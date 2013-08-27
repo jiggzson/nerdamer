@@ -528,19 +528,21 @@ var nerdamer = (function() {
         },
         pow: function( b, a ) { 
             if( b == 1 ) return a;//x^1 = x;
-            a.multiplier = Math.pow( a.multiplier, b.multiplier );
+            
             var g1 = a.group, g2 = b.group;
 
             //if the radical is even we must retain its absolute value.
             var isEven = 1/( +b - parseInt( +b ) ) % 2 === 0 && a.power % 2 === 0;
 
             if( g1 === NUMERIC && g2 === NUMERIC ) {
+                a.multiplier = Math.pow( a.multiplier, b.multiplier );
                 return a;//early exit.
             }
             else {
 
                 var p = a.power;
                 if( g2 === NUMERIC && !isSymbol( p ) ) {
+                    a.multiplier = Math.pow( a.multiplier, b.multiplier );
                     a.power *= b.multiplier;
                 }
                 else { 
