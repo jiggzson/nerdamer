@@ -2,7 +2,9 @@ nerdamer
 ========
 Nerdamer is currently in beta.
 
-This branch includes differentiation
+This branch includes differentiation.
+It is untested and raw. In fact most of the code will need some refactoring.
+
 
 Getting started with Nerdamer
 
