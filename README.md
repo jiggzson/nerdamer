@@ -1,5 +1,6 @@
 nerdamer
 ========
+Nerdamer is currently in beta.
 
 Getting started with Nerdamer
 
