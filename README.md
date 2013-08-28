@@ -2,6 +2,8 @@ nerdamer
 ========
 Nerdamer is currently in beta.
 
+This branch includes differentiation
+
 Getting started with Nerdamer
 
 To add an equation to the object, you must use the addEquation method.
