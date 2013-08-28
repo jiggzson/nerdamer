@@ -450,7 +450,7 @@ var nerdamer = (function() {
                 p1 = a.power, p2 = b.power,
                 n1 = g1 === FUNCTION ? a.name( true ) : null,
                 n2 = g2 === FUNCTION ? b.name( true ) : null, x;
-            if( g2 > g1 ) { 
+            if( g2 > g1 || g1 === g2 && g2 === COMPOSITION && p2 === 1 && p1 !== 1) {
                 //always have the lower group on the right for easy comparison.
                 return this.multiply( b, a) 
             }
