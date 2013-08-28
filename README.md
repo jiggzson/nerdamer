@@ -3,7 +3,7 @@ nerdamer
 Nerdamer is currently in beta.
 
 This branch includes differentiation.
-It is untested and raw. In fact most of the code will need some refactoring.
+It is untested and raw. In fact most of the code will need refactoring.
 
 
 Getting started with Nerdamer
