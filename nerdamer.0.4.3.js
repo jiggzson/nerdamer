@@ -527,7 +527,7 @@ var nerdamer = (function() {
                    a.symbols = t; 
             }
             else if( g1 === COMBINATION && g2 !== NUMERIC && g2 !== POLYNOMIAL ) { 
-                if( g2 === COMBINATION && p1 === 1 ) { 
+                if( g2 === COMBINATION && p2 === 1 ) { 
                     for( x in b.symbols ) {
                         this.powDivide( b.symbols[x], a );
                         this.addSymbol( b.symbols[x], a, undefined, true );
