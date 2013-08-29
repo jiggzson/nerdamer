@@ -855,7 +855,9 @@ var nerdamer = (function() {
         return result;
     }
     
-    var Calculus = {
+    var Calculus = {};
+    
+    Calculus.differentiate = {
         //equivalent of derivative of the outside.
         diff: function( obj, d ) { 
             if( obj.group === FUNCTION ) {
@@ -866,7 +868,7 @@ var nerdamer = (function() {
             }
         },
         polydiff: function( symbol, d ) {
-            if( symbol.value === d || symbol.hasVariable( d )) {
+            if( symbol.value === d || symbol.hasVariable( d )) { 
                 symbol.multiplier *= symbol.power;
                 symbol.power -= 1; 
                 if( symbol.power === 0 ) {
@@ -886,7 +888,9 @@ var nerdamer = (function() {
                     symbol = this.polydiff( symbol, d );
                 }
                 else if( g === COMBINATION ) { 
-                    return this.productRule( symbol, d );
+                    a = this.productRule( symbol, d );
+                    b = this.polydiff( symbol.copy(), d );
+                    return Parser.multiply( a, b );
                 }
                 
                 else if( g === FUNCTION && symbol.power === 1 ) {
@@ -943,7 +947,8 @@ var nerdamer = (function() {
                 t = {};
                 var obj = symbol;
                 for( var x in obj ) { 
-                    Parser.addSymbol( this.derive( obj[x].copy(), d ), t );
+                    var u = this.diff( obj[x].copy(), d );
+                    Parser.addSymbol( u, t );
                 }
                 symbol = Parser.packSymbol( t );
             } 
@@ -1073,7 +1078,7 @@ var nerdamer = (function() {
         },
         //just a test function at present
         diff: function( expStr, independent ) {
-            var r = Calculus.diff( Parser.parseTokens( Parser.tokenize( expStr ) ), independent );
+            var r = Calculus.differentiate.diff( Parser.parseTokens( Parser.tokenize( expStr ) ), independent );
             return this.addEquation( text( r ) ).equation;
         }
     }
