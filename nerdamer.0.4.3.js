@@ -916,9 +916,10 @@ var nerdamer = (function() {
                     }
                 }
                 else if( g === FUNCTION && symbol.power !== 1 ) {
-                    cp = symbol.copy();
-                    if( g === FUNCTION ) cp.power = 1;
-                    symbol = Parser.multiply( this.polydiff( cp, d ), this.derive( g === FUNCTION ? symbol : symbol.symbols, d ) );
+                    a = this.polydiff( symbol.copy(), d );
+                    b = symbol.copy();
+                    b.power = 1;
+                    symbol = Parser.multiply( a, this.derive(b, d) );
                 }
                 else if( g === EXPONENTIAL ) { 
                         a = Parser.rToken( 'log'+inBrackets( symbol.value )+'*'+symbol.power );
