@@ -442,19 +442,23 @@ var nerdamer = (function() {
             b.multiplier *= -1;
             return this.add( a, b );
         },
-        multiply: function( a, b ) {
-            if( a.power === 0 ) a = Symbol( a.multiplier );
-            if( b.power === 0 ) b = Symbol( a.multiplier );
-            if( a.multiplier === 0 || b.multiplier === 0 ) return Symbol( 0 );
+        multiply: function( a, b ) {   
             var g1 = a.group, g2 = b.group,
                 p1 = a.power, p2 = b.power,
                 n1 = g1 === FUNCTION ? a.name( true ) : null,
-                n2 = g2 === FUNCTION ? b.name( true ) : null, x;
-            if( g2 > g1 || g1 === g2 && g2 === COMPOSITION && p2 === 1 && p1 !== 1) {
+                n2 = g2 === FUNCTION ? b.name( true ) : null;
+            //quick returns
+            if( p1 === 0 ) a = Symbol( a.multiplier );
+            if( p2 === 0 ) b = Symbol( a.multiplier );
+            if( a.multiplier === 0 || b.multiplier === 0 ) return Symbol( 0 );
+
+            if( g2 > g1 ) { 
                 //always have the lower group on the right for easy comparison.
                 return this.multiply( b, a) 
             }
-            var t;
+            var isCompositeA = ( g1 === POLYNOMIAL || g1 === COMPOSITION ),
+                isCompositeB = ( g2 === POLYNOMIAL || g2 === COMPOSITION ),
+                t, x;
             a.multiplier *= b.multiplier;
             //exit early if it's a number.
             if( g2 === NUMERIC ) return a;
@@ -469,14 +473,14 @@ var nerdamer = (function() {
                     return Symbol( a.multiplier );
                 }
             }
-
-            else if( g1 === POLYNOMIAL && p1 === 1 || g1 === COMPOSITION && p1 === 1 || 
-                g2 === POLYNOMIAL && p2 === 1 || g2 === COMPOSITION && p2 === 1 ) { 
+            else if( isCompositeA && p1 === 1 || isCompositeB && p2 === 1 ) { 
                 // The multiply method always puts the lower group symbol to the right but sometimes, such as in the case of a multipart symbol,
                 // We need it back on the right. The following tests for these cases.
                 if( g1 === COMBINATION && g2 === POLYNOMIAL || g1 === FUNCTION && g2 === COMPOSITION ||
-                    g1 === EXPONENTIAL && g2 === POLYNOMIAL || g1 === EXPONENTIAL && g2 === COMPOSITION ) { 
-                    t = a; a = b; b = t;
+                    g1 === EXPONENTIAL && g2 === POLYNOMIAL || g1 === EXPONENTIAL && g2 === COMPOSITION ||
+                    isCompositeB && isCompositeA && p1 !== 1  ) { 
+                    t = a; a = b; b = t; //swap symbols
+                    t = p1; p1 = p2; p2 = t; //swap powers
                 } 
                 if( a.value !== b.value && a.group === POLYNOMIAL || p1 !== p2 ) { a.group = COMPOSITION; }
                 t = {}; a.length = 0;
