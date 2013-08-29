@@ -8,7 +8,8 @@
 var nerdamer = (function() {
     
     var EQNS = [],
-        KNOWN_VARS = {};
+        KNOWN_VARS = {},
+        NUMER = false;
 
     // The groups that help during parsing. Note that the names are NOT mathematically accurate.
     // For instance POLYNOMIAL does not include the zeroth power. Some others are just names I chose.
@@ -33,13 +34,22 @@ var nerdamer = (function() {
         'cos' : null,
         'sin' : null,
         'tan' : null,
+        'sec' : null,
+        'csc' : null,
+        'cot' : null,
         'acos': null,
         'asin': null,
         'atan': null,
         'exp' : null,
-        'log' : null,
+        'log' : log,
         'abs' : abs,
         'sqrt': sqrt
+    },
+    
+    Math2 = {
+        'sec': function( x ) { return 1/Math.cos( x );},
+        'cot': function( x ) { return 1/Math.tan( x );},
+        'csc': function( x ) { return 1/Math.sin( x );}
     },
 
     //define any and all constants here. Or use the defConst of the nerdamer object
@@ -65,14 +75,23 @@ var nerdamer = (function() {
         return math( fn, symbol )
     }
     
+    function log( symbol ) {
+        if( symbol.value === 'e' && symbol.multiplier === 1 ) {
+            return isSymbol( symbol.power ) ? symbol.power : Symbol( symbol.power )
+        }
+        else {
+            return math( Symbol('log'), symbol )
+        }
+    }
 
     // A wrapper for methods in the Math object. The method being wrapped still has to be added to the functions object and its key set to 
     // null, undefined, or anything falsy;
     function math( fn , symbol ) { 
         var g = symbol.group; 
         var name = fn.value;
-        if( g === NUMERIC ) { 
-            symbol.multiplier = Math[name]( symbol.multiplier );
+        if( g === NUMERIC && NUMER ) { 
+            var f = Math[name] ? Math[name] : Math2[name]
+            symbol.multiplier = f( symbol.multiplier );
         }
         else {
             if( g === COMPOSITION || g === POLYNOMIAL ){
@@ -233,7 +252,7 @@ var nerdamer = (function() {
                                 e = self.tokenize( KNOWN_VARS[e].eq );
                             }
                             else {
-                                if( constants[e] ) {
+                                if( constants[e] && NUMER ) {
                                     e = constants[e];
                                 }
                                 e = Symbol( e );
@@ -262,6 +281,7 @@ var nerdamer = (function() {
         }
     }
     var Parser = {
+        tokenize: Expression.prototype.tokenize,
         //The function responsible for the actual parsing of the expression.
         parseTokens: function( tokensOrExpression ) { 
             var tokens = tokensOrExpression.tokens || tokensOrExpression,
@@ -334,7 +354,7 @@ var nerdamer = (function() {
                 curPosition++;
             }
             //place a zero in the object if it's empty e.g. 1-1 will result in a empty object
-            if( keys( parsed ).length === 0 ) parsed._ = Symbol( 0 ); 
+            if( keys( parsed ).length === 0 ) parsed._ = Symbol(0); 
             return parsed;
         },
         // a function to safely fetch a token out of the token array. This will read a sub-array into a symbol during parsing.
@@ -442,19 +462,23 @@ var nerdamer = (function() {
             b.multiplier *= -1;
             return this.add( a, b );
         },
-        multiply: function( a, b ) {
-            if( a.power === 0 ) a = Symbol( a.multiplier );
-            if( b.power === 0 ) b = Symbol( a.multiplier );
-            if( a.multiplier === 0 || b.multiplier === 0 ) return Symbol( 0 );
+        multiply: function( a, b ) {   
             var g1 = a.group, g2 = b.group,
                 p1 = a.power, p2 = b.power,
                 n1 = g1 === FUNCTION ? a.name( true ) : null,
-                n2 = g2 === FUNCTION ? b.name( true ) : null, x;
-            if( g2 > g1 || g1 === g2 && g2 === COMPOSITION && p2 === 1 && p1 !== 1) {
+                n2 = g2 === FUNCTION ? b.name( true ) : null;
+            //quick returns
+            if( p1 === 0 ) a = Symbol( a.multiplier );
+            if( p2 === 0 ) b = Symbol( a.multiplier );
+            if( a.multiplier === 0 || b.multiplier === 0 ) return Symbol( 0 );
+
+            if( g2 > g1 ) { 
                 //always have the lower group on the right for easy comparison.
                 return this.multiply( b, a) 
             }
-            var t;
+            var isCompositeA = ( g1 === POLYNOMIAL || g1 === COMPOSITION ),
+                isCompositeB = ( g2 === POLYNOMIAL || g2 === COMPOSITION ),
+                t, x;
             a.multiplier *= b.multiplier;
             //exit early if it's a number.
             if( g2 === NUMERIC ) return a;
@@ -469,14 +493,14 @@ var nerdamer = (function() {
                     return Symbol( a.multiplier );
                 }
             }
-
-            else if( g1 === POLYNOMIAL && p1 === 1 || g1 === COMPOSITION && p1 === 1 || 
-                g2 === POLYNOMIAL && p2 === 1 || g2 === COMPOSITION && p2 === 1 ) { 
+            else if( isCompositeA && p1 === 1 || isCompositeB && p2 === 1 ) { 
                 // The multiply method always puts the lower group symbol to the right but sometimes, such as in the case of a multipart symbol,
                 // We need it back on the right. The following tests for these cases.
                 if( g1 === COMBINATION && g2 === POLYNOMIAL || g1 === FUNCTION && g2 === COMPOSITION ||
-                    g1 === EXPONENTIAL && g2 === POLYNOMIAL || g1 === EXPONENTIAL && g2 === COMPOSITION ) { 
-                    t = a; a = b; b = t;
+                    g1 === EXPONENTIAL && g2 === POLYNOMIAL || g1 === EXPONENTIAL && g2 === COMPOSITION ||
+                    isCompositeB && isCompositeA && p1 !== 1  ) { 
+                    t = a; a = b; b = t; //swap symbols
+                    t = p1; p1 = p2; p2 = t; //swap powers
                 } 
                 if( a.value !== b.value && a.group === POLYNOMIAL || p1 !== p2 ) { a.group = COMPOSITION; }
                 t = {}; a.length = 0;
@@ -538,8 +562,7 @@ var nerdamer = (function() {
                 a.multiplier = Math.pow( a.multiplier, b.multiplier );
                 return a;//early exit.
             }
-            else {
-
+            else { 
                 var p = a.power;
                 if( g2 === NUMERIC && !isSymbol( p ) ) {
                     a.multiplier = Math.pow( a.multiplier, b.multiplier );
@@ -588,7 +611,10 @@ var nerdamer = (function() {
             group = group || COMPOSITION;
             var k = keys( obj );
             var l = k.length;
-            if( l === 1 ) {
+            if( l === 0 ) {
+                return Symbol(0);
+            }
+            else if( l === 1 ) {
                 return obj[k[0]]; 
             }
             else {
@@ -632,18 +658,22 @@ var nerdamer = (function() {
                 this.addSymbol( symbol, parsed );
             }
         },
+        //a quick and dirty way to get a fully built symbol.
+        rToken: function( str ) {
+            return this.packSymbol( this.parseTokens( this.tokenize( str ) ) );
+        },
         // The next functions are needed in case the exponential is a symbol
         powDivide: function( a, b ) {
-            if( isSymbol( a.power ) && isSymbol( b.power )) {
-                    b.power = this.divide( a.power, b.power );
-                }
-                else {
-                    a.power /= b.power;
-                }
+            if( isSymbol( a.power ) || isSymbol( b.power )) {
+                b.power = this.divide( a.power, b.power ); 
+            }
+            else {
+                a.power /= b.power;
+            }
         },
         powMultiply: function( a, b) { 
             if( isSymbol( a.power ) || isSymbol( b.power )) {
-                a.power = this.multiply( a.power, b.power )
+                a.power = this.multiply( a.power, b.power );
             }
             else {
                 a.power *= b.power;
@@ -657,8 +687,7 @@ var nerdamer = (function() {
                 a.power += b.power;
             }
         }
-    }
-
+    };
     // removes an item from either an array or an object.
     // If an array the index must be specified after the array.
     // If an object the key must be specified
@@ -688,7 +717,7 @@ var nerdamer = (function() {
 
     // This recursive method attempts to return a parsed object or symbol back in text form.
     // When asFunction is set to true it will make sure to write in JS function form.
-    function text( obj, delimiter, option ) { 
+    function text( obj, delimiter, option, forceBracket ) { 
         var asFunction = option === 'function',
             g = obj.group, v; 
         delimiter = delimiter || '+';
@@ -707,15 +736,15 @@ var nerdamer = (function() {
                 }
                 else if( g === POLYNOMIAL || g === COMPOSITION || g === COMBINATION || g === EXPONENTIAL && obj.symbols ) {
                     v = text( obj.symbols, delimiter, option );
-                    if( ( obj.multiplier !== 1 && g !== COMBINATION || obj.power !== 1 ))  v = inBrackets( v );
+                    if( obj.multiplier !== 1 && g !== COMBINATION || obj.power !== 1 || forceBracket )  v = inBrackets( v );
                 }
                 else {
-                    v = obj.value
+                    v = obj.value;
                 }
                 var m = obj.multiplier, p = obj.power;
                 if( asFunction ) {
                     if( p !== 1 ) v = 'Math.pow'+inBrackets( v+','+( g === EXPONENTIAL ? text( p, undefined, option) : p) );
-                    if( m !== 1 ) v = m+'*'+v
+                    if( m !== 1 ) v = m+'*'+v;
                 }
                 else {
                     m = m === 1 ? '' : m === -1 ? '-' : m+'*';
@@ -727,7 +756,7 @@ var nerdamer = (function() {
         else {
             var a= [];
             for( var x in obj ) { 
-                a.push( text( obj[x] , undefined, option ) );
+                a.push( text( obj[x], undefined, option ) );
             }
             v = a.sort().join( delimiter ).replace(/\+\-/g,'-');
         }
@@ -742,7 +771,7 @@ var nerdamer = (function() {
             }
         }
         else if( typeof index === 'undefined ') {
-            arr.push( item )
+            arr.push( item );
         }
         else{
             arr.splice( index, 0, item );
@@ -815,11 +844,157 @@ var nerdamer = (function() {
             result = 'No equation found.';
             if( eqn ) { 
                 eqn.equation =  fn( eqn );
-                result = eqn.equation
+                result = eqn.equation;
             }
         return result;
     }
-       
+    
+    var Calculus = {
+        //equivalent of derivative of the outside.
+        diff: function( obj, d ) { 
+            if( obj.group === FUNCTION ) {
+                return this.chainRule( obj, d );
+            }
+            else {
+                return this.derive( obj, d );
+            }
+        },
+        polydiff: function( symbol, d ) {
+            if( symbol.value === d || symbol.hasVariable( d )) {
+                symbol.multiplier *= symbol.power;
+                symbol.power -= 1; 
+                if( symbol.power === 0 ) {
+                    symbol = Symbol( symbol.multiplier );
+                }
+            } 
+            return symbol;
+        },
+        derive: function( symbol, d ) { 
+            var g = symbol.group, t, a, b, cp; 
+            
+            if( isSymbol( symbol ) ) {
+                if( g === NUMERIC || g === SYMBOLIC && symbol.value !== d ) { 
+                    symbol = Symbol( 0 );
+                }
+                else if( g === SYMBOLIC ) {  
+                    symbol = this.polydiff( symbol, d );
+                }
+                else if( g === COMBINATION ) { 
+                    return this.productRule( symbol, d );
+                }
+                
+                else if( g === FUNCTION && symbol.power === 1 ) {
+                    var v = symbol.value;
+                    switch( v ) {
+                        case 'log':
+                            cp = symbol.copy();
+                            symbol = Parser.divide( Parser.packSymbol( symbol.symbols), this.diff(Parser.packSymbol( cp.symbols ), d) );
+                            break;
+                        case 'cos':
+                            symbol.value = 'sin';
+                            symbol.multiplier *= -1;
+                            break;
+                        case 'sin': 
+                            symbol.value = 'cos';
+                            break;
+                        //quick and pretty derivatives
+                        case 'tan':
+                            symbol.value = 'sec';
+                            symbol.power = 2;
+                            break;
+                        case 'sec': 
+                            //use a copy if this gives errors
+                            symbol = this.quickdiff( symbol, 'tan');
+                            break;
+                        case 'csc':
+                            symbol = this.quickdiff( symbol, '-cot');
+                            break;
+                        case 'cot':
+                            symbol.value = 'csc';
+                            symbol.multiplier *= -1;
+                            symbol.power = 2;
+                            break;
+                    }
+                }
+                else if( g === FUNCTION && symbol.power !== 1 ) {
+                    cp = symbol.copy();
+                    if( g === FUNCTION ) cp.power = 1;
+                    symbol = Parser.multiply( this.polydiff( cp, d ), this.derive( g === FUNCTION ? symbol : symbol.symbols, d ) );
+                }
+                else if( g === EXPONENTIAL ) { 
+                        a = Parser.rToken( 'log'+inBrackets( symbol.value )+'*'+symbol.power );
+                        b = this.diff( a, d );
+                    symbol = Parser.multiply( symbol, b );
+                }
+                else if( g === COMPOSITION || g === POLYNOMIAL ) {
+                    a = this.polydiff( symbol.copy(), d );
+                    b = this.diff( symbol.symbols, d );
+                    symbol = Parser.multiply( a, b );
+                }
+            }
+            else { 
+                t = {};
+                var obj = symbol;
+                for( var x in obj ) { 
+                    Parser.addSymbol( this.derive( obj[x].copy(), d ), t );
+                }
+                symbol = Parser.packSymbol( t );
+            } 
+            return symbol;
+        },
+        //a quick and simple way to return a known derivative
+        quickdiff: function( symbol, val, altVal ) {
+            return Parser.multiply( symbol, Parser.rToken( val+inBrackets( altVal || text( symbol.symbols ) ) ));
+        },
+        chainRule: function( symbol, d ) {
+            var a = this.derive( symbol, d ),
+                b = this.derive( symbol.symbols, d );
+            return Parser.multiply( a , b );
+        },
+        productRule: function( symbol, d ) { 
+            var n = 0,//use this to keep track of how many derivatives you actually pulled
+                stack = [],//we're going to stack the derivatives. This may seem wasteful at first but it saves us a lot of trouble later on
+                k = keys( symbol.symbols ),
+                l = k.length,
+                result = symbol;// the default return
+            //a standard for loop is chosen to reduce the number of loops by pulling the keys and working with that;
+            for( var i=0; i<l; i++ ) {
+                var key = k[i],
+                    df = this.diff( symbol.symbols[key].copy(), d ); 
+                if( +df !== 0 ) {
+                    n++;
+                    var ll = k.length;
+                    for( var j=0; j<ll; j++ ) {
+                        //we need to skip the current symbol
+                        if( j !== i ) {
+                            //the unfortunate thing is that we make a copy of the symbol even when we don't have to.
+                            var s = symbol.symbols[k[j]];
+                            df = Parser.multiply( df, s );
+                        }
+                    }
+                    //if there is only one symbol return else
+                    stack.push( df );
+                }
+            }
+            //we have all the derivatives but let's return a symbol
+            if( stack.length === 1 ) { 
+                result = stack[0]; 
+                result.multiplier *= symbol.multiplier;
+            }
+            else {
+                var r = {};
+                l = stack.length;
+                for( i=0; i<l; i++ ) {
+                    var c = stack[i];
+                    c.multiplier *= symbol.multiplier;
+                    Parser.addSymbol( c, r );
+                }
+                result = Parser.packSymbol( r ); 
+            }
+            return result;
+        }
+    };
+    
     return {
         // Use this function to set a known value.
         known: function( str ) {
@@ -847,7 +1022,7 @@ var nerdamer = (function() {
         // Use this method to add and equation to the nerdamer object.
         addEquation: function( str, location ) {
             //Tokanize the string
-            var expression = new Expression( str );
+            var expression = new Expression( ''+str );
             //parse out
             expression.parsed = Parser.parseTokens( expression.tokens );
             expression.equation = text( expression.parsed );
@@ -863,10 +1038,13 @@ var nerdamer = (function() {
             return result;
         },
         // Use this method to evaluate an expression prevously added.
-        evaluate: function( equationNumber ) {
-            return getEquation( equationNumber, function( eqn ){
+        evaluate: function( equationNumber, numer ) {
+            NUMER = !!numer; 
+            var result = getEquation( equationNumber, function( eqn ){
                 return text( Parser.parseTokens( eqn.tokenize( eqn.equation ) ) );
             });
+            NUMER = false; //restore NUMER;
+            return result;
         },
         // The only problem with this method is that you to make sure to keep in mind that the parameters are sorted alphabetically.
         buildFunction: function( equationNumber ) {
@@ -885,6 +1063,11 @@ var nerdamer = (function() {
                     remove( EQNS, equationNumber - 1 )
                 }
             }    
+        },
+        //just a test function at present
+        diff: function( expStr, independent ) {
+            var r = Calculus.diff( Parser.parseTokens( Parser.tokenize( expStr ) ), independent );
+            return this.addEquation( text( r ) ).equation;
         }
     }
 })();
