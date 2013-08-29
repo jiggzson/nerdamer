@@ -348,14 +348,20 @@ var nerdamer = (function() {
             }
             return sym;
         },
-        // transfer over a symbol when downgrading to simpler symbol.
+        // transfer over a symbol when changing a combination to another symbol. e.g. a composition that contains a composition
         transfer: function( second, first ) { 
             first.multiplier *= second.multiplier;
             this.powMultiply( first, second ); //TODO: have the value check if it's dealing with a number and more as well;
             first.value = second.value;
             first.group = second.group;
-            delete first.symbols;
-            delete first.length;
+            if( second.symbols ) {
+                first.symbols = second.symbols;
+                first.length = second.length;
+            }
+            else {
+                delete first.symbols;
+                delete first.length;
+            }
         },
 
         // This method neatly reorganizes all the tokens into an object and is sort of a compliment to the Parser.add method.
