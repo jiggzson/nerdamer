@@ -884,8 +884,7 @@ var nerdamer = (function() {
                 }
                 
                 else if( g === FUNCTION && symbol.power === 1 ) {
-                    var v = symbol.value;
-                    switch( v ) {
+                    switch( symbol.value ) {
                         case 'log':
                             cp = symbol.copy();
                             symbol = Parser.divide( Parser.packSymbol( symbol.symbols), this.diff(Parser.packSymbol( cp.symbols ), d) );
