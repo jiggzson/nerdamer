@@ -9,7 +9,7 @@ var nerdamer = (function() {
     
     //modules
     var Calculus    = {},
-        Formatting  = {}
+        Formatting  = {};
     
     init();//initialize modules
     
@@ -36,23 +36,23 @@ var nerdamer = (function() {
         '^': {order: 5, fn: 'pow'}
     },
 
-    //in order to use the function in Math just set the function name to null. eg. Math.cos -> 'cos':null
+    //in order to use the function in Math just set the function map to null.
     functions = {
-        'cos'       : null,
-        'sin'       : null,
-        'tan'       : null,
-        'sec'       : null,
-        'csc'       : null,
-        'cot'       : null,
-        'acos'      : null,
-        'asin'      : null,
-        'atan'      : null,
-        'exp'       : null,
-        'log'       : log,
-        'abs'       : abs,
-        'sqrt'      : sqrt,
-        'diff'      : Calculus.diff,
-        'integrate' : Calculus.integrate
+        'cos'       : [ , 1],
+        'sin'       : [ , 1],
+        'tan'       : [ , 1],
+        'sec'       : [ , 1],
+        'csc'       : [ , 1],
+        'cot'       : [ , 1],
+        'acos'      : [ , 1],
+        'asin'      : [ , 1],
+        'atan'      : [ , 1],
+        'exp'       : [ , 1],
+        'log'       : [log , 1],
+        'abs'       : [abs , 1],
+        'sqrt'      : [sqrt, 1],
+        'diff'      : [Calculus.diff       , 2],
+        'integrate' : [Calculus.integrate  , 2]
     },
     
     Math2 = {
@@ -69,7 +69,7 @@ var nerdamer = (function() {
 
     function sqrt( symbol ) { 
         /* &% imaginary numbers */
-        var g = symbol.group
+        var g = symbol.group;
         if( g === NUMERIC ) {
             if( isNeg( symbol ) ) throw new Error( 'Complex numbers not yet supported');
             symbol.multiplier = Math.sqrt( symbol.multiplier );
@@ -81,27 +81,27 @@ var nerdamer = (function() {
     }
 
     function abs( symbol, fn ) {
-        fn = fn || Symbol('abs')
+        fn = fn || Symbol('abs');
         symbol.multiplier = Math.abs( symbol.multiplier );
-        return math( fn, symbol )
+        return math( fn, symbol );
     }
     
     function log( symbol ) {
         if( symbol.value === 'e' && symbol.multiplier === 1 ) {
-            return isSymbol( symbol.power ) ? symbol.power : Symbol( symbol.power )
+            return isSymbol( symbol.power ) ? symbol.power : Symbol( symbol.power );
         }
         else {
-            return math( Symbol('log'), symbol )
+            return math( Symbol('log'), symbol );
         }
     }
 
     // A wrapper for methods in the Math object. The method being wrapped still has to be added to the functions object and its key set to 
     // null, undefined, or anything falsy;
     function math( fn , symbol ) { 
-        var g = symbol.group; 
-        var name = fn.value;
+        var g = symbol.group,
+            name = fn.value;
         if( g === NUMERIC && NUMER ) { 
-            var f = Math[name] ? Math[name] : Math2[name]
+            var f = Math[name] ? Math[name] : Math2[name];
             symbol.multiplier = f( symbol.multiplier );
         }
         else {
@@ -139,7 +139,7 @@ var nerdamer = (function() {
                     }
                 }
                 else {
-                    frac = this.fullConversion( value )
+                    frac = this.fullConversion( value );
                 }
             }
             return frac;
@@ -148,7 +148,7 @@ var nerdamer = (function() {
             var x = (dec.toExponential()+'').split('e');
             var d = x[0].split('.')[1];// get the number of places after the decimal
             var l = d ? d.length : 0; // maybe the coefficient is an integer;
-            return [ Math.pow(10,l)*x[0], Math.pow(10, Math.abs(x[1])+l)]
+            return [ Math.pow(10,l)*x[0], Math.pow(10, Math.abs(x[1])+l)];
         },
         fullConversion: function( dec )
         {
@@ -179,7 +179,7 @@ var nerdamer = (function() {
             }
             return [num, den];
         }
-    }
+    };
 
     //An attempt to get objects to behave somewhat as symbols.
     //Depends on methods: text, validateName
@@ -251,7 +251,7 @@ var nerdamer = (function() {
 
             for( i = 0; i < l; i++ ) {
                 if( this[properties[i]] ) {
-                    copy[properties[i]] = this[properties[i]]
+                    copy[properties[i]] = this[properties[i]];
                 }
             }
 
@@ -276,6 +276,7 @@ var nerdamer = (function() {
             }
         },
         //an add-on helper function to help sniff out symbols in complex symbols
+        //it does not check the power.
         hasVariable: function( variable ) {
             if( this.group > SYMBOLIC ) {
                 for( var x in this.symbols ) {
@@ -283,13 +284,13 @@ var nerdamer = (function() {
                         return true;
                     }
                 }
-                return false;
             }
             else {
                 return this.value === variable;
             }
+            return false;
         }
-    }
+    };
     
     function Expression( str ){ 
         this.tokens = this.tokenize( str );
@@ -365,7 +366,7 @@ var nerdamer = (function() {
             if( openBrackets !== 0 ) throw new Error('Malformed expression!');
             return stack;
         }
-    }
+    };
     var Parser = {
         tokenize: Expression.prototype.tokenize,
         
@@ -387,6 +388,23 @@ var nerdamer = (function() {
             
             return paramArray;
         },
+        parseFunction: function( fn, contents ) {
+            var properties = functions[fn.value],
+                fnMap = properties[0],
+                params = contents.params || [];
+            
+            //the parameters don't have to be attached to the symbol anymore
+            delete contents.params;
+            
+            if( !fnMap ) {
+                return math( fn, contents ); 
+            }
+            else {
+                //make the contents the first parameter.
+                params.unshift( contents );
+                return fnMap.apply( undefined, params );
+            }
+        },
         //The function responsible for the actual parsing of the expression.
         parseTokens: function( tokensOrExpression ) { 
             var tokens = tokensOrExpression.tokens || tokensOrExpression,
@@ -399,12 +417,11 @@ var nerdamer = (function() {
                 //function support
                 if( token && token.value in functions ) {
                     token = remove( tokens, curPosition );
-                    var contents = Parser.fetchSymbol( tokens, curPosition, true ),
-                        fn = functions[ token.value ];
-                    //TODO: support for more parameters
-                    if( contents.params ) token = contents.params[0];
                     
-                    insert( tokens , ( fn ? fn( contents, token ) : math( token, contents ) ), curPosition ); 
+                    //parse what's in between the brackets.
+                    var contents = Parser.fetchSymbol( tokens, curPosition, true );
+
+                    insert( tokens , this.parseFunction( token, contents ), curPosition ); 
                 }
                 if( operators[token] || atTheEnd ) {
 
@@ -514,7 +531,7 @@ var nerdamer = (function() {
             else {
                 obj = item;
             }
-            if( symbol.power == 0 ) symbol = Symbol( symbol.multiplier ); 
+            if( +symbol.power === 0 ) symbol = Symbol( symbol.multiplier ); //ch*
             //"polynomials" are stored by their power so verify and use the power value as the key.
             var name = ( parent ? parent.group === POLYNOMIAL: false ) ? ( isSymbol( symbol.power ) ? text( symbol.power ) : symbol.power ) : symbol.name();
             if( !obj[name] ) {
@@ -532,7 +549,7 @@ var nerdamer = (function() {
             else {
                 obj[name] = multiply ? this.multiply( obj[name], symbol ) : this.add( obj[name], symbol );
                 //time for some clean up;
-                if( obj[name].multiplier == 0 ) { 
+                if( obj[name].multiplier === 0 ) { //ch*
                     delete obj[name];
                     if( parent ) parent.length--;
                 }
@@ -678,7 +695,7 @@ var nerdamer = (function() {
             return this.multiply( a, b );
         },
         pow: function( b, a ) { 
-            if( b == 1 ) return a;//x^1 = x;
+            if( +b === 1 ) return a;//ch* x^1 = x;
             var g1 = a.group, g2 = b.group;
 
             //if the radical is even we must retain its absolute value.
@@ -736,15 +753,22 @@ var nerdamer = (function() {
         // A method to pack intermediate results into a symbol or just return the symbol.
         // e.g. calculations done on an expression between brackets
         packSymbol: function( obj, group, donotunpack ) {
-            
             group = group || COMPOSITION;
-            var k = keys( obj );
-            var l = k.length;
+            var k = keys( obj ),
+                l = k.length,
+                isCompounded = false;
+        
+            //bug fix: cos((1+x)^2)^2 would return cos(1+x)^4
+            if( donotunpack ) {
+                isCompounded = obj[k[0]].group === COMPOSITION;
+            }
+            
             if( l === 0 ) {
                 return Symbol(0);
             }
             //NUMER takes higher precedence and can force a number to be returned
-            else if( l === 1 && ( NUMER || !donotunpack ) ) {
+//            else if( l === 1 && ( NUMER || !donotunpack ) ) {
+            else if( l === 1 && ( NUMER || !isCompounded ) ) {
                 return obj[k[0]];
             }
             else {
@@ -994,12 +1018,18 @@ var nerdamer = (function() {
             if( isSymbol( d )) d = d.value;
 
             if( obj.group === FUNCTION ) {
-                return Calculus.chainRule( obj, d );
+                if( isSymbol( obj.power ) ) {
+                    //in progress
+                    return obj;
+                }
+                else {
+                    return Calculus.chainRule( obj, d );
+                } 
             }
             else {
                 return Calculus.derive( obj, d );
             }
-        }
+        };
         Calculus.polydiff = function( symbol, d ) {
             if( symbol.value === d || symbol.hasVariable( d )) { 
                 symbol.multiplier *= symbol.power;
@@ -1009,7 +1039,7 @@ var nerdamer = (function() {
                 }
             } 
             return symbol;
-        }
+        };
         Calculus.derive = function( symbol, d) { 
             var g = symbol.group, t, a, b, cp; 
 
@@ -1025,7 +1055,6 @@ var nerdamer = (function() {
                     b = Calculus.polydiff( symbol.copy(), d );
                     return Parser.multiply( a, b );
                 }
-
                 else if( g === FUNCTION && symbol.power === 1 ) {
                     switch( symbol.value ) {
                         case 'log':
@@ -1063,7 +1092,8 @@ var nerdamer = (function() {
                     a = Calculus.polydiff( symbol.copy(), d );
                     b = symbol.copy();
                     b.power = 1; 
-                    symbol = Parser.multiply( a, Calculus.derive(b, d) );
+                    b = Calculus.derive(b, d);
+                    symbol = Parser.multiply( a, b );  
                 }
                 else if( g === EXPONENTIAL ) { 
                         a = Parser.rToken( 'log'+inBrackets( symbol.value )+'*'+symbol.power );
@@ -1086,16 +1116,19 @@ var nerdamer = (function() {
                 symbol = Parser.packSymbol( t );
             } 
             return symbol;
-        }
+        };
+        
         //a quick and simple way to return a known derivative
         Calculus.quickdiff = function( symbol, val, altVal ) {
             return Parser.multiply( symbol, Parser.rToken( val+inBrackets( altVal || text( symbol.symbols ) ) ));
-        }
+        };
+        
         Calculus.chainRule = function( symbol, d ) {
             var a = Calculus.derive( symbol, d ),
                 b = Calculus.derive( symbol.symbols, d );
             return Parser.multiply( a , b );
-        }
+        };
+        
         Calculus.productRule = function( symbol, d ) { 
             var n = 0,//use this to keep track of how many derivatives you actually pulled
                 stack = [],//we're going to stack the derivatives. This may seem wasteful at first but it saves us a lot of trouble later on
@@ -1137,14 +1170,11 @@ var nerdamer = (function() {
                 result = Parser.packSymbol( r ); 
             }
             return result;
-        }
+        };
 
         Calculus.integrate = function( symbol, d ) { 
             d = isSymbol( d ) ? d.value : d;
-            
-            //temporary fix until I can write a proper function handler
-            if( d === 'integrate' ) d = '';
-            
+            console.log( arguments )
             if( !d ) throw new Error('No integrand provided!');
             
             if( isSymbol( symbol ) ) {
@@ -1181,13 +1211,13 @@ var nerdamer = (function() {
                 symbol = Parser.packSymbol( t );
             }
             return symbol;
-        }
+        };
 
         Formatting.latex = function( obj ) {
             
             if( isSymbol( obj ) ) {
                 var symbol = obj,
-                    g = symbol.group
+                    g = symbol.group;
                 if( g === NUMERIC ) return Formatting.frac( Fraction.convert( symbol.multiplier ) );
                 //determine which bracket to use for current format
                 var prefix = '~',
@@ -1201,7 +1231,7 @@ var nerdamer = (function() {
                     //first check if we have a symbol as the power
                     p =  isSymbol( p ) ? Formatting.latex( p ) :  Math.abs( p ); 
                     //now put it as a fraction
-                    p = ( isInt( p ) ? p : ( !isNaN( p ) ? Fraction.convert( p ) : p ) )
+                    p = ( isInt( p ) ? p : ( !isNaN( p ) ? Fraction.convert( p ) : p ) );
                     // format the power of the symbols. If it's 1... **poof**
                     p = p === 1 || p === -1 ? '' : '^'+bracket( Formatting.frac( p ) );
                 }
@@ -1213,18 +1243,18 @@ var nerdamer = (function() {
                 }
                 var dress = function( v, f, tex ) {
                     return ( sqrt ? '\\sqrt'+bracket( v ): ( p ? f( v, tex) : v )+p );
-                }
+                };
                 
                 var tex = (function(){
                     var g = symbol.group,
                         value,
                         addBrackets = false;
-                    if( g === SYMBOLIC || g === EXPONENTIAL ) {
+                    if( g === SYMBOLIC || g === EXPONENTIAL  ) {
                         value = dress( symbol.symbols ? Formatting.latex( symbol.symbols ): symbol.value, bracket );
                     }
                     else if( g === FUNCTION ) {
                         value = Formatting.latex( symbol.symbols );
-                        value = dress( '\\'+symbol.value + inBrackets( value, true), function(v){ return v; })
+                        value = dress( '\\'+symbol.value + inBrackets( value, true), function(v){ return v; });
                     }
                     else if( g > FUNCTION ) {
                         //first we need to build the value
@@ -1248,29 +1278,31 @@ var nerdamer = (function() {
                     Formatting.attach( value, m, symbol.power, prefix );                    
                     value = Formatting.frac( m );
                     return value;
-                })()
+                })();
                 return sign+tex;
             }
             else {
                 var values = [];
                 for( var x in obj ) {
-                    values.push( Formatting.latex( obj[x]) )
+                    values.push( Formatting.latex( obj[x]) );
                 }
                 return values.join('+').replace('+-','-');
             }
-        }
+        };
+        
         Formatting.attach = function( value, arr, power, prefix ) {
             prefix = prefix || '';
-            //choose wheter we're going top or bottom. that doesn't sound right, does it?
+            //choose whether we're going top or bottom. 
             var loc = isNeg( power ) ? 1 : 0; 
             arr[loc] = arr[loc] === 1 ? value : arr[loc] += prefix+value;
-        },
+        };
+                
         Formatting.frac = function( arr ){
             if(!arr ) return '';
             if( !isArray( arr ) ) return arr;
             if( arr[1] === 1 ) return arr[0];
             return '\\frac{'+arr[0]+'}{'+arr[1]+'}';
-        }
+        };
     }
     
     //checks if a number of symbol is negative;
@@ -1359,12 +1391,12 @@ var nerdamer = (function() {
                 if( !equationNumber ) equationNumber = EQNS.length;
                 if( equationNumber === 'all' ) { EQNS = []; }
                 else {
-                    remove( EQNS, equationNumber - 1 )
+                    remove( EQNS, equationNumber - 1 );
                 }
             }    
         },
         latex: Formatting.latex
-    }
+    };
     
     return USER_FUNCTIONS;
     
