@@ -298,7 +298,7 @@ var nerdamer = (function() {
     Expression.prototype = {
         tokenize: function( expStr ) {
         //normalize e.g. turn (x-2)(x+1) into (x-2)*(x+1) and clean out white space.
-        expStr = expStr.split(' ').join('').replace( /\)\(/g, ')*(' );
+        expStr = expStr.split(' ').join('').replace( /\)\(/g, ')*(' ).toLowerCase();
         var self = this,
             openBrackets = 0,
             stack = [],
@@ -672,7 +672,9 @@ var nerdamer = (function() {
                     }
                 }
                 else {
-                    this.powDivide( b, a );
+                    //investigate this as this may be causing problems
+                    //the thinking is that this only comes here if we're dealing with an exponential function
+                    if( g2 !== FUNCTION ) this.powDivide( b, a ); //potential bug
                     this.addSymbol( b, a, undefined, true );
                 }
             }
@@ -702,7 +704,7 @@ var nerdamer = (function() {
             var isEven = 1/( +b - parseInt( +b ) ) % 2 === 0 && a.power % 2 === 0;
 
             if( g1 === NUMERIC && g2 === NUMERIC ) {
-                if( a.multiplier < 0 ) throw new Error( 'Complex numbers not yet supported');
+//                if( a.multiplier < 0 ) throw new Error( 'Complex numbers not yet supported');
                 a.multiplier = Math.pow( a.multiplier, b.multiplier );
                 return a;//early exit.
             }
@@ -1020,7 +1022,7 @@ var nerdamer = (function() {
             if( obj.group === FUNCTION ) {
                 if( isSymbol( obj.power ) ) {
                     //in progress
-                    return obj;
+                    return Calculus.derive( obj, d );
                 }
                 else {
                     return Calculus.chainRule( obj, d );
@@ -1042,7 +1044,6 @@ var nerdamer = (function() {
         };
         Calculus.derive = function( symbol, d) { 
             var g = symbol.group, t, a, b, cp; 
-
             if( isSymbol( symbol ) ) {
                 if( g === NUMERIC || g === SYMBOLIC && symbol.value !== d ) { 
                     symbol = Symbol( 0 );
@@ -1088,17 +1089,28 @@ var nerdamer = (function() {
                             break;
                     }
                 }
+                else if( g === EXPONENTIAL || g === FUNCTION && isSymbol( symbol.power ) ) { 
+                    var value;
+                    if( g === EXPONENTIAL ) {
+                        value = symbol.value;
+                    }
+                    else if( g === FUNCTION && symbol.hasVariable( d )) {
+                        value = symbol.value + inBrackets( text( symbol.symbols ) );
+                    }
+                    else {
+                        //TODO: eliminate dependence on text.
+                        value = symbol.value + inBrackets( text( symbol.symbols ) );
+                    }
+                        a = Parser.multiply( Parser.rToken( 'log'+inBrackets( value ) ), symbol.power.copy() );
+                        b = Calculus.diff( a, d );
+                    symbol = Parser.multiply( symbol, b );
+                }
                 else if( g === FUNCTION && symbol.power !== 1 ) {
                     a = Calculus.polydiff( symbol.copy(), d );
                     b = symbol.copy();
                     b.power = 1; 
                     b = Calculus.derive(b, d);
                     symbol = Parser.multiply( a, b );  
-                }
-                else if( g === EXPONENTIAL ) { 
-                        a = Parser.rToken( 'log'+inBrackets( symbol.value )+'*'+symbol.power );
-                        b = Calculus.diff( a, d );
-                    symbol = Parser.multiply( symbol, b );
                 }
                 else if( g === COMPOSITION || g === POLYNOMIAL ) {
                     a = Calculus.polydiff( symbol.copy(), d );
@@ -1342,7 +1354,7 @@ var nerdamer = (function() {
         },
         // Use this method to add and equation to the nerdamer object.
         addEquation: function( str, location ) {
-            //Tokanize the string
+            //Tokenize the string
             var expression = new Expression( ''+str );
             //parse out
             expression.parsed = Parser.parseTokens( expression.tokens );
@@ -1368,6 +1380,7 @@ var nerdamer = (function() {
         },
         // Use this method to evaluate an expression prevously added.
         evaluate: function( equationNumber, numer ) {
+            
             NUMER = !!numer; 
             var result = getEquation( equationNumber, function( eqn ){
                 return text( Parser.rToken(  eqn.equation ) );
