@@ -68,6 +68,22 @@ var nerdamer = (function() {
         'pi': Math.PI,
         'e' : Math.E
     };
+    
+    //http://erik.eae.net/playground/arrayextras/arrayextras.js
+    if (!Array.prototype.indexOf) {
+        Array.prototype.indexOf = function (obj, fromIndex) {
+            if (fromIndex == null) {
+                fromIndex = 0;
+            } else if (fromIndex < 0) {
+                fromIndex = Math.max(0, this.length + fromIndex);
+            }
+            for (var i = fromIndex, j = this.length; i < j; i++) {
+                if (this[i] === obj)
+                    return i;
+            }
+            return -1;
+        };
+    }
 
     function sqrt( symbol ) { 
         var g = symbol.group;
@@ -207,7 +223,6 @@ var nerdamer = (function() {
         // return a text reprensentation of the symbol's base value. This method depends on text in cases where 
         // because sometimes a clear distinction has to be made of the value between brackets for instance.
         // e.g. 2(x+1) and (x+1) the same but the same does not hold true for a function like cos(x) and cos(2x). 
-        // That's when text comes in
         name: function( baseOnly, full ) {
             var v, g = this.group, symbol, pw;
             if( g === COMBINATION || g === COMPOSITION || g === POLYNOMIAL && this.power !== 1 ) { 
@@ -309,7 +324,7 @@ var nerdamer = (function() {
     Expression.prototype = {
         tokenize: function( expStr ) {
         //normalize e.g. turn (x-2)(x+1) into (x-2)*(x+1) and clean out white space.
-        expStr = expStr.split(' ').join('').replace( /\)\(/g, ')*(' ).toLowerCase();
+        expStr = expStr.split(' ').join('').replace( /\)\(/g, ')*(' );
         var self = this,
             openBrackets = 0,
             stack = [],
@@ -1298,7 +1313,14 @@ var nerdamer = (function() {
                         value,
                         addBrackets = false;
                     if( g === SYMBOLIC || g === EXPONENTIAL  ) {
-                        value = dress( symbol.symbols ? Formatting.latex( symbol.symbols ): symbol.value, bracket );
+                        value = symbol.value;
+                        
+                        //some pretty prebuilts 
+                        var greek = [ 'alpha', 'beta', 'gamma', 'delta', 'zeta', 'eta', 'theta', 'iota', 
+                            'kappa', 'mu', 'nu', 'xi', 'rho', 'sigma', 'tau', 'chi', 'psi', 'omega', 'pi' ];
+                        if( greek.indexOf( value ) !== -1 ) value = '\\'+value;
+                        
+                        value = dress( symbol.symbols ? Formatting.latex( symbol.symbols ): value, bracket );
                     }
                     else if( g === FUNCTION ) {
                         value = Formatting.latex( symbol.symbols );
