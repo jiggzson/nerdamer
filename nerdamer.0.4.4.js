@@ -559,7 +559,7 @@ var nerdamer = (function() {
             var obj,
             
             //if the function is being multiplied then this forces the power to be ignored.
-            baseOnly = symbol.group === FUNCTION && multiply;;
+            baseOnly = symbol.group === FUNCTION && multiply;
             
             if( isSymbol( item ) ) {
                 obj = item.symbols;
@@ -731,7 +731,15 @@ var nerdamer = (function() {
                 }
             }
             else if( g2 !== NUMERIC ){ 
-                a = this.convertAndInsert( a, b, COMBINATION );
+                
+                //quick fix
+                if( g1 === EXPONENTIAL && g2 === COMBINATION && b.hasVariable( a.name(true) ) ) {
+                    this.addSymbol( a, b, undefined, true );
+                    a = b;
+                }
+                else {
+                    a = this.convertAndInsert( a, b, COMBINATION );
+                }
             }
             return a;
         },
@@ -1524,8 +1532,7 @@ var nerdamer = (function() {
                     remove( EQNS, equationNumber - 1 );
                 }
             }    
-        },
-        latex: Formatting.late
+        }
     };
 
     
