@@ -54,7 +54,8 @@ var nerdamer = (function() {
         'abs'       : [abs , 1],
         'sqrt'      : [sqrt, 1],
         'diff'      : [Calculus.diff       , 2],
-        'integrate' : [Calculus.integrate  , 2]
+        'integrate' : [Calculus.integrate  , 2],
+        'expand'    : [Algebra.expand, 1]
     },
     
     Math2 = {
@@ -223,11 +224,17 @@ var nerdamer = (function() {
         // return a text reprensentation of the symbol's base value. This method depends on text in cases where 
         // because sometimes a clear distinction has to be made of the value between brackets for instance.
         // e.g. 2(x+1) and (x+1) the same but the same does not hold true for a function like cos(x) and cos(2x). 
-        name: function( baseOnly, full ) {
+        name: function( baseOnly ) {
             var v, g = this.group, symbol, pw;
             if( g === COMBINATION || g === COMPOSITION || g === POLYNOMIAL && this.power !== 1 ) { 
                 //the delimiter for joining back the name. Any character excluded from variable names will do really.
-                v = this.symbolsContents( g === COMBINATION ? '*' : '+' );
+                var d = g === COMBINATION ? '*' : '+',
+                    names = [];
+                for( symbol in this.symbols ) {
+                    var t = text( this.symbols[symbol] );
+                    names.push( this.symbols[symbol].group === COMPOSITION ? inBrackets( t ) : t );
+                }
+                v = inBrackets( names.sort().join(d) );
                 if( g === COMPOSITION && this.power !== 1 ) {
                     v = v+ ( baseOnly ? '' : '^('+this.power+')' );
                 }
@@ -239,11 +246,10 @@ var nerdamer = (function() {
                 }
             }
             else if( g === FUNCTION ) {
-                v = this.value+inBrackets( this.symbolsContents() )+( this.power === 1 ? '' : baseOnly ? '' : '^('+this.power+')' );
+                v = this.value+inBrackets( text(this.symbols) )+( this.power === 1 ? '' : baseOnly ? '' : '^('+this.power+')' );
             }
             else {
-
-                v = ( full ? this.multiplier+'*' : '' )+this.value+( full ? '^'+this.power : '' );
+                v = this.value;
             }
             return v;
         },
@@ -395,7 +401,9 @@ var nerdamer = (function() {
     };
     var Parser = {
         tokenize: Expression.prototype.tokenize,
-        
+        declareFunction: function( obj ) {
+            
+        },
         loadParams: function( symbolArray ) {
             var l = symbolArray.length, 
                 first = l,
@@ -548,7 +556,10 @@ var nerdamer = (function() {
         // This method neatly reorganizes all the tokens into an object and is sort of a compliment to the Parser.add method.
         // If a symbol is found they are added together. It also does some book keeping on higher group Symbols.
         addSymbol: function( symbol, item, parent, multiply ) {
-            var obj;
+            var obj,
+            
+            //if the function is being multiplied then this forces the power to be ignored.
+            baseOnly = symbol.group === FUNCTION && multiply;;
             
             if( isSymbol( item ) ) {
                 obj = item.symbols;
@@ -557,9 +568,13 @@ var nerdamer = (function() {
             else {
                 obj = item;
             }
+            
             if( +symbol.power === 0 ) symbol = Symbol( symbol.multiplier ); //ch*
             //"polynomials" are stored by their power so verify and use the power value as the key.
-            var name = ( parent ? parent.group === POLYNOMIAL: false ) ? ( isSymbol( symbol.power ) ? text( symbol.power ) : symbol.power ) : symbol.name();
+            //needs cleaning.
+            var name = ( parent ? parent.group === POLYNOMIAL: false ) ? ( isSymbol( symbol.power ) ? 
+                text( symbol.power ) : symbol.power ) : symbol.name( baseOnly );
+            
             if( !obj[name] ) {
                 //some bookkeeping
                 if( parent ) {
@@ -711,6 +726,7 @@ var nerdamer = (function() {
                     //the thinking is that this only comes here if we're dealing 
                     //with an exponential function
                     if( g2 !== FUNCTION ) this.powDivide( b, a ); //potential bug
+                    
                     this.addSymbol( b, a, undefined, true );
                 }
             }
@@ -1094,7 +1110,14 @@ var nerdamer = (function() {
                     switch( symbol.value ) {
                         case 'log':
                             symbol = Parser.packSymbol( symbol.copy().symbols);
-                            symbol.power *= -1;
+                            
+                            //TODO: function that deals with the border of symbols and numbers
+                            if( isSymbol( symbol.power ) ) {
+                                symbol.power = Parser.multiply( symbol.power, Symbol(-1));
+                            }
+                            else {
+                                symbol.power *= -1;
+                            }
                             symbol.multiplier = 1/symbol.multiplier;
                             break;
                         case 'cos':
@@ -1375,7 +1398,11 @@ var nerdamer = (function() {
         };
         
         Algebra.expand = function( symbol ) {
-
+            var k = keys( symbol.symbols );
+            
+            //TODO: prevent this from happening in the first place
+            if( k.length === 1 && symbol.symbols[k[0]].group === COMPOSITION ) symbol = symbol.symbols[k[0]];
+            
             if( isInt( symbol.power ) && symbol.group === COMPOSITION ) {
                 var l = symbol.power,
                     t , obj;
