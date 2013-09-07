@@ -1057,6 +1057,12 @@ var nerdamer = (function() {
     } 
     
     function build( parsed ) { 
+        //The math object does not contain certain functions so if you plan on exporting you should either
+        //provide them and then comment out this line of leave the next line as is.
+        for( var x in Math2 ) {
+            if( !Math[x] ) Math[x] = Math2[x];
+        }
+        
         var vars = variables( parsed ).sort().join(',');
         return new Function( vars, 'return '+text( parsed, undefined, 'function' )+';' );
     }
@@ -1364,6 +1370,7 @@ var nerdamer = (function() {
                             for( var x in symbol.symbols ) {
                                 var s = symbol.symbols[x];
                                 value = Formatting.latex( s ).replace(/\\frac\{1\}/,'');
+                                if( s.group === COMPOSITION ) value = inBrackets( value, true );
                                 Formatting.attach( value, t, s.power, prefix );
                             } 
                             value =  Formatting.frac( t );
@@ -1534,7 +1541,6 @@ var nerdamer = (function() {
             }    
         }
     };
-
     
     return USER_FUNCTIONS;
     
