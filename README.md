@@ -138,11 +138,11 @@ At present differentiation has just been added for testing and must be called as
 call the diff method of the nerdamer object and pass the independent variable as the second parameter.
 
         
-        var ans = nerdamer.diff('(x+1)*tan(x)','x');
+        nerdamer.addEquation('diff((x+1)*tan(x),x)');
         
-        console.log(ans);
+        console.log(nerdamer.equations(true));
         
-        >>> sec(x)^(2)+sec(x)^(2)*x+tan(x)
+        >>> { '1': sec(x)^(2)+sec(x)^(2)*x+tan(x) }
         
 Again, nerdamer is a work in progress so much of the code may change once refactored.
-That's all for now. Next step integration...
+That's all for now. Next step imaginary number support
