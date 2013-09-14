@@ -1116,9 +1116,9 @@ var nerdamer = (function() {
                     symbol = Calculus.polydiff( symbol, d );
                 }
                 else if( g === COMBINATION ) { 
-                    a = Calculus.productRule( symbol, d );
-                    b = Calculus.polydiff( symbol.copy(), d );
-                    return Parser.multiply( a, b );
+                    return Calculus.productRule( symbol, d );
+                    //b = Calculus.polydiff( symbol.copy(), d );
+                    //return Parser.multiply( a, b );
                 }
                 else if( g === FUNCTION && symbol.power === 1 ) {
                     switch( symbol.value ) {
