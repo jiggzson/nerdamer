@@ -1,11 +1,3 @@
-nerdamer
-========
-Nerdamer is currently in beta.
-
-This branch includes differentiation.
-It is untested and raw. In fact most of the code will need refactoring.
-
-
 Getting started with Nerdamer
 
 To add an equation to the object, you must use the addEquation method.
@@ -53,6 +45,17 @@ and then
 
 
          >>> { '1': '2+x^(2)', '2': '4*2^(x)' }
+        
+
+
+To get the equations as latex just pass in true as the second parameter.
+
+
+        console.log(nerdamer.equations(true,true);
+        
+
+
+         >>> { '1': '{x}^{2}+2', '2': '4~{2}^{x}' }
         
 
 
@@ -130,19 +133,4 @@ If we call f with let's say 4:
 
 I would recommend using this function if you plan on doing many iterations
 There is currently no method for formatting the output or declaring functions although I hope to include them in future releases.
-
-Differentiation
-===============
-
-At present differentiation has just been added for testing and must be called as a function. To differentiate just 
-call the diff method of the nerdamer object and pass the independent variable as the second parameter.
-
-        
-        nerdamer.addEquation('diff((x+1)*tan(x),x)');
-        
-        console.log(nerdamer.equations(true));
-        
-        >>> { '1': sec(x)^(2)+sec(x)^(2)*x+tan(x) }
-        
-Again, nerdamer is a work in progress so much of the code may change once refactored.
-That's all for now. Next step imaginary number support
+Take a look at the demo http://www.nerdamer.com/demo
