@@ -8,6 +8,7 @@
 
 var nerdamer = (function() {
     var DEBUG = false;
+    
     //modules
     var Calculus    = {},
         Algebra     = {},
@@ -590,12 +591,10 @@ var nerdamer = (function() {
         // If a symbol is found they are added together. It also does some book keeping on higher group Symbols.
         addSymbol: function( symbol, item, parent, multiply ) {
             var obj,
-            
+                parentGroup = parent ? parent.group : null,
             //if the function is being multiplied then this forces the power to be ignored.
-            baseOnly = symbol.group === FUNCTION && multiply;
-            
-            var a_ = text( symbol )
-            var b_ = text( item ); 
+            baseOnly = symbol.group === FUNCTION && multiply || parentGroup === COMBINATION && symbol.group === FUNCTION;
+
             if( isSymbol( item ) ) {
                 obj = item.symbols;
                 parent = item;
@@ -608,8 +607,8 @@ var nerdamer = (function() {
             //"polynomials" are stored by their power so verify and use the power value as the key.
             //needs cleaning.
             var name = ( parent ? parent.group === POLYNOMIAL: false ) ? ( isSymbol( symbol.power ) ? 
-                text( symbol.power ) : symbol.power ) : symbol.name( baseOnly );
-            
+                text( symbol.power ) : symbol.power ) : symbol.name( baseOnly ); 
+
             if( !obj[name] ) { 
                 //some bookkeeping
                 if( parent ) {                    
@@ -694,7 +693,7 @@ var nerdamer = (function() {
             return this.add( a, b );
         },
         multiply: function( a, b ) { 
-           
+
             //take care of imaginary numbers
             if( a.isImaginary && b.isImaginary ) return Symbol( -1*a.multiplier*b.multiplier );
             
@@ -768,7 +767,7 @@ var nerdamer = (function() {
                 }
                    a.symbols = t; 
             }
-            else if( g1 === COMBINATION && g2 !== NUMERIC && g2 !== POLYNOMIAL ) {
+            else if( g1 === COMBINATION && g2 !== NUMERIC && g2 !== POLYNOMIAL ) { 
                 if( g2 === COMBINATION && p2 === 1 ) { 
                     for( x in b.symbols ) {
                         this.powDivide( b.symbols[x], a );
@@ -797,7 +796,6 @@ var nerdamer = (function() {
                     a = this.convertAndInsert( a, b, COMBINATION );
                 }
             }
-
             return a;
         },
         divide: function( b, a ) {
@@ -809,8 +807,6 @@ var nerdamer = (function() {
             return this.multiply( a, b );
         },
         pow: function( b, a ) { 
-            var a_ = text(a)
-            var b_ = text(b)
             if( +b === 1 ) return a;//ch* x^1 = x;
             var g1 = a.group, g2 = b.group;
 
