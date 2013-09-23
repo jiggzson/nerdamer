@@ -758,13 +758,15 @@ var nerdamer = (function() {
                     }
                 }
                 else {
-                    //investigate this as this may be causing problems
-                    //the thinking is that this only comes here if we're dealing 
-                    //with an exponential function
-                    if( g2 !== FUNCTION ) this.powDivide( b, a ); //potential bug
+                    //this is still under investigation as this was causing a bug when dealing with 
+                    //exponentials. Power are now explicitly converted to Symbol in powDivide
+                    this.powDivide( b, a ); //potential bug
 
                     this.addSymbol( b, a, undefined, true );
                 }
+                
+                //update the hash value in the object
+                a.value = a.name();
             }
             else if( g2 !== NUMERIC ){ 
                 
@@ -947,6 +949,9 @@ var nerdamer = (function() {
         // The next functions are needed in case the exponential is a symbol
         powDivide: function( a, b ) {
             if( isSymbol( a.power ) || isSymbol( b.power )) {
+                //TODO: find one place to resolve the multiplication or addition of a Symbol and an number.
+                if( !isSymbol( a.power ) ) a.power = Symbol( a.power );
+                if( !isSymbol( b.power ) ) b.power = Symbol( b.power );
                 b.power = this.divide( a.power, b.power ); 
             }
             else {
