@@ -1246,6 +1246,9 @@ var nerdamer = (function() {
                         case 'atan':
                             symbol = Parser.rToken( '(1+('+text(symbol.symbols)+')^2)^(-1)' );
                             break;
+                        case 'abs':
+                            symbol = Parser.multiply( Symbol(d), abs(Symbol(d).invert()) );
+                            break;
                     }
                 }
                 else if( g === EXPONENTIAL || g === FUNCTION && isSymbol( symbol.power ) ) { 
