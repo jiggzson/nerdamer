@@ -1274,7 +1274,7 @@ var nerdamer = (function() {
                             symbol = Parser.rToken( '(1+('+text(symbol.symbols)+')^2)^(-1)' );
                             break;
                         case 'abs':
-                            symbol = Parser.multiply( Symbol(d), abs(Symbol(d).invert()) );
+                            symbol = Parser.multiply( Symbol(d), abs(Symbol(d)).invert() );
                             break;
                     }
                 }
