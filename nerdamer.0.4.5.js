@@ -816,7 +816,7 @@ var nerdamer = (function() {
                 if( isNegative && isRadical && isEven ) {
                     a = Parser.multiply( a, Symbol( 'i' ) );
                 }
-                else if( isRadical ){
+                else if( isRadical && isNegative ){
                     a.negate();
                 }
 
@@ -1247,6 +1247,7 @@ var nerdamer = (function() {
                             symbol = Parser.rToken( '(1+('+text(symbol.symbols)+')^2)^(-1)' );
                             break;
                         case 'abs':
+                            //I can do this because d/dx*1 is still d/dx
                             symbol = Parser.multiply( Symbol(d), abs(Symbol(d).invert()) );
                             break;
                     }
