@@ -815,7 +815,7 @@ var nerdamer = (function() {
 
             //if the radical is even we must retain its absolute value.
             //this checks to see if the radical is divisible by two
-            var isEven = 1/( +b - parseInt( +b ) ) % 2 === 0 ,
+            var isEven = +b % 2 === 0 || 1/( +b - parseInt( +b ) ) % 2 === 0,
                 //record if we have a negative number as the base.
                 isNegative = a.multiplier < 0,
                 //make sure the power is even.
@@ -828,7 +828,8 @@ var nerdamer = (function() {
             }
 
             if( g1 === NUMERIC && g2 === NUMERIC ) { 
-                var isRadical = Math.abs( b.multiplier - parseInt( b.multiplier ) ) < 1;
+                var fracpart = Math.abs( b.multiplier - parseInt( b.multiplier ) ),
+                    isRadical =  fracpart < 1 && fracpart > 0;
 
                 if( isRadical && isNegative ) { a.negate(); }
 
