@@ -106,7 +106,7 @@ var nerdamer = (function() {
         return math( fn, symbol );
     }
     
-    function log( symbol ) {
+    function log( symbol ) { 
         var result;
         if( symbol.value === 'e' && symbol.multiplier === 1 ) {
             result = isSymbol( symbol.power ) ? symbol.power : Symbol( symbol.power );
@@ -122,6 +122,7 @@ var nerdamer = (function() {
             //there is a theta part reinsert
             if( thetai ) { result = Parser.add( thetai, result ); }
         }
+
         return result;
     }
 
@@ -589,7 +590,7 @@ var nerdamer = (function() {
 
         // This method neatly reorganizes all the tokens into an object and is sort of a compliment to the Parser.add method.
         // If a symbol is found they are added together. It also does some book keeping on higher group Symbols.
-        addSymbol: function( symbol, item, parent, multiply ) {
+        addSymbol: function( symbol, item, parent, multiply ) { 
             var obj,
                 parentGroup = parent ? parent.group : null,
             //if the function is being multiplied then this forces the power to be ignored.
@@ -684,7 +685,7 @@ var nerdamer = (function() {
             else {
                 a = this.convertAndInsert( a, b, POLYNOMIAL );
             }
-            
+
             return a;
         },
         //this is method should never actually be called but is there just in case something was overlooked
@@ -795,7 +796,8 @@ var nerdamer = (function() {
                 else {
                     a = this.convertAndInsert( a, b, COMBINATION );
                 }
-            }
+            } 
+
             return a;
         },
         divide: function( b, a ) {
@@ -807,13 +809,14 @@ var nerdamer = (function() {
             return this.multiply( a, b );
         },
         pow: function( b, a ) { 
+
             if( +b === 1 ) return a;//ch* x^1 = x;
             var g1 = a.group, g2 = b.group;
 
             //if the radical is even we must retain its absolute value.
             //this checks to see if the radical is divisible by two
             var isEven = 1/( +b - parseInt( +b ) ) % 2 === 0 ,
-                //record if we have a negative number.
+                //record if we have a negative number as the base.
                 isNegative = a.multiplier < 0,
                 //make sure the power is even.
                 powEven =  a.power % 2 === 0;
@@ -825,10 +828,10 @@ var nerdamer = (function() {
             }
 
             if( g1 === NUMERIC && g2 === NUMERIC ) { 
-                var isRadical = Math.abs( b.multiplier ) < 1;
+                var isRadical = Math.abs( b.multiplier - parseInt( b.multiplier ) ) < 1;
 
                 if( isRadical && isNegative ) { a.negate(); }
-                
+
                 //support for negative/imaginary numbers when dealing with radicals
                 a.multiplier = Math.pow( a.multiplier, b.multiplier );
                 if( isNegative && isRadical && isEven ) {
