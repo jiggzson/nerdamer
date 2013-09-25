@@ -31,12 +31,12 @@ var nerdamer = (function() {
         EXPONENTIAL = 7;
 
     var operators = {
-        ',': {order: 0, fn: null},
-        '+': {order: 1, fn: 'add'},
-        '-': {order: 2, fn: 'subtract'},
-        '*': {order: 3, fn: 'multiply'},
-        '/': {order: 4, fn: 'divide'},
-        '^': {order: 5, fn: 'pow'}
+        ',': {order: 0, fn: null,       action: function( a, b ){ return [a,b] }},
+        '+': {order: 1, fn: 'add',      action: function( a, b ){ return Number(a)+Number(b)}},
+        '-': {order: 2, fn: 'subtract', action: function( a, b ){ return a-b}},
+        '*': {order: 3, fn: 'multiply', action: function( a, b ){ return a*b}},
+        '/': {order: 4, fn: 'divide',   action: function( a, b ){ return a/b}},
+        '^': {order: 5, fn: 'pow',      action: function( a, b ){ return Math.pow( a, b )}}
     },
 
     //in order to use the function in Math just set the function map to null.
@@ -329,11 +329,17 @@ var nerdamer = (function() {
             }
         },
         //an add-on helper function to help sniff out symbols in complex symbols
-        //it does NOT check the power.
-        hasVariable: function( variable ) {
-            if( this.group > SYMBOLIC ) {
+        //pass in true as second parameter to include exponentials
+        hasVariable: function( variable, all ) {
+            var g = this.group;
+            if( g > SYMBOLIC ) {
+                //check if the power has the variable but only if explicitly told to do so.
+                if( g === EXPONENTIAL ) {
+                    //exit only if it does
+                    if( this.power.hasVariable( variable, all )) { return true; }
+                }
                 for( var x in this.symbols ) {
-                    if( this.symbols[x].hasVariable( variable ) ) {
+                    if( this.symbols[x].hasVariable( variable, all ) ) {
                         return true;
                     }
                 }
@@ -716,6 +722,9 @@ var nerdamer = (function() {
             //e.g. a.locked = true and set it false when returning a.
             //REASON: reduce unnecessary copies of symbols
             
+            //lock the symbol 
+            b.locked = true;
+            
             var isCompositeA = ( g1 === POLYNOMIAL || g1 === COMPOSITION ),
                 isCompositeB = ( g2 === POLYNOMIAL || g2 === COMPOSITION ),
                 t, x;
@@ -752,7 +761,7 @@ var nerdamer = (function() {
                 } 
                 if( a.value !== b.value && a.group === POLYNOMIAL || p1 !== p2 ) { a.group = COMPOSITION; }
                 t = {}; a.length = 0;
-                for( x in a.symbols ) {          
+                for( x in a.symbols ) {   
                     var r = this.multiply( a.symbols[x], b.copy() );  
                     var m = r.multiplier;
                     if( b.group === POLYNOMIAL && p2 === 1 || b.group === COMPOSITION && p2 === 1 ) {
@@ -797,7 +806,10 @@ var nerdamer = (function() {
                     a = this.convertAndInsert( a, b, COMBINATION );
                 }
             } 
-
+            
+            //unlock the symbol
+            b.locked = false;
+            
             return a;
         },
         divide: function( b, a ) {
@@ -809,7 +821,7 @@ var nerdamer = (function() {
             return this.multiply( a, b );
         },
         pow: function( b, a ) { 
-
+            
             if( +b === 1 ) return a;//ch* x^1 = x;
             var g1 = a.group, g2 = b.group;
 
@@ -844,19 +856,26 @@ var nerdamer = (function() {
 
                 return a;//early exit.
             }
-            else { 
+            else {
                 if( isNegative ){ a.negate(); }
                 var p = a.power;
                 if( g2 === NUMERIC && !isSymbol( p ) ) { 
                     if( isNegative && isEven ) { //TBD
                         var m = a.multiplier;
-                        a.multiplier = -1;
-                        a = parens( a );
-                        a.multiplier = Math.pow( m, b.multiplier );
+                        
+                        if( g1 === SYMBOLIC ) {
+                            a.multiplier += b.multiplier;
+                        }
+                        else {
+                            a.multiplier = -1;
+                            a = parens( a );
+                        }  
                     }
                     else {
-                        a.multiplier = Math.pow( a.multiplier, b.multiplier );
+                        m = a.multiplier;
                     }
+                    
+                    a.multiplier = Math.pow( m, b.multiplier );
                     a.power *= b.multiplier; 
                 }
                 else { 
@@ -972,9 +991,9 @@ var nerdamer = (function() {
         // The next functions are needed in case the exponential is a symbol
         powDivide: function( a, b ) {
             if( isSymbol( a.power ) || isSymbol( b.power )) {
-                if( !isSymbol( a.power ) ) a.power = Symbol( a.power );
-                if( !isSymbol( b.power ) ) b.power = Symbol( b.power );
-                a.power = this.divide( b.power.copy(), a.power.copy() ); 
+                a.power = !isSymbol( a.power ) ? Symbol( a.power ) : a.power.copy();
+                b.power = !isSymbol( b.power ) ? Symbol( b.power ) : b.power.copy();
+                a.power = this.divide( b.power, a.power ); 
             }
             else {
                 a.power /= b.power;
@@ -1203,7 +1222,7 @@ var nerdamer = (function() {
             }
         };
         Calculus.polydiff = function( symbol, d ) {
-            if( symbol.value === d || symbol.hasVariable( d )) { 
+            if( symbol.value === d || symbol.hasVariable( d, true )) { 
                 symbol.multiplier *= symbol.power;
                 symbol.power -= 1; 
                 if( symbol.power === 0 ) {
@@ -1276,6 +1295,9 @@ var nerdamer = (function() {
                         case 'abs':
                             symbol = Parser.multiply( Symbol(d), abs(Symbol(d)).invert() );
                             break;
+                        case 'parens':
+                            symbol = Symbol(1);
+                            break;
                     }
                 }
                 else if( g === EXPONENTIAL || g === FUNCTION && isSymbol( symbol.power ) ) { 
@@ -1287,11 +1309,12 @@ var nerdamer = (function() {
                         value = symbol.value + inBrackets( text( symbol.symbols ) );
                     }
                     else {
+                        
                         //TODO: eliminate dependence on text.
                         value = symbol.value + inBrackets( text( symbol.symbols ) );
                     }
-                        a = Parser.multiply( Parser.rToken( 'log'+inBrackets( value ) ), symbol.power.copy() );
-                        b = Calculus.diff( a, d );
+                        a = Parser.multiply( Parser.rToken( 'log'+inBrackets( value ) ), symbol.power.copy() ); 
+                        b = Calculus.diff( a, d ); 
                     symbol = Parser.multiply( symbol, b );
                 }
                 else if( g === FUNCTION && symbol.power !== 1 ) {
@@ -1671,7 +1694,7 @@ var nerdamer = (function() {
             }    
         }
     };
-    
+
     return USER_FUNCTIONS;
     
 })();
