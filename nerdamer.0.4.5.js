@@ -5,9 +5,7 @@
  * License : http://opensource.org/licenses/LGPL-3.0
  */
 
-
 var nerdamer = (function() {
-    var DEBUG = false;
     
     //modules
     var Calculus    = {},
@@ -292,7 +290,7 @@ var nerdamer = (function() {
         copy: function() {
             var copy = new Symbol(),
                 //list of properties excluding power as this may be a symbol which also needs to be a copy.
-                properties = [ 'multiplier','value','group','isImaginary' ],
+                properties = [ 'multiplier','value','group', 'length','isImaginary' ],
                 l = properties.length, i;
 
             if( this.symbols ) {
@@ -596,26 +594,25 @@ var nerdamer = (function() {
 
         // This method neatly reorganizes all the tokens into an object and is sort of a compliment to the Parser.add method.
         // If a symbol is found they are added together. It also does some book keeping on higher group Symbols.
-        addSymbol: function( symbol, item, parent, multiply ) { 
+        addSymbol: function( symbol, item, parent, multiply, msg ) { 
             var obj,
                 parentGroup = parent ? parent.group : null,
             //if the function is being multiplied then this forces the power to be ignored.
             baseOnly = symbol.group === FUNCTION && multiply || parentGroup === COMBINATION && symbol.group === FUNCTION;
-
+            
             if( isSymbol( item ) ) {
                 obj = item.symbols;
-                parent = item;
+                //if addSymbol was called but a parent was provided then we want to use that one first.
             }
             else {
                 obj = item;
             }
             
-            if( +symbol.power === 0 ) symbol = Symbol( symbol.multiplier ); //ch*
+            if( +symbol.power === 0 ) { symbol = Symbol( symbol.multiplier ); } //ch*
             //"polynomials" are stored by their power so verify and use the power value as the key.
             //needs cleaning.
             var name = ( parent ? parent.group === POLYNOMIAL: false ) ? ( isSymbol( symbol.power ) ? 
                 text( symbol.power ) : symbol.power ) : symbol.name( baseOnly ); 
-
             if( !obj[name] ) { 
                 //some bookkeeping
                 if( parent ) {                    
@@ -633,19 +630,27 @@ var nerdamer = (function() {
                 obj[name] = multiply ? this.multiply( obj[name], symbol ) : this.add( obj[name], symbol );
                 //time for some clean up;
                 if( obj[name].multiplier === 0 ) { //ch**
-                    delete obj[name];
+                    delete obj[name]; 
                     if( parent ) parent.length--;
                 }
-                if( multiply && obj[name].group === NUMERIC ) {
-                    parent.length--;
+                if( multiply && obj[name].group === NUMERIC ) {                 
                     item = this.multiply( remove( obj, name ), parent );
+
+                    parent.length--;
+                    
                     //cleanup
                     if( parent.length === 1 ) {
-                        this.transfer( firstObject( obj ), parent );
+                        this.transfer( firstObject( obj ), parent ); 
                     }
                 }
-                if( parent && parent.group === COMBINATION && +obj[name] === 1 ) {
-                    delete obj[name]; parent.length--;
+                    
+                if( parent && parent.group === COMBINATION ) {
+                    //if let's say x*y was divided by y then we have to remove y.
+                    //we say one because the multiplier has already been transferred earlier
+                    if( +obj[name] === 1 ) {
+                        delete obj[name]; 
+                        parent.length--;
+                    }
                     if( parent.length === 1 ) {
                         //I have a bit of a quandry here in that I don't want to have to rely on the returned obj
                         //but I still need the parent to transform. 
@@ -653,7 +658,7 @@ var nerdamer = (function() {
                     }
                 }
             }
-
+            
             return obj;
         },
         add: function( a, b) { 
@@ -700,7 +705,7 @@ var nerdamer = (function() {
             return this.add( a, b );
         },
         multiply: function( a, b ) { 
-
+            
             //take care of imaginary numbers
             if( a.isImaginary && b.isImaginary ) return Symbol( -1*a.multiplier*b.multiplier );
             
@@ -717,13 +722,6 @@ var nerdamer = (function() {
             
             //always have the lower group on the right for easy comparison.
             if( g2 > g1 ) { return this.multiply( b, a); }
-
-            //IDEA: use a lock on the symbol while processing and only called the copy function if it's locked.
-            //e.g. a.locked = true and set it false when returning a.
-            //REASON: reduce unnecessary copies of symbols
-            
-            //lock the symbol 
-            b.locked = true;
             
             var isCompositeA = ( g1 === POLYNOMIAL || g1 === COMPOSITION ),
                 isCompositeB = ( g2 === POLYNOMIAL || g2 === COMPOSITION ),
@@ -778,23 +776,32 @@ var nerdamer = (function() {
                    a.symbols = t; 
             }
             else if( g1 === COMBINATION && g2 !== NUMERIC && g2 !== POLYNOMIAL ) { 
+
                 if( g2 === COMBINATION && p2 === 1 ) { 
                     for( x in b.symbols ) {
-                        this.powDivide( b.symbols[x], a );
                         
-                        this.addSymbol( b.symbols[x], a, undefined, true );
+                        //We're going to be multiplying to combinations but in the process one may have been 
+                        //transformed to a simpler symbol. Because of this we have to check that it still has a symbols
+                        //object.
+                        if( !a.symbols ) {
+                            a = Parser.multiply( b.symbols[x], a );
+                        }
+                        else {
+                            this.powDivide( b.symbols[x], a );
+                            this.addSymbol( b.symbols[x], a, a, true );
+                        }
                     }
                 }
-                else {
+                else { 
                     //under investigation: if your having problems with incorrect exponentials you may want to check
                     //here first
                     this.powDivide( b, a ); 
-
-                    this.addSymbol( b, a, undefined, true ); 
+                    this.addSymbol( b, a, a, true ); 
+                    
                 }
                 
-                //update the name
-                a.value = a.name();
+                //update the name but only if it's a function
+                if( a.group !== FUNCTION ) a.value = a.name();
             }
             else if( g2 !== NUMERIC ){ 
                 //TODO: rethink this
@@ -806,10 +813,7 @@ var nerdamer = (function() {
                     a = this.convertAndInsert( a, b, COMBINATION );
                 }
             } 
-            
-            //unlock the symbol
-            b.locked = false;
-            
+
             return a;
         },
         divide: function( b, a ) {
@@ -821,7 +825,6 @@ var nerdamer = (function() {
             return this.multiply( a, b );
         },
         pow: function( b, a ) { 
-            
             if( +b === 1 ) return a;//ch* x^1 = x;
             var g1 = a.group, g2 = b.group;
 
@@ -853,7 +856,6 @@ var nerdamer = (function() {
                 else if( isRadical && isNegative ){
                     a.negate();
                 }
-
                 return a;//early exit.
             }
             else {
@@ -917,7 +919,6 @@ var nerdamer = (function() {
             
             //put back the sign 
             if( isNegative && !isEven ) a.negate();
-
             return a;
         },
         // A method to pack intermediate results into a symbol or just return the symbol.
@@ -1210,16 +1211,16 @@ var nerdamer = (function() {
 
             if( obj.group === FUNCTION ) {
                 if( isSymbol( obj.power ) ) {
-                    //in progress
-                    return Calculus.derive( obj, d );
+                    obj = Calculus.derive( obj, d );
                 }
                 else {
-                    return Calculus.chainRule( obj, d );
+                    obj = Calculus.chainRule( obj, d );
                 } 
             }
             else {
-                return Calculus.derive( obj, d );
+                obj = Calculus.derive( obj, d );
             }
+            return obj;
         };
         Calculus.polydiff = function( symbol, d ) {
             if( symbol.value === d || symbol.hasVariable( d, true )) { 
@@ -1241,14 +1242,19 @@ var nerdamer = (function() {
                     symbol = Calculus.polydiff( symbol, d );
                 }
                 else if( g === COMBINATION ) { 
+                    cp = symbol.copy();
+                    cp.multiplier = 1;
                     a = Calculus.productRule( symbol, d );
-                    b = Calculus.polydiff( symbol.copy(), d );
+                    b = Calculus.polydiff( cp, d );
                     return Parser.multiply( a, b );
                 }
                 else if( g === FUNCTION && symbol.power === 1 ) {
                     switch( symbol.value ) {
+                        
                         case 'log':
-                            symbol = Parser.packSymbol( symbol.copy().symbols);
+//                            symbol = Parser.rToken(symbol.multiplier+'/'+inBrackets(text(symbol.symbols)));
+                            cp = symbol.copy();
+                            symbol = Parser.packSymbol( cp.symbols );
                             
                             //TODO: function that deals with the border of symbols and numbers
                             if( isSymbol( symbol.power ) ) {
@@ -1257,7 +1263,7 @@ var nerdamer = (function() {
                             else {
                                 symbol.power *= -1;
                             }
-                            symbol.multiplier = 1/symbol.multiplier;
+                            symbol.multiplier = cp.multiplier; 
                             break;
                         case 'cos':
                             symbol.value = 'sin';
@@ -1293,7 +1299,8 @@ var nerdamer = (function() {
                             symbol = Parser.rToken( '(1+('+text(symbol.symbols)+')^2)^(-1)' );
                             break;
                         case 'abs':
-                            symbol = Parser.multiply( Symbol(d), abs(Symbol(d)).invert() );
+                            symbol = Parser.rToken(inBrackets(text(symbol.symbols))+'/'+text(symbol));
+                            //symbol = Parser.multiply( Symbol(d), abs(Symbol(d)).invert() );
                             break;
                         case 'parens':
                             symbol = Symbol(1);
@@ -1686,8 +1693,12 @@ var nerdamer = (function() {
                 remove( KNOWN_VARS, equationNumber );
             }
             else {
-                if( !equationNumber ) equationNumber = EQNS.length;
-                if( equationNumber === 'all' ) { EQNS = []; }
+                if( !equationNumber ) { equationNumber = EQNS.length; }
+                
+                if( equationNumber === 'all' ) { 
+                    EQNS = []; 
+                    KNOWN_VARS = {} 
+                }
                 else {
                     remove( EQNS, equationNumber - 1 );
                 }
