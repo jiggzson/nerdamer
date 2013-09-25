@@ -1,7 +1,3 @@
-nerdamer
-========
-Nerdamer is currently in beta.
-
 Getting started with Nerdamer
 
 To add an equation to the object, you must use the addEquation method.
@@ -49,6 +45,17 @@ and then
 
 
          >>> { '1': '2+x^(2)', '2': '4*2^(x)' }
+        
+
+
+To get the equations as latex just pass in true as the second parameter.
+
+
+        console.log(nerdamer.equations(true,true);
+        
+
+
+         >>> { '1': '{x}^{2}+2', '2': '4~{2}^{x}' }
         
 
 
@@ -126,3 +133,4 @@ If we call f with let's say 4:
 
 I would recommend using this function if you plan on doing many iterations
 There is currently no method for formatting the output or declaring functions although I hope to include them in future releases.
+Take a look at the demo http://www.nerdamer.com/demo
