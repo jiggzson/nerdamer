@@ -7,6 +7,7 @@
 
 
 var nerdamer = (function() {
+    var DEBUG = false;
     
     //modules
     var Calculus    = {},
@@ -30,12 +31,12 @@ var nerdamer = (function() {
         EXPONENTIAL = 7;
 
     var operators = {
-        ',': {order: 0, fn: null,       action: function( a, b ){ return [a,b] }},
-        '+': {order: 1, fn: 'add',      action: function( a, b ){ return Number(a)+Number(b)}},
-        '-': {order: 2, fn: 'subtract', action: function( a, b ){ return a-b}},
-        '*': {order: 3, fn: 'multiply', action: function( a, b ){ return a*b}},
-        '/': {order: 4, fn: 'divide',   action: function( a, b ){ return a/b}},
-        '^': {order: 5, fn: 'pow',      action: function( a, b ){ return Math.pow( a, b )}}
+        ',': {order: 0, fn: null},
+        '+': {order: 1, fn: 'add'},
+        '-': {order: 2, fn: 'subtract'},
+        '*': {order: 3, fn: 'multiply'},
+        '/': {order: 4, fn: 'divide'},
+        '^': {order: 5, fn: 'pow'}
     },
 
     //in order to use the function in Math just set the function map to null.
