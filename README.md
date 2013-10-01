@@ -1,136 +1,241 @@
 Getting started with Nerdamer
+Please read the documentation as nerdamer has changed.
 
-To add an equation to the object, you must use the addEquation method.
-e.g.
+All operations are done on the
 
+nerdamer
 
-        nerdamer.addEquation('(x+1)*(x+2)-3*x');
-        
+object. You can choose something else for your convenience e.g.
 
+$N = nerdamer
 
-To get a list of the equations currently contained in the object simply call the equations method.
+To add an equation just add it to the nerdamer object which will return a equations object which 
+isn't particularly usefull at the moment other than getting its text representation.
 
+            
+                var eq = nerdamer('x^2+2*(cos(x)+x*x)');
 
-
-        var equations = nerdamer.equations();
-        
-        console.log(equations);
-
-         >>> [ '2+x^(2)' ]
-
-        
-
-This will return the equations as an array. If you prefer to get the equations as a numbered object however simply pass in true when calling equations.
-
-
-        console.log(nerdamer.equations(true));
-        
-
-
-         >>> { '1': '2+x^(2)' }
-        
-
-
-Let's add another equation. This time let's make it an exponential.
-
-
-        nerdamer.addEquation('4*2^x');
-        
-
-and then
-
-
-        console.log(nerdamer.equations(true));
-        
-
-
-         >>> { '1': '2+x^(2)', '2': '4*2^(x)' }
-        
-
-
-To get the equations as latex just pass in true as the second parameter.
-
-
-        console.log(nerdamer.equations(true,true);
-        
-
-
-         >>> { '1': '{x}^{2}+2', '2': '4~{2}^{x}' }
-        
-
-
-To clear an equation use the clear method and pass in the equation number you choose to clear. If you want to clear the last equation just call clear without a parameter.
-
-
-        nerdamer.clear(1);
-        
-
-
-         >>> { '1': '4*2^(x)' }
-        
-
-
-If you have a known value you can pass this into nerdamer using the known method.
-
-
-        nerdamer.known('x=4');
-
-        nerdamer.addEquation('x^2+2*x+1');
-
-        console.log(nerdamer.equations(true))
-
-         >>> { '1': '4*2^(x)', '2': '25' }
-        
-
-As you can see the previous equation was untouched when you declared x to be known.
-If you've added an equation before you inserted your known you have to call the evaluate function and pass in the function number that you want evaluated.
-
-
-
-        var answer = nerdamer.evaluate(1);
-        
-        console.log(answer);
-        
-        >>> 64
+                console.log(eq.text());
+                
+                //result: 
+                //2*cos(x)+3*x^(2)
             
         
 
-To get a list of your knowns call the knowns method.
-This will return an object containing the known equations. Another function that may be useful is the buildFunction method. This will return a javascript function using methods from the native Math class which are supported by the nerdamer library. This can be useful if you need to have a function from user input but need to have it filtered.
-Let's first clear our known value for x;
-To remove a known value we use the clear method as well but pass in the string 'known' as the second parameter.
+You can also pass in an object with known values as the second parameter.
 
+            
+                var eq = nerdamer('x^2+2*(cos(x)+x*x)',{x:6});
 
-        nerdamer.clear('x', 'known');
+                console.log(eq.text());
+                
+                //result:
+                //108+2*cos(6)
+            
         
 
-Now let's add the equation for which we wish to build a function.
+As you can see only the substitution is performed. To evaluate the result just call evaluate. 
+Note that evaluate returns a text string or a number not an object.
 
+            
+                var eq = nerdamer('x^2+2*(cos(x)+x*x)',{x:6}).evaluate();
 
-
-        nerdamer.addEquation('cos(x^2+sin(x)-4)');
-
-        var f = nerdamer.buildFunction();
-
-        console.log(f.toString());
-
-         >>> function anonymous(x) {
-                    return Math.cos(-4+Math.pow(x,2)+Math.sin(x));
-               }
-
+                console.log(eq);
+                
+                //result:
+                //109.92034057330073
+            
         
 
-This can be done with multiple variables. One thing to note is that the parameter names are sorted alphabetically so keep that in mind when passing in your values.
-If we call f with let's say 4:
+Alternatively you can pass an object containing known values into evaluate instead of nerdamer to get back 
+the value right away. The values passed in don't have to be number the can be another equation if needed.
 
+            
+                var eq = nerdamer('x^2+2*(cos(x)+x*x)',{x:'x^2+1'});
 
-
-        f(4);
-
-        >>> 0.24510036817001535
-
+                console.log(eq.text());
+                
+                //result:
+                //2*cos(1+x^(2))+3*(1+x^(2))^(2)
+            
         
 
-I would recommend using this function if you plan on doing many iterations
-There is currently no method for formatting the output or declaring functions although I hope to include them in future releases.
-Take a look at the demo http://www.nerdamer.com/demo
+Every time you parse an equation it's stored in nerdamer. To get a list of all the equations you just call 
+nerdamer.equations().
+
+            
+                var knownValues = {x:'x^2+1'};
+                nerdamer('x^2+2*(cos(x)+x*x)', knownValues );
+                nerdamer('sin(x)^2+cos(x)^2', knownValues );
+                
+                console.log(nerdamer.equations());
+                
+                //result:
+                //[ 46.692712758272776, 1 ]
+            
+        
+
+You can request it as an object as well by passing in true. This can be convenient in some 
+situations as the numbering starts at 1;
+
+            
+                var knownValues = {x:'x^2+1'};
+                nerdamer('x^2+2*(cos(x)+x*x)', knownValues );
+                nerdamer('sin(x)^2+cos(x)^2', knownValues );
+                
+                console.log(nerdamer.equations(true));
+                
+                //{ '1': '2*cos(1+x^(2))+3*(1+x^(2))^(2)',
+                //'2': 'cos(1+x^(2))^(2)+sin(1+x^(2))^(2)' }
+            
+        
+
+If you need the code as latex you can pass in true as the second parameter when requesting the equations.
+
+            
+                nerdamer('x^2+2*(cos(x)+x*x)');
+                nerdamer('sin(x)^0.25+cos(x)^0.5' );
+                
+                console.log(nerdamer.equations(true, true));
+                
+                //{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
+                //'2': '\\sin\\left(x\\right)^{\\frac{1}{4}}+\\sqrt{\\cos\\left(x\\right)}' }
+            
+        
+
+You can specify a particular location when adding an equation, which is specified with the third parameter.
+
+            
+                nerdamer('x^2+2*(cos(x)+x*x)');
+                nerdamer('sin(x)^0.25+cos(x)^0.5' );
+                nerdamer('equation-override', undefined, 2 );
+                
+                console.log(nerdamer.equations(true, true));
+                
+                //{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
+                //'2': '-override+equation' }
+            
+        
+
+This leads me to two points
+
+    There is currently no control over the output format. If it's critical you will have to impliment 
+    one yourself. I do however plan on including some form of formatter at some point
+    The rules for naming variables are as follows:
+        Must begin with an alpha numeric character.
+        Cannot be a reserved keyword.
+        Can have any number of underscores or numbers as needed.
+
+
+Here's an example of reserved keywords.
+
+            
+                nerdamer.reserved();
+                //result:
+                //parens, cos, sin, tan, sec, csc, cot, acos, asin, atan, exp, log, abs, sqrt, diff, 
+                //integrate, sec, cot, csc, pi, e
+                
+                or as an array
+                
+                nerdamer.reserved(true);
+                //result:
+                //[ 'parens','cos','sin','tan','sec','csc','cot','acos','asin','atan','exp','log','abs',
+                // 'sqrt','diff','integrate','sec','cot','csc','pi','e' ]
+            
+        
+
+A list can and should be generated by calling reserved on the nerdamer object as this will be more 
+accurate and current. Most math functions are passed in as part of the equation. If you want to 
+differentiate for instance you just use the equation diff.
+
+            
+                var eqs = nerdamer('diff(x^2+2*(cos(x)+x*x),x)');
+                
+                console.log(eqs.text());
+                
+                //result: 
+                //-2*sin(x)+6*x
+            
+        
+
+Nerdamer can also handle runtime functions. To do this use the method setFunction. 
+The runtime functions do have symbolic capabilities and support for imaginary numbers. 
+The setfunction method is used as follows:
+
+nerdamer.setFunction( function_name, parameter_array, function_body ) 
+
+For Example:
+
+            
+                //generate some points
+                var f = function(x) { return 5*x-1; }
+                console.log(f(1)); //4
+                console.log(f(2)); //9 - value to be found
+                console.log(f(7)); //34
+                
+                nerdamer.setFunction('interpolate',['y0','x0','y1','x1','x'],'y0+(y1-y0)*((x-x0)/(x1-x0))')
+                var answer = nerdamer('interpolate(4,1,34,7,2)').evaluate();
+                
+                console.log(answer);
+                
+                //result: 9
+            
+        
+
+If you need to add a constant use the setConstant method
+
+            
+                nerdamer.setConstant( 'g', 9.81);
+
+                var weight = nerdamer('100*g').evaluate();
+
+                console.log(weight);
+                
+                //result:
+                //981
+            
+        
+
+To delete just set it to delete
+
+            
+                nerdamer.setConstant( 'g', 'delete');
+            
+        
+
+You also have the option of exporting your function to a javascript function which can be useful if you need some 
+filtering from user input. Do keep in mind that the argument names are sorted alphabetically for more than one 
+argument. To used it add the expression to nerdamer and use the buildFunction method.
+
+            
+                var f = nerdamer('x^2+5').buildFunction();
+                console.log(f(9));
+                
+                //result:
+                //86
+            
+        
+
+Every time you add an equation to nerdamer it's stored. To list the equations currently in nerdamer call 
+the equations method and delete one use the clear method and pass in the equation you want to delete. 
+To clear everything pass in the string 'all'.
+
+            
+                nerdamer('n*R*T/v');
+                nerdamer('mc^2');
+                nerdamer('G*m1*m2/d^2');
+                
+                nerdamer.clear(2);
+                
+                console.log(nerdamer.equations(true));
+                
+                //result:
+                //{ '1': 'R*T*n*v^(-1)', '2': 'G*d^(-2)*m1*m2' }
+                
+                nerdamer.clear('all');
+                console.log(nerdamer.equations(true));
+                
+                //result:
+                //{}
+            
+        
