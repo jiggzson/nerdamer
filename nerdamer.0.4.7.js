@@ -16,7 +16,8 @@ var nerdamer = (function() {
     var EQNS        = [],
         KNOWN_VARS  = {},
         NUMER       = false,
-        RESERVED    = [];
+        RESERVED    = [],
+        version     = '0.4.7';
 
     /*
      * The groups that help with organizing during parsing. Note that for FN is still a function even 
@@ -1636,6 +1637,15 @@ var nerdamer = (function() {
         load( constants ); 
     }
     
+    function map( fn, params, args ) { 
+        //organize the parameters
+        var subs = {};
+        for( var i=0; i<params.length; i++ ) {
+            subs[params[i]] = isSymbol( args[i] ) ? text( args[i] ) : args[i];
+        }
+        return Parser.parse( fn, subs );
+    };
+    
     function sqrt( symbol ) { 
         return Parser.pow( Symbol(0.5), symbol );
     }
@@ -1715,7 +1725,7 @@ var nerdamer = (function() {
         if( RESERVED.indexOf( value ) !== -1) throw new Error( value+' is reserved!' );
         return false;
     }
-    
+
     var userFuncs = function( str, subs, location ) {
         var eq = Parser.parse( str, subs );
         if( location ) {
@@ -1727,6 +1737,10 @@ var nerdamer = (function() {
         return eq;
     };
     
+    userFuncs.version = function() {
+        return version;
+    }
+
     userFuncs.setConstant = function( constant, value ) {
         validateName( constant[0] ); 
         if( !isReserved( constant ) ) {
@@ -1746,16 +1760,7 @@ var nerdamer = (function() {
         var eq = EQNS[equationNumber -1] || this;
         return build( eq, paramArray );
     };
-    
-    var map = function( fn, params, args ) { 
-        //organize the parameters
-        var subs = {};
-        for( var i=0; i<params.length; i++ ) {
-            subs[params[i]] = isSymbol( args[i] ) ? text( args[i] ) : args[i];
-        }
-        return Parser.parse( fn, subs );
-    };
-    
+
     //this does nothing more than create a named equation
     userFuncs.setFunction = function( name, params, fn ) {
         if( !isReserved( name ) ) {
@@ -1770,20 +1775,15 @@ var nerdamer = (function() {
     };
     
     userFuncs.clear = function( equationNumber, opt ) {
-        if( opt === 'known' ) {
-            remove( KNOWN_VARS, equationNumber );
+        if( !equationNumber ) { equationNumber = EQNS.length; }
+
+        if( equationNumber === 'all' ) { 
+            EQNS = []; 
+            KNOWN_VARS = {}; 
         }
         else {
-            if( !equationNumber ) { equationNumber = EQNS.length; }
-
-            if( equationNumber === 'all' ) { 
-                EQNS = []; 
-                KNOWN_VARS = {}; 
-            }
-            else {
-                remove( EQNS, equationNumber - 1 );
-            }
-        }    
+            remove( EQNS, equationNumber - 1 );
+        }   
         return this;
     };
     
@@ -1810,6 +1810,7 @@ var nerdamer = (function() {
         if( asArray ){ return RESERVED; }
         return RESERVED.join(', ');
     };
+    
     return userFuncs;
     
 })();
