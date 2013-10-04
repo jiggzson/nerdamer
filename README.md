@@ -1,5 +1,8 @@
 Getting started with Nerdamer
+
 Please read the documentation as nerdamer has changed.
+
+You can see nerdamer in action at http://www.nerdamer.com/demo
 
 All operations are done on the
 
