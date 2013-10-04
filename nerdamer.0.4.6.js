@@ -9,7 +9,6 @@
 
 var nerdamer = (function() {
     
-    //modules
     var Calculus    = {},
         Algebra     = {},
         Formatting  = {};
@@ -19,17 +18,20 @@ var nerdamer = (function() {
         NUMER       = false,
         RESERVED    = [];
 
-    // The groups that help during parsing. Note that the names are NOT mathematically accurate.
-    var N   = 1, //a numer
+    /*
+     * The groups that help with organizing during parsing. Note that for FN is still a function even 
+     * if raised to a symbol of group S.
+     */  
+    var N   = 1, //a number
         S   = 2, //a single variable e.g. x
         FN  = 3, //a function
-        PL  = 4, //symbol having same name with different power
+        PL  = 4, //symbol having same name with different powers e.g. 1/x + x^2
         CB  = 5, //a symbol composed of one or more variables through multiplication e.g. x*y
         CP  = 6, //a symbol composed of one variable any any other symbol or number x+1 or x+y
-        EX  = 7; //a symbol with an exponent that is not a number
+        EX  = 7; //a symbol with an exponent that is not a number e.g. x^y
         
     
-    init();//initialize modules
+    init();
     
     var operators = {
         ',': {order: 0, fn: null},
@@ -60,10 +62,9 @@ var nerdamer = (function() {
         'abs'       : [abs , 1],
         'sqrt'      : [sqrt, 1],
         'diff'      : [Calculus.diff       , 2],
-        'integrate' : [Calculus.integrate  , 2],
-        'expand'    : [Algebra.expand, 1],
-        'sum'       : [Calculus.sum,   4],
-        'roots'     : [Algebra.roots,  1]
+        'expand'    : [Algebra.expand, 1], //untested
+        'sum'       : [Calculus.sum,   4], //issue: very slow with functions
+        'findRoot'  : [Algebra.findRoot,  2] //untested
     },
     
     Math2 = {
@@ -142,21 +143,28 @@ var nerdamer = (function() {
             }
             return v;
         },
-        isTruePoly: function() {
-            var g = this.group;
-            if( g === S && this.power > 0 ) {
-                return true;
+        isPoly: function() {
+            var status = false;
+            if( this.group === S && this.power > 0 ) {
+                status = true;
             }
             else {
-                var k = keys( this.symbols ).sort();
-                //the following assumptions are made in the next check
-                //1. numbers are represented by and underscore
-                //2. variable and function names must start with an letter
-                if( k.length === 2 && k[0] === '_' ) {
-                    g = this.symbols[k[1]].group;
+                var k = keys( this.symbols ).sort(),
+                    kl = k.length;
+                 //the following assumptions are made in the next check
+                 //1. numbers are represented by and underscore
+                 //2. variable and function names must start with an letter
+                if( kl === 2 && k[0] === '_' ) { 
+                    status = this.symbols[k[1]].isPoly();
                 }
-                return ( g === PL || g === S );
+                else if( this.group === PL ) { 
+                    status = true;
+                    for( var i=0; i<kl; i++ ) {
+                        if( k[i] < 0 ) { status = false; }
+                    }
+                }
             }
+            return status;
         },
         // Copies over a predefined list of properties from one symbol to another.
         copy: function() {
@@ -248,7 +256,9 @@ var nerdamer = (function() {
         }
     };
     
-    //returns a fractional approximation of a decimal
+    /**
+     * returns an approximate fraction when given a decimal
+     */
     var Fraction = {
         convert: function( value, opts ) {
             var frac;
@@ -274,7 +284,8 @@ var nerdamer = (function() {
             }
             return frac;
         },
-        //if the fraction is small or too large this gets called
+        //if the fraction is small or too large this gets called instead of 
+        //fullConversion
         quickConversion: function( dec ) {
             var x = (dec.toExponential()+'').split('e');
             var d = x[0].split('.')[1];// get the number of places after the decimal
@@ -382,7 +393,7 @@ var nerdamer = (function() {
             while( searching ) {
                 var token = symbolArray[curloc],
                     eos = curloc === l; 
-                //if we find a comma or we've gone out of bound.
+                //if we find a comma or we've reached the end of the array.
                 if( token === comma || eos ) {
                     var t = symbolArray.splice( 0, curloc );
                     paramArray.push( nparam === 1 ? t : t.join('') );
@@ -402,13 +413,17 @@ var nerdamer = (function() {
         parseFunction: function( fn, contents ) { 
             var properties = functions[fn.value],
                 fnMap = properties[0],
-                params = contents.params || [];
+                params = contents.params || [],
+                result;
 
             //the parameters don't have to be attached to the symbol anymore
+            //TODO: this is a massive todo. arguments should be handled here
+            //not prior and this may be responsible for the awful performance 
+            //of functions
             delete contents.params;
 
             if( !fnMap ) {
-                return math( fn, contents ); 
+                result = math( fn, contents ); 
             }
             else {
                 //make the contents the first parameter and call the function with the provided parameters.
@@ -417,12 +432,13 @@ var nerdamer = (function() {
                 if( fnMap === map ) { 
                     //Just call map which does nothing more than format the arguments and call Parser.parse 
                     //with the arguments provided
-                    return map( properties[2], properties[3], params );
+                    result = map( properties[2], properties[3], params );
                 }
                 else {
-                    return fnMap.apply( undefined, params );
+                    result = fnMap.apply( undefined, params );
                 } 
             }
+            return result;
         },
         //The function responsible for the actual parsing of the expression.
         parseTokens: function( tokensOrExpression, subs ) { 
@@ -536,7 +552,6 @@ var nerdamer = (function() {
             }
 
             if( paramArray && paramArray.length > 0 ) sym.params = paramArray;
-            
             return sym;
         },
         // transfer over a symbol when changing a combination to another symbol. e.g. a composition that contains a composition
@@ -555,7 +570,8 @@ var nerdamer = (function() {
             }
         },
 
-        // This method neatly reorganizes all the tokens into an object and is sort of a compliment to the Parser.add method.
+        // This method neatly reorganizes all the tokens into an object and is sort of a compliment to 
+        // the Parser.add method.
         // If a symbol is found they are added together. It also does some book keeping on higher group Symbols.
         addSymbol: function( symbol, item, parent, multiply, msg ) { 
             var obj,
@@ -720,11 +736,18 @@ var nerdamer = (function() {
                 if( g1 === CB && g2 === PL || g1 === FN && g2 === CP ||
                     g1 === EX && g2 === PL || g1 === EX && g2 === CP ||
                     isCompositeB && isCompositeA && p1 !== 1  ) { 
-                    t = a; a = b; b = t; //swap symbols
-                    t = p1; p1 = p2; p2 = t; //swap powers
+                    //swap symbols
+                    t = a; a = b; b = t; 
+                    //swap powers
+                    t = p1; p1 = p2; p2 = t; 
                 } 
-                if( !isEqual && a.group === PL || p1 !== p2 ) { a.group = CP; }
-                t = {}; a.length = 0;
+                if( !isEqual && a.group === PL || p1 !== p2 ) { 
+                    a.group = CP; 
+                }
+                
+                t = {}; 
+                a.length = 0;
+                
                 for( x in a.symbols ) {   
                     var r = this.multiply( a.symbols[x], b.copy() );  
                     var m = r.multiplier;
@@ -825,7 +848,7 @@ var nerdamer = (function() {
                 return a;//early exit.
             }
             else {
-                if( isNegative ){ a.negate(); }
+                if( isNegative ) { a.negate(); }
                 var p = a.power;
                 if( g2 === N && !isSymbol( p ) ) { 
                     if( isNegative && isEven ) { //TBD
@@ -1107,7 +1130,6 @@ var nerdamer = (function() {
         };
         //equivalent of derivative of the outside.
         Calculus.diff = function( obj, d ) { 
-
             if( isSymbol( d )) d = d.value;
 
             if( obj.group === FN ) {
@@ -1121,6 +1143,7 @@ var nerdamer = (function() {
             else {
                 obj = Calculus.derive( obj, d );
             }
+
             return obj;
         };
         Calculus.polydiff = function( symbol, d ) { 
@@ -1144,10 +1167,11 @@ var nerdamer = (function() {
                 }
                 else if( g === CB ) { 
                     cp = symbol.copy();
-//                    cp.multiplier = 1;//an if statement is need
+                    //cp.multiplier = 1;
                     a = Calculus.productRule( symbol, d ); 
                     b = Calculus.polydiff( cp, d );
-                    return Parser.multiply( a, b );
+                    var ans =  Parser.multiply( a, b );
+                    return ans;
                 }
                 else if( g === FN && symbol.power === 1 ) {
                     switch( symbol.value ) {
@@ -1155,7 +1179,6 @@ var nerdamer = (function() {
                         case 'log':
                             cp = symbol.copy();
                             symbol = Parser.packSymbol( cp.symbols );
-                            
                             //TODO: function that deals with the border of symbols and numbers
                             if( isSymbol( symbol.power ) ) {
                                 symbol.power = Parser.multiply( symbol.power, Symbol(-1));
@@ -1163,7 +1186,8 @@ var nerdamer = (function() {
                             else {
                                 symbol.power *= -1;
                             }
-                            symbol.multiplier = cp.multiplier; 
+
+                            symbol.multiplier = cp.multiplier/symbol.multiplier; 
                             break;
                         case 'cos':
                             symbol.value = 'sin';
@@ -1246,6 +1270,7 @@ var nerdamer = (function() {
                 }
                 symbol = Parser.packSymbol( t );
             } 
+
             return symbol;
         };
         
@@ -1301,55 +1326,6 @@ var nerdamer = (function() {
                 result = Parser.packSymbol( r ); 
             }
             return result;
-        };
-
-        Calculus.integrate = function( symbol, d ) { 
-            d = isSymbol( d ) ? d.value : d;
-            if( !d ) throw new Error('No integrand provided!');
-            
-            if( isSymbol( symbol ) ) {
-                var g = symbol.group, a;
-                if( g === N ) {
-                    a = symbol;
-                    symbol = Symbol( d );
-                    symbol.multiplier *= a.multiplier;
-                }
-                else if( g === S ) {
-                    if( symbol.value === d ) {
-                        symbol.power += 1;
-                        if( symbol.power !== 0 ) {
-                            symbol.multiplier /= symbol.power;
-                        }
-                        else {
-                            // a whole new branch
-                        }
-                    }
-                    else {
-                        var s = Symbol( d );
-                        return Parser.multiply( s, symbol );
-                    }
-                        
-                }
-                else if( g === PL || g === CP ) {
-                    symbol = Algebra.expand( symbol );
-                    
-                    if( symbol.power === 1 ) {
-                        var r = Calculus.integrate( symbol.symbols, d );
-                        r.multiplier = symbol.multiplier;
-                        symbol = r;
-                    }
-                }
-            }
-            else { 
-                var t = {};
-                var obj = symbol;
-                for( var x in obj ) { 
-                    var u = this.integrate( obj[x].copy(), d );
-                    Parser.addSymbol( u, t );
-                }
-                symbol = Parser.packSymbol( t );
-            }
-            return symbol;
         };
          
         Formatting.latex = function( obj ) {
@@ -1413,7 +1389,7 @@ var nerdamer = (function() {
                         }
                         else if( name === 'sum' ) {
                             name = '\\sum_'+inBraces(symbol.params[0]+'='+symbol.params[1])+'^'+
-                                inBraces(symbol.params[2])+' '+inBraces(value, true)
+                                inBraces(symbol.params[2])+' '+inBraces(value, true);
                         }
                         else {
                             name = '\\'+ name + inBrackets( value, true);
@@ -1487,12 +1463,10 @@ var nerdamer = (function() {
                             var r = Parser.multiply( obj[y].copy(), symbol.symbols[x].copy() );
                             //Parser.addSymbol does not expand the multiplier of groups PL && CP so...
                             if( r.group === PL && r.multiplier !== 1 && r.power === 1 /*may be an unnecessary check*/) {
-                                //% transferMultiplier
                                 for( var z in r.symbols ) {
                                     r.symbols[z].multiplier *= r.multiplier;
                                 }
                                 r.multiplier = 1;
-                                //%
                             }
                             Parser.addSymbol( r, t );
                         }
@@ -1506,7 +1480,7 @@ var nerdamer = (function() {
             return symbol;
         };
         
-        Algebra.roots = function( f, guess ) { 
+        Algebra.findRoot = function( f, guess ) { 
             var newtonraph = function(xn) {
                 var mesh = 1e-15,
                     df = Calculus.diff(f, variables(f)[0]).buildFunction(),
@@ -1656,7 +1630,7 @@ var nerdamer = (function() {
             for( var x in obj ) {
                 RESERVED.push(x);
             }
-        }
+        };
         load( functions ); 
         load( Math2 );
         load( constants ); 
@@ -1757,7 +1731,7 @@ var nerdamer = (function() {
         validateName( constant[0] ); 
         if( !isReserved( constant ) ) {
             if( value === 'delete' ) {
-                delete constants[constant]
+                delete constants[constant];
             }
             else {
                 if( isNaN( value ) ) throw new Error('Constant must be a number!');
@@ -1780,7 +1754,7 @@ var nerdamer = (function() {
             subs[params[i]] = isSymbol( args[i] ) ? text( args[i] ) : args[i];
         }
         return Parser.parse( fn, subs );
-    }
+    };
     
     //this does nothing more than create a named equation
     userFuncs.setFunction = function( name, params, fn ) {
@@ -1789,11 +1763,11 @@ var nerdamer = (function() {
             return true;
         }
         return false;
-    }
+    };
     
     userFuncs.evaluate = function( subs ) {
         return this.getEquation().evaluate( subs );
-    }
+    };
     
     userFuncs.clear = function( equationNumber, opt ) {
         if( opt === 'known' ) {
@@ -1811,33 +1785,31 @@ var nerdamer = (function() {
             }
         }    
         return this;
-    }
+    };
     
     userFuncs.getEquation = function( equationNumber ) {
         equationNumber = equationNumber || EQNS.length;
         return EQNS[equationNumber - 1];
-    }
+    };
     
     userFuncs.equations = function( asObject, asLatex ) {
         var result = asObject ? {} : [];
         for( var i=0; i<EQNS.length; i++ ) {
-            var eq = asLatex ? Formatting.latex( EQNS[i] ) : text( EQNS[i] )
+            var eq = asLatex ? Formatting.latex( EQNS[i] ) : text( EQNS[i] );
             if( asObject ) {
                 result[i+1] = eq;
             }
             else {
-                result.push( eq )
+                result.push( eq );
             }
         }
         return result;
-    }
-    
+    };
+
     userFuncs.reserved = function( asArray ) {
         if( asArray ){ return RESERVED; }
         return RESERVED.join(', ');
-    }
+    };
     return userFuncs;
     
 })();
-
-
