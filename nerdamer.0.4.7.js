@@ -14,7 +14,6 @@ var nerdamer = (function() {
         Formatting  = {};
 
     var EQNS        = [],
-        KNOWN_VARS  = {},
         NUMER       = false,
         RESERVED    = [],
         version     = '0.4.7';
@@ -65,7 +64,8 @@ var nerdamer = (function() {
         'diff'      : [Calculus.diff       , 2],
         'expand'    : [Algebra.expand, 1], //untested
         'sum'       : [Calculus.sum,   4], //issue: very slow with functions
-        'findRoot'  : [Algebra.findRoot,  2] //untested
+        'findRoot'  : [Algebra.findRoot,  2], //untested
+        'polyRoots' : [Algebra.polyRoots, 2] //untested
     },
     
     Math2 = {
@@ -248,12 +248,10 @@ var nerdamer = (function() {
             return Formatting.latex( this );
         },
         evaluate: function( subs ) {
-            //NUMER need to be true for this block only
-            NUMER = true; 
-            var result = text( Parser.parse( text( this ), subs ) );
-            NUMER = false; //restore NUMER;
-
-            return result;  
+            var self = this;
+            return numBlock(function(){
+                return text( Parser.parse( text( self ), subs ) );
+            });
         }
     };
     
@@ -408,7 +406,6 @@ var nerdamer = (function() {
             
             //put the symbol back into the tokens array.
             symbolArray.unshift( paramArray.shift() );
-            
             return paramArray;
         },
         parseFunction: function( fn, contents ) { 
@@ -520,7 +517,6 @@ var nerdamer = (function() {
             }
             //place a zero in the object if it's empty e.g. 1-1 will result in a empty object
             if( keys( parsed ).length === 0 ) parsed._ = Symbol(0); 
-
             return parsed; 
         },
         // a function to safely fetch a token out of the token array. This will read a sub-array into a symbol during parsing.
@@ -552,7 +548,7 @@ var nerdamer = (function() {
                 }
             }
 
-            if( paramArray && paramArray.length > 0 ) sym.params = paramArray;
+            if( paramArray && paramArray.length > 0 ) sym.params = paramArray; 
             return sym;
         },
         // transfer over a symbol when changing a combination to another symbol. e.g. a composition that contains a composition
@@ -976,7 +972,7 @@ var nerdamer = (function() {
         //a quick and lazy way to get a fully built symbol if you don't want to are unable to transform an object.
         //this functions is sometimes needed but most of the time it's convenience but has the benefit of its parameter
         //being a string, so you can easily retrace the logic.
-        parse: function( str, subs ) { 
+        parse: function( str, subs ) {
             return this.packSymbol( this.parseTokens( this.tokenize( str ), subs ) );
         },
         // The next functions are needed in case the exponential is a symbol
@@ -1106,19 +1102,19 @@ var nerdamer = (function() {
         //load indexOf if not present
         loadIndexOf();
 
-        Calculus.sum = function( fn, variable, index, end ) { 
+        Calculus.sum = function( fn, variable, index, end ) {
             if( !isNaN( variable )) throw new Error('Incorrect parameter!');
             
             if( !isNaN( index ) && !isNaN( end ) ) { 
                 //backup the current value for the variable.
                 var lastc = '0', //last computation.
                     eq = text( fn );
-                for(var i=index; i<=end; i++) {
-                    
-                    //append the last equation and then just reparse the whole thing
-                    lastc = text(Parser.parse( (lastc+'+'+eq).replace(/\+\-/g,'-'), { x:i }) ); 
-                }
-                
+                numBlock( function() {
+                    for(var i=index; i<=end; i++) {
+                        //append the last equation and then just reparse the whole thing
+                        lastc = text(Parser.parse( (lastc+'+'+eq).replace(/\+\-/g,'-'), { x:i }) ); 
+                    }
+                });
                 return Parser.parse( ''+lastc );
             }
             else {
@@ -1241,7 +1237,6 @@ var nerdamer = (function() {
                         value = symbol.value + inBrackets( text( symbol.symbols ) );
                     }
                     else {
-                        
                         //TODO: eliminate dependence on text.
                         value = symbol.value + inBrackets( text( symbol.symbols ) );
                     }
@@ -1302,12 +1297,12 @@ var nerdamer = (function() {
                     for( var j=0; j<ll; j++ ) {
                         //we need to skip the current symbol
                         if( j !== i ) {
-                            //the unfortunate thing is that we make a copy of the symbol even when we don't have to.
+                            
                             var s = symbol.symbols[k[j]];
                             df = Parser.multiply( df, s );
                         }
                     }
-                    //if there is only one symbol return else
+
                     stack.push( df );
                 }
             }
@@ -1481,6 +1476,73 @@ var nerdamer = (function() {
             return symbol;
         };
         
+        //ported from http://www.akiti.ca/PolyRootRe.html
+        Algebra.polyRoots = function( symbol ){	
+            var maxAllowed = 120;
+            if( symbol.isPoly() ) {
+                var idx = keys( symbol.symbols ).sort().pop(); 
+                if( idx ) {
+                    var powers      = keys( symbol.symbols[idx].symbols ),
+                        max = arrayMax( powers ),
+                        rawArray = [];
+                    if( max > maxAllowed ) {
+                        throw new Error('This function only supports powers up to '+maxAllowed+' degree');
+                    }
+                    else if( isNaN( max ) ) {
+                        throw new Error('This function does not support polynomials with variable powers!');
+                    }
+                    
+                    //** prepare the data
+                    for( var i=1; i<=max; i++) {
+                        var cur = symbol.symbols[idx].symbols[i];
+                        
+                        //if there is no power then the hole must be filled with a zero.
+                        var c = cur !== undefined ? cur.multiplier : 0;
+                        
+                        //insert the coeffient but in reverse order
+                        rawArray.unshift( c );
+                    }
+                    
+                    //pop in the coefficient of the 0th power
+                    rawArray.push( symbol.symbols._.multiplier );
+                    
+                    //put the maximum power, the power we are solving for, at the front
+                    rawArray.unshift( max );  
+                }
+                else {
+                    throw new Error('Expression does not have enough powers of '+idx+' to be used with this function!');
+                }
+            }
+            else {
+                throw new Error('Expression is not a polynomial!');
+            }
+
+            var zeror = new Array( max );   // Vector of real components of roots
+            var zeroi = new Array( max );   // Vector of imaginary components of roots
+
+            var degreePar = {};    // degreePar is a dummy variable for passing the parameter POLYDEGREE by reference
+
+            degreePar.Degree = max;
+
+            //prefill the arrays
+            for ( i = 0; i < max; i++) {
+                 zeroi[i] = zeror[i] = 0;
+            }
+               
+//               rpSolve(degreePar, powers, zeror, zeroi);
+    //           POLYDEGREE = degreePar.Degree;
+    //
+    //           complexVecOut(7, POLYDEGREE, zeror, zeroi);
+
+               return;
+                
+        } 
+
+        // end of JavaScript-->
+//        Algebra.polyRoots = function( f ) {
+//            
+//        };
+        
         Algebra.findRoot = function( f, guess ) { 
             var newtonraph = function(xn) {
                 var mesh = 1e-15,
@@ -1650,7 +1712,7 @@ var nerdamer = (function() {
         return Parser.pow( Symbol(0.5), symbol );
     }
 
-    function abs( symbol, fn ) {
+    function abs( symbol, fn ) { 
         var p = symbol.power;
         if( Math.abs( p ) < 1 ) p = 1/p;
         
@@ -1705,6 +1767,17 @@ var nerdamer = (function() {
         } 
 
         return symbol;
+    }
+    
+    var arrayMax = function( arr ) {
+        return Math.max.apply( undefined, arr );
+    }
+    
+    var numBlock = function( fn ) {
+       NUMER = true;
+       var ans = fn();
+       NUMER = false;
+       return ans;
     }
     
     //checks if a number of symbol is negative;
@@ -1777,13 +1850,8 @@ var nerdamer = (function() {
     userFuncs.clear = function( equationNumber, opt ) {
         if( !equationNumber ) { equationNumber = EQNS.length; }
 
-        if( equationNumber === 'all' ) { 
-            EQNS = []; 
-            KNOWN_VARS = {}; 
-        }
-        else {
-            remove( EQNS, equationNumber - 1 );
-        }   
+        if( equationNumber === 'all' ) { EQNS = []; }
+        else { remove( EQNS, equationNumber - 1 ); }   
         return this;
     };
     
@@ -1810,6 +1878,7 @@ var nerdamer = (function() {
         if( asArray ){ return RESERVED; }
         return RESERVED.join(', ');
     };
+
     
     return userFuncs;
     
