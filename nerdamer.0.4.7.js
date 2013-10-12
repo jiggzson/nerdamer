@@ -63,7 +63,7 @@ var nerdamer = (function() {
         'sqrt'      : [sqrt, 1],
         'diff'      : [Calculus.diff       , 2],
         'expand'    : [Algebra.expand, 1], //untested
-        'sum'       : [Calculus.sum,   4], //issue: very slow with functions
+        'sum'       : [Calculus.sum,   4], //issue: very slow with symbols
         'findRoot'  : [Algebra.findRoot,  2], //untested
         'polyRoots' : [Algebra.polyRoots, 2] //untested
     },
@@ -1108,14 +1108,32 @@ var nerdamer = (function() {
             if( !isNaN( index ) && !isNaN( end ) ) { 
                 //backup the current value for the variable.
                 var lastc = '0', //last computation.
-                    eq = text( fn );
-                numBlock( function() {
-                    for(var i=index; i<=end; i++) {
-                        //append the last equation and then just reparse the whole thing
-                        lastc = text(Parser.parse( (lastc+'+'+eq).replace(/\+\-/g,'-'), { x:i }) ); 
+                    eq = text( fn ),
+                    vars = variables( fn ),
+                    k = {},
+                    result, i;
+                //You incur an unbearable penalty for functions containing more than one variable
+                //so they have to be handled differently
+                if( vars.length > 1 ) {
+                    var t = {};
+                    for( i=index; i<=end; i++ ) {
+                        k[variable] = i;
+                        Parser.addSymbol( Parser.parse( eq, k ), t );
                     }
-                });
-                return Parser.parse( ''+lastc );
+                    result = Parser.packSymbol( t );
+                }
+                else {
+                    numBlock( function() {
+                        for( i=index; i<=end; i++) {
+                            k[variable] = i;
+                            //append the last equation and then just reparse the whole thing
+                            lastc = text(Parser.parse( (lastc+'+'+eq).replace(/\+\-/g,'-'), k ) ); 
+                        }
+                    });
+                    result = Parser.parse( ''+lastc );
+                }
+                    
+                return result;
             }
             else {
                 var s = Symbol('sum');
@@ -1538,10 +1556,6 @@ var nerdamer = (function() {
                 
         } 
 
-        // end of JavaScript-->
-//        Algebra.polyRoots = function( f ) {
-//            
-//        };
         
         Algebra.findRoot = function( f, guess ) { 
             var newtonraph = function(xn) {
@@ -1773,6 +1787,7 @@ var nerdamer = (function() {
         return Math.max.apply( undefined, arr );
     }
     
+    //provides a temporary block where symbols are processed immediately
     var numBlock = function( fn ) {
        NUMER = true;
        var ans = fn();
