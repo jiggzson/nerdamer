@@ -46,6 +46,7 @@ var nerdamer = (function() {
     //the definition of the function is contained in this object with an array as its value which
     //has the format [mapped function, number of parameters expected]. The number of parameters is currently
     //not enforced and but will be in the future. Subsequent parameters are just ignored.
+    //TODO: at present there is no way to hide supported function from user
     functions = {
         'parens'    : [ , 1],
         'cos'       : [ , 1],
@@ -64,6 +65,8 @@ var nerdamer = (function() {
         'diff'      : [Calculus.diff       , 2],
         'expand'    : [Algebra.expand, 1], //untested
         'sum'       : [Calculus.sum,   4], //issue: very slow with symbols
+        //these 2 should probably be hard coded functions as their return type might be an array/vector
+        //or arrays/vectors should be supported
         'findRoot'  : [Algebra.findRoot,  2], //untested
         'polyRoots' : [Algebra.polyRoots, 2] //untested
     },
@@ -169,7 +172,8 @@ var nerdamer = (function() {
         },
         // Copies over a predefined list of properties from one symbol to another.
         copy: function() {
-            var copy = new Symbol(),
+
+            var copy = new Symbol(0),
                 //list of properties excluding power as this may be a symbol which also needs to be a copy.
                 properties = [ 'multiplier','value','group', 'length','isImaginary' ],
                 l = properties.length, i;
@@ -188,9 +192,8 @@ var nerdamer = (function() {
             }
 
             if( this.power ) {
-                copy.power = this.power instanceof Symbol ? this.power.copy() : this.power;
+                copy.power = isSymbol( this.power ) ? this.power.copy() : this.power;
             }
-
             return copy;
         },
         valueOf: function() {
@@ -499,8 +502,8 @@ var nerdamer = (function() {
                             }
                             else { 
                                 var secondSymbol = this.fetchSymbol( subTokens, subs ),
-                                    opr = operators[curOperator]; 
-                                if( !opr || !opr.fn ) throw new Error('Unsupported function or operator.')
+                                    opr = operators[curOperator];
+                                if( !opr || !opr.fn ) throw new Error( curOperator + ' is not a supported function!')
                                 subTokens.push( this[opr.fn]( firstSymbol, secondSymbol ) ); 
                             }
                         }
@@ -681,7 +684,6 @@ var nerdamer = (function() {
             return this.add( a, b );
         },
         multiply: function( a, b ) { 
-            
             //take care of imaginary numbers
             if( a.isImaginary && b.isImaginary ) return Symbol( -1*a.multiplier*b.multiplier );
             
@@ -691,7 +693,6 @@ var nerdamer = (function() {
                 p2 = b.power,
                 n1 = g1 === FN ? a.name( true ) : null,
                 n2 = g2 === FN ? b.name( true ) : null;
-            
             //quick returns
             if( p1 === 0 ) { a = Symbol( a.multiplier ); }
             if( p2 === 0 ) { b = Symbol( a.multiplier ); }
@@ -727,6 +728,7 @@ var nerdamer = (function() {
                 }
             }
             else if( isCompositeA && p1 === 1 || isCompositeB && p2 === 1 ) { 
+                
                 // The multiply method always puts the lower group symbol to the right but sometimes, 
                 // such as in the case of a multipart symbol.
                 // We need it back on the right. The following tests for these cases.
@@ -744,13 +746,14 @@ var nerdamer = (function() {
                 
                 t = {}; 
                 a.length = 0;
-                
-                for( x in a.symbols ) {   
+                for( x in a.symbols ) {  
                     var r = this.multiply( a.symbols[x], b.copy() );  
-                    var m = r.multiplier;
+                    var m = r.multiplier; 
                     if( b.group === PL && p2 === 1 || b.group === CP && p2 === 1 ) {
                         for( var xx in r.symbols ) {
-                            if( m!== 1 ) r.symbols[xx].multiplier *= m;
+                            
+                            if( m!== 1 ) r.symbols[xx].multiplier *= m; 
+                            //the last operation may have resulted in a number being returned
                             this.addSymbol( r.symbols[xx], t, a );
                         }
                         r.multiplier = 1;
@@ -1635,6 +1638,8 @@ var nerdamer = (function() {
         return Math.round( x*Math.pow( 10,s ) )/Math.pow( 10,s );
     }
 
+    //Items are do not have a fixed order in objects so only use if you need any first random 
+    //item in the object
     function firstObject( obj ) {
         for( var x in obj ) break;
         return obj[x];
@@ -1665,6 +1670,7 @@ var nerdamer = (function() {
         return keys( vars );
     }
 
+    //Enforces rule: must start with a letter and can have any number of underscores or numbers after.
     function validateName( name, type ) { 
         type = type || 'variable';
         if( !(/^[a-z][a-z\d\_]*$/gi.test( name ) ) ) {
@@ -1676,9 +1682,9 @@ var nerdamer = (function() {
         return str.split(' ').join('');
     } 
     
-    function build( fn, paramArray, internal ) { 
+    function build( fn, argsArray, internal ) { 
         var vars = variables( fn ).sort(),
-            args = paramArray || vars;
+            args = argsArray || vars;
         
         //if no paramArray was given then vars and params should be the same object
         //if they're not then make sure that the values match.
@@ -1720,7 +1726,7 @@ var nerdamer = (function() {
             subs[params[i]] = isSymbol( args[i] ) ? text( args[i] ) : args[i];
         }
         return Parser.parse( fn, subs );
-    };
+    }
     
     function sqrt( symbol ) { 
         return Parser.pow( Symbol(0.5), symbol );
@@ -1739,20 +1745,21 @@ var nerdamer = (function() {
     }
     
     function log( symbol ) { 
+        
         var result;
         if( symbol.value === 'e' && symbol.multiplier === 1 ) {
             result = isSymbol( symbol.power ) ? symbol.power : Symbol( symbol.power );
         }
         else {
-            var thetai = '';
+            var imgPart = '';
             if( symbol.group === N && NUMER && symbol.multiplier < 0 ) {
                 symbol.negate();
-                thetai = Parser.parse('pi*i');
+                imgPart = Parser.parse('pi*i');
             }
             result = math( Symbol('log'), symbol );
             
-            //there is a theta part reinsert
-            if( thetai ) { result = Parser.add( thetai, result ); }
+            //there is a imaginary part reinsert
+            if( imgPart ) { result = Parser.parse( result+'+'+imgPart ); }
         }
 
         return result;
@@ -1862,7 +1869,7 @@ var nerdamer = (function() {
         return this.getEquation().evaluate( subs );
     };
     
-    userFuncs.clear = function( equationNumber, opt ) {
+    userFuncs.clear = function( equationNumber ) {
         if( !equationNumber ) { equationNumber = EQNS.length; }
 
         if( equationNumber === 'all' ) { EQNS = []; }
