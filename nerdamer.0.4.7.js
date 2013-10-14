@@ -1184,11 +1184,13 @@ var nerdamer = (function() {
                     symbol = Calculus.polydiff( symbol, d );
                 }
                 else if( g === CB ) { 
+                    var m = symbol.multiplier;
+                    symbol.multiplier = 1;
                     cp = symbol.copy();
-                    //cp.multiplier = 1;
                     a = Calculus.productRule( symbol, d ); 
-                    b = Calculus.polydiff( cp, d );
+                    b = Calculus.polydiff( cp, d ); 
                     var ans =  Parser.multiply( a, b );
+                    ans.multiplier *= m;
                     return ans;
                 }
                 else if( g === FN && symbol.power === 1 ) {
