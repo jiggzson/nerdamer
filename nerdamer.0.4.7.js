@@ -1897,6 +1897,8 @@ var nerdamer = (function() {
         }
         return result;
     };
+    
+    userFuncs.expressions = userFuncs.equations;
 
     userFuncs.reserved = function( asArray ) {
         if( asArray ){ return RESERVED; }
