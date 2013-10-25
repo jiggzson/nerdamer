@@ -1780,7 +1780,7 @@ var nerdamer = (function() {
             subs[params[i]] = isSymbol( args[i] ) ? text( args[i] ) : args[i];
         }
         return Parser.parse( fn, subs );
-    }
+    };
     
     //this does nothing more than create a named equation
     userFuncs.setFunction = function( name, params, fn ) {
@@ -1789,11 +1789,11 @@ var nerdamer = (function() {
             return true;
         }
         return false;
-    }
+    };
     
     userFuncs.evaluate = function( subs ) {
         return this.getEquation().evaluate( subs );
-    }
+    };
     
     userFuncs.clear = function( equationNumber, opt ) {
         if( opt === 'known' ) {
@@ -1811,12 +1811,12 @@ var nerdamer = (function() {
             }
         }    
         return this;
-    }
+    };
     
     userFuncs.getEquation = function( equationNumber ) {
         equationNumber = equationNumber || EQNS.length;
         return EQNS[equationNumber - 1];
-    }
+    };
     
     userFuncs.equations = function( asObject, asLatex ) {
         var result = asObject ? {} : [];
@@ -1830,12 +1830,15 @@ var nerdamer = (function() {
             }
         }
         return result;
-    }
+    };
     
     userFuncs.reserved = function( asArray ) {
         if( asArray ){ return RESERVED; }
         return RESERVED.join(', ');
-    }
+    };
+    
+    userFuncs.expressions = userFuncs.equations;
+    
     return userFuncs;
     
 })();
