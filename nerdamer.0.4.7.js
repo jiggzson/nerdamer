@@ -64,9 +64,7 @@ var nerdamer = (function() {
         'sqrt'      : [sqrt, 1],
         'diff'      : [Calculus.diff       , 2],
         'expand'    : [Algebra.expand, 1], //untested
-        'sum'       : [Calculus.sum,   4], //issue: very slow with symbols
-        //these 2 should probably be hard coded functions as their return type might be an array/vector
-        //or arrays/vectors should be supported
+        'sum'       : [Calculus.sum,   4], 
         'findRoot'  : [Algebra.findRoot,  2], //untested
         'polyRoots' : [Algebra.polyRoots, 2] //untested
     },
