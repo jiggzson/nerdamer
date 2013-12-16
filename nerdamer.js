@@ -20,7 +20,7 @@ var nerdamer = (function( externalMods ) {
         NUMER       = false,
         RESERVED    = [],
         C           = {},
-        version     = '0.4.8',
+        version     = '0.4.9',
 
     /*
      * The groups that help with organizing during parsing. Note that for FN is still a function even 
