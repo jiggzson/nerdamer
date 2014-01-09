@@ -6,14 +6,14 @@
  * Source   : https://github.com/jiggzson/nerdamer
  */
 
+var nerdamer = (function( externalMods ) {
 
-var nerdamer = (function() {
-    
     "use strict";
 
-    var Calculus    = {},
-        Algebra     = {},
-        Formatting  = {},
+    var G = {},
+        Calculus    = G.Calculus   = {},
+        Algebra     = G.Algebra    = {},
+        Formatting  = G.Formatting = {},
 
         EQNS        = [],
         NUMER       = false,
@@ -71,9 +71,9 @@ var nerdamer = (function() {
     },
     
     Math2 = {
-        'sec': function( x ) { return 1/Math.cos( x );},
-        'cot': function( x ) { return 1/Math.tan( x );},
-        'csc': function( x ) { return 1/Math.sin( x );}
+        'sec': { fn: function( x ) { return 1/Math.cos( x );}, inv: 'cos' },
+        'cot': { fn: function( x ) { return 1/Math.tan( x );}, inv: 'tan' },
+        'csc': { fn: function( x ) { return 1/Math.sin( x );}, inv: 'sin' }
     },
 
     // Define any and all constants here. 
@@ -143,6 +143,9 @@ var nerdamer = (function() {
                 v = this.value;
             }
             return v;
+        },
+        isNumber: function() {
+            return this.group === N;
         },
         isPoly: function() {
             var status = false;
@@ -324,18 +327,24 @@ var nerdamer = (function() {
                 dplus = '@#';
             //bug fix: 3.23e-4 will get split into [3.23e,'-', 4]. To fix this I temporarily replace e- with a @#
             //this can be any delimiter not allowed in a variable name
-            expStr = expStr.replace( /(\d+)(e\-)(\d+)/g,function(){ return arguments[1]+'@#'+arguments[3]; } ).
-                replace( /(\d+)(e\+)(\d+)/g,function(){ return arguments[1]+'@$'+arguments[3]; } );
+            expStr = expStr.replace( /(\d+)(e\-)(\d+)/g,
+                function(){ 
+                    return arguments[1]+dplus+arguments[3]; 
+                }).
+            replace( /(\d+)(e\+)(\d+)/g,
+                function(){ 
+                    return arguments[1]+dtim+arguments[3]; 
+                });
             
             //enable the omission of the multiplication sign
-            expStr = expStr.replace(/([a-z\(\+\-\*\/])(\d+)([a-z])|^(\d+)([a-z])/gi,
+            /*expStr = expStr.replace(/([a-z\(\+\-\*\/])(\d+)([a-z])|^(\d+)([a-z])/gi,
                 function( match, g1, g2, g3, g4, g5 ){
                     var r;
                     if( g4 !== undefined ) r = g4+'*'+g5;
                     else if( /[a-z]/.test( g1 ) ) r = g1+g2+g3;
                     else r = g1+g2+'*'+g3;
                     return r;
-                });
+                });*/
             
             //normalize e.g. turn (x-2)(x+1) into (x-2)*(x+1) and clean out white space.
             expStr = String(expStr).split(' ').join('').replace( /\)\(/g, ')*(' );
@@ -374,11 +383,11 @@ var nerdamer = (function() {
                 var stackInsert = function( pos ) {
                     var e = expStr.substring( lastOperator, pos ),
                         curOperator = expStr.charAt( pos ); 
-                        if(e) { stack.push( e.replace(/@#/,'e-').replace(/@$/,'e+') ); }
-                            
-                        if(curOperator) {
-                            stack.push( curOperator );
-                        }    
+                    if(e) { stack.push( e.replace( new RegExp( dplus ),'e-').replace( new RegExp( dtim ),'e+') ); }
+
+                    if(curOperator) {
+                        stack.push( curOperator );
+                    }    
                 };
             for( var i=0; i<el; i++ ){
                 var c = expStr.charAt( i );
@@ -461,7 +470,7 @@ var nerdamer = (function() {
                 lastOrder = 0; 
             while( curPosition <= tokens.length ){ 
                 var token = tokens[curPosition],
-                    endOfString = curPosition === tokens.length;
+                    endOfTokens = curPosition === tokens.length;
                 // Support for functions
                 if( token in functions ) {
                     
@@ -472,10 +481,10 @@ var nerdamer = (function() {
 
                     insert( tokens ,this.parseFunction( token, contents ), curPosition ); 
                 }
-                if( operators[token] !== undefined || endOfString ) {
+                if( operators[token] !== undefined || endOfTokens ) {
 
                     // An order of -1 insures that we have a lower order than anything else and forces processing
-                    var order = endOfString ? -1 : operators[token].order;
+                    var order = endOfTokens ? -1 : operators[token].order;
 
                     if( order < lastOrder ) { 
 
@@ -1056,10 +1065,11 @@ var nerdamer = (function() {
             }
             else {
                 if( g === FN ) {
-                    var params = '';
+                    var params = '',
                     // Whenever we exporting the text to a javascript function we have to format the text differently.
                     // This should probably be its own function but for now we're using text.
-                    v = asFunction ? 'Math.'+obj.value : obj.value;
+                        value = obj.value;
+                    v = asFunction ? ( value in Math2 ? '1/Math.'+Math2[value].inv : 'Math.'+value ): value;
                     
                     // parens is just a function that holds the parentheses so we don't need the name
                     if( v === 'parens' ) v = '';
@@ -1109,11 +1119,20 @@ var nerdamer = (function() {
         return v;
     }
     
+    function loadMods(){
+        for( var x in externalMods ) {
+
+        }
+    }
+    
     function init(){
         
         // Load indexOf function if not present
         loadIndexOf();
-
+        
+        //load external mods
+        loadMods();
+        
         Calculus.sum = function( fn, variable, index, end ) {
             if( !isNaN( variable )) throw new Error('Incorrect parameter!');
             
@@ -1405,13 +1424,14 @@ var nerdamer = (function() {
 
             if( isSymbol( obj ) ) {
                 var symbol = obj,
-                    g = symbol.group;
-                if( g === N ) return Formatting.frac( Fraction.convert( symbol.multiplier ) );
+                    g = symbol.group,
+                    m = Fraction.convert( symbol.multiplier );
+                if( g === N ) return Formatting.frac( m );
                 // Determine which bracket to use for current format
                 var prefix = '~',
                     sign = '',
                     bracket = inBraces,
-                    m =  Fraction.convert( symbol.multiplier ),
+//                    m =  Fraction.convert( symbol.multiplier ),
                     p = symbol.power,
                     sqrt = p === 0.5 || p === -0.5; 
                 // Format the power
@@ -1501,7 +1521,7 @@ var nerdamer = (function() {
                 for( var x in obj ) {
                     values.push( Formatting.latex( obj[x]) );
                 }
-                return values.join('+').replace('+-','-');
+                return values.join('+').replace(/\+\-/g,'-');
             }
         };
         
@@ -1517,6 +1537,10 @@ var nerdamer = (function() {
             if( !isArray( arr ) ) return arr;
             if( arr[1] === 1 ) return arr[0];
             return '\\frac{'+arr[0]+'}{'+arr[1]+'}';
+        };
+        
+        Algebra.polydivide = function( symbol1, symbol2 ) {
+            if( !symbol1.isPoly() || !symbol2.isPoly() ) throw new Error('Both symbols must be polynomials!');
         };
         
         Algebra.transform = function( symbol ) {
@@ -2415,28 +2439,28 @@ var nerdamer = (function() {
         return arr instanceof Array;
     }
 
-    function inBrackets( str, tex ) {
+    var inBrackets = function( str, tex ) {
         var l = tex ? '\\left' : '',
             r = tex ? '\\right': '';
         return l+'('+str+r+')';
-    }
+    },
     
-    function inBraces( str ) {
+    inBraces = function( str ) {
         return '{'+str+'}';
-    }
+    },
     
-    function round( x, s ) { 
+    round = function( x, s ) { 
         s = s || 14;
         return Math.round( x*Math.pow( 10,s ) )/Math.pow( 10,s );
-    }
+    },
 
     // Items are do not have a fixed order in objects so only use if you need any first random item in the object
-    function firstObject( obj ) {
+    firstObject = function( obj ) {
         for( var x in obj ) break;
         return obj[x];
-    }
-
-    function variables( obj, vars ) { 
+    },
+    
+    variables = function( obj, vars ) { 
         vars  = vars || {};
         if( isSymbol( obj ) ) { 
             var g = obj.group; var s = g === EX;
@@ -2459,21 +2483,31 @@ var nerdamer = (function() {
             }
         }   
         return keys( vars );
-    }
+    },
 
     // Enforces rule: must start with a letter and can have any number of underscores or numbers after.
-    function validateName( name, type ) { 
+    validateName = function( name, type ) { 
         type = type || 'variable';
-        if( !(/^[a-z][a-z\d\_]*$/gi.test( name ) ) ) {
+        var regex = /^[a-z][a-z\d\_]*$/gi;
+        if( !( regex.test( name ) ) ) {
             throw new Error( name+' is not a valid '+type+' name' );
         }
-    }
+    },
     
-    function stripWhiteSpace( str ) {
+    map = function( fn, params, args ) { 
+        // Organize the parameters
+        var subs = {};
+        for( var i=0; i<params.length; i++ ) {
+            subs[params[i]] = isSymbol( args[i] ) ? text( args[i] ) : args[i];
+        }
+        return Parser.parse( fn, subs );
+    },
+    
+    stripWhiteSpace = function( str ) {
         return str.split(' ').join('');
-    } 
+    },
     
-    function build( fn, argsArray, internal ) { 
+    build = function( fn, argsArray ) { 
         var vars = variables( fn ).sort(),
             args = argsArray || vars;
         
@@ -2485,7 +2519,19 @@ var nerdamer = (function() {
             }
         }
         return new Function( args, 'return '+text( fn, undefined, 'function' )+';' );
-    }
+    },
+    
+    arrayMax = function( arr ) {
+        return Math.max.apply( undefined, arr );
+    },
+    
+    //provides a temporary block where symbols are processed immediately
+    numBlock = function( fn ) {
+       NUMER = true;
+       var ans = fn();
+       NUMER = false;
+       return ans;
+    };
     
     // This function changes the contents of the stored equation
     function getEquation( equationNumber, fn ) {
@@ -2509,16 +2555,7 @@ var nerdamer = (function() {
         load( Math2 );
         load( constants ); 
     }
-    
-    function map( fn, params, args ) { 
-        // Organize the parameters
-        var subs = {};
-        for( var i=0; i<params.length; i++ ) {
-            subs[params[i]] = isSymbol( args[i] ) ? text( args[i] ) : args[i];
-        }
-        return Parser.parse( fn, subs );
-    }
-    
+
     function sqrt( symbol ) { 
         return Parser.pow( Symbol(0.5), symbol );
     }
@@ -2555,15 +2592,15 @@ var nerdamer = (function() {
     }
 
     // A wrapper for methods in the Math object.
-    function math( fn , symbol ) { 
+    function math( fn , symbol ) {
         var g = symbol.group,
             name = fn.value;
         if( g === N && NUMER ) { 
-            var f = Math[name] ? Math[name] : Math2[name];
+            var f = Math[name] ? Math[name] : Math2[name].fn;
             symbol.multiplier = f( symbol.multiplier );
         }
         else {
-            if( g === CP || g === PL ){
+            if( (  g === CP || g === PL ) && symbol.power === 1 ){
                 symbol.group = FN;
                 symbol.value = fn.value;
             }
@@ -2575,18 +2612,6 @@ var nerdamer = (function() {
         } 
         return symbol;
     }
-    
-    var arrayMax = function( arr ) {
-        return Math.max.apply( undefined, arr );
-    };
-    
-    //provides a temporary block where symbols are processed immediately
-    var numBlock = function( fn ) {
-       NUMER = true;
-       var ans = fn();
-       NUMER = false;
-       return ans;
-    };
     
     //checks if a number of symbol is negative;
     function isNeg( obj ) {
@@ -2606,8 +2631,10 @@ var nerdamer = (function() {
         return false;
     }
     
-    var userFuncs = function( str, subs, location ) {
-        var eq = Parser.parse( str, subs );
+    var userFuncs = function( str, subs, location, opt ) {
+        var eq = opt === 'numer' ? numBlock(function(){
+                return  Parser.parse( str, subs ) ;
+            }) : Parser.parse( str, subs );
         if( location ) {
             EQNS[location-1] = eq;
         }
@@ -2654,17 +2681,30 @@ var nerdamer = (function() {
         return this.getEquation().evaluate( subs );
     };
     
-    userFuncs.clear = function( equationNumber ) {
-        if( !equationNumber ) { equationNumber = EQNS.length; }
+    userFuncs.clear = function( equationNumber, nochange ) { 
+
+        equationNumber = !equationNumber ? EQNS.length : equationNumber - 1; 
 
         if( equationNumber === 'all' ) { EQNS = []; }
-        else { remove( EQNS, equationNumber - 1 ); }   
+        else { 
+            nochange === true ? EQNS[equationNumber] = undefined : remove( EQNS, equationNumber );
+        }   
         return this;
     };
     
-    userFuncs.getEquation = function( equationNumber ) {
+    userFuncs.getEquation = function( equationNumber, opt ) {
         equationNumber = equationNumber || EQNS.length;
-        return EQNS[equationNumber - 1];
+        var eq = EQNS[equationNumber - 1];
+        if( opt === 'latex' ) eq = Formatting.latex( eq );
+        else if( opt === 'text' ) eq = eq.text();
+        return eq;
+    };
+    
+    userFuncs.setEquation = function( equationNumber, eq ) {
+        if( equationNumber === undefined  ||equationNumber < 1 || isNaN( equationNumber ) ) {
+            throw new Error( 'Not a valid equation number!' );
+        }
+        EQNS[ equationNumber - 1 ] = eq;
     };
     
     userFuncs.equations = function( asObject, asLatex ) {
@@ -2688,10 +2728,22 @@ var nerdamer = (function() {
     
     userFuncs.pRoots = function( str ) {
         return Algebra.pRoots( Parser.parse( str ) );
-    }
+    };
+    
+    userFuncs.supported = function() {
+        var funcs = keys(functions),
+            exclude = ['parens'];
+        for( var i=0;i<exclude.length;i++) {
+            remove( funcs, funcs.indexOf( exclude[i]) );
+        }
+        return funcs;
+    };
+    
+    userFuncs.validateName = validateName;
     
     userFuncs.expressions = userFuncs.equations;
     
+    
     return userFuncs;
     
-})();
+})( typeof nerdamerModules !== 'undefined' ? nerdamerModules : {} ); 
