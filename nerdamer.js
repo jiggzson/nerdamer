@@ -78,8 +78,8 @@ var nerdamer = (function( externalMods ) {
 
     // Define any and all constants here. 
     constants = {
-        'pi': Math.PI,
-        'e' : Math.E
+        'PI': Math.PI,
+        'E' : Math.E
     };
 
     
@@ -1119,11 +1119,7 @@ var nerdamer = (function( externalMods ) {
         return v;
     }
     
-    function loadMods(){
-        for( var x in externalMods ) {
-
-        }
-    }
+    function loadMods(){;}
     
     function init(){
         
@@ -1375,12 +1371,31 @@ var nerdamer = (function( externalMods ) {
             if( !d ) throw new Error('No integrand provided!');
             
             if( isSymbol( symbol ) ) {
-                var g = symbol.group, a, roots;
-                symbol = Algebra.transform( symbol );
+                //store the multiplier 
+                var multiplier = symbol.multiplier;
+                symbol.multiplier = 1;
+                
+                //table
+                var txt = text(symbol);
+                var knownIntegral = function(value) {
+                    return Parser.parse( multiplier+'*'+inBrackets( value+inBrackets(d) ) );
+                };
+                switch( txt ) {
+                    //TODO: rethink because this will fail if something changes in text function
+                    case "(1+"+d+"^(2))^(-1)":
+                        return knownIntegral('atan');
+                        break;
+                    case "(-"+d+"^(2)+1)^(-0.5)":
+                        return knownIntegral('asin');
+                        break;
+                    case "cos("+d+')':
+                        return knownIntegral('sin');
+                    case "sin("+d+')':
+                        return knownIntegral('-cos');
+                }
+                var g = symbol.group, a;
                 if( g === N ) {
-                    a = symbol;
-                    symbol = Symbol( d );
-                    symbol.multiplier *= a.multiplier;
+                    symbol = Parser.multiply( Symbol(d), symbol );
                 }
                 else if( g === S ) {
                     if( symbol.value === d ) {
@@ -1398,14 +1413,18 @@ var nerdamer = (function( externalMods ) {
                     }
                         
                 }
-                else if( g === PL || g === CP ) {
-                    symbol = Algebra.expand( symbol );
-                    
+                else if( g === PL && symbol.value === d ) {
                     if( symbol.power === 1 ) {
                         var r = Calculus.integrate( symbol.symbols, d );
                         r.multiplier = symbol.multiplier;
                         symbol = r;
                     }
+                }
+                else if( g === CP ) {
+                    
+                }
+                else if( g === CB ) {
+                    
                 }
             }
             else { 
@@ -1417,6 +1436,7 @@ var nerdamer = (function( externalMods ) {
                 }
                 symbol = Parser.packSymbol( t );
             }
+            symbol.multiplier *= multiplier;
             return symbol;
         };
          
@@ -1538,6 +1558,21 @@ var nerdamer = (function( externalMods ) {
             if( arr[1] === 1 ) return arr[0];
             return '\\frac{'+arr[0]+'}{'+arr[1]+'}';
         };
+        
+//        Algebra.factor = function( symbol ) {
+//            var g = symbol.group;
+//            if( g === N || g === S || g === FN ) { 
+//                //nothing to do so hand it back
+//                return symbol; 
+//            } 
+//            else if( g === PL && symbol.power === 1 ) {
+//                var powers = keys( symbol.symbols ),
+//                    min = arrayMin( powers );
+//                for( var x in symbol.symbols ) {
+//                    symbol.symbols[x].power -= min;
+//                }
+//            }
+//        };
         
         Algebra.polydivide = function( symbol1, symbol2 ) {
             if( !symbol1.isPoly() || !symbol2.isPoly() ) throw new Error('Both symbols must be polynomials!');
@@ -2525,6 +2560,10 @@ var nerdamer = (function( externalMods ) {
         return Math.max.apply( undefined, arr );
     },
     
+    arrayMin = function( arr ) {
+        return Math.min.apply( undefined, arr );
+    },
+    
     //provides a temporary block where symbols are processed immediately
     numBlock = function( fn ) {
        NUMER = true;
@@ -2574,14 +2613,17 @@ var nerdamer = (function( externalMods ) {
     
     function log( symbol ) { 
         var result;
-        if( symbol.value === 'e' && symbol.multiplier === 1 ) {
+        if( ( symbol.value === 'e') && symbol.multiplier === 1 ) {
             result = isSymbol( symbol.power ) ? symbol.power : Symbol( symbol.power );
+        }
+        else if( ( symbol.value === 'exp') && symbol.multiplier === 1 ) {
+            result = Parser.packSymbol( symbol.symbols );
         }
         else {
             var imgPart = '';
             if( symbol.group === N && NUMER && symbol.multiplier < 0 ) {
                 symbol.negate();
-                imgPart = Parser.parse('pi*i');
+                imgPart = Parser.parse('PI*i');
             }
             result = math( Symbol('log'), symbol );
             
@@ -2742,8 +2784,7 @@ var nerdamer = (function( externalMods ) {
     userFuncs.validateName = validateName;
     
     userFuncs.expressions = userFuncs.equations;
-    
-    
+   
     return userFuncs;
     
 })( typeof nerdamerModules !== 'undefined' ? nerdamerModules : {} ); 
