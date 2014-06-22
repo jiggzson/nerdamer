@@ -1782,10 +1782,19 @@ var nerdamer = (function( externalMods ) {
         return false;
     }
     
-    var userFuncs = function( str, subs, location, opt ) {
+    /**
+     * 
+     * @param {String} expression the expression to be evaluated
+     * @param {Object} subs the object containing the variable values
+     * @param {Integer} location a specific location in the equation list to 
+     * insert the evaluated expression
+     * @param {String} opt additional options
+     * @returns {Symbol} 
+     */
+    var userFuncs = function( expression, subs, location, opt ) {
         var eq = opt === 'numer' ? numBlock(function(){
-                return  Parser.parse( str, subs ) ;
-            }) : Parser.parse( str, subs );
+                return  Parser.parse( expression, subs ) ;
+            }) : Parser.parse( expression, subs );
         if( location ) {
             EQNS[location-1] = eq;
         }
@@ -1795,10 +1804,20 @@ var nerdamer = (function( externalMods ) {
         return eq;
     };
     
+    /**
+     * 
+     * @returns {String} returns the version of nerdamer
+     */
     userFuncs.version = function() {
         return version;
     };
 
+    /**
+     * 
+     * @param {String} constant the name of the constant to be set
+     * @param {mixed} value The value of the constant 
+     * @returns {nerdamer object}
+     */
     userFuncs.setConstant = function( constant, value ) {
         validateName( constant[0] ); 
         if( !isReserved( constant ) ) {
@@ -1809,17 +1828,31 @@ var nerdamer = (function( externalMods ) {
                 if( isNaN( value ) ) throw new Error('Constant must be a number!');
                 constants[constant] =  value;
             }
-        }
-            
+        }    
         return this;
     };
     
+    /**
+     * 
+     * @param {Integer} equationNumber the equation number of which to build the function
+     * @param {Array} paramArray used to exclude or add extra parameters to argument list. 
+     * this can also be used to change the order of the parameters as they are in 
+     * alphabetical order by default.
+     * @returns {function} returns a native javascript function
+     */
     userFuncs.buildFunction = Symbol.prototype.buildFunction = function( equationNumber, paramArray ) {
         var eq = EQNS[equationNumber -1] || this;
         return build( eq, paramArray );
     };
 
-    //this does nothing more than create a named equation
+    /**
+     * 
+     * @param {String} name the name of the function
+     * @param {Array} params a list containing the parameter name of the functions
+     * @param {String} fn the body of the function
+     * @returns {Boolean} returns true if succeeded and falls on fail
+     * @example nerdamer.setFunction('f',['x'], 'x^2+2');
+     */
     userFuncs.setFunction = function( name, params, fn ) {
         if( !isReserved( name ) ) {
             functions[name] = [ map, params.length, fn, params ];
@@ -1828,14 +1861,25 @@ var nerdamer = (function( externalMods ) {
         return false;
     };
     
+    /**
+     * 
+     * @param {String} subs an object containing variable: key pairs
+     * @returns {String}
+     */
     userFuncs.evaluate = function( subs ) {
         return this.getEquation().evaluate( subs );
     };
     
+    
+    /**
+     * 
+     * @param {Integer | String} equationNumber the number of the equation to clear. 
+     * If 'all' is supplied then all equations are cleared
+     * @param {Boolean} nochange use true if you don't want the lenght of the array to change
+     * @returns {nerdamer object}
+     */
     userFuncs.clear = function( equationNumber, nochange ) { 
-
         equationNumber = !equationNumber ? EQNS.length : equationNumber - 1; 
-
         if( equationNumber === 'all' ) { EQNS = []; }
         else { 
             nochange === true ? EQNS[equationNumber] = undefined : remove( EQNS, equationNumber );
@@ -1843,6 +1887,13 @@ var nerdamer = (function( externalMods ) {
         return this;
     };
     
+    /**
+     * 
+     * @param {Integer} equationNumber
+     * @param {String} opt 'latex' to have it returned as latex or 'text' for text
+     * @returns {Symbol}
+     * @returns {String} if opt 'latex' or 'text' is used
+     */
     userFuncs.getEquation = function( equationNumber, opt ) {
         equationNumber = equationNumber || EQNS.length;
         var eq = EQNS[equationNumber - 1];
@@ -1851,13 +1902,26 @@ var nerdamer = (function( externalMods ) {
         return eq;
     };
     
+    /**
+     * 
+     * @param {Integer} equationNumber
+     * @param {String | Symbol} eq the equations to be set
+     * @returns {nerdamer object}
+     */
     userFuncs.setEquation = function( equationNumber, eq ) {
         if( equationNumber === undefined  ||equationNumber < 1 || isNaN( equationNumber ) ) {
             throw new Error( 'Not a valid equation number!' );
         }
-        EQNS[ equationNumber - 1 ] = eq;
+        EQNS[ equationNumber - 1 ] = typeof eq === 'string' ? Parser.parse(eq) : eq;
+        return this;
     };
     
+    /**
+     * 
+     * @param {Boolean} asObject
+     * @param {Boolean} asLatex
+     * @returns {Array}
+     */
     userFuncs.equations = function( asObject, asLatex ) {
         var result = asObject ? {} : [];
         for( var i=0; i<EQNS.length; i++ ) {
@@ -1871,12 +1935,21 @@ var nerdamer = (function( externalMods ) {
         }
         return result;
     };
-
+    
+    /**
+     * 
+     * @param {Boolean} asArray have the reserved names returned as an array
+     * @returns {Array | String}
+     */
     userFuncs.reserved = function( asArray ) {
         if( asArray ){ return RESERVED; }
         return RESERVED.join(', ');
     };
     
+    /**
+     * 
+     * @returns {Array} Array of functions currently supported by nerdamer
+     */
     userFuncs.supported = function() {
         var funcs = keys(functions),
             exclude = ['parens'];
@@ -1886,8 +1959,16 @@ var nerdamer = (function( externalMods ) {
         return funcs;
     };
     
+    //backwards compatibility with older versions
+    userFuncs.addEquation = function() {
+        return this.apply(undefined, arguments);
+    };
+    
+    //this function can be used to validate variable names for compatibility 
+    //with the library
     userFuncs.validateName = validateName;
     
+    //backwards compatibility with previous versions
     userFuncs.expressions = userFuncs.equations;
    
     return userFuncs;
