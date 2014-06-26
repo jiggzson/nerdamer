@@ -7,7 +7,7 @@
  */
 
 var nerdamer = (function( externalMods ) {
-
+    
     "use strict";
 
     var G = {},
@@ -807,7 +807,7 @@ var nerdamer = (function( externalMods ) {
                     a = this.convertAndInsert( a, b, CB );
                 }
             } 
-
+            
             return a;
         },
         divide: function( b, a ) {
@@ -1164,7 +1164,11 @@ var nerdamer = (function( externalMods ) {
                     obj = Calculus.derive( obj, d );
                 }
                 else {
+//                    console.log('in');
+//                    console.log(text(obj))
                     obj = Calculus.chainRule( obj, d );
+//                    console.log('out');
+//                    console.log(text(obj))
                 } 
             }
             else {
@@ -1250,7 +1254,13 @@ var nerdamer = (function( externalMods ) {
                             symbol = Parser.parse( '(1+('+text(symbol.symbols)+')^2)^(-1)' );
                             break;
                         case 'abs':
+                            //this pattern keeps repeating itself and needs to be dealt with
+                            //basically store the multiplier, set the multiplier of the symbol to 1, perform
+                            //some action, replace the multiplier
+                            m = symbol.multiplier; 
+                            symbol.multiplier = 1;
                             symbol = Parser.parse(inBrackets(text(symbol.symbols))+'/'+text(symbol));
+                            symbol.multiplier = m;
                             break;
                         case 'parens':
                             symbol = Symbol(1);
