@@ -1252,7 +1252,11 @@ var nerdamer = (function( externalMods ) {
                         case 'abs':
                             m = symbol.multiplier; 
                             symbol.multiplier = 1;
-                            symbol = Parser.parse(inBrackets(text(symbol.symbols))+'/'+text(symbol));
+                            //depending on the complexity of the symbol it's easier to just parse it into a new symbol
+                            //this should really be readdressed soon
+                            b = Parser.parse(text(symbol.symbols));
+                            b.multiplier = 1;
+                            symbol = Parser.parse(inBrackets(text(symbol.symbols))+'/abs'+inBrackets(text(b)));
                             symbol.multiplier = m;
                             break;
                         case 'parens':
