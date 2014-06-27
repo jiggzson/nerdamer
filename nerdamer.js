@@ -1164,11 +1164,7 @@ var nerdamer = (function( externalMods ) {
                     obj = Calculus.derive( obj, d );
                 }
                 else {
-//                    console.log('in');
-//                    console.log(text(obj))
                     obj = Calculus.chainRule( obj, d );
-//                    console.log('out');
-//                    console.log(text(obj))
                 } 
             }
             else {
@@ -1189,7 +1185,7 @@ var nerdamer = (function( externalMods ) {
         };
         Calculus.derive = function( symbol, d) { 
             var g = symbol.group, t, a, b, cp; 
-            if( isSymbol( symbol ) ) {
+            if( isSymbol( symbol ) ) { 
                 if( g === N || g === S && symbol.value !== d ) { 
                     symbol = Symbol( 0 );
                 }
@@ -1254,9 +1250,6 @@ var nerdamer = (function( externalMods ) {
                             symbol = Parser.parse( '(1+('+text(symbol.symbols)+')^2)^(-1)' );
                             break;
                         case 'abs':
-                            //this pattern keeps repeating itself and needs to be dealt with
-                            //basically store the multiplier, set the multiplier of the symbol to 1, perform
-                            //some action, replace the multiplier
                             m = symbol.multiplier; 
                             symbol.multiplier = 1;
                             symbol = Parser.parse(inBrackets(text(symbol.symbols))+'/'+text(symbol));
@@ -1283,10 +1276,14 @@ var nerdamer = (function( externalMods ) {
                         b = Calculus.diff( a, d ); 
                     symbol = Parser.multiply( symbol, b );
                 }
-                else if( g === FN && symbol.power !== 1 ) {
+                else if( g === FN && symbol.power !== 1 ) { 
                     a = Calculus.polydiff( symbol.copy(), d );
                     b = symbol.copy();
+                    
+                    //turn b into a vanilla powerless, multiplier-less symbol
                     b.power = 1; 
+                    b.multiplier = 1;
+                    
                     b = Calculus.derive(b, d);
                     symbol = Parser.multiply( a, b );  
                 }
@@ -1305,7 +1302,6 @@ var nerdamer = (function( externalMods ) {
                 }
                 symbol = Parser.packSymbol( t );
             } 
-
             return symbol;
         };
         
