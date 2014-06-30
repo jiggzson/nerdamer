@@ -6,6 +6,7 @@
  * Source   : https://github.com/jiggzson/nerdamer
  */
 
+
 var nerdamer = (function( externalMods ) {
     
     "use strict";
@@ -1968,6 +1969,14 @@ var nerdamer = (function( externalMods ) {
         }
         return funcs;
     };
+    
+    /*
+     * 
+     * @return {Integer} The number of equations in memory
+     */
+    userFuncs.numEquations = function() {
+        return EQNS.length;
+    }
     
     //backwards compatibility with older versions
     userFuncs.addEquation = function() {
