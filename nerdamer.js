@@ -7,6 +7,7 @@
  */
 
 
+
 var nerdamer = (function( externalMods ) {
     
     "use strict";
@@ -1044,6 +1045,8 @@ var nerdamer = (function( externalMods ) {
     // This recursive method attempts to return a parsed object or symbol back in text form.
     // When asFunction is set to true it will make sure to write in JS function form.
     function text( obj, delimiter, option, forceBracket ) { 
+        if(!obj) return '';
+        
         var asFunction = option === 'function',
             g = obj.group, v; 
         delimiter = delimiter || '+';
@@ -1890,9 +1893,9 @@ var nerdamer = (function( externalMods ) {
      * @returns {nerdamer object}
      */
     userFuncs.clear = function( equationNumber, nochange ) { 
-        equationNumber = !equationNumber ? EQNS.length : equationNumber - 1; 
         if( equationNumber === 'all' ) { EQNS = []; }
         else { 
+            equationNumber = !equationNumber ? EQNS.length : equationNumber - 1; 
             nochange === true ? EQNS[equationNumber] = undefined : remove( EQNS, equationNumber );
         }   
         return this;
