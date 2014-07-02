@@ -32,5 +32,5 @@ An array of functions can be supplied.
 ```javascript
 nerdamer.register([
 {/*first declaration*/}, {/*second declaration*/} // ... etc
-
+]);
 ```
