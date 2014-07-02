@@ -7,17 +7,30 @@ for adding a funciton
 ```javascript
 
 nerdamer.register ({
+  //Algebra for example
   parent: 'Algebra',
   name: 'some_function',
-  visibility: true, //this determines if the functions can be used by the user when passing a string. 
-  numargs: some_integer, //the minimum number of arguments your function requires. Defaults to 1 but is currently not used
+  //this determines if the functions can be used by the user when passing a string. 
+  visibility: true, 
+  //the minimum number of arguments your function requires. 
+  //Defaults to 1 but is currently not used
+  numargs: some_integer, 
   //the constructor. This is the environent under which your function is built. 
   init: {
     //this refers to the Parser
     //return the function which need to be set
-    return function(args) {
+    return function(/*args*/) {
       //body
     }
   }
 });
+```
+this in the constructor's scope refers to the Parser (the core).
+The classes are accessed through the Parser.classes and the Parser functions are accessed through Parser.utils
+An array of functions can be supplied.
+
+```javascript
+nerdamer.register([
+{/*first declaration*/}, {/*second declaration*/} // ... etc
+
 ```
