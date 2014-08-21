@@ -1,16 +1,8 @@
 Getting started with Nerdamer
 
-Please read the documentation as nerdamer has changed.
-
 You can see nerdamer in action at http://www.nerdamer.com/demo
 
-All operations are done on the
-
-nerdamer
-
-object. You can choose something else for your convenience e.g.
-
-$N = nerdamer
+All operations are done using the 'nerdamer' object. 
 
 To add an expression just add it to the nerdamer object which will return a expression object which 
 isn't particularly usefull at the moment other than getting its text representation.
@@ -207,8 +199,8 @@ To delete just set it to delete
         
 
 You also have the option of exporting your function to a javascript function which can be useful if you need some 
-filtering from user input. Do keep in mind that the argument names are sorted alphabetically for more than one 
-argument. To used it add the expression to nerdamer and use the buildFunction method.
+filtering from user input. Do keep in mind that the parameters are sorted alphabetically for more than one 
+parameter. To use it add the expression to nerdamer and use the buildFunction method.
 
             
                 var f = nerdamer('x^2+5').buildFunction();
@@ -220,7 +212,7 @@ argument. To used it add the expression to nerdamer and use the buildFunction me
         
 
 Every time you add an expression to nerdamer it's stored. To list the expressions currently in nerdamer call 
-the expressions method and delete one use the clear method and pass in the expression you want to delete. 
+the 'expressions' method. To delete an expression use the 'clear' method and pass in the expression you want to delete. 
 To clear everything pass in the string 'all'.
 
             
