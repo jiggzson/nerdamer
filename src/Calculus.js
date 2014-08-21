@@ -1,335 +1,230 @@
-nerdamer.register([
+module.exports = [
     {
-    parent: 'Calculus',
-    name: 'sum',
-    visible: true,
-    numargs: 2,
-    init: function() {
-        var Parser = this,
-        FN = Parser.groups.FN;
-        //note that only the first argument is a symbol
-        return function( fn, variable, index, end ) {
-            if( !isNaN( variable )) throw new Error('Incorrect parameter!');
-            
-            if( !isNaN( index ) && !isNaN( end ) ) { 
-                // Backup the current value for the variable.
-                var lastc = '0', //last computation.
-                    eq = Parser.utils.text( fn ),
-                    vars = Parser.utils.variables( fn ),
-                    k = {},
-                    result, i;
+        parent: 'Calculus',
+        name: 'diff',
+        visible: true,
+        numargs: 2,
+        build: function(){
+            var core = this;
+            return function(symbol, d) { 
+                d = core.Utils.text(d);//we need only the text representation of the 
+                var isSymbol = core.Utils.isSymbol,
+                    _ = core.PARSER,
+                    FN = core.groups.FN,
+                    format = core.Utils.format,
+                    keys = core.Utils.keys,
+                    Symbol = core.Symbol,
+                    symbol_is_FN = symbol.group === FN,
+                    symbol_was_FN = symbol.previousGroup === FN,
+                    self = core.Calculus.diff;
 
-                if( vars.length > 1 ) {
-                    var t = {};
-                    for( i=index; i<=end; i++ ) {
-                        k[variable] = i;
-                        Parser.addSymbol( Parser.parse( eq, k ), t );
-                    }
-                    result = Parser.packSymbol( t );
-                }
-                else {
-                    Parser.numBlock( function() {
-                        for( i=index; i<=end; i++) {
-                            k[variable] = i;
-                            
-                            //Append the last equation and then just reparse the whole thing
-                            lastc = Parser.utils.text(Parser.parse( (lastc+'+'+eq).replace(/\+\-/g,'-'), k ) ); 
+                //format [multiplier multiplier, substition function, power multiplier]
+                var table = {
+                    'sin': 'cos({0})',
+                    'cos': '-sin({0})',
+                    'tan': 'sec({0})^2',
+                    'csc': '-cot({0})*csc({0})',
+                    'sec': 'sec({0})*tan({0})',
+                    'cot': '-csc({0})^2',
+                    'asin': '1/(sqrt(1-({0})^2))',
+                    'acos': '-1/(sqrt(1-({0})^2))',
+                    'atan': '1/(1+({0})^2)',
+                    'log': '1/{0}',
+                    'abs': '{1}/abs({1})'
+                };
+
+                function polydiff(symbol) {
+                    if(!(symbol.value === d || symbol.contains(d))) return new Symbol(0);
+                    if(symbol.value === d || symbol.contains(d)) {
+                        if(isSymbol(symbol.power)) {
+                            symbol = _.multiply(symbol, symbol.power.copy());
+                            symbol.power = _.add(symbol.power, new Symbol(-1));
                         }
+                        else {
+                            symbol.multiplier *= symbol.power;
+                            symbol.power -=1;
+                            //has to symbol become a number
+                            if(symbol.power === 0) symbol = new Symbol(symbol.multiplier);
+                        }
+                    }
+                    return symbol;
+                }
+
+                function productdiff(symbol) {
+                    var k = keys( symbol.symbols ),
+                        l = k.length,
+                        retval = new core.Symbol(0);// the default return
+
+                    // A regular for loop is chosen to reduce the number of loops by pulling the keys and working with that;
+                    for( var i=0; i<l; i++ ) {
+                        var key = k[i],
+                            df = derive(symbol.symbols[key].copy()); 
+                        if(df.valueOf() !== 0) {
+                            var ll = k.length;
+                            for( var j=0; j<ll; j++ ) {
+                                //we need to skip the current symbol
+                                if(j !== i) {
+                                    var s = symbol.symbols[k[j]];
+                                    df = _.multiply(df, s);
+                                }
+                            }
+                            retval = _.add(retval, df);
+                        }
+                    }
+
+                    return retval;
+                }
+
+                function multidiff(symbol) {
+                    var retval = new Symbol(0);
+                    symbol.forEachWithin(function(sub_symbol) {
+                        retval = _.add(retval, derive(sub_symbol));
                     });
-                    result = Parser.parse( ''+lastc );
+                    return retval;
                 }
-                    
-                return result;
-            }
-            else {
-                //make it a symbol
-                var s = Parser.parse('sum');
-                    s.symbols = Parser.addSymbol( fn, {} ); 
-                    s.group = FN;
-                    s.params = [ variable, index, end ];
-                return s;
-            }   
-        }
-    }
-},
-{
-    parent: 'Calculus',
-    name: 'diff',
-    visible: true,
-    numargs: 2,
-    init: function() {
-        var Parser = this,
-        FN = this.groups.FN,
-        self = this.classes.calculus;
-        //note that only the first argument is a symbol
-        return function( obj, d ) { 
-            if( Parser.utils.isSymbol( d )) d = d.value;
 
-            if( obj.group === FN ) {
-                if( Parser.utils.isSymbol( obj.power ) ) {
-                    obj = self.derive( obj, d );
-                }
-                else {
-                    obj = self.chainRule( obj, d );
-                } 
-            }
-            else {
-                obj = self.derive( obj, d );
-            }
-
-            return obj;
-        }
-    }
-},
-{
-    parent: 'Calculus',
-    name: 'polydiff',
-    visible: false,
-    numargs: 1,
-    init: function(Parser) {
-        var Parser = this;
-        //note that only the first argument is a symbol
-        return function( symbol, d ) { 
-            if( symbol.value === d || symbol.hasVariable( d, true )) { 
-                symbol.multiplier *= symbol.power;
-                symbol.power -= 1; 
-                if( symbol.power === 0 ) {
-                    symbol = Parser.convertSymbol( symbol.multiplier );
-                }
-            } 
-            return symbol;
-        }
-    }
-},
-{
-    parent: 'Calculus',
-    name: 'derive',
-    visible: false,
-    numargs: 2,
-    init: function() {
-        var Parser = this,
-        self = this.classes.calculus,
-        N   = this.groups.N,
-        S   = this.groups.S,
-        CB  = this.groups.CB,
-        EX  = this.groups.EX,
-        FN  = this.groups.FN,
-        PL  = this.groups.PL,
-        inBrackets = this.utils.inBrackets,
-        isSymbol = this.utils.isSymbol,
-        text = this.utils.text;
-        //note that only the first argument is a symbol
-        return function( symbol, d) { 
-            var g = symbol.group, t, a, b, cp; 
-            if( isSymbol( symbol ) ) { 
-                if( g === N || g === S && symbol.value !== d ) { 
-                    symbol = Parser.convertSymbol( 0 );
-                }
-                else if( g === S ) {  
-                    symbol = self.polydiff( symbol, d );
-                }
-                else if( g === CB ) { 
-                    var m = symbol.multiplier;
-                    symbol.multiplier = 1;
-                    cp = symbol.copy();
-                    a = self.productRule( symbol, d ); 
-                    b = self.polydiff( cp, d ); 
-                    var ans =  Parser.multiply( a, b );
-                    ans.multiplier *= m;
-                    return ans;
-                }
-                else if( g === FN && symbol.power === 1 ) {
-                    // Table of known derivatives
-                    switch( symbol.value ) {
-                        case 'log':
-                            cp = symbol.copy();
-                            symbol = Parser.packSymbol( cp.symbols );
-
-                            if( isSymbol( symbol.power ) ) {
-                                symbol.power = Parser.multiply( symbol.power, Parser.convertSymbol(-1));
-                            }
-                            else {
-                                symbol.power *= -1;
-                            }
-                            symbol.multiplier = cp.multiplier/symbol.multiplier; 
+                //define how the different symbols are derived
+                function derive(symbol) {
+                    switch(symbol.group) {
+                        case FN:
+                            //we assume that all functions only have 1 argument
+                            symbol = _.parse(format(table[symbol.baseName], symbol.args[0].text(), d));
                             break;
-                        case 'cos':
-                            symbol.value = 'sin';
-                            symbol.multiplier *= -1;
+                        case core.groups.PL:
+                            symbol = multidiff(symbol);
                             break;
-                        case 'sin': 
-                            symbol.value = 'cos';
+                        case core.groups.CP:
+                            symbol = multidiff(symbol);
                             break;
-                        case 'tan':
-                            symbol.value = 'sec';
-                            symbol.power = 2;
+                        case core.groups.CB:
+                            symbol = productdiff(symbol);
                             break;
-                        case 'sec': 
-                            // Use a copy if this gives errors
-                            symbol = self.quickdiff( symbol, 'tan');
-                            break;
-                        case 'csc':
-                            symbol = self.quickdiff( symbol, '-cot');
-                            break;
-                        case 'cot':
-                            symbol.value = 'csc';
-                            symbol.multiplier *= -1;
-                            symbol.power = 2;
-                            break;
-                        case 'asin':
-                            symbol = Parser.parse( '(sqrt(1-('+text(symbol.symbols)+')^2))^(-1)' );
-                            break;
-                        case 'acos':
-                            symbol = Parser.parse( '-(sqrt(1-('+text(symbol.symbols)+')^2))^(-1)' );
-                            break;
-                        case 'atan':
-                            symbol = Parser.parse( '(1+('+text(symbol.symbols)+')^2)^(-1)' );
-                            break;
-                        case 'abs':
-                            m = symbol.multiplier; 
-                            symbol.multiplier = 1;
-                            //depending on the complexity of the symbol it's easier to just parse it into a new symbol
-                            //this should really be readdressed soon
-                            b = Parser.parse(text(symbol.symbols));
-                            b.multiplier = 1;
-                            symbol = Parser.parse(inBrackets(text(symbol.symbols))+'/abs'+inBrackets(text(b)));
-                            symbol.multiplier = m;
-                            break;
-                        case 'parens':
-                            symbol = Parser.convertSymbol(1);
-                            break;
+                        default:
+                            symbol = new Symbol(1);
                     }
+                    return symbol;
                 }
-                else if( g === EX || g === FN && Parser.utils.isSymbol( symbol.power ) ) { 
-                    var value;
-                    if( g === EX ) {
-                        value = symbol.value;
-                    }
-                    else if( g === FN && symbol.hasVariable( d )) {
-                        value = symbol.value + inBrackets( text( symbol.symbols ) );
+
+                var derived = _.multiply(polydiff(symbol.copy()), derive(symbol.copy()));
+                if(isSymbol(symbol.power) && symbol.power.contains(d)) {
+                    derived = _.multiply(derived, self.call(this, symbol.power.copy(), d));
+                }
+
+                if(symbol.args) {
+                    derived = _.multiply(derived, self.call(this, symbol.args[0].copy(), d));
+                }
+
+                return derived;
+             };
+        }
+    },
+    {
+        parent: 'Calculus',
+        name: 'sum',
+        visible: true,
+        numargs: 4,
+        build: function(){
+            var core = this,
+                text = core.Utils.text,
+                _ = core.PARSER;
+
+            return function(fn, index, start, end) {
+                if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
+                index = index.value;
+                var retval;
+                if(core.Utils.isNumericSymbol(start) && core.Utils.isNumericSymbol(end)) {
+                    start = start.multiplier;
+                    end = end.multiplier;
+
+                    var variables = core.Utils.variables(fn);
+                    if(variables.length === 1 && index === variables[0]) {
+                        var f = core.Utils.build(fn);
+                        retval = 0;
+                        for(var i=start; i<=end; i++) {
+                            retval += f.call(undefined, i);
+                        }
                     }
                     else {
-                        //TODO: eliminate dependence on text.
-                        value = symbol.value + inBrackets( text( symbol.symbols ) );
-                    }
-                        a = Parser.multiply( Parser.parse( 'log'+inBrackets( value ) ), symbol.power.copy() ); 
-                        b = self.diff( a, d ); 
-                    symbol = Parser.multiply( symbol, b );
-                }
-                else if( g === FN && symbol.power !== 1 ) { 
-                    a = self.polydiff( symbol.copy(), d );
-                    b = symbol.copy();
-                    
-                    //turn b into a vanilla powerless, multiplier-less symbol
-                    b.power = 1; 
-                    b.multiplier = 1;
-                    
-                    b = self.derive(b, d);
-                    symbol = Parser.multiply( a, b );  
-                }
-                else if( g === CP || g === PL ) {
-                    a = self.polydiff( symbol.copy(), d );
-                    b = self.diff( symbol.symbols, d );
-                    symbol = Parser.multiply( a, b );
-                }
-            }
-            else { 
-                t = {};
-                var obj = symbol;
-                for( var x in obj ) { 
-                    var u = self.diff( obj[x].copy(), d );
-                    Parser.addSymbol( u, t );
-                }
-                symbol = Parser.packSymbol( t );
-            } 
-            return symbol;
-        }
-    }
-},
-{
-    parent: 'Calculus',
-    name: 'quickdiff',
-    visible: false,
-    numargs: 3,
-    init: function() {
-        var Parser = this,
-        text = this.utils.text,
-        inBrackets = this.utils.inBrackets;
-        //note that only the first argument is a symbol
-        return function( symbol, val, altVal ) {
-            return Parser.multiply( symbol, Parser.parse( val+inBrackets( altVal || text( symbol.symbols ) ) ));
-        }
-    }
-},
-{
-    parent: 'Calculus',
-    name: 'chainRule',
-    visible: false,
-    numargs: 2,
-    init: function() {
-        var Parser = this,
-        self = this.classes.calculus;
-        //note that only the first argument is a symbol
-        return function( symbol, d ) {
-            var a = self.derive( symbol, d ),
-                b = self.derive( symbol.symbols, d );
-            return Parser.multiply( a , b );
-        }
-    }
-},
-{
-    parent: 'Calculus',
-    name: 'productRule',
-    visible: false,
-    numargs: 2,
-    init: function(Parser) {
-        var Parser = this,
-        keys = Parser.utils.keys,
-        self = this.classes.calculus;
-        //note that only the first argument is a symbol
-        return function( symbol, d ) { 
-            var n = 0,//use this to keep track of how many derivatives you actually pulled
-                stack = [],
-                k = keys( symbol.symbols ),
-                l = k.length,
-                result = symbol;// the default return
-        
-            // A regular for loop is chosen to reduce the number of loops by pulling the keys and working with that;
-            for( var i=0; i<l; i++ ) {
-                var key = k[i],
-                    df = self.diff( symbol.symbols[key].copy(), d ); 
-                if( +df !== 0 ) {
-                    n++;
-                    var ll = k.length;
-                    for( var j=0; j<ll; j++ ) {
-                        //we need to skip the current symbol
-                        if( j !== i ) {
-                            var s = symbol.symbols[k[j]];
-                            df = Parser.multiply( df, s );
+                        var f = fn.text(),
+                            subs = {'~': true}, //lock subs
+                            Symbol = core.Symbol;
+                        retval = new core.Symbol(0);
+
+                        for(var i=start; i<=end; i++) {
+                            subs[index] = new Symbol(i); 
+                            retval = _.add(retval, _.parse(f, subs)); //verrrrryyy sllloooowww
                         }
                     }
+                }
+                else {
+                    retval = core.PARSER.symfunction('sum',arguments);
+                }
 
-                    stack.push( df );
-                }
-            }
-            // We have all the derivatives but let's return a symbol
-            if( stack.length === 1 ) { 
-                result = stack[0]; 
-                result.multiplier *= symbol.multiplier;
-            }
-            else {
-                var r = {};
-                l = stack.length;
-                for( i=0; i<l; i++ ) {
-                    var c = stack[i];
-                    Parser.addSymbol( c, r );
-                }
-                result = Parser.packSymbol( r ); 
-            }
-            return result;
+                return retval;
+            };
+        }
+    },
+    {
+        parent: 'Calculus',
+        name: 'integrate',
+        visible: true,
+        numargs: 2,
+        warning: 'non-functional',
+        build: function() {
+            var core = this,
+                _ = core.PARSER,
+                Symbol = core.Symbol,
+                S = core.groups.S;
+            return function(symbol, ig) {
+                var ig_val = ig.text();
+            
+                var p_int = function(symbol) {
+                        symbol.power += 1; 
+                        symbol.multiplier /= symbol.power;
+                        return symbol;
+                    },
+                    integrate_symbols = function(symbol) {
+                        var result = new Symbol(0);
+                        symbol.forEachWithin(function(s) {
+                            result = _.add(result, integrate(s));
+                        });
+                        return result;
+                    },
+                    integrate = function(symbol) {
+                        var retval;
+                        switch(symbol.group) {
+                            case core.groups.N:
+                                retval = _.multiply(symbol.copy(), ig.copy());
+                                break;
+                            case core.groups.S:
+                                if(symbol.group === S && symbol.value === ig_val) {
+                                    retval = p_int(symbol);
+                                }
+                                else {
+                                    retval = _.multiply(symbol.copy(), ig.copy());
+                                }
+                                break;
+                            case core.groups.PL:
+                                retval = integrate_symbols(symbol);
+                                break;
+                            case core.groups. CP:
+                                retval = integrate_symbols(symbol);
+                                break;
+                            case core.groups.CB:
+                                symbol.forEachWithin(function(s,x){
+                                    if(s.contains(ig_val)) this.symbols[x] = integrate(s);
+                                });
+                                symbol.updateHash();
+                                retval = symbol;
+                                break;
+                        }
+                        return retval;
+                    };
+                    
+                    return integrate(symbol);    
+            };
         }
     }
-}
-]);
+];
 
 
