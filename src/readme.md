@@ -6,7 +6,7 @@ for adding a funciton
 
 ```javascript
 
-nerdamer.register ({
+var some_function = {
   //Algebra for example
   parent: 'Algebra',
   name: 'some_function',
@@ -16,14 +16,16 @@ nerdamer.register ({
   //Defaults to 1 but is currently not used
   numargs: some_integer, 
   //the constructor. This is the environent under which your function is built. 
-  init: {
+  build: {
     //this refers to the Parser
     //return the function which need to be set
     return function(/*args*/) {
       //body
     }
   }
-});
+};
+
+nerdamer.register(some_function);
 ```
 this in the constructor's scope refers to the Parser (the core).
 The classes are accessed through the Parser.classes and the Parser functions are accessed through Parser.utils
