@@ -1,3 +1,11 @@
+/*
+ * Author   : Martin Donk
+ * Website  : http://www.nerdamer.com
+ * Email    : martin.r.donk@gmail.com
+ * License  : http://opensource.org/licenses/LGPL-3.0
+ * Source   : https://github.com/jiggzson/nerdamer
+ * Status   : development
+ */
 
 var nerdamer = (function() {
     
