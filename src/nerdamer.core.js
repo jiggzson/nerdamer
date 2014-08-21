@@ -1,148 +1,472 @@
-/*
- * Author   : Martin Donk
- * Website  : http://www.nerdamer.com
- * Email    : martin.r.donk@gmail.com
- * License  : http://opensource.org/licenses/LGPL-3.0
- * Source   : https://github.com/jiggzson/nerdamer
- */
 
 var nerdamer = (function() {
     
-    "use strict";
+    var version = '0.5.0',
+        _ = new Parser(), //nerdamer's parser
     
-    //store the different modules in the M object for easy access later
-    var M = {},
-        Calculus    = M.Calculus   = {},
-        Algebra     = M.Algebra    = {},
-        Formatting  = M.Formatting = {},
-
-        EQNS        = [],
-        NUMER       = false,
-        RESERVED    = [],
-        Groups      = {},
-        Utils       = {},
-        version     = '0.4.9',
-
-    /*
-     * The groups that help with organizing during parsing. Note that for FN is still a function even 
-     * if raised to a symbol of group S.
-     * It should be noted that for the sake of simplicity both expression and symbol use the same class.
-     * The expressions are basically any other group which is not of group N or group S
-     */  
+        Groups = {},
+        
+        //this is the class which holds the utilities which are exported to the core
+        //All utility functions which will be available to the core should be added to this object
+        Utils = {},
+        
+        //Support functions
+        Support = {},
+        //Add the groups
+        /*
+         * The groups that help with organizing during parsing. Note that for FN is still a function even 
+         * if raised to a symbol of group S.
+         * It should be noted that for the sake of simplicity both expression and symbol use the same class.
+         * The expressions are basically any other group which is not of group N or group S
+         */  
         N   = Groups.N  = 1, // A number
         S   = Groups.S  = 2, // A single variable e.g. x
         FN  = Groups.FN = 3, // A function
         PL  = Groups.PL = 4, // A symbol/expression having same name with different powers e.g. 1/x + x^2
         CB  = Groups.CB = 5, // A symbol/expression composed of one or more variables through multiplication e.g. x*y
         CP  = Groups.CP = 6, // A symbol/expression composed of one variable and any other symbol or number x+1 or x+y
-        EX  = Groups.EX = 7; // A symbol/expression with an exponent that is not a number e.g. x^y
+        EX  = Groups.EX = 7, // A symbol/expression with an exponent that is not a number e.g. x^y
+        
+        //GLOBALS
+        PARENTHESIS = 'parens',
 
-    init();
-    
-    var operators = {
-        ',': {order: 0, fn: null},
-        '+': {order: 1, fn: 'add'},
-        '-': {order: 2, fn: 'subtract'},
-        '*': {order: 3, fn: 'multiply'},
-        '/': {order: 4, fn: 'divide'},
-        '^': {order: 5, fn: 'pow'}
-    },
+        //the function which represent vector
+        VECTOR = 'vector',
 
-    // Supported functions.
-    // Format: function_name: [mapped_function, number_of_parameters]
-    functions = {
-        'parens'    : [ , 1],
-        'cos'       : [ , 1],
-        'sin'       : [ , 1],
-        'tan'       : [ , 1],
-        'sec'       : [ , 1],
-        'csc'       : [ , 1],
-        'cot'       : [ , 1],
-        'acos'      : [ , 1],
-        'asin'      : [ , 1],
-        'atan'      : [ , 1],
-        'exp'       : [ , 1],
-        'log'       : [log , 1],
-        'abs'       : [abs , 1],
-        'sqrt'      : [sqrt, 1]
-    },
-    
-    Math2 = {
-        'sec': { fn: function( x ) { return 1/Math.cos( x );}, inv: 'cos' },
-        'cot': { fn: function( x ) { return 1/Math.tan( x );}, inv: 'tan' },
-        'csc': { fn: function( x ) { return 1/Math.sin( x );}, inv: 'sin' }
-    },
+        SQRT = 'sqrt',
 
-    // Define any and all constants here. 
-    constants = {
-        'PI': Math.PI,
-        'E' : Math.E
-    };
+        //the storage container "memory" for parsed expressions
+        EQNS = [],
 
-    
-    // Load reserved names into RESERVED
-    loadReserved();
-    
-    // An attempt to get objects to behave somewhat as symbols.
-    // Previously an attempt was made to try and separate Symbols from Expressions. For the sake of simplicity, 
-    // let's just assume that they're interchangeable and all symbols of a group higher than S are "Expressions".
-    function Symbol( value ) {
-        if( !( this instanceof Symbol ) ) {
-            return new Symbol( value );
+        //the global used to invoke the libary to parse to a number
+        PARSE2NUMBER = false,
+
+        //the container used to store all the reserved functions
+        RESERVED = [],
+        
+        isReserved = Utils.isReserved = function(value) { 
+            return RESERVED.indexOf(value) !== -1;
+        },
+
+        // Enforces rule: must start with a letter and can have any number of underscores or numbers after.
+        validateName = Utils.validateName = function(name, type) { 
+            type = type || 'variable';
+            var regex = /^[a-z_][a-z\d\_]*$/gi;
+            if(!(regex.test( name)) ) {
+                throw new Error(name+' is not a valid '+type+' name');
+            }
+        },
+        
+        isFraction = Utils.isFraction = function(num) {
+            if(isSymbol(num)) return isFraction(num.multiplier);
+            return (num % 1 !== 0);
+        },
+
+        isSymbol = Utils.isSymbol = function(obj) {
+            return (obj instanceof Symbol);
+        },
+        
+        isVector = Utils.isVector = function(obj) {
+            return (obj instanceof Vector);
+        },
+        
+        isNumericSymbol = Utils.isNumericSymbol = function(symbol) {
+            return symbol.group === N;
+        },
+
+        isArray = Utils.isArray = function(arr) {
+            return arr instanceof Array;
+        },
+
+        isInt = Utils.isInt = function(num) {
+            return num % 1 === 0;
+        },
+
+        isNegative = Utils.isNegative = function(obj) {
+            if( isSymbol(obj) ) {
+                obj = obj.multiplier;
+            }
+            return obj < 0;
+        },
+        
+        isComposite = Utils.isComposite = function(symbol) {
+            return (symbol.group === PL || symbol.group === CP);
+        },
+        
+        inBrackets = Utils.inBrackets = function(str) {
+            return '('+str+')';
+        },
+        
+        format = Utils.format = function() {
+            var args = [].slice.call(arguments),
+                str = args.shift();
+                return str.replace(/{(\d+)}/g, function(match, index) {
+                    return args[index];
+                });
+        },
+        
+        keys = Utils.keys = function( obj ) {
+            var k = [];
+            for( var key in obj ) { k.push( key ); }
+            return k;
+        },
+        
+        // Items are do not have a fixed order in objects so only use if you need any first random item in the object
+        firstObject = Utils.firstObject = function(obj) {
+            for( var x in obj ) break;
+            return obj[x];
+        },
+        
+        arrayMax = Utils.arrayMax = function(arr) {
+        return Math.max.apply(undefined, arr);
+        },
+
+        arrayMin = Utils.arrayMin = function(arr) {
+            return Math.min.apply(undefined, arr);
+        },
+        
+        round = Utils.round = function( x, s ) { 
+            s = s || 14;
+            return Math.round( x*Math.pow( 10,s ) )/Math.pow( 10,s );
+        },
+        
+        // Inserts an object into an array or recursively adds items if an array is given
+        insertArray = Utils.insertArray = function( arr, item, index, unpackArray ) {
+            unpackArray = unpackArray === false ? unpackArray : true;
+
+            if( isArray( item ) && unpackArray ) {
+                for( var i=0; i<=item.length+1; i++ ){
+                    insertArray( arr, item.pop(), index );
+                }
+            }
+            else if( typeof index === 'undefined ') {
+                arr.push( item );
+            }
+            else{
+                arr.splice( index, 0, item );
+            }
+        },
+        
+        variables = Utils.variables = function( obj, vars ) { 
+            vars = vars || {
+                c: [],
+                add: function(value) {
+                    if(this.c.indexOf(value) === -1 && isNaN(value)) this.c.push(value);
+                }
+            };
+
+            if(isSymbol(obj)) { 
+                var group = obj.group,
+                    prevgroup = obj.previousGroup;
+                if(group === CP || group === CB || prevgroup === CP || prevgroup === CB) {
+                    for(var x in obj.symbols) variables(obj.symbols[x], vars);
+                }
+                else if(group === S || group === PL) {
+                    vars.add(obj.value);
+                }
+                else if(group === EX) { 
+                    if(!isNaN(obj.value)) vars.add(obj.value);
+                    variables(obj.power, vars);
+                }
+                else if(group === FN) {
+                    for(var i=0; i<obj.args.length; i++) {
+                        variables(obj.args[i], vars);
+                    }
+                }
+            }
+            return vars.c.sort();
+        },
+        
+        each = Utils.each = function(obj, fn) {
+            if(isArray(obj)) {
+                var l = obj.length;
+                for(var i=0; i<l; i++) fn.call(obj, i);
+            }
+            else {
+                for(var x in obj) if(obj.hasOwnProperty(x)) fn.call(obj, x);
+            }
+        },
+        
+        even = Utils.even = function(num) {
+            return num % 2 === 0;
+        },
+        
+        uval = Utils.uval = function(num) {
+            return num/Math.abs(num);
+        },
+        
+        reserveNames = Utils.reserveNames = function(obj) {
+            var add = function(item) {
+                if(RESERVED.indexOf(item) === -1) RESERVED.push(item);
+            };
+            
+            if(typeof obj === 'string') add(obj);
+            else {
+                each(obj, function(x) {
+                    add(x);
+                });
+            }  
+        },
+        
+        // Removes an item from either an array or an object.
+        // If an array the index must be specified after the array.
+        // If an object the key must be specified
+        remove = Utils.remove = function( obj, indexOrKey ) {
+            var result;
+            if( isArray(obj) ) {
+                result =  obj.splice(indexOrKey, 1)[0];
+            }
+            else {
+                result = obj[indexOrKey];
+                delete obj[indexOrKey];
+            }
+            return result;
+        },
+        
+        numblock = Utils.numblock = function(f, parse2Number) { 
+            PARSE2NUMBER = parse2Number === undefined ? true : !!parse2Number;
+            var retval = f.call();
+            PARSE2NUMBER = false;
+            return retval;
+        },
+        
+        arguments2Array = Utils.arguments2Array = function(obj) {
+            return [].slice.call(obj);
+        },
+        
+        format_subs = function(subs) {
+            for(var x in subs) subs[x] = _.parse(subs[x].toString());
+            return subs;
+        },
+        
+        //Inverse trig functions
+        Math2 = {
+            csc: function( x ) { return 1/Math.sin( x ); },
+            sec: function( x ) { return 1/Math.cos( x ); },
+            cot: function( x ) { return 1/Math.tan( x ); },
+            //https://gist.github.com/kcrt/6210661
+            erf: function(x){
+                // erf(x) = 2/sqrt(pi) * integrate(from=0, to=x, e^-(t^2) ) dt
+                // with using Taylor expansion,
+                // = 2/sqrt(pi) * sigma(n=0 to +inf, ((-1)^n * x^(2n+1))/(n! * (2n+1)))
+                // calculationg n=0 to 50 bellow (note that inside sigma equals x when n = 0, and 50 may be enough)
+                var m = 1.00,
+                    s = 1.00,
+                    sum = x * 1.0;
+                for(var i = 1; i < 50; i++){
+                m *= i;
+                s *= -1;
+                sum += (s * Math.pow(x, 2.0 * i + 1.0)) / (m * (2.0 * i + 1.0));
+                }
+                return 2 * sum / Math.sqrt(3.14159265358979);
+            },
+            fact: function(x) {
+                var retval=1;
+                for (var i = 2; i <= x; i++) retval = retval * i;
+                return retval;
+            },
+            mod: function(x, y) {
+                return x % y;
+            },
+            GCD: function() {
+                var args = [].slice.call(arguments)
+                        .map(function(x){ return Math.abs(x); }).sort(),
+                    a = Math.abs(args.shift()),
+                    n = args.length;
+
+                while(n-- > 0) {
+                    var b = Math.abs(args.shift());
+                    while(true) {
+                        a %= b;
+                        if (a === 0) {
+                            a = b;
+                            break;
+                        }
+                        b %= a;
+                        if (b === 0) break;;
+                    }
+                }
+                return a;
+            }
+        };
+        reserveNames(Math2); //reserve the names in Math2
+        
+    /* GLOBAL FUNCTIONS */
+    function text(obj, option) { 
+        //if the object is a symbol
+        if(isSymbol(obj)) { 
+            var multiplier = '', 
+            power = '',
+            sign = '',
+            group = obj.group,
+            value = obj.value;
+            //if the value is to be used as a hash then the power and multiplier need to be suppressed
+            if(!(option === 'hash')) { 
+                var om = obj.multiplier;
+                if(om === -1) {
+                    sign = '-';
+                    om = 1;
+                }
+                //only add the multiplier if it's not 1
+                if(om !== 1) multiplier = om;
+
+                var p = obj.power;
+                //only add the multiplier 
+                if(p !== 1) {
+                    //is it a symbol
+                    if(isSymbol(p)) {
+                        power = text(p);
+                    }
+                    else {
+                        power = p;
+                    }
+                }
+            }
+
+            switch(group) {
+                case N:
+                    multiplier = '';
+                    //if it's numerical then all we need is the multiplier
+                    value = obj.multiplier === -1 ? 1 : obj.multiplier;
+                    power = '';
+                    break;
+                case PL:
+                    value = obj.collectSymbols(text).join('+').replace('+-', '-');
+                    break;
+                case CP:
+                    value = obj.collectSymbols(text).join('+').replace('+-', '-');
+                    break;
+                case CB: 
+                    value = obj.collectSymbols(function(symbol){
+                        var g = symbol.group;
+                        //both groups will already be in brackets if their power is greater than 1
+                        //so skip it.
+                        if((g === PL || g === CP) && (symbol.power === 1 && symbol.multiplier === 1)) {
+                            return inBrackets(text(symbol));
+                        }
+                        return text(symbol);
+                    }).join('*');
+                    break;
+                case EX:
+                    var pg = obj.previousGroup,
+                        pwg = obj.power.group;
+                    if(!(pg === N || pg === S || pg === FN)) { value = inBrackets(value); }
+                    if(pwg === CP || pwg === CB || pwg === PL || obj.power.multiplier !== 1) power = inBrackets(power);
+                    break;
+            }
+
+
+            //the following groups are held together by plus or minus. The can be raised to a power or multiplied
+            //by a multiplier and have to be in brackets to preserve the order of precedence
+            if(((group === CP || group === PL) && (multiplier && multiplier !== 1)) 
+                    || ((group === CB || group === CP || group === PL) && (power && power !== 1))
+                    || obj.baseName === PARENTHESIS) { 
+                value = inBrackets(value);
+            }
+
+            if(power < 0) power = inBrackets(power);
+            if(multiplier) multiplier = multiplier + '*';
+            if(power) power = '^' + power;
+
+            return sign+multiplier+value+power;
         }
-        if( !isNaN( value ) ) {
-            this.group = N;
-            this.value = '_'; 
-            this.multiplier = Number( value );
+        else if(isVector(obj)) {
+            var l = obj.length(),
+                c = [];
+            for(var i=0; i<l; i++) c.push(text(obj.vec_array[i]));
+            
+            return '['+c.join(',')+']';
         }
         else {
+            return obj;
+        }
+    }
+    Utils.text = text;
+    /* END GLOBAL FUNCTIONS */
+    
+    /* CLASSES */
+    function Collector(extra_conditions) {
+        this.c = [];
+        this.add = function(value) {
+            var condition_true = extra_conditions ? extra_conditions(value) : true;
+            if(this.c.indexOf(value) === -1 && condition_true) this.c.push(value);
+        };
+    }
+    
+    function Func(fn_name) {
+        this.name = fn_name;
+    }
+    
+    /** 
+     * 
+     * @param {Symbol} symbol
+     * @returns {Expression} a wrapper for the Symbol class
+     */
+    function Expression(symbol) {
+        var self = this; 
+        
+        this.value = text(symbol);
+        
+        this.text = function() {
+            return this.value;
+        };
+        
+        this.latex = function() {
+            return Latex.latex(symbol);
+        };
+        
+        this.valueOf = function() {
+            return symbol.valueOf();
+        };
+        
+        this.evaluate = function(subs) {
+            return new Expression(numblock(function() {
+                return _.parse(self.value, format_subs(subs));
+            }, true));
+        };
+        
+        this.buildFunction = function(vars){
+            return build(symbol, vars);
+        };
+        
+        this.getSymbol = function() {
+            return symbol;
+        };
+    }
+    /**
+     * 
+     * @param {String} obj An attempt to get objects to behave somewhat as "real" symbols
+     * @returns {Symbol}
+     */
+    function Symbol(obj) { 
+        //this enables the class to be instanciated without the new operator
+        if(!(this instanceof Symbol)) { return new Symbol(obj); };
+        
+        //define numeric symbols
+        if(!isNaN(obj)) {
+            this.group = N;
+            this.value = '#'; 
+            this.multiplier = Number(obj);
+        }
+        //define symbolic symbols
+        else {
             //imaginary values. 
-            if( value === 'i' ) {
-                this.isImaginary = true;
+            if(obj === 'i') {
+                this.isImgSymbol = true;
             }
             this.group = S; 
-            validateName( value );
-            this.value = value;
+            validateName(obj);
+            this.value = obj;
             this.multiplier = 1;
             this.power = 1;
         }
         // Added to silence the strict warning.
         return this; 
     }
+    
     Symbol.prototype = {
-        // This method depends on text in cases where it is important to retain the multiplier.
-        // e.g. 2(x+1) and (x+1) the same but the same does not hold true for a function like cos(x) and cos(2x). 
-        name: function( baseOnly ) {
-            var v, g = this.group, symbol, pw;
-            if( g === CB || g === CP || g === PL && this.power !== 1 ) { 
-                //the delimiter for joining back the name. Any character excluded from variable names will do really.
-                var d = g === CB ? '*' : '+',
-                    names = [];
-                for( symbol in this.symbols ) {
-                    var t = text( this.symbols[symbol] );
-                    names.push( this.symbols[symbol].group === CP ? inBrackets( t ) : t );
-                }
-                v = inBrackets( names.sort().join(d) );
-                if( g === CP && this.power !== 1 ) {
-                    v = v+ ( baseOnly ? '' : '^('+this.power+')' );
-                }
-            }
-            else if( g === PL ) { 
-                for( pw in this.symbols ) {
-                    v = this.symbols[pw].value;
-                    break;
-                }
-            }
-            else if( g === FN ) {
-                v = this.value+inBrackets( text(this.symbols) )+( this.power === 1 ? '' : baseOnly ? '' : '^('+this.power+')' );
-            }
-            else {
-                v = this.value;
-            }
-            return v;
-        },
-        isNumber: function() {
-            return this.group === N;
+        equals: function(symbol) {
+            return this.value === symbol.value && text(this.power) === text(symbol.power);
         },
         isPoly: function() {
             var status = false;
@@ -155,7 +479,7 @@ var nerdamer = (function() {
                  //the following assumptions are made in the next check
                  //1. numbers are represented by an underscore
                  //2. variable and function names must start with a letter
-                if( kl === 2 && k[0] === '_' ) { 
+                if(kl === 2 && k[0] === '#') { 
                     status = this.symbols[k[1]].isPoly();
                 }
                 else if( this.group === PL ) { 
@@ -168,117 +492,1079 @@ var nerdamer = (function() {
             return status;
         },
         // Copies over a predefined list of properties from one symbol to another.
-        copy: function() {
+        copy: function() { 
             var copy = new Symbol(0),
                 //list of properties excluding power as this may be a symbol and would also need to be a copy.
-                properties = [ 'multiplier','value','group', 'length','isImaginary' ],
+                properties = [
+                    'multiplier', 'value', 'group', 'length', 'previousGroup', 'isImgSymbol', 'baseName', 'args'],
                 l = properties.length, i;
 
-            if( this.symbols ) {
+            if(this.symbols) {
                 copy.symbols = {};
                 for( var x in this.symbols ) {
                     copy.symbols[x] = this.symbols[x].copy();
                 }
             }
 
-            for( i = 0; i < l; i++ ) {
-                if( this[properties[i]] !== undefined ) {
+            for(i=0; i<l; i++) {
+                if(this[properties[i]] !== undefined) {
                     copy[properties[i]] = this[properties[i]];
                 }
             }
 
-            if( this.power ) {
-                copy.power = isSymbol( this.power ) ? this.power.copy() : this.power;
+            if(this.power) {
+                copy.power = isSymbol(this.power) ? this.power.copy() : this.power;
             }
             return copy;
         },
+        collectUniqueMultipliers: function(c) {
+            c = c || new Collector();
+            if(this.group !== CB) {
+                for(var x in this.symbols) {
+                    var sub = this.symbols[x];
+                    if(sub.symbols) sub.collectUniqueMultipliers(c);
+                    else c.add(sub.multiplier);
+                }
+            }
+                
+            return c.c;
+        },
+        forEachWithin: function(fn) {
+            for(var x in this.symbols) {
+                fn.call(this, this.symbols[x], x);
+            }
+        },
         valueOf: function() {
-            if( this.group === N ) {
-                return this.multiplier;
-            }
-            else if( this.power === 0 ){
-                return 1;
-            }
-            else if( this.multiplier === 0 ) {
-                return 0;
-            }
-            else {
-                return text( this );
-            }
+            if(this.group === N) { return this.multiplier; }
+            else if(this.power === 0){ return 1; }
+            else if(this.multiplier === 0) { return 0; }
+            else { return text(this); }
         },
         //an add-on helper function to help sniff out symbols in complex symbols
         //pass in true as second parameter to include exponentials
-        hasVariable: function( variable, all ) {
-            var g = this.group;
-            if( g > S ) {
-                if( g === EX ) {
+        contains: function(variable, all) { 
+            var g = this.group; 
+            if(g > FN && this.previousGroup !== FN) {
+                if(g === EX) {
                     //exit only if it does
-                    if( this.power.hasVariable( variable, all )) { return true; }
+                    if(this.power.contains(variable, all)) { return true; }
                 }
-                for( var x in this.symbols ) {
-                    if( this.symbols[x].hasVariable( variable, all ) ) {
-                        return true;
-                    }
-                }
+                for(var x in this.symbols) { if(this.symbols[x].contains(variable, all)) return true; }
+            }
+            else if(g === FN || this.previousGroup === FN) {
+                for(var i=0; i<this.args.length; i++) { if(this.args[i].contains(variable, all)) return true; }
             }
             else {
                 return this.value === variable;
             }
             return false;
         },
-        negate: function() {
+        negate: function() { 
             this.multiplier *= -1;
+            //***incorrect value if multiplier is not distributed
+            if(this.group === CP || this.group === PL) this.distributeMultiplier();
             return this;
         },
         invert: function() {
-            if( isSymbol( this.power ) ) {
+            //invert the multiplier
+            this.multiplier = 1/this.multiplier;
+            //invert the rest
+            if(isSymbol( this.power) ) {
                 this.power.negate();
             }
             else {
-                this.power *= -1;
+                if(this.power) this.power *= -1;
             }
             return this;
         },
+        distributeMultiplier: function() {
+            if(this.symbols && this.power === 1 && this.group !== CB) {
+                for(var x in this.symbols) {
+                    var s = this.symbols[x];
+                    s.multiplier *= this.multiplier;
+                    s.distributeMultiplier();
+                }
+                this.multiplier = 1;
+            }
+            return this;
+        },
+        convert: function(group) {
+            //all groups greater than S with the exception of EX carry a symbols object
+            //which houses all sub-symbols
+            if(group > FN && group !== EX) {
+                //are we up converting or down converting?
+                if(true) {
+                    //make a copy of this symbol;
+                    var cp = this.copy();
+                    //attach a symbols object and upgrade the group
+                    this.symbols = {};
+                    
+                    if(group === CB) {
+                        //symbol of group CB hold symbols bound together through multiplication
+                        //because of commutativity this multiplier can technically be anywhere within the group
+                        //to keep track of it however it's easier to always have the top level carry it
+                        cp.multiplier = 1;
+                    }
+                    else {
+                        //reset the symbol
+                        this.multiplier = 1;
+                    }
+                    
+                    if(this.group === FN) {
+                        cp.args = this.args; 
+                        delete this.args;
+                        delete this.baseName;
+                    }
+                    
+                    //the symbol may originate from the symbol i but this property no longer holds true
+                    //after copying
+                    if(this.isImgSymbol) delete this.isImgSymbol;
+                    
+                    this.power = 1;
+                    //attach a copy of this symbol to the symbols object using its proper key
+                    this.symbols[cp.keyForGroup(group)] = cp; 
+                    this.group = group;
+                    //objects by default don't have a length property. However, in order to keep track of the number
+                    //of sub-symbols we have to impliment our own.
+                    this.length = 1;    
+                }
+                else {
+                    //a group which is already a complex symbol is being converted to another complex symbol
+                    var cp = this.copy();
+                    var key = this.keyForGroup(group);
+                    this.symbols = {};
+                    
+                }
+            }
+            else if(group === EX) {
+                if(!(this.group === N && Math.abs(this.multiplier) === 1)) {
+                    this.previousGroup = this.group;
+                    if(this.group === N) {
+                        this.value = this.multiplier;
+                        this.multiplier = 1;
+                    }
+                    this.group = EX;
+                }
+            }
+        },
+        insert: function(symbol, action) { 
+            if(!isSymbol(symbol)) throw new Error('Object '+symbol+' is not of type Symbol!');
+            if(this.symbols) {
+                var group = this.group;
+                if(group > FN) {
+                    var key = symbol.keyForGroup(group); 
+                    var existing = this.symbols[key]; //check if there's already a symbol there
+                    if(action === 'add') {
+                        if(existing) { 
+                            //add them together using the parser
+                            this.symbols[key] = _.add(existing, symbol);
+                            //if the addition resulted in a zero multiplier remove it
+                            if(this.symbols[key].multiplier === 0) {
+                                delete this.symbols[key];
+                                this.length--;
+                            }
+                        }
+                        else {
+                            this.symbols[key] = symbol;
+                            this.length++;
+                        }  
+                    }
+                    else {
+                        if(existing) {   
+                            //remove because the symbol may be completely changed
+                            symbol = _.multiply(remove(this.symbols, key), symbol);
+                            this.length--;
+                        }
+                        //transfer the multiplier
+                        this.multiplier *= symbol.multiplier;
+
+                        if(Math.abs(Number(symbol)) !== 1) { 
+                            //transfer the multiplier
+                            symbol.multiplier = 1;
+                            this.symbols[key] = symbol;
+                            this.length++;
+                        }
+                        
+                        
+                    }
+                    //update the hash
+                    if(this.group === CP || this.group === CB) {
+                        this.updateHash();
+                    }
+                }
+            }
+        },
+        
+        attach: function(symbol) {
+            this.insert(symbol, 'add');
+        },
+        
+        combine: function(symbol) {
+            this.insert(symbol, 'multiply');
+            if(symbol.isOne()) {
+                delete this.symbols[symbol.value];
+                this.length--;
+            }
+        },
+        
+        find: function(value, prop) {
+            var retval;
+            try {
+                var l = this.symbols.length; //fails if there's no symbols prop
+                for(var i=0; i<l; i++) {
+                    var symbol = this.symbols[i];
+                    if(symbol[prop] === value) return symbol;
+                }
+            }
+            catch(e){;}
+            return retval;
+        },
+        
+        updateHash: function() {
+            if(this.group === FN) {
+                var contents = '',
+                    args = this.args,
+                    is_parens = this.baseName === PARENTHESIS;
+                for(var i=0; i<args.length; i++) contents += (i===0 ? '' : ',')+text(args[i]);
+                var fn_name = is_parens ? '' : this.baseName;
+                this.value = fn_name+(is_parens ? contents : inBrackets(contents));
+            }
+            else if(!(this.group === S || this.group === PL)) {
+                this.value = text(this, 'hash');
+            }
+        },
+        
+        //this function defines how every group in stored within a group of higher order
+        keyForGroup: function(group) {
+            var g = this.group;
+            if(g === N) {
+                return this.value;
+            }
+            else if(g === S) {
+                if(group === PL) return this.power;
+                else return this.value;
+            }
+            else if(g === FN) {
+                if(group === PL) return this.power;
+                return text(this, 'hash');
+            }
+            else if(g === PL) { 
+                //if the order is reversed then we'll assume multiplication
+                //TODO: possible future dilemma
+                if(group === CB) return text(this, 'hash');
+                if(group === CP) {
+                    if(this.power === 1) return this.value;
+                    else return inBrackets(text(this, 'hash'))+'^'+this.power;
+                }
+                return this.value;
+            }
+            else if(g === CP) {
+                if(group === CP) return text(this);
+                return this.value;
+            }
+            else if(g === CB) {
+                if(group === PL) return this.power;
+                return text(this, 'hash');
+            }
+            else if(g === EX) {
+                if(group === PL) return text(this.power);
+                return text(this);
+            }
+        },
+        //this function simply collect all the symbols and returns them as an array
+        //if a function is supplied then that function is called on the every symbol;
+        collectSymbols: function(fn) { 
+            var collected = [];
+            for(var x in this.symbols) {
+                var symbol = this.symbols[x];
+                collected.push( fn ? fn(symbol) : symbol );
+            }
+            return collected;//sort hopefully gives us some sort of consistency
+        },
         text: function() {
-            return text( this );
+            return text(this);
         },
-        latex: function() {
-            return Formatting.latex( this );
+        isOne: function() {
+            if(this.group === N) return this.multiplier === 1;
+            else return this.power === 0;
         },
-        evaluate: function( subs ) {
-            var self = this;
-            return numBlock(function(){
-                return text( Parser.parse( text( self ), subs ) );
-            });
-        }
+        getDenom: function() {
+            if(this.group === CB) {
+                for(var x in this.symbols) {
+                    if(this.symbols[x].power < 0) return this.symbols[x];
+                }
+            }
+        },
+        
+        toString: Symbol.prototype.text
     };
     
-    //a filter class for Symbol
-    function Expression(symbol) {
-        this.text = function() {
-            return text(symbol);
-        }
-        
-        this.latex = function() {
-            return Formatting.latex(symbol);
-        }
-        
-        this.evaluate = function(subs) {
-            return numBlock(function(){
-                return text( Parser.parse( text( symbol ), subs ) );
-            });
-        }
-        
-        this.isNumber = function() {
-            return symbol.isNumber();
-        }
-    }
-    
-    Expression.prototype.valueOf = function() {
-        return this.text();
+    function Operator(val, fn, precedence, left_assoc, is_prefix, is_postfix) {
+        this.val = val;
+        this.fn = fn;
+        this.precedence = precedence;
+        this.left_assoc = left_assoc;
+        this.is_prefix = is_prefix;
+        this.is_postfix = is_postfix || false;
     }
 
-    // Returns a fractional approximation of a decimal
+    Operator.prototype = {
+        toString: function() { return this.val; }
+    };
+
+    function Prefix(val) {
+        this.val = val;
+    }
+    
+    Prefix.prototype = {
+        resolve: function(obj) {
+            if(this.val === '-') {
+                return obj.negate();
+            }
+            return obj;
+        }
+    };
+
+    function Bracket(name, position, fn_name) {
+        this.name = name;
+        this.position = position;
+        this.fn_name = fn_name;
+        this.open = 0;
+        
+        this.pair = function(val) {
+            var bracket = new Bracket(name, 'right');
+            this.paired = bracket;
+            return bracket;
+        };
+        
+        this.open = function() { this.open++; };
+        this.close = function() { this.open--; };
+        this.toString = function() { return this.name; };
+    }
+    
+    //Uses modified shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
+    function Parser(){
+        var _ = this,
+            constants = this.constants = {
+                PI: Math.PI,
+                E:  Math.E
+            };
+        
+        var operators = {
+                '^': new Operator('^', 'pow', 4, false, false),
+                '*': new Operator('*', 'multiply', 3, true, false),
+                '/': new Operator('/', 'divide', 3, true, false),
+                '+': new Operator('+', 'add', 2, true, true),
+                '-': new Operator('-', 'subtract', 2, true, true),
+                ',': new Operator(',', 'comma', 1, true, false),
+                '!': new Operator('!', 'fact', 0, false, false, true)
+            },
+
+            // Supported functions.
+            // Format: function_name: [mapped_function, number_of_parameters]
+            functions = this.functions = {
+                'cos'       : [ , 1],
+                'sin'       : [ , 1],
+                'tan'       : [ , 1],
+                'sec'       : [ , 1],
+                'csc'       : [ , 1],
+                'cot'       : [ , 1],
+                'acos'      : [ , 1],
+                'asin'      : [ , 1],
+                'atan'      : [ , 1],
+                'exp'       : [ , 1],
+                'min'       : [ , -1],
+                'max'       : [ ,-1],
+                'floor'     : [ ,1],
+                'ceiling'   : [ ,1],
+                'fact'      : [ , 1],
+                'mod'       : [ , 2],
+                'vector'    : [vector, -1],
+                'parens'    : [parens, -1],
+                'sqrt'      : [sqrt, 1],
+                'log'       : [log , 1],
+                'abs'       : [abs , 1]
+            };
+        
+        var brackets = {},
+
+            last_item_in = function(stack) {
+                return stack[stack.length-1];
+            };
+        
+        var LEFT_PAREN = '(',
+            RIGHT_PAREN = ')',
+            LEFT_SQUARE_BRACKET = '[',
+            RIGHT_SQUARE_BRACKET = ']';
+                
+            brackets[LEFT_PAREN] = LEFT_PAREN,
+            brackets[RIGHT_PAREN] = RIGHT_PAREN,
+            brackets[LEFT_SQUARE_BRACKET] = LEFT_SQUARE_BRACKET,
+            brackets[RIGHT_SQUARE_BRACKET] = RIGHT_SQUARE_BRACKET;
+
+        function error(msg) {
+            throw new ParserError(msg);
+            
+        }
+
+        this.symfunction = function(fn_name, params) { 
+            //call the proper function and return the result;
+            var f = new Symbol(fn_name);
+            f.group = FN;
+            if(typeof params === 'object') params = [].slice.call(params);//ensure an array
+            
+            f.args = params;
+            f.baseName = fn_name;
+            f.updateHash();
+            return f;
+        };
+
+        this.callfunction = function(fn_name, args) { 
+            var fn_settings = functions[fn_name];
+            
+            if(!fn_settings) error(fn_name+' is not a supported function.');
+            
+            var num_allowed_args = fn_settings[1],
+                fn = fn_settings[0],
+                retval;
+
+            if(!(args instanceof Array)) args = [args];
+
+            if(num_allowed_args !== -1) {
+                var is_array = isArray(num_allowed_args),
+                    min_args = is_array ? num_allowed_args[0] : num_allowed_args,
+                    max_args = is_array ? num_allowed_args[1] : num_allowed_args,
+                    num_args = args.length;
+                var error_msg = fn_name+' requires a {0} of {1} arguments. {2} provided!';
+                if(num_args < min_args) error(format(error_msg, 'minimum', min_args, num_args));
+                if(num_args > max_args) error(format(error_msg, 'maximum', max_args, num_args));
+            }
+            
+            if(fn) { retval = fn.apply(fn_settings[2] || this, args); }
+            else {
+                if(PARSE2NUMBER) {
+                    try { 
+                        args = args.map(function(symbol) { 
+                            if(symbol.group === N) return symbol.multiplier;
+                            else error('Symbol must be of group N.');
+                        });
+                        var f = Math[fn_name] ? Math[fn_name] : Math2[fn_name];
+                        retval = new Symbol(f.apply(undefined, args));
+                    }
+                    catch(e){ 
+                        retval = this.symfunction(fn_name, args); 
+                    }
+                }
+                else {
+                    retval = this.symfunction(fn_name, args);
+                }
+            }
+            return retval;
+        };
+
+        this.parse = function(expression_string, substitutions) {  
+            expression_string = expression_string.split(' ').join('');//strip empty spaces
+            
+            var subs = substitutions || {},
+                stack = [],
+                output = [],
+                len = expression_string.length,
+                pos = 0,
+                last_opr_pos,
+                last_operator,
+                EOT = false,
+                
+                evaluate = function(operator) { 
+                    if(!operator) {
+                        operator = stack.pop();
+                    }
+
+                    var symbol2 = output.pop(),
+                        symbol1 = output.pop();
+                
+                    //always give precendence to the prefix on the stack
+                    while(last_item_in(stack) instanceof Prefix) {
+                        if(symbol1) symbol1 = stack.pop().resolve(symbol1);
+                        else break;
+                    }
+                    //resolve the prefix if one is encountered and mistaken for an operator
+                    while(operator instanceof Prefix) {
+                        symbol2 = operator.resolve(symbol2);
+                        operator = stack.pop();
+                    }
+
+                    if(!operator && !symbol1 && symbol2) {
+                        insert(symbol2);
+                    }
+                    else if(operator === LEFT_PAREN) { 
+                        if(EOT) error('Unmatched open parenthesis!');
+                        stack.push(operator);
+                        insert(symbol1);
+                        insert(symbol2);
+                    }
+                    else {
+                        var result = _[operator.fn].call(_, symbol1, symbol2);
+//                        console.log(symbol1, operator.val, symbol2, '=', result);
+                        insert(result);
+                    }  
+                         
+                },
+
+                insert = function(token) { 
+                    //when two operators are close to each other then the token will be empty or when we've gone
+                    //out of range in the output or stack. We have to make sure the token even exists before entering.
+                    if(token !== '' && token !== undefined) { 
+                        //this could be function parameters or a vector
+                        if(!(token instanceof Array)) { 
+                            if(!(token instanceof Symbol) && !(token instanceof Vector)) {
+                                var sub = subs[token]; //handle substitutions
+                                token = sub ? sub.copy() : new Symbol(token);
+                            }
+                        }
+                         output.push(token);
+                    } 
+                };
+                
+            if(!subs['~']) {   
+                //collect the substitutions
+                for(var x in constants) subs[x] = new Symbol(constants[x]);
+            }
+            
+            for(var i=0; i<len; i++) { 
+                var cur_char = expression_string.charAt(i);
+                var operator = operators[cur_char], //a possible operator
+                    bracket = brackets[cur_char]; //a possible bracket
+
+                if(operator || bracket) { //if the character is a bracket or an operator
+                    //if an operator is found then we assume that the preceeding is a variable
+                    //the token has to be from the last position up to the current position
+                    var token = expression_string.substring(pos,i);
+                    
+                    
+                    if(bracket === LEFT_PAREN && token || bracket === LEFT_SQUARE_BRACKET) {
+                        var f = bracket === LEFT_SQUARE_BRACKET ? VECTOR : token;
+                        stack.push(new Func(f), LEFT_PAREN);
+                        pos = i+1;
+                        last_opr_pos = i; 
+                        continue;
+                    }
+                    //place the token on the output stack. 
+                    //This may be empty if we're at a unary or bracket so skip those.
+                    insert(token);
+
+                    //if the preceding token is a operator
+                    if(!bracket && (i-last_opr_pos === 1 || i===0)) { 
+                        if(operator.is_prefix) {
+                            stack.push(new Prefix(operator.val));
+                            pos = i+1;
+                            last_opr_pos = i;
+                            continue;
+                        }
+                        error(operator.val+' is not a valid prefix operator!:'+pos); 
+                    }
+                    
+                    if(cur_char !== RIGHT_PAREN) last_opr_pos = i; //note that open brackets count as operators in this case
+
+                    if(operator) { 
+                        //we may be at the first operator and last operator may be undefined in which case do nothing
+                        //other than recording the last operator and placing the operator on the stack.
+                        if(last_operator) { 
+                            if(operator.left_assoc && operator.precedence <= last_operator.precedence ||
+                                    !operator.left_assoc && (operator.precedence < last_operator.precedence)) {
+                                var done = false;
+                                do {
+                                    evaluate(); 
+                                    var last = last_item_in(stack); 
+                                    //stop when you see a parethesis
+                                    if(last === LEFT_PAREN) break;
+                                    
+                                    done = last ? last.left_assoc && last.precedence < operator.precedence: true;
+                                }
+                                while(!done);  
+                            }
+                        }
+                        stack.push(operator);
+                        last_operator = last_item_in(stack);
+                    }
+                    else {
+                        if(cur_char === LEFT_PAREN) {
+                            stack.push(bracket);
+                        }
+                        else if(cur_char === RIGHT_PAREN || cur_char === RIGHT_SQUARE_BRACKET) { 
+                            var found_matching = false;
+                            while(!found_matching) {
+                                var popped = stack.pop();
+
+                                if(popped === undefined) error('Unmatched close parenthesis!');
+
+                                if(popped === LEFT_PAREN) found_matching = true;
+                                else evaluate(popped);
+                            }
+
+                            if(last_item_in(stack) instanceof Func) { 
+                                var v = _.callfunction(stack.pop().name, output.pop()); 
+                                insert(v); 
+                            }
+                        }
+                        last_operator = last_item_in(stack);
+                    } 
+                    
+                    pos = i+1; //move along
+                }
+                else if(i === len-1) {
+                    insert(expression_string.substring(pos, i+1));
+                }
+            }
+            
+            EOT = true; //end of stack reached
+            
+            while(stack.length > 0) { 
+                evaluate();
+            }
+            
+            return output[0];
+        };
+
+        function ParserError(message) {
+            this.name = "ParserError";
+            this.message = message || "An error occurred while parsing.";
+        }
+
+        ParserError.prototype = Error;
+        ParserError.prototype.constructor = ParserError;
+
+        //FUNCTIONS
+        function parens(symbol) {
+            if(PARSE2NUMBER) {
+                return symbol;
+            }
+            return _.symfunction('parens', [symbol]);
+        }
+        
+        function abs(symbol) {
+            if(symbol.multiplier < 0) symbol.multiplier *= -1;
+            if(isNumericSymbol(symbol)) {
+                return symbol;
+            }
+            return _.symfunction('abs', [symbol]);
+        }
+        
+        function sqrt(symbol) {
+            return _.pow(symbol, new Symbol('0.5'));
+        }
+        
+        function log(symbol) { 
+            if(symbol.group === FN && symbol.baseName === 'exp') {
+                var s = symbol.args[0];
+                if(symbol.multiplier === 1) {
+                    return _.multiply(s, new Symbol(symbol.power));
+                }
+                else {
+                    return _.symfunction('log',[symbol]);
+                }
+            }
+            else if(PARSE2NUMBER && isNumericSymbol(symbol)) {
+                var img_part;
+                if(symbol.multiplier < 0) {
+                    symbol.negate();
+                    img_part = _.multiply(new Symbol(Math.PI), new Symbol('i'));
+                }
+                var retval = new Symbol(Math.log(symbol.multiplier));
+                if(img_part) retval = _.add(retval, img_part);
+                return retval;
+            }
+            return _.symfunction('log', arguments); 
+        }
+
+        function vector() {
+            return new Vector([].slice.call(arguments));
+        }
+        
+        this.mapped_function = function() { 
+            var subs = {},
+                params = this.params;
+            for(var i=0; i<params.length; i++) subs[params[i]] = arguments[i];
+            return _.parse(this.body, subs);
+        };
+
+        this.unpack = function(symbol) { 
+            //we only touch this bad boy if the power is one 
+            if(symbol.power === 1) {
+                //parens should only carry one symbol
+                var unpacked = symbol.args[0];
+                unpacked.multiplier *= symbol.multiplier;
+                symbol = unpacked;
+            }
+            return symbol;
+        };
+        
+        this.add = function(symbol1, symbol2) { 
+            var A = text(symbol1), B = text(symbol2); 
+            var group1 = symbol1.group, 
+                group2 = symbol2.group;
+
+            //deal with zero addition
+            if(symbol1.multiplier === 0) return symbol2;
+            if(symbol2.multiplier === 0) return symbol1;
+            
+            //parens is an ugly function that we want to get rid of as soon as possible so check
+            if(group1 === FN && symbol1.baseName === PARENTHESIS) symbol1 = this.unpack(symbol1);
+            if(group2 === FN && symbol1.baseName === PARENTHESIS) symbol2 = this.unpack(symbol2);
+            
+            //always have the lower group on the left
+            if(group1 > group2) { return this.add(symbol2, symbol1); }
+            
+            
+            //same symbol, same power
+            if(symbol1.value === symbol2.value && !( group1 === CP && symbol1.power !== symbol2.power)) { 
+                if(symbol1.power === symbol2.power && group2 !== PL /*if group1 is PL then group2 is PL*/
+                        || (group1 === EX && symbol1.equals(symbol2))) {
+                    symbol1.multiplier += symbol2.multiplier;
+                    //exit early
+                    if(symbol1.multiplier === 0) symbol1 = Symbol(0);
+                }
+                else if(group2 === PL) { 
+                    if(group1 === PL) {
+                        if(symbol1.power ===1 && symbol2.power === 1) {
+                            symbol1.distributeMultiplier();
+                            symbol2.distributeMultiplier();
+                            for(var s in symbol2.symbols) {
+                                symbol1.attach(symbol2.symbols[s]);
+                            }
+                        }
+                        else if(symbol1.power === symbol2.power) {
+                            symbol1.multiplier += symbol2.multiplier;
+                        }
+                        else {
+                            if(symbol1.power > symbol2.power) { var t = symbol1; symbol1 = symbol2; symbol2 = t; /*swap*/}
+                            symbol1.convert(CP); 
+                            symbol1.attach(symbol2);
+                        } 
+                    }
+                    else {
+                        if(symbol2.multiplier === 1) {
+                            symbol2.attach(symbol1);
+                        }
+                        else {
+                            //force the multiplier downhill
+                            for(var s in symbol2.symbols) {
+                                symbol2.symbols[s].multiplier *= symbol2.multiplier;
+                            }
+                            symbol2.multiplier = 1;
+                            symbol2.attach(symbol1);
+                        }
+                        symbol1 = symbol2;
+                    }
+                }
+                else {
+                    //we checkfor CB on the right or S on the left because we know that the lower group is always 
+                    //on the left. This is just an extra precaution
+                    symbol1.convert(PL);
+                    symbol1.attach(symbol2);
+                }
+            }
+            else if(group2 === CP) { 
+                if(group1 === CP) {
+                    if(symbol1.power > symbol2.power) { 
+                        var t = symbol1; symbol1 = symbol2; symbol2 = t;/*swap them*/ 
+                    }
+                    //since we swap the symbols to place the lower power symbol on the left we only have to check a
+                    if(symbol1.power === 1) {
+                        if(symbol2.power === 1) {
+                            var s;
+                            //distribute the multiplier. The hope is that you don't end up delaying it only to end up with
+                            //a very complex symbol in the end. The symbol simplifies immediately if there's any subtraction.
+                            if(symbol1.multiplier !== 1) {
+                                for(s in symbol1.symbols) {
+                                    symbol1.symbols[s].multiplier *= symbol1.multiplier;
+                                    symbol1.multiplier = 1;
+                                }
+                            }
+                            for(s in symbol2.symbols) {
+                                //this order is chosen because the chances of the sub-symbol being of a lower
+                                //group are higher
+                                this.add(symbol2.symbols[s], symbol1);
+                            }
+                        }
+                        else {
+                            //but a still has a power of 1 so attach it
+                            symbol1.attach(symbol2);
+                        }
+                    }
+                    else {
+                        //aaahhh we've reached the end of the dodging and weaving an it's time to start creating
+                        var newSymbol = new Symbol('blank');
+                        newSymbol.symbols = {};
+                        newSymbol.length = 1;
+                        newSymbol.group = CP;
+                        newSymbol.attach(symbol1);
+                        newSymbol.attach(symbol2);
+                        symbol1 = newSymbol;
+                    }
+                }
+                else { 
+                    //the way to deal with both N and S is identical when the power is equal to 1
+                    //if the CP contains a power of 1 then we can just add directly to it
+                    if(symbol2.power === 1) {
+                        //CP symbols can have a multiplier greater than 1 
+                        if(symbol2.multiplier === 1) {
+                            symbol2.attach(symbol1); 
+                        }
+                        else {
+                            //force the multiplier downhill
+                            for(var s in symbol2.symbols) {
+                                symbol2.symbols[s].multiplier *= symbol2.multiplier;
+                            }
+                            symbol2.multiplier = 1;
+                            symbol2.attach(symbol1);
+                        }   
+                        //swap since symbol a is being returned
+                        symbol1 = symbol2;
+                    }
+                    else {
+                        symbol1.convert(CP);
+                        symbol1.attach(symbol2);
+                    }
+                    
+                }
+            }
+            else {
+//                console.log(symbol1, symbol2)
+                symbol1.convert(CP); 
+                symbol1.attach(symbol2);
+            }        
+            
+            //reduce the symbol
+            if((symbol1.group === CP || symbol1.group === PL) && symbol1.length === 1) { 
+                for(var x in symbol1.symbols) {
+                    var symbol = symbol1.symbols[x];
+                    symbol.multiplier *= symbol1.multiplier;
+                    symbol1 = symbol;
+                }
+            }
+//            console.log(A,'+',B,'=',text(symbol1),':', group1, group2);
+//            if(text(symbol1) === '1+2*x+x^2') console.log(symbol1)
+            return symbol1;
+        };
+
+        this.subtract = function( symbol1, symbol2) { 
+            return this.add(symbol1, symbol2.negate());
+        };
+
+        this.multiply = function(symbol1, symbol2) { 
+            if(symbol1.multiplier === 0 || symbol2.multiplier === 0) return new Symbol(0);
+            
+            var group1 = symbol1.group,
+                group2 = symbol2.group;
+            
+            //parens is an ugly function that we want to get rid of as soon as possible so check
+            if(group1 === FN && symbol1.baseName === PARENTHESIS) symbol1 = this.unpack(symbol1);
+            if(group2 === FN && symbol1.baseName === PARENTHESIS) symbol2 = this.unpack(symbol2);
+            
+            if(symbol1.isImgSymbol && symbol2.isImgSymbol) {
+                return Symbol(-1*symbol1.multiplier*symbol2.multiplier);
+            }
+            
+            //as with addition the lower group symbol is kept on the left so only one side has to symbol2 e 
+            //accounted for. With multiplication however it's easier to return the symbol on the right.
+            if(group1 > group2) return this.multiply(symbol2, symbol1);
+            
+            //the symbol2 ehavior is the same for all symbols of group N. modify the multiplier
+            if(group1 === N ) {
+                symbol2.multiplier *= symbol1.multiplier;
+            }
+            else if(symbol1.value === symbol2.value) { 
+                if(symbol1.group === EX || symbol2.group === EX) {
+                    if(symbol1.group === EX) {
+                        //we know that the other group has to symbol2 e EX symbol2 ecause of check 1.
+                        symbol2.power = this.add(symbol1.power, symbol2.power);
+                    }
+                    else {
+                        //this group is not an EX and needs to have its power converted
+                        var s = new Symbol(symbol1.power);
+                        symbol2.power = this.add(s, symbol2.power);
+                    }
+                }
+                else if(group2 === PL) { 
+                    symbol2.distributeMultiplier();
+                    if(group1 !== PL) {
+                        var cp = symbol2.copy();
+                        cp.symbols = {};
+                        cp.length = 0;
+                        for(var s in symbol2.symbols) { 
+                            var symbol = remove(symbol2.symbols, s);
+                            //keep symbol1 on the left since that's what gets returned
+                            var product = _.multiply(symbol1, symbol);
+                            //the symbol may no longer be a valid PL e.g (x^2+x)/x yields a CP
+                            if(product.value !== cp.value) cp.group = CP;
+                            cp.attach(product);
+                        }
+                        symbol2 = cp;
+                    }  
+                }
+                else {
+                    symbol2.power += symbol1.power;
+                }
+                symbol2.multiplier *= symbol1.multiplier;
+                //early exit
+                if(Number(symbol2.power) === 0) symbol2 = Symbol(symbol2.multiplier);
+                
+            }
+            else if(group1 === CB && group2 === CB) {
+                if(symbol1.power === 1 && symbol2.power !== 1) { var t = symbol1; symbol1 = symbol2 ; symbol2 = t; }
+                
+                if(symbol1.power === 1 && symbol2.power === 1) {
+                    symbol2.multiplier *= symbol1.multiplier;
+                    for(var s in symbol1.symbols) {
+                        symbol2.combine(symbol1.symbols[s]);
+                    }
+                }
+                else if(symbol2.power === 1){
+                    symbol2.attach(symbol1);
+                }
+                else {
+                    var s = this.shellSymbol(CB);
+                    s.combine(symbol1);
+                    s.combine(symbol2);
+                    symbol2 = s;
+                }
+                    
+            }
+            else if(group2 === CB) {
+                symbol2.combine(symbol1);
+            }
+            else if(group1 === S && group2 !== CB) {
+                symbol1.convert(CB);
+                symbol1.combine(symbol2);
+                symbol2 = symbol1;
+            }
+            else {
+                if(group1 === CB) {
+                    symbol1.combine(symbol2);
+                    symbol2 = symbol1;
+                }
+                else {
+                    symbol2.convert(CB);
+                    symbol2.combine(symbol1);
+                }   
+            }
+            
+            if((symbol2.group === CB) && symbol2.length === 1) { 
+                for(var x in symbol2.symbols) {
+                    var symbol = symbol2.symbols[x];
+                    symbol.multiplier *= symbol2.multiplier;
+                    symbol2 = symbol;
+                }
+            }
+
+            return symbol2 ;
+        };
+        
+        this.divide = function(symbol1, symbol2) {
+            return this.multiply(symbol1, symbol2.invert());
+        };
+
+        this.pow = function(symbol1,symbol2) {
+            var numberB = Number(symbol2);
+            if(numberB === 1) return symbol1;
+            if(numberB === 0) return new Symbol(1);
+
+            //as usual pull the variables closer
+            var g1 = symbol1.group, 
+                g2 = symbol2.group;
+            if(g1 !== EX && g2 === N) { 
+                var power = symbol2.multiplier;
+                if(power !== 1) {
+                    if(power === 0) {
+                        symbol2.mutiplier = 1;
+                        symbol1 = symbol2;
+                    }
+                    else { 
+                        //check if the power that we're raising to is even e.g. 2,4,1/2,1/4,5/2,...
+                        var isEven = even(power) ||  even(1/( power - parseInt(power))),
+                            // Record if we have a negative number as the base.
+                            isNegative = symbol1.multiplier < 0,
+                            // Make sure that the power is even.
+                            powEven =  even(symbol1.power),
+                            //check if the power being raised to is a fraction
+                            isRadical = Math.abs(power - parseInt(power)) > 0;
+                            
+                        if(g1 === N) {
+                            symbol1.multiplier = Math.pow(Math.abs(symbol1.multiplier), power);
+                            
+                            if(isNegative && isRadical) symbol1 = this.multiply(symbol1, new Symbol('i'));
+                        }
+                        else {
+                            var s = new Symbol(Math.pow(Math.abs(symbol1.multiplier), power));
+                            symbol1.multiplier /= Math.abs(symbol1.multiplier);
+
+                            symbol1.power *= power;
+                            symbol1 = this.multiply(symbol1, s);
+                            
+                            if(isRadical && isNegative) { 
+                                var m = -symbol1.multiplier;
+                                if(powEven) {
+                                    symbol1.multiplier = 1;
+                                    if(!even(symbol1.power)) {
+                                        symbol1 = this.symfunction('abs', [symbol1]);
+                                    }
+                                    symbol1 = this.multiply(new Symbol('i'), symbol1);
+                                }
+                                else {
+                                    var p = symbol1.power;
+                                    symbol1.multiplier /= m;
+                                    symbol1.power /= p;
+                                    symbol1 = this.symfunction(PARENTHESIS, [symbol1]);
+                                    symbol1.power = p;
+                                }
+                                symbol1.multiplier = m;
+                            }
+                        }
+                    }
+                }
+            }
+            else { 
+                var m, spow = symbol1.power;
+
+                if(!isSymbol(spow)) spow = new Symbol(spow || 1);//sympow may be undefined if symbol is of type N
+
+                if(Math.abs(symbol1.multiplier) !== 1) {
+                    m = new Symbol(symbol1.multiplier);
+                    m.convert(EX);
+                    m.power = symbol2.copy();
+                    symbol1.multiplier = 1;
+                }
+                
+                if(symbol1.group !== EX) symbol1.convert(EX);
+
+                if(isNumericSymbol(spow) || isNumericSymbol(symbol2)) { 
+                    symbol1.power = this.multiply(spow, symbol2);
+                    //reduce symbol to simpler form. 
+                    if(symbol1.power.isOne()) {
+                        symbol1.group = symbol1.previousGroup;
+                        delete symbol1.previousGroup;
+                        symbol1.power = 1;
+                    }
+                }
+                else {
+                    symbol1 = _.symfunction('parens', [symbol1]);
+                    symbol1.power = symbol2;
+                } 
+
+                if(m) symbol1 = this.multiply(symbol1, m);
+            }
+            
+            return symbol1;
+        };
+        
+        this.comma = function(a, b) { 
+            if(a instanceof Array) a.push(b);
+            else a = [a,b];
+            return a;
+        };
+    };
+    
+    /* STATIC */
     var Fraction = {
         convert: function( value, opts ) {
             var frac;
@@ -312,6 +1598,7 @@ var nerdamer = (function() {
             var l = d ? d.length : 0; // maybe the coefficient is an integer;
             return [ Math.pow(10,l)*x[0], Math.pow(10, Math.abs(x[1])+l)];
         },
+        
         fullConversion: function( dec ) {
             //function returns a good approximation of a fraction
             //http://mathforum.org/library/drmath/view/61772.html
@@ -342,1191 +1629,316 @@ var nerdamer = (function() {
         }
     };
 
-    var Parser = {
-        tokenize: function( expStr ) { 
-            expStr = String( expStr );
-            var dtim = '@$', //this can be any set of characters not allowed in variable and function names
-                dplus = '@#';
-            //bug fix: 3.23e-4 will get split into [3.23e,'-', 4]. To fix this I temporarily replace e- with a @#
-            //this can be any delimiter not allowed in a variable name
-            expStr = expStr.replace( /(\d+)(e\-)(\d+)/g,
-                function(){ 
-                    return arguments[1]+dplus+arguments[3]; 
-                }).
-            replace( /(\d+)(e\+)(\d+)/g,
-                function(){ 
-                    return arguments[1]+dtim+arguments[3]; 
-                });
-            
-            //normalize e.g. turn (x-2)(x+1) into (x-2)*(x+1) and clean out white space.
-            expStr = String(expStr).split(' ').join('').replace( /\)\(/g, ')*(' );
-            
-            var openBrackets = 0,
-                stack = [],
-                depth = [],
-                //variable for the last operator
-                lastOperator = 0, 
-                //expression length
-                el = expStr.length, 
-                brackets = {
-                    '(': function() {
-
-                        //a bracket signifies a new function and this needs it's own stack
-                        stack.push( [] ); 
-
-                        //we need to find our way back to upper stack so make a note of it
-                        depth.push( stack ); 
-
-                        //move to the new stack 
-                        stack = stack[stack.length - 1]; 
-
-                        //open a new  bracket
-                        openBrackets++;
-                    },
-                    ')': function() {
-
-                        //move up one level on the stack
-                        stack = depth.pop(); 
-
-                        //close the bracket
-                        openBrackets--;
-                    }
-                };
-                var stackInsert = function( pos ) {
-                    var e = expStr.substring( lastOperator, pos ),
-                        curOperator = expStr.charAt( pos ); 
-                    if(e) { stack.push( e.replace( new RegExp( dplus ),'e-').replace( new RegExp( dtim ),'e+') ); }
-
-                    if(curOperator) {
-                        stack.push( curOperator );
-                    }    
-                };
-            for( var i=0; i<el; i++ ){
-                var c = expStr.charAt( i );
-                if( operators[c] || brackets[c] ) {
-                    stackInsert( i );
-                    lastOperator = i+1; 
-                    if( brackets[c] ) {
-                        stack.pop();
-                        brackets[c]();
-                    }
-                }
-            }
-            stackInsert( expStr.length );
-            if( openBrackets !== 0 ) throw new Error('Malformed expression!');
-            return stack;
-        },
-        //this function grabs all between the commas
-        loadParams: function( symbolArray ) { 
-            var l = symbolArray.length,
-                curloc = 0,
-                comma = ',',
-                nparam = 1,
-                paramArray = [],
-                searching = true; 
-            while( searching ) {
-                var token = symbolArray[curloc],
-                    eos = curloc === l; 
-                //if we find a comma or we've reached the end of the array.
-                if( token === comma || eos ) {
-                    var t = symbolArray.splice( 0, curloc );
-                    paramArray.push( nparam === 1 ? t : t.join('') );
-                    symbolArray.shift();//remove the comma
-                    curloc = 0;
-                    nparam++; //walk up the parameter list
-                }
-                searching = !eos; 
-                curloc++; 
-            }
-            
-            //put the symbol back into the tokens array.
-            symbolArray.unshift( paramArray.shift() );
-            return paramArray;
-        },
-        parseFunction: function( fn, contents ) { 
-            var properties = functions[fn.value],
-                fnMap = properties[0],
-                params = contents.params || [],
-                result;
-
-            //the parameters don't have to be attached to the symbol anymore
-            delete contents.params;
-
-            if( !fnMap ) {
-                result = math( fn, contents ); 
-            }
-            else {
-                //make the contents the first parameter and call the function with the provided parameters.
-                //temporary fix: until we can have function parameters wrapped inside of the parens function 
-                //without causing an infinite loop
-                if( contents.length === 1 && contents.group === CP ) contents = firstObject( contents.symbols );
-
-                params.unshift( contents );
-                
-                if( fnMap === map ) { 
-                    //Just call map which does nothing more than format the arguments and call Parser.parse 
-                    //with the arguments provided
-                    result = map( properties[2], properties[3], params );
-                }
-                else {
-                    result = fnMap.apply( undefined, params );
-                } 
-            }
-            return result;
-        },
-        //The function responsible for the actual parsing of the expression.
-        parseTokens: function( tokensOrExpression, subs ) { 
-            var tokens = tokensOrExpression.tokens || tokensOrExpression,
-                parsed = {},
-                curPosition = 0,
-                lastOrder = 0; 
-            while( curPosition <= tokens.length ){ 
-                var token = tokens[curPosition],
-                    endOfTokens = curPosition === tokens.length;
-                // Support for functions
-                if( token in functions ) {
-                    
-                    token = this.fetchSymbol( tokens, subs, curPosition);
-                    
-                    // Parse what's in between the brackets.
-                    var contents = this.fetchSymbol( tokens, subs, curPosition, true ); 
-
-                    insert( tokens ,this.parseFunction( token, contents ), curPosition ); 
-                }
-                if( operators[token] !== undefined || endOfTokens ) {
-
-                    // An order of -1 insures that we have a lower order than anything else and forces processing
-                    var order = endOfTokens ? -1 : operators[token].order;
-
-                    if( order < lastOrder ) { 
-
-                        // Remove the whole prior section from the tokens as we now know that we're either at the end
-                        // or a higher order operator [*,^,/]
-                        var subTokens = tokens.splice( 0, curPosition ),
-
-                            // Look ahead to the next operator after the subtokens to determine if we can place the last
-                            // symbol into parsed or if we have to hang on to it for further multiplication after a '^'.*/
-                            nextOperator = tokens[0]; 
-
-                        //Parsing from this point on is pretty straight forward
-                        while( subTokens.length > 0 ) { 
-                            var firstSymbol = this.fetchSymbol( subTokens, subs ),
-                                curOperator = subTokens.pop(); 
-                            if( curOperator === '-' ){
-                                // To support subraction just negate the multiplier and reinsert for addition
-                                firstSymbol.negate();
-                                if( subTokens[0] ) subTokens.push( '+' );
-                                subTokens.push( firstSymbol ); 
-                            }
-                            // Insert the token into parsed if the operator is + or if no operator was found meaning we 
-                            // only have one token left.
-                            else if( curOperator === '+' || !curOperator ) {
-                                if( nextOperator === '*' || nextOperator === '/' ){
-
-                                    //At this point we've already seen that the next operator so clear the next operator for the next iteration.
-                                    nextOperator = null; 
-
-                                    tokens.unshift( firstSymbol );
-                                }
-                                else {
-                                    Parser.unpackSymbol( firstSymbol, parsed );
-                                }
-                            }
-                            else { 
-                                var secondSymbol = this.fetchSymbol( subTokens, subs ),
-                                    opr = operators[curOperator];
-                                if( !opr || !opr.fn ) throw new Error( curOperator + ' is not a supported function!')
-                                subTokens.push( this[opr.fn]( firstSymbol, secondSymbol ) ); 
-                            }
-                        }
-
-                        if( order > 0 ) {
-                            // Go back to the beginning and let's start parsing again. A better point may be chosen and may lead to better
-                            // performance but I'll investigate that later.
-                            curPosition = 0; 
-                        }                
-                    }
-                    lastOrder = order;
-                }
-                curPosition++;
-            }
-            // Place a zero in the object if it's empty e.g. 1-1 will result in a empty object
-            if( keys( parsed ).length === 0 ) parsed._ = Symbol(0); 
-            return parsed; 
-        },
-        // A function to safely fetch a token out of the token array. This will read a sub-array into a symbol during parsing.
-        fetchSymbol: function( tokens, subs, index, isFunction ) { 
-            // pop out the token
-            var sym = index >= 0 ? remove( tokens, index ) : tokens.pop(), paramArray;
-            
-            if( isSymbol( sym )) return sym;
-            
-            //fish out the parameters that were passed in
-            if(isFunction){
-                paramArray = this.loadParams( sym );
-            }
-            
-            if( isArray( sym ) ) { 
-                //pack it and ship it
-                sym = this.packSymbol( this.parseTokens( sym, subs ), '', isFunction );
-            }
-            else {
-                //subsitute the value for a known value.
-                if( subs && subs[sym] !== undefined && !isReserved( sym ) ) {
-                    sym = Parser.parse( subs[sym] );
-                }
-                else if( constants[sym] !== undefined && NUMER ) { 
-                    sym = Parser.parse( constants[sym] );
-                }
-                else {
-                    sym = Symbol( sym ); 
-                }
-            }
-
-            if( paramArray && paramArray.length > 0 ) sym.params = paramArray; 
-            return sym;
-        },
-        // Transfer over a symbol when changing a combination to another symbol. e.g. a composition that contains a composition
-        transfer: function( second, first ) { 
-            first.multiplier *= second.multiplier;
-            this.powMultiply( first, second ); //TODO: have the value check if it's dealing with a number and more as well;
-            first.value = second.value;
-            first.group = second.group;
-            if( second.symbols ) {
-                first.symbols = second.symbols;
-                first.length = second.length;
-            }
-            else {
-                delete first.symbols;
-                delete first.length;
-            }
-        },
-
-        // This method neatly reorganizes all the tokens into an object and is the heart of the parser.
-        // If a symbol is found they are added together. It also does some book keeping on higher group Symbols.
-        addSymbol: function( symbol, item, parent, multiply ) { 
-            var obj,
-                parentGroup = parent ? parent.group : null,
-            // If the function is being multiplied then this forces the power to be ignored.
-            baseOnly = symbol.group === FN && multiply || parentGroup === CB && symbol.group === FN;
-            
-            if( isSymbol( item ) ) {
-                obj = item.symbols;
-            }
-            else {
-                obj = item;
-            }
-            
-            if( +symbol.power === 0 ) { symbol = Symbol( symbol.multiplier ); } 
-            
-            // Symbols of group PL are stored by their power so verify and use the power value as the key.
-            var name = ( parent ? parent.group === PL: false ) ? ( isSymbol( symbol.power ) ? 
-                text( symbol.power ) : symbol.power ) : symbol.name( baseOnly ); 
-            if( !obj[name] ) { 
-                
-                // Some bookkeeping for the function
-                if( parent ) {                    
-                    if( parent.group === CB ) {
-                        parent.multiplier *= symbol.multiplier;
-                        symbol.multiplier = 1;
-                    }
-                    !parent.length ? parent.length = 1 : parent.length++;
-                }
-                // If the symbol is zero why even bother adding it.
-                if( symbol.multiplier !== 0 ) obj[name] = symbol; 
-            }
-            else { 
-                obj[name] = multiply ? this.multiply( obj[name], symbol ) : this.add( obj[name], symbol );
-
-                if( obj[name].multiplier === 0 ) { 
-                    delete obj[name]; 
-                    if( parent ) parent.length--;
-                }
-                if( multiply && obj[name].group === N ) {                 
-                    item = this.multiply( remove( obj, name ), parent );
-
-                    parent.length--;
-                    
-                    if( parent.length === 1 ) {
-                        this.transfer( firstObject( obj ), parent ); 
-                    }
-                }
-                    
-                if( parent && parent.group === CB ) {
-                    
-                    // We know the multiplier is 1 because it has already been transferred earlier
-                    if( +obj[name] === 1 ) {
-                        delete obj[name]; 
-                        parent.length--;
-                    }
-                    if( parent.length === 1 ) {
-                        // Transform the symbol into the parent symbol.
-                        this.transfer( firstObject( obj ), parent );
-                    }
-                }
-            }
-            
-            return obj;
-        },
-        add: function( a, b) { 
-
-            if( !isSymbol(a) ) a = Symbol(a); //this enables us to pass in numbers which is useful for exponentials
-            if( !isSymbol(b) ) b = Symbol(b);
-            
-            var g1 = a.group, g2 = b.group;
-            var p1 = ''+a.power, p2 = ''+b.power; 
-            if( g1 === CB && g2 === PL || 
-                g1 === S && g2 === PL ) return this.add( b, a );
-            // Note: the add function doesn't get called directly while parsing
-            // First let's make sure we're not dealing with a symbol of group PL
-            if( g1 === PL && p1 === '1' ) { 
-                var m = a.multiplier, x;
-                // Move the value of the multiplier down to avoid problems later on
-                if( m !== 1 ) {
-                    for( x in a.symbols ) {
-                        a.symbols[x].multiplier *= a.multiplier;
-                    }
-                    a.multiplier = 1;
-                }
-                if( g2 === PL && p2 === '1') {
-                    for( x in b.symbols ) {
-                        this.addSymbol( b.symbols[x], a.symbols, a );
-                    }
-                }
-                else {
-                    this.addSymbol( b, a.symbols, a );
-                }
-            }
-            else if( a.value === b.value && p1 === p2 ){
-                a.multiplier += b.multiplier;
-            }  
-            else {
-                a = this.convertAndInsert( a, b, PL );
-            }
-
-            return a;
-        },
-        // NOTE: This is method should never actually be called but is there just in case something was overlooked
-        subtract: function( a, b ) {
-            b.negate(); 
-            return this.add( a, b );
-        },
-        multiply: function( a, b ) { 
-            // Take care of imaginary numbers
-            if( a.isImaginary && b.isImaginary ) return Symbol( -1*a.multiplier*b.multiplier );
-            
-            var g1 = a.group, 
-                g2 = b.group,
-                p1 = a.power, 
-                p2 = b.power,
-                n1 = g1 === FN ? a.name( true ) : null,
-                n2 = g2 === FN ? b.name( true ) : null;
-            // Quick returns
-            if( p1 === 0 ) { a = Symbol( a.multiplier ); }
-            if( p2 === 0 ) { b = Symbol( a.multiplier ); }
-            if( a.multiplier === 0 || b.multiplier === 0 ) { return Symbol( 0 );}
-            
-            // Always have the lower group on the right for easy comparison.
-            if( g2 > g1 ) { return this.multiply( b, a); }
-            
-            var isCompositeA = ( g1 === PL || g1 === CP ),
-                isCompositeB = ( g2 === PL || g2 === CP ),
-                t, x;
-        
-            // For all symbols the multipliers have to be multiplied.
-            a.multiplier *= b.multiplier;
-            
-            // Exit early if it's a number.
-            if( g2 === N ) { return a; }
-            
-            // We have already grabbed the value of the multiplier so we have to 
-            // now set it to 1. e.g 2 * (2*x) = 4 * (1*x).
-            b.multiplier = 1;
-            
-            var isEqual = a.value === b.value;
-            
-            if( isEqual && g2 !== N && g1 !== PL && 
-                !( g1 === EX && g2 === PL ) && n1 === n2 ) { 
-                this.powAdd( a, b );
-                
-                // This is needed if during multiplication one of the symbols 
-                // in a combination results in a zero power.
-                if( +a.power === 0 ) {
-                    return Symbol( a.multiplier );
-                }
-            }
-            else if( isCompositeA && p1 === 1 || isCompositeB && p2 === 1 ) { 
-                
-                // The multiply method always puts the lower group symbol to the right but sometimes, 
-                // such as in the case of group PL or CB, we need it back on the right. 
-                // The following tests for these cases.
-                if( g1 === CB && g2 === PL || g1 === FN && g2 === CP ||
-                    g1 === EX && g2 === PL || g1 === EX && g2 === CP ||
-                    isCompositeB && isCompositeA && p1 !== 1  ) { 
-                    // Swap symbols
-                    t = a; a = b; b = t; 
-                    // Swap powers
-                    t = p1; p1 = p2; p2 = t; 
-                } 
-                if( !isEqual && a.group === PL || p1 !== p2 ) { 
-                    a.group = CP; 
-                }
-                
-                t = {}; 
-                a.length = 0;
-                for( x in a.symbols ) {  
-                    var r = this.multiply( a.symbols[x], b.copy() );  
-                    var m = r.multiplier; 
-                    if( b.group === PL && p2 === 1 || b.group === CP && p2 === 1 ) {
-                        for( var xx in r.symbols ) {
-                            
-                            if( m!== 1 ) r.symbols[xx].multiplier *= m; 
-                            
-                            //The last operation may have resulted in a number being returned
-                            this.addSymbol( r.symbols[xx], t, a );
-                        }
-                        r.multiplier = 1;
-                    }
-                    else {
-                        this.addSymbol( r, t, a ); 
-                    }
-                }
-                   a.symbols = t; 
-            }
-            else if( g1 === CB && g2 !== N && g2 !== PL ) { 
-
-                if( g2 === CB && p2 === 1 ) { 
-                    for( x in b.symbols ) {
-                        
-                        // We're going to be multiplying 2 symbols of group CB but in the process one may have been 
-                        // transformed to a simpler symbol. Because of this we have to check that it still has a symbols
-                        // object.
-                        if( !a.symbols ) {
-                            a = Parser.multiply( b.symbols[x], a );
+    //Depends on Fraction
+    var Latex = {
+        space: '~',
+        latex: function(obj, abs, group) {
+            abs = abs || false;
+            group = group || obj.group; 
+            var output = '',
+                inBraces = this.inBraces, 
+                value;
+            if(isSymbol(obj)) { 
+                switch(group) {
+                    case N:
+                        value = obj.multiplier;
+                        if(abs) value = Math.abs(value);
+                        if(isInt(value)) {
+                            output = value;
                         }
                         else {
-                            this.powDivide( b.symbols[x], a );
-                            this.addSymbol( b.symbols[x], a, a, true );
-                        }
-                    }
-                }
-                else { 
-                    // Under investigation: if your having problems with incorrect exponentials you may want to check
-                    // here first
-                    this.powDivide( b, a ); 
-                    this.addSymbol( b, a, a, true ); 
-                    
-                }
-                
-                // Update the name but only if it's a function
-                if( a.group !== FN ) a.value = a.name();
-            }
-            else if( g2 !== N ){ 
-                if( g1 === EX && g2 === CB && b.hasVariable( a.name(true) ) ) {
-                    this.addSymbol( a, b, undefined, true );
-                    a = b;
-                }
-                else {
-                    a = this.convertAndInsert( a, b, CB );
-                }
-            } 
-            
-            return a;
-        },
-        divide: function( b, a ) {
-            if( b.multiplier === 0 ) throw new Error('Division by zero!')
-            b.multiplier = 1/b.multiplier;
-            if( b.group > N ) {
-                b.invert();
-            }
-            return this.multiply( a, b );
-        },
-        pow: function( b, a ) { 
-            if( +b === 1 ) return a;// x^1 = x;
-            var g1 = a.group, g2 = b.group;
-
-            // If the radical is even we must retain its absolute value.
-            // this checks to see if the radical is divisible by two
-            var isEven = +b % 2 === 0 || 1/( +b - parseInt( +b ) ) % 2 === 0,
-                // Record if we have a negative number as the base.
-                isNegative = a.multiplier < 0,
-                // Make sure that the power is even.
-                powEven =  a.power % 2 === 0;
-
-            if( a.isImaginary ) {
-                if( g2 === N && b.multiplier % 2 === 0 ) {
-                    return Symbol( -Math.pow( a.multiplier, +b ));
-                }
-            }
-
-            if( g1 === N && g2 === N ) { 
-                var fracpart = Math.abs( b.multiplier - parseInt( b.multiplier ) ),
-                    isRadical =  fracpart < 1 && fracpart > 0;
-
-                if( isRadical && isNegative ) { a.negate(); }
-
-                // Support for negative/imaginary numbers when dealing with radicals
-                a.multiplier = Math.pow( a.multiplier, b.multiplier );
-                if( isNegative && isRadical && isEven ) {
-                    a = Parser.multiply( a, Symbol( 'i' ) );
-                }
-                else if( isRadical && isNegative ){
-                    a.negate();
-                }
-                return a;//early exit.
-            }
-            else {
-                if( isNegative ) { a.negate(); }
-                var p = a.power;
-                if( g2 === N && !isSymbol( p ) ) { 
-                    if( isNegative && isEven ) { //TBD
-                        var m = a.multiplier;
-                        
-                        if( g1 === S ) {
-                            a.multiplier += b.multiplier;
-                        }
-                        else {
-                            a.multiplier = -1;
-                            a = parens( a );
+                            var result = Fraction.convert(value);
+                            output = this.fraction(result);
                         }  
-                    }
-                    else {
-                        m = a.multiplier;
-                    }
-                    
-                    a.multiplier = Math.pow( m, b.multiplier );
-                    a.power *= b.multiplier; 
-                }
-                else { 
-                    // The symbols is now of group EX
-                    if( g1 !== FN ) {
-                        // But first some upgrades to the humble group N symbol
-                        if( g1 === N ) {
-                            a.value = a.multiplier;
-                            a.multiplier = 1;
-                            p = 1;
-                        }
-                        // It will become impossible to distinguish between a group CP and a CB symbol once the 
-                        // the group is changed by looking at the objects structure so we make note.
-                        if( g1 !== EX ) { a.origin = g1; }
+                        break;
+                    case S:
+                        output = this.renderSymbolLatex(obj);
+                        break;
+                    case FN: 
+                        var name = obj.baseName;
                         
-                        a.group = EX;
+                        if(name === PARENTHESIS) name = '';
+                        else if(name in Math || name in Math2) name = '\\'+name;
+
+                        var fnInput = obj.args.slice(0).map(function(item) {
+                            return Latex.latex(item);
+                        });
+                        value = name+this.inBrackets(fnInput);
+                        output = this.renderSymbolLatex(obj, value, abs);
                         
-                    }
-
-                    // Make sure that you're sending in a symbol for multiplication
-                    if( !isSymbol( p ) ){ p = Symbol( p ); }
-                    a.power = this.multiply( p , b );
-
-                    // No need leave the power anymore complex than it needs to be.
-                    if( a.power.group === N ) { a.power = a.power.multiplier; } 
+                        break;
+                    case PL:
+                        var value = this.renderSubSymbolsLatex(obj, function(a,b) {
+                            return a.power < b.power;
+                        }, undefined, abs);
+                        output = this.renderSymbolLatex(obj, value, abs);
+                        break;
+                    case CP:
+                        value = this.renderSubSymbolsLatex(obj, function(a,b) {
+                            return a.group < b.group;
+                        }, undefined, abs);
+                        output = this.renderSymbolLatex(obj, value, abs);
+                        break;
+                    case CB:
+                        value = this.renderSubSymbolsLatex(obj, function(a,b) {
+                            return a.group < b.group;
+                        }, true, abs);
+                        output = this.renderSymbolLatex(obj,value, abs);
+                        break;
+                    case EX:
+                        var pg = obj.previousGroup;
+                        output = pg === FN ? Latex.latex(obj, abs, obj.previousGroup) : 
+                                this.renderSymbolLatex(obj, null, abs);
+                        break;
                 }
             }
-            // If the symbol went down from a symbol of group EX, restore.
-            if( a.power === 1 && a.origin ) {
-                if( a.origin === N ) {
-                    a = Symbol( a.multiplier*a.value );
+            else {
+                output = obj;
+            }
+//            console.log('returning from group',group ,'>>>>', output )
+            return output;
+        },
+        //renders the sub-symbols in complex symbols
+        renderSubSymbolsLatex: function(symbol, sortFunction, suppressPlus, abs) { 
+            var rendered = '',
+                subSymbols = symbol.collectSymbols().sort(sortFunction);
+
+            if(sortFunction) subSymbols.sort(sortFunction);
+            
+            var l = subSymbols.length;
+            
+            for(var i=0; i<l; i++) {
+                var curSymbol = subSymbols[i], delimiter;
+                if(curSymbol.multiplier < 0) {
+                    delimiter = '-';
+                }
+                else if(suppressPlus){
+                    delimiter ='';
                 }
                 else {
-                    a.group = a.origin;
+                    delimiter = '+';
                 }
+                //leave the negative for the first symbol
+                abs = abs || i > 0;
+                var latex = this.latex(curSymbol, abs);
+                //only add the delimiter to the first one
+                if(i > 0) latex = delimiter+latex;
+                //add it to the total rendered
+                rendered += latex;
             }
-            // Verify that the symbol is a candidate to have its absolute value retained
-            if( isEven && powEven && parseInt( a.power + 1 ) % 2 === 0 ) a = abs( a );
-            
-            // Put back the sign 
-            if( isNegative && !isEven ) a.negate();
-            return a;
+            return rendered;
         },
-        // A method to pack intermediate results into a symbol or just return the symbol.
-        // e.g. calculations done on an expression between brackets
-        packSymbol: function( obj, group, donotunpack ) {
-            group = group || CP;
-            var k = keys( obj ),
-                l = k.length,
-                isCompounded = false;
-            // Bug fix: cos((1+x)^2)^2 would return cos(1+x)^4
-            // TODO: this should use parens instead. At present it results in an infinite loop.
-            if( donotunpack ) {
-                isCompounded = obj[k[0]].group === CP;
-            }
-
-            if( l === 0 ) {
-                return Symbol(0);
-            }
-            // NUMER takes higher precedence and can force a number to be returned
-            else if( l === 1 && ( NUMER || !isCompounded ) ) {
-                return obj[k[0]];
+        //renders the style for the multiplier and power of the symbol.
+        renderSymbolLatex: function(symbol, value, abs) {
+            if(symbol.group === N) return this.latex(symbol, abs);
+            var multiplierArray = Fraction.convert(symbol.multiplier),
+                value = value || symbol.value,
+                power = symbol.power || '',
+                sign = symbol.multiplier < 0 ? '-' : '',//store the sign
+                sqrt = Math.abs(power) === 0.5;
+            
+            //if the latex was requested as absolute value remove the sign
+            if(abs) sign = '';
+            
+            //make the multiplier array positive
+            multiplierArray[0] = Math.abs(multiplierArray[0]);
+            
+            //handle powers
+            if(isSymbol(power)) {
+                power = this.latex(power, true);
             }
             else {
-                var n = new Symbol();
-                n.group = group;
+                if(Math.abs(power) === 1) { 
+                    power = '';
+                }
+                else {
+                    var powerArray = Fraction.convert(power);
+                    if(powerArray[1] === 1) powerArray.pop();
+                    
+                    if(symbol.power < 0) {
+                        powerArray[0] = Math.abs(powerArray[0]);
+                    }
+                    power = this.fraction(powerArray);
+                }
+            }
+            
+            //remove the one from the base of the fraction
+            if(multiplierArray[1] === 1) multiplierArray.pop();
+            
+            //if there's a power, the location where we attach it depends on the sign of the power.
+            //if negative it's bottom, otherwise we attach it to the top.
+            var where  = isNegative(symbol.power) ? 1 : 0;
                 
-                n.symbols = obj;
-                n.length = l;
-                n.value = text( obj );
-                return n;
+            if(multiplierArray[where] === 1) {
+                multiplierArray[where] = value;
             }
-        },
-        // This method provides a quick and dirty way to upgrade or downgrade a symbol
-        convertAndInsert: function( symbol, symbol2,  group ) {
-            var ns = Symbol(),
-                // Lets addSymbol know to multiply instead of add the symbol if the parsed object 
-                // already has such a value.
-                isCombo = group === CP; 
-            ns.group = group;
-            if( group > S ) {
-                ns.symbols = {}; 
-                ns.length = 0;
-                this.addSymbol( symbol, ns.symbols, ns, isCombo ); 
-                this.addSymbol( symbol2, ns.symbols, ns, isCombo );
-                ns.value = ns.name();
-                symbol = ns;
+            else {
+                var curValue = multiplierArray[where] ? multiplierArray[where]+this.space : '';
+                multiplierArray[where] = curValue+value;
             }
-            else if( group <= S && symbol.group > S ) {
-                delete symbol.symbols;
-            } 
-            return symbol;
-        },
-
-        // Method unpacks a symbol of group CP into a parsed object.
-        unpackSymbol: function( symbol, parsed, forceUnpack ) { 
             
-            if( symbol.power === 1 && symbol.group === CP || forceUnpack )  {
-                for( var x in symbol.symbols ) {
-                    symbol.symbols[x].multiplier *= symbol.multiplier; 
-                    this.addSymbol( symbol.symbols[x], parsed );
+            if(power) { 
+                multiplierArray[where] = this.inBraces(multiplierArray[where]);
+                if(!sqrt) {
+                    multiplierArray[where] += '^'+this.inBraces(power);
                 }
             }
-            else {
-                this.addSymbol( symbol, parsed );
-            }
+            
+            //write the value into a fraction
+            value = this.fraction(multiplierArray);
+            var retval = sign+value;
+            
+            if(sqrt) retval = '\\sqrt'+this.inBraces(retval);
+            
+            return retval;
         },
-        // A quick and lazy way to get a fully built symbol if you don't want to are unable to transform an object.
-        // this functions is sometimes needed but most of the time it's convenience but has the benefit of its parameter
-        // being a string, so you can easily retrace the logic.
-        parse: function( str, subs ) { 
-            return this.packSymbol( this.parseTokens( this.tokenize( str ), subs ) );
+        //the fraction method takes an additional crumb parameter which is
+        //used to add additional contents after creation
+        fraction: function(fractionArray) {
+            if(fractionArray.length === 1) return fractionArray[0];
+            return '\\frac'+this.inBraces(fractionArray[0])+this.inBraces(fractionArray[1]);
         },
-        // The next functions are needed in case the exponential is a symbol
-        powDivide: function( a, b ) {
-            if( isSymbol( a.power ) || isSymbol( b.power )) {
-                a.power = !isSymbol( a.power ) ? Symbol( a.power ) : a.power.copy();
-                b.power = !isSymbol( b.power ) ? Symbol( b.power ) : b.power.copy();
-                a.power = this.divide( b.power, a.power ); 
-            }
-            else {
-                a.power /= b.power;
-            }
+        inBraces: function(contents, index) {
+            index = index === undefined ? '' : '$'+index;
+            return '{'+contents+index+'}';
         },
-        powMultiply: function( a, b) { 
-            if( isSymbol( a.power ) || isSymbol( b.power )) {
-                a.power = this.multiply( a.power, b.power );
-            }
-            else {
-                a.power *= b.power;
-            }
+        inBrackets: function(contents) {
+            return '\\left('+contents+'\\right)';
         },
-        powAdd: function( a, b ) { 
-            if( isSymbol( a.power ) || isSymbol( b.power )) {
-                a.power = this.add( a.power, b.power );
-            }
-            else {
-                a.power += b.power;
-            }
-        },
-        convertSymbol: function( obj ) {
-            return new Symbol(obj);
+        write2Fraction: function(fraction, top, bottom) {
+            return fraction.replace('$1', top).replace('$2', bottom);
         }
     };
-    // Removes an item from either an array or an object.
-    // If an array the index must be specified after the array.
-    // If an object the key must be specified
-    function remove( obj, indexOrKey ) {
-        var result;
-        if( isArray( obj ) ) {
-            result =  obj.splice( indexOrKey, 1 )[0];
-        }
-        else {
-            result = obj[ indexOrKey ];
-            delete obj[ indexOrKey ];
-        }
-        return result;
-    }
-
-    // Returns true if the obj is a symbol.
-    var isSymbol = Utils.isSymbol = function( obj ) {
-        return ( obj instanceof Symbol );
-    }
-
     
-    // Returns the keys of an object/associative array.
-    var keys = Utils.keys = function( obj ) {
-        var k = [];
-        for( var key in obj ) { k.push( key ); }
-        return k;
+    function Vector(vec_array) {
+        this.vec_array = vec_array;
     }
+    
+    Vector.prototype = {
+        length: function() {
+            return this.vec_array.length;
+        }
+    };
+    /* END CLASSES */
 
-    // This recursive method attempts to return a parsed object or symbol back in text form.
-    // When asFunction is set to true it will make sure to write in JS function form.
-    var text = function( obj, delimiter, option, forceBracket ) { 
-        if(!obj) return '';
-        
-        var asFunction = option === 'function',
-            g = obj.group, v; 
-        delimiter = delimiter || '+';
-        if( g === CB || obj.origin === CB ) delimiter = '*';
-        // Base case
-        if( obj instanceof Symbol ) {
-            if( g === N ) {
-                v = +obj.multiplier;
-            }
-            else {
-                if( g === FN ) {
-                    var params = '',
-                    // Whenever we exporting the text to a javascript function we have to format the text differently.
-                    // This should probably be its own function but for now we're using text.
-                        value = obj.value;
-                    v = asFunction ? ( value in Math2 ? '1/Math.'+Math2[value].inv : 'Math.'+value ): value;
-                    
-                    // parens is just a function that holds the parentheses so we don't need the name
-                    if( v === 'parens' ) v = '';
+    /* FINALIZE */
+    var finalize = function() {
+        reserveNames(_.constants);
+        reserveNames(_.functions);
+    };
+    
+    var build = Utils.build = function(symbol, arg_array) {
+        var args = variables(symbol);
+        var ftext = function(symbol, xports) { 
+            xports = xports || [];
+            var c = [],
+                group = symbol.group,
+                prefix = '';
 
-                    v = v + inBrackets( text( obj.symbols, undefined, option ) );
-                    
-                    if(obj.value ==='sum' && obj.params ) v = v.substring(0, v.length-1)+','+obj.params.join(',')+')';
-                }
-                else if( g === PL || g === CP || g === CB || g === EX && obj.symbols ) {
-                    v = text( obj.symbols, delimiter, option );
-                    if( obj.multiplier !== 1 && g !== CB || obj.power !== 1 || forceBracket )  v = inBrackets( v );
-                }
+            var ftext_complex = function(group) {
+                var d = group === CB ? '*' : '+',
+                    cc = [];
+                for(var x in symbol.symbols) cc.push(ftext(symbol.symbols[x], xports)[0]);
+                var retval = cc.join(d);
+                return retval ? inBrackets(retval) : retval;
+            },
+
+            ftext_function = function(bn) {
+                var retval;
+                if(bn in Math) retval = 'Math.'+bn;
                 else {
-                    v = obj.value;
+                    //Math2 functions aren't part of the standard javascript
+                    //Math library and must be exported.
+                    xports.push('var '+bn+' = '+_.Math2[bn].toString()+'; ');
+                    retval = bn;
                 }
-                var m = obj.multiplier, p = obj.power;
-                if( asFunction ) {
-                    if( p !== 1 ) v = 'Math.pow'+inBrackets( v+','+( g === EX ? text( p, undefined, option) : p) );
-                    if( m !== 1 ) v = m+'*'+v;
-                }
-                else {
-                    m = m === 1 ? '' : m === -1 ? '-' : m+'*';
-                    p = p === 1 ? '' : '^('+obj.power+')';
-                    v = m+v+p;
-                }    
-            }
-        }
-        else {
-            var a= [], imgpart = '';
-            for( var x in obj ) { 
-                var txt = text( obj[x], undefined, option );
-                // Grab the imaginary part if it happens to be so and store it.
-                if( obj[x].isImaginary ) {
-                    imgpart = txt;
-                }
-                else {
-                    a.push( txt );
-                }
-            }
-            v = a.sort();
-            
-            // Reinsert imaginary part if there is one.
-            if( imgpart ) { a.push( imgpart ); }
-            
-            v = a.join( delimiter ).replace(/\+\-/g,'-');
-        }
-        return v;
-    }
-    
-    Utils.text = text;
-    
-    function init(){
-        
-        // Load indexOf function if not present
-        loadIndexOf();
-
-        Formatting.latex = function( obj ) {
-
-            if( isSymbol( obj ) ) {
-                var symbol = obj,
-                    g = symbol.group,
-                    m = Fraction.convert( symbol.multiplier );
-                if( g === N ) return Formatting.frac( m );
-                // Determine which bracket to use for current format
-                var prefix = '~',
-                    sign = '',
-                    bracket = inBraces,
-                    p = symbol.power,
-                    sqrt = p === 0.5 || p === -0.5; 
-                // Format the power
-                if( !sqrt ) { 
-                    // First check if we have a symbol as the power
-                    p =  isSymbol( p ) ? Formatting.latex( p ) :  Math.abs( p ); 
-                    // Fow put it as a fraction
-                    p = ( isInt( p ) ? p : ( !isNaN( p ) ? Fraction.convert( p ) : p ) );
-                    // Format the power of the symbols. If it's 1... **poof**
-                    p = p === 1 || p === -1 ? '' : '^'+bracket( Formatting.frac( p ) );
-                }
-
-                // Grab the sign
-                if( m[0] < 0 ) { 
-                    m[0] = Math.abs( m[0] );
-                    sign = '-';
-                }
-                var dress = function( v, f, tex ) {
-                    return ( sqrt ? '\\sqrt'+bracket( v ): ( p ? f( v, tex) : v )+p );
-                };
-                
-                var tex = (function(){
-                    var g = symbol.group,
-                        value,
-                        addBrackets = false;
-                    if( g === S || g === EX  ) {
-                        value = symbol.value;
-                        
-                        // Some pretty prebuilts 
-                        var greek = [ 'alpha', 'beta', 'gamma', 'delta', 'zeta', 'eta', 'theta', 'iota', 
-                            'kappa', 'mu', 'nu', 'xi', 'rho', 'sigma', 'tau', 'chi', 'psi', 'omega', 'pi' ];
-                        if( greek.indexOf( value ) !== -1 ) value = '\\'+value;
-                        
-                        value = dress( symbol.symbols ? Formatting.latex( symbol.symbols ): value, bracket );
-                    }
-                    else if( g === FN ) { 
-                        //grab the name of the function
-                        var name = symbol.value;
-                        
-                        value = Formatting.latex( symbol.symbols );
-                        
-                        if( name === 'parens' ) { 
-                            if( sqrt ) { name = value; }
-                            else { name = inBrackets( value, true ); }
-                        }
-                        else if( name === 'abs' ) {
-                            name = '\\left|'+value+'\\right|';
-                        }
-                        else if( name === 'sum' ) {
-                            name = '\\sum_'+inBraces(symbol.params[0]+'='+symbol.params[1])+'^'+
-                                inBraces(symbol.params[2])+' '+inBraces(value, true);
-                        }
-                        else {
-                            name = '\\'+ name + inBrackets( value, true);
-                        }
-                        value = dress( name, function(v){ return v; });
-
-                    }
-                    else if( g > FN ) {
-                        // First we need to build the value
-                        if( g === CB ) {
-                            var t = [m[0],1]; m[0] = 1;
-                            for( var x in symbol.symbols ) {
-                                var s = symbol.symbols[x];
-                                value = Formatting.latex( s ).replace(/\\frac\{1\}/,'');
-                                if( s.group === CP ) value = inBrackets( value, true );
-                                Formatting.attach( value, t, s.power, prefix );
-                            } 
-                            value =  Formatting.frac( t );
-                            if( symbol.multiplier !== -1 ) addBrackets = true;
-                        }
-                        else if( g === CP || g === PL ) {
-                            value = Formatting.latex( symbol.symbols );
-                            if( symbol.power === 1 ) addBrackets = true;
-                        }
-                        value = dress( value, inBrackets, true );
-                    }
-                    if( symbol.multiplier !== 1 && g !== CB && addBrackets  ) value = inBrackets( value, true );
-                    Formatting.attach( value, m, symbol.power, prefix );                    
-                    value = Formatting.frac( m );
-                    return value;
-                })();
-                return sign+tex;
-            }
-            else {
-                var values = [];
-                for( var x in obj ) {
-                    values.push( Formatting.latex( obj[x]) );
-                }
-                return values.join('+').replace(/\+\-/g,'-');
-            }
-        };
-        
-        Formatting.attach = function( value, arr, power, prefix ) {
-            prefix = prefix || '';
-            // Choose whether we're going top or bottom. 
-            var loc = isNeg( power ) ? 1 : 0; 
-            arr[loc] = arr[loc] === 1 ? value : arr[loc] += prefix+value;
-        };
-                
-        Formatting.frac = function( arr ){
-            if(!arr ) return '';
-            if( !isArray( arr ) ) return arr;
-            if( arr[1] === 1 ) return arr[0];
-            return '\\frac{'+arr[0]+'}{'+arr[1]+'}';
-        };
-    } 
-    
-    function loadIndexOf() {
-        //http://erik.eae.net/playground/arrayextras/arrayextras.js
-        if (!Array.prototype.indexOf) {
-            Array.prototype.indexOf = function (obj, fromIndex) {
-                if (fromIndex == null) {
-                    fromIndex = 0;
-                } else if (fromIndex < 0) {
-                    fromIndex = Math.max(0, this.length + fromIndex);
-                }
-                for (var i = fromIndex, j = this.length; i < j; i++) {
-                    if (this[i] === obj)
-                        return i;
-                }
-                return -1;
+                retval = retval+inBrackets(symbol.args.map(function(x) {
+                    return ftext(x, xports)[0];
+                }).join(','));
+                return retval;
             };
-        }
-    }
-    
-    // Inserts an object into an array or recursively adds items if an array is given
-    var insert = Utils.insert = function( arr, item, index ) {
-        if( isArray( item ) ) {
-            for( var i=0; i<=item.length+1; i++ ){
-                insert( arr, item.pop(), index );
-            }
-        }
-        else if( typeof index === 'undefined ') {
-            arr.push( item );
-        }
-        else{
-            arr.splice( index, 0, item );
-        }
-    }
-    
-    var isInt = Utils.isInt = function( num ) {
-        return num % 1 === 0;
-    }
-    
-    var isArray = Utils.isArray = function( arr ) {
-        return arr instanceof Array;
-    }
 
-    var inBrackets = Utils.inBrackets = function( str, tex ) {
-        var l = tex ? '\\left' : '',
-            r = tex ? '\\right': '';
-        return l+'('+str+r+')';
-    },
-    
-    inBraces = Utils.inBraces = function( str ) {
-        return '{'+str+'}';
-    },
-    
-    round = Utils.round = function( x, s ) { 
-        s = s || 14;
-        return Math.round( x*Math.pow( 10,s ) )/Math.pow( 10,s );
-    },
+            //the multiplier
+            if(group === N) c.push(symbol.multiplier);
+            else if(symbol.multiplier === -1) prefix = '-';
+            else if(symbol.multiplier !== 1) c.push(symbol.multiplier);
+            //the value
+            var value = null;
 
-    // Items are do not have a fixed order in objects so only use if you need any first random item in the object
-    firstObject = Utils.firstObject = function( obj ) {
-        for( var x in obj ) break;
-        return obj[x];
-    },
-    
-    variables = Utils.variables = function( obj, vars ) { 
-        vars  = vars || {};
-        if( isSymbol( obj ) ) { 
-            var g = obj.group; var s = g === EX;
-            if( g > S && g !== PL && g !== EX ) {
-                variables( obj.symbols, vars ); 
+            if(group === S) value = symbol.value;
+            else if(group === FN) { 
+                value = ftext_function(symbol.baseName);
             }
-            else if( g === S || g === PL ) {
-                vars[obj.value] = null;
-            }
-            else if( g === EX ) { 
-                var ov = obj.value;
-                // We don't want a number passed in as a parameter so we check.
-                if( isNaN( ov ) ) vars[ov] = null;
-                variables( obj.power, vars );
-            }
-        }
-        else { 
-            for( var x in obj ) {
-                variables( obj[x], vars );
-            }
-        }   
-        return keys( vars );
-    },
-
-    map = Utils.map = function( fn, params, args ) { 
-        // Organize the parameters
-        var subs = {};
-        for( var i=0; i<params.length; i++ ) {
-            subs[params[i]] = isSymbol( args[i] ) ? text( args[i] ) : args[i];
-        }
-        return Parser.parse( fn, subs );
-    },
-    
-    build = function( fn, argsArray ) { 
-        var vars = variables( fn ).sort(),
-            args = argsArray || vars;
-        
-        // If no paramArray was given then vars and params should be the same object
-        // if they're not then make sure that the values match.
-        if( !( vars === args ) ){
-            for( var i=0; i<vars.length; i++ ) {
-                if( args.indexOf === -1 ) throw new Error('Wrong number of parameters provided!');
-            }
-        }
-        return new Function( args, 'return '+text( fn, undefined, 'function' )+';' );
-    },
-    
-    arrayMax = Utils.arrayMax = function( arr ) {
-        return Math.max.apply( undefined, arr );
-    },
-    
-    arrayMin = Utils.arrayMin = function( arr ) {
-        return Math.min.apply( undefined, arr );
-    },
-    
-    //provides a temporary block where symbols are processed immediately
-    numBlock = Parser.numBlock = function( fn ) {
-       NUMER = true;
-       var ans = fn();
-       NUMER = false;
-       return ans;
-    };
-
-    // Enforces rule: must start with a letter and can have any number of underscores or numbers after.
-    function validateName( name, type ) { 
-        type = type || 'variable';
-        var regex = /^[a-z][a-z\d\_]*$/gi;
-        if( !( regex.test( name ) ) ) {
-            throw new Error( name+' is not a valid '+type+' name' );
-        }
-    }
-    
-    // This function changes the contents of the stored equation
-    function getEquation( equationNumber, fn ) {
-        var e = !equationNumber ? EQNS.length - 1 : equationNumber - 1,
-            eqn = EQNS[e],
-            result = 'No equation found.';
-            if( eqn ) { 
-                eqn.equation =  fn( eqn );
-                result = eqn.equation;
-            }
-        return result;
-    }
-    
-    function loadReserved() {
-        var load = function( obj ) { 
-            for( var x in obj ) {
-                RESERVED.push(x);
-            }
-        };
-        load( functions ); 
-        load( Math2 );
-        load( constants ); 
-    }
-
-    function sqrt( symbol ) { 
-        return Parser.pow( Symbol(0.5), symbol );
-    }
-
-    function abs( symbol, fn ) { 
-        var p = symbol.power;
-        if( Math.abs( p ) < 1 ) p = 1/p;
-        
-        // An symbol to the power of an even integer is already absolute.
-        if( p % 2 === 0 ) { return symbol; }
-        
-        fn = fn || Symbol('abs');
-        symbol.multiplier = Math.abs( symbol.multiplier );
-        return math( fn, symbol );
-    }
-    
-    function log( symbol ) { 
-        var result;
-        if( ( symbol.value === 'e') && symbol.multiplier === 1 ) {
-            result = isSymbol( symbol.power ) ? symbol.power : Symbol( symbol.power );
-        }
-        else if( ( symbol.value === 'exp') && symbol.multiplier === 1 ) {
-            result = Parser.packSymbol( symbol.symbols );
-        }
-        else {
-            var imgPart = '';
-            if( symbol.group === N && NUMER && symbol.multiplier < 0 ) {
-                symbol.negate();
-                imgPart = Parser.parse('PI*i');
-            }
-            result = math( Symbol('log'), symbol );
-            
-            // If there is an imaginary part reinsert it
-            if( imgPart ) { result = Parser.parse( result+'+'+imgPart ); }
-        }
-        return result;
-    }
-
-    // A wrapper for methods in the Math object.
-    function math( fn , symbol ) {
-        var g = symbol.group,
-            name = fn.value;
-        if( g === N && NUMER ) { 
-            var f = Math[name] ? Math[name] : Math2[name].fn;
-            symbol.multiplier = f( symbol.multiplier );
-        }
-        else {
-            if( (  g === CP || g === PL ) && symbol.power === 1 ){
-                symbol.group = FN;
-                symbol.value = fn.value;
+            else if(group === EX) {
+                var pg = symbol.previousGroup;
+                if(pg === N || pg === S) value = symbol.value;
+                else if(pg === FN) value = ftext_function(symbol.baseName);
+                else value = ftext_complex(symbol.previousGroup);
             }
             else {
-                fn.group = FN;
-                fn.symbols = Parser.addSymbol( symbol, {}, fn );
-                symbol = fn;
+                value = ftext_complex(symbol.group);
+            }     
+
+            if(symbol.power !== undefined && symbol.power !== 1) {
+                value = 'Math.pow'+inBrackets(value+','+text(symbol.power));
             }
-        } 
-        return symbol;
-    }
-    
-    //checks if a number of symbol is negative;
-    function isNeg( obj ) {
-        if( isSymbol( obj ) ) {
-            obj = obj.multiplier;
+
+            if(value) c.push(prefix+value);
+
+            return [c.join('*'), xports.join('').replace(/\n+\s+/g, ' ')];
+        };
+        if(arg_array) {
+            if(args.length !== arg_array.length) throw new Error('Argument array contains wrong number of arguments');
+            for(var i=0; i<args.length; i++) {
+                var arg = args[i];
+                if(arg_array.indexOf(arg) === -1) throw new Error(arg+' not found in argument array');
+            }
+            args = arg_array;
         }
-        return obj < 0;
-    }
+        var f_array = ftext(symbol);
+        return new Function(args, f_array[1]+' return '+f_array[0]+';');
+    };
     
-    //this function doesn't do much other than carry parentheses
-    function parens( symbol ) {
-        return Parser.parse('parens'+inBrackets( text(symbol) ) );
-    }
+    finalize(); //final preparations
+    /* END FINALIZE */
+
+    /* BUILD CORE */
+    var Core = {};
+    Core.groups = Groups;
+    Core.classes = {};
+    Core.Symbol = Symbol;
+    Core.Expression = Expression;
+    Core.Vector = Vector;
+    Core.Parser = Parser;
+    Core.Fraction = Fraction;
+    Core.Math2 = Math2;
+    Core.Latex = Latex;
+    Core.Utils = Utils;
+    Core.PARSER = _;
+    Core.PARENTHESIS = PARENTHESIS;
+    Core.parse2Number = function() {
+        return PARSE2NUMBER;
+    };
+    /* END BUILD CORE */
     
-    function isReserved( value ) { 
-        if( RESERVED.indexOf( value ) !== -1) throw new Error( value+' is reserved!' );
-        return false;
-    }
-    
-    //wrap it all up
-    Parser.groups = Groups;
-    Parser.utils = Utils;
-    Parser.classes = {};
-    Parser.classes.algebra = Algebra;
-    Parser.classes.calculus = Calculus;
-    Parser.classes.formatting = Formatting;
-    
-    
+    /* EXPORTS */
     /**
      * 
      * @param {String} expression the expression to be evaluated
      * @param {Object} subs the object containing the variable values
      * @param {Integer} location a specific location in the equation list to 
      * insert the evaluated expression
-     * @param {String} opt additional options
+     * @param {String} option additional options
      * @returns {Expression} 
      */
-    var userFuncs = function( expression, subs, location, opt ) {
-        var eq = opt === 'numer' ? numBlock(function(){
-                return  Parser.parse( expression, subs ) ;
-            }) : Parser.parse( expression, subs );
-        if( location ) {
-            EQNS[location-1] = eq;
-        }
-        else {
-            EQNS.push( eq );
-        }
+    var libExports = function(expression, subs, option, location) {
+        var eq = numblock(function(){
+            return _.parse(expression, format_subs(subs));
+        }, option === 'numer');
+        
+        if(location) { EQNS[location-1] = eq; }
+        else { EQNS.push( eq ); }
+        
         return new Expression(eq);
     };
     
@@ -1534,25 +1946,25 @@ var nerdamer = (function() {
      * 
      * @returns {String} returns the version of nerdamer
      */
-    userFuncs.version = function() {
+    libExports.version = function() {
         return version;
     };
-
+    
     /**
      * 
      * @param {String} constant the name of the constant to be set
      * @param {mixed} value The value of the constant 
      * @returns {nerdamer object}
      */
-    userFuncs.setConstant = function( constant, value ) {
-        validateName( constant[0] ); 
-        if( !isReserved( constant ) ) {
-            if( value === 'delete' ) {
-                delete constants[constant];
+    libExports.setConstant = function(constant, value) {
+        validateName(constant); 
+        if(!isReserved(constant)) {
+            if(value === 'delete') {
+                delete _.constants[constant];
             }
             else {
-                if( isNaN( value ) ) throw new Error('Constant must be a number!');
-                constants[constant] =  value;
+                if(isNaN(value)) throw new Error('Constant must be a number!');
+                _.constants[constant] =  value;
             }
         }    
         return this;
@@ -1560,28 +1972,20 @@ var nerdamer = (function() {
     
     /**
      * 
-     * @param {Integer} equationNumber the equation number of which to build the function
-     * @param {Array} paramArray used to exclude or add extra parameters to argument list. 
-     * this can also be used to change the order of the parameters as they are in 
-     * alphabetical order by default.
-     * @returns {function} returns a native javascript function
-     */
-    userFuncs.buildFunction = Symbol.prototype.buildFunction = function( equationNumber, paramArray ) {
-        var eq = EQNS[equationNumber -1] || this;
-        return build( eq, paramArray );
-    };
-
-    /**
-     * 
      * @param {String} name the name of the function
-     * @param {Array} params a list containing the parameter name of the functions
-     * @param {String} fn the body of the function
+     * @param {Array} params_array a list containing the parameter name of the functions
+     * @param {String} body the body of the function
      * @returns {Boolean} returns true if succeeded and falls on fail
      * @example nerdamer.setFunction('f',['x'], 'x^2+2');
      */
-    userFuncs.setFunction = function( name, params, fn ) {
-        if( !isReserved( name ) ) {
-            functions[name] = [ map, params.length, fn, params ];
+    libExports.setFunction = function(name, params_array, body) {
+        validateName(name);
+        if(!isReserved(name)) {
+            _.functions[name] = [_.mapped_function, params_array.length, {
+                    name: name,
+                    params: params_array,
+                    body: body
+            }];
             return true;
         }
         return false;
@@ -1589,55 +1993,47 @@ var nerdamer = (function() {
     
     /**
      * 
-     * @param {String} subs an object containing variable: key pairs
-     * @returns {String}
+     * @returns {Core} Exports the nerdamer core functions and objects
      */
-    userFuncs.evaluate = function( subs ) {
-        return this.getEquation().evaluate( subs );
+    libExports.getCore = function() {
+        return Core;
     };
-    
+
+    /**
+     * 
+     * @param {Integer} expression_number The number of the expression wanted
+     * @returns {Expression}
+     */
+    libExports.getExpression = function(expression_number) {
+        var index = expression_number -1 || EQNS.length-1,
+            expression = EQNS[index],
+            retval = expression ? new Expression(expression) : expression;
+        return retval;
+    };
     
     /**
      * 
-     * @param {Integer | String} equationNumber the number of the equation to clear. 
+     * @param {Boolean} asArray The returned names are return as an array if this is set to true;
+     * @returns {String|Array}
+     */
+    libExports.reserved = function(asArray) {
+        if(asArray){ return RESERVED; }
+        return RESERVED.join(', ');
+    };
+    
+    /**
+     * 
+     * @param {Integer} equation_number the number of the equation to clear. 
      * If 'all' is supplied then all equations are cleared
-     * @param {Boolean} nochange use true if you don't want the lenght of the array to change
+     * @param {Boolean} keep_EQNS_fixed use true if you don't want to keep EQNS length fixed
      * @returns {nerdamer object}
      */
-    userFuncs.clear = function( equationNumber, nochange ) { 
-        if( equationNumber === 'all' ) { EQNS = []; }
+    libExports.clear = function( equation_number, keep_EQNS_fixed ) { 
+        if(equation_number === 'all') { EQNS = []; }
         else { 
-            equationNumber = !equationNumber ? EQNS.length : equationNumber - 1; 
-            nochange === true ? EQNS[equationNumber] = undefined : remove( EQNS, equationNumber );
+            var index = !equation_number ? EQNS.length : equation_number-1; 
+            keep_EQNS_fixed === true ? EQNS[index] = undefined : remove(EQNS, index);
         }   
-        return this;
-    };
-    
-    /**
-     * 
-     * @param {Integer} equationNumber
-     * @param {String} opt 'latex' to have it returned as latex or 'text' for text
-     * @returns {String|Expression} if opt 'latex' or 'text' is used
-     */
-    userFuncs.getEquation = function( equationNumber, opt ) {
-        equationNumber = equationNumber || EQNS.length;
-        var eq = new Expression(EQNS[equationNumber - 1]);
-        if( opt === 'latex' ) eq = eq.latex();
-        else if( opt === 'text' ) eq = eq.text();
-        return eq;
-    };
-    
-    /**
-     * 
-     * @param {Integer} equationNumber
-     * @param {String | Symbol} eq the equations to be set
-     * @returns {nerdamer object}
-     */
-    userFuncs.setEquation = function( equationNumber, eq ) {
-        if( equationNumber === undefined  ||equationNumber < 1 || isNaN( equationNumber ) ) {
-            throw new Error( 'Not a valid equation number!' );
-        }
-        EQNS[ equationNumber - 1 ] = typeof eq === 'string' ? Parser.parse(eq) : eq;
         return this;
     };
     
@@ -1647,79 +2043,48 @@ var nerdamer = (function() {
      * @param {Boolean} asLatex
      * @returns {Array}
      */
-    userFuncs.equations = function( asObject, asLatex ) {
+    libExports.expressions = function( asObject, asLatex ) {
         var result = asObject ? {} : [];
-        for( var i=0; i<EQNS.length; i++ ) {
-            var eq = asLatex ? Formatting.latex( EQNS[i] ) : text( EQNS[i] );
-            if( asObject ) {
-                result[i+1] = eq;
-            }
-            else {
-                result.push( eq );
-            }
+        for(var i=0; i<EQNS.length; i++) {
+            var eq = asLatex ? Latex.latex(EQNS[i]) : text(EQNS[i]);
+            asObject ? result[i+1] = eq : result.push(eq);
         }
         return result;
     };
     
-    /**
-     * 
-     * @param {Boolean} asArray have the reserved names returned as an array
-     * @returns {Array | String}
-     */
-    userFuncs.reserved = function( asArray ) {
-        if( asArray ){ return RESERVED; }
-        return RESERVED.join(', ');
-    };
-    
-    /**
-     * 
-     * @returns {Array} Array of functions currently supported by nerdamer
-     */
-    userFuncs.supported = function() {
-        var funcs = keys(functions),
-            exclude = ['parens'];
-        for( var i=0;i<exclude.length;i++) {
-            remove( funcs, funcs.indexOf( exclude[i]) );
-        }
-        return funcs;
-    };
-    
-    /*
-     * 
-     * @return {Integer} The number of equations in memory
-     */
-    userFuncs.numEquations = function() {
-        return EQNS.length;
-    }
-    
-    //backwards compatibility with older versions
-    userFuncs.addEquation = function() {
-        return this.apply(undefined, arguments);
-    };
-    
-    //this function can be used to validate variable names for compatibility 
-    //with the library
-    userFuncs.validateName = validateName;
-    
-    //backwards compatibility with previous versions
-    userFuncs.expressions = userFuncs.equations;
-    
     //the method for registering modules
-    userFuncs.register = function(fnObj) {
-        if( isArray( fnObj ) ) {
-            for(var i=0; i<fnObj.length; i++) {
-                if( fnObj ) this.register(fnObj[i]);
+    libExports.register = function(obj, objParent) {
+        objParent = objParent || obj.parent;
+        var core = this.getCore();
+        
+        if(isArray(obj)) {
+            for(var i=0; i<obj.length; i++) {
+                if(obj) this.register(obj[i]);
             }
         }
         else {
+            var parent_obj = obj.parent;
+            if(!core[parent_obj]) core[obj.parent] = {};
             //call the constructor with the parent as this
-            var fn = fnObj.init.call(Parser);
-
-            //register the function
-            M[fnObj.parent][fnObj.name] = fn;
-            if( fnObj.visible ) functions[fnObj.name] = [fn, fnObj.numargs || 1];
+            var fn = obj.build.call(core);
+            //attach the function to the core
+            core[parent_obj][obj.name] = fn;
+            
+            if(obj.visible) _.functions[obj.name] = [fn, obj.numargs]; //make the function available
         } 
-    }
-    return userFuncs;
+    };
     
-})(); 
+    /* END EXPORTS */
+    
+    
+    return libExports; //bon voyage
+})();
+
+var calculus = require('./Calculus.js');
+var algebra = require('./Algebra.js');
+
+nerdamer.register([calculus, algebra]);
+
+
+
+module.exports = nerdamer;
