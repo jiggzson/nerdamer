@@ -517,12 +517,12 @@ var nerdamer = (function() {
             }
             return copy;
         },
-        collectUniqueMultipliers: function(c) {
+        coeffs: function(c) {
             c = c || new Collector();
             if(this.group !== CB) {
                 for(var x in this.symbols) {
                     var sub = this.symbols[x];
-                    if(sub.symbols) sub.collectUniqueMultipliers(c);
+                    if(sub.symbols) sub.coeffs(c);
                     else c.add(sub.multiplier);
                 }
             }
@@ -633,7 +633,6 @@ var nerdamer = (function() {
                     var cp = this.copy();
                     var key = this.keyForGroup(group);
                     this.symbols = {};
-                    
                 }
             }
             else if(group === EX) {
@@ -671,7 +670,7 @@ var nerdamer = (function() {
                     }
                     else {
                         if(existing) {   
-                            //remove because the symbol may be completely changed
+                            //remove because the symbol may have changed
                             symbol = _.multiply(remove(this.symbols, key), symbol);
                             this.length--;
                         }
@@ -684,8 +683,6 @@ var nerdamer = (function() {
                             this.symbols[key] = symbol;
                             this.length++;
                         }
-                        
-                        
                     }
                     //update the hash
                     if(this.group === CP || this.group === CB) {
@@ -2053,8 +2050,7 @@ var nerdamer = (function() {
     };
     
     //the method for registering modules
-    libExports.register = function(obj, objParent) {
-        objParent = objParent || obj.parent;
+    libExports.register = function(obj) {
         var core = this.getCore();
         
         if(isArray(obj)) {
@@ -2079,12 +2075,9 @@ var nerdamer = (function() {
     
     return libExports; //bon voyage
 })();
-
 var calculus = require('./Calculus.js');
 var algebra = require('./Algebra.js');
 
 nerdamer.register([calculus, algebra]);
-
-
 
 module.exports = nerdamer;
