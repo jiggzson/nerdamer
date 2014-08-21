@@ -867,7 +867,7 @@ module.exports = [
                     //distribute the multiplier in sub-symbols
                     for(var x in symbol.symbols) symbol.symbols[x].distributeMultiplier(); 
                     //factor the multiplier
-                    var gcf = core.Support.GCD.apply(undefined, symbol.collectUniqueMultipliers()),
+                    var gcf = core.Support.GCD.apply(undefined, symbol.coeffs()),
                         factorize = function(symbol) { 
                             for(var x in symbol.symbols) {
                                 var sub = symbol.symbols[x]; 
