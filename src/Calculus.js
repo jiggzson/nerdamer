@@ -41,6 +41,7 @@ module.exports = [
                             symbol.power = _.add(symbol.power, new Symbol(-1));
                         }
                         else {
+                            
                             symbol.multiplier *= symbol.power;
                             symbol.power -=1;
                             //has to symbol become a number
@@ -86,6 +87,12 @@ module.exports = [
                 //define how the different symbols are derived
                 function derive(symbol) {
                     switch(symbol.group) {
+                        case core.groups.N:
+                            symbol = new Symbol(0);
+                            break;
+                        case core.groups.S: 
+                            symbol = polydiff(symbol);
+                            break;
                         case FN:
                             //we assume that all functions only have 1 argument
                             symbol = _.parse(format(table[symbol.baseName], symbol.args[0].text(), d));
@@ -106,6 +113,7 @@ module.exports = [
                 }
 
                 var derived = _.multiply(polydiff(symbol.copy()), derive(symbol.copy()));
+                console.log(derived.text())
                 if(isSymbol(symbol.power) && symbol.power.contains(d)) {
                     derived = _.multiply(derived, self.call(this, symbol.power.copy(), d));
                 }
