@@ -1,12 +1,10 @@
 /*
- * Author   : Martin Donk
- * Website  : http://www.nerdamer.com
- * Email    : martin.r.donk@gmail.com
- * License  : http://opensource.org/licenses/LGPL-3.0
- * Source   : https://github.com/jiggzson/nerdamer
- * Status   : development
- */
-
+* Author : Martin Donk
+* Website : http://www.nerdamer.com
+* Email : martin.r.donk@gmail.com
+* License : http://opensource.org/licenses/LGPL-3.0
+* Source : https://github.com/jiggzson/nerdamer
+*/
 var nerdamer = (function() {
     
     var version = '0.5.0',
@@ -17,16 +15,9 @@ var nerdamer = (function() {
         //this is the class which holds the utilities which are exported to the core
         //All utility functions which will be available to the core should be added to this object
         Utils = {},
-        
-        //Support functions
-        Support = {},
+
         //Add the groups
-        /*
-         * The groups that help with organizing during parsing. Note that for FN is still a function even 
-         * if raised to a symbol of group S.
-         * It should be noted that for the sake of simplicity both expression and symbol use the same class.
-         * The expressions are basically any other group which is not of group N or group S
-         */  
+         //The groups that help with organizing during parsing. Note that for FN is still a function even 
         N   = Groups.N  = 1, // A number
         S   = Groups.S  = 2, // A single variable e.g. x
         FN  = Groups.FN = 3, // A function
@@ -103,6 +94,10 @@ var nerdamer = (function() {
         
         inBrackets = Utils.inBrackets = function(str) {
             return '('+str+')';
+        },
+        
+        sameSign = Utils.sameSign = function(a, b) {
+            return (a < 0) === (b < 0);
         },
         
         format = Utils.format = function() {
@@ -198,11 +193,7 @@ var nerdamer = (function() {
         even = Utils.even = function(num) {
             return num % 2 === 0;
         },
-        
-        uval = Utils.uval = function(num) {
-            return num/Math.abs(num);
-        },
-        
+
         reserveNames = Utils.reserveNames = function(obj) {
             var add = function(item) {
                 if(RESERVED.indexOf(item) === -1) RESERVED.push(item);
@@ -408,7 +399,7 @@ var nerdamer = (function() {
     /** 
      * 
      * @param {Symbol} symbol
-     * @returns {Expression} a wrapper for the Symbol class
+     * @returns {Expression} wraps around the Symbol class
      */
     function Expression(symbol) {
         var self = this; 
@@ -478,7 +469,7 @@ var nerdamer = (function() {
         },
         isPoly: function() {
             var status = false;
-            if( this.group === S && this.power > 0 ) {
+            if( this.group === S && this.power > 0 || this.group === N) {
                 status = true;
             }
             else {
@@ -525,12 +516,12 @@ var nerdamer = (function() {
             }
             return copy;
         },
-        coeffs: function(c) {
+        uniqueCoeffs: function(c) {
             c = c || new Collector();
             if(this.group !== CB) {
                 for(var x in this.symbols) {
                     var sub = this.symbols[x];
-                    if(sub.symbols) sub.coeffs(c);
+                    if(sub.symbols) sub.uniqueCoeffs(c);
                     else c.add(sub.multiplier);
                 }
             }
@@ -548,7 +539,7 @@ var nerdamer = (function() {
             else if(this.multiplier === 0) { return 0; }
             else { return text(this); }
         },
-        //an add-on helper function to help sniff out symbols in complex symbols
+        //a function to help sniff out symbols in complex symbols
         //pass in true as second parameter to include exponentials
         contains: function(variable, all) { 
             var g = this.group; 
@@ -569,7 +560,6 @@ var nerdamer = (function() {
         },
         negate: function() { 
             this.multiplier *= -1;
-            //***incorrect value if multiplier is not distributed
             if(this.group === CP || this.group === PL) this.distributeMultiplier();
             return this;
         },
@@ -597,51 +587,40 @@ var nerdamer = (function() {
             return this;
         },
         convert: function(group) {
-            //all groups greater than S with the exception of EX carry a symbols object
-            //which houses all sub-symbols
             if(group > FN && group !== EX) {
-                //are we up converting or down converting?
-                if(true) {
-                    //make a copy of this symbol;
-                    var cp = this.copy();
-                    //attach a symbols object and upgrade the group
-                    this.symbols = {};
-                    
-                    if(group === CB) {
-                        //symbol of group CB hold symbols bound together through multiplication
-                        //because of commutativity this multiplier can technically be anywhere within the group
-                        //to keep track of it however it's easier to always have the top level carry it
-                        cp.multiplier = 1;
-                    }
-                    else {
-                        //reset the symbol
-                        this.multiplier = 1;
-                    }
-                    
-                    if(this.group === FN) {
-                        cp.args = this.args; 
-                        delete this.args;
-                        delete this.baseName;
-                    }
-                    
-                    //the symbol may originate from the symbol i but this property no longer holds true
-                    //after copying
-                    if(this.isImgSymbol) delete this.isImgSymbol;
-                    
-                    this.power = 1;
-                    //attach a copy of this symbol to the symbols object using its proper key
-                    this.symbols[cp.keyForGroup(group)] = cp; 
-                    this.group = group;
-                    //objects by default don't have a length property. However, in order to keep track of the number
-                    //of sub-symbols we have to impliment our own.
-                    this.length = 1;    
+                //make a copy of this symbol;
+                var cp = this.copy();
+                //attach a symbols object and upgrade the group
+                this.symbols = {};
+
+                if(group === CB) {
+                    //symbol of group CB hold symbols bound together through multiplication
+                    //because of commutativity this multiplier can technically be anywhere within the group
+                    //to keep track of it however it's easier to always have the top level carry it
+                    cp.multiplier = 1;
                 }
                 else {
-                    //a group which is already a complex symbol is being converted to another complex symbol
-                    var cp = this.copy();
-                    var key = this.keyForGroup(group);
-                    this.symbols = {};
+                    //reset the symbol
+                    this.multiplier = 1;
                 }
+
+                if(this.group === FN) {
+                    cp.args = this.args; 
+                    delete this.args;
+                    delete this.baseName;
+                }
+
+                //the symbol may originate from the symbol i but this property no longer holds true
+                //after copying
+                if(this.isImgSymbol) delete this.isImgSymbol;
+
+                this.power = 1;
+                //attach a copy of this symbol to the symbols object using its proper key
+                this.symbols[cp.keyForGroup(group)] = cp; 
+                this.group = group;
+                //objects by default don't have a length property. However, in order to keep track of the number
+                //of sub-symbols we have to impliment our own.
+                this.length = 1;    
             }
             else if(group === EX) {
                 if(!(this.group === N && Math.abs(this.multiplier) === 1)) {
@@ -655,6 +634,7 @@ var nerdamer = (function() {
             }
         },
         insert: function(symbol, action) { 
+            //this check can save a lot of aggravation
             if(!isSymbol(symbol)) throw new Error('Object '+symbol+' is not of type Symbol!');
             if(this.symbols) {
                 var group = this.group;
@@ -677,17 +657,25 @@ var nerdamer = (function() {
                         }  
                     }
                     else {
-                        if(existing) {   
+                        if(existing) {  
                             //remove because the symbol may have changed
                             symbol = _.multiply(remove(this.symbols, key), symbol);
                             this.length--;
                         }
                         //transfer the multiplier
                         this.multiplier *= symbol.multiplier;
-
-                        if(Math.abs(Number(symbol)) !== 1) { 
+                        
+                        if(Math.abs(symbol.valueOf()) !== 1) { 
                             //transfer the multiplier
                             symbol.multiplier = 1;
+                            if(this.power !== 1) {
+                                var cp = this.copy();
+                                this.power = 1;
+                                this.symbols = {};
+                                var key2 = cp.keyForGroup(CB);
+                                this.symbols[key2] = cp;
+                            }
+                            //if the power does not equal to zero then we have to create a new symbol
                             this.symbols[key] = symbol;
                             this.length++;
                         }
@@ -698,12 +686,10 @@ var nerdamer = (function() {
                     }
                 }
             }
-        },
-        
+        },  
         attach: function(symbol) {
             this.insert(symbol, 'add');
         },
-        
         combine: function(symbol) {
             this.insert(symbol, 'multiply');
             if(symbol.isOne()) {
@@ -711,20 +697,6 @@ var nerdamer = (function() {
                 this.length--;
             }
         },
-        
-        find: function(value, prop) {
-            var retval;
-            try {
-                var l = this.symbols.length; //fails if there's no symbols prop
-                for(var i=0; i<l; i++) {
-                    var symbol = this.symbols[i];
-                    if(symbol[prop] === value) return symbol;
-                }
-            }
-            catch(e){;}
-            return retval;
-        },
-        
         updateHash: function() {
             if(this.group === FN) {
                 var contents = '',
@@ -738,7 +710,6 @@ var nerdamer = (function() {
                 this.value = text(this, 'hash');
             }
         },
-        
         //this function defines how every group in stored within a group of higher order
         keyForGroup: function(group) {
             var g = this.group;
@@ -830,22 +801,6 @@ var nerdamer = (function() {
         }
     };
 
-    function Bracket(name, position, fn_name) {
-        this.name = name;
-        this.position = position;
-        this.fn_name = fn_name;
-        this.open = 0;
-        
-        this.pair = function(val) {
-            var bracket = new Bracket(name, 'right');
-            this.paired = bracket;
-            return bracket;
-        };
-        
-        this.open = function() { this.open++; };
-        this.close = function() { this.open--; };
-        this.toString = function() { return this.name; };
-    }
     
     //Uses modified shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
@@ -861,8 +816,7 @@ var nerdamer = (function() {
                 '/': new Operator('/', 'divide', 3, true, false),
                 '+': new Operator('+', 'add', 2, true, true),
                 '-': new Operator('-', 'subtract', 2, true, true),
-                ',': new Operator(',', 'comma', 1, true, false),
-                '!': new Operator('!', 'fact', 0, false, false, true)
+                ',': new Operator(',', 'comma', 1, true, false)
             },
 
             // Supported functions.
@@ -1009,7 +963,6 @@ var nerdamer = (function() {
                     }
                     else {
                         var result = _[operator.fn].call(_, symbol1, symbol2);
-//                        console.log(symbol1, operator.val, symbol2, '=', result);
                         insert(result);
                     }  
                          
@@ -1203,8 +1156,24 @@ var nerdamer = (function() {
             return symbol;
         };
         
+        this.xSymbol = function(group) {
+            var val = 'x',
+                shell;
+            if(group === FN) {
+                shell = new this.symfunction(val, []);
+            }
+            else if(group) {
+                shell = new Symbol(val);
+                if(group !== EX) {
+                    shell.symbols = {};
+                }
+                shell.group = group;
+            }
+            
+            return shell;
+        };
+        
         this.add = function(symbol1, symbol2) { 
-            var A = text(symbol1), B = text(symbol2); 
             var group1 = symbol1.group, 
                 group2 = symbol2.group;
 
@@ -1334,7 +1303,6 @@ var nerdamer = (function() {
                 }
             }
             else {
-//                console.log(symbol1, symbol2)
                 symbol1.convert(CP); 
                 symbol1.attach(symbol2);
             }        
@@ -1347,8 +1315,7 @@ var nerdamer = (function() {
                     symbol1 = symbol;
                 }
             }
-//            console.log(A,'+',B,'=',text(symbol1),':', group1, group2);
-//            if(text(symbol1) === '1+2*x+x^2') console.log(symbol1)
+            
             return symbol1;
         };
 
@@ -1357,11 +1324,12 @@ var nerdamer = (function() {
         };
 
         this.multiply = function(symbol1, symbol2) { 
+            
             if(symbol1.multiplier === 0 || symbol2.multiplier === 0) return new Symbol(0);
             
             var group1 = symbol1.group,
                 group2 = symbol2.group;
-            
+
             //parens is an ugly function that we want to get rid of as soon as possible so check
             if(group1 === FN && symbol1.baseName === PARENTHESIS) symbol1 = this.unpack(symbol1);
             if(group2 === FN && symbol1.baseName === PARENTHESIS) symbol2 = this.unpack(symbol2);
@@ -1428,7 +1396,7 @@ var nerdamer = (function() {
                     symbol2.attach(symbol1);
                 }
                 else {
-                    var s = this.shellSymbol(CB);
+                    var s = _.xSymbol(CB);
                     s.combine(symbol1);
                     s.combine(symbol2);
                     symbol2 = s;
@@ -1700,7 +1668,7 @@ var nerdamer = (function() {
             else {
                 output = obj;
             }
-//            console.log('returning from group',group ,'>>>>', output )
+
             return output;
         },
         //renders the sub-symbols in complex symbols
@@ -2067,13 +2035,14 @@ var nerdamer = (function() {
             }
         }
         else {
-            var parent_obj = obj.parent;
-            if(!core[parent_obj]) core[obj.parent] = {};
-            //call the constructor with the parent as this
-            var fn = obj.build.call(core);
-            //attach the function to the core
-            core[parent_obj][obj.name] = fn;
-            
+            //if no parent object is provided then the function does not have an address and cannot be called directly
+            var parent_obj = obj.parent, 
+                fn = obj.build.call(core); //call constructor to get function
+            if(parent_obj) {
+                if(!core[parent_obj]) core[obj.parent] = {};
+                //attach the function to the core
+                core[parent_obj][obj.name] = fn;
+            }
             if(obj.visible) _.functions[obj.name] = [fn, obj.numargs]; //make the function available
         } 
     };
@@ -2083,9 +2052,8 @@ var nerdamer = (function() {
     
     return libExports; //bon voyage
 })();
-var calculus = require('./Calculus.js');
-var algebra = require('./Algebra.js');
+var calculus = require('./Calculus.js')(nerdamer);
+var algebra = require('./Algebra.js')(nerdamer);
 
 nerdamer.register([calculus, algebra]);
 
-module.exports = nerdamer;
