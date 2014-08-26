@@ -1239,11 +1239,6 @@ module.exports = function(nerdamer) {
     
     return [
         {
-            /*
-            * Other than the preparation of the coefficients, 
-            * this function is Mr. David Binner's javascript port of the Jenkins-Traub algorithm.
-            * The original source code can be found here http://www.akiti.ca/PolyRootRe.html.
-            */    
             name: 'proots',
             visible: true,
             numargs: [1,2],
