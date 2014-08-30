@@ -5,6 +5,7 @@
 * License : http://opensource.org/licenses/LGPL-3.0
 * Source : https://github.com/jiggzson/nerdamer
 */
+
 var nerdamer = (function() {
     
     var version = '0.5.0',
@@ -15,6 +16,9 @@ var nerdamer = (function() {
         //this is the class which holds the utilities which are exported to the core
         //All utility functions which will be available to the core should be added to this object
         Utils = {},
+        
+        //Settings
+        Settings = {},
 
         //Add the groups
          //The groups that help with organizing during parsing. Note that for FN is still a function even 
@@ -35,13 +39,17 @@ var nerdamer = (function() {
         SQRT = 'sqrt',
 
         //the storage container "memory" for parsed expressions
-        EQNS = [],
+        EQNS = [];
 
         //the global used to invoke the libary to parse to a number
-        PARSE2NUMBER = false,
+        Settings.PARSE2NUMBER = false;
+        
+        //this flag forces the a copy to be returned when add, subtract, etc... is called
+        //Not very efficient at the moment
+        Settings.SAFE = false;
 
         //the container used to store all the reserved functions
-        RESERVED = [],
+        var RESERVED = [],
         
         isReserved = Utils.isReserved = function(value) { 
             return RESERVED.indexOf(value) !== -1;
@@ -94,6 +102,10 @@ var nerdamer = (function() {
         
         inBrackets = Utils.inBrackets = function(str) {
             return '('+str+')';
+        },
+        
+        customType = Utils.customType = function(obj) {
+            return obj !== undefined && obj.custom;
         },
         
         sameSign = Utils.sameSign = function(a, b) {
@@ -222,13 +234,14 @@ var nerdamer = (function() {
             return result;
         },
         
-        numblock = Utils.numblock = function(f, parse2Number) { 
-            PARSE2NUMBER = parse2Number === undefined ? true : !!parse2Number;
-            var retval = f.call();
-            PARSE2NUMBER = false;
+        block = Utils.block = function(setting, f, opt, obj) {
+            var current_setting = Settings[setting];
+            Settings[setting] = opt === undefined ? true : !! opt;
+            var retval = f.call(obj);
+            Settings[setting] = current_setting;
             return retval;
         },
-        
+
         arguments2Array = Utils.arguments2Array = function(obj) {
             return [].slice.call(obj);
         },
@@ -404,7 +417,7 @@ var nerdamer = (function() {
     function Expression(symbol) {
         var self = this; 
         
-        this.value = text(symbol);
+        this.value = symbol.text();
         
         this.text = function() {
             return this.value;
@@ -419,7 +432,7 @@ var nerdamer = (function() {
         };
         
         this.evaluate = function(subs) {
-            return new Expression(numblock(function() {
+            return new Expression(block('PARSE2NUMBER', function() {
                 return _.parse(self.value, format_subs(subs));
             }, true));
         };
@@ -454,7 +467,7 @@ var nerdamer = (function() {
                 this.isImgSymbol = true;
             }
             this.group = S; 
-            validateName(obj);
+            validateName(obj); 
             this.value = obj;
             this.multiplier = 1;
             this.power = 1;
@@ -464,6 +477,16 @@ var nerdamer = (function() {
     }
     
     Symbol.prototype = {
+        coeffs: function() {
+            var c = [];
+            if(this.symbols) {
+                for(var x in this.symbols) {
+                    c.push(this.symbols[x].multiplier);
+                }
+            }
+            else c.push(this.multiplier);
+            return c;
+        },
         equals: function(symbol) {
             return this.value === symbol.value && text(this.power) === text(symbol.power);
         },
@@ -516,19 +539,7 @@ var nerdamer = (function() {
             }
             return copy;
         },
-        uniqueCoeffs: function(c) {
-            c = c || new Collector();
-            if(this.group !== CB) {
-                for(var x in this.symbols) {
-                    var sub = this.symbols[x];
-                    if(sub.symbols) sub.uniqueCoeffs(c);
-                    else c.add(sub.multiplier);
-                }
-            }
-                
-            return c.c;
-        },
-        forEachWithin: function(fn) {
+        each: function(fn) {
             for(var x in this.symbols) {
                 fn.call(this, this.symbols[x], x);
             }
@@ -771,8 +782,9 @@ var nerdamer = (function() {
                 }
             }
         },
-        
-        toString: Symbol.prototype.text
+        toString: function() {
+            return this.text();
+        }
     };
     
     function Operator(val, fn, precedence, left_assoc, is_prefix, is_postfix) {
@@ -805,6 +817,7 @@ var nerdamer = (function() {
     //Uses modified shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
         var _ = this,
+            bin = {},
             constants = this.constants = {
                 PI: Math.PI,
                 E:  Math.E
@@ -865,7 +878,31 @@ var nerdamer = (function() {
             throw new ParserError(msg);
             
         }
-
+        
+        this.override = function(which, with_what) {
+            if(!bin[which]) bin[which] = [];
+            bin[which].push(this[which]);
+            this[which] = with_what;
+        };
+        
+        this.restore = function(what) {
+            if(bin[what]) this[what] = bin.pop();
+        };
+        
+        this.extend = function(what, with_what) {
+            var _ = this,
+                extended = this[what];
+            if(typeof extended === 'function' && typeof with_what === 'function') {
+                this[what] = function() {
+                    var args = arguments2Array(arguments);
+                    args.push(function(){
+                        return extended.apply(_, arguments);
+                    });
+                    return with_what.apply(_, args);
+                };
+            }
+        };
+        
         this.symfunction = function(fn_name, params) { 
             //call the proper function and return the result;
             var f = new Symbol(fn_name);
@@ -901,7 +938,7 @@ var nerdamer = (function() {
             
             if(fn) { retval = fn.apply(fn_settings[2] || this, args); }
             else {
-                if(PARSE2NUMBER) {
+                if(Settings.PARSE2NUMBER) {
                     try { 
                         args = args.map(function(symbol) { 
                             if(symbol.group === N) return symbol.multiplier;
@@ -974,12 +1011,12 @@ var nerdamer = (function() {
                     if(token !== '' && token !== undefined) { 
                         //this could be function parameters or a vector
                         if(!(token instanceof Array)) { 
-                            if(!(token instanceof Symbol) && !(token instanceof Vector)) {
+                            if(!(token instanceof Symbol) && !(customType(token))) {
                                 var sub = subs[token]; //handle substitutions
                                 token = sub ? sub.copy() : new Symbol(token);
                             }
                         }
-                         output.push(token);
+                        output.push(token);
                     } 
                 };
                 
@@ -1049,6 +1086,7 @@ var nerdamer = (function() {
                             stack.push(bracket);
                         }
                         else if(cur_char === RIGHT_PAREN || cur_char === RIGHT_SQUARE_BRACKET) { 
+                            last_opr_pos = null;
                             var found_matching = false;
                             while(!found_matching) {
                                 var popped = stack.pop();
@@ -1093,7 +1131,7 @@ var nerdamer = (function() {
 
         //FUNCTIONS
         function parens(symbol) {
-            if(PARSE2NUMBER) {
+            if(Settings.PARSE2NUMBER) {
                 return symbol;
             }
             return _.symfunction('parens', [symbol]);
@@ -1121,7 +1159,7 @@ var nerdamer = (function() {
                     return _.symfunction('log',[symbol]);
                 }
             }
-            else if(PARSE2NUMBER && isNumericSymbol(symbol)) {
+            else if(Settings.PARSE2NUMBER && isNumericSymbol(symbol)) {
                 var img_part;
                 if(symbol.multiplier < 0) {
                     symbol.negate();
@@ -1174,6 +1212,8 @@ var nerdamer = (function() {
         };
         
         this.add = function(symbol1, symbol2) { 
+            
+            if(!isSymbol(symbol1) || !isSymbol(symbol2)) throw new Error('dafuq?????')
             var group1 = symbol1.group, 
                 group2 = symbol2.group;
 
@@ -1188,6 +1228,7 @@ var nerdamer = (function() {
             //always have the lower group on the left
             if(group1 > group2) { return this.add(symbol2, symbol1); }
             
+            if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); };
             
             //same symbol, same power
             if(symbol1.value === symbol2.value && !( group1 === CP && symbol1.power !== symbol2.power)) { 
@@ -1342,6 +1383,8 @@ var nerdamer = (function() {
             //accounted for. With multiplication however it's easier to return the symbol on the right.
             if(group1 > group2) return this.multiply(symbol2, symbol1);
             
+            if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); };
+            
             //the symbol2 ehavior is the same for all symbols of group N. modify the multiplier
             if(group1 === N ) {
                 symbol2.multiplier *= symbol1.multiplier;
@@ -1445,6 +1488,9 @@ var nerdamer = (function() {
             //as usual pull the variables closer
             var g1 = symbol1.group, 
                 g2 = symbol2.group;
+            
+            if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); };
+            
             if(g1 !== EX && g2 === N) { 
                 var power = symbol2.multiplier;
                 if(power !== 1) {
@@ -1783,13 +1829,15 @@ var nerdamer = (function() {
         }
     };
     
-    function Vector(vec_array) {
-        this.vec_array = vec_array;
+    function Vector(v) {
+        if(isVector(v)) this.elements = v.items.slice(0);
+        else this.elements = v || [];
     }
     
     Vector.prototype = {
+        custom: true,//has to be set to skip casting to Symbol
         length: function() {
-            return this.vec_array.length;
+            return this.elements.length;
         }
     };
     /* END CLASSES */
@@ -1878,7 +1926,6 @@ var nerdamer = (function() {
     /* BUILD CORE */
     var Core = {};
     Core.groups = Groups;
-    Core.classes = {};
     Core.Symbol = Symbol;
     Core.Expression = Expression;
     Core.Vector = Vector;
@@ -1889,9 +1936,7 @@ var nerdamer = (function() {
     Core.Utils = Utils;
     Core.PARSER = _;
     Core.PARENTHESIS = PARENTHESIS;
-    Core.parse2Number = function() {
-        return PARSE2NUMBER;
-    };
+    Core.Settings = Settings;
     /* END BUILD CORE */
     
     /* EXPORTS */
@@ -1905,7 +1950,7 @@ var nerdamer = (function() {
      * @returns {Expression} 
      */
     var libExports = function(expression, subs, option, location) {
-        var eq = numblock(function(){
+        var eq = block('PARSE2NUMBER', function(){
             return _.parse(expression, format_subs(subs));
         }, option === 'numer');
         
@@ -2026,7 +2071,7 @@ var nerdamer = (function() {
     };
     
     //the method for registering modules
-    libExports.register = function(obj) {
+    libExports.register = function(obj) { 
         var core = this.getCore();
         
         if(isArray(obj)) {
@@ -2034,7 +2079,7 @@ var nerdamer = (function() {
                 if(obj) this.register(obj[i]);
             }
         }
-        else {
+        else if(obj) {
             //if no parent object is provided then the function does not have an address and cannot be called directly
             var parent_obj = obj.parent, 
                 fn = obj.build.call(core); //call constructor to get function
@@ -2052,8 +2097,10 @@ var nerdamer = (function() {
     
     return libExports; //bon voyage
 })();
+var vector = require('./Vector.js')(nerdamer);
 var calculus = require('./Calculus.js')(nerdamer);
 var algebra = require('./Algebra.js')(nerdamer);
+var linalg = require('./LinAlg.js')(nerdamer);
 
-nerdamer.register([calculus, algebra]);
+nerdamer.register([calculus, algebra, linalg]);
 
