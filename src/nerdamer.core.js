@@ -578,7 +578,7 @@ var nerdamer = (function() {
             //invert the multiplier
             this.multiplier = 1/this.multiplier;
             //invert the rest
-            if(isSymbol( this.power) ) {
+            if(isSymbol(this.power)) {
                 this.power.negate();
             }
             else {
@@ -977,17 +977,6 @@ var nerdamer = (function() {
 
                     var symbol2 = output.pop(),
                         symbol1 = output.pop();
-                
-                    //always give precendence to the prefix on the stack
-                    while(last_item_in(stack) instanceof Prefix) {
-                        if(symbol1) symbol1 = stack.pop().resolve(symbol1);
-                        else break;
-                    }
-                    //resolve the prefix if one is encountered and mistaken for an operator
-                    while(operator instanceof Prefix) {
-                        symbol2 = operator.resolve(symbol2);
-                        operator = stack.pop();
-                    }
 
                     if(!operator && !symbol1 && symbol2) {
                         insert(symbol2);
@@ -1016,6 +1005,13 @@ var nerdamer = (function() {
                                 token = sub ? sub.copy() : new Symbol(token);
                             }
                         }
+                        
+                        //resolve prefixes
+                        while(last_item_in(stack) instanceof Prefix) {
+                            var prefix = stack.pop();
+                            token = prefix.resolve(token);
+                        }
+                        
                         output.push(token);
                     } 
                 };
@@ -2104,3 +2100,4 @@ var linalg = require('./LinAlg.js')(nerdamer);
 
 nerdamer.register([calculus, algebra, linalg]);
 
+module.exports = nerdamer;
