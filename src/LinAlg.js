@@ -1,21 +1,209 @@
 /* 
- * Contains ports from Sylvester.js
+ * This contains mostly ports from Sylvester.js
  * website: http://sylvester.jcoglan.com/
  */
 
 module.exports = function(nerdamer){
     var core = nerdamer.getCore(),
         _ = core.PARSER,
+        Vector = core.Vector,
         Symbol = core.Symbol,
         isSymbol = core.Utils.isSymbol,
         isVector = core.Utils.isVector,
         isArray = core.Utils.isArray,
-        block = core.Utils.block;
+        block = core.Utils.block,
+        PRECISION = 1e-6;
     
     //add utilities
     var isMatrix = core.Utils.isMatrix = function(obj) {
         return (obj instanceof Matrix);
     };
+    
+    //Ported from Sylvester.js
+    Vector.prototype = {
+        custom: true,
+        // Returns element i of the vector
+        e: function(i) {
+            return (i < 1 || i > this.elements.length) ? null : this.elements[i-1];
+        },
+
+        // Returns the number of elements the vector has
+        dimensions: function() {
+            return this.elements.length;
+        },
+
+        // Returns the modulus ('length') of the vector
+        modulus: function() {
+            return block('SAFE', function() {
+                return _.pow((this.dot(this.copy())), new Symbol(0.5));
+            }, undefined, this);
+        },
+
+        // Returns true iff the vector is equal to the argument
+        eql: function(vector) {
+            var n = this.elements.length;
+            var V = vector.elements || vector;
+            if (n !== V.length) { return false; }
+            do {
+                if (Math.abs(_.subtract(this.elements[n-1],V[n-1]).valueOf()) > PRECISION) { return false; }
+            } while (--n);
+            return true;
+        },
+
+        // Returns a copy of the vector
+        copy: function() {
+            var V = new Vector(),
+                l = this.elements.length;
+            for(var i=0; i<l; i++) {
+                //Rule: all items within the vector must have a copy method.
+                V.elements.push(this.elements[i].copy());
+            }
+            return V;
+        },
+
+        // Maps the vector to another vector according to the given function
+        map: function(fn) {
+            var elements = [];
+            this.each(function(x, i) {
+                elements.push(fn(x, i));
+            });
+            return new Vector(elements);
+        },
+
+        // Calls the iterator for each element of the vector in turn
+        each: function(fn) {
+            var n = this.elements.length, k=n, i;
+            do { 
+                i = k-n;
+                fn(this.elements[i], i+1);
+            } while (--n);
+        },
+
+        // Returns a new vector created by normalizing the receiver
+        toUnitVector: function() {
+            return block('SAFE', function() {
+                var r = this.modulus();
+                if (r.valueOf() === 0) { return this.copy(); }
+                return this.map(function(x) { return _.divide(x, r); });
+            }, undefined, this);    
+        },
+
+        // Returns the angle between the vector and the argument (also a vector)
+        angleFrom: function(vector) {
+            return block('SAFE', function() {
+                var V = vector.elements || vector;
+                var n = this.elements.length;
+                if (n !== V.length) { return null; }
+                var dot = new Symbol(0), mod1 = new Symbol(0), mod2 = new Symbol(0);
+                // Work things out in parallel to save time
+                this.each(function(x, i) {
+                    dot = _.add(dot, _.multiply(x, V[i-1]));
+                    mod1 = _.add(mod1, _.multiply(x, x));//will not conflict in safe block
+                    mod2 = _.add(mod2, _.multiply(V[i-1], V[i-1]));//will not conflict in safe block
+                });
+                mod1 = _.pow(mod1, new Symbol(0.5)); mod2 = _.pow(mod2, new Symbol(0.5));
+                var product = _.multiply(mod1,mod2);
+                if(product.valueOf() === 0) { return null; }
+                var theta = _.divide(dot, product);
+                var theta_val = theta.valueOf();
+                if(theta_val < -1) { theta = -1; }
+                if (theta_val > 1) { theta = 1; }
+                return new Symbol(Math.acos(theta));
+            }, undefined, this);
+        },
+
+        // Returns true iff the vector is parallel to the argument
+        isParallelTo: function(vector) {
+          var angle = this.angleFrom(vector).valueOf();
+          return (angle === null) ? null : (angle <= PRECISION);
+        },
+
+        // Returns true iff the vector is antiparallel to the argument
+        isAntiparallelTo: function(vector) {
+          var angle = this.angleFrom(vector).valueOf();
+          return (angle === null) ? null : (Math.abs(angle - Math.PI) <= Sylvester.precision);
+        },
+
+        // Returns true iff the vector is perpendicular to the argument
+        isPerpendicularTo: function(vector) {
+          var dot = this.dot(vector);
+          return (dot === null) ? null : (Math.abs(dot) <= Sylvester.precision);
+        },
+
+        // Returns the result of adding the argument to the vector
+        add: function(vector) {
+            return block('SAFE', function(){
+                var V = vector.elements || vector;
+                if (this.elements.length !== V.length) { return null; }
+                return this.map(function(x, i) { return _.add(x, V[i-1]); });
+            }, undefined, this);
+        },
+
+        // Returns the result of subtracting the argument from the vector
+        subtract: function(vector) {
+            return block('SAFE', function(){
+                var V = vector.elements || vector;
+                if (this.elements.length !== V.length) { return null; }
+                return this.map(function(x, i) { return _.subtract(x, V[i-1]); });
+            }, undefined, this);
+        },
+
+        // Returns the result of multiplying the elements of the vector by the argument
+        multiply: function(k) {
+            return this.map(function(x) { return x.copy()*k.copy(); });
+        },
+
+        x: function(k) { return this.multiply(k); },
+
+        // Returns the scalar product of the vector with the argument
+        // Both vectors must have equal dimensionality
+        dot: function(vector) {
+            return block('SAFE', function() {
+                var V = vector.elements || vector;
+                var product = new Symbol(0), n = this.elements.length;
+                if (n !== V.length) { return null; }
+                do { product = _.add(product, _.multiply(this.elements[n-1], V[n-1])); } while (--n);
+                return product;
+            }, undefined, this);  
+        },
+
+        // Returns the vector product of the vector with the argument
+        // Both vectors must have dimensionality 3
+        cross: function(vector) {
+            var B = vector.elements || vector;
+            if(this.elements.length !== 3 || B.length !== 3) { return null; }
+            var A = this.elements;
+            return block('SAFE', function() {
+                return new Vector([
+                    _subtract(_.multiply(A[1], B[2]), _.multiply(A[2], B[1])),
+                    _subtract(_.multiply(A[2], B[0]), _.multiply(A[0], B[2])),
+                    _subtract(_.multiply(A[0], B[1]), _.multiply(A[1], B[0]))
+                ]);
+            }, undefined, this);  
+        },
+
+        // Returns the (absolute) largest element of the vector
+        max: function() {
+            var m = 0, n = this.elements.length, k = n, i;
+            do { i = k - n;
+                if(Math.abs(this.elements[i].valueOf()) > Math.abs(m.valueOf())) { m = this.elements[i]; }
+            } while (--n);
+            return m;
+        },
+
+        // Returns the index of the first match found
+        indexOf: function(x) {
+            var index = null, n = this.elements.length, k = n, i;
+            do { 
+                i = k-n;
+                if(index === null && this.elements[i].valueOf() === x.valueOf()) {
+                    index = i+1;
+                }
+            } while (--n);
+            return index;
+        }
+    };
+  
     
     function Matrix() {
         var m = arguments,
@@ -299,6 +487,16 @@ module.exports = function(nerdamer){
             visible: true,
             numargs: -1,
             build: function(){ return matrix; }
-        }];
-    
+        },
+        {
+            name: 'determinant',
+            visible: true,
+            numargs: 1,
+            build: function() {
+                return function(symbol) {
+                    return symbol.determinant();
+                };
+            }
+        }
+    ];
 };
