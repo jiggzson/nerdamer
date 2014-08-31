@@ -19,6 +19,13 @@ module.exports = function(nerdamer){
         return (obj instanceof Matrix);
     };
     
+    Vector.arrayPrefill = function(n, val) {
+        var a = [];
+        val = val || 0;
+        for(var i=0; i<n; i++) a[i] = val;
+        return a;
+    };
+    
     //Ported from Sylvester.js
     Vector.prototype = {
         custom: true,
@@ -246,7 +253,15 @@ module.exports = function(nerdamer){
         F.prototype = Matrix.prototype;
 
         return new F(arr);
-    },
+    };
+    
+    Matrix.zeroMatrix = function(rows, cols) {
+        var m = new Matrix();
+        for(var i=0; i<rows; i++) {
+            m.elements.push(Vector.arrayPrefill(cols, new Symbol(0)));
+        }
+        return m;
+    };
     
     Matrix.prototype = {
         //needs be true to let the parser know not to try to cast it to a symbol
@@ -399,6 +414,50 @@ module.exports = function(nerdamer){
                 return M;  
             }, undefined, this);     
         },
+        transpose: function() {
+            var rows = this.elements.length, cols = this.elements[0].length;
+            var M = new Matrix(), ni = cols, i, nj, j;
+            
+            do { 
+                i = cols - ni;
+                M.elements[i] = [];
+                nj = rows;
+                do { j = rows - nj;
+                    M.elements[i][j] = this.elements[j][i].copy();
+                } while (--nj);
+            } while (--ni);
+            return M;
+        },
+        // Returns true if the matrix can multiply the argument from the left
+        canMultiplyFromLeft: function(matrix) {
+          var l = isMatrix(matrix) ? matrix.elements.length : matrix.length;
+          // this.columns should equal matrix.rows
+          return (this.elements[0].length === l);
+        },
+        multiply: function(matrix) {    
+            return block('SAFE', function(){
+                var M = matrix.elements || matrix;
+                if (!this.canMultiplyFromLeft(M)) { return null; }
+                var ni = this.elements.length, ki = ni, i, nj, kj = M[0].length, j;
+                var cols = this.elements[0].length, elements = [], sum, nc, c;
+                do { 
+                    i = ki-ni;
+                    elements[i] = [];
+                    nj = kj;
+                    do { 
+                        j = kj - nj;
+                        sum = new Symbol(0);
+                        nc = cols;
+                        do { 
+                            c = cols-nc;
+                            sum = _.add(sum, _.multiply(this.elements[i][c], M[c][j])) ;
+                        } while (--nc);
+                      elements[i][j] = sum;
+                    } while (--nj);
+                } while (--ni);
+                return Matrix.fromArray(elements);
+            }, undefined, this);
+        },
         toString: function(newline) {
             var l = this.rows(),
                 s = [];
@@ -415,30 +474,6 @@ module.exports = function(nerdamer){
         }
     };
     core.Matrix = Matrix;
-    
-    var __ = core.LinAlg = {
-        dot: function(a1, a2) {
-            var l1 = a1.length, l2 = a2.length, 
-                sum = new Symbol(0);
-            if(l1 !== l2) throw new Error('Dimensions do not match!');
-            for(var i=0; i<l1; i++) {
-                sum = _.add(sum, _.multiply(a1[i].copy(), a2[i].copy()));
-            }
-            return sum;
-        },
-        arrayPrefill: function(n, val) {
-            var a = [], val = val || 0;
-            for(var i=0; i<n; i++) a[i] = val;
-            return a;
-        },
-        zeroMatrix: function(rows, cols) {
-            var m = new Matrix();
-            for(var i=0; i<rows; i++) {
-                m.elements.push(__.arrayPrefill(cols, new Symbol(0)));
-            }
-            return m;
-        }
-    };
  
     _.extend('multiply', function(a, b, multiply){ 
         var aIsSym = isSymbol(a), bIsSym = isSymbol(b);
@@ -454,31 +489,14 @@ module.exports = function(nerdamer){
             });
         }
         else if(isMatrix(a) && isMatrix(b)) { 
-            var rows = a.rows();
-            if(rows !== b.cols()) throw new Error('Dimensions do not match!');
-            //prepare the matrix
-            var bcols = [],
-                m = new Matrix();
-            for(var i=0; i<rows; i++) {
-                m.elements.push([]);
-                bcols.push(b.col(i+1));
-            }
-            //multiply
-            for(var i=0; i<rows; i++) { 
-                for(var j=0; j<rows; j++) { 
-                    m.set(i, j, __.dot(a.row(i+1), bcols[j]));
-                }
-            }
-            b = m;
+            b = a.multiply(b);
         }
 
-        
         return b;
     });
     
     function matrix() {
-        var M = Matrix.fromArray(arguments);
-        return M;
+        return Matrix.fromArray(arguments);
     }
     
     return [
@@ -495,6 +513,26 @@ module.exports = function(nerdamer){
             build: function() {
                 return function(symbol) {
                     return symbol.determinant();
+                };
+            }
+        },
+        {
+            name: 'dot',
+            visible: true,
+            numargs: 2,
+            build: function() {
+                return function(symbol1, symbol2) {
+                    return symbol1.dot(symbol2);
+                };
+            }
+        },
+        {
+            name: 'invert',
+            visible: true,
+            numargs: 1,
+            build: function() {
+                return function(matrix) {
+                    return matrix.invert();
                 };
             }
         }
