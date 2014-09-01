@@ -6,13 +6,19 @@ module.exports = function(nerdamer) {
         format = core.Utils.format,
         keys = core.Utils.keys,
         Symbol = core.Symbol,
-        text = core.Utils.text;
-        
+        text = core.Utils.text,
+        N = core.groups. N,
+        S = core.groups.S,
+        FN = core.groups.FN,
+        PL = core.groups.PL,
+        CP = core.groups.CP,
+        CB = core.groups.CB,
+        EX = core.groups.EX;
+ 
     var __ = core.Calculus = {
         diff: function(symbol, d) { 
             d = core.Utils.text(d);//we need only the text representation of the 
             var self = __.diff;
-
             //format [multiplier multiplier, substition function, power multiplier]
             var table = {
                 'sin': 'cos({0})',
@@ -28,15 +34,14 @@ module.exports = function(nerdamer) {
                 'abs': '{1}/abs({1})'
             };
 
-            function polydiff(symbol) {
+            function polydiff(symbol) { 
                 if(!(symbol.value === d || symbol.contains(d))) return new Symbol(0);
-                if(symbol.value === d || symbol.contains(d)) {
+                if(symbol.value === d || symbol.contains(d)) { 
                     if(isSymbol(symbol.power)) {
                         symbol = _.multiply(symbol, symbol.power.copy());
                         symbol.power = _.add(symbol.power, new Symbol(-1));
                     }
                     else {
-
                         symbol.multiplier *= symbol.power;
                         symbol.power -=1;
                         //has to symbol become a number
@@ -106,14 +111,15 @@ module.exports = function(nerdamer) {
                 }
                 return symbol;
             }
-
-            var derived = _.multiply(polydiff(symbol.copy()), derive(symbol.copy()));
+            
+            var derived = derive(symbol.copy());
+            if(symbol.group !== S && symbol.power !== 1) _.multiply(polydiff(symbol.copy()), derived);
             if(isSymbol(symbol.power) && symbol.power.contains(d)) {
-                derived = _.multiply(derived, self.call(this, symbol.power.copy(), d));
+                derived = _.multiply(derived, self.call(self, symbol.power.copy(), d));
             }
 
             if(symbol.args) {
-                derived = _.multiply(derived, self.call(this, symbol.args[0].copy(), d));
+                derived = _.multiply(derived, self.call(self, symbol.args[0].copy(), d));
             }
 
             return derived;
@@ -155,49 +161,85 @@ module.exports = function(nerdamer) {
             var ig_val = ig.text();
 
             var p_int = function(symbol) {
-                    symbol.power += 1; 
-                    symbol.multiplier /= symbol.power;
-                    return symbol;
+                symbol.power += 1; 
+                symbol.multiplier /= symbol.power;
+                return symbol;
+            },
+            integrate_symbols = function(symbol) {
+                var result = new Symbol(0);
+                symbol.forEachWithin(function(s) {
+                    result = _.add(result, integrate(s));
+                });
+                return result;
+            },
+            look_up = function(symbol) {
+                var table = {
+                    cos: 'sin({0})',
+                    sin: '-cos({0})',
+                    tan: 'log(sec({0}))',
+                    sec: 'log(tan({0})+sec({0}))',
+                    csc: '-log(csc({0})+cot({0}))',
+                    cot: 'log(sin({0}))',
+                    acos: '({0})*acos({0})-sqrt(1-({0})^2)',
+                    asin: '({0})*asin({0})+sqrt(1-({0})^2)',
+                    log: '({0})*log({0})-({0})'
                 },
-                integrate_symbols = function(symbol) {
-                    var result = new Symbol(0);
-                    symbol.forEachWithin(function(s) {
-                        result = _.add(result, integrate(s));
-                    });
-                    return result;
-                },
-                integrate = function(symbol) {
-                    var retval;
-                    switch(symbol.group) {
-                        case core.groups.N:
-                            retval = _.multiply(symbol.copy(), ig.copy());
-                            break;
-                        case core.groups.S:
-                            if(symbol.group === S && symbol.value === ig_val) {
-                                retval = p_int(symbol);
+                integral = table[symbol.baseName],
+                arg = symbol.args[0];
+                if(integral && arg.group === S) {
+                    symbol = _.parse(format((1/arg.multiplier)+'*('+integral+')', arg.text()));
+                }
+                return symbol;
+            },
+            integrate = function(symbol) {
+                var retval;
+                switch(symbol.group) {
+                    case N:
+                        retval = _.multiply(symbol.copy(), ig.copy());
+                        break;
+                    case S:
+                        //if the value is the same as the integrand.
+                        if(symbol.group === S && symbol.value === ig_val) {
+                            if(symbol.power === -1) {
+                                retval = _.symfunction('log', [new Symbol(ig)]);
+                                retval.multiplier = symbol.multiplier;
                             }
                             else {
-                                retval = _.multiply(symbol.copy(), ig.copy());
+                                retval = p_int(symbol);
                             }
-                            break;
-                        case core.groups.PL:
-                            retval = integrate_symbols(symbol);
-                            break;
-                        case core.groups. CP:
-                            retval = integrate_symbols(symbol);
-                            break;
-                        case core.groups.CB:
-                            symbol.forEachWithin(function(s,x){
-                                if(s.contains(ig_val)) this.symbols[x] = integrate(s);
-                            });
-                            symbol.updateHash();
-                            retval = symbol;
-                            break;
-                    }
-                    return retval;
-                };
+                        }
+                        //otherwise just multiply times the integrand e.g. y become y*x if integrand is x
+                        else {
+                            retval = _.multiply(symbol.copy(), ig.copy());
+                        }
+                        break;
+                    case FN: 
+                        var arg = symbol.args[0]; 
+                        if(arg.contains(ig_val)) {
+                            if(arg.power === 1 && symbol.power === 1) {
+                                symbol = look_up(symbol);
+                            }
+                        }
+                        retval = symbol;
+                        break;
+                    case PL:
+                        retval = integrate_symbols(symbol);
+                        break;
+                    case CP:
+                        retval = integrate_symbols(symbol);
+                        break;
+                    case CB:
+                        symbol.forEachWithin(function(s,x){
+                            if(s.contains(ig_val)) this.symbols[x] = integrate(s);
+                        });
+                        symbol.updateHash();
+                        retval = symbol;
+                        break;
+                }
+                return retval;
+            };
 
-                return integrate(symbol);    
+            return integrate(symbol);    
         }
     };
     
@@ -218,8 +260,7 @@ module.exports = function(nerdamer) {
             name: 'integrate',
             visible: true,
             numargs: 2,
-            warning: 'non-functional',
-            build: function() { return __.integrate; }
+            build: function(){ return __.integrate; }
         }
     ];
 };
