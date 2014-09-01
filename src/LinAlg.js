@@ -7,6 +7,7 @@ module.exports = function(nerdamer){
     var core = nerdamer.getCore(),
         _ = core.PARSER,
         Vector = core.Vector,
+        format = core.Utils.format,
         Symbol = core.Symbol,
         isSymbol = core.Utils.isSymbol,
         isVector = core.Utils.isVector,
@@ -208,6 +209,15 @@ module.exports = function(nerdamer){
                 }
             } while (--n);
             return index;
+        },
+        text: function(x) {
+            var l = this.elements.length,
+                c = [];
+            for(var i=0; i<l; i++) c.push(this.elements[i].text());
+            return '['+c.join(',')+']';
+        },
+        toString: function() {
+            return this.text();
         }
     };
   
@@ -297,6 +307,15 @@ module.exports = function(nerdamer){
                 }
             }
         },
+        each: function(fn) {
+            var nr = this.rows(),
+                nc = this.cols(), i, j;
+            for(i=0; i<nr; i++) {
+                for(j=0; j<nc; j++) {
+                    fn(this.elements[i][j], i, j);
+                }
+            }
+        },
         //ported from Sylvester.js
         determinant: function() {
             if (!this.isSquare()) { return null; }
@@ -351,7 +370,7 @@ module.exports = function(nerdamer){
                     divisor = M.elements[i][i];
                     do { 
                         p = kp - np;
-                        new_element = _.divide(M.elements[i][p], divisor);
+                        new_element = _.divide(M.elements[i][p], divisor.copy());
                         els.push(new_element);
                         // Shuffle of the current row of the right hand side into the results
                         // array as it will not be modified by later runs through this loop
@@ -476,23 +495,193 @@ module.exports = function(nerdamer){
     core.Matrix = Matrix;
  
     _.extend('multiply', function(a, b, multiply){ 
-        var aIsSym = isSymbol(a), bIsSym = isSymbol(b);
-        if(bIsSym && !aIsSym) { //keep symbols to the right 
-            var t = a; a = b; b = t; //swap
+        var isSymbolA = isSymbol(a), isSymbolB = isSymbol(b), t;
+        if(isSymbolB && !isSymbolA) { //keep symbols to the right 
+            t = a; a = b; b = t; //swap
+            t = isSymbolB; isSymbolB = isSymbolA; isSymbolA = t;
         }
-        if(aIsSym && bIsSym) {
+        
+        if(isSymbolA && isSymbolB) {
             return multiply(a, b);
         }
-        else if(isSymbol(a) && isMatrix(b)) {
-            b.eachElement(function(e) {
-               return multiply(a.copy(), e); 
+        else {
+            var isMatrixB = isMatrix(b), isMatrixA = isMatrix(a);
+            if(isSymbolA && isMatrixB) {
+                b.eachElement(function(e) {
+                   return multiply(a.copy(), e); 
+                });
+            }
+            else {
+                if(isMatrixA && isMatrixB) { 
+                    b = a.multiply(b);
+                }
+                else if(isSymbolA && isVector(b)) {
+                    b.each(function(x, i) {
+                        i--;
+                        b.elements[i] = _.multiply(a.copy(), b.elements[i]);
+                    });
+                }
+                else {
+                    if(isVector(a) && isVector(b)) {
+                        b.each(function(x, i) {
+                            i--;
+                            b.elements[i] = _.multiply(a.elements[i], b.elements[i]);
+                        });
+                    }
+                    else if(isVector(a) && isMatrix(b)) {
+                        //try to convert a to a matrix
+                        a = new Matrix(a.elements);
+                        b = a.multiply(b);
+                    }
+                    else if(isMatrix(a) && isVector(b)) {
+                        b = new Matrix(b.elements);
+                        b = a.multiply(b);
+                    }
+                }
+            }
+        }
+        return b;
+    });
+    
+    _.extend('divide', function(a, b, divide) {
+        var isSymbolA = isSymbolA = isSymbol(a), isSymbolB = isSymbol(b), t;
+        if(isSymbolA && isSymbolB) {
+            b = divide(a, b);
+        }
+        else {
+            var isVectorA = isVector(a), isVectorB = isVector(b);
+            if(isSymbolA && isVectorB) {
+                b = b.map(function(x){
+                    return _.divide(a.copy(),x);
+                });
+            }
+            else if(isVectorA && isSymbolB) {
+                b = a.map(function(x) {
+                    return _.divide(x, b.copy());
+                });
+            }
+            else if(isVectorA && isVectorB) {
+                if(a.dimensions() === b.dimensions()) {
+                    b = b.map(function(x, i) {
+                        return _.divide(a.elements[--i], x);
+                    });
+                }
+                else _.error('Cannot divide vectors. Dimensions do not match!');
+            }
+            else {
+                var isMatrixA = isMatrix(a), isMatrixB = isMatrix(b);
+                if(isMatrixA && isSymbolB) {
+                    a.eachElement(function(x) {
+                        return _.divide(x, b.copy());
+                    });
+                    b = a;
+                }
+                else if(isMatrixA && isMatrixB) {
+                    if(a.rows() === b.rows() && a.cols() === b.cols()) {
+                        a.eachElement(function(x, i, j) {
+                            return _.divide(x, b.elements[i][j]);
+                        });
+                    }
+                    else {
+                        _.error('Dimensions do not match!');
+                    }
+                }
+                else if(isMatrixA && isVectorB) {
+                    if(a.cols() === b.dimensions()) {
+                        a.eachElement(function(x, i, j) {
+                            return _.divide(x, b.elements[i].copy());
+                        });
+                        b = a;
+                    }
+                    else {
+                        _.error('Unable to divide matrix by vector.');
+                    }
+                }
+            }
+        }
+        return b;
+    });
+    
+    _.extend('add', function(a, b, add) {
+        var isSymbolA = isSymbolA = isSymbol(a), isSymbolB = isSymbol(b), t;
+        if(isSymbolA && isSymbolB) {
+            b = add(a, b);
+        }
+        else {
+            if(isSymbolB) {
+                t = b; b = a; a = t;
+                isSymbolA = isSymbolB;
+            }
+            if(isSymbolA && isVector(b)) {
+                b = b.map(function(x, i) {
+                    return _.add(x, a.copy());
+                });
+            }
+            else if(isVector(a) && isVector(b)) {
+                if(a.dimensions() === b.dimensions()) b = a.add(b);
+                else _.error('Unable to add vectors. Dimensions do not match.');
+            }
+            else if(isMatrix(a) && isMatrix(b)) {
+                var rows = a.rows(), V = new Matrix();
+                if(rows === b.rows() && a.cols() === b.cols()) {
+                    b.eachElement(function(x, i, j) {
+                        return _.add(x, a.elements[i][j]);
+                    });
+                }
+                else _.error('Matrix dimensions do not match!');
+            }
+        } 
+        return b;
+    });
+    
+    _.extend('subtract', function(a, b, subtract) {
+        var isSymbolA = isSymbolA = isSymbol(a), isSymbolB = isSymbol(b), t;
+        if(isSymbolA && isSymbolB) {
+            b = subtract(a, b);
+        }
+        else {
+            if(isSymbolB) {
+                t = b; b = a; a = t;
+                isSymbolA = isSymbolB;
+            }
+            if(isSymbolA && isVector(b)) {
+                b = b.map(function(x) {
+                    return _.subtract(x, a.copy());
+                });
+            }
+            else if(isVector(a) && isVector(b)) {
+                if(a.dimensions() === b.dimensions()) b = a.subtract(b);
+                else _.error('Unable to subtract vectors. Dimensions do not match.');
+            }
+            else if(isMatrix(a) && isMatrix(b)) {
+                var rows = a.rows();
+                if(rows === b.rows() && a.cols() === b.cols()) {
+                    b.eachElement(function(x, i, j) {
+                        return _.subtract(x, a.elements[i][j]);
+                    });
+                }
+                else _.error('Matrix dimensions do not match!');
+            }
+        } 
+        return b;
+    });
+    
+    _.extend('pow', function(a, b, pow) {
+        var isSymbolA = isSymbolA = isSymbol(a), isSymbolB = isSymbol(b);
+        if(isSymbolA && isSymbolB) {
+            a = pow(a, b);
+        }
+        else if(isVector(a) && isSymbolB) {
+            a = a.map(function(x) {
+                return _.pow(x, b.copy());
             });
         }
-        else if(isMatrix(a) && isMatrix(b)) { 
-            b = a.multiply(b);
+        else if(isMatrix(a) && isSymbolB) {
+            a.eachElement(function(x) {
+                return _.pow(x, b.copy());
+            });
         }
-
-        return b;
+        return a;
     });
     
     function matrix() {
