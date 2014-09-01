@@ -382,13 +382,6 @@ var nerdamer = (function() {
 
             return sign+multiplier+value+power;
         }
-        else if(isVector(obj)) {
-            var l = obj.length(),
-                c = [];
-            for(var i=0; i<l; i++) c.push(text(obj.vec_array[i]));
-            
-            return '['+c.join(',')+']';
-        }
         else {
             return obj;
         }
@@ -874,10 +867,9 @@ var nerdamer = (function() {
             brackets[LEFT_SQUARE_BRACKET] = LEFT_SQUARE_BRACKET,
             brackets[RIGHT_SQUARE_BRACKET] = RIGHT_SQUARE_BRACKET;
 
-        function error(msg) {
+        var error = this.error = function(msg) {
             throw new ParserError(msg);
-            
-        }
+        };
         
         this.override = function(which, with_what) {
             if(!bin[which]) bin[which] = [];
@@ -1829,13 +1821,7 @@ var nerdamer = (function() {
         if(isVector(v)) this.elements = v.items.slice(0);
         else this.elements = v || [];
     }
-    
-    Vector.prototype = {
-        custom: true,//has to be set to skip casting to Symbol
-        length: function() {
-            return this.elements.length;
-        }
-    };
+    Vector.prototype.custom = true;
     /* END CLASSES */
 
     /* FINALIZE */
@@ -2093,11 +2079,10 @@ var nerdamer = (function() {
     
     return libExports; //bon voyage
 })();
-var vector = require('./Vector.js')(nerdamer);
+
 var calculus = require('./Calculus.js')(nerdamer);
 var algebra = require('./Algebra.js')(nerdamer);
 var linalg = require('./LinAlg.js')(nerdamer);
 
 nerdamer.register([calculus, algebra, linalg]);
-
 module.exports = nerdamer;
