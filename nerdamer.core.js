@@ -532,7 +532,6 @@ var nerdamer = (function() {
             if(this.symbols) {
                 copy.symbols = {};
                 for(var x in this.symbols) {
-//                    if(text(this) === '-1+z') throw new Error()
                     copy.symbols[x] = this.symbols[x].copy();
                 }
             }
@@ -743,10 +742,6 @@ var nerdamer = (function() {
         },
         combine: function(symbol) {
             this.insert(symbol, 'multiply');
-//            if(symbol.isOne()) {
-//                delete this.symbols[symbol.value];
-//                this.length--;
-//            }
         },
         updateHash: function() {
             if(this.group === FN) {
@@ -1225,6 +1220,14 @@ var nerdamer = (function() {
             return new Vector([].slice.call(arguments));
         }
         
+        this.ext = {
+            log: log,
+            sqrt: sqrt,
+            abs: abs,
+            vector: vector,
+            parens: parens
+        };
+        
         this.mapped_function = function() { 
             var subs = {},
                 params = this.params;
@@ -1268,7 +1271,7 @@ var nerdamer = (function() {
             if(symbol1.multiplier === 0) return symbol2;
             if(symbol2.multiplier === 0) return symbol1;
             
-            //parens is an ugly function that we want to get rid of as soon as possible so check
+            //parens is a function that we want to get rid of as soon as possible so check
             if(group1 === FN && symbol1.baseName === PARENTHESIS) symbol1 = this.unpack(symbol1);
             if(group2 === FN && symbol1.baseName === PARENTHESIS) symbol2 = this.unpack(symbol2);
             
@@ -1413,7 +1416,7 @@ var nerdamer = (function() {
             var group1 = symbol1.group,
                 group2 = symbol2.group;
 
-            //parens is an ugly function that we want to get rid of as soon as possible so check
+            //parens is a function that we want to get rid of as soon as possible so check
             if(group1 === FN && symbol1.baseName === PARENTHESIS) symbol1 = this.unpack(symbol1);
             if(group2 === FN && symbol1.baseName === PARENTHESIS) symbol2 = this.unpack(symbol2);
             
@@ -1687,7 +1690,7 @@ var nerdamer = (function() {
         };
     };
     
-    /* STATIC */
+    /* "STATIC" */
     var Fraction = {
         convert: function( value, opts ) {
             var frac;
@@ -2118,6 +2121,7 @@ var nerdamer = (function() {
     /**
      * 
      * @param {Integer} expression_number The number of the expression wanted
+     * @param {String} asType Get the equation as text or latex text
      * @returns {Expression}
      */
     libExports.getExpression = libExports.getEquation = function(expression_number, asType) {
