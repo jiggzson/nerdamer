@@ -9,6 +9,7 @@
 var nerdamer = (function() {
     
     var version = '0.5.1',
+    
         _ = new Parser(), //nerdamer's parser
     
         Groups = {},
@@ -47,7 +48,6 @@ var nerdamer = (function() {
         Settings.PARSE2NUMBER = false;
         
         //this flag forces the a copy to be returned when add, subtract, etc... is called
-        //Not very efficient at the moment
         Settings.SAFE = false;
 
         //the container used to store all the reserved functions
@@ -57,7 +57,8 @@ var nerdamer = (function() {
             return RESERVED.indexOf(value) !== -1;
         },
 
-        // Enforces rule: must start with a letter and can have any number of underscores or numbers after.
+        // Enforces rule: must start with a letter or an underscore and can have any number of 
+        // underscores or numbers after.
         validateName = Utils.validateName = function(name, type) { 
             type = type || 'variable';
             var regex = /^[a-z_][a-z\d\_]*$/gi;
@@ -142,9 +143,9 @@ var nerdamer = (function() {
             return Math.min.apply(undefined, arr);
         },
         
-        round = Utils.round = function( x, s ) { 
+        round = Utils.round = function(x, s) { 
             s = s || 14;
-            return Math.round( x*Math.pow( 10,s ) )/Math.pow( 10,s );
+            return Math.round(x*Math.pow(10,s))/Math.pow(10, s);
         },
         
         // Inserts an object into an array or recursively adds items if an array is given
@@ -240,6 +241,7 @@ var nerdamer = (function() {
             return result;
         },
         
+        //At block in which a flag is temporarily set to ON e.g. PARSE2NUMBER of SAFE
         block = Utils.block = function(setting, f, opt, obj) {
             var current_setting = Settings[setting];
             Settings[setting] = opt === undefined ? true : !! opt;
@@ -379,7 +381,7 @@ var nerdamer = (function() {
             }
 
 
-            //the following groups are held together by plus or minus. The can be raised to a power or multiplied
+            //the following groups are held together by plus or minus. They can be raised to a power or multiplied
             //by a multiplier and have to be in brackets to preserve the order of precedence
             if(((group === CP || group === PL) && (multiplier && multiplier !== 1)) 
                     || ((group === CB || group === CP || group === PL) && (power && power !== 1))
@@ -400,7 +402,7 @@ var nerdamer = (function() {
     Utils.text = text;
     /* END GLOBAL FUNCTIONS */
     
-    /* CLASSES */
+    /* "CLASSES" */
     function Collector(extra_conditions) {
         this.c = [];
         this.add = function(value) {
@@ -409,6 +411,7 @@ var nerdamer = (function() {
         };
     }
     
+    //Parser function
     function Func(fn_name) {
         this.name = fn_name;
     }
@@ -559,7 +562,7 @@ var nerdamer = (function() {
             else { return text(this); }
         },
         //a function to help sniff out symbols in complex symbols
-        //pass in true as second parameter to include exponentials
+        //pass in true as second parameter to include exponents
         contains: function(variable, all) { 
             var g = this.group; 
             if(this.symbols) {
@@ -573,10 +576,8 @@ var nerdamer = (function() {
                 if(all && this.power.contains(variable, all)) { return true; }
                 return this.value === variable;
             }
-            else {
-                return this.value === variable;
-            }
-            return false;
+            
+            return this.value === variable;
         },
         negate: function() { 
             this.multiplier *= -1;
@@ -680,7 +681,8 @@ var nerdamer = (function() {
             }
         },
         insert: function(symbol, action) { 
-            //this check can save a lot of aggravation
+            //this check can be removed but saves a lot of aggravation when trying to hunt down
+            //a bug. If left you will instantly know that the error can only be between 2 symbols.
             if(!isSymbol(symbol)) throw new Error('Object '+symbol+' is not of type Symbol!');
             if(this.symbols) {
                 var group = this.group;
@@ -713,10 +715,9 @@ var nerdamer = (function() {
                         }
                         //transfer the multiplier
                         this.multiplier *= symbol.multiplier;
+                        symbol.multiplier = 1;
                         
                         if(Math.abs(symbol.valueOf()) !== 1) { 
-                            //transfer the multiplier
-                            symbol.multiplier = 1;
                             if(this.power !== 1) {
                                 var cp = this.copy();
                                 cp.multiplier = 1; 
@@ -725,10 +726,12 @@ var nerdamer = (function() {
                                 var key2 = cp.keyForGroup(CB);
                                 this.symbols[key2] = cp;
                             }
+                            
                             //if the power does not equal to zero then we have to create a new symbol
                             this.symbols[key] = symbol;
                             this.length++;
                         }
+                        
                     }
                     //update the hash
                     if(this.group === CP || this.group === CB) {
@@ -1654,7 +1657,7 @@ var nerdamer = (function() {
                 //symbol power may be undefined if symbol is of type N
                 if(!isSymbol(spow)) spow = new Symbol(spow || 1);
 
-                if(Math.abs(symbol1.multiplier) !== 1) {
+                if(Math.abs(symbol1.multiplier) !== 1 && symbol1.group === N) {
                     m = new Symbol(symbol1.multiplier);
                     m.convert(EX);
                     m.power = symbol2.copy();
@@ -1677,9 +1680,11 @@ var nerdamer = (function() {
                     symbol1.power = symbol2;
                 } 
 
-                if(m) symbol1 = this.multiply(symbol1, m);
+                if(m) {
+                    symbol1 = this.multiply(symbol1, m); 
+                }
             }
-            
+
             return symbol1;
         };
         
@@ -2215,3 +2220,4 @@ var nerdamer = (function() {
     
     return libExports; //Done
 })();
+
