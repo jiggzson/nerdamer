@@ -9,7 +9,6 @@
 var nerdamer = (function() {
     
     var version = '0.5.1',
-    
         _ = new Parser(), //nerdamer's parser
     
         Groups = {},
@@ -48,6 +47,7 @@ var nerdamer = (function() {
         Settings.PARSE2NUMBER = false;
         
         //this flag forces the a copy to be returned when add, subtract, etc... is called
+        //Not very efficient at the moment
         Settings.SAFE = false;
 
         //the container used to store all the reserved functions
@@ -57,8 +57,7 @@ var nerdamer = (function() {
             return RESERVED.indexOf(value) !== -1;
         },
 
-        // Enforces rule: must start with a letter or an underscore and can have any number of 
-        // underscores or numbers after.
+        // Enforces rule: must start with a letter and can have any number of underscores or numbers after.
         validateName = Utils.validateName = function(name, type) { 
             type = type || 'variable';
             var regex = /^[a-z_][a-z\d\_]*$/gi;
@@ -143,9 +142,9 @@ var nerdamer = (function() {
             return Math.min.apply(undefined, arr);
         },
         
-        round = Utils.round = function(x, s) { 
+        round = Utils.round = function( x, s ) { 
             s = s || 14;
-            return Math.round(x*Math.pow(10,s))/Math.pow(10, s);
+            return Math.round( x*Math.pow( 10,s ) )/Math.pow( 10,s );
         },
         
         // Inserts an object into an array or recursively adds items if an array is given
@@ -241,7 +240,6 @@ var nerdamer = (function() {
             return result;
         },
         
-        //At block in which a flag is temporarily set to ON e.g. PARSE2NUMBER of SAFE
         block = Utils.block = function(setting, f, opt, obj) {
             var current_setting = Settings[setting];
             Settings[setting] = opt === undefined ? true : !! opt;
@@ -381,7 +379,7 @@ var nerdamer = (function() {
             }
 
 
-            //the following groups are held together by plus or minus. They can be raised to a power or multiplied
+            //the following groups are held together by plus or minus. The can be raised to a power or multiplied
             //by a multiplier and have to be in brackets to preserve the order of precedence
             if(((group === CP || group === PL) && (multiplier && multiplier !== 1)) 
                     || ((group === CB || group === CP || group === PL) && (power && power !== 1))
@@ -402,7 +400,7 @@ var nerdamer = (function() {
     Utils.text = text;
     /* END GLOBAL FUNCTIONS */
     
-    /* "CLASSES" */
+    /* CLASSES */
     function Collector(extra_conditions) {
         this.c = [];
         this.add = function(value) {
@@ -411,7 +409,6 @@ var nerdamer = (function() {
         };
     }
     
-    //Parser function
     function Func(fn_name) {
         this.name = fn_name;
     }
@@ -525,6 +522,10 @@ var nerdamer = (function() {
             }
             return status;
         },
+        isInverse: function() {
+            if(this.group === EX) return (this.power.multiplier < 0);
+            return this.power < 0;
+        },
         // Copies over a predefined list of properties from one symbol to another.
         copy: function() { 
             var copy = new Symbol(0),
@@ -562,7 +563,7 @@ var nerdamer = (function() {
             else { return text(this); }
         },
         //a function to help sniff out symbols in complex symbols
-        //pass in true as second parameter to include exponents
+        //pass in true as second parameter to include exponentials
         contains: function(variable, all) { 
             var g = this.group; 
             if(this.symbols) {
@@ -584,9 +585,9 @@ var nerdamer = (function() {
             if(this.group === CP || this.group === PL) this.distributeMultiplier();
             return this;
         },
-        invert: function() {
+        invert: function(power_only) {
             //invert the multiplier
-            this.multiplier = 1/this.multiplier;
+            if(!power_only) this.multiplier = 1/this.multiplier;
             //invert the rest
             if(isSymbol(this.power)) {
                 this.power.negate();
@@ -785,6 +786,7 @@ var nerdamer = (function() {
             }
             else if(g === CP) {
                 if(group === CP) return text(this, 'hash');
+                if(group === PL) return this.power;
                 return this.value;
             }
             else if(g === CB) {
@@ -1006,6 +1008,45 @@ var nerdamer = (function() {
             if(symbol.power.valueOf() === 0) symbol.convert(N);
         };
         
+        //moved to parser
+        //this function defines how every group in stored within a group of higher order
+        keyForGroup = this.keyForGroup = function(super_group, sub_group) {
+            var g = this.group;
+            if(g === N) {
+                return this.value;
+            }
+            else if(g === S) {
+                if(group === PL) return this.power;
+                else return this.value;
+            }
+            else if(g === FN) {
+                if(group === PL) return this.power;
+                return text(this, 'hash');
+            }
+            else if(g === PL) { 
+                //if the order is reversed then we'll assume multiplication
+                //TODO: possible future dilemma
+                if(group === CB) return text(this, 'hash');
+                if(group === CP) {
+                    if(this.power === 1) return this.value;
+                    else return inBrackets(text(this, 'hash'))+'^'+this.power;
+                }
+                return this.value;
+            }
+            else if(g === CP) {
+                if(group === CP) return text(this, 'hash');
+                return this.value;
+            }
+            else if(g === CB) {
+                if(group === PL) return this.power;
+                return text(this, 'hash');
+            }
+            else if(g === EX) {
+                if(group === PL) return text(this.power);
+                return text(this, 'hash');
+            }
+        }
+        
         this.parse = function(expression_string, substitutions) {  
             expression_string = expression_string.split(' ').join('');//strip empty spaces
             
@@ -1197,14 +1238,11 @@ var nerdamer = (function() {
         }
         
         function log(symbol) { 
+            var retval;
             if(symbol.group === FN && symbol.baseName === 'exp') {
                 var s = symbol.args[0];
-                if(symbol.multiplier === 1) {
-                    return _.multiply(s, new Symbol(symbol.power));
-                }
-                else {
-                    return _.symfunction('log',[symbol]);
-                }
+                if(symbol.multiplier === 1) retval = _.multiply(s, new Symbol(symbol.power));
+                else retval = _.symfunction('log',[symbol]);
             }
             else if(Settings.PARSE2NUMBER && isNumericSymbol(symbol)) {
                 var img_part;
@@ -1212,11 +1250,21 @@ var nerdamer = (function() {
                     symbol.negate();
                     img_part = _.multiply(new Symbol(Math.PI), new Symbol('i'));
                 }
-                var retval = new Symbol(Math.log(symbol.multiplier));
+                retval = new Symbol(Math.log(symbol.multiplier));
                 if(img_part) retval = _.add(retval, img_part);
-                return retval;
             }
-            return _.symfunction('log', arguments); 
+            else {
+                retval = _.symfunction('log', arguments); 
+                //TODO
+//                if(retval.group === FN && retval.args[0].isInverse()) {
+//                    retval.args[0].invert(true);
+//                    retval.negate();
+//                }
+            }
+            
+                
+            
+            return retval;
         }
 
         function vector() {
@@ -1280,11 +1328,11 @@ var nerdamer = (function() {
             
             //always have the lower group on the left
             if(group1 > group2) { return this.add(symbol2, symbol1); }
-            
+
             if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); };
             
             //same symbol, same power
-            if(symbol1.value === symbol2.value && !( group1 === CP && symbol1.power !== symbol2.power)) {
+            if(symbol1.value === symbol2.value && !(group1 === CP && symbol1.power !== symbol2.power)) {
                 if(symbol1.power === symbol2.power && group2 !== PL /*if group1 is PL then group2 is PL*/
                         || (group1 === EX && symbol1.equals(symbol2))) {
                     symbol1.multiplier += symbol2.multiplier;
@@ -1325,7 +1373,6 @@ var nerdamer = (function() {
                     }
                 }
                 else { 
-                    
                     //we checkfor CB on the right or S on the left because we know that the lower group is always 
                     //on the left. This is just an extra precaution
                     symbol1.convert(PL);
@@ -1333,12 +1380,19 @@ var nerdamer = (function() {
                 }
             }
             else if(group2 === CP) { 
-                if(group1 === CP) {
+                if(group1 === CP) { 
                     if(symbol1.power > symbol2.power) { 
                         var t = symbol1; symbol1 = symbol2; symbol2 = t;/*swap them*/ 
                     }
-                    //since we swap the symbols to place the lower power symbol on the left we only have to check a
-                    if(symbol1.power === 1) {
+                    
+                    if(symbol1.value === symbol2.value) { 
+                        //we checkfor CB on the right or S on the left because we know that the lower group is always 
+                        //on the left. This is just an extra precaution
+                        symbol1.convert(PL);
+                        symbol1.attach(symbol2);
+                    }
+                    else if(symbol1.power === 1) {
+                        //since we swap the symbols to place the lower power symbol on the left we only have to check a
                         if(symbol2.power === 1) { 
                             var s;
                             //distribute the multiplier. The hope is that you don't end up delaying it only to end up with
@@ -1356,7 +1410,7 @@ var nerdamer = (function() {
                             symbol1.attach(symbol2);
                         }
                     }
-                    else {
+                    else { 
                         //aaahhh we've reached the end of the dodging and weaving an it's time to start creating
                         var newSymbol = new Symbol('blank');
                         newSymbol.symbols = {};
@@ -1393,7 +1447,7 @@ var nerdamer = (function() {
                     
                 }
             }
-            else {
+            else { 
                 symbol1.convert(CP); 
                 symbol1.attach(symbol2);
             }        
@@ -1831,33 +1885,50 @@ var nerdamer = (function() {
         },
         //renders the sub-symbols in complex symbols
         renderSubSymbolsLatex: function(symbol, sortFunction, suppressPlus, abs) { 
-            var rendered = '',
-                subSymbols = symbol.collectSymbols().sort(sortFunction);
-
-            if(sortFunction) subSymbols.sort(sortFunction);
+            var subSymbols = symbol.collectSymbols().sort(sortFunction),
+                l = subSymbols.length, 
+                denom = [], i,
+                self = this;
             
-            var l = subSymbols.length;
-            
-            for(var i=0; i<l; i++) {
-                var curSymbol = subSymbols[i], delimiter;
-                if(curSymbol.multiplier < 0) {
-                    delimiter = '-';
+            for(i=0; i<l; i++) {
+                var s = subSymbols[i];
+                if(s.isInverse()) {
+                    denom.push(remove(subSymbols, i).copy().invert());
+                    i--, l--; //adjust the index and the length since we're one item shorter
                 }
-                else if(suppressPlus){
-                    delimiter ='';
-                }
-                else {
-                    delimiter = '+';
-                }
-                //leave the negative for the first symbol
-                abs = abs || i > 0;
-                var latex = this.latex(curSymbol, abs);
-                //only add the delimiter to the first one
-                if(i > 0) latex = delimiter+latex;
-                //add it to the total rendered
-                rendered += latex;
             }
-            return rendered;
+            if(sortFunction) {
+                subSymbols.sort(sortFunction);
+                denom.sort(sortFunction);
+            }
+            
+            function convert(arr) { 
+                var i, l = arr.length, rendered = '';
+                for(var i=0; i<l; i++) {
+                    var curSymbol = arr[i], delimiter;
+                    if(curSymbol.multiplier < 0) {
+                        delimiter = '-';
+                    }
+                    else if(suppressPlus){
+                        delimiter = '';
+                    }
+                    else {
+                        delimiter = '+';
+                    }
+                    //leave the negative for the first symbol
+                    abs = abs || i > 0;
+                    var latex = self.latex(curSymbol, abs);
+                    //only add the delimiter to the first one
+                    if(i > 0) latex = delimiter+latex;
+                    //add it to the total rendered
+                    rendered += latex;
+                }
+                return rendered;
+            }
+            var num = convert(subSymbols),
+                denom = convert(denom);
+            if(denom) return format('\\frac{{0}}{{1}}', num, denom);
+            else return num;
         },
         //renders the style for the multiplier and power of the symbol.
         renderSymbolLatex: function(symbol, value, abs) {
@@ -2220,4 +2291,3 @@ var nerdamer = (function() {
     
     return libExports; //Done
 })();
-
