@@ -311,7 +311,8 @@ var nerdamer = (function() {
         
     /* GLOBAL FUNCTIONS */
     function text(obj, option) { 
-        var asHash = (option === 'hash');
+        var asHash = (option === 'hash'),
+            finalize = option === 'final';
         //if the object is a symbol
         if(isSymbol(obj)) { 
             var multiplier = '', 
@@ -424,7 +425,7 @@ var nerdamer = (function() {
     
     Expression.prototype = {
         text: function() {
-            return this.symbol.text();
+            return this.symbol.text('final');
         },
         
         latex: function() {
@@ -887,6 +888,7 @@ var nerdamer = (function() {
                 'exp'       : [ , 1],
                 'min'       : [ , -1],
                 'max'       : [ ,-1],
+                'erf'       : [ , 1],
                 'floor'     : [ ,1],
                 'ceiling'   : [ ,1],
                 'fact'      : [ , 1],
@@ -1008,47 +1010,8 @@ var nerdamer = (function() {
             if(symbol.power.valueOf() === 0) symbol.convert(N);
         };
         
-        //moved to parser
-        //this function defines how every group in stored within a group of higher order
-        keyForGroup = this.keyForGroup = function(super_group, sub_group) {
-            var g = this.group;
-            if(g === N) {
-                return this.value;
-            }
-            else if(g === S) {
-                if(group === PL) return this.power;
-                else return this.value;
-            }
-            else if(g === FN) {
-                if(group === PL) return this.power;
-                return text(this, 'hash');
-            }
-            else if(g === PL) { 
-                //if the order is reversed then we'll assume multiplication
-                //TODO: possible future dilemma
-                if(group === CB) return text(this, 'hash');
-                if(group === CP) {
-                    if(this.power === 1) return this.value;
-                    else return inBrackets(text(this, 'hash'))+'^'+this.power;
-                }
-                return this.value;
-            }
-            else if(g === CP) {
-                if(group === CP) return text(this, 'hash');
-                return this.value;
-            }
-            else if(g === CB) {
-                if(group === PL) return this.power;
-                return text(this, 'hash');
-            }
-            else if(g === EX) {
-                if(group === PL) return text(this.power);
-                return text(this, 'hash');
-            }
-        }
-        
         this.parse = function(expression_string, substitutions) {  
-            expression_string = expression_string.split(' ').join('');//strip empty spaces
+            expression_string = expression_string.split(' ').join('');//strip empty space
             
             var subs = substitutions || {},
                 stack = [],
@@ -1057,10 +1020,11 @@ var nerdamer = (function() {
                 pos = 0,
                 last_opr_pos,
                 last_operator,
+                last_char,
                 EOT = false,
                 func_on_stack = false,
                 curpos = 0,
-                
+                                
                 evaluate = function(operator) { 
                     if(!operator) {
                         operator = stack.pop();
@@ -1124,8 +1088,8 @@ var nerdamer = (function() {
                 var cur_char = expression_string.charAt(curpos);
                 var operator = operators[cur_char], //a possible operator
                     bracket = brackets[cur_char]; //a possible bracket
-
-                if(operator || bracket) { //if the character is a bracket or an operator
+                //if the character is a bracket or an operator but not a scientific number
+                if(operator && last_char !== 'e' || bracket) { 
                     //if an operator is found then we assume that the preceeding is a variable
                     //the token has to be from the last position up to the current position
                     var token = expression_string.substring(pos,curpos);
@@ -1206,6 +1170,7 @@ var nerdamer = (function() {
                 else if(curpos === len-1) {
                     insert(expression_string.substring(pos, curpos+1));
                 }
+                last_char = cur_char;
             }
             
             EOT = true; //end of stack reached
@@ -1328,7 +1293,6 @@ var nerdamer = (function() {
             
             //always have the lower group on the left
             if(group1 > group2) { return this.add(symbol2, symbol1); }
-
             if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); };
             
             //same symbol, same power
@@ -1478,7 +1442,7 @@ var nerdamer = (function() {
             if(group2 === FN && symbol1.baseName === PARENTHESIS) symbol2 = this.unpack(symbol2);
             
             if(symbol1.isImgSymbol && symbol2.isImgSymbol) {
-                return Symbol(-1*symbol1.multiplier*symbol2.multiplier);
+                return new Symbol(-1*symbol1.multiplier*symbol2.multiplier);
             }
 
             //as with addition the lower group symbol is kept on the left so only one side has to symbol2 e 
@@ -2176,6 +2140,7 @@ var nerdamer = (function() {
     libExports.setFunction = function(name, params_array, body) {
         validateName(name);
         if(!isReserved(name)) {
+            params_array = params_array || variables(_.parse(body));
             _.functions[name] = [_.mapped_function, params_array.length, {
                     name: name,
                     params: params_array,
