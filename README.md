@@ -1,7 +1,7 @@
 Nerdamer
 ========
 
-As of version 0.5.0, the library is split into the core and add-ons which have to also be loaded.
+As of version 0.5.0, the library is split into the core and optional add-ons which can be loaded after the core has been loaded.
 
 Getting started with Nerdamer
 
