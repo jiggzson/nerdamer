@@ -387,7 +387,7 @@ var nerdamer = (function() {
                     || obj.baseName === PARENTHESIS) { 
                 value = inBrackets(value);
             }
-            
+
             if(power < 0) power = inBrackets(power);
             if(multiplier) multiplier = multiplier + '*';
             if(power) power = '^' + power;
@@ -626,8 +626,8 @@ var nerdamer = (function() {
             }
             return this;
         },
-        convert: function(group) {
-            if(group > FN && this.group !== EX) {
+        convert: function(group) { 
+            if(group > FN) { 
                 //make a copy of this symbol;
                 var cp = this.copy();
                 //attach a symbols object and upgrade the group
@@ -1564,7 +1564,7 @@ var nerdamer = (function() {
                 symbol1.combine(symbol2);
                 symbol2 = symbol1;
             }
-            else {
+            else { 
                 if(group1 === CB) {
                     symbol1.combine(symbol2);
                     symbol2 = symbol1;
@@ -1675,7 +1675,7 @@ var nerdamer = (function() {
                 //symbol power may be undefined if symbol is of type N
                 if(!isSymbol(spow)) spow = new Symbol(spow || 1);
 
-                if(Math.abs(symbol1.multiplier) !== 1 && symbol1.group === N) {
+                if(Math.abs(symbol1.multiplier) !== 1) {
                     m = new Symbol(symbol1.multiplier);
                     m.convert(EX);
                     m.power = symbol2.copy();
@@ -1684,19 +1684,20 @@ var nerdamer = (function() {
                 
                 if(symbol1.group !== EX) symbol1.convert(EX);
 
-                if(isNumericSymbol(spow) || isNumericSymbol(symbol2)) { 
-                    symbol1.power = this.multiply(spow, symbol2); 
+//                if(isNumericSymbol(spow) || isNumericSymbol(symbol2)) { 
+                    symbol1.power = this.multiply(spow, symbol2);
                     //reduce symbol to simpler form. 
                     if(symbol1.power.isOne()) {
                         symbol1.group = symbol1.previousGroup;
                         delete symbol1.previousGroup;
                         symbol1.power = 1;
                     }
-                }
-                else {
-                    symbol1 = _.symfunction('parens', [symbol1]);
-                    symbol1.power = symbol2;
-                } 
+//                }
+//                else {
+//                    throw new Error('called')
+//                    symbol1 = _.symfunction('parens', [symbol1]);
+//                    symbol1.power = symbol2;
+//                } 
 
                 if(m) {
                     symbol1 = this.multiply(symbol1, m); 
