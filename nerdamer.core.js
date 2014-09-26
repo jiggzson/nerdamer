@@ -1011,8 +1011,25 @@ var nerdamer = (function() {
         };
         
         this.parse = function(expression_string, substitutions) {  
-            expression_string = expression_string.split(' ').join('');//strip empty space
-            
+            /*
+             * Since variables cannot start with a number, the assumption is made that when this occurs the
+             * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
+             * a side-by-side close and open parenthesis
+             */
+            expression_string = expression_string.split(' ').join('')//strip empty space
+                    .replace(/([\+\-\/\*]*[0-9]+)([a-z_]+[\+\-\/\*]*)/gi, function() {
+                        var str = arguments[4],
+                            group1 = arguments[1],
+                            group2 = arguments[2],
+                            start = arguments[3],
+                            first = str.charAt(start),
+                            before = '',
+                            d = '*';
+                        if(!first.match(/[\+\-\/\*]/)) before = str.charAt(start-1);
+                        if(before.match(/[a-z]/i)) d = '';
+                        return group1+d+group2;
+                    })
+                    .replace( /\)\(/g, ')*(' );
             var subs = substitutions || {},
                 stack = [],
                 output = [],
