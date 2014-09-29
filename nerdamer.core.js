@@ -1459,14 +1459,14 @@ var nerdamer = (function() {
             if(group2 === FN && symbol1.baseName === PARENTHESIS) symbol2 = this.unpack(symbol2);
             
             if(symbol1.isImgSymbol && symbol2.isImgSymbol) {
-                return new Symbol(-1*symbol1.multiplier*symbol2.multiplier);
+                var sign = (symbol1.power + symbol2.power) === 0 ? 1 : -1; //i/i = 0
+                return new Symbol(sign*symbol1.multiplier*symbol2.multiplier);
             }
 
             //as with addition the lower group symbol is kept on the left so only one side has to symbol2 e 
             //accounted for. With multiplication however it's easier to return the symbol on the right.
             if(group1 > group2) return this.multiply(symbol2, symbol1);
-            
-            if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); };
+            if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); }
 
             //the symbol2 ehavior is the same for all symbols of group N. modify the multiplier
             if(group1 === N ) {
@@ -1830,7 +1830,13 @@ var nerdamer = (function() {
                         var fnInput = obj.args.slice(0).map(function(item) {
                             return Latex.latex(item);
                         });
-                        value = name+this.inBrackets(fnInput);
+                        if(name === '\\abs') {
+                            value = '\\left|'+fnInput+'\\right|'
+                        }
+                        else {
+                            value = name+this.inBrackets(fnInput);
+                        }
+                        
                         output = this.renderSymbolLatex(obj, value, abs);
                         
                         break;
@@ -1850,6 +1856,7 @@ var nerdamer = (function() {
                         value = this.renderSubSymbolsLatex(obj, function(a,b) {
                             return a.group < b.group;
                         }, true, abs);
+                        
                         output = this.renderSymbolLatex(obj,value, abs);
                         break;
                     case EX:
@@ -1908,7 +1915,8 @@ var nerdamer = (function() {
                 return rendered;
             }
             var num = convert(subSymbols),
-                denom = convert(denom);
+                denom = convert(denom); 
+            if(denom && !num) num = 1;
             if(denom) return format('\\frac{{0}}{{1}}', num, denom);
             else return num;
         },
@@ -1926,6 +1934,15 @@ var nerdamer = (function() {
             
             //make the multiplier array positive
             multiplierArray[0] = Math.abs(multiplierArray[0]);
+            
+            //TODO: 
+            //This might need some rethinking
+//            var match = /\\frac\{\}\{(.+)\}/.exec(value);
+//            if(match) {
+//                 if(multiplierArray[1] === 1) multiplierArray[1] = match[1];
+//                 else multiplierArray[1] += match[1];
+//                 value = '';
+//            }
             
             //handle powers
             if(isSymbol(power)) {
