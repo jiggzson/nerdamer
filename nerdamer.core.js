@@ -706,13 +706,14 @@ var nerdamer = (function() {
                             //modified hash will be discarded, making this change only valid for this
                             //transaction. It the change will persist for any reason then we have a bug.
                             if(existing) { symbol.value = nkey; hash = nkey; }
+                            //eliminate duplicates.
+                            delete this.symbols[hash];
                         }
                         if(existing) { 
                             //add them together using the parser
                             this.symbols[key] = _.add(existing, symbol);
-                            
                             //if the addition resulted in a zero multiplier remove it
-                            if(existing.multiplier === 0) {
+                            if(this.symbols[key].multiplier === 0) {
                                 delete this.symbols[hash];
                                 this.length--;
                             }
