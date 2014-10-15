@@ -695,20 +695,20 @@ var nerdamer = (function() {
                     if(action === 'add') {
                         var hash = key;
                         //try an alternate key for even powers
-                        if(even(symbol.power) && symbol.length === 2) {
-                            var nkey = key.split('+').reverse()
-                                    .map(function(a){ 
-                                        return a.charAt(0) === '-' ? a.substr(1) : '-'+a;
-                                    }).join('+');
-                            existing = this.symbols[nkey];
-                            //give it a new hash so the add method will recognize it.
-                            //Important: Add returns the first argument so the symbol with the 
-                            //modified hash will be discarded, making this change only valid for this
-                            //transaction. It the change will persist for any reason then we have a bug.
-                            if(existing) { symbol.value = nkey; hash = nkey; this.length--; }
-                            //eliminate duplicates.
-                            delete this.symbols[hash];
-                        }
+//                        if(even(symbol.power) && symbol.length === 2) {
+//                            var nkey = key.split('+').reverse()
+//                                    .map(function(a){ 
+//                                        return a.charAt(0) === '-' ? a.substr(1) : '-'+a;
+//                                    }).join('+');
+//                            existing = this.symbols[nkey];
+//                            //give it a new hash so the add method will recognize it.
+//                            //Important: Add returns the first argument so the symbol with the 
+//                            //modified hash will be discarded, making this change only valid for this
+//                            //transaction. It the change will persist for any reason then we have a bug.
+//                            if(existing) { symbol.value = nkey; hash = nkey; this.length--; }
+//                            //eliminate duplicates.
+//                            delete this.symbols[hash];
+//                        }
                         if(existing) { 
                             //add them together using the parser
                             this.symbols[hash] = _.add(existing, symbol);
