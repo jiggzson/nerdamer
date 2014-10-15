@@ -1,10 +1,10 @@
 /*
-* Author : Martin Donk
-* Website : http://www.nerdamer.com
-* Email : martin.r.donk@gmail.com
-* License : http://opensource.org/licenses/LGPL-3.0
-* Source : https://github.com/jiggzson/nerdamer
-*/
+ * Author : Martin Donk
+ * Website : http://www.nerdamer.com
+ * Email : martin.r.donk@gmail.com
+ * License : http://opensource.org/licenses/LGPL-3.0
+ * Source : https://github.com/jiggzson/nerdamer
+ */
 
 var nerdamer = (function() {
     
@@ -691,13 +691,29 @@ var nerdamer = (function() {
                 if(group > FN) {
                     var key = symbol.keyForGroup(group); 
                     var existing = this.symbols[key]; //check if there's already a symbol there
+                        
                     if(action === 'add') {
+                        var hash = key;
+                        //try an alternate key for even powers
+                        if(even(symbol.power) && symbol.length === 2) {
+                            var nkey = key.split('+').reverse()
+                                    .map(function(a){ 
+                                        return a.charAt(0) === '-' ? a.substr(1) : '-'+a;
+                                    }).join('+');
+                            existing = this.symbols[nkey];
+                            //give it a new hash so the add method will recognize it.
+                            //Important: Add returns the first argument so the symbol with the 
+                            //modified hash will be discarded, making this change only valid for this
+                            //transaction. It the change will persist for any reason then we have a bug.
+                            if(existing) { symbol.value = nkey; hash = nkey; }
+                        }
                         if(existing) { 
                             //add them together using the parser
                             this.symbols[key] = _.add(existing, symbol);
+                            
                             //if the addition resulted in a zero multiplier remove it
-                            if(this.symbols[key].multiplier === 0) {
-                                delete this.symbols[key];
+                            if(existing.multiplier === 0) {
+                                delete this.symbols[hash];
                                 this.length--;
                             }
                         }
@@ -705,6 +721,7 @@ var nerdamer = (function() {
                             this.symbols[key] = symbol;
                             this.length++;
                         }  
+                            
                     }
                     else {
                         if(existing) {  
@@ -1243,9 +1260,7 @@ var nerdamer = (function() {
 //                    retval.negate();
 //                }
             }
-            
-                
-            
+
             return retval;
         }
 
@@ -1701,24 +1716,15 @@ var nerdamer = (function() {
                 
                 if(symbol1.group !== EX) symbol1.convert(EX);
 
-//                if(isNumericSymbol(spow) || isNumericSymbol(symbol2)) { 
-                    symbol1.power = this.multiply(spow, symbol2);
-                    //reduce symbol to simpler form. 
-                    if(symbol1.power.isOne()) {
-                        symbol1.group = symbol1.previousGroup;
-                        delete symbol1.previousGroup;
-                        symbol1.power = 1;
-                    }
-//                }
-//                else {
-//                    throw new Error('called')
-//                    symbol1 = _.symfunction('parens', [symbol1]);
-//                    symbol1.power = symbol2;
-//                } 
-
-                if(m) {
-                    symbol1 = this.multiply(symbol1, m); 
+                symbol1.power = this.multiply(spow, symbol2);
+                //reduce symbol to simpler form. 
+                if(symbol1.power.isOne()) {
+                    symbol1.group = symbol1.previousGroup;
+                    delete symbol1.previousGroup;
+                    symbol1.power = 1;
                 }
+
+                if(m) { symbol1 = this.multiply(symbol1, m); }
             }
 
             return symbol1;
@@ -1831,7 +1837,7 @@ var nerdamer = (function() {
                             return Latex.latex(item);
                         });
                         if(name === '\\abs') {
-                            value = '\\left|'+fnInput+'\\right|'
+                            value = '\\left|'+fnInput+'\\right|';
                         }
                         else {
                             value = name+this.inBrackets(fnInput);
@@ -1937,12 +1943,12 @@ var nerdamer = (function() {
             
             //TODO: 
             //This might need some rethinking
-//            var match = /\\frac\{\}\{(.+)\}/.exec(value);
-//            if(match) {
-//                 if(multiplierArray[1] === 1) multiplierArray[1] = match[1];
-//                 else multiplierArray[1] += match[1];
-//                 value = '';
-//            }
+            /*var match = /\\frac\{\}\{(.+)\}/.exec(value);
+            if(match) {
+                 if(multiplierArray[1] === 1) multiplierArray[1] = match[1];
+                 else multiplierArray[1] += match[1];
+                 value = '';
+            }*/
             
             //handle powers
             if(isSymbol(power)) {
