@@ -705,17 +705,22 @@ var nerdamer = (function() {
                             //Important: Add returns the first argument so the symbol with the 
                             //modified hash will be discarded, making this change only valid for this
                             //transaction. It the change will persist for any reason then we have a bug.
-                            if(existing) { symbol.value = nkey; hash = nkey; }
+                            if(existing) { symbol.value = nkey; hash = nkey; this.length--; }
                             //eliminate duplicates.
                             delete this.symbols[hash];
                         }
                         if(existing) { 
                             //add them together using the parser
-                            this.symbols[key] = _.add(existing, symbol);
+                            this.symbols[hash] = _.add(existing, symbol);
                             //if the addition resulted in a zero multiplier remove it
-                            if(this.symbols[key].multiplier === 0) {
+                            if(this.symbols[hash].multiplier === 0) {
                                 delete this.symbols[hash];
                                 this.length--;
+                                
+                                if(this.length === 0) {
+                                    this.convert(N);
+                                    this.multiplier = 0;
+                                }
                             }
                         }
                         else {
