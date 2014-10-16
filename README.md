@@ -147,6 +147,14 @@ An expression can be replaced directly by passing in the index of which expressi
     //[ 'sin(6)+y' ]
 ```
 
+If multiplier modifier options need to be passed into nerdamer you can do so using an array. For example, if the Algebra add-on is loaded you can pass in the expand modifier.
+
+```javascript
+    var eq = nerdamer('cos(x)+(y-x)^2', {x:7}, ['expand', 'numer']);
+    console.log(eq.text());
+    //-14*y+y^2+49.7539022543433
+```
+
 If you need the code as latex you can pass in true as the second parameter when requesting the expressions.
 
             
