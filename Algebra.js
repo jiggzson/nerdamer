@@ -930,7 +930,7 @@
 
             return retval;
         },
-        expand: function (symbol) {
+        expand: function (symbol) { 
             var is_composite = isComposite(symbol);
 
             function powerExpand(symbol) { 
@@ -993,11 +993,11 @@
                 else {
                     result = _.multiply(symbol1, symbol2);
                 }
-
+                
                 return result;
             }
             symbol = powerExpand(symbol); 
-
+//---->
             if(symbol.symbols) { 
                 //there is no way to know if one of the symbols contained within
                 //the CB is a composite so unfortunately we have to loop over each one of them.
@@ -1012,13 +1012,17 @@
 
                 var expanded_symbol = symbols[0];
                 if(expanded_symbol) {
-                    expanded_symbol.multiplier = symbol.multiplier;
-                    expanded_symbol.distributeMultiplier();
-                    expanded.power *= symbol.power;
+                    expanded_symbol.multiplier *= symbol.multiplier;
+                    if(expanded_symbol.group !== core.groups.N) {
+                        expanded_symbol.distributeMultiplier();
+                        expanded.power *= symbol.power;
+                    }
+                        
                     symbol = expanded_symbol;
                     //put back the sign
                 }
             }
+            
             return symbol;
         },
         poly2Arrays: function(symbol, sort) {
