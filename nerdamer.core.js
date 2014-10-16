@@ -1331,6 +1331,7 @@ var nerdamer = (function() {
             
             //always have the lower group on the left
             if(group1 > group2) { return this.add(symbol2, symbol1); }
+            var A = text(symbol1), B = text(symbol2)
             if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); };
             
             //same symbol, same power
@@ -1462,7 +1463,7 @@ var nerdamer = (function() {
                     symbol1 = symbol;
                 }
             }
-            
+
             return symbol1;
         };
 
@@ -2138,9 +2139,16 @@ var nerdamer = (function() {
      * @returns {Expression} 
      */
     var libExports = function(expression, subs, option, location) {
+        var multi_options = isArray(option),
+            expand = 'expand',
+            numer = multi_options ? option.indexOf('numer') !== -1 : option === 'numer';
+        if((multi_options ? option.indexOf(expand) !== -1 : option === expand) 
+                && typeof Core.Algebra.expand !== 'undefined') {
+            expression = format('{0}({1})', expand, expression);
+        }
         var eq = block('PARSE2NUMBER', function(){
             return _.parse(expression, format_subs(subs));
-        }, option === 'numer');
+        }, numer);
         
         if(location) { EQNS[location-1] = eq; }
         else { EQNS.push(eq);}
