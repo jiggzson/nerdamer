@@ -694,21 +694,6 @@ var nerdamer = (function() {
                         
                     if(action === 'add') {
                         var hash = key;
-                        //try an alternate key for even powers
-//                        if(even(symbol.power) && symbol.length === 2) {
-//                            var nkey = key.split('+').reverse()
-//                                    .map(function(a){ 
-//                                        return a.charAt(0) === '-' ? a.substr(1) : '-'+a;
-//                                    }).join('+');
-//                            existing = this.symbols[nkey];
-//                            //give it a new hash so the add method will recognize it.
-//                            //Important: Add returns the first argument so the symbol with the 
-//                            //modified hash will be discarded, making this change only valid for this
-//                            //transaction. It the change will persist for any reason then we have a bug.
-//                            if(existing) { symbol.value = nkey; hash = nkey; this.length--; }
-//                            //eliminate duplicates.
-//                            delete this.symbols[hash];
-//                        }
                         if(existing) { 
                             //add them together using the parser
                             this.symbols[hash] = _.add(existing, symbol);
@@ -822,8 +807,8 @@ var nerdamer = (function() {
                 return text(this, 'hash');
             }
         },
-        //this function simply collect all the symbols and returns them as an array
-        //if a function is supplied then that function is called on the every symbol;
+        //this function simply collects all the symbols and returns them as an array
+        //if a function is supplied then that function is called on every symbol;
         collectSymbols: function(fn) { 
             var collected = [];
             for(var x in this.symbols) {
@@ -877,7 +862,6 @@ var nerdamer = (function() {
         }
     };
 
-    
     //Uses modified shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
         var _ = this,
@@ -915,6 +899,7 @@ var nerdamer = (function() {
                 'floor'     : [ ,1],
                 'ceiling'   : [ ,1],
                 'fact'      : [ , 1],
+                'round'     : [ , 1],
                 'mod'       : [ , 2],
                 'vector'    : [vector, -1],
                 'parens'    : [parens, -1],
@@ -1034,12 +1019,10 @@ var nerdamer = (function() {
         };
         
         this.parse = function(expression_string, substitutions) {  
-            /*
-             * Since variables cannot start with a number, the assumption is made that when this occurs the
-             * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
-             * a side-by-side close and open parenthesis
-             */
-            expression_string = expression_string.split(' ').join('')//strip empty space
+            //Since variables cannot start with a number, the assumption is made that when this occurs the
+            //user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
+            //a side-by-side close and open parenthesis
+            expression_string = expression_string.split(' ').join('')//strip empty spaces
                     .replace(/([\+\-\/\*]*[0-9]+)([a-z_]+[\+\-\/\*]*)/gi, function() {
                         var str = arguments[4],
                             group1 = arguments[1],
@@ -1091,7 +1074,7 @@ var nerdamer = (function() {
 
                 insert = function(token) { 
                     //when two operators are close to each other then the token will be empty or when we've gone
-                    //out of range in the output or stack. We have to make sure the token even exists before entering.
+                    //out of range inside of the output or stack. We have to make sure the token even exists before entering.
                     if(token !== '' && token !== undefined) { 
                         //this could be function parameters or a vector
                         if(!(token instanceof Array)) { 
@@ -1331,7 +1314,6 @@ var nerdamer = (function() {
             
             //always have the lower group on the left
             if(group1 > group2) { return this.add(symbol2, symbol1); }
-            var A = text(symbol1), B = text(symbol2)
             if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); };
             
             //same symbol, same power
@@ -1771,7 +1753,7 @@ var nerdamer = (function() {
             return frac;
         },
         // If the fraction is small or too large this gets called instead of 
-        // fullConversion
+        // fullConversion method
         quickConversion: function( dec ) {
             var x = (dec.toExponential()+'').split('e');
             var d = x[0].split('.')[1];// get the number of places after the decimal
@@ -2006,8 +1988,7 @@ var nerdamer = (function() {
             
             return retval;
         },
-        //the fraction method takes an additional crumb parameter which is
-        //used to add additional contents after creation
+
         fraction: function(fractionArray) {
             if(fractionArray.length === 1) return fractionArray[0];
             return '\\frac'+this.inBraces(fractionArray[0])+this.inBraces(fractionArray[1]);
