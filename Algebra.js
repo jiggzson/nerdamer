@@ -997,7 +997,7 @@
                 return result;
             }
             symbol = powerExpand(symbol); 
-//---->
+
             if(symbol.symbols) { 
                 //there is no way to know if one of the symbols contained within
                 //the CB is a composite so unfortunately we have to loop over each one of them.
@@ -1021,6 +1021,10 @@
                     symbol = expanded_symbol;
                     //put back the sign
                 }
+            }
+            else if(symbol.args) {
+                symbol.args[0] = __.expand(symbol.args[0]);
+                if(symbol.group === core.groups.FN) symbol.updateHash();
             }
             
             return symbol;
