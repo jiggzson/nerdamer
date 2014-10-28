@@ -24,190 +24,193 @@ All operations are done using the 'nerdamer' object.
 To add an expression just add it to the nerdamer object which will return a expression object which 
 isn't particularly usefull at the moment other than getting its text representation.
 
-            
-    var eq = nerdamer('x^2+2*(cos(x)+x*x)');
+```javascript             
+var eq = nerdamer('x^2+2*(cos(x)+x*x)');
 
-    console.log(eq.text());
-    
-    //result: 
-    //2*cos(x)+3*x^(2)
-            
+console.log(eq.text());
+
+//result: 
+//2*cos(x)+3*x^(2)
+```            
         
 
 You can also pass in an object with known values as the second parameter.
 
-            
-    var eq = nerdamer('x^2+2*(cos(x)+x*x)',{x:6});
+```javascript             
+var eq = nerdamer('x^2+2*(cos(x)+x*x)',{x:6});
 
-    console.log(eq.text());
-    
-    //result:
-    //108+2*cos(6)
-            
+console.log(eq.text());
+
+//result:
+//108+2*cos(6)
+```            
         
 
 As you can see only the substitution is performed. To evaluate the result just call evaluate. 
 Note that evaluate returns a text string or a number not an object.
 
-            
-    var eq = nerdamer('x^2+2*(cos(x)+x*x)',{x:6}).evaluate();
+```javascript             
+var eq = nerdamer('x^2+2*(cos(x)+x*x)',{x:6}).evaluate();
 
-    console.log(eq);
-    
-    //result:
-    //109.92034057330073
-            
+console.log(eq);
+
+//result:
+//109.92034057330073
+```            
         
 
 Alternatively you can pass an object containing known values into evaluate instead of nerdamer to get back 
 the value right away. The values passed in don't have to be number the can be another expression if needed.
 
-            
-    var eq = nerdamer('x^2+2*(cos(x)+x*x)',{x:'x^2+1'});
+```javascript             
+var eq = nerdamer('x^2+2*(cos(x)+x*x)',{x:'x^2+1'});
 
-    console.log(eq.text());
-    
-    //result:
-    //2*cos(1+x^(2))+3*(1+x^(2))^(2)
-            
+console.log(eq.text());
+
+//result:
+//2*cos(1+x^(2))+3*(1+x^(2))^(2)
+```            
         
 
 Every time you parse an expression it's stored in nerdamer. To get a list of all the expressions you just call 
 nerdamer.expressions().
 
-            
-    var knownValues = {x:'x^2+1'};
-    nerdamer('x^2+2*(cos(x)+x*x)', knownValues );
-    nerdamer('sin(x)^2+cos(x)^2', knownValues );
-    
-    console.log(nerdamer.expressions());
-    
-    //result:
-    //[ 46.692712758272776, 1 ]
-            
+```javascript             
+var knownValues = {x:'x^2+1'};
+nerdamer('x^2+2*(cos(x)+x*x)', knownValues );
+nerdamer('sin(x)^2+cos(x)^2', knownValues );
+
+console.log(nerdamer.expressions());
+
+//result:
+//[ 46.692712758272776, 1 ]
+```            
         
 
 You can request it as an object as well by passing in true. This can be convenient in some 
 situations as the numbering starts at 1;
 
-            
-    var knownValues = {x:'x^2+1'};
-    nerdamer('x^2+2*(cos(x)+x*x)', knownValues );
-    nerdamer('sin(x)^2+cos(x)^2', knownValues );
-    
-    console.log(nerdamer.expressions(true));
-    
-    //{ '1': '2*cos(1+x^(2))+3*(1+x^(2))^(2)',
-    //'2': 'cos(1+x^(2))^(2)+sin(1+x^(2))^(2)' }
-            
+```javascript             
+var knownValues = {x:'x^2+1'};
+nerdamer('x^2+2*(cos(x)+x*x)', knownValues );
+nerdamer('sin(x)^2+cos(x)^2', knownValues );
+
+console.log(nerdamer.expressions(true));
+
+//{ '1': '2*cos(1+x^(2))+3*(1+x^(2))^(2)',
+//'2': 'cos(1+x^(2))^(2)+sin(1+x^(2))^(2)' }
+```            
         
 Functions aren't always immediately parsed to numbers. For example
 
 ```javascript
-    var result = nerdamer('cos(x)',{x:6});
-    console.log(result.text());
-    //cos(6)
+var result = nerdamer('cos(x)',{x:6});
+console.log(result.text());
+//cos(6)
 ```
 will only subsitute out the variable name. To change this behaviour numer should be passed in as the 3rd argument.
 
 ```javascript
-    var result = nerdamer('cos(x)',{x:6}, 'numer');
-    console.log(result.text());
-    //0.960170286650366
+var result = nerdamer('cos(x)',{x:6}, 'numer');
+console.log(result.text());
+//0.960170286650366
 ```
 or alternatively
+
 ```javascript
-    var result = nerdamer('cos(x)').evaluate();
-    console.log(result.text());
-    //0.960170286650366
+var result = nerdamer('cos(x)').evaluate();
+console.log(result.text());
+//0.960170286650366
 ```
 The difference however is that the first option directly substitutes the variables while the second first evaluates
 the variable and then makes the substitutions. This library utilizes native javascript functions as much as possible. As a result it inherits whatever rounding errors they possess. Take this example for instance.
 
 ```javascript
-    var result = nerdamer('sqrt(x)*sqrt(x)-2', {x:2});
-    console.log(result.text());
-    //4.440892098500626e-16
+var result = nerdamer('sqrt(x)*sqrt(x)-2', {x:2});
+console.log(result.text());
+//4.440892098500626e-16
 ```
 Yup, it's not zero. To minimize this error it would be better to first simplify the expression and then make your substitutions. The above example would then be
 
 ```javascript
-    var result = nerdamer('sqrt(x)*sqrt(x)-2').evaluate({x:2});
-    console.log(result.text());
-    //0
-    //the expression first becomes x-2 and therefore avoids rounding errors
+var result = nerdamer('sqrt(x)*sqrt(x)-2').evaluate({x:2});
+console.log(result.text());
+//0
+//the expression first becomes x-2 and therefore avoids rounding errors
 ```
 
 An expression can be replaced directly by passing in the index of which expression to override. For example
 
 ```javascript
-    nerdamer('cos(x)',{x:6}, 'numer');
-    nerdamer('sin(x)+y',{x:6}, null, 1);
-    console.log(nerdamer.expressions());
-    //[ 'sin(6)+y' ]
+nerdamer('cos(x)',{x:6}, 'numer');
+nerdamer('sin(x)+y',{x:6}, null, 1);
+console.log(nerdamer.expressions());
+//[ 'sin(6)+y' ]
 ```
 
 If multiple modifier options need to be passed into nerdamer you can do so using an array. For example, if the Algebra add-on is loaded you can pass in the expand modifier along with the numer modifier.
 
 ```javascript
-    var eq = nerdamer('cos(x)+(y-x)^2', {x:7}, ['expand', 'numer']);
-    console.log(eq.text());
-    //-14*y+y^2+49.7539022543433
+var eq = nerdamer('cos(x)+(y-x)^2', {x:7}, ['expand', 'numer']);
+console.log(eq.text());
+//-14*y+y^2+49.7539022543433
 ```
 
 If you need the code as latex you can pass in true as the second parameter when requesting the expressions.
 
-            
-    nerdamer('x^2+2*(cos(x)+x*x)');
-    nerdamer('sin(x)^0.25+cos(x)^0.5' );
-    
-    console.log(nerdamer.expressions(true, true));
-    
-    //{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
-    //'2': '\\sin\\left(x\\right)^{\\frac{1}{4}}+\\sqrt{\\cos\\left(x\\right)}' }
-            
+```javascript             
+nerdamer('x^2+2*(cos(x)+x*x)');
+nerdamer('sin(x)^0.25+cos(x)^0.5' );
+
+console.log(nerdamer.expressions(true, true));
+
+//{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
+//'2': '\\sin\\left(x\\right)^{\\frac{1}{4}}+\\sqrt{\\cos\\left(x\\right)}' }
+```            
         
 
 You can specify a particular location when adding an expression, which is specified with the third parameter.
 
+```javascript 
+nerdamer('x^2+2*(cos(x)+x*x)');
+nerdamer('sin(x)^0.25+cos(x)^0.5' );
+nerdamer('equation-override', undefined, 2 );
 
-    nerdamer('x^2+2*(cos(x)+x*x)');
-    nerdamer('sin(x)^0.25+cos(x)^0.5' );
-    nerdamer('equation-override', undefined, 2 );
-    
-    console.log(nerdamer.expressions(true, true));
-    
-    //{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
-    //'2': '-override+equation' 
+console.log(nerdamer.expressions(true, true));
+
+//{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
+//'2': '-override+equation' 
+```
 
 Here's an example of reserved keywords.
 
-    nerdamer.reserved();
-    //result:
-    //parens, cos, sin, tan, sec, csc, cot, acos, asin, atan, exp, log, abs, sqrt, diff, 
-    //integrate, sec, cot, csc, pi, e
-    
-    //or as an array
-    
-    nerdamer.reserved(true);
-    //result:
-    //[ 'parens','cos','sin','tan','sec','csc','cot','acos','asin','atan','exp','log','abs',
-    // 'sqrt','diff','integrate','sec','cot','csc','pi','e' ]
-            
+```javascript 
+nerdamer.reserved();
+//result:
+//parens, cos, sin, tan, sec, csc, cot, acos, asin, atan, exp, log, abs, sqrt, diff, 
+//integrate, sec, cot, csc, pi, e
+
+//or as an array
+
+nerdamer.reserved(true);
+//result:
+//[ 'parens','cos','sin','tan','sec','csc','cot','acos','asin','atan','exp','log','abs',
+// 'sqrt','diff','integrate','sec','cot','csc','pi','e' ]
+```            
         
 
 A list can and should be generated by calling the reserved method.
 
 Most math functions are passed in as part of the expression. If you want to differentiate for instance you just use the function diff which is located in the Calculus add-on as of 0.5.0
 
-            
-    var eqs = nerdamer('diff(x^2+2*(cos(x)+x*x),x)');
-    
-    console.log(eqs.text());
-    
-    //result: 
-    //-2*sin(x)+6*x
+```javascript             
+var eqs = nerdamer('diff(x^2+2*(cos(x)+x*x),x)');
 
+console.log(eqs.text());
+
+//result: 
+//-2*sin(x)+6*x
+```
         
 
 Nerdamer can also handle runtime functions. To do this use the method setFunction. 
@@ -218,76 +221,76 @@ nerdamer.setFunction( function_name, parameter_array, function_body )
 
 For Example:
 
-            
-    //generate some points
-    var f = function(x) { return 5*x-1; }
-    console.log(f(1)); //4
-    console.log(f(2)); //9 - value to be found
-    console.log(f(7)); //34
-    
-    nerdamer.setFunction('interpolate',['y0','x0','y1','x1','x'],'y0+(y1-y0)*((x-x0)/(x1-x0))')
-    var answer = nerdamer('interpolate(4,1,34,7,2)').evaluate();
-    
-    console.log(answer);
-    
-    //result: 9
+```javascript             
+//generate some points
+var f = function(x) { return 5*x-1; }
+console.log(f(1)); //4
+console.log(f(2)); //9 - value to be found
+console.log(f(7)); //34
+
+nerdamer.setFunction('interpolate',['y0','x0','y1','x1','x'],'y0+(y1-y0)*((x-x0)/(x1-x0))')
+var answer = nerdamer('interpolate(4,1,34,7,2)').evaluate();
+
+console.log(answer);
+
+//result: 9
+```
             
 If you need to add a constant use the setConstant method
 
-            
-    nerdamer.setConstant( 'g', 9.81);
+```javascript             
+nerdamer.setConstant( 'g', 9.81);
 
-    var weight = nerdamer('100*g').evaluate();
+var weight = nerdamer('100*g').evaluate();
 
-    console.log(weight);
-    
-    //result:
-    //981
-            
+console.log(weight);
+
+//result:
+//981
+```            
         
 
 To delete just set it to delete
 
-            
-    nerdamer.setConstant( 'g', 'delete');
-            
-        
+```javascript             
+nerdamer.setConstant( 'g', 'delete');
+```        
 
 You also have the option of exporting your function to a javascript function which can be useful if you need some 
 filtering from user input. Do keep in mind that the parameters are sorted alphabetically for more than one 
 parameter. To use it add the expression to nerdamer and use the buildFunction method.
 
-            
-    var f = nerdamer('x^2+5').buildFunction();
-    console.log(f(9));
-    
-    //result:
-    //86
-            
+```javascript             
+var f = nerdamer('x^2+5').buildFunction();
+console.log(f(9));
+
+//result:
+//86
+```            
         
 
 Every time you add an expression to nerdamer it's stored. To list the expressions currently in nerdamer call 
 the 'expressions' method. To delete an expression use the 'clear' method and pass in the expression you want to delete. 
 To clear everything pass in the string 'all'.
 
-            
-    nerdamer('n*R*T/v');
-    nerdamer('mc^2');
-    nerdamer('G*m1*m2/d^2');
-    
-    nerdamer.clear(2);
-    
-    console.log(nerdamer.expressions(true));
-    
-    //result:
-    //{ '1': 'R*T*n*v^(-1)', '2': 'G*d^(-2)*m1*m2' }
-    
-    nerdamer.clear('all');
-    console.log(nerdamer.expressions(true));
-    
-    //result:
-    //{}
-            
+```javascript            
+nerdamer('n*R*T/v');
+nerdamer('mc^2');
+nerdamer('G*m1*m2/d^2');
+
+nerdamer.clear(2);
+
+console.log(nerdamer.expressions(true));
+
+//result:
+//{ '1': 'R*T*n*v^(-1)', '2': 'G*d^(-2)*m1*m2' }
+
+nerdamer.clear('all');
+console.log(nerdamer.expressions(true));
+
+//result:
+//{}
+```            
         
 
 
@@ -325,7 +328,7 @@ var some_function = {
   //the minimum number of arguments your function requires. 
   //Defaults to 1 but is currently not used
   numargs: some_integer, 
-  //the constructor. This is the environent under which your function is built. 
+  //the constructor. This is the environment under which your function is built. 
   build: {
     //this refers to the Parser
     //return the function which need to be set
@@ -338,11 +341,11 @@ var some_function = {
 nerdamer.register(some_function);
 ```
 
-_**parent**_:  The parent is optional. If this object does not exist it will be created. If it does then it is added. Ommitting the parent does not result in it being added to the core directly. 
+_**parent**_:  The parent is optional. If this object does not exist it will be created. If it does then it is added. Omitting the parent does not result in it being added to the core directly. 
 
 _**numargs**_:  tells nerdamer how many arguments are allowed and can be either an integer, a range in the form of an array [min arguments, max arguments], or -1 which enables any amount of arguments.
 
-_**visibiity**_:  enables nerdamer's parse function to see the function and allows the user to use it.
+_**visibility**_:  enables nerdamer's parse function to see the function and allows the user to use it.
 
 _**build**_:  is the constructor and is within the core's scope. It returns a function which is within the scope of the PARSER (the parser instance which nerdamer uses). The arguments for the return function are Symbols. This means that any algorithm can be directly applied using nerdamer's abstraction layer using the functions, add, subtract, divide, multiply, and pow. 
 
@@ -393,7 +396,7 @@ Although shorter and easier to read it generally comes at a higher cost so choos
 
 **THE PARSER**
 
-The core comes with a parser instance fired up and ready to go. It is wise to keep using that parser instance as this is the instance that get extened and modified. To modify the parser instance call the extend method of the parser and supply the name of the function you're extending and the function you are extending it with. The extended function gets called with 3 parameters, the first symbol, the second symbol, and the original function. Here's an example of how it's done in the LinAlg add-on.
+The core comes with a parser instance fired up and ready to go. It is wise to keep using that parser instance as this is the instance that get extended and modified. To modify the parser instance call the extend method of the parser and supply the name of the function you're extending and the function you are extending it with. The extended function gets called with 3 parameters, the first symbol, the second symbol, and the original function. Here's an example of how it's done in the LinAlg add-on.
 
 ```javascript
 var core = nerdamer.getCore();
