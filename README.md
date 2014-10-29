@@ -267,7 +267,14 @@ console.log(f(9));
 //result:
 //86
 ```            
-        
+If you have a particular order in which you need the parameters to be set, then you pass in an array with the variables in the order in which you want them for instance:
+
+ ```javascript
+var f = nerdamer('z+x^2+y').buildFunction(['y', 'x', 'z']);
+ console.log(f(9,2,1));
+ //result
+ //14
+ ```
 
 Every time you add an expression to nerdamer it's stored. To list the expressions currently in nerdamer call 
 the 'expressions' method. To delete an expression use the 'clear' method and pass in the expression you want to delete. 
