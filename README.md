@@ -333,18 +333,20 @@ var some_function = {
   //this determines if the functions can be used by the user when passing a string. 
   visibility: true, 
   //the minimum number of arguments your function requires. 
-  //Defaults to 1 but is currently not used
+  //defaults to 1
   numargs: some_integer, 
   //the constructor. This is the environment under which your function is built. 
-  build: {
+  build: function(){
     //this refers to the Parser
     //return the function which need to be set
     return function(/*args*/) {
       //body
+      
     }
   }
 };
 
+//and then register it
 nerdamer.register(some_function);
 ```
 
@@ -377,6 +379,15 @@ nerdamer.register({
     }
 });
 ```
+After this the function can be called through nerdamer. 
+
+```javascript
+//get one of the roots for x^2+2x+1
+var eq = nerdamer('quad(1,11,24)');
+console.log(eq.text());
+//-3
+```
+
 Notice the use of the copy method when the symbol is used more than once. When parsing one or more symbols drop per operation. On the next cycle a fresh new Symbol is created. To minimize the creation of new Symbols nerdamer reuses one of the symbols supplied so the return symbol is usually a modified version of one of the parameters. This usually does not cause a problem when the parsing is in a linear fashion but it creates a problem when applying algorithms in which symbols get called again. This is one of the issues I'll be tackling in the future but for now either use a safe block or call the copy method on symbols which get reused.
 
 In this example the layer is used directly. When an algorithm is applied in this fashion the additional cost is negligible. You could alternatively use the parse method as in example 2.
