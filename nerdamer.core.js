@@ -39,6 +39,8 @@ var nerdamer = (function() {
         VECTOR = 'vector',
 
         SQRT = 'sqrt',
+        
+        ABS = 'abs',
 
         //the storage container "memory" for parsed expressions
         EQNS = [];
@@ -971,7 +973,7 @@ var nerdamer = (function() {
                 fn = fn_settings[0],
                 retval;
 
-            if(!(args instanceof Array)) args = [args];
+            if(!(args instanceof Array)) args = args !== undefined ?  [args] : [];
 
             if(num_allowed_args !== -1) {
                 var is_array = isArray(num_allowed_args),
@@ -1215,10 +1217,10 @@ var nerdamer = (function() {
         
         function abs(symbol) {
             if(symbol.multiplier < 0) symbol.multiplier *= -1;
-            if(isNumericSymbol(symbol)) {
+            if(isNumericSymbol(symbol) || even(symbol.power)) {
                 return symbol;
             }
-            return _.symfunction('abs', [symbol]);
+            return _.symfunction(ABS, [symbol]);
         }
         
         function sqrt(symbol) {
@@ -1494,8 +1496,13 @@ var nerdamer = (function() {
                     else {
                         //both are EX so we're concerned with their previous groups
                         var pg1 = symbol1.previousGroup, pg2 = symbol2.previousGroup;
-                        if((pg1 === S || pg1 === N || pg1 === FN) && pg1 === pg1) {
-                            symbol2.power = _.add(symbol2.power, symbol1.power);
+                        if((pg1 === S || pg1 === N || pg1 === FN)) {
+                            var p1 = symbol1.power, p2 = symbol2.power;
+                            if(symbol2.group !== EX) {
+                                p2 = new Symbol(p2);
+                                symbol2 = symbol1;
+                            }
+                            symbol2.power = _.add(p1, p2);
                         }
                         else if(pg1 === PL && pg1 === pg2) { 
                             if(symbol1.keyForGroup(CB) !== symbol2.keyForGroup(CB)) {
@@ -1661,7 +1668,7 @@ var nerdamer = (function() {
                                 if(powEven) {
                                     symbol1.multiplier = 1;
                                     if(!even(symbol1.power)) {
-                                        symbol1 = this.symfunction('abs', [symbol1]);
+                                        symbol1 = this.symfunction(ABS, [symbol1]);
                                     }
                                     symbol1 = this.multiply(new Symbol('i'), symbol1);
                                 }
@@ -1678,8 +1685,19 @@ var nerdamer = (function() {
                                 //we have to wrap the symbol in the abs function to preserve the absolute value
                                 var p = symbol1.power; //save the power
                                 symbol1.power = 1;
-                                symbol1 = _.symfunction('abs',[symbol1]);
+                                symbol1 = _.symfunction(ABS,[symbol1]);
                                 symbol1.power = p;
+                            }
+                            
+                            //Attempt to unwrap abs
+                            if(symbol1.group === FN && symbol1.baseName === ABS) {
+                                var s = symbol1.args[0];
+                                var ppower = symbol1.power * s.power;
+                                if(even(ppower)) {
+                                    s.power = ppower;
+                                    s.multiplier = symbol1.multiplier * Math.pow(s.multiplier, symbol1.power);
+                                    symbol1 = s;
+                                }
                             }
                         }
                     }
@@ -1911,6 +1929,12 @@ var nerdamer = (function() {
             }
             var num = convert(subSymbols),
                 denom = convert(denom); 
+            if(symbol.group === CP || symbol.group === PL) {
+                if(num && !denom && Math.abs(symbol.multiplier) !== 1 || Math.abs(symbol.power !== 1)) {
+                    num = Latex.inBrackets(num);
+                }
+            }
+
             if(denom && !num) num = 1;
             if(denom) return format('\\frac{{0}}{{1}}', num, denom);
             else return num;
