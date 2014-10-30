@@ -867,7 +867,7 @@ var nerdamer = (function() {
     //Uses modified shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
         var _ = this,
-            bin = {},
+            bin = {}
             constants = this.constants = {
                 PI: Math.PI,
                 E:  Math.E
@@ -919,7 +919,8 @@ var nerdamer = (function() {
         var LEFT_PAREN = '(',
             RIGHT_PAREN = ')',
             LEFT_SQUARE_BRACKET = '[',
-            RIGHT_SQUARE_BRACKET = ']';
+            RIGHT_SQUARE_BRACKET = ']',
+            scientific_numbers = [];
                 
             brackets[LEFT_PAREN] = LEFT_PAREN,
             brackets[RIGHT_PAREN] = RIGHT_PAREN,
@@ -1025,6 +1026,11 @@ var nerdamer = (function() {
             //user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
             //a side-by-side close and open parenthesis
             expression_string = expression_string.split(' ').join('')//strip empty spaces
+                    .replace(/([\+\-\/\*])(\d+e[\+\-]*\d+)/gi, function() {
+                        scientific_numbers.push(arguments[2]);
+                        return arguments[1]+'&';
+                    })
+                    //allow omission of multiplication after coefficients
                     .replace(/([\+\-\/\*]*[0-9]+)([a-z_]+[\+\-\/\*]*)/gi, function() {
                         var str = arguments[4],
                             group1 = arguments[1],
@@ -1037,7 +1043,9 @@ var nerdamer = (function() {
                         if(before.match(/[a-z]/i)) d = '';
                         return group1+d+group2;
                     })
+                    //allow omission of multiplication sign between brackets
                     .replace( /\)\(/g, ')*(' );
+
             var subs = substitutions || {},
                 stack = [],
                 output = [],
@@ -1075,6 +1083,9 @@ var nerdamer = (function() {
                 },
 
                 insert = function(token) { 
+                    //if the number is a scientifc number then put it back
+                    if(/&/.test(token)) token = scientific_numbers.pop();
+                    
                     //when two operators are close to each other then the token will be empty or when we've gone
                     //out of range inside of the output or stack. We have to make sure the token even exists before entering.
                     if(token !== '' && token !== undefined) { 
@@ -1114,12 +1125,11 @@ var nerdamer = (function() {
                 var operator = operators[cur_char], //a possible operator
                     bracket = brackets[cur_char]; //a possible bracket
                 //if the character is a bracket or an operator but not a scientific number
-                if(operator && last_char !== 'e' || bracket) { 
+                if(operator || bracket) {
                     //if an operator is found then we assume that the preceeding is a variable
                     //the token has to be from the last position up to the current position
                     var token = expression_string.substring(pos,curpos);
-                    
-                    
+
                     if(bracket === LEFT_PAREN && token || bracket === LEFT_SQUARE_BRACKET) {
                         var f = bracket === LEFT_SQUARE_BRACKET ? VECTOR : token;
                         stack.push(new Func(f), LEFT_PAREN);
@@ -1458,7 +1468,8 @@ var nerdamer = (function() {
         this.multiply = function(symbol1, symbol2) { 
             if(symbol1.multiplier === 0 || symbol2.multiplier === 0) return new Symbol(0);
             var group1 = symbol1.group,
-                group2 = symbol2.group;
+                group2 = symbol2.group,
+                reInvert = false;
 
             //parens is a function that we want to get rid of as soon as possible so check
             if(group1 === FN && symbol1.baseName === PARENTHESIS) symbol1 = this.unpack(symbol1);
@@ -1473,6 +1484,14 @@ var nerdamer = (function() {
             //accounted for. With multiplication however it's easier to return the symbol on the right.
             if(group1 > group2) return this.multiply(symbol2, symbol1);
             if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); }
+            
+            //we want symbol to have a consistent has for example we want (1/x)*(1/y) to have the same hash
+            //as 1/(x*y). To ensure this all symbols are kept negative during multiplacation
+            if(isNegative(symbol1.power) && isNegative(symbol2.power)) {
+                reInvert = true;
+                symbol1.invert();
+                symbol2.invert();
+            }
 
             //the symbol2 ehavior is the same for all symbols of group N. modify the multiplier
             if(group1 === N ) {
@@ -1609,7 +1628,9 @@ var nerdamer = (function() {
                     symbol2 = symbol;
                 }
             }
-
+            
+            if(reInvert) symbol2.invert();
+            
             return symbol2 ;
         };
         
