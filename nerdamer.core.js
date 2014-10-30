@@ -912,7 +912,7 @@ var nerdamer = (function() {
         
         var brackets = {},
 
-            last_item_in = function(stack) {
+            last_item_on = function(stack) {
                 return stack[stack.length-1];
             };
         
@@ -1098,7 +1098,7 @@ var nerdamer = (function() {
                         }
                             
                         //resolve prefixes
-                        while(last_item_in(stack) instanceof Prefix) {
+                        while(last_item_on(stack) instanceof Prefix) {
                             //if there's a function on the output stack then check the next operator 
                             if(func_on_stack) {
                                 //check the next operator to come
@@ -1163,7 +1163,7 @@ var nerdamer = (function() {
                                 var done = false;
                                 do {
                                     evaluate(); 
-                                    var last = last_item_in(stack); 
+                                    var last = last_item_on(stack); 
                                     //stop when you see a parethesis
                                     if(last === LEFT_PAREN) break;
                                     
@@ -1173,7 +1173,7 @@ var nerdamer = (function() {
                             }
                         }
                         stack.push(operator);
-                        last_operator = last_item_in(stack);
+                        last_operator = last_item_on(stack);
                     }
                     else {
                         if(cur_char === LEFT_PAREN) {
@@ -1191,13 +1191,13 @@ var nerdamer = (function() {
                                 else evaluate(popped);
                             }
 
-                            if(last_item_in(stack) instanceof Func) { 
+                            if(last_item_on(stack) instanceof Func) { 
                                 var v = _.callfunction(stack.pop().name, output.pop()); 
                                 func_on_stack = true;
                                 insert(v);//go directly to output as this will cause the prefix to prematurely be evaluated
                             }
                         }
-                        last_operator = last_item_in(stack);
+                        last_operator = last_item_on(stack);
                     } 
                     
                     pos = curpos+1; //move along
@@ -1833,7 +1833,7 @@ var nerdamer = (function() {
     //Depends on Fraction
     var Latex = {
         space: '~',
-        latex: function(obj, abs, group) {
+        latex: function(obj, abs, group, addParens) {
             abs = abs || false;
             group = group || obj.group; 
             var output = '',
@@ -1878,32 +1878,33 @@ var nerdamer = (function() {
                         var value = this.renderSubSymbolsLatex(obj, function(a,b) {
                             return a.power < b.power;
                         }, undefined, abs);
-                        output = this.renderSymbolLatex(obj, value, abs);
+                        output = this.renderSymbolLatex(obj, value, abs, obj.group === EX);
                         break;
                     case CP:
                         value = this.renderSubSymbolsLatex(obj, function(a,b) {
                             return a.group < b.group;
                         }, undefined, abs);
-                        output = this.renderSymbolLatex(obj, value, abs);
+  
+                        output = this.renderSymbolLatex(obj, value, abs, obj.group === EX);
                         break;
                     case CB:
                         value = this.renderSubSymbolsLatex(obj, function(a,b) {
                             return a.group < b.group;
                         }, true, abs);
-                        
+   
                         output = this.renderSymbolLatex(obj,value, abs);
                         break;
                     case EX:
-                        var pg = obj.previousGroup;
-                        output = pg === FN ? Latex.latex(obj, abs, obj.previousGroup) : 
-                                this.renderSymbolLatex(obj, null, abs);
+                        output = this.latex(obj, abs, obj.previousGroup);
                         break;
                 }
             }
             else {
                 output = obj;
             }
-
+            
+            if(addParens) output = this.inBrackets(output);
+            
             return output;
         },
         //renders the sub-symbols in complex symbols
@@ -1929,6 +1930,7 @@ var nerdamer = (function() {
                 var i, l = arr.length, rendered = '';
                 for(var i=0; i<l; i++) {
                     var curSymbol = arr[i], delimiter;
+                    
                     if(curSymbol.multiplier < 0) {
                         delimiter = '-';
                     }
@@ -1940,12 +1942,17 @@ var nerdamer = (function() {
                     }
                     //leave the negative for the first symbol
                     abs = abs || i > 0;
-                    var latex = self.latex(curSymbol, abs);
+
+                    var latex = self.latex(curSymbol, abs, undefined, 
+                        symbol.group === CB && (curSymbol.group === PL || curSymbol.group === CP) && curSymbol.power === 1);
+
                     //only add the delimiter to the first one
                     if(i > 0) latex = delimiter+latex;
                     //add it to the total rendered
+
                     rendered += latex;
                 }
+                
                 return rendered;
             }
             var num = convert(subSymbols),
@@ -1961,10 +1968,11 @@ var nerdamer = (function() {
             else return num;
         },
         //renders the style for the multiplier and power of the symbol.
-        renderSymbolLatex: function(symbol, value, abs) {
+        renderSymbolLatex: function(symbol, value, abs, bracketed) {
             if(symbol.group === N) return this.latex(symbol, abs);
+            value = value || symbol.value;
+            
             var multiplierArray = Fraction.convert(symbol.multiplier),
-                value = value || symbol.value,
                 power = symbol.power || '',
                 sign = symbol.multiplier < 0 ? '-' : '',//store the sign
                 sqrt = Math.abs(power) === 0.5;
@@ -2019,7 +2027,7 @@ var nerdamer = (function() {
             }
             
             if(power) { 
-                multiplierArray[where] = this.inBraces(multiplierArray[where]);
+                multiplierArray[where] = this[bracketed ? 'inBrackets': 'inBraces'](multiplierArray[where]);
                 if(!sqrt) {
                     multiplierArray[where] += '^'+this.inBraces(power);
                 }
@@ -2306,10 +2314,10 @@ var nerdamer = (function() {
         }
         else if(obj) {
             //if no parent object is provided then the function does not have an address and cannot be called directly
-            var parent_obj = obj.parent, 
+            var parent_obj = obj.extends, 
                 fn = obj.build.call(core); //call constructor to get function
             if(parent_obj) {
-                if(!core[parent_obj]) core[obj.parent] = {};
+                if(!core[parent_obj]) core[obj.extends] = {};
                 //attach the function to the core
                 core[parent_obj][obj.name] = fn;
             }

@@ -304,7 +304,7 @@ console.log(nerdamer.expressions(true));
 The Core
 ========
 
-To use the core simply request it using the getCore method
+To use the core simply request it using the getCore method.
 
 ```javascript
 var core = nerdamer.getCore();
@@ -317,7 +317,35 @@ The core contains:
 * The extended math functions -> Math2
 * And an instance of the current parser being used -> PARSER
 
+Additionally the core enables you to use nerdamer's classes directly. You could
+for instance do this after getting the core
 
+```javascript
+
+var core = nerdamer.getCore();
+var x1 = new core.Symbol('x');
+var x2 = new core.Symbol('x');
+var product = core.PARSER.multiply(x1,x2);
+
+console.log(product.valueOf());
+
+```
+
+This may or may not be useful but do keep in mind that when doing this one 
+or both symbols may be modified. To prevent this call a copy if you intent to
+reuse the symbol. So the above example would be
+
+```javascript
+
+var core = nerdamer.getCore();
+var x = new core.Symbol('x');
+
+var product = core.PARSER.multiply(x.copy(),x.copy());
+
+console.log(product.valueOf());
+```
+
+This leaves x unchanged.
 
 **EXTENDING THE CORE**
 
