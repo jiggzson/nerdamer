@@ -8,11 +8,13 @@ Getting started with Nerdamer
 Load the library in your html page
 
 ```html
-<script src="nerdamer.core.js"></script> <!-- assuming you've saved the file in the root of course -->
+<!-- assuming you've saved the file in the root of course -->
+<script src="nerdamer.core.js"></script> 
 <!-- LOAD ADD-ONS -->
+<!-- again assuming you've saved the files in root -->
 <script src="Algebra.js"></script>
 <script src="Calculus.js"></script>
-<script src="LinAlg.js"></script> <!-- again assuming you've saved the files in root -->
+<script src="LinAlg.js"></script> 
 ```
 
 Some functions have dependencies from other add-ons. 
@@ -328,6 +330,7 @@ var x2 = new core.Symbol('x');
 var product = core.PARSER.multiply(x1,x2);
 
 console.log(product.valueOf());
+//x^2
 
 ```
 
@@ -343,6 +346,7 @@ var x = new core.Symbol('x');
 var product = core.PARSER.multiply(x.copy(),x.copy());
 
 console.log(product.valueOf());
+//x^2
 ```
 
 This leaves x unchanged.
@@ -401,8 +405,10 @@ nerdamer.register({
         var Symbol = core.Symbol;//grab the symbol class or use it directly
         return function(a, b, c) {
             //apply algorithm (-b+sqrt(b^2-4ac))/2a
-            var det = _.subtract(_.pow(b.copy(), new Symbol(2)), _.multiply(_.multiply(a.copy(), c), new Symbol(4)));
-            return _.divide(_.add(b.negate(), _.pow(det, new Symbol(0.5))), _.multiply(new Symbol(2), a));
+            var det = _.subtract(_.pow(b.copy(), new Symbol(2)),
+                _.multiply(_.multiply(a.copy(), c), new Symbol(4)));
+            return _.divide(_.add(b.negate(), _.pow(det, new Symbol(0.5))),
+                        _.multiply(new Symbol(2), a));
         };
     }
 });
@@ -432,7 +438,8 @@ nerdamer.register({
         var core = this; //get the core
         return function(a, b, c) {
             //apply algorithm (-b+sqrt(b^2-4ac))/2a
-            return core.PARSER.parse(core.Utils.format('(-{1}+sqrt({1}^2-4*{0}*{2}))/2*{0}', a, b, c));
+            var exp = core.Utils.format('(-{1}+sqrt({1}^2-4*{0}*{2}))/2*{0}', a, b, c);
+            return core.PARSER.parse(exp);
         };
     }
 });
