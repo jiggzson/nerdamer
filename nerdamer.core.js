@@ -60,11 +60,11 @@ var nerdamer = (function() {
         },
 
         // Enforces rule: must start with a letter and can have any number of underscores or numbers after.
-        validateName = Utils.validateName = function(name, type) { 
-            type = type || 'variable';
+        validateName = Utils.validateName = function(name, typ) { 
+            typ = typ || 'variable';
             var regex = /^[a-z_][a-z\d\_]*$/gi;
             if(!(regex.test( name)) ) {
-                throw new Error(name+' is not a valid '+type+' name');
+                throw new Error(name+' is not a valid '+typ+' name');
             }
         },
         
@@ -451,6 +451,14 @@ var nerdamer = (function() {
         
         isNumber: function() {
             return isNumericSymbol(this.symbol);
+        },
+        
+        isInfinity: function() {
+            return Math.abs(this.symbol.multiplier) === Infinity;
+        },
+        
+        variables: function() {
+            return variables(this.symbol);
         },
         
         toString: function() {
@@ -867,7 +875,7 @@ var nerdamer = (function() {
     //Uses modified shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
         var _ = this,
-            bin = {}
+            bin = {},
             constants = this.constants = {
                 PI: Math.PI,
                 E:  Math.E
@@ -1836,6 +1844,7 @@ var nerdamer = (function() {
         latex: function(obj, abs, group, addParens) {
             abs = abs || false;
             group = group || obj.group; 
+
             var output = '',
                 inBraces = this.inBraces, 
                 value;
@@ -1843,9 +1852,15 @@ var nerdamer = (function() {
                 switch(group) {
                     case N:
                         value = obj.multiplier;
+                        
                         if(abs) value = Math.abs(value);
+
                         if(isInt(value)) {
                             output = value;
+                        }
+                        else if(Math.abs(value) === Infinity) {
+                            output = '\\infty';
+                            if(value === -Infinity) output = '-'+output;
                         }
                         else {
                             var result = Fraction.convert(value);
@@ -1853,11 +1868,10 @@ var nerdamer = (function() {
                         }  
                         break;
                     case S:
-                        output = this.renderSymbolLatex(obj);
+                        output = this.renderSymbolLatex(obj, undefined, abs);
                         break;
                     case FN: 
                         var name = obj.baseName;
-                        
                         if(name === PARENTHESIS) name = '';
                         else if(name in Math || name in Math2) name = '\\'+name;
 
@@ -1878,6 +1892,7 @@ var nerdamer = (function() {
                         var value = this.renderSubSymbolsLatex(obj, function(a,b) {
                             return a.power < b.power;
                         }, undefined, abs);
+
                         output = this.renderSymbolLatex(obj, value, abs, obj.group === EX);
                         break;
                     case CP:
@@ -1891,12 +1906,18 @@ var nerdamer = (function() {
                         value = this.renderSubSymbolsLatex(obj, function(a,b) {
                             return a.group < b.group;
                         }, true, abs);
-   
+
                         output = this.renderSymbolLatex(obj,value, abs);
                         break;
                     case EX:
                         output = this.latex(obj, abs, obj.previousGroup);
                         break;
+                }
+            }
+            else if(isArray(obj)) {
+                var l = obj.length;
+                for(var i=0; i<l; i++) {
+                    output = '\\left['+obj.map(function(a) { return Latex.latex(a); }).join(' ,')+'\\right]';
                 }
             }
             else {
@@ -1930,7 +1951,7 @@ var nerdamer = (function() {
                 var i, l = arr.length, rendered = '';
                 for(var i=0; i<l; i++) {
                     var curSymbol = arr[i], delimiter;
-                    
+
                     if(curSymbol.multiplier < 0) {
                         delimiter = '-';
                     }
@@ -1942,10 +1963,9 @@ var nerdamer = (function() {
                     }
                     //leave the negative for the first symbol
                     abs = abs || i > 0;
-
                     var latex = self.latex(curSymbol, abs, undefined, 
-                        symbol.group === CB && (curSymbol.group === PL || curSymbol.group === CP) && curSymbol.power === 1);
-
+                        symbol.group === CB && (curSymbol.group === PL || curSymbol.group === CP));
+                        
                     //only add the delimiter to the first one
                     if(i > 0) latex = delimiter+latex;
                     //add it to the total rendered
@@ -2324,6 +2344,12 @@ var nerdamer = (function() {
             if(obj.visible) _.functions[obj.name] = [fn, obj.numargs]; //make the function available
         } 
     };
+    
+    /**
+     * @param {String} name variable name
+     * @returns {boolean} validates if the profided string is a valid variable name
+     */
+    libExports.validateName = Utils.validateName;
     
     /**
      * 

@@ -56,8 +56,10 @@
             return retval;
         },
         diff: function(symbol, wrt) {
-            var d = isSymbol(wrt) ? wrt.value : wrt; 
+            var d = isSymbol(wrt) ? wrt.text() : wrt; 
             
+            if(d === undefined) d = core.Utils.variables(symbol)[0];
+
             if(symbol.group === FN && !isSymbol(symbol.power)) {
                 var a = derive(symbol);
                 var b = __.diff(symbol.args[0].copy(), d); 
@@ -183,7 +185,7 @@
                 else if( g === CP || g === PL ) { 
                     var result = new Symbol(0);
                     for(var x in symbol.symbols) {
-                        result = _.result.add(result, __.diff(symbol.symbols[x].copy(), d));
+                        result = _.add(result, __.diff(symbol.symbols[x].copy(), d));
                     }
                     symbol = _.multiply(polydiff(symbol.copy()), result);
                 }
@@ -210,7 +212,7 @@
                             df = _.multiply(df, symbols[j].copy());
                         }
                     }
-                    //add the derivative to the result
+                    //add the derivative to the resutl
                     result = _.add(result, df);
                 }
                 return result; //done
@@ -222,7 +224,7 @@
         {
             name: 'diff',
             visible: true,
-            numargs: 2,
+            numargs: [1,2],
             build: function(){ return __.diff; }
         },
         {

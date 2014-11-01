@@ -300,7 +300,19 @@ console.log(nerdamer.expressions(true));
 //result:
 //{}
 ```            
-        
+     
+If you need go get the variables of an expression use the variables method. This method can be called after
+nerdamer was provided an expression. For example
+
+```javascript
+var variables = nerdamer('csc(x*cos(y))-no_boring_x').variables();
+console.log(variables);
+//result:
+//[ 'no_boring_x', 'x', 'y' ]
+```
+
+The order in which the variables appear require a little bit of knowledge of how nerdamer organizes symbols. For the
+sake of simplicity we'll just assume that there is no particular order   
 
 
 The Core
