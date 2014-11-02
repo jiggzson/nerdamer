@@ -8,7 +8,7 @@
 
 var nerdamer = (function() {
     
-    var version = '0.5.2',
+    var version = '0.5.3',
         _ = new Parser(), //nerdamer's parser
     
         Groups = {},
@@ -252,6 +252,31 @@ var nerdamer = (function() {
 
         arguments2Array = Utils.arguments2Array = function(obj) {
             return [].slice.call(obj);
+        },
+        
+        //Using a regex to get between brackets can be a bit tricky. This functions makes it more abstract
+        //to fetch between brackets within a string from any given index. If the starting index is
+        //a bracket then it will fail. returns [matched_string, first_bracket_index, end_bracket_index]
+        betweenBrackets = function(ob, cb, str, start) {
+            start = start || 0;
+            var l = str.length,
+                open = 0, fb;
+            for(var i=start; i<l; i++) {
+                var ch = str.charAt(i); //get the character at this position
+
+                if(ch === ob) { //if an open bracket was found
+                    if(fb === undefined) fb = i+1;//mark the first bracket found
+                    open++; //mark a new open bracket
+                }
+                if(ch === cb) { //if a close bracket was found
+                    open--; //close a bracket
+                    if(open === 0 && fb !== undefined) {
+                        var nb = i;
+                        return [str.substring(fb, nb), fb, nb];
+                    }
+                }
+            }
+            return [];
         },
         
         format_subs = function(subs) {
@@ -1899,7 +1924,7 @@ var nerdamer = (function() {
                         value = this.renderSubSymbolsLatex(obj, function(a,b) {
                             return a.group < b.group;
                         }, undefined, abs);
-  
+
                         output = this.renderSymbolLatex(obj, value, abs, obj.group === EX);
                         break;
                     case CB:
@@ -1923,7 +1948,7 @@ var nerdamer = (function() {
             else {
                 output = obj;
             }
-            
+
             if(addParens) output = this.inBrackets(output);
             
             return output;
@@ -1933,11 +1958,13 @@ var nerdamer = (function() {
             var subSymbols = symbol.collectSymbols().sort(sortFunction),
                 l = subSymbols.length, 
                 denom = [], i,
-                self = this;
-            
+                self = this,
+                g = symbol.group,
+                sqrt = Math.abs(symbol.power) === 0.5;
+
             for(i=0; i<l; i++) {
                 var s = subSymbols[i];
-                if(s.isInverse()) {
+                if(s.isInverse() && g === CB) {
                     denom.push(remove(subSymbols, i).copy().invert());
                     i--, l--; //adjust the index and the length since we're one item shorter
                 }
@@ -1963,6 +1990,7 @@ var nerdamer = (function() {
                     }
                     //leave the negative for the first symbol
                     abs = abs || i > 0;
+                    //TODO: redundant brackets in denominator when denominator is CP or PL
                     var latex = self.latex(curSymbol, abs, undefined, 
                         symbol.group === CB && (curSymbol.group === PL || curSymbol.group === CP));
                         
@@ -1977,9 +2005,9 @@ var nerdamer = (function() {
             }
             var num = convert(subSymbols),
                 denom = convert(denom); 
-            if(symbol.group === CP || symbol.group === PL) {
+            if(g === CP || g === PL) {
                 if(num && !denom && Math.abs(symbol.multiplier) !== 1 || Math.abs(symbol.power !== 1)) {
-                    num = Latex.inBrackets(num);
+                    if(!sqrt) num = Latex.inBrackets(num);
                 }
             }
 
@@ -1988,14 +2016,15 @@ var nerdamer = (function() {
             else return num;
         },
         //renders the style for the multiplier and power of the symbol.
-        renderSymbolLatex: function(symbol, value, abs, bracketed) {
+        renderSymbolLatex: function(symbol, value, abs, bracketed) { 
             if(symbol.group === N) return this.latex(symbol, abs);
             value = value || symbol.value;
             
             var multiplierArray = Fraction.convert(symbol.multiplier),
                 power = symbol.power || '',
                 sign = symbol.multiplier < 0 ? '-' : '',//store the sign
-                sqrt = Math.abs(power) === 0.5;
+                sqrt = (power) === 0.5,
+                sqrtDenom = power === -0.5;
             
             //if the latex was requested as absolute value remove the sign
             if(abs) sign = '';
@@ -2003,21 +2032,12 @@ var nerdamer = (function() {
             //make the multiplier array positive
             multiplierArray[0] = Math.abs(multiplierArray[0]);
             
-            //TODO: 
-            //This might need some rethinking
-            /*var match = /\\frac\{\}\{(.+)\}/.exec(value);
-            if(match) {
-                 if(multiplierArray[1] === 1) multiplierArray[1] = match[1];
-                 else multiplierArray[1] += match[1];
-                 value = '';
-            }*/
-            
             //handle powers
             if(isSymbol(power)) {
                 power = this.latex(power, true);
             }
             else {
-                if(Math.abs(power) === 1) { 
+                if(Math.abs(power) === 1 || sqrt || sqrtDenom) { 
                     power = '';
                 }
                 else {
@@ -2030,7 +2050,7 @@ var nerdamer = (function() {
                     power = this.fraction(powerArray);
                 }
             }
-            
+
             //remove the one from the base of the fraction
             if(multiplierArray[1] === 1) multiplierArray.pop();
             
@@ -2042,8 +2062,22 @@ var nerdamer = (function() {
                 multiplierArray[where] = value;
             }
             else {
-                var curValue = multiplierArray[where] ? multiplierArray[where]+this.space : '';
-                multiplierArray[where] = curValue+value;
+                //sub out the multipliers to the top and bottom
+                if(/^\\frac/.test(value)) {
+                    var start = 4;
+                    for(var i=0; i<2; i++) {
+                        var m0 = multiplierArray[i],
+                            m = !(m0 === 1 || m0 === undefined) ? m0+this.space : '';
+                        var match = betweenBrackets('{', '}', value, start);
+                        multiplierArray[i] = m+match[0];
+                        start = match[2]+1;
+                    }
+                }
+                else {
+                    var curValue = multiplierArray[where] ? multiplierArray[where]+this.space : '';
+                    if(sqrtDenom) value = '\\sqrt'+this.inBraces(value);
+                    multiplierArray[where] = curValue+value;
+                }
             }
             
             if(power) { 
@@ -2052,7 +2086,7 @@ var nerdamer = (function() {
                     multiplierArray[where] += '^'+this.inBraces(power);
                 }
             }
-            
+
             //write the value into a fraction
             value = this.fraction(multiplierArray);
             var retval = sign+value;
