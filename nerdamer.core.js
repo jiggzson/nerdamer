@@ -2372,10 +2372,10 @@ console.log(expression_string)
         }
         else if(obj) {
             //if no parent object is provided then the function does not have an address and cannot be called directly
-            var parent_obj = obj.extends, 
+            var parent_obj = obj.parent, 
                 fn = obj.build.call(core); //call constructor to get function
             if(parent_obj) {
-                if(!core[parent_obj]) core[obj.extends] = {};
+                if(!core[parent_obj]) core[obj.parent] = {};
                 //attach the function to the core
                 core[parent_obj][obj.name] = fn;
             }
