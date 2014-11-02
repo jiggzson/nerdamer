@@ -1055,13 +1055,15 @@ var nerdamer = (function() {
         };
         
         this.parse = function(expression_string, substitutions) {  
+            console.log(expression_string)
             //Since variables cannot start with a number, the assumption is made that when this occurs the
             //user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
             //a side-by-side close and open parenthesis
             expression_string = expression_string.split(' ').join('')//strip empty spaces
-                    .replace(/([\+\-\/\*])(\d+e[\+\-]*\d+)/gi, function() {
-                        scientific_numbers.push(arguments[2]);
-                        return arguments[1]+'&';
+                    .replace(/\d*\.*\d+e[\+\-]*\d+/gi, function(match, start, str) {
+                        if(/[a-z_]/.test(str.charAt(start-1))) return match;
+                        scientific_numbers.push(match);
+                        return '&';
                     })
                     //allow omission of multiplication after coefficients
                     .replace(/([\+\-\/\*]*[0-9]+)([a-z_]+[\+\-\/\*]*)/gi, function() {
@@ -1078,7 +1080,7 @@ var nerdamer = (function() {
                     })
                     //allow omission of multiplication sign between brackets
                     .replace( /\)\(/g, ')*(' );
-
+console.log(expression_string)
             var subs = substitutions || {},
                 stack = [],
                 output = [],
@@ -1117,7 +1119,9 @@ var nerdamer = (function() {
 
                 insert = function(token) { 
                     //if the number is a scientifc number then put it back
-                    if(/&/.test(token)) token = scientific_numbers.pop();
+                    if(/&/.test(token)) {
+                        token = scientific_numbers.shift();
+                    }
                     
                     //when two operators are close to each other then the token will be empty or when we've gone
                     //out of range inside of the output or stack. We have to make sure the token even exists before entering.
