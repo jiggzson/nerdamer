@@ -974,13 +974,13 @@ var nerdamer = (function() {
             if(this[what]) this[what] = bin[what].pop();
         };
         
-        this.extend = function(what, with_what) {
+        this.extend = function(what, with_what, force_call) {
             var _ = this,
                 extended = this[what];
             if(typeof extended === 'function' && typeof with_what === 'function') {
                 var f = this[what];
                 this[what] = function(a, b) {
-                    if(isSymbol(a) && isSymbol(b)) return f.call(_, a, b);
+                    if(isSymbol(a) && isSymbol(b) && !force_call) return f.call(_, a, b);
                     else return with_what.call(_, a, b, f);
                 };
             }
@@ -1055,7 +1055,6 @@ var nerdamer = (function() {
         };
         
         this.parse = function(expression_string, substitutions) {  
-            console.log(expression_string)
             //Since variables cannot start with a number, the assumption is made that when this occurs the
             //user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
             //a side-by-side close and open parenthesis
@@ -1080,7 +1079,7 @@ var nerdamer = (function() {
                     })
                     //allow omission of multiplication sign between brackets
                     .replace( /\)\(/g, ')*(' );
-console.log(expression_string)
+
             var subs = substitutions || {},
                 stack = [],
                 output = [],
@@ -1292,11 +1291,6 @@ console.log(expression_string)
             }
             else {
                 retval = _.symfunction('log', arguments); 
-                //TODO
-//                if(retval.group === FN && retval.args[0].isInverse()) {
-//                    retval.args[0].invert(true);
-//                    retval.negate();
-//                }
             }
 
             return retval;
@@ -1939,7 +1933,13 @@ console.log(expression_string)
                         output = this.renderSymbolLatex(obj,value, abs);
                         break;
                     case EX:
-                        output = this.latex(obj, abs, obj.previousGroup);
+                        var pg = obj.previousGroup;
+                        if(pg === N) {
+                            //:) lie about the previous group and render it as a symbol
+                            pg = S;
+                        }
+                        output = this.latex(obj, abs, pg);
+
                         break;
                 }
             }
