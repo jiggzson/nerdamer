@@ -5,6 +5,8 @@
 * License : http://opensource.org/licenses/LGPL-3.0
 * Source : https://github.com/jiggzson/nerdamer
 */
+
+
 (function() {
     var core = nerdamer.getCore(),
         _ = core.PARSER,
@@ -280,7 +282,8 @@
                    // sdPar is a dummy variable for passing the two parameters--a and b--in by reference
                    // calcPar is a dummy variable for passing the nine parameters--a1, a3, a7, c, d, e, f, g, and h --in by reference
 
-                   var qPar = new Object(),    // qPar is a dummy variable for passing the four parameters--szr, szi, lzr, and lzi--into Quad_ak1 by reference
+                   // qPar is a dummy variable for passing the four parameters--szr, szi, lzr, and lzi--into Quad_ak1 by reference
+                   var qPar = new Object(),    
                        ee, mp, omp, relstp, t, u, ui, v, vi, zm,
                        i, j = 0, tFlag, triedFlag = 0;   // Integer variables
 
@@ -831,6 +834,7 @@
                 for(var x in symbol.symbols) symbol.symbols[x].distributeMultiplier(); 
                 //factor the multiplier
                 var gcf = Math2.GCD.apply(undefined, symbol.coeffs()),
+                        
                     factorize = function(symbol) { 
                         for(var x in symbol.symbols) {
                             var sub = symbol.symbols[x]; 
@@ -864,8 +868,8 @@
                 }
                 else if(group === CP) { 
                     try{
-                        var roots = core.Algebra.proots(symbol),
-                            all_ints = true;
+                        var roots = core.Utils.arrayUnique(core.Algebra.proots(symbol)),
+                            all_ints = true; 
                         for(var i=0; i<roots.length; i++) {
                             if(!isInt(roots[i])) all_ints = false;
                         }
@@ -874,7 +878,7 @@
                             roots.map(function(root) {
                                 result = _.multiply(result, 
                                     _.symfunction(core.PARENTHESIS, 
-                                    [_.subtract(new Symbol(variables[0]), new Symbol(root))]));
+                                    [_.subtract(new Symbol(variables(symbol)[0]), new Symbol(root))]));
                             });
                             result.multiplier *= symbol.multiplier;
                             retval = result;
@@ -887,8 +891,7 @@
                                 num_symbols = symbol.length,
                                 hash_table = {};
                             for(var i=0; i<num_symbols; i++) {
-                                var cur_symbol = symbols[i],
-                                    vars = variables(cur_symbol), //collect all the variables contained in the symbol
+                                var cur_symbol = symbols[i], //collect all the variables contained in the symbol
                                     num_vars = vars.length;
                                 for(var j=0; j<num_vars; j++) {
                                     var var_name = vars[j],
@@ -927,7 +930,9 @@
                     }
                 }
             }
-
+            
+            if(retval.group === core.groups.FN) retval.updateHash();
+            
             return retval;
         },
         expand: function (symbol) { 
@@ -1282,3 +1287,5 @@
         }
     ]);
 })();
+
+
