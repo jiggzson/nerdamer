@@ -214,6 +214,15 @@ var nerdamer = (function() {
             return 1/( num % 1) % 2 === 0;
         },
         
+        arrayUnique = Utils.arrayUnique = function(arr) {
+            var l = arr.length, a = [];
+            for(var i=0; i<l; i++) {
+                item = arr[i];
+                if(a.indexOf(item) === -1) a.push(item);
+            }
+            return a;
+        },
+        
         reserveNames = Utils.reserveNames = function(obj) {
             var add = function(item) {
                 if(RESERVED.indexOf(item) === -1) RESERVED.push(item);
@@ -488,6 +497,18 @@ var nerdamer = (function() {
         
         toString: function() {
             return this.symbol.text();
+        },
+        
+        isMonomial: function() {
+            return this.symbol.group === S;
+        },
+        
+        isFraction: function() {
+            return isFraction(this.symbol);
+        },
+        
+        isPolynomial: function() {
+            return this.symbol.isPoly();
         }
     };
     /**
@@ -1110,7 +1131,9 @@ var nerdamer = (function() {
                         insert(symbol2);
                     }
                     else {
-                        var result = _[operator.fn].call(_, symbol1, symbol2);
+                        var ofn = operator.fn, result;
+                        if(!ofn) result = operator.resolve(symbol2);//it's the firs symbol and neg
+                        else result = _[ofn].call(_, symbol1, symbol2);
                         insert(result);
                     }  
                          
@@ -1325,24 +1348,7 @@ var nerdamer = (function() {
             }
             return symbol;
         };
-        
-        this.xSymbol = function(group) {
-            var val = 'x',
-                shell;
-            if(group === FN) {
-                shell = new this.symfunction(val, []);
-            }
-            else if(group) {
-                shell = new Symbol(val);
-                if(group !== EX) {
-                    shell.symbols = {};
-                }
-                shell.group = group;
-            }
-            
-            return shell;
-        };
-        
+
         this.add = function(symbol1, symbol2) { 
             var group1 = symbol1.group, 
                 group2 = symbol2.group;
@@ -1610,7 +1616,7 @@ var nerdamer = (function() {
                 if(Number(symbol2.power) === 0) symbol2 = Symbol(symbol2.multiplier);
                 
             }
-            else if(group1 === CB && group2 === CB) {
+            else if(group1 === CB && group2 === CB) { 
                 symbol1.distributeExponent();
                 symbol2.distributeExponent();
                 
@@ -1627,7 +1633,9 @@ var nerdamer = (function() {
                     symbol2.attach(symbol1);
                 }
                 else {
-                    var s = _.xSymbol(CB);
+                    var s = new Symbol('x');
+                    s.symbols = {};
+                    s.group = CB;
                     s.combine(symbol1);
                     s.combine(symbol2);
                     symbol2 = s;
@@ -2339,6 +2347,8 @@ var nerdamer = (function() {
      */
     libExports.clear = function( equation_number, keep_EQNS_fixed ) { 
         if(equation_number === 'all') { EQNS = []; }
+        else if(equation_number === 'last') { EQNS.pop(); }
+        else if(equation_number === 'first') { EQNS.shift(); }
         else { 
             var index = !equation_number ? EQNS.length : equation_number-1; 
             keep_EQNS_fixed === true ? EQNS[index] = undefined : remove(EQNS, index);
