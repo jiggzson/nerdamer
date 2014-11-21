@@ -43,7 +43,10 @@ var nerdamer = (function() {
         ABS = 'abs',
 
         //the storage container "memory" for parsed expressions
-        EQNS = [];
+        EQNS = [],
+        
+        //variables
+        VARS = {};
 
         //the global used to invoke the libary to parse to a number
         Settings.PARSE2NUMBER = false;
@@ -120,7 +123,8 @@ var nerdamer = (function() {
             var args = [].slice.call(arguments),
                 str = args.shift();
                 return str.replace(/{(\d+)}/g, function(match, index) {
-                    return args[index];
+                    var arg = args[index];
+                    return typeof arg === 'function' ? arg() : arg;
                 });
         },
         
@@ -1151,7 +1155,7 @@ var nerdamer = (function() {
                         //this could be function parameters or a vector
                         if(!(token instanceof Array)) { 
                             if(!(token instanceof Symbol) && !(customType(token))) {
-                                var sub = subs[token]; //handle substitutions
+                                var sub = subs[token] || VARS[token]; //handle substitutions
                                 token = sub ? sub.copy() : new Symbol(token);
                             }
                         }
@@ -1243,14 +1247,28 @@ var nerdamer = (function() {
                             var found_matching = false;
                             while(!found_matching) {
                                 var popped = stack.pop();
+                                
+                                if(popped === undefined) error('Unmatched close bracket or parenthesis!');
 
-                                if(popped === undefined) error('Unmatched close parenthesis!');
-
-                                if(popped === LEFT_PAREN) found_matching = true;
+                                if(popped === LEFT_PAREN) {
+                                    found_matching = true;
+                                }
                                 else evaluate(popped);
+                                //closing the barn door after the horses left but better than nothing.
+                                //again bracket parity checking was an afterthought in the current 
+                                //design. I'll address this in the future
+                                if(popped === LEFT_PAREN && cur_char === RIGHT_SQUARE_BRACKET) {
+                                    var lsi = last_item_on(stack);
+                                    if(!lsi || lsi.name !== VECTOR) error('Unmatched parenthesis!');
+                                }
                             }
+                            
+                            var last_stack_item = last_item_on(stack);
 
-                            if(last_item_on(stack) instanceof Func) { 
+                            if(last_stack_item instanceof Func) { 
+                                //TODO: really really really fix bracket parity checking
+                                if(last_stack_item.name === VECTOR && cur_char !== RIGHT_SQUARE_BRACKET)
+                                    error('Unmatched bracket!');
                                 var v = _.callfunction(stack.pop().name, output.pop()); 
                                 func_on_stack = true;
                                 insert(v);//go directly to output as this will cause the prefix to prematurely be evaluated
@@ -1957,6 +1975,9 @@ var nerdamer = (function() {
                     output = '\\left['+obj.map(function(a) { return Latex.latex(a); }).join(' ,')+'\\right]';
                 }
             }
+            else if(typeof obj.latex === 'function') {
+                output = obj.latex();
+            }
             else {
                 output = obj;
             }
@@ -2226,6 +2247,7 @@ var nerdamer = (function() {
     Core.PARSER = _;
     Core.PARENTHESIS = PARENTHESIS;
     Core.Settings = Settings;
+    Core.VARS = VARS;
     /* END BUILD CORE */
     
     /* EXPORTS */
@@ -2268,7 +2290,7 @@ var nerdamer = (function() {
      * 
      * @param {String} constant the name of the constant to be set
      * @param {mixed} value The value of the constant 
-     * @returns {nerdamer object}
+     * @returns {Object} Returns the nerdamer object
      */
     libExports.setConstant = function(constant, value) {
         validateName(constant); 
@@ -2343,7 +2365,7 @@ var nerdamer = (function() {
      * @param {Integer} equation_number the number of the equation to clear. 
      * If 'all' is supplied then all equations are cleared
      * @param {Boolean} keep_EQNS_fixed use true if you don't want to keep EQNS length fixed
-     * @returns {nerdamer object}
+     * @returns {Object} Returns the nerdamer object
      */
     libExports.clear = function( equation_number, keep_EQNS_fixed ) { 
         if(equation_number === 'all') { EQNS = []; }
@@ -2397,7 +2419,7 @@ var nerdamer = (function() {
      * @param {String} name variable name
      * @returns {boolean} validates if the profided string is a valid variable name
      */
-    libExports.validateName = Utils.validateName;
+    libExports.validateName = validateName;
     
     /**
      * 
@@ -2416,6 +2438,17 @@ var nerdamer = (function() {
     };
     /* END EXPORTS */
     
+    /**
+     * 
+     * @param {String} v variable to be set
+     * @param {String} val value of variable. This can be a variable expression or number
+     * @returns {Object} Returns the nerdamer object
+     */
+    libExports.setVar = function(v, val) {
+        validateName(v);
+        VARS[v] = _.parse(val);
+        return this;
+    };
     
     return libExports; //Done
 })();
