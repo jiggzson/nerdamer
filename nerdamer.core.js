@@ -24,7 +24,7 @@ var nerdamer = (function() {
         //The groups that help with organizing during parsing. Note that for FN is still a function even 
         //when raised to a symbol which typically results in an EX
         N   = Groups.N  = 1, // A number
-        S   = Groups.S  = 2, // A single variable e.g. x
+        S   = Groups.S  = 2, // A single variable e.g. x. I refrain from using monomial to avoid confusion
         EX  = Groups.EX = 3, // A symbol/expression with an exponent that is not a number e.g. x^y
         FN  = Groups.FN = 4, // A function
         PL  = Groups.PL = 5, // A symbol/expression having same name with different powers e.g. 1/x + x^2
@@ -1521,6 +1521,7 @@ var nerdamer = (function() {
         };
 
         this.multiply = function(symbol1, symbol2) { 
+            var A = text(symbol1), B = text(symbol2);
             if(symbol1.multiplier === 0 || symbol2.multiplier === 0) return new Symbol(0);
             var group1 = symbol1.group,
                 group2 = symbol2.group,
@@ -1552,7 +1553,7 @@ var nerdamer = (function() {
             if(group1 === N ) {
                 symbol2.multiplier *= symbol1.multiplier;
             }
-            else if(symbol1.value === symbol2.value) { 
+            else if(symbol1.value === symbol2.value) {
                 if(group1 === S && group2 === EX) { 
                     if(symbol2.previousGroup === PL) {
                         symbol2.convert(CB);
@@ -1586,6 +1587,9 @@ var nerdamer = (function() {
                             else { 
                                 symbol2.power = _.add(symbol2.power, symbol1.power);
                             }
+                        }
+                        else if(group1 === EX && group2 === EX) {
+                            symbol2.power = _.add(symbol1.power, symbol2.power)
                         }
                         else {
                             symbol2.convert(CB);
@@ -1687,7 +1691,7 @@ var nerdamer = (function() {
             }
             
             if(reInvert) symbol2.invert();
-            
+
             return symbol2 ;
         };
         
