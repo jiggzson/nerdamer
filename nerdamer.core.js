@@ -1588,12 +1588,13 @@ var nerdamer = (function() {
                                 symbol2.power = _.add(symbol2.power, symbol1.power);
                             }
                         }
-                        else if(group1 === EX && group2 === EX) {
-                            symbol2.power = _.add(symbol1.power, symbol2.power)
+                        else if(group2 === EX) {
+                            symbol2.power = _.add(symbol1.power, symbol2.power);
                         }
                         else {
-                            symbol2.convert(CB);
-                            symbol2.combine(symbol1);
+                            var p = new Symbol(symbol2.power);
+                            symbol1.power = _.add(symbol1.power, p);
+                            symbol2 = symbol1;
                         }
                     }
                 }
