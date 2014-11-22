@@ -14,7 +14,6 @@ Load the library in your html page
 <!-- again assuming you've saved the files in root -->
 <script src="Algebra.js"></script>
 <script src="Calculus.js"></script>
-<script src="LinAlg.js"></script> 
 ```
 
 Some functions have dependencies from other add-ons. 
@@ -469,3 +468,15 @@ core.PARSER.extend('add', function(symbol1, symbol2, add){
     //do stuff with your new types
 });
 ```
+
+Internally the library is more of an exercise in organizing rather than mathematics and as such I avoid using such terms in comments to avoid confusion. That doesn't mean that mathematicals checks can't be done. They basically have to be created and done using a function call e.g. isPolynomial, etc. The library is divided into 7 groups:
+
+1. N - A number
+2. S - A single variable e.g. x
+3. EX - A symbol/expression with an exponent that is not a number e.g. x^y
+4. FN - A function
+5. PL - A symbol/expression having same name with different powers e.g. 1/x + x^2 or tan(x)+tan(x)^2
+6. CB - A symbol/expression composed of one or more variables through multiplication e.g. x*y
+7. CP - A symbol/expression composed of one variable and any other symbol or number x+1 or x+y
+
+All groups have a multiplier which must be a number, and all groups except for N have a power which can be a Number or a Symbol. Symbols of group EX are basically exponentials and have Symbols as powers.
