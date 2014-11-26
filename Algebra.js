@@ -6,7 +6,6 @@
 * Source : https://github.com/jiggzson/nerdamer
 */
 
-
 (function() {
     var core = nerdamer.getCore(),
         _ = core.PARSER,
@@ -938,7 +937,7 @@
         expand: function (symbol) { 
             var is_composite = isComposite(symbol);
 
-            function powerExpand(symbol) { 
+            function powerExpand(symbol) {
                 if(!isComposite(symbol)) return symbol; //nothing to do here
 
                 var p = symbol.power,
@@ -1003,7 +1002,7 @@
             }
             symbol = powerExpand(symbol); 
 
-            if(symbol.symbols) { 
+            if(symbol.symbols && symbol.group !== core.groups.EX) { 
                 //there is no way to know if one of the symbols contained within
                 //the CB is a composite so unfortunately we have to loop over each one of them.
                 var symbols = symbol.collectSymbols(),
@@ -1030,6 +1029,9 @@
             else if(symbol.args) {
                 symbol.args[0] = __.expand(symbol.args[0]);
                 if(symbol.group === core.groups.FN) symbol.updateHash();
+            }
+            else if(symbol.group === core.groups.EX) {
+                symbol.power = __.expand(symbol.power);
             }
             
             return symbol;
