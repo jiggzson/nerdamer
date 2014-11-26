@@ -8,7 +8,7 @@
 
 var nerdamer = (function() {
     
-    var version = '0.5.3',
+    var version = '0.5.4',
         _ = new Parser(), //nerdamer's parser
     
         Groups = {},
@@ -18,7 +18,13 @@ var nerdamer = (function() {
         Utils = {},
         
         //Settings
-        Settings = {},
+        Settings = {
+            suppress_errors: false,
+            //the global used to invoke the libary to parse to a number
+            PARSE2NUMBER: false,
+            //this flag forces the a copy to be returned when add, subtract, etc... is called
+            SAFE: false
+        },
 
         //Add the groups. These have been reorganized in v0.5.1 to make CP the highest group
         //The groups that help with organizing during parsing. Note that for FN is still a function even 
@@ -46,28 +52,25 @@ var nerdamer = (function() {
         EQNS = [],
         
         //variables
-        VARS = {};
-
-        //the global used to invoke the libary to parse to a number
-        Settings.PARSE2NUMBER = false;
+        VARS = {},
         
-        //this flag forces the a copy to be returned when add, subtract, etc... is called
-        //Not very efficient at the moment
-        Settings.SAFE = false;
-
         //the container used to store all the reserved functions
-        var RESERVED = [],
+        RESERVED = [],
         
         isReserved = Utils.isReserved = function(value) { 
             return RESERVED.indexOf(value) !== -1;
         },
-
+        
+        error = function(msg) {
+            if(!Settings.suppress_errors) throw new Error(msg);
+        },
+        
         // Enforces rule: must start with a letter and can have any number of underscores or numbers after.
         validateName = Utils.validateName = function(name, typ) { 
             typ = typ || 'variable';
             var regex = /^[a-z_][a-z\d\_]*$/gi;
             if(!(regex.test( name)) ) {
-                throw new Error(name+' is not a valid '+typ+' name');
+                error(name+' is not a valid '+typ+' name');
             }
         },
         
@@ -134,7 +137,7 @@ var nerdamer = (function() {
             return k;
         },
         
-        // Items are do not have a fixed order in objects so only use if you need any first random item in the object
+        // Items do not have a fixed order in objects so only use if you need any first random item in the object
         firstObject = Utils.firstObject = function(obj) {
             for( var x in obj ) break;
             return obj[x];
@@ -463,6 +466,15 @@ var nerdamer = (function() {
         this.symbol = symbol;
     }
     
+    Expression.getExpression = function(expression_number, asType) {
+        if(expression_number === 'last' || !expression_number) expression_number = EQNS.length;
+        if(expression_number === 'first') expression_number = 1;
+        var index = expression_number -1,
+            expression = EQNS[index],
+            retval = expression ? new Expression(expression) : expression;
+        return retval;
+    };
+    
     Expression.prototype = {
         text: function() {
             return this.symbol.text('final');
@@ -476,12 +488,31 @@ var nerdamer = (function() {
             return this.symbol.valueOf();
         },
         
-        evaluate: function(subs) {
-            var self = this;
+        evaluate: function() {
+            var first_arg = arguments[0], expression, idx = 1;
+            if(typeof first_arg === 'string') {
+                expression = (first_arg.charAt(0) === '%') ? Expression.getExpression(first_arg.substr(1)).text() : first_arg;
+            }
+            else if(first_arg instanceof Expression || isSymbol(first_arg)) {
+                expression = first_arg.text();
+            }
+            else {
+                expression = this.symbol.text(); idx--;
+            }
+            
+            var subs = arguments[idx];
+
             return new Expression(block('PARSE2NUMBER', function() {
-                return _.parse(self.symbol.text(), format_subs(subs));
+                return _.parse(expression, format_subs(subs));
             }, true));
         },
+        
+//        evaluate: function(subs) {
+//            var self = this;
+//            return new Expression(block('PARSE2NUMBER', function() {
+//                return _.parse(self.symbol.text(), format_subs(subs));
+//            }, true));
+//        },
         
         buildFunction: function(vars) {
             return build(this.symbol, vars);
@@ -745,7 +776,7 @@ var nerdamer = (function() {
         insert: function(symbol, action) { 
             //this check can be removed but saves a lot of aggravation when trying to hunt down
             //a bug. If left you will instantly know that the error can only be between 2 symbols.
-            if(!isSymbol(symbol)) throw new Error('Object '+symbol+' is not of type Symbol!');
+            if(!isSymbol(symbol)) error('Object '+symbol+' is not of type Symbol!');
             if(this.symbols) {
                 var group = this.group;
                 if(group > FN) {
@@ -985,9 +1016,7 @@ var nerdamer = (function() {
             brackets[LEFT_SQUARE_BRACKET] = LEFT_SQUARE_BRACKET,
             brackets[RIGHT_SQUARE_BRACKET] = RIGHT_SQUARE_BRACKET;
 
-        var error = this.error = function(msg) {
-            throw new Error(msg);
-        };
+        this.error = error;
         
         this.override = function(which, with_what) {
             if(!bin[which]) bin[which] = [];
@@ -1136,15 +1165,14 @@ var nerdamer = (function() {
                     }
                     else {
                         var ofn = operator.fn, result;
-                        if(!ofn) result = operator.resolve(symbol2);//it's the firs symbol and neg
+                        if(!ofn) result = operator.resolve(symbol2);//it's the first symbol and negative
                         else result = _[ofn].call(_, symbol1, symbol2);
                         insert(result);
-                    }  
-                         
+                    }    
                 },
 
                 insert = function(token) { 
-                    //if the number is a scientifc number then put it back
+                    //if the number is a scientifc number then use that instead
                     if(/&/.test(token)) {
                         token = scientific_numbers.shift();
                     }
@@ -1205,7 +1233,7 @@ var nerdamer = (function() {
                     insert(token);
 
                     //if the preceding token is a operator
-                    if(!bracket && (curpos-last_opr_pos === 1 || curpos===0)) { 
+                    if(!bracket && (curpos-last_opr_pos === 1 || curpos === 0)) { 
                         if(operator.is_prefix) {
                             stack.push(new Prefix(operator.val));
                             pos = curpos+1;
@@ -1254,9 +1282,9 @@ var nerdamer = (function() {
                                     found_matching = true;
                                 }
                                 else evaluate(popped);
-                                //closing the barn door after the horses left but better than nothing.
-                                //again bracket parity checking was an afterthought in the current 
-                                //design. I'll address this in the future
+                                //Let's close the barn door after the horses left but it's still better than nothing.
+                                //Bracket parity checking was an afterthought in the current design. I'll address this
+                                //in the future when I switch to a full parser.
                                 if(popped === LEFT_PAREN && cur_char === RIGHT_SQUARE_BRACKET) {
                                     var lsi = last_item_on(stack);
                                     if(!lsi || lsi.name !== VECTOR) error('Unmatched parenthesis!');
@@ -1285,7 +1313,7 @@ var nerdamer = (function() {
                 last_char = cur_char;
             }
             
-            EOT = true; //end of stack reached
+            EOT = true; //end of tokens/stack reached
             
             while(stack.length > 0) { 
                 evaluate();
@@ -1521,7 +1549,6 @@ var nerdamer = (function() {
         };
 
         this.multiply = function(symbol1, symbol2) { 
-            var A = text(symbol1), B = text(symbol2);
             if(symbol1.multiplier === 0 || symbol2.multiplier === 0) return new Symbol(0);
             var group1 = symbol1.group,
                 group2 = symbol2.group,
@@ -1697,6 +1724,7 @@ var nerdamer = (function() {
         };
         
         this.divide = function(symbol1, symbol2) {
+            if(symbol2.multiplier === 0) error('Division by zero!');
             return this.multiply(symbol1, symbol2.invert());
         };
 
@@ -2224,10 +2252,10 @@ var nerdamer = (function() {
             return [c.join('*'), xports.join('').replace(/\n+\s+/g, ' ')];
         };
         if(arg_array) {
-            if(args.length !== arg_array.length) throw new Error('Argument array contains wrong number of arguments');
+            if(args.length !== arg_array.length) error('Argument array contains wrong number of arguments');
             for(var i=0; i<args.length; i++) {
                 var arg = args[i];
-                if(arg_array.indexOf(arg) === -1) throw new Error(arg+' not found in argument array');
+                if(arg_array.indexOf(arg) === -1) error(arg+' not found in argument array');
             }
             args = arg_array;
         }
@@ -2265,7 +2293,11 @@ var nerdamer = (function() {
      * @param {String} option additional options
      * @returns {Expression} 
      */
+    
     var libExports = function(expression, subs, option, location) {
+        //convert any expression passed in to a string
+        if(expression instanceof Expression) expression = expression.toString();
+        
         var multi_options = isArray(option),
             expand = 'expand',
             numer = multi_options ? option.indexOf('numer') !== -1 : option === 'numer';
@@ -2275,7 +2307,7 @@ var nerdamer = (function() {
         }
         var eq = block('PARSE2NUMBER', function(){
             return _.parse(expression, format_subs(subs));
-        }, numer);
+        }, numer || Settings.PARSE2NUMBER);
         
         if(location) { EQNS[location-1] = eq; }
         else { EQNS.push(eq);}
@@ -2304,7 +2336,7 @@ var nerdamer = (function() {
                 delete _.constants[constant];
             }
             else {
-                if(isNaN(value)) throw new Error('Constant must be a number!');
+                if(isNaN(value)) error('Constant must be a number!');
                 _.constants[constant] =  value;
             }
         }    
@@ -2341,19 +2373,7 @@ var nerdamer = (function() {
         return Core;
     };
 
-    /**
-     * 
-     * @param {Integer} expression_number The number of the expression wanted
-     * @param {String} asType Get the equation as text or latex text
-     * @returns {Expression}
-     */
-    libExports.getExpression = libExports.getEquation = function(expression_number, asType) {
-        asType = asType || 'text';
-        var index = expression_number ? expression_number -1 : EQNS.length-1,
-            expression = EQNS[index],
-            retval = expression ? new Expression(expression) : expression;
-        return retval;
-    };
+    libExports.getExpression = libExports.getEquation = Expression.getExpression;
     
     /**
      * 
@@ -2451,8 +2471,20 @@ var nerdamer = (function() {
      */
     libExports.setVar = function(v, val) {
         validateName(v);
-        VARS[v] = _.parse(val);
+        if(val === 'delete') delete VARS[v];
+        else VARS[v] = _.parse(val);
         return this;
+    };
+    
+    /**
+     * 
+     * @param {String} setting The setting to be changed
+     * @param {boolean} value 
+     */
+    libExports.set = function(setting, value) {
+        var disallowed = ['SAFE'];
+        if(disallowed.indexOf(setting) !== -1) error('Cannot modify setting: '+setting);
+        Settings[setting] = value;
     };
     
     return libExports; //Done
