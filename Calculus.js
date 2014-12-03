@@ -1,10 +1,3 @@
-/*
-* Author : Martin Donk
-* Website : http://www.nerdamer.com
-* Email : martin.r.donk@gmail.com
-* License : http://opensource.org/licenses/LGPL-3.0
-* Source : https://github.com/jiggzson/nerdamer
-*/
 (function() {
     var core = nerdamer.getCore(),
         _ = core.PARSER,
@@ -55,9 +48,11 @@
 
             return retval;
         },
-        diff: function(symbol, wrt) {
+        diff: function(symbol, wrt, nth) {
             var d = isSymbol(wrt) ? wrt.text() : wrt; 
             
+            nth = isSymbol(nth) ? nth.multiplier : nth || 1;
+
             if(d === undefined) d = core.Utils.variables(symbol)[0];
 
             if(symbol.group === FN && !isSymbol(symbol.power)) {
@@ -67,6 +62,11 @@
             }
             else {
                 symbol = derive(symbol);
+            }
+            
+            if(nth > 1) { 
+                nth--;
+                symbol = __.diff(symbol, wrt, nth);
             }
             
             return symbol;
@@ -224,7 +224,13 @@
         {
             name: 'diff',
             visible: true,
-            numargs: [1,2],
+            numargs: [1,3],
+            build: function(){ return __.diff; }
+        },
+        {
+            name: 'differentiate',
+            visible: true,
+            numargs: [1,3],
             build: function(){ return __.diff; }
         },
         {
