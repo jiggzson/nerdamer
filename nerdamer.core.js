@@ -2,7 +2,7 @@
  * Author : Martin Donk
  * Website : http://www.nerdamer.com
  * Email : martin.r.donk@gmail.com
- * License : MIT License
+ * License : http://opensource.org/licenses/LGPL-3.0
  * Source : https://github.com/jiggzson/nerdamer
  */
 
@@ -56,15 +56,18 @@ var nerdamer = (function() {
         //the container used to store all the reserved functions
         RESERVED = [],
         
+        //reserves variable names
         isReserved = Utils.isReserved = function(value) { 
             return RESERVED.indexOf(value) !== -1;
         },
         
+        //throw an error with this function if the error is allowed to be suppressed
         err = function(msg) {
             if(!Settings.suppress_errors) throw new Error(msg);
         },
         
-        // Enforces rule: must start with a letter and can have any number of underscores or numbers after.
+        // Enforces rule: must start with a letter or underscore and can have any 
+        // number of underscores, letters, and numbers after.
         validateName = Utils.validateName = function(name, typ) { 
             typ = typ || 'variable';
             var regex = /^[a-z_][a-z\d\_]*$/gi;
@@ -117,6 +120,7 @@ var nerdamer = (function() {
             return '('+str+')';
         },
         
+        //the Parser uses this to check if it should convert the obj to type Symbol
         customType = Utils.customType = function(obj) {
             return obj !== undefined && obj.custom;
         },
@@ -176,6 +180,7 @@ var nerdamer = (function() {
             }
         },
         
+        //this method grabs all the variables in a symbol
         variables = Utils.variables = function( obj, vars ) { 
             vars = vars || {
                 c: [],
@@ -303,7 +308,7 @@ var nerdamer = (function() {
             return subs;
         },
         
-        //Inverse trig functions
+        //Inverse trig functions and additional functions
         Math2 = {
             csc: function(x) { return 1/Math.sin(x); },
             sec: function(x) { return 1/Math.cos(x); },
@@ -356,6 +361,14 @@ var nerdamer = (function() {
         reserveNames(Math2); //reserve the names in Math2
         
     /* GLOBAL FUNCTIONS */
+    /**
+     * This method will return a hash or a text representation of a Symbol, Matrix, or Vector. 
+     * If all else fails it return *assumes* the object has a toString method and will call that.
+     * 
+     * @param {Object} obj
+     * @param {String} option get is as a hash 
+     * @returns {String}
+     */
     function text(obj, option) { 
         var asHash = (option === 'hash'),
             finalize = option === 'final';
@@ -441,13 +454,14 @@ var nerdamer = (function() {
             return sign+multiplier+value+power;
         }
         else {
-            return obj;
+            return obj.toString();
         }
     }
     Utils.text = text;
     /* END GLOBAL FUNCTIONS */
     
     /* CLASSES */
+    //The Collector is used to find unique values within objects
     function Collector(extra_conditions) {
         this.c = [];
         this.add = function(value) {
@@ -461,7 +475,8 @@ var nerdamer = (function() {
     }
     
     /** 
-     * 
+     * This is what nerdamer returns. If you want to provide the user with extra
+     * library function then modify this class.
      * @param {Symbol} symbol
      * @returns {Expression} wraps around the Symbol class
      */
@@ -510,13 +525,6 @@ var nerdamer = (function() {
             }, true));
         },
         
-//        evaluate: function(subs) {
-//            var self = this;
-//            return new Expression(block('PARSE2NUMBER', function() {
-//                return _.parse(self.symbol.text(), format_subs(subs));
-//            }, true));
-//        },
-        
         buildFunction: function(vars) {
             return build(this.symbol, vars);
         },
@@ -550,8 +558,8 @@ var nerdamer = (function() {
         }
     };
     /**
-     * 
-     * @param {String} obj An attempt to get objects to behave somewhat as "real" symbols
+     * Primary data type for the Parser
+     * @param {String} obj 
      * @returns {Symbol}
      */
     function Symbol(obj) { 
@@ -581,6 +589,7 @@ var nerdamer = (function() {
     }
     
     Symbol.prototype = {
+        //returns the coefficients of symbols
         coeffs: function() {
             var c = [];
             if(this.symbols) {
@@ -594,6 +603,8 @@ var nerdamer = (function() {
         equals: function(symbol) {
             return this.value === symbol.value && text(this.power) === text(symbol.power);
         },
+        //Symbols are grouped using a custom schema. This checks if the symbol
+        //qualifies as a polynomial
         isPoly: function() {
             var status = false;
             if( this.group === S && this.power > 0 || this.group === N) {
@@ -692,6 +703,7 @@ var nerdamer = (function() {
             }
             return this;
         },
+        //distributes the multiplier over the entire symbol
         distributeMultiplier: function() {
             if(this.symbols && this.power === 1 && this.group !== CB) {
                 for(var x in this.symbols) {
@@ -704,6 +716,7 @@ var nerdamer = (function() {
 
             return this;
         },
+        //expands the exponent over the entire symbol
         distributeExponent: function() {
             if(this.power !== 1) {
                 var p = this.power;
@@ -720,6 +733,7 @@ var nerdamer = (function() {
             }
             return this;
         },
+        //converts one group to another. Not all combinations are supported.
         convert: function(group) { 
             if(group > FN) { 
                 //make a copy of this symbol;
@@ -850,6 +864,9 @@ var nerdamer = (function() {
         combine: function(symbol) {
             this.insert(symbol, 'multiply');
         },
+        //this method should be called after any major surgery on a symbol
+        //it updates the has of the symbol e.g. if the baseName of a function
+        //is called it will update the hash with the new baseName
         updateHash: function() {
             if(this.group === FN) {
                 var contents = '',
@@ -864,6 +881,7 @@ var nerdamer = (function() {
             }
         },
         //this function defines how every group in stored within a group of higher order
+        //think of it as the switchboard for nerdamer. It defines the hashes for symbols.
         keyForGroup: function(group) {
             var g = this.group;
             if(g === N) {
@@ -1031,6 +1049,8 @@ var nerdamer = (function() {
             if(this[what]) this[what] = bin[what].pop();
         };
         
+        //the idea behind this method is to give faux function overloading
+        //not really ready for primetime
         this.extend = function(what, with_what, force_call) {
             var _ = this,
                 extended = this[what];
@@ -1043,6 +1063,9 @@ var nerdamer = (function() {
             }
         };
         
+        //generates nerdamer's representation of a function. It's a fancy way of saying a symbol with 
+        //a few extras. The most important thing is that that it gives a baseName and 
+        //an args property to the symbols in addition to changing its group to FN
         this.symfunction = function(fn_name, params) { 
             //call the proper function and return the result;
             var f = new Symbol(fn_name);
@@ -1054,7 +1077,10 @@ var nerdamer = (function() {
             f.updateHash();
             return f;
         };
-
+        
+        //an internal function call for the Parser. This will either trigger a real
+        //function call if it can do so or just return a symbolic representation of the 
+        //function using symfunction.
         this.callfunction = function(fn_name, args) { 
             var fn_settings = functions[fn_name];
             
@@ -1111,6 +1137,7 @@ var nerdamer = (function() {
             if(symbol.power.valueOf() === 0) symbol.convert(N);
         };
         
+        //the external method which should be called to trigger parsing of a string.
         this.parse = function(expression_string, substitutions) {  
             //Since variables cannot start with a number, the assumption is made that when this occurs the
             //user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
@@ -1192,7 +1219,7 @@ var nerdamer = (function() {
                             }
                         }
                         
-                        //TODO: fix accessing indices. Very crude and buggy.
+                        //TODO: fix element index access
                         var loi = last_item_on(output);
                         
                         if(isVector(token)) {
@@ -1308,9 +1335,7 @@ var nerdamer = (function() {
                                     found_matching = true;
                                 }
                                 else evaluate(popped);
-                                //Let's close the barn door after the horses left but it's still better than nothing.
-                                //Bracket parity checking was an afterthought in the current design. I'll address this
-                                //in the future when I switch to a full parser.
+                                //TODO: fix bracket parity checking.
                                 if(popped === LEFT_PAREN && cur_char === RIGHT_SQUARE_BRACKET) {
                                     var lsi = last_item_on(stack);
                                     if(!lsi || lsi.name !== VECTOR) err('Unmatched parenthesis!');
@@ -1320,7 +1345,7 @@ var nerdamer = (function() {
                             var last_stack_item = last_item_on(stack);
 
                             if(last_stack_item instanceof Func) { 
-                                //TODO: really really really fix bracket parity checking
+                                //TODO: fix bracket parity checking
                                 if(last_stack_item.name === VECTOR && cur_char !== RIGHT_SQUARE_BRACKET)
                                     err('Unmatched bracket!');
                                 var v = _.callfunction(stack.pop().name, output.pop()); 
@@ -1349,6 +1374,9 @@ var nerdamer = (function() {
         };
 
         //FUNCTIONS
+        //although not a "real" function it is important in some cases when the 
+        //symbol must carry parenthesis. Once set you don't have to worry about it anymore
+        //as the parser will get rid of it at the first opportunity
         function parens(symbol) {
             if(Settings.PARSE2NUMBER) {
                 return symbol;
@@ -1390,11 +1418,13 @@ var nerdamer = (function() {
 
             return retval;
         }
-
+        
+        //the constructor for vectors
         function vector() {
             return new Vector([].slice.call(arguments));
         }
         
+        //the constructor for matrices
         function matrix() {
             return Matrix.fromArray(arguments);
         }
@@ -1421,26 +1451,32 @@ var nerdamer = (function() {
             err('invert expects a matrix');
         }
         
+        //extended functions. Because functions like log aren't directly 
+        //stored in an object, it's difficult to find out about them unless you know of them 
+        //outside the library. This serves as registry. That's all.
         this.ext = {
             log: log,
             sqrt: sqrt,
             abs: abs,
             vector: vector,
             matrix: matrix,
-//            parens: parens,
-//            determinant: determinant,
-//            dot: dot,
-//            invert: invert,
-//            transpose: transpose
+            parens: parens,
+            determinant: determinant,
+            dot: dot,
+            invert: invert,
+            transpose: transpose
         };
         
+        //The loader for functions which are not part of Math2
         this.mapped_function = function() { 
             var subs = {},
                 params = this.params;
             for(var i=0; i<params.length; i++) subs[params[i]] = arguments[i];
             return _.parse(this.body, subs);
         };
-
+        
+        //the simpler the structure of the symbol, the better. Unpack tries to
+        //remove the parens function and return it in a simpler form.
         this.unpack = function(symbol) { 
             //we only touch this bad boy if the power is one 
             if(symbol.power === 1) {
@@ -1452,6 +1488,7 @@ var nerdamer = (function() {
             return symbol;
         };
 
+        //gets called when the parser finds the + operator. Not the prefix operator.
         this.add = function(symbol1, symbol2) { 
             var isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2), t;
             if(isSymbolA && isSymbolB) {
@@ -1646,7 +1683,8 @@ var nerdamer = (function() {
             }
             return symbol2;
         };
-
+        
+        //gets called when the parser finds the - operator. Not the prefix operator.
         this.subtract = function( symbol1, symbol2) { 
             var isSymbolA = isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2), t;
             
@@ -1677,6 +1715,7 @@ var nerdamer = (function() {
             return symbol2;
         };
 
+        //gets called when the parser finds the * operator. 
         this.multiply = function(symbol1, symbol2) { 
             var isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2), t;
             
@@ -1897,6 +1936,7 @@ var nerdamer = (function() {
             return symbol2;
         };
         
+        //gets called when the parser finds a / operator. 
         this.divide = function(symbol1, symbol2) {
             var isSymbolA = isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2), t;
             
@@ -1958,6 +1998,7 @@ var nerdamer = (function() {
             return symbol2;
         };
 
+        //gets called when the parser finds the ^ operator. 
         this.pow = function(symbol1,symbol2) {
             var isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2);
             
@@ -2096,6 +2137,7 @@ var nerdamer = (function() {
                 
         };
         
+        //gets called when the parser finds the , operator. 
         this.comma = function(a, b) { 
             if(a instanceof Array) a.push(b);
             else a = [a,b];
@@ -2104,6 +2146,7 @@ var nerdamer = (function() {
     };
     
     /* "STATIC" */
+    //converts a number to a fraction. 
     var Fraction = {
         convert: function( value, opts ) {
             var frac;
@@ -2169,16 +2212,13 @@ var nerdamer = (function() {
     };
 
     //Depends on Fraction
+    //The latex generator
     var Latex = {
         space: '~',
         latex: function(obj, abs, group, addParens) {
             abs = abs || false;
+            group = group || obj.group; 
             
-            try {
-                group = group || obj.group; 
-            }
-            catch(e){console.log(console.trace())}
-
             var output = '',
                 inBraces = this.inBraces, 
                 value;
@@ -3013,6 +3053,8 @@ var nerdamer = (function() {
     /* END FINALIZE */
 
     /* BUILD CORE */
+    //This contains all the parts of nerdamer and enables nerdamer's internal functions
+    //to be used.
     var C = {};
     C.groups = Groups;
     C.Symbol = Symbol;
