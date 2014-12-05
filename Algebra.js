@@ -2,7 +2,7 @@
 * Author : Martin Donk
 * Website : http://www.nerdamer.com
 * Email : martin.r.donk@gmail.com
-* License : http://opensource.org/licenses/LGPL-3.0
+* License : MIT
 * Source : https://github.com/jiggzson/nerdamer
 */
 
@@ -11,7 +11,7 @@
         _ = core.PARSER,
         keys = core.Utils.keys,
         text = core.Utils.text,
-        remove = core.Utils.remove,
+        build = core.Utils.build,
         Symbol = core.Symbol,
         S = core.groups.S,
         round = core.Utils.round,
@@ -20,21 +20,27 @@
         variables = core.Utils.variables,
         isComposite = core.Utils.isComposite,
         isSymbol = core.Utils.isSymbol,
+        N = core.groups.N,
+        EX = core.groups.EX,
+        FN = core.groups.FN,
         PL = core.groups.PL,
-        CP = core.groups.CP;
+        CP = core.groups.CP,
+        CB = core.groups.CB,
+        Vector = core.Vector;
     
     var __ = core.Algebra = {
         /*
         * proots is Mr. David Binner's javascript port of the Jenkins-Traub algorithm.
         * The original source code can be found here http://www.akiti.ca/PolyRootRe.html.
         */  
+        version: '1.1.2',
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
             //if this causes trouble you can explicitly pass in a different number of places
             decp = decp || 7;
             var zeros = 0;
-            if(symbol instanceof Symbol && symbol.isPoly()) { 
-                if(symbol.group === core.groups.S) {
+            if(symbol instanceof Symbol && symbol.isPoly(true)) { 
+                if(symbol.group === core.groups.S) { 
                     return [0];
                 }
                 else if(symbol.group === core.groups.PL) { 
@@ -78,6 +84,8 @@
                 }
 
                 rarr.push(symbol.symbols['#'].multiplier);
+                
+                if(sym.group === S) rarr[0] = sym.multiplier;//the symbol maybe of group CP with one variable
 
                 // Make a copy of the coefficients before appending the max power
                 var p = rarr.slice(0);
@@ -821,6 +829,36 @@
                 return zeror;
             } 
          },
+        froot: function(f, guess, dx) { 
+            var newtonraph = function(xn) {
+                var mesh = 1e-12,
+                    // If the derivative was already provided then don't recalculate.
+                    df = dx ? dx : build(core.Calculus.diff(f.copy())),
+                    
+                    // If the function was passed in as a function then don't recalculate.
+                    fn = f instanceof Function ? f : build(f),
+                    max = 10000,
+                    done = false, 
+                    safety = 0;
+                while( !done ) { 
+                    var x = xn-(fn(xn)/df(xn));
+                    //absolute values for both x & xn ensures that we indeed have the radius    
+                    var r = Math.abs(x) - Math.abs(xn),
+                        delta = Math.abs(r);
+                    xn = x; 
+
+                    if( delta < mesh ) done = true;
+                    else if( safety > max ) {
+                        xn = null;
+                        done = true;
+                    }
+                    
+                    safety++;
+                }
+                return xn;
+            };
+            return newtonraph( Number( guess ) );
+        },
         factor: function(symbol) {
             var retval = symbol,
                 group = symbol.group,
@@ -1041,7 +1079,7 @@
             if(!symbol.isPoly()) throw new Error('Polynomial Expected! Received '+core.Utils.text(symbol));
             var c = [];
                 if(Math.abs(symbol.power) !== 1) symbol = core.Algebra.expand(symbol);
-
+e.symbols[s].group
                 if(symbol.group === core.groups.N) {c.push([symbol.multiplier, 0]); }
                 else if(symbol.group === core.groups.S) { c.push([symbol.multiplier, symbol.power]); }
                 else {
@@ -1139,7 +1177,7 @@
         },
         polydiv: function(symbol, asArray) { 
             //A numerator and a denominator is expected. The symbol must therefore be of group CB
-            if(symbol.group === core.groups.CB) {
+            if(symbol.group === CB) {
                 var symbols = symbol.collectSymbols(),
                     n = symbols.length,
                     variable = core.Utils.variables(symbol)[0],   
@@ -1237,7 +1275,7 @@
             var coeff_gcd = core.Math2.GCD.apply(undefined, __.polyArrayCoeffs(retval))/gcd;
 
             if(coeff_gcd !== 1) {
-                for(i=0; i<l; i++) { retval[i][0] /= coeff_gcd; }
+                for(var i=0; i<l; i++) { retval[i][0] /= coeff_gcd; }
             }
 
             return retval;
@@ -1253,9 +1291,179 @@
                 p1 = polyArrayGCD(__.polyfill(p1),p2 = __.polyfill(p2));
             }
             return p1;
+        },
+        //assumes you've already verified that it's a polynomial
+        polyPowers: function(e) {
+            var g = g = e.group, powers = []; 
+            if(g ===  PL) powers = keys(e.symbols);
+            else if(g === CP) { 
+                for(var s in e.symbols) {
+                    var p = e.symbols[s].power;
+                    powers.push(!p ? 0 : p);
+                }
+            }
+            return powers;
+        },
+        allLinear: function(set) {
+            l = set.length;
+            for(var i=0; i<l; i++) if(!__.isLinear(set[i])) return false;
+            return true;
+        },
+        isLinear: function(e) {
+            var status = false, g = e.group;
+            if(g === PL || g === CP) {
+                status = true;
+                for(var s in e.symbols) {
+                    var symbol = e.symbols[s], sg = symbol.group;
+                    if(sg === FN || sg === EX || sg === CB) { status = false;}
+                    else {
+                        if(sg === PL || sg === CP) status = __.isLinear(symbol);
+                        else {
+                            if(symbol.group !== N && symbol.power !== 1) { status = false; break; }
+                        }
+                    }
+                }
+            }
+            else if(g === S && e.power === 1) status = true;
+            return status;
+        },
+        /**
+         * Requires diff to be loaded
+         * @returns {Vector}
+         */
+        solve: function() { 
+            var retval = new Vector(),//the result vector to be returned
+                add_to_result = function(r){ 
+                    if(r.valueOf() !== 'null') retval.elements.push(r);
+                };
+        
+            if(!core.Calculus) core.err('solve needs the Calculus add-on!.');
+            
+            var args = [].slice.call(arguments),
+                wrt = args.pop();
+            if(isSymbol(wrt)) wrt = wrt.text();
+            var l = args.length, 
+                same_sign = core.Utils.sameSign;
+
+            //if the second equation is zero or if only one is provided then we assume the second to be 0
+            if(l === 1 || l === 2 && args[1].valueOf() === 0) { 
+                var symbol = args[0];
+                //single argument check if symbol is polynomial
+                //if yes then return parse it into Symbols and return it in vector form
+
+                if(symbol.isPoly(true)) { 
+                    retval = new Vector(__.proots(symbol).map(function(x) {
+                        return _.parse(x.toString());
+                    }));
+                }
+                else {              
+                    var vars = variables(symbol);
+                    if(vars.length === 1) {
+                        if(vars.indexOf(wrt) !== -1) { 
+                            //first we compile a machine function to gain a boost in speed
+                            var f = core.Utils.build(symbol);
+
+                            //we're going to use trial and error to generate two points for Newton's method
+                            //these to point should have opposite signs. 
+                            //we start at 0 just because and check the sign
+                            var starting_point, guess = 0;
+
+                            do {
+                                starting_point =  f(guess); //we want a real starting point
+                                guess++;
+                                if(guess > 100) break;//safety
+                            }
+                            while(!isFinite(starting_point))
+
+                            if(starting_point === 0) retval = add_to_result(new Symbol(starting_point));//we're done
+                            else {
+                                var df = build(core.Calculus.diff(symbol.copy())), ls;
+
+                                //get two points so we can get the slope of the function
+                                for(var i=0; i<10; i++) {
+                                    var c = df(i);
+                                    if(!isNaN(ls) && !isNaN(c)) break;
+                                    ls = c;
+                                }
+
+                                var direction = 1, 
+                                    slope = ls-c;
+
+                                //we want to make sure that we search for a number in the opposite direction
+                                if(same_sign(slope, starting_point)) {
+                                    direction = -1;
+                                }
+
+                                var search_for_solution_at = function(start) { 
+                                    var end = 0, point;
+                                    //we want a number with an opposite sign
+                                    for(var i=start; i<start+100; i++) {
+                                        var next_point = f(i)*direction,
+                                            r = Math.abs(0 - next_point);//get the distance to zero
+
+                                        if(r > 1) next_point *= r;//increase the search radius
+
+                                        if(next_point === 0 || !same_sign(next_point, end)) {
+                                            point = next_point === start ? next_point : (start+end)/2; 
+                                            break;
+                                        }
+
+                                        end = next_point; 
+                                    }
+
+                                    if(point !== undefined) add_to_result(_.parse(core.Algebra.froot(symbol, point)));
+                                }
+
+                                search_for_solution_at(starting_point); //check 1 side  
+                                search_for_solution_at(-starting_point);//check the other
+                            }
+                        }
+                    }
+                    else {
+                        if(__.isLinear(symbol)){ 
+                            //rolling up sleaves. We're gonna do this one manually boys
+                            var div = symbol.symbols[wrt].copy(),
+                                m = new Symbol(div.multiplier).negate();
+                            add_to_result(_.divide(_.subtract(symbol, div), m));
+                        }
+                    }   
+                }
+            }
+            else {
+                if(__.allLinear(args)) { 
+                    var r = __.sys_solve.apply(__, args);
+                    return r;
+                }
+            }
+
+            return retval;
+        },
+        sys_solve: function() {
+            var args = [].slice.call(arguments);
+            
+            var vars = variables(args[0]), m = new core.Matrix(),
+                c = new core.Matrix(),
+                l = args.length; 
+            //get all variables
+            for(var i=1; i<l; i++) { vars = vars.concat(variables(args[i])); }
+            vars = core.Utils.arrayUnique(vars).sort();
+
+            for(var i=0; i<l; i++) {
+                var e = args[i]; //store the expression
+                for(var j=0; j<l; j++) {     
+                    var variable = e.symbols[vars[j]];
+                    m.set(i, j, variable ? variable.multiplier : 0);
+                }
+                var num = e.symbols['#']; 
+                c.set(i, 0, new Symbol(num ? -num.multiplier : 0));
+            }
+
+            m = m.invert();
+            
+            return m.multiply(c);
         }
     };
-    
+
     nerdamer.register([
         {
             /*
@@ -1278,7 +1486,6 @@
             name: 'expand',
             visible: true,
             numargs: 1,
-            warnings: 'unoptimized, slow',
             build: function() { return __.expand; }
         },
         {
@@ -1286,8 +1493,15 @@
             visible: true,
             numargs: -1,
             build: function() { return __.polyGCD; }
+        },
+        {
+            name: 'solve',
+            visible: true,
+            numargs: [2,101],
+            build: function() { return __.solve; }
         }
     ]);
 })();
+
 
 
