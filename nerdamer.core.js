@@ -195,8 +195,11 @@ var nerdamer = (function() {
                 if(group === CP || group === CB || prevgroup === CP || prevgroup === CB) {
                     for(var x in obj.symbols) variables(obj.symbols[x], vars);
                 }
-                else if(group === S || group === PL) {
+                else if(group === S) {
                     vars.add(obj.value);
+                }
+                else if(group === PL) {
+                    variables(firstObject(obj.symbols), vars);
                 }
                 else if(group === EX) { 
                     if(!isNaN(obj.value)) vars.add(obj.value);
@@ -453,6 +456,12 @@ var nerdamer = (function() {
 
             return sign+multiplier+value+power;
         }
+        else if(isVector(obj)) { 
+            var l = obj.elements.length,
+                c = [];
+            for(var i=0; i<l; i++) c.push(obj.elements[i].text());
+            return '['+c.join(',')+']';
+        }
         else {
             return obj.toString();
         }
@@ -557,6 +566,7 @@ var nerdamer = (function() {
             return this.symbol.isPoly();
         }
     };
+    
     /**
      * Primary data type for the Parser
      * @param {String} obj 
@@ -605,7 +615,7 @@ var nerdamer = (function() {
         },
         //Symbols are grouped using a custom schema. This checks if the symbol
         //qualifies as a polynomial
-        isPoly: function() {
+        isPoly: function(include_denom) { 
             var status = false;
             if( this.group === S && this.power > 0 || this.group === N) {
                 status = true;
@@ -620,9 +630,12 @@ var nerdamer = (function() {
                     status = this.symbols[k[1]].isPoly();
                 }
                 else if( this.group === PL ) { 
-                    status = true;
-                    for( var i=0; i<kl; i++ ) {
-                        if( k[i] < 0 ) { status = false; }
+                    //any random first object is fine since all member of PL are of the same type & group
+                    status = firstObject(this.symbols).group !== FN;
+                    if(!include_denom) {
+                        for( var i=0; i<kl; i++ ) {
+                            if( k[i] < 0 ) { status = false; }
+                        }
                     }
                 }
             }
@@ -948,6 +961,12 @@ var nerdamer = (function() {
         }
     };
     
+    function Equation(equation1, equation2) {
+        this.e1 = equation1;
+        this.e2 = equation2;
+    }
+    
+    
     function Operator(val, fn, precedence, left_assoc, is_prefix, is_postfix) {
         this.val = val;
         this.fn = fn;
@@ -1142,7 +1161,7 @@ var nerdamer = (function() {
             //Since variables cannot start with a number, the assumption is made that when this occurs the
             //user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
             //a side-by-side close and open parenthesis
-            expression_string = expression_string.split(' ').join('')//strip empty spaces
+            expression_string = String(expression_string).split(' ').join('')//strip empty spaces
                     .replace(/\d*\.*\d+e[\+\-]*\d+/gi, function(match, start, str) {
                         if(/[a-z_]/.test(str.charAt(start-1))) return match;
                         scientific_numbers.push(match);
@@ -1226,10 +1245,13 @@ var nerdamer = (function() {
                             var lios = last_item_on(stack);
                             if(isVector(loi)) {
                                 if(!lios || lios.val !== ',') {
-                                    if(token.elements.length > 1) err('Incorrect number of indices!');
+                                    if(token.elements.length > 2) err('Incorrect number of indices!');
                                     //swap the last item on output with the indexed element
                                     output.pop();
-                                    token = (loi.elements[token.elements[0]-1]); //make 1 the first index
+                                    var start = token.elements[0]-1;
+                                    var end = token.elements[1];
+                                    if(end !== undefined) token = new Vector(loi.elements.slice(start, end));
+                                    else token = (loi.elements[start]); //make 1 the first index
                                     if(!token) err('Index out of range!');
                                 }
                             }
@@ -2470,9 +2492,10 @@ var nerdamer = (function() {
         }
     };
     
-    function Vector(v) {
+    function Vector(v) { 
         if(isVector(v)) this.elements = v.items.slice(0);
-        else this.elements = v || [];
+        else if(isArray(v)) this.elements = v.slice(0);
+        else this.elements = [].slice.call(arguments);
     }
     
     Vector.arrayPrefill = function(n, val) {
@@ -2489,7 +2512,11 @@ var nerdamer = (function() {
         e: function(i) {
             return (i < 1 || i > this.elements.length) ? null : this.elements[i-1];
         },
-
+        
+        set: function(i, val) {
+            this.elements[i] = new Symbol(val);
+        },
+        
         // Returns the number of elements the vector has
         dimensions: function() {
             return this.elements.length;
@@ -2666,10 +2693,7 @@ var nerdamer = (function() {
             return index;
         },
         text: function(x) {
-            var l = this.elements.length,
-                c = [];
-            for(var i=0; i<l; i++) c.push(this.elements[i].text());
-            return '['+c.join(',')+']';
+            return text(this);
         },
         toString: function() {
             return this.text();
@@ -2738,7 +2762,8 @@ var nerdamer = (function() {
         //needs be true to let the parser know not to try to cast it to a symbol
         custom: true, 
         set: function(row, column, value) {
-            this.elements[row][column] = value;
+            if(!this.elements[row]) this.elements[row] = [];
+            this.elements[row][column] = new Symbol(value);
         },
         cols: function() {
             return this.elements[0].length;
@@ -3060,6 +3085,7 @@ var nerdamer = (function() {
     C.Symbol = Symbol;
     C.Expression = Expression;
     C.Vector = Vector;
+    C.Matrix = Matrix;
     C.Parser = Parser;
     C.Fraction = Fraction;
     C.Math2 = Math2;
@@ -3069,6 +3095,7 @@ var nerdamer = (function() {
     C.PARENTHESIS = PARENTHESIS;
     C.Settings = Settings;
     C.VARS = VARS;
+    C.err = err;
     /* END BUILD CORE */
     
     /* EXPORTS */
