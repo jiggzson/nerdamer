@@ -7,10 +7,10 @@
 */
 
 (function() {
+    /*imports*/
     var core = nerdamer.getCore(),
         _ = core.PARSER,
         keys = core.Utils.keys,
-        text = core.Utils.text,
         build = core.Utils.build,
         Symbol = core.Symbol,
         S = core.groups.S,
@@ -20,6 +20,7 @@
         variables = core.Utils.variables,
         isComposite = core.Utils.isComposite,
         isSymbol = core.Utils.isSymbol,
+        isVector = core.Utils.isVector,
         N = core.groups.N,
         EX = core.groups.EX,
         FN = core.groups.FN,
@@ -33,7 +34,7 @@
         * proots is Mr. David Binner's javascript port of the Jenkins-Traub algorithm.
         * The original source code can be found here http://www.akiti.ca/PolyRootRe.html.
         */  
-        version: '1.1.2',
+        version: '1.1.0',
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
             //if this causes trouble you can explicitly pass in a different number of places
@@ -1079,7 +1080,7 @@
             if(!symbol.isPoly()) throw new Error('Polynomial Expected! Received '+core.Utils.text(symbol));
             var c = [];
                 if(Math.abs(symbol.power) !== 1) symbol = core.Algebra.expand(symbol);
-e.symbols[s].group
+
                 if(symbol.group === core.groups.N) {c.push([symbol.multiplier, 0]); }
                 else if(symbol.group === core.groups.S) { c.push([symbol.multiplier, symbol.power]); }
                 else {
@@ -1293,19 +1294,29 @@ e.symbols[s].group
             return p1;
         },
         //assumes you've already verified that it's a polynomial
-        polyPowers: function(e) {
-            var g = g = e.group, powers = []; 
-            if(g ===  PL) powers = keys(e.symbols);
+        polyPowers: function(e, for_variable, powers) { 
+            powers = powers || [];
+            var g = g = e.group; 
+            if(g ===  PL && for_variable === e.value) {
+                powers = powers.concat(keys(e.symbols)); 
+            }
             else if(g === CP) { 
                 for(var s in e.symbols) {
-                    var p = e.symbols[s].power;
-                    powers.push(!p ? 0 : p);
+                    var symbol = e.symbols[s]; 
+                    var g = symbol.group, v = symbol.value; 
+                    if(g === S && for_variable === v) powers.push(symbol.power);
+                    else if(g === PL || g === CP) powers = __.polyPowers(symbol, for_variable, powers);
+                    else if(g === CB && symbol.contains(for_variable)) {
+                        var t = symbol.symbols[for_variable];
+                        if(t) powers.push((t.power));
+                    }
+                    else if(g === N || for_variable !== v) powers.push(0);
                 }
             }
-            return powers;
+            return core.Utils.arrayUnique(powers).sort();
         },
         allLinear: function(set) {
-            l = set.length;
+            var l = set.length;
             for(var i=0; i<l; i++) if(!__.isLinear(set[i])) return false;
             return true;
         },
@@ -1326,117 +1337,6 @@ e.symbols[s].group
             }
             else if(g === S && e.power === 1) status = true;
             return status;
-        },
-        /**
-         * Requires diff to be loaded
-         * @returns {Vector}
-         */
-        solve: function() { 
-            var retval = new Vector(),//the result vector to be returned
-                add_to_result = function(r){ 
-                    if(r.valueOf() !== 'null') retval.elements.push(r);
-                };
-        
-            if(!core.Calculus) core.err('solve needs the Calculus add-on!.');
-            
-            var args = [].slice.call(arguments),
-                wrt = args.pop();
-            if(isSymbol(wrt)) wrt = wrt.text();
-            var l = args.length, 
-                same_sign = core.Utils.sameSign;
-
-            //if the second equation is zero or if only one is provided then we assume the second to be 0
-            if(l === 1 || l === 2 && args[1].valueOf() === 0) { 
-                var symbol = args[0];
-                //single argument check if symbol is polynomial
-                //if yes then return parse it into Symbols and return it in vector form
-
-                if(symbol.isPoly(true)) { 
-                    retval = new Vector(__.proots(symbol).map(function(x) {
-                        return _.parse(x.toString());
-                    }));
-                }
-                else {              
-                    var vars = variables(symbol);
-                    if(vars.length === 1) {
-                        if(vars.indexOf(wrt) !== -1) { 
-                            //first we compile a machine function to gain a boost in speed
-                            var f = core.Utils.build(symbol);
-
-                            //we're going to use trial and error to generate two points for Newton's method
-                            //these to point should have opposite signs. 
-                            //we start at 0 just because and check the sign
-                            var starting_point, guess = 0;
-
-                            do {
-                                starting_point =  f(guess); //we want a real starting point
-                                guess++;
-                                if(guess > 100) break;//safety
-                            }
-                            while(!isFinite(starting_point))
-
-                            if(starting_point === 0) retval = add_to_result(new Symbol(starting_point));//we're done
-                            else {
-                                var df = build(core.Calculus.diff(symbol.copy())), ls;
-
-                                //get two points so we can get the slope of the function
-                                for(var i=0; i<10; i++) {
-                                    var c = df(i);
-                                    if(!isNaN(ls) && !isNaN(c)) break;
-                                    ls = c;
-                                }
-
-                                var direction = 1, 
-                                    slope = ls-c;
-
-                                //we want to make sure that we search for a number in the opposite direction
-                                if(same_sign(slope, starting_point)) {
-                                    direction = -1;
-                                }
-
-                                var search_for_solution_at = function(start) { 
-                                    var end = 0, point;
-                                    //we want a number with an opposite sign
-                                    for(var i=start; i<start+100; i++) {
-                                        var next_point = f(i)*direction,
-                                            r = Math.abs(0 - next_point);//get the distance to zero
-
-                                        if(r > 1) next_point *= r;//increase the search radius
-
-                                        if(next_point === 0 || !same_sign(next_point, end)) {
-                                            point = next_point === start ? next_point : (start+end)/2; 
-                                            break;
-                                        }
-
-                                        end = next_point; 
-                                    }
-
-                                    if(point !== undefined) add_to_result(_.parse(core.Algebra.froot(symbol, point)));
-                                }
-
-                                search_for_solution_at(starting_point); //check 1 side  
-                                search_for_solution_at(-starting_point);//check the other
-                            }
-                        }
-                    }
-                    else {
-                        if(__.isLinear(symbol)){ 
-                            //rolling up sleaves. We're gonna do this one manually boys
-                            var div = symbol.symbols[wrt].copy(),
-                                m = new Symbol(div.multiplier).negate();
-                            add_to_result(_.divide(_.subtract(symbol, div), m));
-                        }
-                    }   
-                }
-            }
-            else {
-                if(__.allLinear(args)) { 
-                    var r = __.sys_solve.apply(__, args);
-                    return r;
-                }
-            }
-
-            return retval;
         },
         sys_solve: function() {
             var args = [].slice.call(arguments);
@@ -1493,15 +1393,6 @@ e.symbols[s].group
             visible: true,
             numargs: -1,
             build: function() { return __.polyGCD; }
-        },
-        {
-            name: 'solve',
-            visible: true,
-            numargs: [2,101],
-            build: function() { return __.solve; }
         }
     ]);
 })();
-
-
-
