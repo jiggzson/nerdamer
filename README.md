@@ -314,7 +314,34 @@ The order in which the variables appear require a little bit of knowledge of how
 sake of simplicity we'll just assume that there is no particular order   
 
 ----------------------------------------------------------------------------------------------------------------------
+Using the solver
+===============
+To solve equations first load Solver.js
+You can then solve equations using nerdamer. For example
+```javascript
+var sol = nerdamer.solveEquations('x^3+8=x^2+6','x');
+console.log(sol.toString());
+//1+1.000000000000001*i,-1.000000000000001*i+1,-1
+```
 
+Notice that we use toString rather than text as this returns a javascript array.
+
+You can also solve multivariate equations
+```javascript
+var sol = nerdamer.solveEquations('x^2+8+y=x+6','x');
+console.log(sol.toString());
+//0.5*((-4*y-7)^0.5+1),0.5*(-(-4*y-7)^0.5+1)
+```
+You can do up to 3rd order polynomials for multivariate polynomials
+
+Additionally you can try for equations containing functions. This is more of a hit or miss approach but it's there if you want to give it a try
+
+```javascript
+var sol = nerdamer.solveEquations('cos(x)+cos(3*x)=1','x');
+console.log(sol.toString());
+//5.7981235959208695,0.4850617112587174
+```
+If no solutions could be found then the array will be empty
 
 The Core
 ========
