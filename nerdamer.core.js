@@ -2,7 +2,6 @@
  * Author : Martin Donk
  * Website : http://www.nerdamer.com
  * Email : martin.r.donk@gmail.com
- * License : http://opensource.org/licenses/LGPL-3.0
  * Source : https://github.com/jiggzson/nerdamer
  */
 
@@ -615,7 +614,7 @@ var nerdamer = (function() {
         },
         //Symbols are grouped using a custom schema. This checks if the symbol
         //qualifies as a polynomial
-        isPoly: function(include_denom) { 
+        isPoly: function(include_denom, multivariate) { 
             var status = false;
             if( this.group === S && this.power > 0 || this.group === N) {
                 status = true;
@@ -627,15 +626,26 @@ var nerdamer = (function() {
                  //1. numbers are represented by an underscore
                  //2. variable and function names must start with a letter
                 if(kl === 2 && k[0] === '#') { 
-                    status = this.symbols[k[1]].isPoly();
+                    status = this.symbols[k[1]].isPoly(include_denom, multivariate);
+                }
+                else if(this.group === CP && multivariate) { 
+                    status = true;
+                    for(var x in this.symbols) {
+                        var s = this.symbols[x], g = s.group; 
+                        if(g === FN || g === EX) { status = false; }
+                        else if(g === PL ||g === CP) { status = s.isPoly(include_denom, multivariate); }
+                        if(!status) break;
+                    }
+                    
                 }
                 else if( this.group === PL ) { 
+                    status = true;
                     //any random first object is fine since all member of PL are of the same type & group
-                    status = firstObject(this.symbols).group !== FN;
-                    if(!include_denom) {
-                        for( var i=0; i<kl; i++ ) {
-                            if( k[i] < 0 ) { status = false; }
-                        }
+                    for( var i=0; i<kl; i++ ) {
+                        var p = k[i];
+                        status = !isNaN(p);
+                        if(!include_denom) status = !(p < 0);
+                        if(!status) break;
                     }
                 }
             }
@@ -2088,12 +2098,14 @@ var nerdamer = (function() {
                                     }
                                     symbol1.multiplier = m;
                                 }
+                                
                                 if(powEven && isRadical && !even(symbol1.power)) {
                                     //we have to wrap the symbol in the abs function to preserve the absolute value
                                     var p = symbol1.power; //save the power
                                     symbol1.power = 1;
                                     symbol1 = _.symfunction(ABS,[symbol1]);
                                     symbol1.power = p;
+                                    
                                 }
 
                                 //Attempt to unwrap abs
@@ -2110,7 +2122,7 @@ var nerdamer = (function() {
                         }
                     }
                     //distribute the power for the CB class
-                    if(group1 === CB) { 
+                    if(symbol1.group === CB) { 
                         var p = symbol1.power;
                         for(var x in symbol1.symbols) { symbol1.symbols[x].power *= p; }
                         symbol1.power = 1;
@@ -2964,6 +2976,14 @@ var nerdamer = (function() {
                 return Matrix.fromArray(elements);
             }, undefined, this);
         },
+        toVector: function() {
+            if(this.rows () === 1 || this.cols() === 1) {
+                var v = new Vector();
+                v.elements = this.elements;
+                return v;
+            }
+            return this;
+        },
         toString: function(newline) {
             var l = this.rows(),
                 s = [];
@@ -3255,8 +3275,10 @@ var nerdamer = (function() {
                 fn = obj.build.call(core); //call constructor to get function
             if(parent_obj) {
                 if(!core[parent_obj]) core[obj.parent] = {};
+                
+                var ref_obj = parent_obj === 'nerdamer' ? this : core[parent_obj];
                 //attach the function to the core
-                core[parent_obj][obj.name] = fn;
+                ref_obj[obj.name] = fn;
             }
             if(obj.visible) _.functions[obj.name] = [fn, obj.numargs]; //make the function available
         } 
@@ -3315,3 +3337,4 @@ var nerdamer = (function() {
     
     return libExports; //Done
 })();
+
