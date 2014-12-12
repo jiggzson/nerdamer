@@ -12,7 +12,7 @@ var nerdamer = (function() {
         Groups = {},
         
         //this is the class which holds the utilities which are exported to the core
-        //All utility functions which will be available to the core should be added to this object
+        //All utility functions which are to be made available to the core should be added to this object
         Utils = {},
         
         //Settings
@@ -24,9 +24,9 @@ var nerdamer = (function() {
             SAFE: false
         },
 
-        //Add the groups. These have been reorganized in v0.5.1 to make CP the highest group
+        //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
         //The groups that help with organizing during parsing. Note that for FN is still a function even 
-        //when raised to a symbol which typically results in an EX
+        //when it's raised to a symbol, which typically results in an EX
         N   = Groups.N  = 1, // A number
         S   = Groups.S  = 2, // A single variable e.g. x. I refrain from using monomial to avoid confusion
         EX  = Groups.EX = 3, // A symbol/expression with an exponent that is not a number e.g. x^y
@@ -66,7 +66,7 @@ var nerdamer = (function() {
         },
         
         // Enforces rule: must start with a letter or underscore and can have any 
-        // number of underscores, letters, and numbers after.
+        // number of underscores, letters, and numbers thereafter.
         validateName = Utils.validateName = function(name, typ) { 
             typ = typ || 'variable';
             var regex = /^[a-z_][a-z\d\_]*$/gi;
@@ -123,7 +123,7 @@ var nerdamer = (function() {
             return str.substr(0, from)+with_str+str.substr(to, str.length);
         },
         
-        //the Parser uses this to check if it should convert the obj to type Symbol
+        //the Parser uses this to check if it's allowed to convert the obj to type Symbol
         customType = Utils.customType = function(obj) {
             return obj !== undefined && obj.custom;
         },
@@ -147,7 +147,8 @@ var nerdamer = (function() {
             return k;
         },
         
-        // Items do not have a fixed order in objects so only use if you need any first random item in the object
+        // Items do not have a fixed order in objects so only use if you need any first random 
+        //item in the object
         firstObject = Utils.firstObject = function(obj) {
             for( var x in obj ) break;
             return obj[x];
@@ -258,8 +259,8 @@ var nerdamer = (function() {
         },
         
         // Removes an item from either an array or an object.
-        // If an array the index must be specified after the array.
-        // If an object the key must be specified
+        // If the object is an array, the index must be specified after the array.
+        // If it's an object then the key must be specified
         remove = Utils.remove = function( obj, indexOrKey ) {
             var result;
             if( isArray(obj) ) {
@@ -369,7 +370,7 @@ var nerdamer = (function() {
     /* GLOBAL FUNCTIONS */
     /**
      * This method will return a hash or a text representation of a Symbol, Matrix, or Vector. 
-     * If all else fails it return *assumes* the object has a toString method and will call that.
+     * If all else fails it *assumes* the object has a toString method and will call that.
      * 
      * @param {Object} obj
      * @param {String} option get is as a hash 
@@ -444,7 +445,7 @@ var nerdamer = (function() {
                     break;
             }
 
-            //the following groups are held together by plus or minus. The can be raised to a power or multiplied
+            //the following groups are held together by plus or minus. They can be raised to a power or multiplied
             //by a multiplier and have to be in brackets to preserve the order of precedence
             if(((group === CP || group === PL) && (multiplier && multiplier !== 1 || sign === '-')) 
                     || ((group === CB || group === CP || group === PL) && (power && power !== 1))
@@ -488,7 +489,7 @@ var nerdamer = (function() {
     
     /** 
      * This is what nerdamer returns. If you want to provide the user with extra
-     * library function then modify this class.
+     * library functions then modify this class.
      * @param {Symbol} symbol
      * @returns {Expression} wraps around the Symbol class
      */
@@ -576,7 +577,7 @@ var nerdamer = (function() {
      * @returns {Symbol}
      */
     function Symbol(obj) { 
-        //this enables the class to be instanciated without the new operator
+        //this enables the class to be instantiated without the new operator
         if(!(this instanceof Symbol)) { return new Symbol(obj); };
         
         //define numeric symbols
@@ -819,7 +820,7 @@ var nerdamer = (function() {
         },
         insert: function(symbol, action) { 
             //this check can be removed but saves a lot of aggravation when trying to hunt down
-            //a bug. If left you will instantly know that the error can only be between 2 symbols.
+            //a bug. If left, you will instantly know that the error can only be between 2 symbols.
             if(!isSymbol(symbol)) err('Object '+symbol+' is not of type Symbol!');
             if(this.symbols) {
                 var group = this.group;
@@ -891,8 +892,8 @@ var nerdamer = (function() {
         combine: function(symbol) {
             this.insert(symbol, 'multiply');
         },
-        //this method should be called after any major surgery on a symbol
-        //it updates the has of the symbol e.g. if the baseName of a function
+        //this method should be called after any major "surgery" on a symbol
+        //it updates the hash of the symbol e.g. if the baseName of a function
         //is called it will update the hash with the new baseName
         updateHash: function() {
             if(this.group === FN) {
@@ -908,7 +909,7 @@ var nerdamer = (function() {
             }
         },
         //this function defines how every group in stored within a group of higher order
-        //think of it as the switchboard for nerdamer. It defines the hashes for symbols.
+        //think of it as the switchboard for the library. It defines the hashes for symbols.
         keyForGroup: function(group) {
             var g = this.group;
             if(g === N) {
@@ -1006,7 +1007,7 @@ var nerdamer = (function() {
         }
     };
 
-    //Uses modified shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
+    //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
         var _ = this,
             bin = {},
@@ -1099,7 +1100,7 @@ var nerdamer = (function() {
             }
         };
         
-        //generates nerdamer's representation of a function. It's a fancy way of saying a symbol with 
+        //generates library's representation of a function. It's a fancy way of saying a symbol with 
         //a few extras. The most important thing is that that it gives a baseName and 
         //an args property to the symbols in addition to changing its group to FN
         this.symfunction = function(fn_name, params) { 
@@ -1244,7 +1245,8 @@ var nerdamer = (function() {
                     }
                     
                     //when two operators are close to each other then the token will be empty or when we've gone
-                    //out of range inside of the output or stack. We have to make sure the token even exists before entering.
+                    //out of range inside of the output or stack. We have to make sure the token even exists 
+                    //before entering.
                     if(token !== '' && token !== undefined) { 
                         //this could be function parameters or a vector
                         if(!(token instanceof Array)) { 
@@ -1305,13 +1307,13 @@ var nerdamer = (function() {
                     bracket = brackets[cur_char]; //a possible bracket
                 //if the character is a bracket or an operator but not a scientific number
                 if(operator || bracket) {
-                    //if an operator is found then we assume that the preceeding is a variable
+                    //if an operator is found then we assume that the preceeding is a variable.
                     //the token has to be from the last position up to the current position
                     var token = expression_string.substring(pos,curpos); 
 
                     if(bracket === LEFT_PAREN && token || bracket === LEFT_SQUARE_BRACKET) {
-
-                        if(bracket === LEFT_SQUARE_BRACKET && token) insert(token);//make sure you insert the variables
+                        //make sure you insert the variables
+                        if(bracket === LEFT_SQUARE_BRACKET && token) insert(token);
                         
                         var f = bracket === LEFT_SQUARE_BRACKET ? VECTOR : token;
                         stack.push(new Func(f), LEFT_PAREN);
@@ -1334,12 +1336,13 @@ var nerdamer = (function() {
                         }
                         err(operator.val+' is not a valid prefix operator!:'+pos); 
                     }
-                    
-                    if(cur_char !== RIGHT_PAREN) last_opr_pos = curpos; //note that open brackets count as operators in this case
+                    //note that open brackets count as operators in this case
+                    if(cur_char !== RIGHT_PAREN) last_opr_pos = curpos; 
 
                     if(operator) { 
-                        //we may be at the first operator and last operator may be undefined in which case do nothing
-                        //other than recording the last operator and placing the operator on the stack.
+                        //we may be at the first operator, in which case the last operator may be undefined
+                        //If this is the case then do nothing other than record the last operator and 
+                        //place the operator on the stack.
                         if(last_operator) { 
                             if(operator.left_assoc && operator.precedence <= last_operator.precedence ||
                                     !operator.left_assoc && (operator.precedence < last_operator.precedence)) {
@@ -1413,7 +1416,7 @@ var nerdamer = (function() {
         };
 
         //FUNCTIONS
-        //although not a "real" function it is important in some cases when the 
+        //although parens is not a "real" function it is important in some cases when the 
         //symbol must carry parenthesis. Once set you don't have to worry about it anymore
         //as the parser will get rid of it at the first opportunity
         function parens(symbol) {
@@ -1492,7 +1495,7 @@ var nerdamer = (function() {
         
         //extended functions. Because functions like log aren't directly 
         //stored in an object, it's difficult to find out about them unless you know of them 
-        //outside the library. This serves as registry. That's all.
+        //outside of the library. This serves as registry. That's all.
         this.ext = {
             log: log,
             sqrt: sqrt,
@@ -1588,8 +1591,8 @@ var nerdamer = (function() {
                         }
                     }
                     else { 
-                        //we checkfor CB on the right or S on the left because we know that the lower group is always 
-                        //on the left. This is just an extra precaution
+                        //we check for CB on the right or S on the left because we know that the lower 
+                        //group is always on the left. This is just an extra precaution
                         symbol1.convert(PL);
                         symbol1.attach(symbol2);
                     }
@@ -2213,7 +2216,7 @@ var nerdamer = (function() {
             }
             return frac;
         },
-        // If the fraction is small or too large this gets called instead of 
+        // If the fraction is too small or too large this gets called instead of 
         // fullConversion method
         quickConversion: function( dec ) {
             var x = (dec.toExponential()+'').split('e');
@@ -3181,7 +3184,7 @@ var nerdamer = (function() {
     
     /**
      * 
-     * @param {String} constant the name of the constant to be set
+     * @param {String} constant The name of the constant to be set
      * @param {mixed} value The value of the constant 
      * @returns {Object} Returns the nerdamer object
      */
@@ -3201,9 +3204,9 @@ var nerdamer = (function() {
     
     /**
      * 
-     * @param {String} name the name of the function
-     * @param {Array} params_array a list containing the parameter name of the functions
-     * @param {String} body the body of the function
+     * @param {String} name The name of the function
+     * @param {Array} params_array A list containing the parameter name of the functions
+     * @param {String} body The body of the function
      * @returns {Boolean} returns true if succeeded and falls on fail
      * @example nerdamer.setFunction('f',['x'], 'x^2+2');
      */
@@ -3233,7 +3236,7 @@ var nerdamer = (function() {
     
     /**
      * 
-     * @param {Boolean} asArray The returned names are return as an array if this is set to true;
+     * @param {Boolean} asArray The returned names are returned as an array if this is set to true;
      * @returns {String|Array}
      */
     libExports.reserved = function(asArray) {
