@@ -119,6 +119,10 @@ var nerdamer = (function() {
             return '('+str+')';
         },
         
+        stringReplace = Utils.stringReplace = function(str, from, to, with_str) {
+            return str.substr(0, from)+with_str+str.substr(to, str.length);
+        },
+        
         //the Parser uses this to check if it should convert the obj to type Symbol
         customType = Utils.customType = function(obj) {
             return obj !== undefined && obj.custom;
@@ -951,6 +955,9 @@ var nerdamer = (function() {
                 collected.push( fn ? fn(symbol) : symbol );
             }
             return collected.sort();//sort hopefully gives us some sort of consistency
+        },
+        latex: function() {
+            return Latex.latex(this);
         },
         text: function() {
             return text(this);
@@ -2249,7 +2256,7 @@ var nerdamer = (function() {
     //The latex generator
     var Latex = {
         space: '~',
-        latex: function(obj, abs, group, addParens) {
+        latex: function(obj, abs, group, addParens) { 
             abs = abs || false;
             group = group || obj.group; 
             
@@ -2310,11 +2317,11 @@ var nerdamer = (function() {
 
                         output = this.renderSymbolLatex(obj, value, abs, obj.group === EX);
                         break;
-                    case CB:
+                    case CB: 
                         value = this.renderSubSymbolsLatex(obj, function(a,b) {
                             return a.group < b.group;
                         }, true, abs);
-
+                        
                         output = this.renderSymbolLatex(obj,value, abs);
                         break;
                     case EX:
@@ -2448,14 +2455,21 @@ var nerdamer = (function() {
             
             //if there's a power, the location where we attach it depends on the sign of the power.
             //if negative it's bottom, otherwise we attach it to the top.
-            var where  = isNegative(symbol.power) ? 1 : 0;
-                
-            if(multiplierArray[where] === 1) {
+            var where  = isNegative(symbol.power) ? 1 : 0,
+                valueIsFraction = /^\\frac/.test(value); 
+            if(multiplierArray[where] === 1) { 
+                var dn = multiplierArray[1];
+                if(valueIsFraction && dn && dn !== 1) {
+                    //TODO: needs a better way of getting denominator
+                    var v = betweenBrackets('{', '}', value, betweenBrackets('{', '}', value, 0)[2]+1);
+                    value = stringReplace(value, v[1], v[2], multiplierArray.pop()+this.space+v[0])   
+                }
+
                 multiplierArray[where] = value;
             }
             else {
                 //sub out the multipliers to the top and bottom
-                if(/^\\frac/.test(value)) {
+                if(valueIsFraction) { 
                     var start = 4;
                     for(var i=0; i<2; i++) {
                         var m0 = multiplierArray[i],
@@ -3337,4 +3351,3 @@ var nerdamer = (function() {
     
     return libExports; //Done
 })();
-
