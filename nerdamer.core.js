@@ -444,12 +444,12 @@ var nerdamer = (function() {
                     break;
             }
 
-
             //the following groups are held together by plus or minus. The can be raised to a power or multiplied
             //by a multiplier and have to be in brackets to preserve the order of precedence
-            if(((group === CP || group === PL) && (multiplier && multiplier !== 1)) 
+            if(((group === CP || group === PL) && (multiplier && multiplier !== 1 || sign === '-')) 
                     || ((group === CB || group === CP || group === PL) && (power && power !== 1))
                     || obj.baseName === PARENTHESIS) { 
+                
                 value = inBrackets(value);
             }
 
