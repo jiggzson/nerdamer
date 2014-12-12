@@ -334,7 +334,7 @@ console.log(sol.toString());
 ```
 You can do up to 3rd order polynomials for multivariate polynomials
 
-Additionally you can try for equations containing functions. This is more of a hit or miss approach but it's there if you want to give it a try
+Additionally you can try for equations containing functions. This is more of a hit or miss approach unlike single variable polynomials (which uses Mr. David Binner's Jenkins-Traub port - http://www.akiti.ca/PolyRootRe.html) but it's there if you want to give it a try.
 
 ```javascript
 var sol = nerdamer.solveEquations('cos(x)+cos(3*x)=1','x');
