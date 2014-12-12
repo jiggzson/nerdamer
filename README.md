@@ -316,8 +316,7 @@ sake of simplicity we'll just assume that there is no particular order
 ----------------------------------------------------------------------------------------------------------------------
 Using the solver
 ===============
-To solve equations first load Solver.js
-You can then solve equations using nerdamer. For example
+To solve equations first load Solve.js. Just remember that Solve also required Algebra.js and Calculus.js to be loaded. You can then solve equations using nerdamer. For example
 ```javascript
 var sol = nerdamer.solveEquations('x^3+8=x^2+6','x');
 console.log(sol.toString());
@@ -325,6 +324,13 @@ console.log(sol.toString());
 ```
 
 Notice that we use toString rather than text as this returns a javascript array.
+
+You can also solve an expression
+```javascript
+var e = nerdamer.solveEquations('x^2+4-y', 'y');
+console.log(e[0].text());
+//4+x^2
+```
 
 You can also solve multivariate equations
 ```javascript
