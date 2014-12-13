@@ -347,6 +347,13 @@ var sol = nerdamer.solveEquations('cos(x)+cos(3*x)=1','x');
 console.log(sol.toString());
 //5.7981235959208695,0.4850617112587174
 ```
+To solve a system of linear equations pass them in as an array. For example
+
+```javascript
+var sol = nerdamer.solveEquations(['x+y=1', '2*x=6', '4*z+y=6']);
+console.log(sol);
+//[ [ 'x', 3 ], [ 'y', -2 ], [ 'z', 2 ] ]
+```
 
 If no solutions could be found then the array will be empty
 
