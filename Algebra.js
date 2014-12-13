@@ -58,7 +58,7 @@
                 return roots;
             }
             else {
-                throw new Error('Cannot calculate roots. Symbol must be a polynomial!')
+                throw new Error('Cannot calculate roots. Symbol must be a polynomial!');
             }
 
             function calcroots(){	
@@ -1337,30 +1337,6 @@
             }
             else if(g === S && e.power === 1) status = true;
             return status;
-        },
-        sys_solve: function() {
-            var args = [].slice.call(arguments);
-            
-            var vars = variables(args[0]), m = new core.Matrix(),
-                c = new core.Matrix(),
-                l = args.length; 
-            //get all variables
-            for(var i=1; i<l; i++) { vars = vars.concat(variables(args[i])); }
-            vars = core.Utils.arrayUnique(vars).sort();
-
-            for(var i=0; i<l; i++) {
-                var e = args[i]; //store the expression
-                for(var j=0; j<l; j++) {     
-                    var variable = e.symbols[vars[j]];
-                    m.set(i, j, variable ? variable.multiplier : 0);
-                }
-                var num = e.symbols['#']; 
-                c.set(i, 0, new Symbol(num ? -num.multiplier : 0));
-            }
-
-            m = m.invert();
-            
-            return m.multiply(c);
         }
     };
 
