@@ -20,8 +20,16 @@
         variables = core.Utils.variables,
         isArray = core.Utils.isArray;
         
+    var make_equal_zero = function(eqn) {
+        var es = eqn.split('=');
+        if(es[1] === undefined) es[1] = '0';
+        var e1 = _.parse(es[0]), e2 = _.parse(es[1]);
+        return _.subtract(e1, e2);
+    };
+    
     var sys_solve = function(eqns) {
-        for(var i=0; i<eqns.length; i++) eqns[i] = _.parse(eqns[i]);
+        for(var i=0; i<eqns.length; i++) eqns[i] = make_equal_zero(eqns[i]);
+        
         if(!_A.allLinear(eqns)) core.err('System must contain all linear equations!');
         var vars = variables(eqns[0]), m = new core.Matrix(),
             c = new core.Matrix(),
@@ -150,15 +158,12 @@
                 search_for_solution_at(-starting_point);//check the other
             }
         };
-            
-        var es = eqns.split('=');
 
-        if(typeof es[1] === 'undefined') es[1] = '0';
 
-        var e1 = _.parse(es[0]), e2 = _.parse(es[1]),
-            eq = _.subtract(e1, e2),
+        var eq = make_equal_zero(eqns),
             vars = core.Utils.variables(eq),//get a list of all the variables
             numvars = vars.length;//how many variables are we dealing with
+            console.log(eq.text())
         //if we're dealing with a single variable then we first check if it's a 
         //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.
         if(numvars === 1) {
