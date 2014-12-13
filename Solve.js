@@ -163,7 +163,6 @@
         var eq = make_equal_zero(eqns),
             vars = core.Utils.variables(eq),//get a list of all the variables
             numvars = vars.length;//how many variables are we dealing with
-            console.log(eq.text())
         //if we're dealing with a single variable then we first check if it's a 
         //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.
         if(numvars === 1) {
