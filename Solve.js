@@ -17,7 +17,36 @@
         same_sign = core.Utils.sameSign,
         Symbol = core.Symbol,
         isSymbol = core.Utils.isSymbol,
+        variables = core.Utils.variables,
         isArray = core.Utils.isArray;
+        
+    var sys_solve = function(eqns) {
+        for(var i=0; i<eqns.length; i++) eqns[i] = _.parse(eqns[i]);
+        if(!_A.allLinear(eqns)) core.err('System must contain all linear equations!');
+        var vars = variables(eqns[0]), m = new core.Matrix(),
+            c = new core.Matrix(),
+            l = eqns.length; 
+        //get all variables
+        for(var i=1; i<l; i++) { vars = vars.concat(variables(eqns[i])); }
+        vars = core.Utils.arrayUnique(vars).sort();
+
+        for(var i=0; i<l; i++) {
+            var e = eqns[i]; //store the expression
+            for(var j=0; j<l; j++) {     
+                var variable = e.symbols[vars[j]];
+                m.set(i, j, variable ? variable.multiplier : 0);
+            }
+            var num = e.symbols['#']; 
+            c.set(i, 0, new Symbol(num ? -num.multiplier : 0));
+        }
+
+        m = m.invert();
+
+        var result = m.multiply(c);
+        var solutions = [];
+        result.each(function(e, idx) { solutions.push([vars[idx], e]); });
+        return solutions;
+    };
         
     var quad = function(a, b, c, plus_or_min) {
         var plus_or_minus = plus_or_min === '-' ? 'subtract': 'add';
@@ -49,11 +78,9 @@
             ];
     };
     
-    var solve = function() {
-        var args = [].slice.call(arguments),
-            solve_for = args.pop(),
-            solutions = [],
-            numeqs = args.length,
+    var solve = function(eqns, solve_for) {
+        if(isArray(eqns)) return sys_solve.apply(undefined, arguments);
+        var solutions = [],
             add_to_result = function(r) {
                 if(isArray(r)) solutions = solutions.concat(r);
                 else {
@@ -124,90 +151,87 @@
             }
         };
             
-        for(var i=0; i<numeqs; i++) {
-            var es = args[i].split('=');
-            
-            if(typeof es[1] === 'undefined') es[1] = '0';
-            
-            var e1 = _.parse(es[0]), e2 = _.parse(es[1]),
-                eq = _.subtract(e1, e2),
-                vars = core.Utils.variables(eq),//get a list of all the variables
-                numvars = vars.length;//how many variables are we dealing with
-            //if we're dealing with a single variable then we first check if it's a 
-            //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.
-            if(numvars === 1) {
-                if(eq.isPoly(true)) {
-                    if(vars[0] === solve_for) _A.proots(eq).map(add_to_result);
-                }
-                else {
-                    //since it's not a polynomial then we'll try to look for a solution using Newton's method
-                    //this is not a very broad search but takes the positions that something is better than nothing
-                    attempt_Newton(eq);
-                }
+        var es = eqns.split('=');
+
+        if(typeof es[1] === 'undefined') es[1] = '0';
+
+        var e1 = _.parse(es[0]), e2 = _.parse(es[1]),
+            eq = _.subtract(e1, e2),
+            vars = core.Utils.variables(eq),//get a list of all the variables
+            numvars = vars.length;//how many variables are we dealing with
+        //if we're dealing with a single variable then we first check if it's a 
+        //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.
+        if(numvars === 1) {
+            if(eq.isPoly(true)) {
+                if(vars[0] === solve_for) _A.proots(eq).map(add_to_result);
             }
             else {
-                //if it's multivariate but has no functions
-                if(eq.isPoly(false, true)) { 
-                        //get a list of all the power of the polynomial we're solving for
-                    var pwrs = _A.polyPowers(eq, solve_for),
-                        //get the highest power wrt to the variable we're solving for    
-                        max_pwr = core.Utils.arrayMax(pwrs); 
-                        
-                        var coeff_array = [],
-                            add_to_coeff_array = function(key, value) {
-                                var existing = coeff_array[key];
-                                if(!existing) coeff_array[key] = value;
-                                else coeff_array[key] = _.add(existing, value);
-                            },
-                            remainder = eq.copy(); 
-                    
-                        for(var s in eq.symbols) {
-                            var sym = eq.symbols[s];
-                            //place all the coefficient
-                            if(sym.contains(solve_for)) {
-                                var g = sym.group;
-                                if(g === CB) {
-                                    var t = sym.symbols[solve_for];
-                                    remainder = _.subtract(remainder, sym.copy());//make sure to remove the polynomial
-                                    add_to_coeff_array(t.power-1, _.divide(sym, t.copy()));//add the coefficient to the array
+                //since it's not a polynomial then we'll try to look for a solution using Newton's method
+                //this is not a very broad search but takes the positions that something is better than nothing
+                attempt_Newton(eq);
+            }
+        }
+        else {
+            //if it's multivariate but has no functions
+            if(eq.isPoly(false, true)) { 
+                    //get a list of all the power of the polynomial we're solving for
+                var pwrs = _A.polyPowers(eq, solve_for),
+                    //get the highest power wrt to the variable we're solving for    
+                    max_pwr = core.Utils.arrayMax(pwrs); 
+
+                    var coeff_array = [],
+                        add_to_coeff_array = function(key, value) {
+                            var existing = coeff_array[key];
+                            if(!existing) coeff_array[key] = value;
+                            else coeff_array[key] = _.add(existing, value);
+                        },
+                        remainder = eq.copy(); 
+                    for(var s in eq.symbols) {
+                        var sym = eq.symbols[s];
+                        //place all the coefficient
+                        if(sym.contains(solve_for)) {
+                            var g = sym.group;
+                            if(g === CB) {
+                                var t = sym.symbols[solve_for];
+                                remainder = _.subtract(remainder, sym.copy());//make sure to remove the polynomial
+                                add_to_coeff_array(t.power-1, _.divide(sym, t.copy()));//add the coefficient to the array
+                            }
+                            else if(g === PL) {
+                                for(var x in sym.symbols) {
+                                    var sub_sym = sym.symbols[x];
+                                    add_to_coeff_array(sub_sym.power-1, new Symbol(sub_sym.multiplier));
                                 }
-                                else if(g === PL) {
-                                    for(var x in sym.symbols) {
-                                        var sub_sym = sym.symbols[x];
-                                        add_to_coeff_array(sub_sym.power-1, new Symbol(sub_sym.multiplier));
-                                    }
-                                    remainder = _.subtract(remainder, sym.copy());
-                                }
-                                else if(g === S) {
-                                    remainder = _.subtract(remainder, sym.copy());
-                                    add_to_coeff_array(sym.power-1, new Symbol(sym.multiplier));
-                                }
+                                remainder = _.subtract(remainder, sym.copy());
+                            }
+                            else if(g === S) {
+                                remainder = _.subtract(remainder, sym.copy()); 
+                                add_to_coeff_array(sym.power-1, new Symbol(sym.multiplier).negate());
                             }
                         }
+                    }
 
-                        coeff_array.reverse().push(remainder);
+                    coeff_array.reverse().push(remainder);
 
-                        //fill in the zeroes
-                        for(var i=0; i<max_pwr; i++){
-                            var u = coeff_array[i];
-                            if(!u) coeff_array[i] = new Symbol(0);
-                        }
-                        
-                        switch(max_pwr) {
-                            case 1:
-                                add_to_result(_.divide(coeff_array[1], coeff_array[0]));
-                                break;
-                            case 2:
-                                add_to_result(quad.apply(undefined, coeff_array));
-                                coeff_array.push('-');
-                                add_to_result(quad.apply(undefined, coeff_array));
-                                break;
-                            case 3:
-                                add_to_result(cubic.apply(undefined, coeff_array))
-                                break;
-                        }
-                    
-                }
+                    //fill in the zeroes
+                    for(var i=0; i<max_pwr; i++){
+                        var u = coeff_array[i];
+                        if(!u) coeff_array[i] = new Symbol(0);
+                    }
+
+                    switch(max_pwr) {
+                        case 1:
+                            add_to_result(_.divide(coeff_array[1], coeff_array[0]));
+                            break;
+                        case 2:
+                            add_to_result(quad.apply(undefined, coeff_array));
+                            coeff_array.push('-');
+                            add_to_result(quad.apply(undefined, coeff_array));
+                            break;
+                        case 3:
+                            add_to_result(cubic.apply(undefined, coeff_array));
+                            break;
+                    }
+
             }
         }
         
@@ -218,7 +242,6 @@
         name: 'solveEquations',
         parent: 'nerdamer',
         visible: true,
-        numargs: [2, 101],
         build: function(){ return solve; }
     });
 })();
