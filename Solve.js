@@ -44,7 +44,7 @@
 
         var result = m.multiply(c);
         var solutions = [];
-        result.each(function(e, idx) { solutions.push([vars[idx], e]); });
+        result.each(function(e, idx) { solutions.push([vars[idx], e.valueOf()]); });
         return solutions;
     };
         
