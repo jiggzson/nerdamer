@@ -2,7 +2,6 @@
 * Author : Martin Donk
 * Website : http://www.nerdamer.com
 * Email : martin.r.donk@gmail.com
-* License : MIT
 * Source : https://github.com/jiggzson/nerdamer
 */
 
@@ -884,89 +883,92 @@
                             }
                         }
                     };
+                
+                if(symbol.power <= 1) {
+                    factorize(symbol);
+                    symbol.multiplier *= Math.pow(gcf, symbol.power);
 
-                factorize(symbol);
-                symbol.multiplier *= gcf;
-
-                if(group === PL) {
-                    var powers = keys(symbol.symbols),
-                        lowest_power = core.Utils.arrayMin(powers),
-                        factor = _.parse(symbol.value+'^'+lowest_power);
-                    var factored = new core.Symbol(0);
-                    for(var x in symbol.symbols) {
-                        factored = _.add(factored, _.divide(symbol.symbols[x], factor.copy()));
-                    }
-
-                    factored = _.symfunction(core.PARENTHESIS, [factored]);//place it parenthesis
-                    factored.power *= symbol.power;
-                    factored.multiplier *= symbol.multiplier;
-                    factor.power *= symbol.power;
-
-                    retval = _.multiply(factor, factored);
-                }
-                else if(group === CP) { 
-                    try{
-                        var roots = core.Utils.arrayUnique(core.Algebra.proots(symbol)),
-                            all_ints = true; 
-                        for(var i=0; i<roots.length; i++) {
-                            if(!isInt(roots[i])) all_ints = false;
+                    if(group === PL) {
+                        var powers = keys(symbol.symbols),
+                            lowest_power = core.Utils.arrayMin(powers),
+                            factor = _.parse(symbol.value+'^'+lowest_power);
+                        var factored = new core.Symbol(0);
+                        for(var x in symbol.symbols) {
+                            factored = _.add(factored, _.divide(symbol.symbols[x], factor.copy()));
                         }
-                        var result = new Symbol(1);
-                        if(all_ints)  {
-                            roots.map(function(root) {
-                                result = _.multiply(result, 
-                                    _.symfunction(core.PARENTHESIS, 
-                                    [_.subtract(new Symbol(variables(symbol)[0]), new Symbol(root))]));
-                            });
-                            result.multiplier *= symbol.multiplier;
-                            retval = result;
-                        }
+
+                        factored = _.symfunction(core.PARENTHESIS, [factored]);//place it parenthesis
+                        factored.power *= symbol.power;
+                        factored.multiplier *= symbol.multiplier;
+                        factor.power *= symbol.power;
+
+                        retval = _.multiply(factor, factored);
                     }
-                    catch(e) {
-                        try {
-                            //not a polynomial. No biggie. Let's see if we can extract a few variables
-                            var symbols = symbol.collectSymbols(),
-                                num_symbols = symbol.length,
-                                hash_table = {};
-                            for(var i=0; i<num_symbols; i++) {
-                                var cur_symbol = symbols[i], //collect all the variables contained in the symbol
-                                    num_vars = vars.length;
-                                for(var j=0; j<num_vars; j++) {
-                                    var var_name = vars[j],
-                                        variable = cur_symbol.value === var_name ? cur_symbol : cur_symbol.symbols[var_name],
-                                        var_record = hash_table[var_name];
-                                    if(isSymbol(variable.power)) throw new Error('Cannot factor symbol. Exiting');
-                                    if(!var_record) hash_table[var_name] = [1, variable.power];
-                                    else {
-                                        var_record[0]++;
-                                        var p = variable.power;
-                                        if(p < var_record[1]) var_record[1] = p;
+                    else if(group === CP) { 
+                        try{
+                            var p = symbol.power,
+                                roots = core.Utils.arrayUnique(core.Algebra.proots(symbol)),
+                                all_ints = true; 
+                            for(var i=0; i<roots.length; i++) {
+                                if(!isInt(roots[i])) all_ints = false;
+                            }
+                            var result = new Symbol(1);
+                            if(all_ints)  {
+                                roots.map(function(root) {
+                                    result = _.multiply(result, 
+                                        _.symfunction(core.PARENTHESIS, 
+                                        [_.subtract(new Symbol(variables(symbol)[0]), new Symbol(root))]));
+                                });
+                                result.multiplier *= symbol.multiplier;
+                                retval = result; 
+                                retval.power = p;
+                            }
+                        }
+                        catch(e) {
+                            try {
+                                //not a polynomial. No biggie. Let's see if we can extract a few variables
+                                var symbols = symbol.collectSymbols(),
+                                    num_symbols = symbol.length,
+                                    hash_table = {};
+                                for(var i=0; i<num_symbols; i++) {
+                                    var cur_symbol = symbols[i], //collect all the variables contained in the symbol
+                                        num_vars = vars.length;
+                                    for(var j=0; j<num_vars; j++) {
+                                        var var_name = vars[j],
+                                            variable = cur_symbol.value === var_name ? cur_symbol : cur_symbol.symbols[var_name],
+                                            var_record = hash_table[var_name];
+                                        if(isSymbol(variable.power)) throw new Error('Cannot factor symbol. Exiting');
+                                        if(!var_record) hash_table[var_name] = [1, variable.power];
+                                        else {
+                                            var_record[0]++;
+                                            var p = variable.power;
+                                            if(p < var_record[1]) var_record[1] = p;
+                                        }
                                     }
                                 }
-                            }
-                            var factor = [];
-                            //we now know which variables we have and to which power so we can start reducing
-                            for(var x in hash_table) {
-                                var_record = hash_table[x];
-                                //if we have as many recorded as there were sub-symbols then we can divide all of them
-                                //by that symbol
-                                if(var_record[0] === num_symbols) { 
-                                    factor.push(x+'^'+var_record[1]);
+                                var factor = [];
+                                //we now know which variables we have and to which power so we can start reducing
+                                for(var x in hash_table) {
+                                    var_record = hash_table[x];
+                                    //if we have as many recorded as there were sub-symbols then we can divide all of them
+                                    //by that symbol
+                                    if(var_record[0] === num_symbols) { 
+                                        factor.push(x+'^'+var_record[1]);
+                                    }
+                                };
+
+                                //we can now divide each one by that factor
+                                factor = _.parse(factor.join('*'));//make it a Symbol
+                                for(x in symbol.symbols) {
+                                    symbol.symbols[x] = _.divide(symbol.symbols[x], factor.copy());
                                 }
-                            };
-                            
-                            //we can now divide each one by that factor
-                            factor = _.parse(factor.join('*'));//make it a Symbol
-                            for(x in symbol.symbols) {
-                                symbol.symbols[x] = _.divide(symbol.symbols[x], factor.copy());
+
+                                retval = _.multiply(_.parse(symbol.text()), factor);
                             }
-                            
-                            retval = _.multiply(_.parse(symbol.text()), factor);
+                            catch(e){;}
                         }
-                        catch(e){;}
-                            
                     }
-                }
+                }     
             }
             
             if(retval.group === core.groups.FN) retval.updateHash();
