@@ -227,9 +227,9 @@
                             add_to_result(_.divide(coeff_array[1], coeff_array[0]));
                             break;
                         case 2:
-                            add_to_result(quad.apply(undefined, coeff_array));
+                            add_to_result(_A.factor(quad.apply(undefined, coeff_array)));
                             coeff_array.push('-');
-                            add_to_result(quad.apply(undefined, coeff_array));
+                            add_to_result(_A.factor(quad.apply(undefined, coeff_array)));
                             break;
                         case 3:
                             add_to_result(cubic.apply(undefined, coeff_array));
