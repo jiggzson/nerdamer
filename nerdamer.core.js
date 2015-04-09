@@ -3061,7 +3061,7 @@ var nerdamer = (function() {
                 else {
                     //Math2 functions aren't part of the standard javascript
                     //Math library and must be exported.
-                    xports.push('var '+bn+' = '+_.Math2[bn].toString()+'; ');
+                    xports.push('var '+bn+' = '+Math2[bn].toString()+'; ');
                     retval = bn;
                 }
                 retval = retval+inBrackets(symbol.args.map(function(x) {
