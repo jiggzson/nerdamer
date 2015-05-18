@@ -1,0 +1,170 @@
+.main-input {
+    width: 60%;
+    border: 1px solid #CCC;
+    padding: 5px;
+}
+
+.delete {
+    margin-left: 10px;
+}
+
+.instructions {
+    font-size: 0.9em !important;
+}
+
+h3 {
+    margin: 5px;
+}
+
+.full-width-input { 
+    width: 100%;
+    padding: 1em; 
+    box-sizing: border-box; /* Opera/IE 8+ */ 
+    -webkit-box-sizing: border-box; /* Safari, Chrome et al */ 
+    -moz-box-sizing: border-box; /* Firefox */ 
+}
+
+.nerdamer-interface-container {
+    border: 10px solid #CCC;
+    border-radius: 10px;
+    margin: 0 auto;
+    padding: 15px;
+    background: #EFEFEF;
+}
+@media(max-width:500px){
+  .nerdamer-interface-container {
+    padding-bottom: 50px;
+  }
+  
+  .nerdamer-interface-container label {
+
+  }
+}
+
+@media(max-width: 320px) {
+    .nerdamer-interface-container {
+        padding-bottom: 100px;
+    }
+}
+.nerdamer-interface-input {
+    border: 1px solid #ABABAB;
+    margin-bottom: 10px;
+    width: 100%;
+    resize: vertical;
+    font-size: 1.2em;
+    color: #434445;
+    outline: 0;
+}
+
+
+.nerdamer-interface-button {
+    margin-left: 15px;
+    float: right;
+    margin-bottom: 15px;
+}
+
+button::-moz-focus-inner {
+  border: 0;
+}
+
+.demo-container {
+    text-align: center;
+    border-radius: 6px;
+}
+
+.demo-container input {
+    width: 60%;
+    margin-right: 10px;
+    text-align: center;
+}
+
+.demo-container button{
+    vertical-align: top;
+}
+
+.instructions-container {
+    background: #646D7E;
+    padding: 15px;
+    color: #FFF;
+}
+
+#expr-panel {
+    margin-top: 1em;
+    text-align: left;
+}
+
+.version {
+    text-transform: uppercase;
+    float: left;
+    font-size: 11px;
+    padding-top: 4px;
+    font-weight: bold;
+}
+
+.top-bar {
+    text-align: right;
+    padding-bottom: 4px;
+    padding-right: 4px;
+}
+
+.btn-inverse { 
+  color: #ffffff; 
+  background-color: #1E1C21; 
+  border-color: #000000; 
+} 
+ 
+.btn-inverse:hover, 
+.btn-inverse:focus, 
+.btn-inverse:active, 
+.btn-inverse.active, 
+.open .dropdown-toggle.btn-inverse { 
+    color: #ffffff; 
+    background-color: #000000; 
+    border-color: #000000; 
+} 
+ 
+.btn-inverse:active, 
+.btn-inverse.active, 
+.open .dropdown-toggle.btn-inverse { 
+  background-image: none; 
+} 
+ 
+.btn-inverse.disabled, 
+.btn-inverse[disabled], 
+fieldset[disabled] .btn-inverse, 
+.btn-inverse.disabled:hover, 
+.btn-inverse[disabled]:hover, 
+fieldset[disabled] .btn-inverse:hover, 
+.btn-inverse.disabled:focus, 
+.btn-inverse[disabled]:focus, 
+fieldset[disabled] .btn-inverse:focus, 
+.btn-inverse.disabled:active, 
+.btn-inverse[disabled]:active, 
+fieldset[disabled] .btn-inverse:active, 
+.btn-inverse.disabled.active, 
+.btn-inverse[disabled].active, 
+fieldset[disabled] .btn-inverse.active { 
+  background-color: #1E1C21; 
+  border-color: #000000; 
+} 
+ 
+.btn-inverse .badge { 
+    color: #1E1C21; 
+    background-color: #ffffff; 
+}
+
+.panel-row {
+    border-top: 1px solid #CCC;
+    display: block;
+    padding: 1.25em 0;
+}
+
+.gray-header {
+    background: #EFEFEF;
+    border-radius: 5px;
+}
+
+#expr-input {
+    width: 100%;
+    resize: vertical;
+}

@@ -1,0 +1,52 @@
+/*!
+ * Start Bootstrap - Portfolio Item HTML Template (http://startbootstrap.com)
+ * Code licensed under the Apache License v2.0.
+ * For details, see http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+body {
+    padding-top: 70px; /* Required padding for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
+    background: url('../images/math.jpg');
+    font-size: 14px;
+}
+
+
+footer {
+    margin: 50px 0;
+}
+
+
+div.rounded-15 {
+    border-radius: 15px;
+}
+
+div.white {
+    background: #FFF;
+}
+
+.padded{
+    padding: 15px;
+    margin-left: 15px;
+    margin-right: 15px;
+}
+
+footer {
+    text-align: center;
+    color: #FFF;
+}
+
+div.centered {
+    text-align: center;
+}
+
+div.gray {
+    background: #EFEFEF;
+    padding-top: 15px;
+    padding-bottom: 10px;
+    border: 1px solid #CCC;
+    border-radius: 5px;
+}
+
+.gray-text {
+    color: #8A8A8A;
+}

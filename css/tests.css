@@ -1,0 +1,31 @@
+.test-item {
+    padding: 5px 0;
+    border-top: 1px solid #CCC;
+}
+
+.test-header {
+    background: #EFEFEF;
+}
+
+.test-pass {
+    background: #008000;
+    color: #fff;
+}
+
+.test-fail {
+    color: #fff;
+    background: #FF0000;
+}
+
+.formatted-values {
+    margin-bottom: 10px;
+    background: #B2FF85;
+    padding: 5px 0;
+    text-align: center;
+}
+
+.formatted-values span {
+    display: inline-block;
+    margin-right: 10px;
+    font-weight: bold;
+}

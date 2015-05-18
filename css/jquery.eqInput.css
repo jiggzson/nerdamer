@@ -1,0 +1,23 @@
+.eqinput-marked-bracket {
+    color: #99B6DF;
+    font-weight: bold;
+}
+
+.jquery-eqinput-input {
+    background: #fff;
+    min-height: 20px;
+    outline: 0;
+}
+
+/*http://codepen.io/flesler/pen/AEIFc*/
+.jquery-eqinput-input[contenteditable=true]:empty:before{
+  content: attr(data-placeholder);
+  color: #CCC;
+}
+
+.jquery-eqinput-input[contenteditable=true] {
+  border: 1px solid #CCC;
+  width: 300px;
+  padding: 5px;
+}
+
