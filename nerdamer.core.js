@@ -17,8 +17,12 @@ var nerdamer = (function() {
         
         //Settings
         Settings = {
+            exclude: [],
+            //If you don't care about division by zero for example then this can be set to true. 
+            //Has some nasty side effects so choose carefully.
             suppress_errors: false,
-            //the global used to invoke the libary to parse to a number
+            //the global used to invoke the libary to parse to a number. Normally cos(9) for example returns
+            //cos(9) for convenience but parse to number will always try to return a number if set to true. 
             PARSE2NUMBER: false,
             //this flag forces the a copy to be returned when add, subtract, etc... is called
             SAFE: false
@@ -37,6 +41,7 @@ var nerdamer = (function() {
         
         
         //GLOBALS
+        
         PARENTHESIS = 'parens',
 
         //the function which represent vector
@@ -45,6 +50,10 @@ var nerdamer = (function() {
         SQRT = 'sqrt',
         
         ABS = 'abs',
+        
+        //the idea is to have the ability to do some processing on the string before passing it
+        //to the parser. EXPERIMENTAL and might be stripped.
+        PREPROCESSORS = [],
 
         //the storage container "memory" for parsed expressions
         EQNS = [],
@@ -55,18 +64,30 @@ var nerdamer = (function() {
         //the container used to store all the reserved functions
         RESERVED = [],
         
-        //reserves variable names
+        /**
+         * Checks to see if value is one of nerdamer's reserved names
+         * @param {String} value
+         * @return boolean
+         */
         isReserved = Utils.isReserved = function(value) { 
             return RESERVED.indexOf(value) !== -1;
         },
         
-        //throw an error with this function if the error is allowed to be suppressed
+        /**
+         * Use this when errors are suppressible
+         * @param {String} msg
+         */
         err = function(msg) {
             if(!Settings.suppress_errors) throw new Error(msg);
         },
         
-        // Enforces rule: must start with a letter or underscore and can have any 
-        // number of underscores, letters, and numbers thereafter.
+        /**
+         * Enforces rule: "must start with a letter or underscore and 
+         * can have any number of underscores, letters, and numbers thereafter."
+         * @param name The name of the symbol being checked
+         * @param {String} typ - The type of symbols that's being validated
+         * @throws {Exception} - Throws an exception on fail
+         */
         validateName = Utils.validateName = function(name, typ) { 
             typ = typ || 'variable';
             var regex = /^[a-z_][a-z\d\_]*$/gi;
@@ -75,35 +96,68 @@ var nerdamer = (function() {
             }
         },
         
+        /**
+         * Checks to see if a number or Symbol is a fraction
+         * @type {Number|Symbol} num
+         * @returns {boolean}
+         */
         isFraction = Utils.isFraction = function(num) {
             if(isSymbol(num)) return isFraction(num.multiplier);
             return (num % 1 !== 0);
         },
-
+        
+        /**
+         * Checks to see if the object provided is a Symbol
+         * @param {Object} obj
+         */
         isSymbol = Utils.isSymbol = function(obj) {
             return (obj instanceof Symbol);
         },
         
+        /**
+         * 
+         * Checks to see if the object provided is a Vector
+         * @param {Object} obj
+         */
         isVector = Utils.isVector = function(obj) {
             return (obj instanceof Vector);
         },
         
+        /**
+         * Checks to see if the object provided is a Matrix
+         * @param {Object} obj
+         */
         isMatrix = Utils.isMatrix = function(obj) {
             return (obj instanceof Matrix);
         },
         
+        /**
+         * @param {Symbol} symbol
+         */
         isNumericSymbol = Utils.isNumericSymbol = function(symbol) {
             return symbol.group === N;
         },
 
+        /**
+         * Checks to see if the object provided is an Array
+         * @param {Object} arr
+         */
         isArray = Utils.isArray = function(arr) {
             return arr instanceof Array;
         },
 
+        /**
+         * Checks to see if a number is an integer
+         * @param {Number} num
+         */
         isInt = Utils.isInt = function(num) {
             return num % 1 === 0;
         },
 
+        /**
+         * @param {Number|Symbol} obj
+         * @returns {boolean}
+         */
         isNegative = Utils.isNegative = function(obj) {
             if( isSymbol(obj) ) {
                 obj = obj.multiplier;
@@ -111,27 +165,61 @@ var nerdamer = (function() {
             return obj < 0;
         },
         
+        /**
+         * Checks to see if symbol is a symbol of symbols held together by addition
+         * e.g. (x+z+6) or (x^2+x) etc
+         * @param {Symbol} symbol
+         * @return {boolean}
+         */
         isComposite = Utils.isComposite = function(symbol) {
             return (symbol.group === PL || symbol.group === CP);
         },
         
+        /**
+         * @param {String} str
+         * @returns {String} - returns a formatted string surrounded by brackets
+         */
         inBrackets = Utils.inBrackets = function(str) {
             return '('+str+')';
         },
         
+        /**
+         * A helper function to replace parts of string
+         * @param {String} str - The original string
+         * @param {Integer} from - The starting index
+         * @param {Integer} to - The ending index
+         * @param {String} with_str - The replacement string
+         * @returns {String} - A formatted string
+         */
         stringReplace = Utils.stringReplace = function(str, from, to, with_str) {
             return str.substr(0, from)+with_str+str.substr(to, str.length);
         },
         
-        //the Parser uses this to check if it's allowed to convert the obj to type Symbol
+        /**
+         * the Parser uses this to check if it's allowed to convert the obj to type Symbol
+         * @obj {Object} obj
+         * @returns {boolean}
+         * @description
+         */
         customType = Utils.customType = function(obj) {
             return obj !== undefined && obj.custom;
         },
         
+        /**
+         * Checks to see if numbers are both negative or are both positive
+         * @param {Number} a
+         * @param {Number} b
+         * @returns {boolean}
+         */
         sameSign = Utils.sameSign = function(a, b) {
             return (a < 0) === (b < 0);
         },
         
+        /**
+         * A helper function to replace multiple occurences in a string. Takes multiple arguments
+         * @example format('{0} nice, {0} sweet')
+         * //returns 'something nice, something sweet'
+         */
         format = Utils.format = function() {
             var args = [].slice.call(arguments),
                 str = args.shift();
@@ -141,33 +229,65 @@ var nerdamer = (function() {
                 });
         },
         
+        /**
+         * Returns an array of all the keys in an array
+         * @param {Object} obj
+         * @returns {Array}
+         */
         keys = Utils.keys = function( obj ) {
             var k = [];
             for( var key in obj ) { k.push( key ); }
             return k;
         },
-        
-        // Items do not have a fixed order in objects so only use if you need any first random 
-        //item in the object
+
+        /**
+         * Returns the first encountered item in an object. Items do not have a fixed order in objects 
+         * so only use if you need any first random or if there's only one item in the object
+         * @param {Object} obj
+         * @returns {*}
+         */
         firstObject = Utils.firstObject = function(obj) {
             for( var x in obj ) break;
             return obj[x];
         },
         
+        /**
+         * Returns the minimum number in an array
+         * @param {Array} arr
+         * @returns {Number} 
+         */
         arrayMax = Utils.arrayMax = function(arr) {
             return Math.max.apply(undefined, arr);
         },
 
+        /**
+         * Returns the maximum number in an array
+         * @param {Array} arr
+         * @returns {Number} 
+         */
         arrayMin = Utils.arrayMin = function(arr) {
             return Math.min.apply(undefined, arr);
         },
         
+        /**
+         * Rounds a number up to x decimal places
+         * @param {Number} x
+         * @param {Number} s
+         */
         round = Utils.round = function( x, s ) { 
             s = s || 14;
             return Math.round( x*Math.pow( 10,s ) )/Math.pow( 10,s );
         },
         
-        // Inserts an object into an array or recursively adds items if an array is given
+        /**
+         * Inserts an object into an array at a given index or recursively adds items if an array is given.
+         * When inserting another array, passing in false for unpackArray will result in the array being inserted
+         * rather than its items.
+         * @param {Array} arr - The target array
+         * @param {Array} item - The item being inserted
+         * @param {Number} index - Where to place the item
+         * @param {boolean} unpackArray - Will insert the array instead of adding its items
+         */
         insertArray = Utils.insertArray = function( arr, item, index, unpackArray ) {
             unpackArray = unpackArray === false ? unpackArray : true;
 
@@ -184,7 +304,14 @@ var nerdamer = (function() {
             }
         },
         
-        //this method grabs all the variables in a symbol
+        /**
+         * This method traverses the symbol structure and grabs all the variables in a symbol. The variable
+         * names are then returned in alphabetical order.
+         * @param {Symbol} obj
+         * @param {Object} vars - An object containing the variables. Do not pass this in as it generated 
+         * automatically. In the future this will be a Collector object.
+         * @returns {String[]} - An array containing variable names
+         */
         variables = Utils.variables = function( obj, vars ) { 
             vars = vars || {
                 c: [],
@@ -218,6 +345,11 @@ var nerdamer = (function() {
             return vars.c.sort();
         },
         
+        /**
+         * Loops through each item in object and calls function with item as param
+         * @param {Object|Array} obj
+         * @param {Function} fn 
+         */
         each = Utils.each = function(obj, fn) {
             if(isArray(obj)) {
                 var l = obj.length;
@@ -228,23 +360,41 @@ var nerdamer = (function() {
             }
         },
         
+        /**
+         * Checks to see if a number is an even number
+         * @param {Number} num
+         * @returns {boolean}
+         */
         even = Utils.even = function(num) {
             return num % 2 === 0;
         },
         
+        /**
+         * Checks to see if a fraction is divisible by 2
+         * @param {Number} num
+         * @returns {boolean}
+         */
         evenFraction = Utils.evenFraction = function(num) {
             return 1/( num % 1) % 2 === 0;
         },
         
+        /**
+         * Strips duplicates out of an array
+         * @param {Array} arr
+         */
         arrayUnique = Utils.arrayUnique = function(arr) {
             var l = arr.length, a = [];
             for(var i=0; i<l; i++) {
-                item = arr[i];
+                var item = arr[i];
                 if(a.indexOf(item) === -1) a.push(item);
             }
             return a;
         },
         
+        /**
+         * Reserves the names in an object so they cannot be used as function names
+         * @param {Object} obj
+         */
         reserveNames = Utils.reserveNames = function(obj) {
             var add = function(item) {
                 if(RESERVED.indexOf(item) === -1) RESERVED.push(item);
@@ -257,10 +407,13 @@ var nerdamer = (function() {
                 });
             }  
         },
-        
-        // Removes an item from either an array or an object.
-        // If the object is an array, the index must be specified after the array.
-        // If it's an object then the key must be specified
+
+        /**
+         * Removes an item from either an array or an object. If the object is an array, the index must be 
+         * specified after the array. If it's an object then the key must be specified
+         * @param {Object|Array} obj
+         * @param {Integer} indexOrKey
+         */
         remove = Utils.remove = function( obj, indexOrKey ) {
             var result;
             if( isArray(obj) ) {
@@ -273,6 +426,16 @@ var nerdamer = (function() {
             return result;
         },
         
+        /**
+         * Creates a temporary block in which one of the global settings is temporarily modified while
+         * the function is called. For instance if you want to parse directly to a number rather than have a symbolic
+         * answer for a period you would set PARSE2NUMBER to true in the block.
+         * @example block('PARSE2NUMBER', function(){//symbol being parsed to number}, true);
+         * @param {String} setting - The setting being accessed
+         * @param {Function} f 
+         * @param {boolean} opt - The value of the setting in the block
+         * @param {String} obj - The obj of interest. Usually a Symbol but could be any object
+         */
         block = Utils.block = function(setting, f, opt, obj) {
             var current_setting = Settings[setting];
             Settings[setting] = opt === undefined ? true : !! opt;
@@ -281,13 +444,24 @@ var nerdamer = (function() {
             return retval;
         },
 
+        /**
+         * Converts function arguments to an array. I had hopes for this function :(
+         * @param {Object} obj - arguments obj
+         */
         arguments2Array = Utils.arguments2Array = function(obj) {
             return [].slice.call(obj);
         },
         
-        //Using a regex to get between brackets can be a bit tricky. This functions makes it more abstract
-        //to fetch between brackets within a string from any given index. If the starting index is
-        //a bracket then it will fail. returns [matched_string, first_bracket_index, end_bracket_index]
+        /**
+         * Using a regex to get between brackets can be a bit tricky. This functions makes it more abstract 
+         * to fetch between brackets within a string from any given index. If the starting index is a bracket 
+         * then it will fail. returns [matched_string, first_bracket_index, end_bracket_index]
+         * @param {Char} ob - open bracket
+         * @param {Char} cb - close bracket
+         * @param {String} str - The string being read
+         * @param {Integer} start - Where in the string to start
+         * @returns {Array}
+         */
         betweenBrackets = function(ob, cb, str, start) {
             start = start || 0;
             var l = str.length,
@@ -307,15 +481,39 @@ var nerdamer = (function() {
                     }
                 }
             }
+            
             return [];
         },
         
+        /**
+         * A helper function to make substitutions
+         * @param {Object} subs
+         */
         format_subs = function(subs) {
             for(var x in subs) subs[x] = _.parse(subs[x].toString());
             return subs;
         },
         
-        //Inverse trig functions and additional functions
+        /**
+         * The idea is to have the ability to do some preprocessing on the string. This can have some nice 
+         * possibilities such as being able to make a psuedo programming language and out the the result in the form
+         * of an expression or equation. Currently not used
+         * @param {String} str
+         * @
+         */
+        preprocess = function(str) {
+            s = str;
+            var l = PREPROCESSORS.length;
+            for(var i=0; i<l; i++) {
+                var preprocess = PREPROCESSORS[i];
+                if(typeof preprocess === 'function') s = preprocess(s);
+            }
+            return s;
+        },
+        
+        //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
+        //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the 
+        //functions within are pretty self-explanatory.
         Math2 = {
             csc: function(x) { return 1/Math.sin(x); },
             sec: function(x) { return 1/Math.cos(x); },
@@ -473,8 +671,12 @@ var nerdamer = (function() {
     Utils.text = text;
     /* END GLOBAL FUNCTIONS */
     
-    /* CLASSES */
-    //The Collector is used to find unique values within objects
+    /**** CLASSES *****/
+    /**
+     * The Collector is used to find unique values within objects
+     * @param {Function} extra_conditions - A function which performs a check on the values and returns a boolean
+     * @returns {Collector}
+     */
     function Collector(extra_conditions) {
         this.c = [];
         this.add = function(value) {
@@ -483,13 +685,19 @@ var nerdamer = (function() {
         };
     }
     
+    /**
+     * Wraps a function name in this object
+     * @param {String} fn_name
+     * @returns {Func}
+     */
     function Func(fn_name) {
         this.name = fn_name;
     }
     
     /** 
-     * This is what nerdamer returns. If you want to provide the user with extra
-     * library functions then modify this class.
+     * This is what nerdamer returns. It's sort of a wrapper around the symbol class and 
+     * provides the user with some useful functions. If you want to provide the user with extra
+     * library functions then add them to this class's prototype.
      * @param {Symbol} symbol
      * @returns {Expression} wraps around the Symbol class
      */
@@ -497,6 +705,10 @@ var nerdamer = (function() {
         this.symbol = symbol;
     }
     
+    /**
+     * Returns stored expression at index. For first index use 1 not 0.
+     * @param {Integer} expression_number 
+     */
     Expression.getExpression = function(expression_number, asType) {
         if(expression_number === 'last' || !expression_number) expression_number = EQNS.length;
         if(expression_number === 'first') expression_number = 1;
@@ -507,10 +719,17 @@ var nerdamer = (function() {
     };
     
     Expression.prototype = {
+        /**
+         * Returns the text representation of the expression
+         * @returns {String}
+         */
         text: function() {
             return this.symbol.text('final');
         },
-        
+        /**
+         * Returns the latex representation of the expression
+         * @returns {String}
+         */
         latex: function() {
             return Latex.latex(this.symbol);
         },
@@ -519,6 +738,12 @@ var nerdamer = (function() {
             return this.symbol.valueOf();
         },
         
+        /**
+         * Evaluates the expression and tries to reduce it to a number if possible.
+         * If an argument is given in the form of %{integer} it will evaluate that expression.
+         * Other than that it will just use it's own text and reparse
+         * @returns {Expression}
+         */
         evaluate: function() {
             var first_arg = arguments[0], expression, idx = 1;
             if(typeof first_arg === 'string') {
@@ -537,19 +762,32 @@ var nerdamer = (function() {
                 return _.parse(expression, format_subs(subs));
             }, true));
         },
-        
+        /**
+         * Converts a symbol to a JS function. Pass in an array of variables to use that order instead of 
+         * the default alphabetical order
+         * @param {Array}
+         */
         buildFunction: function(vars) {
             return build(this.symbol, vars);
         },
-        
+        /**
+         * Checks to see if the expression is just a plain old number
+         * @returns {boolean}
+         */
         isNumber: function() {
             return isNumericSymbol(this.symbol);
         },
-        
+        /**
+         * Checks to see if the expression is infinity
+         * @returns {boolean}
+         */
         isInfinity: function() {
             return Math.abs(this.symbol.multiplier) === Infinity;
         },
-        
+        /**
+         * Returns all the variables in the expression
+         * @returns {Array}
+         */
         variables: function() {
             return variables(this.symbol);
         },
@@ -557,7 +795,9 @@ var nerdamer = (function() {
         toString: function() {
             return this.symbol.text();
         },
-        
+        /**
+         * Returns true if the expression is a monomial
+         */
         isMonomial: function() {
             return this.symbol.group === S;
         },
@@ -572,7 +812,9 @@ var nerdamer = (function() {
     };
     
     /**
-     * Primary data type for the Parser
+     * All symbols e.g. x, y, z, etc or functions are wrapped in this class. All symbols have a multiplier and a group. 
+     * All symbols except for "numbers (group N)" have a power. 
+     * @class Primary data type for the Parser. 
      * @param {String} obj 
      * @returns {Symbol}
      */
@@ -603,7 +845,13 @@ var nerdamer = (function() {
     }
     
     Symbol.prototype = {
-        //returns the coefficients of symbols
+        /**
+         * If the symbols is of group PL or CP it will return the multipliers of each symbol
+         * as these are polynomial coefficients. CB symbols are glued together by multiplication
+         * so the symbol multiplier carries the coefficients for all contained symbols.
+         * For S it just returns it's own multiplier.
+         * @return {Array}
+         */
         coeffs: function() {
             var c = [];
             if(this.symbols) {
@@ -614,11 +862,19 @@ var nerdamer = (function() {
             else c.push(this.multiplier);
             return c;
         },
+        /**
+         * Checks to see if two functions are of equal value
+         */
         equals: function(symbol) {
             return this.value === symbol.value && text(this.power) === text(symbol.power);
         },
-        //Symbols are grouped using a custom schema. This checks if the symbol
-        //qualifies as a polynomial
+        /**
+         * Because nerdamer doesn't group symbols by polynomials but 
+         * rather a custom grouping method, this has to be
+         * reinserted in order to make use of most algorithms. This function
+         * checks if the symbol meets the criteria of a polynomial.
+         * @returns {boolean}
+         */
         isPoly: function(include_denom, multivariate) { 
             var status = false;
             if( this.group === S && this.power > 0 || this.group === N) {
@@ -656,11 +912,19 @@ var nerdamer = (function() {
             }
             return status;
         },
+        /**
+         * Checks to see if symbol is located in the denominator
+         * @returns {boolean}
+         */
         isInverse: function() {
             if(this.group === EX) return (this.power.multiplier < 0);
             return this.power < 0;
         },
-        // Copies over a predefined list of properties from one symbol to another.
+        /**
+         * Make a duplicate of a symbol by copying a predefined list of items
+         * to a new symbol
+         * @returns {Symbol}
+         */
         copy: function() { 
             var copy = new Symbol(0),
                 //list of properties excluding power as this may be a symbol and would also need to be a copy.
@@ -690,14 +954,26 @@ var nerdamer = (function() {
                 fn.call(this, this.symbols[x], x);
             }
         },
+        /**
+         * A numeric value to be returned for Javascript. It will try to 
+         * return a number as far a possible but in case of a pure symbolic
+         * symbol it will just return its text representation
+         * @returns {String|Number}
+         */
         valueOf: function() {
             if(this.group === N) { return this.multiplier; }
             else if(this.power === 0){ return 1; }
             else if(this.multiplier === 0) { return 0; }
             else { return text(this); }
         },
-        //a function to help sniff out symbols in complex symbols
-        //pass in true as second parameter to include exponentials
+        /**
+         * Checks to see if a symbols has a particular variable within it.
+         * Pass in true as second argument to include the power of exponentials
+         * which aren't check by default.
+         * @example var s = _.parse('x+y+z'); s.contains('y');
+         * //returns true
+         * @returns {boolean}
+         */
         contains: function(variable, all) { 
             var g = this.group; 
             if(this.symbols) {
@@ -714,11 +990,19 @@ var nerdamer = (function() {
             
             return this.value === variable;
         },
+        /**
+         * Negates a symbols
+         * @returns {boolean}
+         */
         negate: function() { 
             this.multiplier *= -1;
             if(this.group === CP || this.group === PL) this.distributeMultiplier();
             return this;
         },
+        /**
+         * Inverts a symbol
+         * @returns {boolean}
+         */
         invert: function(power_only) {
             //invert the multiplier
             if(!power_only) this.multiplier = 1/this.multiplier;
@@ -731,7 +1015,14 @@ var nerdamer = (function() {
             }
             return this;
         },
-        //distributes the multiplier over the entire symbol
+        /**
+         * Symbols of group CP or PL may have the multiplier being carried by 
+         * the top level symbol at any given time e.g. 2*(x+y+z). This is 
+         * convenient in many cases, however in some cases the multiplier needs
+         * to be carried individually e.g. 2*x+2*y+2*z.
+         * This method distributes the multiplier over the entire symbol
+         * @returns {Symbol}
+         */
         distributeMultiplier: function() {
             if(this.symbols && this.power === 1 && this.group !== CB) {
                 for(var x in this.symbols) {
@@ -744,7 +1035,11 @@ var nerdamer = (function() {
 
             return this;
         },
-        //expands the exponent over the entire symbol
+        /**
+         * This method expands the exponent over the entire symbol just like
+         * distributeMultiplier
+         * @returns {Symbol}
+         */
         distributeExponent: function() {
             if(this.power !== 1) {
                 var p = this.power;
@@ -761,7 +1056,12 @@ var nerdamer = (function() {
             }
             return this;
         },
-        //converts one group to another. Not all combinations are supported.
+        /**
+         * This method will attempt to up-convert or down-convert one symbol
+         * from one group to another. Not all symbols are convertible from one 
+         * group to another however. In that case the symbol will remain 
+         * unchanged.
+         */
         convert: function(group) { 
             if(group > FN) { 
                 //make a copy of this symbol;
@@ -818,6 +1118,18 @@ var nerdamer = (function() {
                 this.group = N;
             }
         },
+        /**
+         * This method is one of the principal methods to make it all possible.
+         * It performs cleanup and prep operations whenever a symbols is 
+         * inserted. If the symbols results in a 1 in a CB (multiplication) 
+         * group for instance it will remove the redundant symbol. Similarly
+         * in a symbol of group PL or CP (symbols glued by multiplication) it
+         * will remove any dangling zeroes from the symbol. It will also 
+         * up-convert or down-convert a symbol if it detects that it's 
+         * incorrectly grouped. It should be noted that this method is not
+         * called directly but rather by the 'attach' method for addition groups
+         * and the 'combine' method for multipiclation groups.
+         */
         insert: function(symbol, action) { 
             //this check can be removed but saves a lot of aggravation when trying to hunt down
             //a bug. If left, you will instantly know that the error can only be between 2 symbols.
@@ -886,15 +1198,19 @@ var nerdamer = (function() {
                 }
             }
         },  
+        //the insert method for addition
         attach: function(symbol) {
             this.insert(symbol, 'add');
         },
+        //the insert method for multiplication
         combine: function(symbol) {
             this.insert(symbol, 'multiply');
         },
-        //this method should be called after any major "surgery" on a symbol
-        //it updates the hash of the symbol e.g. if the baseName of a function
-        //is called it will update the hash with the new baseName
+        /**
+         * This method should be called after any major "surgery" on a symbol.
+         * It updates the hash of the symbol for example if the baseName of a 
+         * function has changed it will update the hash of the symbol.
+         */
         updateHash: function() {
             if(this.group === FN) {
                 var contents = '',
@@ -908,8 +1224,11 @@ var nerdamer = (function() {
                 this.value = text(this, 'hash');
             }
         },
-        //this function defines how every group in stored within a group of higher order
-        //think of it as the switchboard for the library. It defines the hashes for symbols.
+        /**
+         * this function defines how every group in stored within a group of 
+         * higher order think of it as the switchboard for the library. It 
+         * defines the hashes for symbols. 
+         */
         keyForGroup: function(group) {
             var g = this.group;
             if(g === N) {
@@ -947,8 +1266,14 @@ var nerdamer = (function() {
                 return text(this, 'hash');
             }
         },
-        //this function simply collects all the symbols and returns them as an array
-        //if a function is supplied then that function is called on every symbol;
+        /** 
+         * Symbols are typically stored in an object which works fine for most
+         * cases but presents a problem when the order of the symbols makes
+         * a difference. This function simply collects all the symbols and 
+         * returns them as an array. If a function is supplied then that 
+         * function is called on every symbol contained within the object.
+         * @returns {Array}
+         */
         collectSymbols: function(fn) { 
             var collected = [];
             for(var x in this.symbols) {
@@ -957,16 +1282,33 @@ var nerdamer = (function() {
             }
             return collected.sort();//sort hopefully gives us some sort of consistency
         },
+        /**
+         * Returns the latex representation of the symbol
+         * @returns {String}
+         */
         latex: function() {
             return Latex.latex(this);
         },
+        /**
+         * Returns the text representation of a symbol
+         * @returns {String}
+         */
         text: function() {
             return text(this);
         },
+        /**
+         * Checks if the function evaluates to 1. e.g. x^0 or 1 :)
+         */
         isOne: function() {
             if(this.group === N) return this.multiplier === 1;
             else return this.power === 0;
         },
+        /**
+         * Get's the denominator of the symbol if the symbol is of class CB (multiplication)
+         * with other classes the symbol is either the denominator or not. 
+         * Take x^-1+x^-2. If the symbol was to be mixed such as x+x^-2 then the symbol doesn't have have an exclusive
+         * denominator and has to be found by looking at the actual symbols themselves.
+         */
         getDenom: function() {
             if(this.group === CB) {
                 for(var x in this.symbols) {
@@ -979,12 +1321,25 @@ var nerdamer = (function() {
         }
     };
     
+    //EXPERIMENTAL -  Might be stripped
     function Equation(equation1, equation2) {
         this.e1 = equation1;
         this.e2 = equation2;
     }
     
-    
+    /**
+     * This class defines the operators in nerdamer. The thinking is that with using these parameters
+     * we should be able to define more operators such as the modulus operator or a boolean operator.
+     * Although this initially works at the moment, it fails in some instances due to minor flaws in design which
+     * will be addressed in future releases.
+     * @param {char} val - The symbol of the operator
+     * @param {String} fn - The function it maps to
+     * @param {Integer} precedence - The precedence of the operator
+     * @param {boolean} left_assoc - Is the operator left or right associative
+     * @param {boolean} is_prefix - Is the operator a prefix operator
+     * @param {boolean} is_postfix - Is the operator a postfix operator (for future releases)
+     * @returns {Operator}
+     */
     function Operator(val, fn, precedence, left_assoc, is_prefix, is_postfix) {
         this.val = val;
         this.fn = fn;
@@ -994,11 +1349,21 @@ var nerdamer = (function() {
         this.is_postfix = is_postfix || false;
     }
 
+    /**
+     * 
+     * @param {char} val - The operator
+     * @returns {Prefix}
+     */
     function Prefix(val) {
         this.val = val;
     }
     
     Prefix.prototype = {
+        /**
+         * This function resolves the prefix. It will correct the sign of the symbol by changing the sign of
+         * the multiplier. If the multiplier is negative it will make it positive etc..
+         * @returns {Symbol}
+         */
         resolve: function(obj) {
             if(this.val === '-') {
                 return obj.negate();
@@ -1009,13 +1374,14 @@ var nerdamer = (function() {
 
     //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
-        var _ = this,
+        //we want the underscore to point to this parser not the global nerdamer parser.
+        var _ = this, 
             bin = {},
             constants = this.constants = {
                 PI: Math.PI,
                 E:  Math.E
             };
-        
+        //list all the supported operators
         var operators = {
                 '^': new Operator('^', 'pow', 4, false, false),
                 '*': new Operator('*', 'multiply', 3, true, false),
@@ -1057,7 +1423,7 @@ var nerdamer = (function() {
                 'dot'       : [dot, 2]
             };
         
-        var brackets = {},
+        var brackets = {}, //the storage container for the brackets
 
             last_item_on = function(stack) {
                 return stack[stack.length-1];
@@ -1076,18 +1442,32 @@ var nerdamer = (function() {
 
         this.error = err;
         
+        /**
+         * This method gives the ability to override operators with new methods.
+         * @param {String} which
+         * @param {Function} with_what
+         */
         this.override = function(which, with_what) {
             if(!bin[which]) bin[which] = [];
             bin[which].push(this[which]);
             this[which] = with_what;
         };
         
+        /**
+         * Restores a previously overridden operator
+         * @param {String} what
+         */
         this.restore = function(what) {
             if(this[what]) this[what] = bin[what].pop();
         };
         
-        //the idea behind this method is to give faux function overloading
-        //not really ready for primetime
+        /**
+         * This method is supposed to behave similarly to the override method but it does not override
+         * the existing function rather it only extends it
+         * @param {String} what
+         * @param {Function} with_what
+         * @param {boolean} force_call
+         */
         this.extend = function(what, with_what, force_call) {
             var _ = this,
                 extended = this[what];
@@ -1100,9 +1480,14 @@ var nerdamer = (function() {
             }
         };
         
-        //generates library's representation of a function. It's a fancy way of saying a symbol with 
-        //a few extras. The most important thing is that that it gives a baseName and 
-        //an args property to the symbols in addition to changing its group to FN
+        /**
+         * Generates library's representation of a function. It's a fancy way of saying a symbol with 
+         * a few extras. The most important thing is that that it gives a baseName and 
+         * an args property to the symbols in addition to changing its group to FN
+         * @param {String} fn_name
+         * @param {Array} params
+         * @returns {Symbol}
+         */
         this.symfunction = function(fn_name, params) { 
             //call the proper function and return the result;
             var f = new Symbol(fn_name);
@@ -1115,9 +1500,14 @@ var nerdamer = (function() {
             return f;
         };
         
-        //an internal function call for the Parser. This will either trigger a real
-        //function call if it can do so or just return a symbolic representation of the 
-        //function using symfunction.
+        /**
+         * An internal function call for the Parser. This will either trigger a real 
+         * function call if it can do so or just return a symbolic representation of the 
+         * function using symfunction.
+         * @param {String} fn_name
+         * @param {Array} args
+         * @returns {Symbol}
+         */
         this.callfunction = function(fn_name, args) { 
             var fn_settings = functions[fn_name];
             
@@ -1174,11 +1564,23 @@ var nerdamer = (function() {
             if(symbol.power.valueOf() === 0) symbol.convert(N);
         };
         
-        //the external method which should be called to trigger parsing of a string.
+        /**
+         * This is the method that triggers the parsing of the string. It generates a parse tree but processes 
+         * it right away. The operator functions are called when their respective operators are reached. For instance
+         * + with cause this.add to be called with the left and right hand values. It works by walking along each 
+         * character of the string and placing the operators on the stack and values on the output. When an operator
+         * having a lower order than the last is reached then the stack is processed from the last operator on the 
+         * stack.
+         * @param {String} expression_string
+         * @param {Object} substitutions
+         * @returns {Symbol}
+         */
         this.parse = function(expression_string, substitutions) {  
-            //Since variables cannot start with a number, the assumption is made that when this occurs the
-            //user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
-            //a side-by-side close and open parenthesis
+            /*
+             * Since variables cannot start with a number, the assumption is made that when this occurs the
+             * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
+             * a side-by-side close and open parenthesis
+             */
             expression_string = String(expression_string).split(' ').join('')//strip empty spaces
                     .replace(/\d*\.*\d+e[\+\-]*\d+/gi, function(match, start, str) {
                         if(/[a-z_]/.test(str.charAt(start-1))) return match;
@@ -1202,16 +1604,16 @@ var nerdamer = (function() {
                     .replace( /\)\(/g, ')*(' );
 
             var subs = substitutions || {},
-                stack = [],
-                output = [],
+                stack = [], //the operator stack
+                output = [], //the values stack
                 len = expression_string.length,
                 pos = 0,
-                last_opr_pos,
-                last_operator,
+                last_opr_pos, //where the last operator was found
+                last_operator, //the lst operator that was found
                 last_char,
-                EOT = false,
+                EOT = false, //was the end of the string reached?
                 func_on_stack = false,
-                curpos = 0,
+                curpos = 0, //the current position on the string
                                 
                 evaluate = function(operator) { 
                     if(!operator) {
@@ -1237,7 +1639,12 @@ var nerdamer = (function() {
                         insert(result);
                     }    
                 },
-
+                /**
+                 * This method inserts the token into the output stack. Here it will attempt to detect if a prefix is 
+                 * on the stack and will try to resolve it. Additonally it checks if the item is a scientific number
+                 * and if so places the correct number on the output stack. 
+                 * @param token
+                 */
                 insert = function(token) { 
                     //if the number is a scientifc number then use that instead
                     if(/&/.test(token)) {
@@ -1323,7 +1730,6 @@ var nerdamer = (function() {
                     }
                     //place the token on the output stack. 
                     //This may be empty if we're at a unary or bracket so skip those.
-
                     insert(token);
 
                     //if the preceding token is a operator
@@ -1434,13 +1840,21 @@ var nerdamer = (function() {
             return _.symfunction(ABS, [symbol]);
         }
         
+        /**
+         * It just raises the symbol's power to 1/2
+         * @param {Symbol} symbol
+         * @returns {Symbol}
+         */
         function sqrt(symbol) {
             return _.pow(symbol, new Symbol('0.5'));
         }
         
         function log(symbol) { 
             var retval;
-            if(symbol.group === FN && symbol.baseName === 'exp') {
+            if(symbol.value === 'e') { 
+                retval = new Symbol(symbol.power);
+            }
+            else if(symbol.group === FN && symbol.baseName === 'exp') {
                 var s = symbol.args[0];
                 if(symbol.multiplier === 1) retval = _.multiply(s, new Symbol(symbol.power));
                 else retval = _.symfunction('log',[symbol]);
@@ -1457,7 +1871,6 @@ var nerdamer = (function() {
             else {
                 retval = _.symfunction('log', arguments); 
             }
-
             return retval;
         }
         
@@ -1530,7 +1943,17 @@ var nerdamer = (function() {
             return symbol;
         };
 
-        //gets called when the parser finds the + operator. Not the prefix operator.
+        //
+        /**
+         * This method gets called when the parser finds the + operator. Not the prefix operator. Just like the 
+         * multiply, divide, and subract methods it will transform one of the symbols rather than return a new
+         * one. The result is slightly faster processing when the parsing is inline but it's the source of much
+         * aggravation when the parsing branches out. To alleviate this problem the add method should be called in a
+         * SAFE block or with Settings.SAFE set to true, which will force a new symbol to be return every time.
+         * @param {Symbol} symbol1
+         * @param {Symbol} symbol2
+         * @returns {Symbol}
+         */
         this.add = function(symbol1, symbol2) { 
             var isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2), t;
             if(isSymbolA && isSymbolB) {
@@ -1726,7 +2149,12 @@ var nerdamer = (function() {
             return symbol2;
         };
         
-        //gets called when the parser finds the - operator. Not the prefix operator.
+        /**
+         * Gets called when the parser finds the - operator. Not the prefix operator. See this.add
+         * @param {Symbol} symbol1
+         * @param {Symbol} symbol2
+         * @returns {Symbol}
+         */
         this.subtract = function( symbol1, symbol2) { 
             var isSymbolA = isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2), t;
             
@@ -1757,7 +2185,12 @@ var nerdamer = (function() {
             return symbol2;
         };
 
-        //gets called when the parser finds the * operator. 
+        /**
+         * Gets called when the parser finds the * operator. See this.add
+         * @param {Symbol} symbol1
+         * @param {Symbol} symbol2
+         * @returns {Symbol}
+         */
         this.multiply = function(symbol1, symbol2) { 
             var isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2), t;
             
@@ -1978,7 +2411,12 @@ var nerdamer = (function() {
             return symbol2;
         };
         
-        //gets called when the parser finds a / operator. 
+        /**
+         * Gets called when the parser finds the / operator. See this.add
+         * @param {Symbol} symbol1
+         * @param {Symbol} symbol2
+         * @returns {Symbol}
+         */
         this.divide = function(symbol1, symbol2) {
             var isSymbolA = isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2), t;
             
@@ -2040,7 +2478,12 @@ var nerdamer = (function() {
             return symbol2;
         };
 
-        //gets called when the parser finds the ^ operator. 
+        /**
+         * Gets called when the parser finds the ^ operator. See this.add
+         * @param {Symbol} symbol1
+         * @param {Symbol} symbol2
+         * @returns {Symbol}
+         */
         this.pow = function(symbol1,symbol2) {
             var isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2);
             
@@ -2192,6 +2635,11 @@ var nerdamer = (function() {
     /* "STATIC" */
     //converts a number to a fraction. 
     var Fraction = {
+        /**
+         * Converts a decimal to a fraction
+         * @param {number} value
+         * @returns {Array} - an array containing the denominator and the numerator
+         */
         convert: function( value, opts ) {
             var frac;
             if( value === 0 ) {
@@ -2216,20 +2664,26 @@ var nerdamer = (function() {
             }
             return frac;
         },
-        // If the fraction is too small or too large this gets called instead of 
-        // fullConversion method
+        /**
+         * If the fraction is too small or too large this gets called instead of fullConversion method
+         * @param {number} dec
+         * @returns {Array} - an array containing the denominator and the numerator
+         */
         quickConversion: function( dec ) {
             var x = (dec.toExponential()+'').split('e');
             var d = x[0].split('.')[1];// get the number of places after the decimal
             var l = d ? d.length : 0; // maybe the coefficient is an integer;
             return [Math.pow(10,l)*x[0], Math.pow(10, Math.abs(x[1])+l)];
         },
-        
+        /**
+         * Returns a good approximation of a fraction. This method gets called by convert
+         * http://mathforum.org/library/drmath/view/61772.html
+         * Decimal To Fraction Conversion - A Simpler Version
+         * Dr Peterson
+         * @param {number} dec
+         * @returns {Array} - an array containing the denominator and the numerator
+         */
         fullConversion: function( dec ) {
-            //function returns a good approximation of a fraction
-            //http://mathforum.org/library/drmath/view/61772.html
-            //Decimal To Fraction Conversion - A Simpler Version
-            //Dr Peterson
             var done = false;
             //you can adjust the epsilon to a larger number if you don't need very high precision
             var n1 = 0, d1 = 1, n2 = 1, d2 = 0, n = 0, q = dec, epsilon = 1e-13;
@@ -3041,6 +3495,7 @@ var nerdamer = (function() {
     
     var build = Utils.build = function(symbol, arg_array) {
         var args = variables(symbol);
+        var supplements = [];
         var ftext = function(symbol, xports) { 
             xports = xports || [];
             var c = [],
@@ -3059,9 +3514,12 @@ var nerdamer = (function() {
                 var retval;
                 if(bn in Math) retval = 'Math.'+bn;
                 else {
-                    //Math2 functions aren't part of the standard javascript
-                    //Math library and must be exported.
-                    xports.push('var '+bn+' = '+Math2[bn].toString()+'; ');
+                    if(supplements.indexOf(bn) === -1) { //make sure you're not adding the function twice
+                        //Math2 functions aren't part of the standard javascript
+                        //Math library and must be exported.
+                        xports.push('var '+bn+' = '+ Math2[bn].toString()+'; ');
+                        supplements.push(bn);
+                    }
                     retval = bn;
                 }
                 retval = retval+inBrackets(symbol.args.map(function(x) {
@@ -3134,6 +3592,7 @@ var nerdamer = (function() {
     C.VARS = VARS;
     C.err = err;
     /* END BUILD CORE */
+
     
     /* EXPORTS */
     /**
@@ -3148,6 +3607,8 @@ var nerdamer = (function() {
     
     var libExports = function(expression, subs, option, location) {
         var variable;
+        //handle preprocessors
+        expression = preprocess(expression);
         //convert any expression passed in to a string
         if(expression instanceof Expression) expression = expression.toString();
         
@@ -3286,7 +3747,13 @@ var nerdamer = (function() {
                 if(obj) this.register(obj[i]);
             }
         }
-        else if(obj) {
+        else if(obj && Settings.exclude.indexOf(obj.name) === -1) {
+            //make sure all the dependencies are available
+            if(obj.dependencies) {
+                for(var i=0; i<obj.dependencies.length; i++)
+                    if(!core[obj.dependencies[i]]) 
+                        throw new Error(format('{0} requires {1} to be loaded!', obj.name, obj.dependencies[i]));
+            }
             //if no parent object is provided then the function does not have an address and cannot be called directly
             var parent_obj = obj.parent, 
                 fn = obj.build.call(core); //call constructor to get function
@@ -3298,6 +3765,7 @@ var nerdamer = (function() {
                 ref_obj[obj.name] = fn;
             }
             if(obj.visible) _.functions[obj.name] = [fn, obj.numargs]; //make the function available
+            
         } 
     };
     
@@ -3337,6 +3805,15 @@ var nerdamer = (function() {
             VARS[v] = isSymbol(val) ? val : _.parse(val);
         }
         return this;
+    };
+    
+    libExports.addPreprocessor = function(f) {
+        return PREPROCESSORS.push(f);
+    };
+    
+    libExports.removePreprocessor = function(n) {
+        if(n===PREPROCESSORS.length) PREPROCESSORS.pop();
+        PREPROCESSORS.splice(n-1, 1, undefined);
     };
     
     /**
