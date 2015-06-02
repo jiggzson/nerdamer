@@ -34,14 +34,21 @@
         ga('send', 'pageview');
 
     </script>
+    <style>
+        #forkongithub a{background:#ABABAB;color:#fff;text-decoration:none;font-family:arial,sans-serif;
+        text-align:center;font-weight:bold;padding:5px 40px;font-size:1rem;line-height:2rem;
+        position:relative;transition:0.5s;}#forkongithub a:hover{background:#56CE65;color:#fff;}
+        #forkongithub a::before,#forkongithub a::after{content:"";width:100%;display:block;position:absolute;
+        top:1px;left:0;height:1px;background:#fff;}#forkongithub a::after{bottom:1px;top:auto;}
+        @media screen and (min-width:800px){#forkongithub{position:fixed;display:block;top:-15px;
+        right:0;width:200px;overflow:hidden;height:200px;z-index:9999;}
+        #forkongithub a{width:200px;position:absolute;top:60px;right:-60px;
+        transform:rotate(45deg);-webkit-transform:rotate(45deg);-ms-transform:rotate(45deg);
+        -moz-transform:rotate(45deg);-o-transform:rotate(45deg);box-shadow:4px 4px 10px #222;}}
+    </style>
 </head>
 
 <body>
-    <a href="https://github.com/jiggzson/nerdamer">
-        <img style="position: absolute; top: 0; left: 0; border: 0; z-index: 9999" 
-        src="https://camo.githubusercontent.com/c6286ade715e9bea433b4705870de482a654f78a/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f6c6566745f77686974655f6666666666662e706e67" 
-        alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_left_white_ffffff.png">
-    </a>
     <!-- Navigation -->
     <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
         <div class="container">
@@ -86,7 +93,7 @@
     <div class="container">
         <div class="rounded-15 white padded">
             <div id="message">
-                
+                <span id="forkongithub"><a href="https://github.com/jiggzson/nerdamer">Fork me on GitHub</a></span>
                 <h2>What is Nerdamer?</h2>
                     <p>
                         Nerdamer is a small and light-weight symbolic math expression evaluator written in javaScript. The parsing is done
