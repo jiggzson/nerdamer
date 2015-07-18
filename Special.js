@@ -35,7 +35,7 @@
 		* if x > 0 then 1
 		* if x == 0 then 1/2
 		* if x < 0 then 0
-        */
+        	*/
 		step: function(x) {
 			if (x > 0)
 			{
@@ -85,56 +85,56 @@
     };
 
     nerdamer.register([
-        {
-            /*
-            * Heavyside step function
-			* Specification : http://mathworld.wolfram.com/HeavisideStepFunction.html
-			* if x > 0 then 1
-			* if x == 0 then 1/2
-			* if x < 0 then 0
-            */
-            name: 'step',
-            visible: true,
-            numargs: 1,
-            build: function() { return __.step; }
-		},
-		{
-            /*
-            * Sign function
-			* Specification : http://mathworld.wolfram.com/Sign.html
-			* if x > 0 then 1
-			* if x == 0 then 0
-			* if x < 0 then -1
-            */
-            name: 'sign',
-            visible: true,
-            numargs: 1,
-            build: function() { return __.sign; }
-		},
-		{
-            /*
-			* Sign function
-			* Specification : http://mathworld.wolfram.com/RectangleFunction.html
-			* if |x| > 1/2 then 0
-			* if |x| == 1/2 then 1/2
-			* if |x| < 1/2 then 1
-			*/
-            name: 'rectangle',
-            visible: true,
-            numargs: 1,
-            build: function() { return __.rectangle; }
-		},
-		{
-            /*
-			* Sinc function
-			* Specification : http://mathworld.wolfram.com/SincFunction.html
-			* if x == 0 then 1
-			* otherwise sin(x)/x
-			*/
-            name: 'sinc',
-            visible: true,
-            numargs: 1,
-            build: function() { return __.sinc; }
-		}
+	{
+		/*
+		* Heavyside step function
+		* Specification : http://mathworld.wolfram.com/HeavisideStepFunction.html
+		* if x > 0 then 1
+		* if x == 0 then 1/2
+		* if x < 0 then 0
+		*/
+		name: 'step',
+		visible: true,
+		numargs: 1,
+		build: function() { return __.step; }
+	},
+	{
+		/*
+		* Sign function
+		* Specification : http://mathworld.wolfram.com/Sign.html
+		* if x > 0 then 1
+		* if x == 0 then 0
+		* if x < 0 then -1
+		*/
+		name: 'sign',
+		visible: true,
+		numargs: 1,
+		build: function() { return __.sign; }
+	},
+	{
+		/*
+		* Sign function
+		* Specification : http://mathworld.wolfram.com/RectangleFunction.html
+		* if |x| > 1/2 then 0
+		* if |x| == 1/2 then 1/2
+		* if |x| < 1/2 then 1
+		*/
+		name: 'rectangle',
+		visible: true,
+		numargs: 1,
+		build: function() { return __.rectangle; }
+	},
+	{
+		/*
+		* Sinc function
+		* Specification : http://mathworld.wolfram.com/SincFunction.html
+		* if x == 0 then 1
+		* otherwise sin(x)/x
+		*/
+		name: 'sinc',
+		visible: true,
+		numargs: 1,
+		build: function() { return __.sinc; }
+	}
     ]);
 })();
