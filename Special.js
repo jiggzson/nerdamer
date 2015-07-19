@@ -62,7 +62,15 @@
 		sign: function(symbol) {
 			if (symbol.group === N)//Check if a number
 			{
-				return Math.sign(symbol);
+				if (x > 0)
+				{
+					return 1;
+				}
+				else if (x < 0)
+				{
+					return -1;
+				}
+				return 0;
 			}
 			return  _.symfunction("sign",[symbol]);
 		},
