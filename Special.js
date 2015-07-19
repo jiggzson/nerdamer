@@ -62,11 +62,11 @@
 		sign: function(symbol) {
 			if (symbol.group === N)//Check if a number
 			{
-				if (x > 0)
+				if (symbol > 0)
 				{
 					return 1;
 				}
-				else if (x < 0)
+				else if (symbol < 0)
 				{
 					return -1;
 				}
