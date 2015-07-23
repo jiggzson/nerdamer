@@ -1898,7 +1898,7 @@ var nerdamer = (function() {
         
         function transpose(mat) {
             if(isMatrix(mat)) return mat.transpose();
-            err('function tranpose expects a matrix');
+            err('function transpose expects a matrix');
         }
         
         function invert(mat) {
