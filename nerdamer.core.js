@@ -3808,7 +3808,7 @@ var nerdamer = (function() {
     };
 
     /**
-     * Clear the variables from the VARS object;
+     * Clear the variables from the VARS object
      * @returns {Object} Returns the nerdamer object
      */    
     libExports.clearVars = function() {
