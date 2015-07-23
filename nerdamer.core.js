@@ -3806,6 +3806,15 @@ var nerdamer = (function() {
         }
         return this;
     };
+
+    /**
+     * Clear the variables from the VARS object;
+     * @returns {Object} Returns the nerdamer object
+     */    
+    libExports.clearVars = function() {
+        VARS = {};
+        return this;
+    };
     
     libExports.addPreprocessor = function(f) {
         return PREPROCESSORS.push(f);
