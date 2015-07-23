@@ -1898,7 +1898,7 @@ var nerdamer = (function() {
         
         function transpose(mat) {
             if(isMatrix(mat)) return mat.transpose();
-            err('function tranpose expects a matrix');
+            err('function transpose expects a matrix');
         }
         
         function invert(mat) {
@@ -3805,6 +3805,35 @@ var nerdamer = (function() {
             VARS[v] = isSymbol(val) ? val : _.parse(val);
         }
         return this;
+    };
+
+    /**
+     * Clear the variables from the VARS object
+     * @returns {Object} Returns the nerdamer object
+     */    
+    libExports.clearVars = function() {
+        VARS = {};
+        return this;
+    };
+    
+    /**
+     * @param {String} Output format. Can be 'object' (just returns the VARS object), 'text' or 'latex'. Default: 'text'
+     * @returns {Object} Returns an object with the variables
+     */    
+    libExports.getVars = function(output) {
+        output = output || 'text';
+        var variables = {};
+        if (output === 'object') variables = VARS;
+        else {
+            for (var v in VARS) {
+                if (output === 'latex') {
+                    variables[v] = VARS[v].latex();
+                } else if (output === 'text') {
+                    variables[v] = VARS[v].text();
+                }
+            }
+        }
+        return variables;
     };
     
     libExports.addPreprocessor = function(f) {
