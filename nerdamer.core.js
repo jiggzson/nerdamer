@@ -107,8 +107,7 @@ var nerdamer = (function() {
             do {
                 factorial = regex.exec(expression);
                 if (factorial !== null) {
-                    expression = expression.replace(factorial[0], 'fact(' + factorial[0] + ')');
-                    expression = expression.replace('!', '');
+                    expression = expression.replace(factorial[0], 'fact(' + factorial[0] + ')').expression.replace('!', '');
                 }
             } while(factorial);
             return expression;
