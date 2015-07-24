@@ -3624,6 +3624,8 @@ var nerdamer = (function() {
     
     var libExports = function(expression, subs, option, location) {
         var variable;
+        var fn;
+        var args;
         //Replace n! to fact(n!)
         expression = insertFactorial(expression);
         //handle preprocessors
@@ -3633,7 +3635,16 @@ var nerdamer = (function() {
         
         var parts = expression.split('=');
         //have the expression point to the second part instead
-        if(parts.length > 1) { variable = parts[0]; expression = parts[1]; }
+        if(parts.length > 1) {
+            //Check if parts[0] is a function
+            if (/\w+\((.*)\)/.test(parts[0].replace(/\s/g, ''))) {
+                fn = /\w+(?=\()/.exec(parts[0])[0];
+                args = /\((.*)(?=\))/.exec(parts[0])[1].replace(/\s/g, '').split(',');
+            } else {
+                variable = parts[0];
+            }
+            expression = parts[1];
+        }
         
         var multi_options = isArray(option),
             expand = 'expand',
@@ -3650,6 +3661,7 @@ var nerdamer = (function() {
         else { EQNS.push(e);}
         
         if(variable) libExports.setVar(variable, e);
+        if(fn) libExports.setFunction(fn, args, e);
         
         return new Expression(e);
     };
