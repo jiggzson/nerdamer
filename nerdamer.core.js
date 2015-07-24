@@ -88,12 +88,30 @@ var nerdamer = (function() {
          * @param {String} typ - The type of symbols that's being validated
          * @throws {Exception} - Throws an exception on fail
          */
-        validateName = Utils.validateName = function(name, typ) { 
+        validateName = Utils.validateName = function(name, typ) {
             typ = typ || 'variable';
             var regex = /^[a-z_][a-z\d\_]*$/gi;
             if(!(regex.test( name)) ) {
                 throw new Error(name+' is not a valid '+typ+' name');
             }
+        },
+        
+        /**
+         * Replace n! to fact(n)
+         * @param {String}
+         */
+        
+        insertFactorial = Utils.insertFactorial = function(expression) {
+            var factorial;
+            var regex = /(\d+|\w+)!/ig;
+            do {
+                factorial = regex.exec(expression);
+                if (factorial !== null) {
+                    expression = expression.replace(factorial[0], 'fact(' + factorial[0] + ')');
+                    expression = expression.replace('!', '');
+                }
+            } while(factorial);
+            return expression;
         },
         
         /**
@@ -510,7 +528,7 @@ var nerdamer = (function() {
             }
             return s;
         },
-        
+
         //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
         //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the 
         //functions within are pretty self-explanatory.
@@ -3607,6 +3625,8 @@ var nerdamer = (function() {
     
     var libExports = function(expression, subs, option, location) {
         var variable;
+        //Replace n! to fact(n!)
+        expression = insertFactorial(expression);
         //handle preprocessors
         expression = preprocess(expression);
         //convert any expression passed in to a string
@@ -3673,6 +3693,8 @@ var nerdamer = (function() {
      */
     libExports.setFunction = function(name, params_array, body) {
         validateName(name);
+        body = insertFactorial(body);
+		console.log(body);
         if(!isReserved(name)) {
             params_array = params_array || variables(_.parse(body));
             _.functions[name] = [_.mapped_function, params_array.length, {
