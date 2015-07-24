@@ -1593,6 +1593,8 @@ var nerdamer = (function() {
          * @returns {Symbol}
          */
         this.parse = function(expression_string, substitutions) {  
+            //Replace n! to fact(n!)
+            expression_string = insertFactorial(expression_string);
             /*
              * Since variables cannot start with a number, the assumption is made that when this occurs the
              * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
@@ -3626,8 +3628,6 @@ var nerdamer = (function() {
         var variable;
         var fn;
         var args;
-        //Replace n! to fact(n!)
-        expression = insertFactorial(expression);
         //handle preprocessors
         expression = preprocess(expression);
         //convert any expression passed in to a string
@@ -3704,7 +3704,6 @@ var nerdamer = (function() {
      */
     libExports.setFunction = function(name, params_array, body) {
         validateName(name);
-        body = insertFactorial(body);
         if(!isReserved(name)) {
             params_array = params_array || variables(_.parse(body));
             _.functions[name] = [_.mapped_function, params_array.length, {
