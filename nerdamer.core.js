@@ -496,7 +496,7 @@ var nerdamer = (function() {
         
         /**
          * The idea is to have the ability to do some preprocessing on the string. This can have some nice 
-         * possibilities such as being able to make a psuedo programming language and out the the result in the form
+         * possibilities such as being able to make a pseudo programming language and out the the result in the form
          * of an expression or equation. Currently not used
          * @param {String} str
          * @
