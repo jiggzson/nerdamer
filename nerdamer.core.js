@@ -3694,7 +3694,6 @@ var nerdamer = (function() {
     libExports.setFunction = function(name, params_array, body) {
         validateName(name);
         body = insertFactorial(body);
-		console.log(body);
         if(!isReserved(name)) {
             params_array = params_array || variables(_.parse(body));
             _.functions[name] = [_.mapped_function, params_array.length, {
