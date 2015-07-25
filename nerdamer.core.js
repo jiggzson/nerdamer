@@ -88,12 +88,29 @@ var nerdamer = (function() {
          * @param {String} typ - The type of symbols that's being validated
          * @throws {Exception} - Throws an exception on fail
          */
-        validateName = Utils.validateName = function(name, typ) { 
+        validateName = Utils.validateName = function(name, typ) {
             typ = typ || 'variable';
             var regex = /^[a-z_][a-z\d\_]*$/gi;
             if(!(regex.test( name)) ) {
                 throw new Error(name+' is not a valid '+typ+' name');
             }
+        },
+        
+        /**
+         * Replace n! to fact(n)
+         * @param {String}
+         */
+        
+        insertFactorial = Utils.insertFactorial = function(expression) {
+            var factorial;
+            var regex = /(\d+|\w+)!/ig;
+            do {
+                factorial = regex.exec(expression);
+                if (factorial !== null) {
+                    expression = expression.replace(factorial[0], 'fact(' + factorial[0] + ')').expression.replace('!', '');
+                }
+            } while(factorial);
+            return expression;
         },
         
         /**
@@ -496,7 +513,7 @@ var nerdamer = (function() {
         
         /**
          * The idea is to have the ability to do some preprocessing on the string. This can have some nice 
-         * possibilities such as being able to make a psuedo programming language and out the the result in the form
+         * possibilities such as being able to make a pseudo programming language and out the the result in the form
          * of an expression or equation. Currently not used
          * @param {String} str
          * @
@@ -510,7 +527,7 @@ var nerdamer = (function() {
             }
             return s;
         },
-        
+
         //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
         //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the 
         //functions within are pretty self-explanatory.
@@ -1576,6 +1593,8 @@ var nerdamer = (function() {
          * @returns {Symbol}
          */
         this.parse = function(expression_string, substitutions) {  
+            //Replace n! to fact(n!)
+            expression_string = insertFactorial(expression_string);
             /*
              * Since variables cannot start with a number, the assumption is made that when this occurs the
              * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
@@ -3607,6 +3626,8 @@ var nerdamer = (function() {
     
     var libExports = function(expression, subs, option, location) {
         var variable;
+        var fn;
+        var args;
         //handle preprocessors
         expression = preprocess(expression);
         //convert any expression passed in to a string
@@ -3614,7 +3635,16 @@ var nerdamer = (function() {
         
         var parts = expression.split('=');
         //have the expression point to the second part instead
-        if(parts.length > 1) { variable = parts[0]; expression = parts[1]; }
+        if(parts.length > 1) {
+            //Check if parts[0] is a function
+            if (/\w+\((.*)\)/.test(parts[0].replace(/\s/g, ''))) {
+                fn = /\w+(?=\()/.exec(parts[0])[0];
+                args = /\((.*)(?=\))/.exec(parts[0])[1].replace(/\s/g, '').split(',');
+            } else {
+                variable = parts[0];
+            }
+            expression = parts[1];
+        }
         
         var multi_options = isArray(option),
             expand = 'expand',
@@ -3631,6 +3661,7 @@ var nerdamer = (function() {
         else { EQNS.push(e);}
         
         if(variable) libExports.setVar(variable, e);
+        if(fn) libExports.setFunction(fn, args, e);
         
         return new Expression(e);
     };
