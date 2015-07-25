@@ -3891,3 +3891,7 @@ var nerdamer = (function() {
     
     return libExports; //Done
 })();
+
+if((typeof module) !== 'undefined') {
+    module.exports = nerdamer;
+}
