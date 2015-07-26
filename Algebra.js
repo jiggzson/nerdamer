@@ -1169,19 +1169,18 @@ if((typeof module) !== 'undefined') {
                 nn = n,
                 mp = divisor[0][1], //get the maximum power of the divisor
                 coeff = divisor[0][0],
-                quotient = [],
-                row = []; //the quotient to be returned
+                quotient = []; //the quotient to be returned
             //step through the dividend
             for(var i=0; i<n; i++) { 
                 //get the ratio of the maximum powers of the dividend and the divisor
                 var cur_pow = dividend[0], //get the current power of the polynomial at this position
-                    diff = cur_pow[1] - mp; //get the difference in the powers
+                    diff = cur_pow[1] - mp, //get the difference in the powers
+                    row = []; //clear the row
                 if(diff < 0) {
                     break;//no need to continue since our divisor is now larger than our dividend
                 } 
                 var ratio = cur_pow[0]/coeff; //the ratio of the coefficients
                 //we start at 1 because we already know that the first term in the dividend drops off
-                //and reduce n since the dividend length also drops by 1
                 for(var j=1; j<nn; j++) {
                     var term = divisor[j];
                     if(typeof term !== 'undefined') {
@@ -1195,7 +1194,6 @@ if((typeof module) !== 'undefined') {
                     }
                 }
                 dividend = row;
-                row = []; //clear the row
                 quotient.push([ratio, diff]); //add the current term to the quotient
                 nn--; //one term drops so reduce end limit
             }
@@ -1451,3 +1449,4 @@ if((typeof module) !== 'undefined') {
         }
     ]);
 })();
+
