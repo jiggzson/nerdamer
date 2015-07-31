@@ -580,29 +580,29 @@ var test_cases = {
         expected: '(1+x)^(5+n)',
         numval: 117649
     },
-	//Edge cases for zero
-	95: {
+    //Edge cases for zero
+    95: {
         description: "Divide by zero",
         expression: '0/0',
         expected: 'Division by zero!',
         numval: 0,
-		error: true //Expect an error
+	error: true //Expect an error
     },
-	96: {
+    96: {
         description: "Multiples of zero",
         expression: '0^0',
         expected: 'Division by zero!',
         numval: 0,
-		error: true //Expect an error
+	error: true //Expect an error
     },
-	//Exponents of negative numbers
-	97: {
+    //Exponents of negative numbers
+    97: {
         description: "Exponents of negative numbers",
         expression: '(-1)^x',
         expected: '(-1)^x',
         numval: 0
     },
-	98: {
+    98: {
         description: "Euler's identity",
         expression: 'e^(2*i*PI) +e^(i*PI)',
         expected: '0',
@@ -616,7 +616,7 @@ var run_tests = function() {
     for(var x in test_cases) {
         var test_case = test_cases[x]; //get the test case
 		var result = "";
-        //Test if nerdamer throws and error correctly
+        	//Test if nerdamer throws and error correctly
 		try {
 			//run it through nerdamer
 			result = nerdamer(test_case.expression).text();
