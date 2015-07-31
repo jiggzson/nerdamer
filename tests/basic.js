@@ -600,7 +600,7 @@ var test_cases = {
         description: "Exponents of negative numbers",
         expression: '(-1)^x',
         expected: '(-1)^x',
-        numval: 0
+        numval: 1
     },
     98: {
         description: "Euler's identity",
