@@ -39,7 +39,9 @@
         setFn = isDiv ? 'html' : 'val',
         history = [],
         modifiers = [],
-        lastRecalled = 0;
+        lastRecalled = 0,
+		graph_x_axis = $.map($(Array(40)),function(val, i) {   return  i-10; }), //Steps to evaluate fuction at
+		graph_y_axis = [];
 
     //format the text from mathquill into something that nerdamer can understand
     var standardize = function(text) {
@@ -70,6 +72,9 @@
         }
         
         div.append(' <a href="javascript:void(0)" class="delete">delete</a>');
+		//Graph button
+		div.append(' <a href="javascript:void(0)" class="graph">graph</a>');
+
         $panel.append(div);
         //if(span) span.mathquill('redraw');
         
@@ -268,4 +273,40 @@
         //remove the div from the DOM
         $parent.remove();
     });
+
+	//Callback for graphing
+	$panel.on('click', '.graph', function(e) {
+        e.preventDefault();
+        var $parent = $(this).parent();
+
+        console.log(nerdamer.expressions()[$parent.data('eqNumber') -1]);
+		var expression = nerdamer.expressions()[$parent.data('eqNumber') -1];
+
+		console.log (graph_x_axis.map(function (i) { return nerdamer(expression,{x:i}).evaluate(); } ));
+		graph_y_axis.push(graph_x_axis.map(function (i) { return nerdamer(expression,{x:i}).evaluate(); } ));
+
+		var graph_x_axis_copy = graph_x_axis.slice() ;
+		var graph_y_axis_copy = $.extend(true, [], graph_y_axis) ;
+
+		graph_x_axis_copy.unshift('x');
+		var new_column = [graph_x_axis_copy];
+		console.log (graph_y_axis);
+		graph_y_axis_copy.forEach(function(val, i,arr) { val.unshift("lol"); new_column.push(val); });
+
+		var chart = c3.generate({
+			bindto: '#graph',
+			data: {
+				x: 'x',
+				columns: new_column,
+				type: 'spline'
+			},
+			zoom: {
+				enabled: true
+			}
+		});
+
+
+
+    });
+
 })();

@@ -24,6 +24,9 @@
     <!-- Mathquill css -->
     <link href="./js/mathquill/mathquill.css" rel="stylesheet">
 
+	<!-- Graph css -->
+    <link href="./css/c3.min.css" rel="stylesheet">
+
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -151,7 +154,8 @@
                     <span class="version"></span> 
                     <a href="#" class="instructions-anchor" data-toggle="modal" data-target=".bs-example-modal-lg">Click here for instructions and supported functions </a> 
                 </div>
-                    
+
+
                 <div class="nerdamer-interface-container">
                     <div class="nerdamer-interface-input full-width-input" id="expr-input" data-placeholder="Enter Expression"></div>
                     <span>
@@ -163,6 +167,10 @@
                     <button class="btn btn-inverse nerdamer-interface-button" id="clear-all"> CLEAR ALL </button>
                     <button class="btn btn-inverse nerdamer-interface-button" id="expr-submit"> ENTER </button>
                 </div>
+
+				<!-- Display graph -->
+				<div id="graph"></div>
+
             </div>
 
             <div id="expr-panel"></div>   
@@ -187,7 +195,12 @@
     <script src="./js/Calculus.js"></script>
     <script src="./js/Algebra.js"></script>
     <script src="./js/LinAlg.js"></script>
-    
+    <script src="./js/Special.js"></script>
+
+	<!-- Graphing library -->
+	<script src="./js/d3.min.js"></script>
+	<script src="./js/c3.min.js"></script>
+
     <!-- Behave library -->
     <script src="./js/jquery.eqInput.js"></script>
     <script src="./js/demo.js"></script>
