@@ -16,11 +16,11 @@
 
     <!-- Custom CSS -->
     <link href="./css/style.css" rel="stylesheet">
-    
+
     <!-- Page CSS -->
     <link href="./css/demo.css" rel="stylesheet">
     <link href="./css/jquery.eqInput.css" rel="stylesheet">
-    
+
     <!-- Mathquill css -->
     <link href="./js/mathquill/mathquill.css" rel="stylesheet">
 
@@ -37,7 +37,7 @@
         MathJax.Hub.Config({
             tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
             "HTML-CSS": {
-                linebreaks: { automatic: true, width: "container" }          
+                linebreaks: { automatic: true, width: "container" }
             },
             menuSettings: {
                 zoom: "Click",
@@ -127,19 +127,19 @@
                         <div class="modal-body">
                             <div class="instructions top-layer">
                                 <hr>
-                                To enter an expression just type it in the box below with the format:<span class="description"> expression;variable=value</span> 
+                                To enter an expression just type it in the box below with the format:<span class="description"> expression;variable=value</span>
                                 e.g. <span class="example">cos(x)+1,x=PI</span><br/>
 
-                                To enter a known value type in: <span class="description">number_of_expression: variable=value, variable2=value</span>. 
-                                <span class="example">e.g. %1, x=5, y=6 </span>. Constant $\pi$ = PI and e = E<br/><br/> 
-                                
+                                To enter a known value type in: <span class="description">number_of_expression: variable=value, variable2=value</span>.
+                                <span class="example">e.g. %1, x=5, y=6 </span>. Constant $\pi$ = PI and e = E<br/><br/>
+
                                 <p>
                                     To set a variable type in <span class="description">variable:value</span>
-                                    <span class="example">e.g. x:8</span> 
+                                    <span class="example">e.g. x:8</span>
                                 </p>
 
                                 To declare a function type in: <span class="description">function_name( variables_separated_by_commas ):=function_expression</span>
-                                <span class="example">e.g. f(x):=x^2-5/cos(x)</span>. To access the last declared expression use <span class="description">%</span> or 
+                                <span class="example">e.g. f(x):=x^2-5/cos(x)</span>. To access the last declared expression use <span class="description">%</span> or
                                 use %[digit] to access a previously entered expression.<br/><br/>
                                 Math is rendered using <a href="mathjax.com">Mathjax</a>.<br/>
                                 Equations are calculated using <a href="https://github.com/jiggzson/nerdamer" class="anchor-green">nerdamer.js</a><br/>
@@ -151,8 +151,8 @@
             </div>
             <div class="input-container">
                 <div class="top-bar">
-                    <span class="version"></span> 
-                    <a href="#" class="instructions-anchor" data-toggle="modal" data-target=".bs-example-modal-lg">Click here for instructions and supported functions </a> 
+                    <span class="version"></span>
+                    <a href="#" class="instructions-anchor" data-toggle="modal" data-target=".bs-example-modal-lg">Click here for instructions and supported functions </a>
                 </div>
 
 
@@ -170,12 +170,17 @@
 
 				<!-- Display graph -->
 				<div id="graph"></div>
-
+                Start:
+                <input type="text" size="4" id="graph_start" value="1">
+                End:
+                <input type="text" size="4" id="graph_end" value="10">
+                Step:
+                <input type="text" size="4" id="graph_step" value="1">
             </div>
 
-            <div id="expr-panel"></div>   
+            <div id="expr-panel"></div>
         </div>
-    </div> 
+    </div>
     <footer>
         <div class="container">
             Copyright &copy; 2015 | Nerdamer.com
@@ -189,7 +194,7 @@
     <!-- Bootstrap Core JavaScript -->
     <script src="./js/bootstrap.min.js"></script>
 
-    
+
     <!-- Nerdamer libraries -->
     <script src="./js/nerdamer.core.js"></script>
     <script src="./js/Calculus.js"></script>
