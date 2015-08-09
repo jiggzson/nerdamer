@@ -143,7 +143,8 @@
                                 use %[digit] to access a previously entered expression.<br/><br/>
                                 Math is rendered using <a href="mathjax.com">Mathjax</a>.<br/>
                                 Equations are calculated using <a href="https://github.com/jiggzson/nerdamer" class="anchor-green">nerdamer.js</a><br/>
-                                Equation input is done with <a href="https://github.com/jiggzson/eqInput">EqInput</a>
+                                Equation input is done with <a href="https://github.com/jiggzson/eqInput">EqInput</a><br/>
+                                Graphs are done by <a href="http://c3js.org/">C3</a>
                             </div>
                         </div>
                     </div>
@@ -176,6 +177,12 @@
                 <input type="text" size="4" id="graph_end" value="10">
                 Step:
                 <input type="text" size="4" id="graph_step" value="1">
+                Type:
+                <select id="graph_type">
+                    <option value="spline">Spline</option>
+                    <option value="line">Line</option>
+                    <option value="scatter">Scatter</option>
+                </select>
             </div>
 
             <div id="expr-panel"></div>

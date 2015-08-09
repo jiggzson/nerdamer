@@ -40,30 +40,39 @@
         history = [],
         modifiers = [],
         lastRecalled = 0,
-        //Create chart
+        //Create chart variables
+        $start = $('#graph_start'),
+        $end = $('#graph_end'),
+        $step = $('#graph_step'),
+        $type = $('#graph_type'),
         data_columns = [ ['x']],
         chart_step = 1,
         chart_start = 1,
         chart_end = 10,
-		chart = c3.generate({
+        chart = {},
+        new_chart = function() {
+            chart = c3.generate({
 			bindto: '#graph',
 			data: {
 				x: 'x',
 				columns: data_columns,
-				type: 'spline'
+				type: $type.val()
 			},
 			zoom: {
 				enabled: true
 			}
-		});
+		  });
+        };
 
+    new_chart();
 
     //Loop through and generate data for each function
     var gen_chart_data = function(name,expression) {
         var graph_data = [name];
         var start_domain = Number(chart_start);
         var step_domain  = Number(chart_step);
-        var end_domain = Number(chart_end) ;
+        var end_domain = Number(chart_end);
+        var expressions_length = nerdamer.expressions().length;
         for (var i = start_domain; i <= end_domain ; i += step_domain)
         {
             var out = 0;
@@ -73,11 +82,17 @@
             }
             catch(err)
             {
-
+                console.log(err.message);
             }
             graph_data.push(out);
 
         }
+
+        while (nerdamer.expressions().length > expressions_length)
+        {
+            nerdamer.clear(expressions_length+1);
+        }
+
 
         return graph_data;
     };
@@ -85,7 +100,7 @@
     //Update all functions
     var update_graph = function() {
         //Generate domain
-        var graph_domain = d3.range(chart_start, chart_end, chart_step);
+        var graph_domain = d3.range(chart_start, (chart_end+chart_step) , chart_step);
         graph_domain.unshift('x');
 
         data_columns.forEach(function(val, i,arr)
@@ -101,12 +116,8 @@
             }
         });
 
-        //Load domain
-        chart.load({
-            columns: data_columns
-        });
-        console.log(data_columns);
-        chart.resize();
+        //Load chart
+        new_chart();
 	};
 
 
@@ -115,11 +126,12 @@
         update_graph();
 
         data_columns.push(data);
-        //Load domain
-        chart.load({
-            columns: data_columns
+        var temp_ids = data_columns.map(function(val) {
+            return val[0];
         });
-        chart.resize();
+
+        //Load chart
+        new_chart();
 	};
 
 
@@ -146,14 +158,15 @@
             span = $('<span>$'+result+'$<span>');
             //span.mathquill('redraw').appendTo(div).mathquill();
             span.appendTo(div);
+            //Graph button
+            div.append('  <a href="javascript:void(0)" class="add_graph">add graph</a>');
         }
         else {
             div.append('<span class="info">'+result+'<span>');
         }
         
         div.append(' <a href="javascript:void(0)" class="delete">delete</a>');
-		//Graph button
-		div.append(' <a href="javascript:void(0)" class="add_graph">add graph</a>');
+
 
         $panel.append(div);
         //if(span) span.mathquill('redraw');
@@ -338,7 +351,9 @@
     
     $clear.click(function() {
         nerdamer.clear('all');
-        
+        //Override graph
+        data_columns = [ ['x']];
+        new_chart();
         //remove all panel-rows from the DOM
         $('.panel-row').remove();
     });
@@ -363,18 +378,17 @@
         var $parent = $(this).parent();
 
 		var expression = nerdamer.expressions()[$parent.data('eqNumber') -1];
-
         add_data_to_graph(gen_chart_data('F'+($parent.data('eqNumber') -1), expression ));
     });
 
 
     //Start textbox changed
-    $("#graph_start").on('input',function() {
+    $start.on('input',function() {
 
-        if (jQuery.isNumeric($("#graph_start").val()) && jQuery.isNumeric($("#graph_end").val()) )
+        if (jQuery.isNumeric($start.val()) && jQuery.isNumeric($end.val()) )
         {
-            var num_graph_start = parseInt($("#graph_start").val(),10);
-            var num_graph_end = parseInt($("#graph_end").val(),10);
+            var num_graph_start = parseFloat($start.val(),10);
+            var num_graph_end = parseFloat($end.val(),10);
             if (num_graph_start < num_graph_end)
             {
 
@@ -386,26 +400,25 @@
 
 
     //End textbox changed
-    $("#graph_end").on('input',function() {
+    $end.on('input',function() {
 
-        if (jQuery.isNumeric($("#graph_start").val()) && jQuery.isNumeric($("#graph_end").val()) )
+        if (jQuery.isNumeric($start.val()) && jQuery.isNumeric($end.val()) )
         {
-            var num_graph_start = parseInt($("#graph_start").val(),10);
-            var num_graph_end = parseInt($("#graph_end").val(),10);
+            var num_graph_start = parseFloat($start.val(),10);
+            var num_graph_end = parseFloat($end.val(),10);
             if (num_graph_start < num_graph_end)
             {
-
                 chart_end = num_graph_end;
                 update_graph();
             }
         }
     });
 
-    $("#graph_step").on('input',function() {
+    $step.on('input',function() {
 
-        if (jQuery.isNumeric($("#graph_step").val()))
+        if (jQuery.isNumeric($step.val()))
         {
-            var num_graph_step = parseInt($("#graph_step").val(),10);
+            var num_graph_step = parseFloat($step.val(),10);
             if (num_graph_step > 0)
             {
                 chart_step = num_graph_step;
@@ -414,5 +427,9 @@
         }
     });
 
+
+    $type.on('change', function() {
+        chart.transform($type.val());
+    })
 
 })();
