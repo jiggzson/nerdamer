@@ -579,34 +579,6 @@ var test_cases = {
         expression: '(x+1)^(n+1)*(1+x)^4',
         expected: '(1+x)^(5+n)',
         numval: 117649
-    },
-    //Edge cases for zero
-    95: {
-        description: "Divide by zero",
-        expression: '0/0',
-        expected: 'Division by zero!',
-        numval: 0,
-	error: true //Expect an error
-    },
-    96: {
-        description: "Multiples of zero",
-        expression: '0^0',
-        expected: 'Division by zero!',
-        numval: 0,
-	error: true //Expect an error
-    },
-    //Exponents of negative numbers
-    97: {
-        description: "Exponents of negative numbers",
-        expression: '(-1)^x',
-        expected: '(-1)^x',
-        numval: 1
-    },
-    98: {
-        description: "Euler's identity",
-        expression: 'e^(2*i*PI) +e^(i*PI)',
-        expected: '0',
-        numval: 0
     }
 };
 
@@ -615,31 +587,19 @@ var run_tests = function() {
     console.log('Running tests ... \n------------------------------------ \n');
     for(var x in test_cases) {
         var test_case = test_cases[x]; //get the test case
-		var result = "";
-        	//Test if nerdamer throws and error correctly
-		try {
-			//run it through nerdamer
-			result = nerdamer(test_case.expression).text();
-		}
-		//Catches errors
-		catch(error) {
-			//If an error was expected then save result
-			if (test_case.error)
-			{
-				result = error.message;
-			}
-		}
+        //run it through nerdamer
+        var result = nerdamer(test_case.expression).text();
 
-		if(result !== test_case.expected) {
-			num_failed++;
-			//the first test failed but this might not mean anything other than that the structure of the
-			//output string has changed. Let's take a look at the number value. It might not have one but then it's
-			//up to you to decide if the test did test did indeed fail
-			console.log('Case number '+x+' did not get expected value! Testing number value:');
-			var num_val = Number(nerdamer(test_case.expression).evaluate(values).valueOf());
+        if(result !== test_case.expected) {
+            num_failed++;
+            //the first test failed but this might not mean anything other than that the structure of the
+            //output string has changed. Let's take a look at the number value. It might not have one but then it's
+            //up to you to decide if the test did test did indeed fail
+            console.log('Case number '+x+' did not get expected value! Testing number value:');
+            var num_val = Number(nerdamer(test_case.expression).evaluate(values).valueOf());
 
-			console.log('Number value does'+(num_val === test_case.numval ? '': ' not')+' match \n')
-		}
+            console.log('Number value does'+(num_val === test_case.numval ? '': ' not')+' match \n')
+        }
     }
     console.log('Done!');
     console.log(num_failed+' test'+(num_failed === 1 ? '' : 's')+' failed.');
