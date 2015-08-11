@@ -66,6 +66,14 @@
 
     new_chart();
 
+    var get_function_num = function(text) {
+        if (text == 'x')
+        {
+            return -1;
+        }
+        return parseInt(text.substring(1,text.length),10);
+    };
+
     //Loop through and generate data for each function
     var gen_chart_data = function(name,expression) {
         var graph_data = [name];
@@ -112,7 +120,7 @@
             }
             else
             {
-                arr[i] = gen_chart_data(array_name,nerdamer.expressions()[array_name.substring(1,array_name.length) ]  );
+                arr[i] = gen_chart_data(array_name,nerdamer.expressions()[ get_function_num(array_name) ]  );
             }
         });
 
@@ -120,19 +128,51 @@
         new_chart();
 	};
 
-
+    //Add new data to graph
 	var add_data_to_graph = function(data) {
         //Update
         update_graph();
+        var function_number = get_function_num(data[0]);
+        data_columns
+        var insert_index = data_columns.reduce(function(iMax,x,i,a) {
+            return ((get_function_num(x[0]) > get_function_num(a[iMax][0]) ) && (get_function_num(x[0]) < function_number )) ? i : iMax;
+        }, 0);
 
-        data_columns.push(data);
-        var temp_ids = data_columns.map(function(val) {
-            return val[0];
-        });
+        data_columns.splice(insert_index+1, 0, data);
 
+        add_data_to_graph
         //Load chart
         new_chart();
 	};
+
+    //Delete data from graph
+    var delete_data_graph = function(name) {
+        var delete_index = get_function_num(name);
+        var changed = false;
+        data_columns.forEach(function(val, i,arr)
+        {
+            var current_name = val[0];
+            if (current_name == name)
+            {
+                changed = true;
+            }
+
+            if (get_function_num(current_name) >= delete_index)
+            {
+                var num = get_function_num(current_name);
+                --num;
+                arr[i][0] = '%'+( num.toString() );
+            }
+        });
+
+        if (changed) {
+            data_columns.splice(delete_index, 1);
+        }
+        //Update
+        update_graph();
+
+	};
+
 
 
     //format the text from mathquill into something that nerdamer can understand
@@ -362,8 +402,22 @@
         e.preventDefault();
         var $parent = $(this).parent();
         
+        $('.panel-row').each(function( index, element ) {
+            if ($(this).data('eqNumber') > $parent.data('eqNumber'))
+            {
+                $(this).data('eqNumber', index);
+                $(this).find('.bold').text("%"+index+" ");
+            }
+        });
+
+
+        nerdamer.clear($parent.data('eqNumber'));
+
         //remove the equation
-        nerdamer.clear($parent.data('eqNumber'), true);
+        delete_data_graph('%'+($parent.data('eqNumber') -1));
+
+
+
         
         //remove the div from the DOM
         $parent.remove();
@@ -378,7 +432,8 @@
         var $parent = $(this).parent();
 
 		var expression = nerdamer.expressions()[$parent.data('eqNumber') -1];
-        add_data_to_graph(gen_chart_data('F'+($parent.data('eqNumber') -1), expression ));
+
+        add_data_to_graph(gen_chart_data('%'+($parent.data('eqNumber') -1), expression ));
     });
 
 
