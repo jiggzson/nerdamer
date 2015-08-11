@@ -140,9 +140,9 @@
 
         data_columns.splice(insert_index+1, 0, data);
 
-        add_data_to_graph
         //Load chart
         new_chart();
+        console.log(data_columns);
 	};
 
     //Delete data from graph
@@ -415,8 +415,6 @@
 
         //remove the equation
         delete_data_graph('%'+($parent.data('eqNumber') -1));
-
-
 
         
         //remove the div from the DOM

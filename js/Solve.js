@@ -190,12 +190,12 @@
                             else coeff_array[key] = _.add(existing, value);
                         },
                         remainder = eq.copy(); 
-                    for(var s in eq.symbols) { 
+                    for(var s in eq.symbols) {
                         var sym = eq.symbols[s];
                         //place all the coefficient
                         if(sym.contains(solve_for)) {
                             var g = sym.group;
-                            if(g === CB) { 
+                            if(g === CB) {
                                 var t = sym.symbols[solve_for];
                                 remainder = _.subtract(remainder, sym.copy());//make sure to remove the polynomial
                                 add_to_coeff_array(t.power-1, _.divide(sym, t.copy()));//add the coefficient to the array
@@ -207,7 +207,7 @@
                                 }
                                 remainder = _.subtract(remainder, sym.copy());
                             }
-                            else if(g === S) { 
+                            else if(g === S) {
                                 remainder = _.subtract(remainder, sym.copy()); 
                                 add_to_coeff_array(sym.power-1, new Symbol(sym.multiplier).negate());
                             }
@@ -235,6 +235,7 @@
                             add_to_result(cubic.apply(undefined, coeff_array));
                             break;
                     }
+
             }
         }
         
