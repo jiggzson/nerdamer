@@ -1,9 +1,3 @@
-/*
-* Author : Martin Donk
-* Website : http://www.nerdamer.com
-* Email : martin.r.donk@gmail.com
-* Source : https://github.com/jiggzson/nerdamer
-*/
 (function() {
     var core = nerdamer.getCore(),
         _ = core.PARSER,
@@ -195,7 +189,6 @@
                     }
                     symbol = _.multiply(polydiff(symbol.copy()), result);
                 }
-
                 symbol.updateHash();
                 return symbol;
             };

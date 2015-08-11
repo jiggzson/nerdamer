@@ -5,6 +5,9 @@
 * License : MIT
 * Source : https://github.com/jiggzson/nerdamer
 */
+if((typeof module) !== 'undefined') {
+    nerdamer = require('./nerdamer.core.js');
+}
 
 (function() {
     /*imports*/
@@ -20,21 +23,19 @@
         variables = core.Utils.variables,
         isComposite = core.Utils.isComposite,
         isSymbol = core.Utils.isSymbol,
-        isVector = core.Utils.isVector,
         N = core.groups.N,
         EX = core.groups.EX,
         FN = core.groups.FN,
         PL = core.groups.PL,
         CP = core.groups.CP,
-        CB = core.groups.CB,
-        Vector = core.Vector;
+        CB = core.groups.CB;
     
     var __ = core.Algebra = {
         /*
         * proots is Mr. David Binner's javascript port of the Jenkins-Traub algorithm.
         * The original source code can be found here http://www.akiti.ca/PolyRootRe.html.
         */  
-        version: '1.1.0',
+        version: '1.2.0',
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
             //if this causes trouble you can explicitly pass in a different number of places
@@ -860,6 +861,9 @@
             };
             return newtonraph( Number( guess ) );
         },
+        /**
+         * Factors a symbol.
+         */
         factor: function(symbol) {
             var retval = symbol,
                 group = symbol.group,
@@ -976,6 +980,9 @@
             
             return retval;
         },
+        /**
+         * Expands a symbol
+         */
         expand: function (symbol) { 
             var is_composite = isComposite(symbol);
 
@@ -1078,6 +1085,13 @@
             
             return symbol;
         },
+        /**
+         * Converts a symbol into an equivalent polynomial arrays of
+         * the form [[coefficient_1, power_1],[coefficient_2, power_2], ... ]
+         * @param {Symbol} symbol
+         * @param {boolean} sort
+         * @returns {Array}
+         */
         poly2Arrays: function(symbol, sort) {
             var self = this; 
             if(!symbol.isPoly()) throw new Error('Polynomial Expected! Received '+core.Utils.text(symbol));
@@ -1114,6 +1128,13 @@
                 return x.slice(0);
             });
         },
+        /**
+         * Expects powers to be from low to high.
+         * Takes an array of coefficient, power pairs and fills missing holes with zero until zero polynomial. For example
+         * __.polyfill([ [ 1, 3 ]]) will return [ [ 1, 3 ], [ 0, 2 ], [ 0, 1 ], [ 0, 0 ] ]
+         * @param {Array} arr
+         * @returns {Array}
+         */
         polyfill: function(arr) {
             //if the first power isn't zero make it so
             if(arr[0][1] !== 0) arr.unshift([0,0]);
@@ -1133,43 +1154,57 @@
             o.push(arr[0]);
             return o;
         },
-        polyArrayDiv: function(dividend, divisor) { 
-            var max_pow_div = divisor[0][1],//the maximum divisor power
-                coeff_div = divisor[0][0],
-                dl = divisor.length,
-                curpos = 0, //the walker along the numerator;
-                top = [];
-            //while the difference of the powers is greater than zero
-            do {
-                var max_pow_num = dividend[curpos][1], //the current maximum power
-                    //the ratio of the first coefficients which will be used to adjust out the divisor
-                    mratio = dividend[curpos][0]/coeff_div, 
-                    pow_difference = max_pow_num-max_pow_div;//the difference in maximum powers
-                if(pow_difference < 0) break; //out of bounds check <<<
-                //place the symbol on the top
-                top.push([mratio, pow_difference]);
-                //start at the current cursor position
-                for(var i=0; i<dl; i++) {
-                    var div_i = curpos+i,
-                        cur_sym_den = divisor[i]; //current working symbol in denominator
-                    //adjust the dividend coeff
-                    dividend[div_i][0] -= cur_sym_den[0]*mratio;
+        /**
+         * Divides to polynomial arrays and returns the quotient and the remainder as an array
+         * polynomial arrays are in the form [[coefficient_1, power_1],[coefficient_2, power_2], ... ]
+         * @param {Array} dividend_array
+         * @param {Array} divisor_array
+         * @returns {Array}
+         */
+        polyArrayDiv: function(dividend_array, divisor_array) {
+            //fill in the holes
+            var dividend = __.polyfill(dividend_array.slice().reverse());
+            var divisor = __.polyfill(divisor_array.reverse());
+            var n = dividend.length,
+                nn = n,
+                mp = divisor[0][1], //get the maximum power of the divisor
+                coeff = divisor[0][0],
+                quotient = []; //the quotient to be returned
+            //step through the dividend
+            for(var i=0; i<n; i++) {
+                //get the ratio of the maximum powers of the dividend and the divisor
+                var cur_pow = dividend[0], //get the current power of the polynomial at this position
+                    diff = cur_pow[1] - mp, //get the difference in the powers
+                    row = []; //clear the row
+                if(diff < 0) {
+                    break;//no need to continue since our divisor is now larger than our dividend
                 }
-                curpos++;
+                var ratio = cur_pow[0]/coeff; //the ratio of the coefficients
+                //we start at 1 because we already know that the first term in the dividend drops off
+                for(var j=1; j<nn; j++) {
+                    var term = divisor[j];
+                    if(typeof term !== 'undefined') {
+                        row.push([
+                            dividend[j][0] - (term[0]*ratio),
+                            diff+term[1]
+                        ]);
+                    }
+                    else {
+                        row.push(dividend[j]);
+                    }
+                }
+                dividend = row;
+                quotient.push([ratio, diff]); //add the current term to the quotient
+                nn--; //one term drops so reduce end limit
             }
-            while(pow_difference > 0);
-
-            //filter the results
-            var remainder = [],
-                rl = dividend.length;
-            for(i=0; i<rl; i++) {
-                var p = dividend[i];
-                if(p[0] !== 0) remainder.push(p);
-            };
-            if(top[0] === undefined) top.push([0,0]);
-            if(remainder[0] === undefined) remainder.push([0,0]);
-            return [top, remainder];
+            return [quotient, dividend];
         },
+        /*
+         * Takes a polynomial array and returns the coefficients only
+         * @param {Array} a
+         * @param {boolean} all
+         * @returns {Array}
+         */
         polyArrayCoeffs: function(a, all) { 
             var c = [],
                 l = a.length;
@@ -1179,6 +1214,16 @@
             }
             return c;
         },
+        /**
+         * Given the symbol of group CB it will divide the denominator by the numerator and return an array of the
+         * quotient and the remainder. For example the symbol for (x^3+x)/(x+1) will return an array with
+         * a symbol -x+x^2+2 and another symbol -2.
+         * If true is passed as the second argument it will return an array containing arrays of coefficient and power
+         * pairs. The above example would return [ [ [ 1, 2 ], [ -1, 1 ], [ 2, 0 ] ], [ [ -2, 0 ] ] ]
+         * @param {Symbol} symbol
+         * @param {bool} asArray - request the result as an array
+         * @returns {Array}
+         */
         polydiv: function(symbol, asArray) { 
             //A numerator and a denominator is expected. The symbol must therefore be of group CB
             if(symbol.group === CB) {
@@ -1284,6 +1329,12 @@
 
             return retval;
         },
+        /**
+         * Gets the polynomial gcd for to polynomials and returns it as a polynomial array. This method gets exported
+         * for example polyGCD(x^3, x^4) will return [ [ 1, 3 ], [ 0, 2 ], [ 0, 1 ], [ 0, 0 ] ], the GCD with all
+         * the remaining holes filled with zeros
+         * @returns {core.Algebra.polyGCD.p1|Algebra_L11.polyGCD.p1}
+         */
         polyGCD: function() { 
             var polyArrayGCD = core.Algebra.polyArrayGCD,
                 n = arguments.length,
@@ -1296,6 +1347,15 @@
             }
             return p1;
         },
+        /**
+         * Get's all the powers of a particular polynomial including the denominators. The denominators powers
+         * are returned as negative. All remaining polynomials are returned as zero order polynomials.
+         * for example polyPowers(x^2+1/x+y+t) will return [ '-1', 0, '2' ]
+         * @param {Symbol} e
+         * @param {String} for_variable
+         * @param {Array} powers
+         * @returns {Array} An array of the powers
+         */
         //assumes you've already verified that it's a polynomial
         polyPowers: function(e, for_variable, powers) { 
             powers = powers || [];
@@ -1318,11 +1378,21 @@
             }
             return core.Utils.arrayUnique(powers).sort();
         },
+        /**
+         * Checks to see if a set of "equations" is linear.
+         * @param {type} set
+         * @returns {Boolean}
+         */
         allLinear: function(set) {
             var l = set.length;
             for(var i=0; i<l; i++) if(!__.isLinear(set[i])) return false;
             return true;
         },
+        /*
+         * Checks to see if the "equation" is linear
+         * @param {Symbol} e
+         * @returns {boolean}
+         */
         isLinear: function(e) {
             var status = false, g = e.group;
             if(g === PL || g === CP) {
@@ -1368,6 +1438,10 @@
             build: function() { return __.expand; }
         },
         {
+            /**
+             * Get the gcd of a set of polynomials.
+             * usage: polyGCD(p1, p2, p3, ...)
+             */
             name: 'polyGCD',
             visible: true,
             numargs: -1,
@@ -1375,3 +1449,4 @@
         }
     ]);
 })();
+
