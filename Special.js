@@ -104,13 +104,13 @@
             return 0;
 
         },
-	/*
-	* Sinc function
-	* Specification : http://mathworld.wolfram.com/SincFunction.html
-	* if x == 0 then 1
-	* otherwise sin(x)/x
-	*/
-	sinc: function(symbol) {
+        /*
+        * Sinc function
+        * Specification : http://mathworld.wolfram.com/SincFunction.html
+        * if x == 0 then 1
+        * otherwise sin(x)/x
+        */
+        sinc: function(symbol) {
 
             if (!isNumericSymbol(symbol))
             {
@@ -127,15 +127,15 @@
             }
             return Math.sin(symbol)/symbol;
 
-	},
-	/*
-	* Triangle function
-	* Specification : http://mathworld.wolfram.com/TriangleFunction.html
-	* if |x| >= 1 then 0
-	* if |x| < then 1-|x|
-	*/
-	tri: function(symbol) {
-			if (!isNumericSymbol(symbol))
+        },
+        /*
+        * Triangle function
+        * Specification : http://mathworld.wolfram.com/TriangleFunction.html
+        * if |x| >= 1 then 0
+        * if |x| < then 1-|x|
+        */
+        tri: function(symbol) {
+                        if (!isNumericSymbol(symbol))
             {
                 return  _.symfunction("tri",[symbol]);
             }
@@ -146,7 +146,7 @@
             }
 
             return 0;
-	},
+        },
         /*
         * Dirac delta function
         * Specification : http://mathworld.wolfram.com/DeltaFunction.html
@@ -168,69 +168,69 @@
     };
 
     nerdamer.register([
-	{
-		/*
-		* Heavyside step function
-		* Specification : http://mathworld.wolfram.com/HeavisideStepFunction.html
-		* if x > 0 then 1
-		* if x == 0 then 1/2
-		* if x < 0 then 0
-		*/
-		name: 'step',
-		visible: true,
-		numargs: 1,
-		build: function() { return __.step; }
-	},
-	{
-		/*
-		* Sign function
-		* Specification : http://mathworld.wolfram.com/Sign.html
-		* if x > 0 then 1
-		* if x == 0 then 0
-		* if x < 0 then -1
-		*/
-		name: 'sign',
-		visible: true,
-		numargs: 1,
-		build: function() { return __.sign; }
-	},
-	{
-		/*
-		* Rectangle function
-		* Specification : http://mathworld.wolfram.com/RectangleFunction.html
-		* if |x| > 1/2 then 0
-		* if |x| == 1/2 then 1/2
-		* if |x| < 1/2 then 1
-		*/
-		name: 'rect',
-		visible: true,
-		numargs: 1,
-		build: function() { return __.rect; }
-	},
-	{
-		/*
-		* Sinc function
-		* Specification : http://mathworld.wolfram.com/SincFunction.html
-		* if x == 0 then 1
-		* otherwise sin(x)/x
-		*/
-		name: 'sinc',
-		visible: true,
-		numargs: 1,
-		build: function() { return __.sinc; }
-	},
-	{
-		/*
-		* Triangle function
-		* Specification : http://mathworld.wolfram.com/TriangleFunction.html
-		* if |x| >= 1 then 0
-		* if |x| < then 1-|x|
-		*/
-		name: 'tri',
-		visible: true,
-		numargs: 1,
-		build: function() { return __.tri; }
-	},
+        {
+                /*
+                * Heavyside step function
+                * Specification : http://mathworld.wolfram.com/HeavisideStepFunction.html
+                * if x > 0 then 1
+                * if x == 0 then 1/2
+                * if x < 0 then 0
+                */
+                name: 'step',
+                visible: true,
+                numargs: 1,
+                build: function() { return __.step; }
+        },
+        {
+                /*
+                * Sign function
+                * Specification : http://mathworld.wolfram.com/Sign.html
+                * if x > 0 then 1
+                * if x == 0 then 0
+                * if x < 0 then -1
+                */
+                name: 'sign',
+                visible: true,
+                numargs: 1,
+                build: function() { return __.sign; }
+        },
+        {
+                /*
+                * Rectangle function
+                * Specification : http://mathworld.wolfram.com/RectangleFunction.html
+                * if |x| > 1/2 then 0
+                * if |x| == 1/2 then 1/2
+                * if |x| < 1/2 then 1
+                */
+                name: 'rect',
+                visible: true,
+                numargs: 1,
+                build: function() { return __.rect; }
+        },
+        {
+                /*
+                * Sinc function
+                * Specification : http://mathworld.wolfram.com/SincFunction.html
+                * if x == 0 then 1
+                * otherwise sin(x)/x
+                */
+                name: 'sinc',
+                visible: true,
+                numargs: 1,
+                build: function() { return __.sinc; }
+        },
+        {
+                /*
+                * Triangle function
+                * Specification : http://mathworld.wolfram.com/TriangleFunction.html
+                * if |x| >= 1 then 0
+                * if |x| < then 1-|x|
+                */
+                name: 'tri',
+                visible: true,
+                numargs: 1,
+                build: function() { return __.tri; }
+        },
         {
                 /*
                 * Dirac delta function
