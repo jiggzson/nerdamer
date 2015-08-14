@@ -3531,19 +3531,54 @@ var nerdamer = (function() {
 
             ftext_function = function(bn) {
                 var retval;
-                if(bn in Math) retval = 'Math.'+bn;
+                var extended_function = false;
+                var bracket_args = inBrackets(symbol.args.map(function(x) {
+                    return ftext(x, xports)[0];
+                }));
+                if((bn in Math) && ( bn != 'sign'))
+                {
+                    retval = 'Math.'+bn;
+                }
                 else {
                     if(supplements.indexOf(bn) === -1) { //make sure you're not adding the function twice
-                        //Math2 functions aren't part of the standard javascript
-                        //Math library and must be exported.
-                        xports.push('var '+bn+' = '+ Math2[bn].toString()+'; ');
-                        supplements.push(bn);
+                        if (Math2[bn] != undefined) {
+                            //Math2 functions aren't part of the standard javascript
+                            //Math library and must be exported.
+                            xports.push('var '+bn+' = '+ Math2[bn].toString()+'; ');
+                            supplements.push(bn);
+                        } else {//Extended functions
+                            extended_function = true;
+                            var search_key = "";
+                            //Seach each object in core
+                            for(var key in C) {
+                                if (C[key][bn] != undefined) {
+                                    search_key = key;
+                                }
+                            }
+                            if (search_key != "") // Found function
+                            {
+                                xports.push('var '+bn+' = nerdamer(nerdamer.getCore().'+search_key+"."+bn+bracket_args+'.toString()).valueOf(); ');
+                                supplements.push(bn);
+                            }
+                            else //Function not found
+                            {
+                                xports.push('var '+bn+' = 0;');
+                            }
+                        }
                     }
                     retval = bn;
                 }
-                retval = retval+inBrackets(symbol.args.map(function(x) {
-                    return ftext(x, xports)[0];
-                }).join(','));
+
+                if (extended_function)
+                {
+                   retval = bn;
+                }
+                else
+                {
+                    retval = retval+inBrackets(symbol.args.map(function(x) {
+                        return ftext(x, xports)[0];
+                    }).join(','));
+                }
                 return retval;
             };
 
