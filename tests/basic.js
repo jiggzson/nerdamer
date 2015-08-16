@@ -586,14 +586,14 @@ var test_cases = {
         expression: '0/0',
         expected: 'Division by zero!',
         numval: 0,
-        error: true //Expect an error
+	error: true //Expect an error
     },
     96: {
         description: "Multiples of zero",
         expression: '0^0',
         expected: 'Division by zero!',
         numval: 0,
-        error: true //Expect an error
+	error: true //Expect an error
     },
     //Exponents of negative numbers
     97: {
