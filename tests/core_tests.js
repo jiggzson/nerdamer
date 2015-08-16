@@ -50,6 +50,18 @@ QUnit.test( "Math functions test", function( assert ) {
     nerdamer.clear('all'); //make sure that we start fresh
     var test_cases = [
         {
+            description: "Sine function",
+            expression: "sin(x)",
+            input: [0,Math.PI/2,Math.PI,2*Math.PI,4,5],
+            expected: [0,1,1.2246467991473532e-16,-2.4492935982947064e-16,-0.7568024953079282,-0.9589242746631385]
+        },
+        {
+            description: "Cosine function",
+            expression: "cos(x)",
+            input: [0,Math.PI/2,Math.PI,2*Math.PI,4,5],
+            expected: [1,6.123233995736766e-17,-1,1,-0.6536436208636119,0.28366218546322625]
+        },
+        {
             description: "Step function",
             expression: "step(x)",
             input: [-2,-1,0,1,2],
@@ -710,7 +722,7 @@ QUnit.test( "Systems test", function( assert ) {
             numval: 0
         },
         {
-            description: "Math2 objects",
+            description: "Math functions",
             expression: "(step(x))^2+4*sign(y)+atan(tri(z))",
             expected: "4*sign(y)+atan(tri(z))+step(x)^2",
             numval: 5
@@ -725,7 +737,15 @@ QUnit.test( "Systems test", function( assert ) {
             try {
                 //run it through nerdamer
                 result = nerdamer(test_case.expression).text();
-                num_result = Number(nerdamer(test_case.expression).evaluate(values).valueOf());
+                var num_val = nerdamer(test_case.expression).evaluate(values).valueOf();
+                if (typeof num_val === 'string' || num_val instanceof String)
+                {
+                    num_result = num_val;
+                }
+                else
+                {
+                    num_result = Number(num_val);
+                }
             }
             //Catches errors
             catch(error) {
