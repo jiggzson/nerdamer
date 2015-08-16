@@ -578,6 +578,72 @@ var nerdamer = (function() {
                     }
                 }
                 return a;
+            },
+            /*
+            * Heavyside step function
+            * Specification : http://mathworld.wolfram.com/HeavisideStepFunction.html
+            * if x > 0 then 1
+            * if x == 0 then 1/2
+            * if x < 0 then 0
+            */
+            step: function(symbol) {
+                if (symbol > 0)
+                {
+                    return 1;
+                }
+                else if (symbol < 0)
+                {
+                    return 0;
+                }
+                return 1/2;
+            },
+            /*
+            * Rectangle function
+            * Specification : http://mathworld.wolfram.com/RectangleFunction.html
+            * if |x| > 1/2 then 0
+            * if |x| == 1/2 then 1/2
+            * if |x| < 1/2 then 1
+            */
+            rect: function(symbol) {
+                if ((symbol == 0.5) || (symbol == -0.5))
+                {
+                    return 0.5;
+                }
+                else if (Math.abs(symbol) < 0.5)
+                {
+                    return 1;
+                }
+                return 0;
+            },
+            /*
+            * Sinc function
+            * Specification : http://mathworld.wolfram.com/SincFunction.html
+            * if x == 0 then 1
+            * otherwise sin(x)/x
+            */
+            sinc: function(symbol) {
+                if (symbol == 0)
+                {
+                    return 1;
+                }
+                else if ((symbol == Infinity) || (symbol == -Infinity))
+                {
+                    return 0;
+                }
+                return Math.sin(symbol)/symbol;
+            },
+            /*
+            * Triangle function
+            * Specification : http://mathworld.wolfram.com/TriangleFunction.html
+            * if |x| >= 1 then 0
+            * if |x| < then 1-|x|
+            */
+            tri: function(symbol) {
+                if (Math.abs(symbol) < 1)
+                {
+                    return 1-Math.abs(symbol);
+                }
+                return 0;
             }
         };
         reserveNames(Math2); //reserve the names in Math2
@@ -1424,11 +1490,16 @@ var nerdamer = (function() {
                 'min'       : [ , -1],
                 'max'       : [ ,-1],
                 'erf'       : [ , 1],
-                'floor'     : [ ,1],
-                'ceiling'   : [ ,1],
+                'floor'     : [ , 1],
+                'ceiling'   : [ , 1],
                 'fact'      : [ , 1],
                 'round'     : [ , 1],
                 'mod'       : [ , 2],
+                'step'      : [ , 1],
+                'sign'      : [ , 1],
+                'rect'      : [ , 1],
+                'sinc'      : [ , 1],
+                'tri'       : [ , 1],
                 'vector'    : [vector, -1],
                 'matrix'    : [matrix, -1],
                 'parens'    : [parens, -1],
@@ -3535,7 +3606,7 @@ var nerdamer = (function() {
                 var bracket_args = inBrackets(symbol.args.map(function(x) {
                     return ftext(x, xports)[0];
                 }));
-                if((bn in Math) && ( bn != 'sign'))
+                if(bn in Math)
                 {
                     retval = 'Math.'+bn;
                 }
