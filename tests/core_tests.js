@@ -62,6 +62,12 @@ QUnit.test( "Math functions test", function( assert ) {
             expected: [1,6.123233995736766e-17,-1,1,-0.6536436208636119,0.28366218546322625]
         },
         {
+            description: "Tangent function",
+            expression: "tan(x)",
+            input: [0,Math.PI/2,Math.PI,2*Math.PI,4,5],
+            expected: [0,16331239353195370,-1.2246467991473532e-16,-2.4492935982947064e-16,1.1578212823495777,-3.380515006246586]
+        },
+        {
             description: "Step function",
             expression: "step(x)",
             input: [-2,-1,0,1,2],
@@ -700,14 +706,14 @@ QUnit.test( "Systems test", function( assert ) {
             expression: "0/0",
             expected: "Division by zero!",
             numval: 0,
-            "error": true
+            error: true
         },
         {
             description: "Multiples of zero",
             expression: "0^0",
             expected: "Division by zero!",
             numval: 0,
-            "error": true
+            error: true
         },
         {
             description: "Exponents of negative numbers",

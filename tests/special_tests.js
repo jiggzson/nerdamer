@@ -1,27 +1,33 @@
 QUnit.module( "Special.js" );
 QUnit.test( "Functions test", function( assert ) {
     nerdamer.clear('all'); //make sure that we start fresh
-    var values = {
-        x: 0,
-        y: 4,
-        z: 1,
-        t: 0.5,
-        r: 4,
-        q: 0.2,
-        n: 1
-    };
     var test_cases = [
         {
             description: "Dirac delta function",
-            expression: "delta(x)",
-            expected: "delta(x)",
-            numval: "Infinity"
+            expression: "delta(0)",
+            expected: "Infinity"
         },
         {
             description: "Multiples of dirac delta function",
-            expression: "5*delta(x)",
-            expected: "5*delta(x)",
-            numval: "5*Infinity"
+            expression: "5*delta(0)",
+            expected: "5*Infinity"
+        },
+        {
+            description: "Fourier transform invalid input",
+            expression: "ft( (t+t^2),t,1)",
+            expected: "Must be single symbol",
+            error: true
+        },
+        {
+            description: "Fourier transform more invalid input",
+            expression: "ft( (t+t^2),t,2*s)",
+            expected: "Must be single symbol",
+            error: true
+        },
+        {
+            description: "Fourier transform delta",
+            expression: "ft(a*5*(1/x)*delta(sin(t)) ,t,s)",
+            expected: "1"
         }
     ];
     var run_tests = function() {
@@ -33,15 +39,6 @@ QUnit.test( "Functions test", function( assert ) {
             try {
                 //run it through nerdamer
                 result = nerdamer(test_case.expression).text();
-                var num_val = nerdamer(test_case.expression).evaluate(values).valueOf();
-                if (typeof num_val === 'string' || num_val instanceof String)
-                {
-                    num_result = num_val;
-                }
-                else
-                {
-                    num_result = Number(num_val);
-                }
             }
             //Catches errors
             catch(error) {
@@ -52,7 +49,6 @@ QUnit.test( "Functions test", function( assert ) {
                 }
             }
             assert.equal( result, test_case.expected, test_case.description );
-            assert.equal( num_result, test_case.numval, test_case.description+" numerical values" );
         });
     };
     run_tests();
