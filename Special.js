@@ -35,7 +35,7 @@
         */
         eachaddsymbol: function(symbol) {
             var symbols = [];
-            if  ( (symbol.group === CB) || (symbol.group == EX) || (symbol.collectSymbols().length == 0))
+            if ( (symbol.group === CB) || ((symbol.group === EX) || (symbol.collectSymbols().length === 0)) )
             {
                 return [symbol];
             }
@@ -52,9 +52,9 @@
         */
         eachmuiltisymbol: function(symbol) {
             var symbols = [];
-            if  (symbol.collectSymbols().length == 0)
+            if  (symbol.collectSymbols().length === 0)
             {
-                return [symbol];
+                return [symbol,(new Symbol(symbol.multiplier))];
             }
             else
             {
@@ -62,14 +62,26 @@
                     symbols.push.apply(symbols, __.eachmuiltisymbol(element));
                 });
             }
-            symbols.push(new Symbol(symbol.multiplier))
+            symbols.push(new Symbol(symbol.multiplier));
             return symbols;
         },
         /*
         * Single variable of power 1 and multiplier 1
         */
-        isSingleVarible: function(exp) {
-                return ((exp.group === S) && (exp.multiplier == 1) && (exp.power == 1));
+        isSingleVariable: function(exp) {
+            return ((exp.group === S) && (exp.multiplier === 1) && (exp.power === 1));
+        },
+        /*
+        * Check to see if the function contains a variable
+        */
+        hasVariable: function(exp,vin) {
+            return (exp.text().indexOf(vin.text()) !== -1);
+        },
+
+        joinmuiltisymbols: function(symbols) {
+            return symbols.reduce(function(a, b) {
+                return _.multiply(a,b);
+            });
         },
         /*
         * Dirac delta function
@@ -96,29 +108,104 @@
         ft: function(expression,varin,varout) {
 
             //Check for invalid inputs
-            if ((!__.isSingleVarible(varin)) || (!__.isSingleVarible(varout)))
+            if ((!__.isSingleVariable(varin)) || (!__.isSingleVariable(varout)))
             {
                 throw new Error('Must be single symbol');
             }
 
-            var get_coeffs = function(exp,vin) {
-                __.eachmuiltisymbol(exp).forEach(function (element, index, array) { console.log(element); });
-                var coeffs = "";
-                var parsed_var = "";
-
-                return [coeffs,parsed_var];
-            };
+            //If input is zero
+            if (isNumericSymbol(expression) && (expression.valueOf() == 0))
+            {
+                return new Symbol("0");
+            }
 
             var transfrom = function(exp,vin,vout) {
-                var coeffs = get_coeffs(exp);
-                //console.log(exp.text());
-                return "";
+                //Get all multiplications
+                var allmuilti = __.eachmuiltisymbol(exp);
+                //Get coefficients
+                var coeffs = allmuilti.filter(function (value) { return (!__.hasVariable(value,vin)) ; });
+                //Parse symbols that contain the varin
+                var mainsymbols = allmuilti.filter(function (value) { return __.hasVariable(value,vin) ; });
+
+                //Constant input
+                if (mainsymbols.length === 0)
+                {
+                    return _.multiply(exp,_.symfunction("delta",[vout]));
+                }
+
+                //Collect all the symbols with the variable
+                var mainsymbol = __.joinmuiltisymbols(mainsymbols);
+
+                //Handle functions with multiple arguments
+                if (mainsymbol.args.length > 1)
+                {
+
+                }
+
+                //Handle nested functions
+                if (mainsymbol.args[0].baseName != undefined)
+                {
+
+                }
+
+                //Shifting
+                if (mainsymbol.args[0].group !== S)
+                {
+                    //Different power
+                    if (mainsymbol.args[0].power !== 1)
+                    {
+
+                    }
+                    //Amplitude and frequency shift
+                    if (mainsymbol.args[0].multiplier !== 1)
+                    {
+
+                    }
+
+                    console.log(mainsymbol.args[0].text());
+                    console.log(mainsymbol.args[0]);
+                }
+
+
+
+                //Tables of functions
+                switch(mainsymbol.baseName) {
+                    case "delta":
+                        mainsymbol = new Symbol("1");
+                        break;
+                    case "rect":
+                        mainsymbol = _.symfunction("sinc",[vout]);
+                        break;
+                    case "sinc":
+                        mainsymbol = _.symfunction("rect",[vout]);
+                        break;
+                    case "tri":
+                        mainsymbol = _.pow( _.symfunction("sinc",[vout]),new Symbol("2") );
+                        break;
+                    default:
+
+                        break;
+                }
+                //Add to coefficients list
+                coeffs.push(mainsymbol);
+                //Rejoin all of them
+                return __.joinmuiltisymbols(coeffs);
             };
 
+            //Seperate each symbol by addition
             var symbols = __.eachaddsymbol(expression);
-            var result = symbols.forEach(function (element, index, array) {
-                transfrom(element,varin,varout);
-            });
+            var result;
+            //Use linear property of transform
+            if (symbols.length == 1)
+            {
+                result = transfrom(symbols[0],varin,varout);
+            }
+            else
+            {
+                result = symbols.reduce(function (a,b) {
+                    return _.add(a,transfrom(b,varin,varout));
+                });
+            }
             return result;
 
         }

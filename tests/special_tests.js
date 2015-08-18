@@ -20,14 +20,59 @@ QUnit.test( "Functions test", function( assert ) {
         },
         {
             description: "Fourier transform more invalid input",
-            expression: "ft( (t+t^2),t,2*s)",
+            expression: "ft( (t+t^2),t,2*f)",
             expected: "Must be single symbol",
             error: true
         },
         {
-            description: "Fourier transform delta",
-            expression: "ft(a*5*(1/x)*delta(sin(t)) ,t,s)",
+            description: "Fourier transform 0",
+            expression: "ft( 0,t,f)",
+            expected: "0"
+        },
+        {
+            description: "Fourier transform delta(t)",
+            expression: "ft( delta(t) ,t,f)",
             expected: "1"
+        },
+        {
+            description: "Fourier transform 5*delta(t)",
+            expression: "ft( 5*delta(t) ,t,f)",
+            expected: "5"
+        },
+        {
+            description: "Fourier transform (1/x)*a*5*delta(t)",
+            expression: "ft( (1/x)*a*5*delta(t) ,t,f)",
+            expected: "5*a*x^(-1)"
+        },
+        {
+            description: "Fourier transform 1",
+            expression: "ft(1,t,f)",
+            expected: "delta(f)"
+        },
+        {
+            description: "Fourier transform delta(t-a+b)",
+            expression: "ft( delta(t-a+b) ,t,f)",
+            expected: "e^(j*2*PI*f*a*b)"
+        },
+        {
+            description: "Fourier transform rect(t)",
+            expression: "ft( rect(t) ,t,f)",
+            expected: "sinc(f)"
+        },
+        {
+            description: "Fourier transform sinc(t)",
+            expression: "ft( sinc(t) ,t,f)",
+            expected: "rect(f)"
+        },
+        {
+            description: "Fourier transform tri(t)",
+            expression: "ft( tri(t) ,t,f)",
+            expected: "sinc(f)^2"
+        },
+        {
+            description: "Fourier transform (sinc(t))^2 ",
+            expression: "ft( (sinc(t))^2 ,t,f)",
+            expected: "tri(f)"
         }
     ];
     var run_tests = function() {
