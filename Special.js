@@ -77,10 +77,20 @@
         hasVariable: function(exp,vin) {
             return (exp.text().indexOf(vin.text()) !== -1);
         },
-
+        /*
+        * Joints symbols in array by multiplication
+        */
         joinmuiltisymbols: function(symbols) {
             return symbols.reduce(function(a, b) {
                 return _.multiply(a,b);
+            });
+        },
+        /*
+        * Joints symbols in array by addition
+        */
+        joinaddsymbols: function(symbols) {
+            return symbols.reduce(function(a, b) {
+                return _.add(a,b);
             });
         },
         /*
@@ -91,7 +101,7 @@
         delta: function(symbol) {
             if (!isNumericSymbol(symbol))
             {
-                return  _.symfunction("delta",[symbol]);
+                return  _.symfunction('delta',[symbol]);
             }
 
             if (symbol == 0)
@@ -116,7 +126,7 @@
             //If input is zero
             if (isNumericSymbol(expression) && (expression.valueOf() == 0))
             {
-                return new Symbol("0");
+                return new Symbol('0');
             }
 
             var transfrom = function(exp,vin,vout) {
@@ -130,7 +140,7 @@
                 //Constant input
                 if (mainsymbols.length === 0)
                 {
-                    return _.multiply(exp,_.symfunction("delta",[vout]));
+                    return _.multiply(exp,_.symfunction('delta',[vout]));
                 }
 
                 //Collect all the symbols with the variable
@@ -151,6 +161,7 @@
                 //Shifting
                 if (mainsymbol.args[0].group !== S)
                 {
+
                     //Different power
                     if (mainsymbol.args[0].power !== 1)
                     {
@@ -162,30 +173,56 @@
 
                     }
 
-                    console.log(mainsymbol.args[0].text());
-                    console.log(mainsymbol.args[0]);
-                }
+                    //Time shift
+                    var shiftby =  __.eachaddsymbol(mainsymbol.args[0].copy());
+                    var shiftcoeffs = shiftby.filter(function (value) { return (!__.hasVariable(value,vin)) ; });
+                    //Add shift
+                    var newshift = core.Utils.format('exp(i*2*PI*f*({0}))', __.joinaddsymbols(shiftcoeffs));
+                    coeffs.push(_.parse(newshift));
+                    var newmainsymbol = _.parse( mainsymbol.text().replace(mainsymbol.args[0].text(),vin.text()) );
+                    //Evalute rest of function
+                    newmainsymbol = transfrom( newmainsymbol,vin,vout);
 
+                    //Add to coefficients list
+                    coeffs.push(newmainsymbol);
+                    //Rejoin all of them
+                    return __.joinmuiltisymbols(coeffs);
+                }
 
 
                 //Tables of functions
-                switch(mainsymbol.baseName) {
-                    case "delta":
-                        mainsymbol = new Symbol("1");
+                if (mainsymbol.power === 1)
+                {
+                    switch(mainsymbol.baseName)
+                    {
+                    case 'delta':
+                        mainsymbol = new Symbol('1');
                         break;
-                    case "rect":
-                        mainsymbol = _.symfunction("sinc",[vout]);
+                    case 'rect':
+                        mainsymbol = _.symfunction('sinc',[vout]);
                         break;
-                    case "sinc":
-                        mainsymbol = _.symfunction("rect",[vout]);
+                    case 'sinc':
+                        mainsymbol = _.symfunction('rect',[vout]);
                         break;
-                    case "tri":
-                        mainsymbol = _.pow( _.symfunction("sinc",[vout]),new Symbol("2") );
+                    case 'tri':
+                        mainsymbol = _.pow( _.symfunction('sinc',[vout]),new Symbol('2') );
                         break;
                     default:
-
                         break;
+                    }
                 }
+                else if (mainsymbol.power === 2)
+                {
+                    switch(mainsymbol.baseName)
+                    {
+                    case 'sinc':
+                        mainsymbol = _.symfunction('tri',[vout]);
+                        break;
+                    default:
+                        break;
+                    }
+                }
+
                 //Add to coefficients list
                 coeffs.push(mainsymbol);
                 //Rejoin all of them
@@ -194,20 +231,12 @@
 
             //Seperate each symbol by addition
             var symbols = __.eachaddsymbol(expression);
-            var result;
             //Use linear property of transform
-            if (symbols.length == 1)
-            {
-                result = transfrom(symbols[0],varin,varout);
-            }
-            else
-            {
-                result = symbols.reduce(function (a,b) {
-                    return _.add(a,transfrom(b,varin,varout));
-                });
-            }
-            return result;
+            symbols.forEach(function (element, index, array) {
+                array[index] = transfrom(element,varin,varout);
+            });
 
+            return __.joinaddsymbols(symbols);
         }
     };
     nerdamer.register([
