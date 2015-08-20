@@ -1460,10 +1460,7 @@ var nerdamer = (function() {
         //we want the underscore to point to this parser not the global nerdamer parser.
         var _ = this, 
             bin = {},
-            constants = this.constants = {
-                PI: Math.PI,
-                E:  Math.E
-            };
+            constants = this.constants = {};
         //list all the supported operators
         var operators = {
                 '^': new Operator('^', 'pow', 4, false, false),
@@ -3752,6 +3749,13 @@ var nerdamer = (function() {
             expression = parts[1];
         }
         
+        //Add constants when detects numer
+        if ((option !== undefined) && (option.indexOf('numer') !== -1))
+        {
+            subs = (subs == null) ? {} : subs;
+            subs.PI = Math.PI;
+            subs.E = Math.E;
+        }
         var multi_options = isArray(option),
             expand = 'expand',
             numer = multi_options ? option.indexOf('numer') !== -1 : option === 'numer';

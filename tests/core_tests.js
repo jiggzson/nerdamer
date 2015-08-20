@@ -1,4 +1,32 @@
 QUnit.module( "nerdamer.core.js" );
+QUnit.test( "Constants test", function( assert ) {
+    nerdamer.clear('all'); //make sure that we start fresh
+    assert.equal( nerdamer('E',null, 'numer').valueOf(), 2.718281828459045, "Constant E" );
+    assert.equal( nerdamer('PI',null, 'numer').valueOf(), 3.141592653589793, "Constant PI" );
+    nerdamer.setConstant( 'G',1.61803398875 );
+    assert.equal( nerdamer('G').valueOf(), 1.61803398875, "Set constant Phi(Golden ratio)" );
+    nerdamer.setConstant( 'A',1.20205 );
+    assert.equal( nerdamer('A').valueOf(), 1.20205, "Set constant ζ(3)(Apéry's constant)" );
+});
+
+QUnit.test( "Set equation test", function( assert ) {
+    nerdamer.clear('all'); //make sure that we start fresh
+    nerdamer('f(x) = x^2 ');
+    assert.equal( nerdamer('f(6)').valueOf(), 36, "f(x) = x^2 ,x=6" );
+    nerdamer('hyp(a, b) = sqrt(a^2 + b^2) ');
+    assert.equal( nerdamer('hyp(7, 2)').valueOf(), 7.280109889280518, "hyp(a, b) = sqrt(a^2 + b^2),a=7,b=2" );
+    nerdamer('g(x,y,z) = y*sin(x)+cos(z)+x^y');
+    assert.equal( nerdamer('g(4,3,0)',null, 'numer').valueOf(), 7.280109889280518, "hyp(a, b) = sqrt(a^2 + b^2),a=7,b=2" );
+
+});
+
+QUnit.test( "numer test", function( assert ) {
+    nerdamer.clear('all'); //make sure that we start fresh
+    assert.equal( nerdamer('x*PI',{x:2}, 'numer').valueOf(), 6.283185307179586, "x*PI , x=2" );
+    assert.equal( nerdamer('x+y',{x:2,y:45}, 'numer').valueOf(), 47, "x+y , x=2,y=45" );
+    assert.equal( nerdamer('y*cos(x)',{x:2,y:45}, 'numer').valueOf(), -18.72660764462141, "y*cos(x) , x=2,y=45" );
+});
+
 QUnit.test( "buildFunction test", function( assert ) {
     nerdamer.clear('all'); //make sure that we start fresh
     (function() {
@@ -38,7 +66,6 @@ QUnit.test( "buildFunction test", function( assert ) {
         ]);
     })();
     var f = nerdamer("foobar(x)").buildFunction();
-    console.log(f.toString());
     assert.equal( 8, f(-23), "Inputing -23 into foobar(x)");
     assert.equal( 1, f(0), "Inputing 0 into foobar(x)");
     assert.equal( -8, f(1), "Inputing 1 into foobar(x)");
@@ -723,7 +750,7 @@ QUnit.test( "Systems test", function( assert ) {
         },
         {
             description: "Euler's identity",
-            expression: "e^(2*i*PI) +e^(i*PI)",
+            expression: "exp(2*i*PI) +exp(i*PI)",
             expected: "0",
             numval: 0
         },

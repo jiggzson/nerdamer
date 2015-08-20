@@ -52,12 +52,12 @@ QUnit.test( "Functions test", function( assert ) {
         {
             description: "Fourier transform delta(t-a+b)",
             expression: "ft( delta(t-a+b) ,t,f)",
-            expected: "exp(6.283185307179586*(-a+b)*f*i)"
+            expected: "exp(2*(-a+b)*PI*f*i)"
         },
         {
-            description: "Fourier transform rect(t-a+b+c)",
-            expression: "ft( rect(t-a+b+c) ,t,f)",
-            expected: "exp(6.283185307179586*(-a+b+c)*f*i)*sinc(f)"
+            description: "Fourier transform rect(t-a+b+c+4)",
+            expression: "ft( rect(t-a+b+c+4) ,t,f)",
+            expected: "exp(2*(-a+4+b+c)*PI*f*i)*sinc(f)"
         },
         {
             description: "Fourier transform rect(t)",
@@ -87,7 +87,7 @@ QUnit.test( "Functions test", function( assert ) {
         {
             description: "Fourier transform a*rect(t+b)+b*delta(t-h)+1+5*(sinc(t))^2 ",
             expression: "ft( a*rect(t+b)+b*delta(t-h)+1+5*(sinc(t))^2 ,t,f)",
-            expected: "5*tri(f)+a*exp(6.283185307179586*b*f*i)*sinc(f)+b*exp(-6.283185307179586*f*h*i)+delta(f)"
+            expected: "5*tri(f)+a*exp(2*PI*b*f*i)*sinc(f)+b*exp(-2*PI*f*h*i)+delta(f)"
         }
     ];
     var run_tests = function() {
