@@ -236,6 +236,16 @@ console.log(answer);
 
 //result: 9
 ```
+
+Set custom functions using this example:
+
+```javascript
+nerdamer('hyp(a, b) = sqrt(a^2 + b^2) ');
+var result = nerdamer('hyp(7, 2)').valueOf();
+
+//result: 7.280109889280518
+```
+
             
 If you need to add a constant use the setConstant method
 
