@@ -1,23 +1,26 @@
 QUnit.module( "nerdamer.core.js" );
 QUnit.test( "Constants test", function( assert ) {
     nerdamer.clear('all'); //make sure that we start fresh
-    assert.equal( nerdamer('E',null, 'numer').valueOf(), 2.718281828459045, "Constant E" );
-    assert.equal( nerdamer('PI',null, 'numer').valueOf(), 3.141592653589793, "Constant PI" );
+    assert.equal( nerdamer('E').evaluate().valueOf(), 2.718281828459045, "Evaluate constant E" );
+    assert.equal( nerdamer('PI').evaluate().valueOf(), 3.141592653589793, "Evaluate constant PI" );
+    assert.equal( nerdamer('E',null, 'numer').valueOf(), 2.718281828459045, "numer constant E" );
+    assert.equal( nerdamer('PI',null, 'numer').valueOf(), 3.141592653589793, "numer constant PI" );
     nerdamer.setConstant( 'G',1.61803398875 );
     assert.equal( nerdamer('G').valueOf(), 1.61803398875, "Set constant Phi(Golden ratio)" );
     nerdamer.setConstant( 'A',1.20205 );
     assert.equal( nerdamer('A').valueOf(), 1.20205, "Set constant ζ(3)(Apéry's constant)" );
 });
 
-QUnit.test( "Set equation test", function( assert ) {
+QUnit.test( "Set function test", function( assert ) {
     nerdamer.clear('all'); //make sure that we start fresh
     nerdamer('f(x) = x^2 ');
     assert.equal( nerdamer('f(6)').valueOf(), 36, "f(x) = x^2 ,x=6" );
     nerdamer('hyp(a, b) = sqrt(a^2 + b^2) ');
     assert.equal( nerdamer('hyp(7, 2)').valueOf(), 7.280109889280518, "hyp(a, b) = sqrt(a^2 + b^2),a=7,b=2" );
     nerdamer('g(x,y,z) = y*sin(x)+cos(z)+x^y');
-    assert.equal( nerdamer('g(4,3,0)',null, 'numer').valueOf(), 7.280109889280518, "hyp(a, b) = sqrt(a^2 + b^2),a=7,b=2" );
-
+    assert.equal( nerdamer('g(4,3,0)',null, 'numer').valueOf(), 62.72959251407622, "g(x,y,z) = y*sin(x)+cos(z)+x^y,x=4,y=3,z=0" );
+    nerdamer('A(x,y,z) =  f(x) + hyp(x,y)*g(x,y,z) ');
+    assert.equal( nerdamer('A(-4,1,2)',null, 'numer').valueOf(), 0.9121367605644437, "A(x,y,z) =  f(x) + hyp(x,y)*g(x,y,z),x=-4,y=1,z=2" );
 });
 
 QUnit.test( "numer test", function( assert ) {
@@ -743,6 +746,12 @@ QUnit.test( "Systems test", function( assert ) {
             error: true
         },
         {
+            description: "Exponent exp(2*x)",
+            expression: "exp(2*x)",
+            expected: "exp(2*x)",
+            numval: 162754.79141900386
+        },
+        {
             description: "Exponents of negative numbers",
             expression: "(-1)^x",
             expected: "(-1)^x",
@@ -751,14 +760,38 @@ QUnit.test( "Systems test", function( assert ) {
         {
             description: "Euler's identity",
             expression: "exp(2*i*PI) +exp(i*PI)",
-            expected: "0",
-            numval: 0
+            expected: "exp(2*PI*i)+exp(PI*i)",
+            numval: "-1.2246467991473532e-16*i"
         },
         {
             description: "Math functions",
             expression: "(step(x))^2+4*sign(y)+atan(tri(z))",
             expected: "4*sign(y)+atan(tri(z))+step(x)^2",
             numval: 5
+        },
+        {
+            description: "Re function",
+            expression: "re(23*i+9+PI*i+sin(x)+tan(y))",
+            expected: "re(23*i+9+PI*i+sin(x)+tan(y))",
+            numval: 9.878405784150651
+        },
+        {
+            description: "More Re function",
+            expression: "re(23*i)",
+            expected: "re(23*i)",
+            numval: 0
+        },
+        {
+            description: "Im function",
+            expression: "im(23*i+9+PI*i+sin(x)+tan(y))",
+            expected: "im(23*i+9+PI*i+sin(x)+tan(y))",
+            numval: 26.141592653589793
+        },
+        {
+            description: "More Im function",
+            expression: "im(748)",
+            expected: "im(748)",
+            numval: 0
         }
     ];
     var run_tests = function() {

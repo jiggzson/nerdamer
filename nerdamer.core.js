@@ -528,6 +528,34 @@ var nerdamer = (function() {
             return s;
         },
 
+        /*
+        * Splits symbols by addition or subtraction
+        */
+        eachaddsymbol = function(symbol) {
+            var symbols = [];
+            if ( (symbol.group === CB) || ((symbol.group === EX) || (symbol.collectSymbols().length === 0)) )
+            {
+                return [symbol];
+            }
+            else
+            {
+                symbol.collectSymbols().forEach(function (element, index, array) {
+                    symbols.push.apply(symbols, eachaddsymbol(element));
+                });
+            }
+            return symbols;
+        },
+
+        /*
+        * Joints symbols in array by addition
+        */
+        joinaddsymbols = function(symbols) {
+            return symbols.reduce(function(a, b) {
+                return _.add(a,b);
+            });
+        },
+
+
         //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
         //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the 
         //functions within are pretty self-explanatory.
@@ -644,6 +672,67 @@ var nerdamer = (function() {
                     return 1-Math.abs(symbol);
                 }
                 return 0;
+            },
+            /*
+            * Get real part of symbol
+            */
+            re: function(symbol) {
+                if (!isNumericSymbol(symbol))
+                {
+                    var symbols = eachaddsymbol(symbol);
+                    symbols = symbols.filter(function (value) { return (value.text().indexOf('i') === -1) ; });
+                    //No real numbers
+                    if (symbols.length === 0)
+                    {
+                        return new Symbol('0');
+                    }
+                    return joinaddsymbols(symbols);
+                }
+
+                return symbol;
+            },
+            /*
+            * Get imaginary part of symbol
+            */
+            im: function(symbol) {
+                //No imaginary numbers
+                if (!isSymbol(symbol))
+                {
+                    return 0;
+                }
+
+                if (!isNumericSymbol(symbol))
+                {
+                    var symbols = eachaddsymbol(symbol);
+                    symbols = symbols.filter(function (value) { return (value.text().indexOf('i') !== -1) ; });
+                    //No imaginary numbers
+                    if (symbols.length === 0)
+                    {
+                        return new Symbol('0');
+                    }
+                    return _.parse(_.divide(joinaddsymbols(symbols),new Symbol("i")));
+                }
+
+                return 0;
+            },
+            /*
+            * Modified exp for complex numbers
+            */
+            exp: function(symbol) {
+                //Check if numeric
+                if (!isNumericSymbol(symbol))
+                {
+                    //If complex number
+                    if (symbol.text().indexOf('i') !== -1)
+                    {
+                        var exp = Utils.format('(e^({0}))*(cos({1}) + i*sin({1}))', Math2.re(symbol), Math2.im(symbol));
+                        return  _.parse(exp);
+                    }
+
+                    return  _.symfunction('exp',[symbol]);
+                }
+
+                return Math.exp(symbol);
             }
         };
         reserveNames(Math2); //reserve the names in Math2
@@ -839,8 +928,10 @@ var nerdamer = (function() {
                 expression = this.symbol.text(); idx--;
             }
             
-            var subs = arguments[idx];
-
+            var subs = (arguments[idx] !== undefined) ? arguments[idx] : {} ;
+            //Add constants
+            subs.PI = Math.PI;
+            subs.E = Math.E;
             return new Expression(block('PARSE2NUMBER', function() {
                 return _.parse(expression, format_subs(subs));
             }, true));
@@ -1497,6 +1588,8 @@ var nerdamer = (function() {
                 'rect'      : [ , 1],
                 'sinc'      : [ , 1],
                 'tri'       : [ , 1],
+                're'        : [ , 1],
+                'im'        : [ , 1],
                 'vector'    : [vector, -1],
                 'matrix'    : [matrix, -1],
                 'parens'    : [parens, -1],
@@ -1625,8 +1718,11 @@ var nerdamer = (function() {
                         var f = Math[fn_name] ? Math[fn_name] : Math2[fn_name];
                         retval = new Symbol(f.apply(undefined, args));
                     }
-                    catch(e){ 
-                        retval = this.symfunction(fn_name, args); 
+                    catch(e){
+                        //Complex numbered functions
+                        var complex_fn = ['exp','re','im'];
+                        //Fix for complex numbers functions
+                        retval = (complex_fn.indexOf(fn_name) !== -1) ? Math2[fn_name].apply(undefined, args) : this.symfunction(fn_name, args);
                     }
                 }
                 else {
