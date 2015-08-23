@@ -1,28 +1,39 @@
 {
-  "author": {
-    "name": "Martin Donk",
-    "email": "martin.r.donk@gmail.com"
-  },
-  "description": "light-weight symbolic math expression evaluator in javascript",
-  "name": "nerdamer",
-  "license": "MIT",
-  "version": "0.5.8",
-  "homepage": "http://nerdamer.com/",
-  "keywords": [
-    "math",
-    "algebra",
-    "calculus",
-    "fourier",
-    "symbolic"
-  ],
-  "scripts": {
-    "test": "grunt test"
-  },
-  "devDependencies": {
-    "grunt": "^0.4.5",
-    "grunt-contrib-qunit": "~0.7.0"
-  },
-  "engines": {
-    "node": ">=0.11.0"
-  }
+    "author": {
+        "name": "Martin Donk",
+        "email": "martin.r.donk@gmail.com"
+    },
+    "description": "javascript light-weight symbolic math expression evaluator",
+    "name": "nerdamer",
+    "license": "MIT",
+    "version": "0.5.8",
+    "homepage": "http://nerdamer.com/",
+    "keywords": [
+        "math",
+        "symbolic",
+        "integration",
+        "differentiation",
+        "derivative",
+        "algebra",
+        "calculus",
+        "fourier",
+        "symbolic math"
+    ],
+    "scripts": {
+        "test": "grunt test"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/jiggzson/nerdamer.git"
+    },
+    "bugs": {
+        "url": "https://github.com/jiggzson/nerdamer/issues"
+    },
+    "devDependencies": {
+        "grunt": "^0.4.5",
+        "grunt-contrib-qunit": "~0.7.0"
+    },
+    "engines": {
+        "node": ">=0.10.0"
+    }
 }
