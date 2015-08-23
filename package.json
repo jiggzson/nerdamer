@@ -6,7 +6,7 @@
   "description": "light-weight symbolic math expression evaluator in javascript",
   "name": "nerdamer",
   "license": "MIT",
-  "version": "0.5.6",
+  "version": "0.5.8",
   "homepage": "http://nerdamer.com/",
   "keywords": [
     "math",

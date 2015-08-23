@@ -6,7 +6,7 @@
  */
 
 var nerdamer = (function() {
-    var version = '0.5.6',
+    var version = '0.5.8',
         _ = new Parser(), //nerdamer's parser
     
         Groups = {},
@@ -742,6 +742,13 @@ var nerdamer = (function() {
 
                 return Math.exp(symbol);
             },
+            /*
+            * Sign function
+            * Specification : http://mathworld.wolfram.com/Sign.html
+            * if x > 0 then 1
+            * if x == 0 then 0
+            * if x < 0 then -1
+            */
             sign: function(symbol) {
                 if (symbol > 0)
                 {
