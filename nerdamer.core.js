@@ -741,6 +741,17 @@ var nerdamer = (function() {
                 }
 
                 return Math.exp(symbol);
+            },
+            sign: function(symbol) {
+                if (symbol > 0)
+                {
+                    return 1;
+                }
+                else if (symbol < 0)
+                {
+                    return -1;
+                }
+                return 0;
             }
         };
         reserveNames(Math2); //reserve the names in Math2
