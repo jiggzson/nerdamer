@@ -1,5 +1,7 @@
-Nerdamer
+Nerdamer 
 ========
+
+[![Build Status](https://travis-ci.org/brosnanyuen/nerdamer.svg?branch=dev)](https://travis-ci.org/brosnanyuen/nerdamer)
 
 As of version 0.5.0, the library is split into the core and optional add-ons which can be loaded after the core has been loaded.
 
