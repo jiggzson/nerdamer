@@ -735,14 +735,14 @@ QUnit.test( "Systems test", function( assert ) {
             description: "Divide by zero",
             expression: "0/0",
             expected: "Division by zero!",
-            numval: 0,
+            numval: Infinity,
             error: true
         },
         {
             description: "Multiples of zero",
             expression: "0^0",
             expected: "Division by zero!",
-            numval: 0,
+            numval: Infinity,
             error: true
         },
         {
@@ -756,6 +756,18 @@ QUnit.test( "Systems test", function( assert ) {
             expression: "(-1)^x",
             expected: "(-1)^x",
             numval: 1
+        },
+        {
+            description: "More exponents of negative numbers",
+            expression: "(-5)^(x+y)",
+            expected: "(-5)^(x+y)",
+            numval: 9765625
+        },
+        {
+            description: "More exponents of complex numbers",
+            expression: "(3+i)^(x+y)",
+            expected: "(3+i)^(x+y)",
+            numval: "(3+i)^10"
         },
         {
             description: "Euler's identity",

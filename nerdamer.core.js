@@ -677,6 +677,11 @@ var nerdamer = (function() {
             * Get real part of symbol
             */
             re: function(symbol) {
+                if (!isSymbol(symbol))
+                {
+                    return symbol;
+                }
+
                 if (!isNumericSymbol(symbol))
                 {
                     var symbols = eachaddsymbol(symbol);
@@ -705,12 +710,15 @@ var nerdamer = (function() {
                 {
                     var symbols = eachaddsymbol(symbol);
                     symbols = symbols.filter(function (value) { return (value.text().indexOf('i') !== -1) ; });
+                    symbols.forEach(function (element, index, array) {
+                        array[index] = _.divide(element,new Symbol("i"));
+                    });
                     //No imaginary numbers
                     if (symbols.length === 0)
                     {
                         return new Symbol('0');
                     }
-                    return _.parse(_.divide(joinaddsymbols(symbols),new Symbol("i")));
+                    return joinaddsymbols(symbols);
                 }
 
                 return 0;
@@ -1274,7 +1282,8 @@ var nerdamer = (function() {
             }
             else if(group === EX) {
                 //1^x is just one so check and make sure
-                if(!(this.group === N && Math.abs(this.multiplier) === 1)) {
+                //Fix (-1)^(x) evaluation
+                if(!(this.group === N && (this.multiplier === 1))) {
                     this.previousGroup = this.group;
                     if(this.group === N) {
                         this.value = this.multiplier;
@@ -2673,7 +2682,17 @@ var nerdamer = (function() {
             if(isSymbolA && isSymbolB) {
                 var numberB = Number(symbol2);
                 if(numberB === 1) return symbol1;
-                if(numberB === 0) return new Symbol(1);
+
+                //Fix if symbol1 is zero
+                if(numberB === 0)
+                {
+                    //If symbol1 is zero then error
+                    if (Number(symbol1) === 0)
+                    {
+                        err('Division by zero!');
+                    }
+                    return new Symbol(1);
+                }
 
                 //as usual pull the variables closer
                 var group1 = symbol1.group, 
@@ -2768,10 +2787,19 @@ var nerdamer = (function() {
                     var m, spow = symbol1.power;
                     //symbol power may be undefined if symbol is of type N
                     if(!isSymbol(spow)) spow = new Symbol(spow || 1);
-
-                    if(Math.abs(symbol1.multiplier) !== 1) {
+                    //Fix (-1)^(x) evaluation
+                    if(symbol1.multiplier !== 1) {
                         m = new Symbol(symbol1.multiplier);
-                        m.convert(EX);
+                        if (symbol1.multiplier >= 0)
+                        {
+                            m.convert(EX);
+                        }
+                        else
+                        {
+                            m.group = EX;
+                            m.value = m.multiplier;
+                            m.multiplier = 1;
+                        }
                         m.power = symbol2.copy();
                         symbol1.multiplier = 1;
                     }
