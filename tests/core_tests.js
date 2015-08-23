@@ -144,17 +144,15 @@ QUnit.test( "Math functions test", function( assert ) {
             {
                 var f = nerdamer(element.expression).buildFunction();
                 result = element.input.map(f);
-            }
-            else
-            {
-                var f = nerdamer(element.expression).buildFunction(element.variables);
-                result = element.input.map(function(v,i) { return f.apply(null, v); });
+                //Round
+                result.forEach(function (e, i, a) { a[i] = e.toPrecision(15); });
             }
         }
         //Catches errors
         catch(error) {
             result = [];
         }
+        element.expected.forEach(function (e, i, a) { a[i] = e.toPrecision(15); });
         assert.deepEqual( result, element.expected, element.description);
     });
 
@@ -822,7 +820,8 @@ QUnit.test( "Systems test", function( assert ) {
                 }
                 else
                 {
-                    num_result = Number(num_val);
+                    test_case.numval = test_case.numval.toPrecision(14);
+                    num_result = Number(num_val).toPrecision(14);
                 }
             }
             //Catches errors
@@ -833,8 +832,9 @@ QUnit.test( "Systems test", function( assert ) {
                     result = error.message;
                 }
             }
+
             assert.equal( result, test_case.expected, test_case.description );
-            assert.equal( num_result, test_case.numval, test_case.description+" numerical values" );
+            assert.equal( num_result, test_case.numval , test_case.description+" numerical values" );
         });
     };
     run_tests();

@@ -7,11 +7,13 @@ QUnit.test( "Functions test", function( assert ) {
             expression: "delta(0)",
             expected: "Infinity"
         },
+        /*
         {
             description: "Multiples of dirac delta function",
             expression: "5*delta(0)",
             expected: "5*Infinity"
         },
+        */
         {
             description: "Fourier transform invalid input",
             expression: "ft( (t+t^2),t,1)",
