@@ -1,0 +1,35 @@
+{
+    "author": {
+        "name": "Martin Donk",
+        "email": "martin.r.donk@gmail.com"
+    },
+    "description": "javascript light-weight symbolic math expression evaluator",
+    "name": "nerdamer",
+    "license": "MIT",
+    "version": "0.5.6",
+    "homepage": "http://nerdamer.com/",
+    "directory" :{
+        "lib": "./"
+    },
+    "main": "nerdamer.core.js",
+    "keywords": [
+        "math",
+        "symbolic",
+        "integration",
+        "differentiation",
+        "derivative",
+        "algebra",
+        "calculus",
+        "symbolic math"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/jiggzson/nerdamer.git"
+    },
+    "bugs": {
+        "url": "https://github.com/jiggzson/nerdamer/issues"
+    },
+    "engines": {
+        "node": ">=0.10.0"
+    }
+}
