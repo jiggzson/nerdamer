@@ -19,6 +19,12 @@
         isComposite = core.Utils.isComposite,
         isSymbol = core.Utils.isSymbol,
         isNumericSymbol = core.Utils.isNumericSymbol,
+        eachaddsymbol = core.Utils.eachaddsymbol,
+        eachmuiltisymbol = core.Utils.eachmuiltisymbol,
+        isSingleVariable = core.Utils.isSingleVariable,
+        hasVariable = core.Utils.hasVariable,
+        joinmuiltisymbols = core.Utils.joinmuiltisymbols,
+        joinaddsymbols = core.Utils.joinaddsymbols,
         isVector = core.Utils.isVector,
         N = core.groups.N,
         EX = core.groups.EX,
@@ -30,69 +36,6 @@
 
     var __ = core.Special = {
         version: '1.0.1',
-        /*
-        * Splits symbols by addition or subtraction
-        */
-        eachaddsymbol: function(symbol) {
-            var symbols = [];
-            if ( (symbol.group === CB) || ((symbol.group === EX) || (symbol.collectSymbols().length === 0)) )
-            {
-                return [symbol];
-            }
-            else
-            {
-                symbol.collectSymbols().forEach(function (element, index, array) {
-                    symbols.push.apply(symbols, __.eachaddsymbol(element));
-                });
-            }
-            return symbols;
-        },
-        /*
-        * Splits symbols by multiplication
-        */
-        eachmuiltisymbol: function(symbol) {
-            var symbols = [];
-            if  (symbol.collectSymbols().length === 0)
-            {
-                return [symbol,(new Symbol(symbol.multiplier))];
-            }
-            else
-            {
-                symbol.collectSymbols().forEach(function (element, index, array) {
-                    symbols.push.apply(symbols, __.eachmuiltisymbol(element));
-                });
-            }
-            symbols.push(new Symbol(symbol.multiplier));
-            return symbols;
-        },
-        /*
-        * Single variable of power 1 and multiplier 1
-        */
-        isSingleVariable: function(exp) {
-            return ((exp.group === S) && (exp.multiplier === 1) && (exp.power === 1));
-        },
-        /*
-        * Check to see if the function contains a variable
-        */
-        hasVariable: function(exp,vin) {
-            return (exp.text().indexOf(vin.text()) !== -1);
-        },
-        /*
-        * Joints symbols in array by multiplication
-        */
-        joinmuiltisymbols: function(symbols) {
-            return symbols.reduce(function(a, b) {
-                return _.multiply(a,b);
-            });
-        },
-        /*
-        * Joints symbols in array by addition
-        */
-        joinaddsymbols: function(symbols) {
-            return symbols.reduce(function(a, b) {
-                return _.add(a,b);
-            });
-        },
         /*
         * Dirac delta function
         * Specification : http://mathworld.wolfram.com/DeltaFunction.html
@@ -118,24 +61,24 @@
         ft: function(expression,varin,varout) {
 
             //Check for invalid inputs
-            if ((!__.isSingleVariable(varin)) || (!__.isSingleVariable(varout)))
+            if ((!isSingleVariable(varin)) || (!isSingleVariable(varout)))
             {
                 throw new Error('Must be single symbol');
             }
 
             //If input is zero
-            if (isNumericSymbol(expression) && (expression.valueOf() == 0))
+            if (isNumericSymbol(expression) && (expression.valueOf() === 0))
             {
                 return new Symbol('0');
             }
 
             var transfrom = function(exp,vin,vout) {
                 //Get all multiplications
-                var allmuilti = __.eachmuiltisymbol(exp);
+                var allmuilti = eachmuiltisymbol(exp);
                 //Get coefficients
-                var coeffs = allmuilti.filter(function (value) { return (!__.hasVariable(value,vin)) ; });
+                var coeffs = allmuilti.filter(function (value) { return (!hasVariable(value,vin)) ; });
                 //Parse symbols that contain the varin
-                var mainsymbols = allmuilti.filter(function (value) { return __.hasVariable(value,vin) ; });
+                var mainsymbols = allmuilti.filter(function (value) { return hasVariable(value,vin) ; });
 
                 //Constant input
                 if (mainsymbols.length === 0)
@@ -144,7 +87,7 @@
                 }
 
                 //Collect all the symbols with the variable
-                var mainsymbol = __.joinmuiltisymbols(mainsymbols);
+                var mainsymbol = joinmuiltisymbols(mainsymbols);
 
                 //Handle functions with multiple arguments
                 if (mainsymbol.args.length > 1)
@@ -174,10 +117,10 @@
                     }
 
                     //Time shift
-                    var shiftby =  __.eachaddsymbol(mainsymbol.args[0].copy());
-                    var shiftcoeffs = shiftby.filter(function (value) { return (!__.hasVariable(value,vin)) ; });
+                    var shiftby =  eachaddsymbol(mainsymbol.args[0].copy());
+                    var shiftcoeffs = shiftby.filter(function (value) { return (!hasVariable(value,vin)) ; });
                     //Add shift
-                    var newshift = core.Utils.format('exp(i*2*PI*f*({0}))', __.joinaddsymbols(shiftcoeffs));
+                    var newshift = core.Utils.format('exp(i*2*PI*f*({0}))', joinaddsymbols(shiftcoeffs));
                     coeffs.push(_.parse(newshift));
                     var newmainsymbol = _.parse( mainsymbol.text().replace(mainsymbol.args[0].text(),vin.text()) );
                     //Evalute rest of function
@@ -186,7 +129,7 @@
                     //Add to coefficients list
                     coeffs.push(newmainsymbol);
                     //Rejoin all of them
-                    return __.joinmuiltisymbols(coeffs);
+                    return joinmuiltisymbols(coeffs);
                 }
 
 
@@ -226,17 +169,17 @@
                 //Add to coefficients list
                 coeffs.push(mainsymbol);
                 //Rejoin all of them
-                return __.joinmuiltisymbols(coeffs);
+                return joinmuiltisymbols(coeffs);
             };
 
             //Seperate each symbol by addition
-            var symbols = __.eachaddsymbol(expression);
+            var symbols = eachaddsymbol(expression);
             //Use linear property of transform
             symbols.forEach(function (element, index, array) {
                 array[index] = transfrom(element,varin,varout);
             });
 
-            return __.joinaddsymbols(symbols);
+            return joinaddsymbols(symbols);
         }
     };
     nerdamer.register([

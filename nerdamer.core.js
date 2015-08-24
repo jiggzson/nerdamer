@@ -531,7 +531,7 @@ var nerdamer = (function() {
         /*
         * Splits symbols by addition or subtraction
         */
-        eachaddsymbol = function(symbol) {
+        eachaddsymbol = Utils.eachaddsymbol = function(symbol) {
             var symbols = [];
             if ( (symbol.group === CB) || ((symbol.group === EX) || (symbol.collectSymbols().length === 0)) )
             {
@@ -545,16 +545,52 @@ var nerdamer = (function() {
             }
             return symbols;
         },
-
+        /*
+        * Splits symbols by multiplication
+        */
+        eachmuiltisymbol = Utils.eachmuiltisymbol = function(symbol) {
+            var symbols = [];
+            if  (symbol.collectSymbols().length === 0)
+            {
+                return [symbol,(new Symbol(symbol.multiplier))];
+            }
+            else
+            {
+                symbol.collectSymbols().forEach(function (element, index, array) {
+                    symbols.push.apply(symbols, eachmuiltisymbol(element));
+                });
+            }
+            symbols.push(new Symbol(symbol.multiplier));
+            return symbols;
+        },
+        /*
+        * Single variable of power 1 and multiplier 1
+        */
+        isSingleVariable = Utils.isSingleVariable = function(exp) {
+            return ((exp.group === S) && (exp.multiplier === 1) && (exp.power === 1));
+        },
+        /*
+        * Check to see if the function contains a variable
+        */
+        hasVariable = Utils.hasVariable = function(exp,vin) {
+            return (exp.text().indexOf(vin.text()) !== -1);
+        },
+        /*
+        * Joints symbols in array by multiplication
+        */
+        joinmuiltisymbols = Utils.joinmuiltisymbols = function(symbols) {
+            return symbols.reduce(function(a, b) {
+                return _.multiply(a,b);
+            });
+        },
         /*
         * Joints symbols in array by addition
         */
-        joinaddsymbols = function(symbols) {
+        joinaddsymbols = Utils.joinaddsymbols = function(symbols) {
             return symbols.reduce(function(a, b) {
                 return _.add(a,b);
             });
         },
-
 
         //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
         //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the 

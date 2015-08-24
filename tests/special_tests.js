@@ -3,9 +3,14 @@ QUnit.test( "Functions test", function( assert ) {
     nerdamer.clear('all'); //make sure that we start fresh
     var test_cases = [
         {
-            description: "Dirac delta function",
+            description: "Dirac delta delta(0)",
             expression: "delta(0)",
             expected: "Infinity"
+        },
+        {
+            description: "Dirac delta delta(2)",
+            expression: "delta(2)",
+            expected: "0"
         },
         /*
         {
