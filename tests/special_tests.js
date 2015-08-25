@@ -87,6 +87,36 @@ QUnit.test( "Functions test", function( assert ) {
             expected: "tri(f)"
         },
         {
+            description: "Fourier transform sign(t) ",
+            expression: "ft( sign(t) ,t,f)",
+            expected: "(PI*f*i)^(-1)"
+        },
+        {
+            description: "Fourier transform step(t) ",
+            expression: "ft( step(t) ,t,f)",
+            expected: "0.5*(0.5*PI^(-1)*f^(-1)*i^(-1)+delta(f))"
+        },
+        {
+            description: "Fourier transform exp(2*PI*i*t) ",
+            expression: "ft( exp(2*PI*i*t),t,f)",
+            expected: "delta(-1+f)"
+        },
+        {
+            description: "Fourier transform exp(2*PI*i*t*b*l) ",
+            expression: "ft( exp(2*PI*i*t*b*l),t,f)",
+            expected: "delta(-b*l+f)"
+        },
+        {
+            description: "Fourier transform exp(2*PI*i*t*z*c)*delta(t-m+l) ",
+            expression: "ft( exp(2*PI*i*t*z*c)*delta(t-m+l) ,t,f)",
+            expected: "exp(2*(-c*z+f)*(-m+l)*PI*i)"
+        },
+        {
+            description: "Fourier transform d*exp(2*PI*i*t*q*5)*rect(t-3*v) ",
+            expression: "ft( d*exp(2*PI*i*t*q*5)*rect(t-3*v) ,t,f)",
+            expected: "d*exp(-6*(-5*q+f)*PI*i*v)*sinc(-5*q+f)"
+        },
+        {
             description: "Fourier transform a*rect(t)+b*delta(t)+1+5*(sinc(t))^2 ",
             expression: "ft( a*rect(t)+b*delta(t)+1+5*(sinc(t))^2 ,t,f)",
             expected: "5*tri(f)+a*sinc(f)+b+delta(f)"
