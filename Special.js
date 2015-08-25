@@ -82,9 +82,6 @@
                 //Main focus
                 var mainsymbols = [];
 
-                //Properties
-                var fprops = [];
-
                 //Sort symbols into coeffs and mainsymbols
                 allmuilti.forEach(function (element, index, array) {
                     if (hasVariable(element,vin))

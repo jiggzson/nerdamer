@@ -130,6 +130,11 @@ QUnit.test( "Functions test", function( assert ) {
             description: "Fourier transform a*rect(t+b)+b*delta(t-h)+1+5*(sinc(t))^2 ",
             expression: "ft( a*rect(t+b)+b*delta(t-h)+1+5*(sinc(t))^2 ,t,f)",
             expected: "5*tri(f)+a*exp(2*PI*b*f*i)*sinc(f)+b*exp(-2*PI*f*h*i)+delta(f)"
+        },
+        {
+            description: "Fourier transform a*rect(t+b)+b*delta(t-h)+exp(2*PI*i*t*r)+5*exp(2*PI*i*t*u)*(sinc(t+j))^2 ",
+            expression: "ft( a*rect(t+b)+b*delta(t-h)+exp(2*PI*i*t*r)+5*exp(2*PI*i*t*u)*(sinc(t+j))^2  ,t,f)",
+            expected: "5*exp(2*(-u+f)*PI*i*j)*tri(-u+f)+a*exp(2*PI*b*f*i)*sinc(f)+b*exp(-2*PI*f*h*i)+delta(-r+f)"
         }
     ];
     var run_tests = function() {
