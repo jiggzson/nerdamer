@@ -72,13 +72,30 @@
                 return new Symbol('0');
             }
 
-            var transfrom = function(exp,vin,vout) {
+            var transform = function(exp,vin,vout) {
                 //Get all multiplications
                 var allmuilti = eachmuiltisymbol(exp);
-                //Get coefficients
-                var coeffs = allmuilti.filter(function (value) { return (!hasVariable(value,vin)) ; });
-                //Parse symbols that contain the varin
-                var mainsymbols = allmuilti.filter(function (value) { return hasVariable(value,vin) ; });
+
+                //Coefficients
+                var coeffs = [];
+
+                //Main focus
+                var mainsymbols = [];
+
+                //Properties
+                var fprops = [];
+
+                //Sort symbols into coeffs and mainsymbols
+                allmuilti.forEach(function (element, index, array) {
+                    if (hasVariable(element,vin))
+                    {
+                        mainsymbols.push(element);
+                    }
+                    else
+                    {
+                        coeffs.push(element);
+                    }
+                });
 
                 //Constant number input
                 if (mainsymbols.length === 0)
@@ -109,15 +126,14 @@
                     //Contains frequency shift
                     if (mainsymbol.text().indexOf('exp') !== -1)
                     {
-                        Object.keys(mainsymbol.symbols).forEach(function (key) {
-                            //Find exp term
-                            if (mainsymbol.symbols[key].baseName === 'exp')
+                        eachmuiltisymbol(mainsymbol).forEach(function (element, index, array) {
+                            if (element.baseName === 'exp')
                             {
-                                fshift = mainsymbol.symbols[key];
+                                fshift = element;
                             }
-                            else //Non exp terms
+                            else
                             {
-                                newmainsymbols.push(mainsymbol.symbols[key]);
+                                newmainsymbols.push(element);
                             }
                         });
                     }
@@ -126,7 +142,8 @@
                     if (newmainsymbols.length === 1)
                     {
                         //Call itself there
-                        mainsymbol = transfrom(newmainsymbols[0], vin,vout);
+                        mainsymbol = transform(newmainsymbols[0], vin.copy() , vout.copy());
+
                         //Frequency shift
                         if (fshift !== undefined)
                         {
@@ -136,7 +153,7 @@
                             //Subsitude shift
                             var newmainsymbols = eachmuiltisymbol(mainsymbol);
                             newmainsymbols.forEach(function (element, index, array) {
-                                array[index] = _.parse( element.text().replace(vout.text(),fshift)) ;
+                                array[index] = _.parse( element.text().replace( vout.text() ,fshift) ) ;
                             });
                             coeffs.push.apply(coeffs, newmainsymbols);
                         }
@@ -181,7 +198,7 @@
                         coeffs.push(_.parse(newshift));
                         var newmainsymbol = _.parse( mainsymbol.text().replace(mainsymbol.args[0].text(),vin.text()) );
                         //Evalute rest of function
-                        newmainsymbol = transfrom( newmainsymbol,vin,vout);
+                        newmainsymbol = transform( newmainsymbol,vin.copy(),vout.copy());
                         //Add to coefficients list
                         coeffs.push(newmainsymbol);
                     }
@@ -244,7 +261,7 @@
             var symbols = eachaddsymbol(expression);
             //Use linear property of transform
             symbols.forEach(function (element, index, array) {
-                array[index] = transfrom(element,varin,varout);
+                array[index] = transform(element,varin.copy(),varout.copy());
             });
 
             return joinaddsymbols(symbols);

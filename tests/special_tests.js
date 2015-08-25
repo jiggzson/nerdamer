@@ -117,6 +117,11 @@ QUnit.test( "Functions test", function( assert ) {
             expected: "d*exp(-6*(-5*q+f)*PI*i*v)*sinc(-5*q+f)"
         },
         {
+            description: "Fourier transform g*exp(2*PI*i*t*n)*sign(t-p) ",
+            expression: "ft( g*exp(2*PI*i*t*n)*sign(t-p) , t , f)",
+            expected: "(-n+f)^(-1)*PI^(-1)*exp(-2*(-n+f)*PI*i*p)*g*i^(-1)"
+        },
+        {
             description: "Fourier transform a*rect(t)+b*delta(t)+1+5*(sinc(t))^2 ",
             expression: "ft( a*rect(t)+b*delta(t)+1+5*(sinc(t))^2 ,t,f)",
             expected: "5*tri(f)+a*sinc(f)+b+delta(f)"

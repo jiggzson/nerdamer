@@ -552,6 +552,10 @@ var nerdamer = (function() {
             var symbols = [];
             if  (symbol.collectSymbols().length === 0)
             {
+                if (symbol.multiplier === 1)
+                {
+                    return [symbol];
+                }
                 return [symbol,(new Symbol(symbol.multiplier))];
             }
             else
@@ -560,7 +564,11 @@ var nerdamer = (function() {
                     symbols.push.apply(symbols, eachmuiltisymbol(element));
                 });
             }
-            symbols.push(new Symbol(symbol.multiplier));
+
+            if (symbol.multiplier !== 1)
+            {
+                symbols.push(new Symbol(symbol.multiplier));
+            }
             return symbols;
         },
         /*
