@@ -1818,9 +1818,16 @@ var nerdamer = (function() {
                     else {
                         var ofn = operator.fn, result;
                         if(!ofn) result = operator.resolve(symbol2);//it's the first symbol and negative
-                        else result = _[ofn].call(_, symbol1, symbol2);
+                        else {
+                            if(symbol1.multiplier === Infinity || symbol2.multiplier === Infinity) {
+                                result = new Symbol(Infinity);
+                            }
+                            else {
+                                result = _[ofn].call(_, symbol1, symbol2);
+                            }
+                        }
                         insert(result);
-                    }    
+                    }   
                 },
                 /**
                  * This method inserts the token into the output stack. Here it will attempt to detect if a prefix is 
