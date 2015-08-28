@@ -140,21 +140,16 @@ QUnit.test( "Math functions test", function( assert ) {
         var result = [];
         try {
             //run it through nerdamer
-            if (element.variables == undefined)
-            {
-                var f = nerdamer(element.expression).buildFunction();
-                result = element.input.map(f);
-            }
-            else
-            {
-                var f = nerdamer(element.expression).buildFunction(element.variables);
-                result = element.input.map(function(v,i) { return f.apply(null, v); });
-            }
+            var f = nerdamer(element.expression).buildFunction();
+            result = element.input.map(f);
+            //Round
+            result.forEach(function (e, i, a) { a[i] = e.toPrecision(15); });
         }
         //Catches errors
         catch(error) {
             result = [];
         }
+        element.expected.forEach(function (e, i, a) { a[i] = e.toPrecision(15); });
         assert.deepEqual( result, element.expected, element.description);
     });
 
@@ -735,14 +730,14 @@ QUnit.test( "Systems test", function( assert ) {
             description: "Divide by zero",
             expression: "0/0",
             expected: "Division by zero!",
-            numval: 0,
+            numval: Infinity,
             error: true
         },
         {
             description: "Multiples of zero",
             expression: "0^0",
             expected: "Division by zero!",
-            numval: 0,
+            numval: Infinity,
             error: true
         },
         {
@@ -758,6 +753,18 @@ QUnit.test( "Systems test", function( assert ) {
             numval: 1
         },
         {
+            description: "More exponents of negative numbers",
+            expression: "(-5)^(x+y)",
+            expected: "(-5)^(x+y)",
+            numval: 9765625
+        },
+        {
+            description: "More exponents of complex numbers",
+            expression: "(3+i)^(x+y)",
+            expected: "(3+i)^(x+y)",
+            numval: "(3+i)^10"
+        },
+        {
             description: "Euler's identity",
             expression: "exp(2*i*PI) +exp(i*PI)",
             expected: "exp(2*PI*i)+exp(PI*i)",
@@ -770,25 +777,37 @@ QUnit.test( "Systems test", function( assert ) {
             numval: 5
         },
         {
-            description: "Re function",
+            description: "re(0)",
+            expression: "re(0)",
+            expected: "re(0)",
+            numval: 0
+        },
+        {
+            description: "re(23*i+9+PI*i+sin(x)+tan(y))",
             expression: "re(23*i+9+PI*i+sin(x)+tan(y))",
             expected: "re(23*i+9+PI*i+sin(x)+tan(y))",
             numval: 9.878405784150651
         },
         {
-            description: "More Re function",
+            description: "re(23*i)",
             expression: "re(23*i)",
             expected: "re(23*i)",
             numval: 0
         },
         {
-            description: "Im function",
+            description: "im(0)",
+            expression: "im(0)",
+            expected: "im(0)",
+            numval: 0
+        },
+        {
+            description: "im(23*i+9+PI*i+sin(x)+tan(y))",
             expression: "im(23*i+9+PI*i+sin(x)+tan(y))",
             expected: "im(23*i+9+PI*i+sin(x)+tan(y))",
             numval: 26.141592653589793
         },
         {
-            description: "More Im function",
+            description: "im(748)",
             expression: "im(748)",
             expected: "im(748)",
             numval: 0
@@ -810,7 +829,8 @@ QUnit.test( "Systems test", function( assert ) {
                 }
                 else
                 {
-                    num_result = Number(num_val);
+                    test_case.numval = test_case.numval.toPrecision(14);
+                    num_result = Number(num_val).toPrecision(14);
                 }
             }
             //Catches errors
@@ -821,8 +841,9 @@ QUnit.test( "Systems test", function( assert ) {
                     result = error.message;
                 }
             }
+
             assert.equal( result, test_case.expected, test_case.description );
-            assert.equal( num_result, test_case.numval, test_case.description+" numerical values" );
+            assert.equal( num_result, test_case.numval , test_case.description+" numerical values" );
         });
     };
     run_tests();
