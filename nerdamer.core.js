@@ -3013,6 +3013,12 @@ var nerdamer = (function() {
                         }  
                         break;
                     case S:
+                        //Add PI to latex generator
+                        if (obj.value === "PI")
+                        {
+                            output = this.renderSymbolLatex(obj, "\\pi", abs);
+                            break;
+                        }
                         output = this.renderSymbolLatex(obj, undefined, abs);
                         break;
                     case FN: 

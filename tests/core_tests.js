@@ -76,6 +76,68 @@ QUnit.test( "buildFunction test", function( assert ) {
     assert.equal( -8, f(5), "Inputing 5 into foobar(x)");
 });
 
+
+QUnit.test( "LaTeX generator test", function( assert ) {
+    nerdamer.clear('all'); //make sure that we start fresh
+    var test_cases = [
+        {
+            description: "x+x",
+            expression: "x+x",
+            expected: "2~x"
+        },
+        {
+            description: "a/b",
+            expression: "a/b",
+            expected: "\\frac{a}{b}"
+        },
+        {
+            description: "2*(x+x^2)+(y+y^2)^6+y",
+            expression: "2*(x+x^2)+(y+y^2)^6+y",
+            expected: "{\\left({y}^{2}+y\\right)}^{6}+2~\\left({x}^{2}+x\\right)+y"
+        },
+        {
+            description: "sqrt(-x)",
+            expression: "sqrt(-x)",
+            expected: "\\sqrt{\\left(-x\\right)}"
+        },
+        {
+            description: "(x+x^6)^y/(a+x^6)^y",
+            expression: "(x+x^6)^y/(a+x^6)^y",
+            expected: "\\frac{\\left({x}^{6}+x\\right)^{y}}{\\left(a+{x}^{6}\\right)^{y}}"
+        },
+        {
+            description: "x^(E+2*PI^2)",
+            expression: "x^(E+2*PI^2)",
+            expected: "{x}^{{2~\\pi}^{2}+E}"
+        },
+        {
+            description: "x^(E+PIe)",
+            expression: "x^(E+PIe)",
+            expected: "{x}^{E+PIe}"
+        },
+        {
+            description: "(x+1)/(x^2 -i)",
+            expression: "(x+1)/(x^2 -i)",
+            expected: "\\frac{\\left(x+1\\right)}{\\left(-i+{x}^{2}\\right)}"
+        }
+    ];
+
+    test_cases.forEach(function (element, index, array) {
+        var result = "";
+        try {
+            //run it through nerdamer
+            result = nerdamer(element.expression).latex();
+        }
+        //Catches errors
+        catch(error) {
+            result = error.message;
+        }
+        assert.equal( result, element.expected, element.description);
+    });
+    //assert.equal( nerdamer('(x+1)/(x^2 -i)',null,'expand').symbol.latex(), "\\frac{1}{\\left(-i+{x}^{2}\\right)}+\\frac{x}{\\left(-i+{x}^{2}\\right)}", "LaTeX rational expression bug");
+});
+
+
 QUnit.test( "Math functions test", function( assert ) {
     nerdamer.clear('all'); //make sure that we start fresh
     var test_cases = [
