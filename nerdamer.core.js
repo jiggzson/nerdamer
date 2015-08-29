@@ -3942,7 +3942,7 @@ var nerdamer = (function() {
         }
         
         //Add constants when detects numer
-        if ((option !== undefined) && (option.indexOf('numer') !== -1))
+        if  ((typeof option === 'string' || option instanceof String) && ((option !== undefined) && (option.indexOf('numer') !== -1)))
         {
             subs = (subs == null) ? {} : subs;
             subs.PI = Math.PI;

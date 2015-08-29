@@ -83,42 +83,56 @@ QUnit.test( "LaTeX generator test", function( assert ) {
         {
             description: "x+x",
             expression: "x+x",
+            nodeexpected: "2~x",
             expected: "2~x"
         },
         {
             description: "a/b",
             expression: "a/b",
+            nodeexpected: "\\frac{a}{b}",
             expected: "\\frac{a}{b}"
         },
         {
             description: "2*(x+x^2)+(y+y^2)^6+y",
             expression: "2*(x+x^2)+(y+y^2)^6+y",
+            nodeexpected: "{\\left(y+{y}^{2}\\right)}^{6}+2~\\left(x+{x}^{2}\\right)+y",
             expected: "{\\left({y}^{2}+y\\right)}^{6}+2~\\left({x}^{2}+x\\right)+y"
         },
         {
             description: "sqrt(-x)",
             expression: "sqrt(-x)",
+            nodeexpected: "\\sqrt{\\left(-x\\right)}",
             expected: "\\sqrt{\\left(-x\\right)}"
         },
         {
             description: "(x+x^6)^y/(a+x^6)^y",
             expression: "(x+x^6)^y/(a+x^6)^y",
+            nodeexpected: "\\frac{\\left(x+{x}^{6}\\right)^{y}}{\\left(a+{x}^{6}\\right)^{y}}",
             expected: "\\frac{\\left({x}^{6}+x\\right)^{y}}{\\left(a+{x}^{6}\\right)^{y}}"
         },
         {
             description: "x^(E+2*PI^2)",
             expression: "x^(E+2*PI^2)",
+            nodeexpected: "{x}^{{2~\\pi}^{2}+E}",
             expected: "{x}^{{2~\\pi}^{2}+E}"
         },
         {
             description: "x^(E+PIe)",
             expression: "x^(E+PIe)",
+            nodeexpected: "{x}^{E+PIe}",
             expected: "{x}^{E+PIe}"
         },
         {
             description: "(x+1)/(x^2 -i)",
             expression: "(x+1)/(x^2 -i)",
+            nodeexpected: "\\frac{\\left(1+x\\right)}{\\left(-i+{x}^{2}\\right)}",
             expected: "\\frac{\\left(x+1\\right)}{\\left(-i+{x}^{2}\\right)}"
+        },
+        {
+            description: "(x*x*y)^2/(x+x^2)",
+            expression: "(x*x*y)^2/(x+x^2)",
+            nodeexpected: "\\frac{{x}^{4}{y}^{2}}{\\left(x+{x}^{2}\\right)}",
+            expected: "\\frac{{x}^{4}{y}^{2}}{\\left({x}^{2}+x\\right)}"
         }
     ];
 
@@ -131,6 +145,10 @@ QUnit.test( "LaTeX generator test", function( assert ) {
         //Catches errors
         catch(error) {
             result = error.message;
+        }
+        if (result !== element.expected)
+        {
+            element.expected = element.nodeexpected;
         }
         assert.equal( result, element.expected, element.description);
     });
