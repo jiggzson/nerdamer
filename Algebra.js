@@ -1030,14 +1030,7 @@ if((typeof module) !== 'undefined') {
             }
 
             if(a.value === b.value) {
-                var p1 = a.power, p2 = b.power;
-                if(core.Utils.isInt(p1) && core.Utils.isInt(p2)) {
-                    retval = _.parse(mGCD+'*'+a.value+'^'+Math.min(a.power, b.power));
-                }
-                //one of them is an EX
-                else {
-                    
-                }
+                retval = _.parse('('+mGCD+')*'+a.value+'^('+__.mmin(a.power, b.power)+')');
             }
             else if(g1 === S && g2 === CB) {
                 var bb = b.symbols[a.value];
