@@ -28,7 +28,8 @@ if((typeof module) !== 'undefined') {
         FN = core.groups.FN,
         PL = core.groups.PL,
         CP = core.groups.CP,
-        CB = core.groups.CB;
+        CB = core.groups.CB,
+        numKey = '#';
     
     var __ = core.Algebra = {
         /*
@@ -863,6 +864,7 @@ if((typeof module) !== 'undefined') {
         },
         /**
          * Factors a symbol.
+         * @param {Symbol} symbol
          */
         factor: function(symbol) {
             var retval = symbol,
@@ -930,47 +932,17 @@ if((typeof module) !== 'undefined') {
                             }
                         }
                         catch(e) {
-                            try {
-                                //not a polynomial. No biggie. Let's see if we can extract a few variables
-                                var symbols = symbol.collectSymbols(),
-                                    num_symbols = symbol.length,
-                                    hash_table = {};
-                                for(var i=0; i<num_symbols; i++) {
-                                    var cur_symbol = symbols[i], //collect all the variables contained in the symbol
-                                        num_vars = vars.length;
-                                    for(var j=0; j<num_vars; j++) {
-                                        var var_name = vars[j],
-                                            variable = cur_symbol.value === var_name ? cur_symbol : cur_symbol.symbols[var_name],
-                                            var_record = hash_table[var_name];
-                                        if(isSymbol(variable.power)) throw new Error('Cannot factor symbol. Exiting');
-                                        if(!var_record) hash_table[var_name] = [1, variable.power];
-                                        else {
-                                            var_record[0]++;
-                                            var p = variable.power;
-                                            if(p < var_record[1]) var_record[1] = p;
-                                        }
-                                    }
-                                }
-                                var factor = [];
-                                //we now know which variables we have and to which power so we can start reducing
-                                for(var x in hash_table) {
-                                    var_record = hash_table[x];
-                                    //if we have as many recorded as there were sub-symbols then we can divide all of them
-                                    //by that symbol
-                                    if(var_record[0] === num_symbols) { 
-                                        factor.push(x+'^'+var_record[1]);
-                                    }
-                                };
+                            //reduces the symbol by one factor
+                            var reduce_factor = function() {
 
-                                //we can now divide each one by that factor
-                                factor = _.parse(factor.join('*'));//make it a Symbol
-                                for(x in symbol.symbols) {
-                                    symbol.symbols[x] = _.divide(symbol.symbols[x], factor.copy());
-                                }
-
-                                retval = _.multiply(_.parse(symbol.text()), factor);
                             }
-                            catch(e){;}
+                            var cp = symbol.copy(); //leave the original symbol untouched by making a copy
+                            for(var x in cp.symbols) {
+                                var s1 = cp.symbols[x];
+                                for(var y in s1.symbols) {
+
+                                }
+                            }
                         }
                     }
                 }     
@@ -979,6 +951,111 @@ if((typeof module) !== 'undefined') {
             if(retval.group === core.groups.FN) retval.updateHash();
             
             return retval;
+        },
+        /**
+         * Return the minimum of two functions based on their multipliers
+         * @param {Symbol} symbol1
+         * @param {Symbol} symbol2
+         * @returns {Symbol}
+         */
+        mmin: function(symbol1, symbol2) {
+            var a = !core.Utils.isSymbol(symbol1) ? new Symbol(symbol1) : symbol1,
+                b = !core.Utils.isSymbol(symbol2) ? new Symbol(symbol2) : symbol2,
+                g1 = a.group,
+                g2 = b.group,
+                retval,
+            collapse = function(o, glue) {
+                glue = glue || '+';
+                return '('+o.join(')'+glue+'(')+')';
+            },
+            //cycle through the symbols and find a minimum
+            cycle = function(symbol1, symbol2, force_testing) {
+                var c = [];
+                for(var x in symbol1.symbols) {
+                    var s = symbol1.symbols[x];
+                    if(force_testing || s.power === symbol2.power) {
+                        var r = __.mmin(s, symbol2);
+                        if(r) c.push(r);
+                    }
+                }
+                return _.parse(collapse(c));
+            };
+            if(g2 < g1) {
+                var t = g1; g1 = g2; g2 = t;
+                t = a; a = b; b = a;
+            }
+
+            if(a.value === b.value) {
+                if(g1 === PL) {
+                    retval = cycle(a, b, true);
+                }
+                else if(g2 === PL) {
+                    retval = cycle(b, a);
+                }
+                else if(a.power === b.power){
+                    retval = a.multiplier < b.multiplier ? a.copy() : b.copy();
+                }
+            }
+            else if((g1 === N || g1 === S || g1 === EX) && g2 === CP) {
+                var s = b.symbols[a.value];
+                if(s.power === a.power) retval = __.mmin(a, s);
+            }
+            else if(g1 === PL && g2 === CP) {
+                retval = cycle(a, b, true)
+            }
+            else if(g1 === CP && g2 === CP) {
+                retval = cycle(a, b);
+            }
+
+            return retval;
+        },
+        /**
+         * Gets out common symbols
+         * @param {Symbol} symbol1
+         * @param {Symbol} symbol2
+         * @returns {Symbol}
+         */
+        gcd: function(symbol1, symbol2) {
+            var g1 = symbol1.group,
+                g2 = symbol2.group,
+                a = symbol1,
+                b = symbol2,
+                //the absolute mininum for the GCD is the GCD for their multipliers
+                mGCD = core.Math2.GCD(a.multiplier, b.multiplier),
+                retval;
+            //always keep the lower group to the left so swap if that's not the case
+            if(g2 < g1) {
+                var t = g1; g1 = g2; g2 = t;
+                a = symbol2; b = symbol1;
+            }
+
+            if(a.value === b.value) {
+                retval = _.parse('('+mGCD+')*'+a.value+'^('+__.mmin(a.power, b.power)+')');
+            }
+            else if(g1 === S && g2 === CB) {
+                var bb = b.symbols[a.value];
+                if(bb) retval = _.multiply(new Symbol(mGCD), __.gcd(a, bb));
+            }
+            else {
+                retval = new Symbol(mGCD);
+            }
+
+            return retval;
+        },
+        /**
+         *
+         * @param {Symbol} symbol
+         * @param {String} by
+         * @returns {Symbol[]}
+         */
+        group: function(symbol, by) {
+            var grouped = [];
+            symbol.each(function(s){
+                if(s.contains(by)) {
+                    grouped.push(s);
+                }
+            });
+            return grouped;
         },
         /**
          * Expands a symbol
@@ -1161,11 +1238,17 @@ if((typeof module) !== 'undefined') {
          * @param {Array} divisor_array
          * @returns {Array}
          */
-        polyArrayDiv: function(dividend_array, divisor_array) { 
+        polyArrayDiv: function(dividend_array, divisor_array, is_reversed) {
             //fill in the holes
-            var dividend = __.polyfill(dividend_array.slice().reverse());
-            var divisor = __.polyfill(divisor_array.reverse());
-            var n = dividend.length,
+            var a = dividend_array.slice(),
+                b = divisor_array.slice();
+            if(!is_reversed) {
+                a.reverse();
+                b.reverse();
+            }
+            var dividend = __.polyfill(a),
+                divisor = __.polyfill(b),
+                n = dividend.length,
                 nn = n,
                 mp = divisor[0][1], //get the maximum power of the divisor
                 coeff = divisor[0][0],
@@ -1215,6 +1298,23 @@ if((typeof module) !== 'undefined') {
             return c;
         },
         /**
+         * Divides to polynomials
+         * @param {Symbol} symbol1
+         * @param {Symbol} symbol2
+         * @returns {Symbol}
+         */
+        polyDiv: function(symbol1, symbol2) {
+            var v1 = variables(symbol1)[0],
+                v2 = variables(symbol2)[0],
+                a = __.poly2Arrays(symbol1),
+                b = __.poly2Arrays(symbol2),
+                variable = v1 ? v1 : v2 ? v2 : 'x', //if there are 2 numbers then we just use x
+                result = __.polyArrayDiv(a, b, true);
+            return [__.polyArray2Symbol(result[0], variable), __.polyArray2Symbol(result[1], variable)|| new core.Symbol(0)];
+        },
+        /**
+         * NOTE: This will more than likely get stripped form future versions
+         *
          * Given the symbol of group CB it will divide the denominator by the numerator and return an array of the
          * quotient and the remainder. For example the symbol for (x^3+x)/(x+1) will return an array with 
          * a symbol -x+x^2+2 and another symbol -2.
@@ -1347,6 +1447,22 @@ if((typeof module) !== 'undefined') {
             }
             return p1;
         },
+        /*
+         * Converts a polynomial array to a symbol
+         * @param {Array} array
+         * @returns {Symbol}
+         */
+        polyArray2Symbol: function(arr, variable) {
+            if(!variable) core.err('polyArray2Symbol expects a variable name');
+            var l = arr.length,
+                format = core.Utils.format,
+                formatted = []; //the expression
+            for(var i=0; i<l; i++) {
+                var p = arr[i];
+                formatted.push(format(p[0]+'*'+variable+'^'+p[1]));
+            }
+            return _.parse(formatted.join('+'));
+        },
         /**
          * Get's all the powers of a particular polynomial including the denominators. The denominators powers
          * are returned as negative. All remaining polynomials are returned as zero order polynomials.
@@ -1446,7 +1562,12 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: -1,
             build: function() { return __.polyGCD; }
+        },
+        {
+            name: 'polyDiv',
+            visible: true,
+            numargs: 2,
+            build: function() { return __.polyDiv; }
         }
     ]);
 })();
-

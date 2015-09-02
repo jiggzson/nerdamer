@@ -6,28 +6,43 @@
     "description": "javascript light-weight symbolic math expression evaluator",
     "name": "nerdamer",
     "license": "MIT",
-    "version": "0.5.6",
+    "version": "0.5.8",
     "homepage": "http://nerdamer.com/",
-    "directory" :{
-        "lib": "./"
-    },
-    "main": "nerdamer.core.js",
     "keywords": [
         "math",
         "symbolic",
+        "complex",
+        "number",
+        "functions",
+        "mathematics",
+        "parser",
+        "expression",
         "integration",
         "differentiation",
         "derivative",
         "algebra",
         "calculus",
+        "fourier",
+        "fourier transform",
         "symbolic math"
     ],
+    "directory" :{
+        "lib": "./"
+    },
+    "main": "nerdamer.core.js",
+    "scripts": {
+        "test": "grunt test"
+    },
     "repository": {
         "type": "git",
         "url": "https://github.com/jiggzson/nerdamer.git"
     },
     "bugs": {
         "url": "https://github.com/jiggzson/nerdamer/issues"
+    },
+    "devDependencies": {
+        "grunt": "^0.4.5",
+        "grunt-contrib-qunit": "~0.7.0"
     },
     "engines": {
         "node": ">=0.10.0"
