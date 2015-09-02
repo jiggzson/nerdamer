@@ -912,7 +912,7 @@ if((typeof module) !== 'undefined') {
                         retval = _.multiply(factor, factored);
                     }
                     else if(group === CP) { 
-                        try{
+                        try{ 
                             var p = symbol.power,
                                 roots = core.Utils.arrayUnique(core.Algebra.proots(symbol)),
                                 all_ints = true; 
@@ -931,6 +931,7 @@ if((typeof module) !== 'undefined') {
                                 retval.power = p;
                             }
                         }
+<<<<<<< HEAD
                         catch(e) {
                             //reduces the symbol by one factor
                             var reduce_factor = function() {
@@ -943,6 +944,20 @@ if((typeof module) !== 'undefined') {
 
                                 }
                             }
+=======
+                        catch(e) { 
+                            //reduces the symbol by one factor
+                            var reduce_factor = function() {
+                                
+                            }
+                            var cp = symbol.copy(); //leave the original symbol untouched by making a copy
+                            for(var x in cp.symbols) {
+                                var s1 = cp.symbols[x];
+                                for(var y in s1.symbols) {
+                                    
+                                }
+                            }
+>>>>>>> b/dev
                         }
                     }
                 }     
@@ -958,8 +973,13 @@ if((typeof module) !== 'undefined') {
          * @param {Symbol} symbol2
          * @returns {Symbol}
          */
+<<<<<<< HEAD
         mmin: function(symbol1, symbol2) {
             var a = !core.Utils.isSymbol(symbol1) ? new Symbol(symbol1) : symbol1,
+=======
+        mmin: function(symbol1, symbol2) { 
+            var a = !core.Utils.isSymbol(symbol1) ? new Symbol(symbol1) : symbol1, 
+>>>>>>> b/dev
                 b = !core.Utils.isSymbol(symbol2) ? new Symbol(symbol2) : symbol2,
                 g1 = a.group,
                 g2 = b.group,
@@ -971,7 +991,11 @@ if((typeof module) !== 'undefined') {
             //cycle through the symbols and find a minimum
             cycle = function(symbol1, symbol2, force_testing) {
                 var c = [];
+<<<<<<< HEAD
                 for(var x in symbol1.symbols) {
+=======
+                for(var x in symbol1.symbols) { 
+>>>>>>> b/dev
                     var s = symbol1.symbols[x];
                     if(force_testing || s.power === symbol2.power) {
                         var r = __.mmin(s, symbol2);
@@ -979,8 +1003,13 @@ if((typeof module) !== 'undefined') {
                     }
                 }
                 return _.parse(collapse(c));
+<<<<<<< HEAD
             };
             if(g2 < g1) {
+=======
+            }; 
+            if(g2 < g1) { 
+>>>>>>> b/dev
                 var t = g1; g1 = g2; g2 = t;
                 t = a; a = b; b = a;
             }
@@ -1006,7 +1035,11 @@ if((typeof module) !== 'undefined') {
             else if(g1 === CP && g2 === CP) {
                 retval = cycle(a, b);
             }
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> b/dev
             return retval;
         },
         /**
@@ -1018,13 +1051,21 @@ if((typeof module) !== 'undefined') {
         gcd: function(symbol1, symbol2) {
             var g1 = symbol1.group,
                 g2 = symbol2.group,
+<<<<<<< HEAD
                 a = symbol1,
+=======
+                a = symbol1, 
+>>>>>>> b/dev
                 b = symbol2,
                 //the absolute mininum for the GCD is the GCD for their multipliers
                 mGCD = core.Math2.GCD(a.multiplier, b.multiplier),
                 retval;
             //always keep the lower group to the left so swap if that's not the case
+<<<<<<< HEAD
             if(g2 < g1) {
+=======
+            if(g2 < g1) { 
+>>>>>>> b/dev
                 var t = g1; g1 = g2; g2 = t;
                 a = symbol2; b = symbol1;
             }
@@ -1043,7 +1084,11 @@ if((typeof module) !== 'undefined') {
             return retval;
         },
         /**
+<<<<<<< HEAD
          *
+=======
+         * 
+>>>>>>> b/dev
          * @param {Symbol} symbol
          * @param {String} by
          * @returns {Symbol[]}
@@ -1238,7 +1283,11 @@ if((typeof module) !== 'undefined') {
          * @param {Array} divisor_array
          * @returns {Array}
          */
+<<<<<<< HEAD
         polyArrayDiv: function(dividend_array, divisor_array, is_reversed) {
+=======
+        polyArrayDiv: function(dividend_array, divisor_array, is_reversed) { 
+>>>>>>> b/dev
             //fill in the holes
             var a = dividend_array.slice(),
                 b = divisor_array.slice();
@@ -1314,7 +1363,11 @@ if((typeof module) !== 'undefined') {
         },
         /**
          * NOTE: This will more than likely get stripped form future versions
+<<<<<<< HEAD
          *
+=======
+         * 
+>>>>>>> b/dev
          * Given the symbol of group CB it will divide the denominator by the numerator and return an array of the
          * quotient and the remainder. For example the symbol for (x^3+x)/(x+1) will return an array with 
          * a symbol -x+x^2+2 and another symbol -2.
@@ -1454,7 +1507,11 @@ if((typeof module) !== 'undefined') {
          */
         polyArray2Symbol: function(arr, variable) {
             if(!variable) core.err('polyArray2Symbol expects a variable name');
+<<<<<<< HEAD
             var l = arr.length,
+=======
+            var l = arr.length, 
+>>>>>>> b/dev
                 format = core.Utils.format,
                 formatted = []; //the expression
             for(var i=0; i<l; i++) {
