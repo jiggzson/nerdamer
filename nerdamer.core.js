@@ -2381,7 +2381,14 @@ var nerdamer = (function() {
             }
             else {
                 if(isMatrixA && isMatrixB) { 
-                    symbol2 = symbol1.multiply(symbol2);
+                    //Fix matrix addition
+                    var rows = symbol1.rows(), V = new Matrix();
+                    if(rows === symbol2.rows() && symbol1.cols() === symbol2.cols()) {
+                        symbol2.eachElement(function(x, i, j) {
+                            return _.add(x, symbol1.elements[i][j]);
+                        });
+                    }
+                    else _.error('Matrix dimensions do not match!');
                 }
                 else if(isSymbolA && isVector(symbol2)) {
                     symbol2.each(function(x, i) {
@@ -3020,6 +3027,12 @@ var nerdamer = (function() {
                         }  
                         break;
                     case S:
+                        //Add PI to latex generator
+                        if (obj.value === "PI")
+                        {
+                            output = this.renderSymbolLatex(obj, "\\pi", abs);
+                            break;
+                        }
                         output = this.renderSymbolLatex(obj, undefined, abs);
                         break;
                     case FN: 
@@ -3943,7 +3956,7 @@ var nerdamer = (function() {
         }
         
         //Add constants when detects numer
-        if ((option !== undefined) && (option.indexOf('numer') !== -1))
+        if  ((typeof option === 'string' || option instanceof String) && ((option !== undefined) && (option.indexOf('numer') !== -1)))
         {
             subs = (subs == null) ? {} : subs;
             subs.PI = Math.PI;
