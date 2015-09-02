@@ -2374,7 +2374,14 @@ var nerdamer = (function() {
             }
             else {
                 if(isMatrixA && isMatrixB) { 
-                    symbol2 = symbol1.multiply(symbol2);
+                    //Fix matrix addition
+                    var rows = symbol1.rows(), V = new Matrix();
+                    if(rows === symbol2.rows() && symbol1.cols() === symbol2.cols()) {
+                        symbol2.eachElement(function(x, i, j) {
+                            return _.add(x, symbol1.elements[i][j]);
+                        });
+                    }
+                    else _.error('Matrix dimensions do not match!');
                 }
                 else if(isSymbolA && isVector(symbol2)) {
                     symbol2.each(function(x, i) {

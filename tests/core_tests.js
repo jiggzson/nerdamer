@@ -236,6 +236,61 @@ QUnit.test( "Math functions test", function( assert ) {
 });
 
 
+QUnit.test( "Matrices test", function( assert ) {
+    nerdamer.clear('all'); //make sure that we start fresh
+    var test_cases = [
+        {
+            description: "Matrix addition matrix([4])+matrix([3])",
+            expression: "matrix([4]) + matrix([3])",
+            expected: "matrix([7])"
+        },
+        {
+            description: "Matrix addition matrix([4,5],[1,0])+matrix([3,0],[-1,9])",
+            expression: "matrix([4,5],[1,0]) + matrix([3,0],[-1,9])",
+            expected: "matrix([7,5],[0,9])"
+        },
+        {
+            description: "Matrix addition matrix([a,b],[c,d]) + matrix([2,3],[-3,8])",
+            expression: "matrix([a,b],[c,d]) + matrix([2,3],[-3,8])",
+            expected: "matrix([2+a,3+b],[-3+c,8+d])"
+        },
+        {
+            description: "Matrix multiplication 5*matrix([3,0],[-1,9])",
+            expression: "5*matrix([3,0],[-1,9])",
+            expected: "matrix([15,0],[-5,45])"
+        },
+        {
+            description: "Matrix multiplication matrix([a,b],[c,d])*matrix([1,0],[0,1])",
+            expression: "matrix([a,b],[c,d])*matrix([1,0],[0,1])",
+            expected: "matrix([a,b],[c,d])"
+        },
+        {
+            description: "Matrix multiplication matrix([4,5],[1,0])*matrix([3,0],[-1,9])",
+            expression: "matrix([4,5],[1,0])*matrix([3,0],[-1,9])",
+            expected: "matrix([7,45],[3,0])"
+        },
+        {
+            description: "Matrix multiplication matrix([4,5,3],[1,3,0],[2,1,5])*matrix([-3,2,0],[2,-1,9],[3,2,3])",
+            expression: "matrix([4,5,3],[1,3,0],[2,1,5])*matrix([-3,2,0],[2,-1,9],[3,2,3])",
+            expected: "matrix([7,9,54],[3,-1,27],[11,13,24])"
+        }
+    ];
+
+    test_cases.forEach(function (element, index, array) {
+        var result = "";
+        try {
+            //run it through nerdamer
+            result = nerdamer(element.expression).text();
+        }
+        //Catches errors
+        catch(error) {
+            result = error.message;
+        }
+        assert.equal( result, element.expected, element.description);
+    });
+});
+
+
 QUnit.test( "Systems test", function( assert ) {
     nerdamer.clear('all'); //make sure that we start fresh
     var values = {
