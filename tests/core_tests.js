@@ -76,6 +76,86 @@ QUnit.test( "buildFunction test", function( assert ) {
     assert.equal( -8, f(5), "Inputing 5 into foobar(x)");
 });
 
+
+QUnit.test( "LaTeX generator test", function( assert ) {
+    nerdamer.clear('all'); //make sure that we start fresh
+    var test_cases = [
+        {
+            description: "x+x",
+            expression: "x+x",
+            nodeexpected: "2~x",
+            expected: "2~x"
+        },
+        {
+            description: "a/b",
+            expression: "a/b",
+            nodeexpected: "\\frac{a}{b}",
+            expected: "\\frac{a}{b}"
+        },
+        {
+            description: "2*(x+x^2)+(y+y^2)^6+y",
+            expression: "2*(x+x^2)+(y+y^2)^6+y",
+            nodeexpected: "{\\left(y+{y}^{2}\\right)}^{6}+2~\\left(x+{x}^{2}\\right)+y",
+            expected: "{\\left({y}^{2}+y\\right)}^{6}+2~\\left({x}^{2}+x\\right)+y"
+        },
+        {
+            description: "sqrt(-x)",
+            expression: "sqrt(-x)",
+            nodeexpected: "\\sqrt{\\left(-x\\right)}",
+            expected: "\\sqrt{\\left(-x\\right)}"
+        },
+        {
+            description: "(x+x^6)^y/(a+x^6)^y",
+            expression: "(x+x^6)^y/(a+x^6)^y",
+            nodeexpected: "\\frac{\\left(x+{x}^{6}\\right)^{y}}{\\left(a+{x}^{6}\\right)^{y}}",
+            expected: "\\frac{\\left({x}^{6}+x\\right)^{y}}{\\left(a+{x}^{6}\\right)^{y}}"
+        },
+        {
+            description: "x^(E+2*PI^2)",
+            expression: "x^(E+2*PI^2)",
+            nodeexpected: "{x}^{{2~\\pi}^{2}+E}",
+            expected: "{x}^{{2~\\pi}^{2}+E}"
+        },
+        {
+            description: "x^(E+PIe)",
+            expression: "x^(E+PIe)",
+            nodeexpected: "{x}^{E+PIe}",
+            expected: "{x}^{E+PIe}"
+        },
+        {
+            description: "(x+1)/(x^2 -i)",
+            expression: "(x+1)/(x^2 -i)",
+            nodeexpected: "\\frac{\\left(1+x\\right)}{\\left(-i+{x}^{2}\\right)}",
+            expected: "\\frac{\\left(x+1\\right)}{\\left(-i+{x}^{2}\\right)}"
+        },
+        {
+            description: "(x*x*y)^2/(x+x^2)",
+            expression: "(x*x*y)^2/(x+x^2)",
+            nodeexpected: "\\frac{{x}^{4}{y}^{2}}{\\left(x+{x}^{2}\\right)}",
+            expected: "\\frac{{x}^{4}{y}^{2}}{\\left({x}^{2}+x\\right)}"
+        }
+    ];
+
+    test_cases.forEach(function (element, index, array) {
+        var result = "";
+        try {
+            //run it through nerdamer
+            result = nerdamer(element.expression).latex();
+        }
+        //Catches errors
+        catch(error) {
+            result = error.message;
+        }
+        if (result !== element.expected)
+        {
+            element.expected = element.nodeexpected;
+        }
+        assert.equal( result, element.expected, element.description);
+    });
+    //assert.equal( nerdamer('(x+1)/(x^2 -i)',null,'expand').symbol.latex(), "\\frac{1}{\\left(-i+{x}^{2}\\right)}+\\frac{x}{\\left(-i+{x}^{2}\\right)}", "LaTeX rational expression bug");
+});
+
+
 QUnit.test( "Math functions test", function( assert ) {
     nerdamer.clear('all'); //make sure that we start fresh
     var test_cases = [
@@ -153,6 +233,61 @@ QUnit.test( "Math functions test", function( assert ) {
         assert.deepEqual( result, element.expected, element.description);
     });
 
+});
+
+
+QUnit.test( "Matrices test", function( assert ) {
+    nerdamer.clear('all'); //make sure that we start fresh
+    var test_cases = [
+        {
+            description: "Matrix addition matrix([4])+matrix([3])",
+            expression: "matrix([4]) + matrix([3])",
+            expected: "matrix([7])"
+        },
+        {
+            description: "Matrix addition matrix([4,5],[1,0])+matrix([3,0],[-1,9])",
+            expression: "matrix([4,5],[1,0]) + matrix([3,0],[-1,9])",
+            expected: "matrix([7,5],[0,9])"
+        },
+        {
+            description: "Matrix addition matrix([a,b],[c,d]) + matrix([2,3],[-3,8])",
+            expression: "matrix([a,b],[c,d]) + matrix([2,3],[-3,8])",
+            expected: "matrix([2+a,3+b],[-3+c,8+d])"
+        },
+        {
+            description: "Matrix multiplication 5*matrix([3,0],[-1,9])",
+            expression: "5*matrix([3,0],[-1,9])",
+            expected: "matrix([15,0],[-5,45])"
+        },
+        {
+            description: "Matrix multiplication matrix([a,b],[c,d])*matrix([1,0],[0,1])",
+            expression: "matrix([a,b],[c,d])*matrix([1,0],[0,1])",
+            expected: "matrix([a,b],[c,d])"
+        },
+        {
+            description: "Matrix multiplication matrix([4,5],[1,0])*matrix([3,0],[-1,9])",
+            expression: "matrix([4,5],[1,0])*matrix([3,0],[-1,9])",
+            expected: "matrix([7,45],[3,0])"
+        },
+        {
+            description: "Matrix multiplication matrix([4,5,3],[1,3,0],[2,1,5])*matrix([-3,2,0],[2,-1,9],[3,2,3])",
+            expression: "matrix([4,5,3],[1,3,0],[2,1,5])*matrix([-3,2,0],[2,-1,9],[3,2,3])",
+            expected: "matrix([7,9,54],[3,-1,27],[11,13,24])"
+        }
+    ];
+
+    test_cases.forEach(function (element, index, array) {
+        var result = "";
+        try {
+            //run it through nerdamer
+            result = nerdamer(element.expression).text();
+        }
+        //Catches errors
+        catch(error) {
+            result = error.message;
+        }
+        assert.equal( result, element.expected, element.description);
+    });
 });
 
 
