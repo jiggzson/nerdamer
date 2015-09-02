@@ -943,7 +943,6 @@ if((typeof module) !== 'undefined') {
                                     
                                 }
                             }
-                            catch(e){;}
                         }
                     }
                 }     
