@@ -6,7 +6,7 @@
  */
 
 var nerdamer = (function() {
-    var version = '0.5.6',
+    var version = '0.5.7',
         _ = new Parser(), //nerdamer's parser
     
         Groups = {},
