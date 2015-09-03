@@ -6,7 +6,7 @@
     "description": "javascript light-weight symbolic math expression evaluator",
     "name": "nerdamer",
     "license": "MIT",
-    "version": "0.5.6",
+    "version": "0.5.7",
     "homepage": "http://nerdamer.com/",
     "directory" :{
         "lib": "./"
@@ -14,12 +14,24 @@
     "main": "nerdamer.core.js",
     "keywords": [
         "math",
+        "matrix",
+        "complex",
+        "number",
+        "parser",
+        "expression",
+        "functions",
+        "numeric",
+        "equation solver",
+        "linear algebra",
+        "vectors",
         "symbolic",
         "integration",
         "differentiation",
         "derivative",
         "algebra",
         "calculus",
+        "mathematics",
+        "constants",
         "symbolic math"
     ],
     "repository": {
