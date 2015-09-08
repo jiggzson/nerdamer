@@ -254,14 +254,21 @@
                 return joinmuiltisymbols(coeffs);
             };
 
+            //Expand expression
+            var temp = core.Utils.format('expand({0})', expression.copy());
+            expression = _.parse(temp);
+            expression = nerdamer(expression.text()).symbol;
+
             //Seperate each symbol by addition
             var symbols = eachaddsymbol(expression);
+
             //Use linear property of transform
+            var transsymbols = [];
             symbols.forEach(function (element, index, array) {
-                array[index] = transform(element,varin.copy(),varout.copy());
+                transsymbols.push(transform(element,varin.copy(),varout.copy()));
             });
 
-            return joinaddsymbols(symbols);
+            return joinaddsymbols(transsymbols);
         }
     };
     nerdamer.register([
