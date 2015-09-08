@@ -173,7 +173,7 @@
                     }
 
                     //Amplitude and frequency shift
-                    if (mainsymbol.args[0].multiplier !== 1)
+                    if ((mainsymbol.args[0].multiplier !== 1) || (mainsymbol.args[0].text().indexOf('i') !== -1))//Hack
                     {
                         switch(mainsymbol.baseName)
                         {
@@ -181,6 +181,20 @@
                                 var factorout = core.Utils.format('2*i*PI*({0})', vin) ;
                                 var fshift = core.Utils.format('delta(({0})-({1}))',vout , _.divide (mainsymbol.args[0], _.parse(factorout) ) ) ;
                                 coeffs.push( _.parse(fshift));
+                                break;
+                            case 'cos':
+                                var retval1 = core.Utils.format('0.5*(exp(i*({0})))', mainsymbol.args[0].copy());
+                                var retval2 = core.Utils.format('0.5*(exp(-i*({0})))', mainsymbol.args[0].copy());
+                                retval1 = transform( _.parse( retval1 ) ,vin.copy(),vout.copy());
+                                retval2 = transform( _.parse(retval2),vin.copy(),vout.copy());
+                                coeffs.push( _.add(retval1,retval2) );
+                                break;
+                            case 'sin':
+                                var retval1 = core.Utils.format('0.5*(1/i)*(exp(i*({0})))', mainsymbol.args[0].copy());
+                                var retval2 = core.Utils.format('-0.5*(1/i)*(exp(-i*({0})))', mainsymbol.args[0].copy());
+                                retval1 = transform( _.parse( retval1 ) ,vin.copy(),vout.copy());
+                                retval2 = transform( _.parse(retval2),vin.copy(),vout.copy());
+                                coeffs.push( _.add(retval1,retval2));
                                 break;
                             default:
                                 break;
@@ -230,6 +244,14 @@
                             break;
                         case 'exp':
                             var retval = core.Utils.format('0.5*((i*2*PI*{0})^(-1)+delta({0}))', vout);
+                            mainsymbol = _.parse(retval);
+                            break;
+                        case 'cos':
+                            var retval = core.Utils.format('0.5*delta(-0.5*PI^(-1)+{0})+0.5*delta(0.5*PI^(-1)+{0})', vout);
+                            mainsymbol = _.parse(retval);
+                            break;
+                        case 'sin':
+                            var retval = core.Utils.format('-0.5*delta(0.5*PI^(-1)+{0})*i^(-1)+0.5*delta(-0.5*PI^(-1)+{0})*i^(-1)', vout);
                             mainsymbol = _.parse(retval);
                             break;
                         default:
