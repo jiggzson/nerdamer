@@ -170,14 +170,12 @@ QUnit.test( "Functions test", function( assert ) {
             description: "Fourier transform h*sin(2*PI*t-x+o) ",
             expression: "ft( h*sin(2*PI*t-x+o) ,t,f)",
             expected: "(-0.5*delta(1+f)*exp(-i*o)*exp(i*x)*i^(-1)+0.5*delta(-1+f)*exp(-i*x)*exp(i*o)*i^(-1))*h"
-        }
-        /*
+        },
         {
-            description: "Fourier transform exp(2*PI*i*t)*g*sin(2*PI*t*y+l) + exp(2*PI*i*t)*g*cos(2*PI*t*y+l)",
-            expression: "ft( exp(2*PI*i*t)*g*sin(2*PI*t*y+l) + exp(2*PI*i*t)*g*cos(2*PI*t*y+l) ,t,f)",
-            expected: "a"
+            description: "Fourier transform (exp(2*PI*i*t)*g*sin(2*PI*t*y+l) + exp(2*PI*i*t)*a*cos(2*PI*t*y+l))",
+            expression: "ft( (exp(2*PI*i*t)*g*sin(2*PI*t*y+l) + exp(2*PI*i*t)*a*cos(2*PI*t*y+l)),t,f)",
+            expected: "(-0.5*delta(-1+f+y)*exp(-i*l)*i^(-1)+0.5*delta(-1-y+f)*exp(i*l)*i^(-1))*g+(0.5*delta(-1+f+y)*exp(-i*l)+0.5*delta(-1-y+f)*exp(i*l))*a"
         }
-        */
     ];
     var run_tests = function() {
         test_cases.forEach(function(element, index, array) {

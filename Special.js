@@ -145,15 +145,21 @@
                         //Frequency shift
                         if (fshift !== undefined)
                         {
+                            var eachmain = eachaddsymbol(mainsymbol);
                             //Get shift
-                            var factorout = core.Utils.format('2*i*PI*({0})', vin) ;
-                            fshift = core.Utils.format('(({0})-({1}))',vout , _.divide ( fshift.args[0] , _.parse(factorout) ) ) ;
-                            //Subsitude shift
-                            var newmainsymbols = eachmuiltisymbol(mainsymbol);
-                            newmainsymbols.forEach(function (element, index, array) {
-                                array[index] = _.parse( element.text().replace( vout.text() ,fshift) ) ;
+                            var factorout = _.parse(core.Utils.format('2*i*PI*({0})', vin)) ;
+                            fshift = core.Utils.format('(({0})-({1}))',vout , _.divide ( fshift.args[0] , factorout ) ) ;
+                            //Split
+                            eachmain.forEach(function (e, i, a) {
+                                //Substitute shift
+                                //var newmainsymbols = eachmuiltisymbol(mainsymbol);
+                                var newmainsymbols = eachmuiltisymbol(e);
+                                newmainsymbols.forEach(function (element, index, array) {
+                                    array[index] = _.parse( element.text().replace( vout.text() , fshift ) ) ;
+                                });
+                                a[i] = joinmuiltisymbols(newmainsymbols);
                             });
-                            coeffs.push.apply(coeffs, newmainsymbols);
+                            coeffs.push(joinaddsymbols(eachmain));
                         }
                     }
                     else //More functions
@@ -173,6 +179,7 @@
 
                     }
 
+                    //Cosine and sine functions
                     if ((mainsymbol.baseName === "sin") || (mainsymbol.baseName === "cos"))
                     {
                         var iargs = eachaddsymbol(mainsymbol.args[0].copy());
