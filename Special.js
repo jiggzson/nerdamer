@@ -72,6 +72,7 @@
                 return new Symbol('0');
             }
 
+            //Transforms a single expression
             var transform = function(exp,vin,vout) {
                 //Get all multiplications
                 var allmuilti = eachmuiltisymbol(exp);
@@ -144,15 +145,21 @@
                         //Frequency shift
                         if (fshift !== undefined)
                         {
+                            var eachmain = eachaddsymbol(mainsymbol);
                             //Get shift
-                            var factorout = core.Utils.format('2*i*PI*({0})', vin) ;
-                            fshift = core.Utils.format('(({0})-({1}))',vout , _.divide ( fshift.args[0] , _.parse(factorout) ) ) ;
-                            //Subsitude shift
-                            var newmainsymbols = eachmuiltisymbol(mainsymbol);
-                            newmainsymbols.forEach(function (element, index, array) {
-                                array[index] = _.parse( element.text().replace( vout.text() ,fshift) ) ;
+                            var factorout = _.parse(core.Utils.format('2*i*PI*({0})', vin)) ;
+                            fshift = core.Utils.format('(({0})-({1}))',vout , _.divide ( fshift.args[0] , factorout ) ) ;
+                            //Split
+                            eachmain.forEach(function (e, i, a) {
+                                //Substitute shift
+                                //var newmainsymbols = eachmuiltisymbol(mainsymbol);
+                                var newmainsymbols = eachmuiltisymbol(e);
+                                newmainsymbols.forEach(function (element, index, array) {
+                                    array[index] = _.parse( element.text().replace( vout.text() , fshift ) ) ;
+                                });
+                                a[i] = joinmuiltisymbols(newmainsymbols);
                             });
-                            coeffs.push.apply(coeffs, newmainsymbols);
+                            coeffs.push(joinaddsymbols(eachmain));
                         }
                     }
                     else //More functions
@@ -172,8 +179,40 @@
 
                     }
 
+                    //Cosine and sine functions
+                    if ((mainsymbol.baseName === "sin") || (mainsymbol.baseName === "cos"))
+                    {
+                        var iargs = eachaddsymbol(mainsymbol.args[0].copy());
+                        if (mainsymbol.baseName === "cos")
+                        {
+                            var retval = "0.5";
+                            iargs.forEach(function (element, index, array) {
+                                retval += core.Utils.format('*(exp(i*({0})))', element);
+                            });
+                            retval += "+0.5"
+                            iargs.forEach(function (element, index, array) {
+                                retval += core.Utils.format('*(exp((-i)*({0})))', element);
+                            });
+                            coeffs.push(__.ft(_.parse( retval ), vin.copy() ,vout.copy() ));
+                        }
+                        else
+                        {
+                            var retval = "0.5*(1/i)";
+                            iargs.forEach(function (element, index, array) {
+                                retval += core.Utils.format('*(exp(i*({0})))', element);
+                            });
+                            retval += "-0.5*(1/i)"
+                            iargs.forEach(function (element, index, array) {
+                                retval += core.Utils.format('*(exp((-i)*({0})))', element);
+                            });
+                            coeffs.push( __.ft(_.parse( retval ), vin.copy() ,vout.copy() ));
+                        }
+                        return joinmuiltisymbols(coeffs);
+                    }
+
+                    //console.log(exp.text());
                     //Amplitude and frequency shift
-                    if (mainsymbol.args[0].multiplier !== 1)
+                    if  ( ((mainsymbol.args[0].multiplier !== 1) || (mainsymbol.args[0].text().indexOf('i') !== -1))) //Hack
                     {
                         switch(mainsymbol.baseName)
                         {
@@ -232,6 +271,14 @@
                             var retval = core.Utils.format('0.5*((i*2*PI*{0})^(-1)+delta({0}))', vout);
                             mainsymbol = _.parse(retval);
                             break;
+                        case 'cos':
+                            var retval = core.Utils.format('0.5*delta(-0.5*PI^(-1)+{0})+0.5*delta(0.5*PI^(-1)+{0})', vout);
+                            mainsymbol = _.parse(retval);
+                            break;
+                        case 'sin':
+                            var retval = core.Utils.format('-0.5*delta(0.5*PI^(-1)+{0})*i^(-1)+0.5*delta(-0.5*PI^(-1)+{0})*i^(-1)', vout);
+                            mainsymbol = _.parse(retval);
+                            break;
                         default:
                             break;
                     }
@@ -250,18 +297,25 @@
 
                 //Add to coefficients list
                 coeffs.push(mainsymbol);
-                //Rejoin all of them
+                //Rejoin all of themcos to exp
                 return joinmuiltisymbols(coeffs);
             };
 
+            //Expand expression
+            var temp = core.Utils.format('expand({0})', expression.copy());
+            expression = _.parse(temp);
+            expression = nerdamer(expression.text()).symbol;
+
             //Seperate each symbol by addition
             var symbols = eachaddsymbol(expression);
+
             //Use linear property of transform
+            var transsymbols = [];
             symbols.forEach(function (element, index, array) {
-                array[index] = transform(element,varin.copy(),varout.copy());
+                transsymbols.push(transform(element,varin.copy(),varout.copy()));
             });
 
-            return joinaddsymbols(symbols);
+            return joinaddsymbols(transsymbols);
         }
     };
     nerdamer.register([

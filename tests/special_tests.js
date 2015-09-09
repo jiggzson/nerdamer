@@ -97,6 +97,21 @@ QUnit.test( "Functions test", function( assert ) {
             expected: "0.5*(0.5*PI^(-1)*f^(-1)*i^(-1)+delta(f))"
         },
         {
+            description: "Fourier transform exp(i*t) ",
+            expression: "ft( exp(i*t) ,t,f)",
+            expected: "delta(-0.5*PI^(-1)+f)"
+        },
+        {
+            description: "Fourier transform cos(t) ",
+            expression: "ft( cos(t) ,t,f)",
+            expected: "0.5*delta(-0.5*PI^(-1)+f)+0.5*delta(0.5*PI^(-1)+f)"
+        },
+        {
+            description: "Fourier transform sin(t) ",
+            expression: "ft( sin(t) ,t,f)",
+            expected: "-0.5*delta(0.5*PI^(-1)+f)*i^(-1)+0.5*delta(-0.5*PI^(-1)+f)*i^(-1)"
+        },
+        {
             description: "Fourier transform exp(2*PI*i*t) ",
             expression: "ft( exp(2*PI*i*t),t,f)",
             expected: "delta(-1+f)"
@@ -135,6 +150,31 @@ QUnit.test( "Functions test", function( assert ) {
             description: "Fourier transform a*rect(t+b)+b*delta(t-h)+exp(2*PI*i*t*r)+5*exp(2*PI*i*t*u)*(sinc(t+j))^2 ",
             expression: "ft( a*rect(t+b)+b*delta(t-h)+exp(2*PI*i*t*r)+5*exp(2*PI*i*t*u)*(sinc(t+j))^2  ,t,f)",
             expected: "5*exp(2*(-u+f)*PI*i*j)*tri(-u+f)+a*exp(2*PI*b*f*i)*sinc(f)+b*exp(-2*PI*f*h*i)+delta(-r+f)"
+        },
+        {
+            description: "Fourier transform exp(2*PI*i*t*q*5)*(delta(t-m+l)+rect(t-3*v)) ",
+            expression: "ft( exp(2*PI*i*t*q*5)*(delta(t-m+l)+rect(t-3*v))    ,t,f)",
+            expected: "exp(-6*(-5*q+f)*PI*i*v)*sinc(-5*q+f)+exp(2*(-5*q+f)*(-m+l)*PI*i)"
+        },
+        {
+            description: "Fourier transform sin(2*PI*t) ",
+            expression: "ft( sin(2*PI*t) ,t,f)",
+            expected: "-0.5*delta(1+f)*i^(-1)+0.5*delta(-1+f)*i^(-1)"
+        },
+        {
+            description: "Fourier transform cos(2*PI*t) ",
+            expression: "ft( cos(2*PI*t) ,t,f)",
+            expected: "0.5*delta(-1+f)+0.5*delta(1+f)"
+        },
+        {
+            description: "Fourier transform h*sin(2*PI*t-x+o) ",
+            expression: "ft( h*sin(2*PI*t-x+o) ,t,f)",
+            expected: "(-0.5*delta(1+f)*exp(-i*o)*exp(i*x)*i^(-1)+0.5*delta(-1+f)*exp(-i*x)*exp(i*o)*i^(-1))*h"
+        },
+        {
+            description: "Fourier transform (exp(2*PI*i*t)*g*sin(2*PI*t*y+l) + exp(2*PI*i*t)*a*cos(2*PI*t*y+l))",
+            expression: "ft( (exp(2*PI*i*t)*g*sin(2*PI*t*y+l) + exp(2*PI*i*t)*a*cos(2*PI*t*y+l)),t,f)",
+            expected: "(-0.5*delta(-1+f+y)*exp(-i*l)*i^(-1)+0.5*delta(-1-y+f)*exp(i*l)*i^(-1))*g+(0.5*delta(-1+f+y)*exp(-i*l)+0.5*delta(-1-y+f)*exp(i*l))*a"
         }
     ];
     var run_tests = function() {
