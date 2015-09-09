@@ -160,12 +160,22 @@ QUnit.test( "Functions test", function( assert ) {
             description: "Fourier transform sin(2*PI*t) ",
             expression: "ft( sin(2*PI*t) ,t,f)",
             expected: "-0.5*delta(1+f)*i^(-1)+0.5*delta(-1+f)*i^(-1)"
+        },
+        {
+            description: "Fourier transform cos(2*PI*t) ",
+            expression: "ft( cos(2*PI*t) ,t,f)",
+            expected: "0.5*delta(-1+f)+0.5*delta(1+f)"
+        },
+        {
+            description: "Fourier transform h*sin(2*PI*t-x+o) ",
+            expression: "ft( h*sin(2*PI*t-x+o) ,t,f)",
+            expected: "(-0.5*delta(1+f)*exp(-i*o)*exp(i*x)*i^(-1)+0.5*delta(-1+f)*exp(-i*x)*exp(i*o)*i^(-1))*h"
         }
         /*
         {
-            description: "Fourier transform sin(2*PI*t-x+o) ",
-            expression: "ft( sin(2*PI*t-x+o) ,t,f)",
-            expected: "-0.5*delta(1+f)*i^(-1)+0.5*delta(-1+f)*i^(-1)"
+            description: "Fourier transform exp(2*PI*i*t)*g*sin(2*PI*t*y+l) + exp(2*PI*i*t)*g*cos(2*PI*t*y+l)",
+            expression: "ft( exp(2*PI*i*t)*g*sin(2*PI*t*y+l) + exp(2*PI*i*t)*g*cos(2*PI*t*y+l) ,t,f)",
+            expected: "a"
         }
         */
     ];

@@ -72,6 +72,7 @@
                 return new Symbol('0');
             }
 
+            //Transforms a single expression
             var transform = function(exp,vin,vout) {
                 //Get all multiplications
                 var allmuilti = eachmuiltisymbol(exp);
@@ -172,8 +173,39 @@
 
                     }
 
+                    if ((mainsymbol.baseName === "sin") || (mainsymbol.baseName === "cos"))
+                    {
+                        var iargs = eachaddsymbol(mainsymbol.args[0].copy());
+                        if (mainsymbol.baseName === "cos")
+                        {
+                            var retval = "0.5";
+                            iargs.forEach(function (element, index, array) {
+                                retval += core.Utils.format('*(exp(i*({0})))', element);
+                            });
+                            retval += "+0.5"
+                            iargs.forEach(function (element, index, array) {
+                                retval += core.Utils.format('*(exp((-i)*({0})))', element);
+                            });
+                            coeffs.push(__.ft(_.parse( retval ), vin.copy() ,vout.copy() ));
+                        }
+                        else
+                        {
+                            var retval = "0.5*(1/i)";
+                            iargs.forEach(function (element, index, array) {
+                                retval += core.Utils.format('*(exp(i*({0})))', element);
+                            });
+                            retval += "-0.5*(1/i)"
+                            iargs.forEach(function (element, index, array) {
+                                retval += core.Utils.format('*(exp((-i)*({0})))', element);
+                            });
+                            coeffs.push( __.ft(_.parse( retval ), vin.copy() ,vout.copy() ));
+                        }
+                        return joinmuiltisymbols(coeffs);
+                    }
+
+                    //console.log(exp.text());
                     //Amplitude and frequency shift
-                    if ((mainsymbol.args[0].multiplier !== 1) || (mainsymbol.args[0].text().indexOf('i') !== -1))//Hack
+                    if  ( ((mainsymbol.args[0].multiplier !== 1) || (mainsymbol.args[0].text().indexOf('i') !== -1))) //Hack
                     {
                         switch(mainsymbol.baseName)
                         {
@@ -181,20 +213,6 @@
                                 var factorout = core.Utils.format('2*i*PI*({0})', vin) ;
                                 var fshift = core.Utils.format('delta(({0})-({1}))',vout , _.divide (mainsymbol.args[0], _.parse(factorout) ) ) ;
                                 coeffs.push( _.parse(fshift));
-                                break;
-                            case 'cos':
-                                var retval1 = core.Utils.format('0.5*(exp(i*({0})))', mainsymbol.args[0].copy());
-                                var retval2 = core.Utils.format('0.5*(exp(-i*({0})))', mainsymbol.args[0].copy());
-                                retval1 = transform( _.parse( retval1 ) ,vin.copy(),vout.copy());
-                                retval2 = transform( _.parse(retval2),vin.copy(),vout.copy());
-                                coeffs.push( _.add(retval1,retval2) );
-                                break;
-                            case 'sin':
-                                var retval1 = core.Utils.format('0.5*(1/i)*(exp(i*({0})))', mainsymbol.args[0].copy());
-                                var retval2 = core.Utils.format('-0.5*(1/i)*(exp(-i*({0})))', mainsymbol.args[0].copy());
-                                retval1 = transform( _.parse( retval1 ) ,vin.copy(),vout.copy());
-                                retval2 = transform( _.parse(retval2),vin.copy(),vout.copy());
-                                coeffs.push( _.add(retval1,retval2));
                                 break;
                             default:
                                 break;
@@ -272,7 +290,7 @@
 
                 //Add to coefficients list
                 coeffs.push(mainsymbol);
-                //Rejoin all of them
+                //Rejoin all of themcos to exp
                 return joinmuiltisymbols(coeffs);
             };
 
