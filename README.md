@@ -1,9 +1,9 @@
 Nerdamer 
 ========
 
-[![Build Status](https://travis-ci.org/brosnanyuen/nerdamer.svg?branch=dev)](https://travis-ci.org/brosnanyuen/nerdamer)
+[![Build Status](https://travis-ci.org/brosnanyuen/nerdamer.svg?branch=dev)](https://travis-ci.org/brosnanyuen/nerdamer) ![npm version](https://img.shields.io/npm/v/nerdamer.svg)
 
-As of version 0.5.0, the library is split into the core and optional add-ons which can be loaded after the core has been loaded.
+As of version 0.5.0, the library is split into the core and optional add-ons which can be loaded after the core has been loaded. Node version >= 0.10.
 
 Getting started with Nerdamer
 
@@ -23,6 +23,13 @@ Some functions have dependencies from other add-ons.
 You can see nerdamer in action at http://www.nerdamer.com/demo
 
 All operations are done using the 'nerdamer' object. 
+
+If using node.
+
+```javascript
+var nerdamer = require('nerdamer');
+require('nerdamer/Calculus.js');
+```
 
 To add an expression just add it to the nerdamer object which will return a expression object which 
 isn't particularly usefull at the moment other than getting its text representation.
