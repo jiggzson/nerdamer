@@ -8,7 +8,8 @@ module.exports = function(grunt) {
                     'build/Calculus.min.js': ['Calculus.js'],
                     'build/Solve.min.js': ['Solve.js'],
                     'build/Special.min.js': ['Special.js'],
-                    'build/nerdamer.core.min.js': ['nerdamer.core.js']
+                    'build/nerdamer.core.min.js': ['nerdamer.core.js'],
+                    'build/all.min.js': ['nerdamer.core.js','Algebra.js','Calculus.js','Solve.js','Special.js']
                 }
             }
         },
