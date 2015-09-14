@@ -1650,7 +1650,7 @@ var nerdamer = (function() {
                 'max'       : [ ,-1],
                 'erf'       : [ , 1],
                 'floor'     : [ , 1],
-                'ceiling'   : [ , 1],
+                'ceil'      : [ , 1],
                 'fact'      : [ , 1],
                 'round'     : [ , 1],
                 'mod'       : [ , 2],

@@ -172,6 +172,12 @@ QUnit.test( "Math functions test", function( assert ) {
             expected: [1,6.123233995736766e-17,-1,1,-0.6536436208636119,0.28366218546322625]
         },
         {
+            description: "Ceil function",
+            expression: "ceil(x)",
+            input: [.95,1,3,2.01,6.2],
+            expected: [1,1,3,3,7]
+        },
+        {
             description: "Tangent function",
             expression: "tan(x)",
             input: [0,Math.PI/2,Math.PI,2*Math.PI,4,5],
