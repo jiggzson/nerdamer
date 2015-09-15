@@ -5,43 +5,49 @@
 * License : MIT
 * Source : https://github.com/jiggzson/nerdamer
 */
+
+/* ~! flag */ 
+
 if((typeof module) !== 'undefined') {
     nerdamer = require('./nerdamer.core.js');
 }
 
 (function() {
-    /*imports*/
+    /*shortcuts*/
     var core = nerdamer.getCore(),
         _ = core.PARSER,
-        keys = core.Utils.keys,
-        build = core.Utils.build,
-        Symbol = core.Symbol,
-        S = core.groups.S,
-        round = core.Utils.round,
-        isInt = core.Utils.isInt,
-        Math2 = core.Math2,
-        variables = core.Utils.variables,
-        isComposite = core.Utils.isComposite,
-        isSymbol = core.Utils.isSymbol,
         N = core.groups.N,
+        S = core.groups.S,
         EX = core.groups.EX,
         FN = core.groups.FN,
         PL = core.groups.PL,
         CP = core.groups.CP,
         CB = core.groups.CB,
-        numKey = '#';
-    
+        EPSILON = core.Settings.EPSILON;
+    var qc = function() {
+        var args = [].slice.call(arguments),
+            name = args.shift();
+        args = args.map(function(a) {
+            return __.polyArray2Symbol(a, 'x').text();
+        });
+        
+        return name+'('+args.join(',')+')';
+    };
     var __ = core.Algebra = {
-        /*
-        * proots is Mr. David Binner's javascript port of the Jenkins-Traub algorithm.
-        * The original source code can be found here http://www.akiti.ca/PolyRootRe.html.
-        */  
-        version: '1.2.0',
+
+        version: '1.3.0',
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
             //if this causes trouble you can explicitly pass in a different number of places
+            //rarr for polynomial of power n is of format [n, coeff x^n, coeff x^(n-1), ..., coeff x^0]
             decp = decp || 7;
             var zeros = 0;
+            var get_roots = function(rarr, powers, max) {
+                var roots = calcroots(rarr, powers, max);
+                for(var i=0;i<zeros;i++) roots.unshift(0);
+                return roots;
+            }
+            
             if(symbol instanceof Symbol && symbol.isPoly(true)) { 
                 if(symbol.group === core.groups.S) { 
                     return [0];
@@ -53,19 +59,7 @@ if((typeof module) !== 'undefined') {
                     zeros = minpower;
                     symbol = core.PARSER.divide(symbol, core.PARSER.parse(symbol.value+'^'+minpower));
                 }
-
-                var roots = calcroots();
-                for(var i=0;i<zeros;i++) roots.unshift(0);
-
-                return roots;
-            }
-            else {
-                throw new Error('Cannot calculate roots. Symbol must be a polynomial!');
-            }
-
-            function calcroots(){	
-                var MAXDEGREE = 100, // Degree of largest polynomial accepted by this script.
-                    variable = keys( symbol.symbols ).sort().pop(), 
+                var variable = keys( symbol.symbols ).sort().pop(), 
                     sym = symbol.group === core.groups.PL ? symbol.symbols : symbol.symbols[variable], 
                     g = sym.group,
                     powers = g === S ? [sym.power] : keys( sym.symbols ),
@@ -87,15 +81,44 @@ if((typeof module) !== 'undefined') {
                 }
 
                 rarr.push(symbol.symbols['#'].multiplier);
-                
+
                 if(sym.group === S) rarr[0] = sym.multiplier;//the symbol maybe of group CP with one variable
+
+                return get_roots(rarr, powers, max);
+            }
+            else if(core.Utils.isArray(symbol)) {
+                var parr = symbol;
+                var rarr = [],
+                    powers = [],
+                    last_power = 0;
+                for(var i=0; i<parr.length; i++) {
+                    
+                    var coeff = parr[i][0],
+                        pow = parr[i][1],
+                        d = pow - last_power - 1;
+                    //insert the zeros
+                    for(var j=0; j<d; j++) rarr.unshift(0);
+                    
+                    rarr.unshift(coeff);
+                    if(pow !== 0) powers.push(pow);
+                    last_power = pow;
+                }
+                var max = Math.max.apply(undefined, powers);
+
+                return get_roots(rarr, powers, max);
+            }
+            else {
+                throw new Error('Cannot calculate roots. Symbol must be a polynomial!');
+            }
+
+            function calcroots(rarr, powers, max){	
+                var MAXDEGREE = 100; // Degree of largest polynomial accepted by this script.
 
                 // Make a copy of the coefficients before appending the max power
                 var p = rarr.slice(0);
 
                 // Divide the string up into its individual entries, which--presumably--are separated by whitespace
                 rarr.unshift(max);
-
 
                 if (max > MAXDEGREE){
                     throw new Error("This utility accepts polynomials of degree up to " + MAXDEGREE + ". ");
@@ -863,208 +886,14 @@ if((typeof module) !== 'undefined') {
             return newtonraph( Number( guess ) );
         },
         /**
-         * Factors a symbol.
-         * @param {Symbol} symbol
-         */
-        factor: function(symbol) {
-            var retval = symbol,
-                group = symbol.group,
-                isCompositionGroup = function(group) {
-                    return (group === PL || group === CP);
-                };
-
-            if(isCompositionGroup(group)) {
-                //distribute the multiplier in sub-symbols
-                for(var x in symbol.symbols) symbol.symbols[x].distributeMultiplier(); 
-                //factor the multiplier
-                var gcf = Math2.GCD.apply(undefined, symbol.coeffs()),
-                        
-                    factorize = function(symbol) { 
-                        for(var x in symbol.symbols) {
-                            var sub = symbol.symbols[x]; 
-                            if(isCompositionGroup(sub.group)) {
-                                factorize(sub);
-                            }
-                            else {
-                                sub.multiplier /= gcf;
-                            }
-                        }
-                    };
-                
-                if(symbol.power <= 1) {
-                    factorize(symbol);
-                    symbol.multiplier *= Math.pow(gcf, symbol.power);
-
-                    if(group === PL) {
-                        var powers = keys(symbol.symbols),
-                            lowest_power = core.Utils.arrayMin(powers),
-                            factor = _.parse(symbol.value+'^'+lowest_power);
-                        var factored = new core.Symbol(0);
-                        for(var x in symbol.symbols) {
-                            factored = _.add(factored, _.divide(symbol.symbols[x], factor.copy()));
-                        }
-
-                        factored = _.symfunction(core.PARENTHESIS, [factored]);//place it parenthesis
-                        factored.power *= symbol.power;
-                        factored.multiplier *= symbol.multiplier;
-                        factor.power *= symbol.power;
-
-                        retval = _.multiply(factor, factored);
-                    }
-                    else if(group === CP) { 
-                        try{ 
-                            var p = symbol.power,
-                                roots = core.Utils.arrayUnique(core.Algebra.proots(symbol)),
-                                all_ints = true; 
-                            for(var i=0; i<roots.length; i++) {
-                                if(!isInt(roots[i])) all_ints = false;
-                            }
-                            var result = new Symbol(1);
-                            if(all_ints)  {
-                                roots.map(function(root) {
-                                    result = _.multiply(result, 
-                                        _.symfunction(core.PARENTHESIS, 
-                                        [_.subtract(new Symbol(variables(symbol)[0]), new Symbol(root))]));
-                                });
-                                result.multiplier *= symbol.multiplier;
-                                retval = result; 
-                                retval.power = p;
-                            }
-                        }
-                        catch(e) { 
-                            //reduces the symbol by one factor
-                            var reduce_factor = function() {
-                                
-                            }
-                            var cp = symbol.copy(); //leave the original symbol untouched by making a copy
-                            for(var x in cp.symbols) {
-                                var s1 = cp.symbols[x];
-                                for(var y in s1.symbols) {
-                                    
-                                }
-                            }
-                        }
-                    }
-                }     
-            }
-            
-            if(retval.group === core.groups.FN) retval.updateHash();
-            
-            return retval;
-        },
-        /**
-         * Return the minimum of two functions based on their multipliers
-         * @param {Symbol} symbol1
-         * @param {Symbol} symbol2
-         * @returns {Symbol}
-         */
-        mmin: function(symbol1, symbol2) { 
-            var a = !core.Utils.isSymbol(symbol1) ? new Symbol(symbol1) : symbol1, 
-                b = !core.Utils.isSymbol(symbol2) ? new Symbol(symbol2) : symbol2,
-                g1 = a.group,
-                g2 = b.group,
-                retval,
-            collapse = function(o, glue) {
-                glue = glue || '+';
-                return '('+o.join(')'+glue+'(')+')';
-            },
-            //cycle through the symbols and find a minimum
-            cycle = function(symbol1, symbol2, force_testing) {
-                var c = [];
-                for(var x in symbol1.symbols) { 
-                    var s = symbol1.symbols[x];
-                    if(force_testing || s.power === symbol2.power) {
-                        var r = __.mmin(s, symbol2);
-                        if(r) c.push(r);
-                    }
-                }
-                return _.parse(collapse(c));
-            }; 
-            if(g2 < g1) { 
-                var t = g1; g1 = g2; g2 = t;
-                t = a; a = b; b = a;
-            }
-
-            if(a.value === b.value) {
-                if(g1 === PL) {
-                    retval = cycle(a, b, true);
-                }
-                else if(g2 === PL) {
-                    retval = cycle(b, a);
-                }
-                else if(a.power === b.power){
-                    retval = a.multiplier < b.multiplier ? a.copy() : b.copy();
-                }
-            }
-            else if((g1 === N || g1 === S || g1 === EX) && g2 === CP) {
-                var s = b.symbols[a.value];
-                if(s.power === a.power) retval = __.mmin(a, s);
-            }
-            else if(g1 === PL && g2 === CP) {
-                retval = cycle(a, b, true)
-            }
-            else if(g1 === CP && g2 === CP) {
-                retval = cycle(a, b);
-            }
-            
-            return retval;
-        },
-        /**
-         * Gets out common symbols
-         * @param {Symbol} symbol1
-         * @param {Symbol} symbol2
-         * @returns {Symbol}
-         */
-        gcd: function(symbol1, symbol2) {
-            var g1 = symbol1.group,
-                g2 = symbol2.group,
-                a = symbol1, 
-                b = symbol2,
-                //the absolute mininum for the GCD is the GCD for their multipliers
-                mGCD = core.Math2.GCD(a.multiplier, b.multiplier),
-                retval;
-            //always keep the lower group to the left so swap if that's not the case
-            if(g2 < g1) { 
-                var t = g1; g1 = g2; g2 = t;
-                a = symbol2; b = symbol1;
-            }
-
-            if(a.value === b.value) {
-                retval = _.parse('('+mGCD+')*'+a.value+'^('+__.mmin(a.power, b.power)+')');
-            }
-            else if(g1 === S && g2 === CB) {
-                var bb = b.symbols[a.value];
-                if(bb) retval = _.multiply(new Symbol(mGCD), __.gcd(a, bb));
-            }
-            else {
-                retval = new Symbol(mGCD);
-            }
-
-            return retval;
-        },
-        /**
-         * 
-         * @param {Symbol} symbol
-         * @param {String} by
-         * @returns {Symbol[]}
-         */
-        group: function(symbol, by) {
-            var grouped = [];
-            symbol.each(function(s){
-                if(s.contains(by)) {
-                    grouped.push(s);
-                }
-            });
-            return grouped;
-        },
-        /**
          * Expands a symbol
+         * @param {Symbol} symbol 
          */
         expand: function (symbol) { 
-            var is_composite = isComposite(symbol);
+            var is_composite = core.Utils.isComposite(symbol);
 
             function powerExpand(symbol) {
-                if(!isComposite(symbol)) return symbol; //nothing to do here
+                if(!core.Utils.isComposite(symbol)) return symbol; //nothing to do here
 
                 var p = symbol.power,
                     n = Math.abs(p); //store the power
@@ -1162,337 +991,208 @@ if((typeof module) !== 'undefined') {
             
             return symbol;
         },
+        zeroPolyArray: function(n) {
+            //add 1 to n to include to 0th order polynomial
+            var nn = n+1, arr = new Array(nn);
+            for(var i=0; i<nn; i++) { arr[i] = 0; }
+            return arr;
+        }, 
+        /**
+         * Split poly_array into factors
+         * @param {Array} parr
+         * @returns {Array}
+         */
+        polyArrayFactor: function(parr) {
+            
+        },
         /**
          * Converts a symbol into an equivalent polynomial arrays of 
          * the form [[coefficient_1, power_1],[coefficient_2, power_2], ... ]
          * @param {Symbol} symbol
-         * @param {boolean} sort
+         * @param {Array} c
          * @returns {Array}
          */
-        poly2Arrays: function(symbol, sort) {
-            var self = this; 
+        poly2Array: function(symbol, c) {
             if(!symbol.isPoly()) throw new Error('Polynomial Expected! Received '+core.Utils.text(symbol));
-            var c = [];
+            var c = c || [];
                 if(Math.abs(symbol.power) !== 1) symbol = core.Algebra.expand(symbol);
 
-                if(symbol.group === core.groups.N) {c.push([symbol.multiplier, 0]); }
-                else if(symbol.group === core.groups.S) { c.push([symbol.multiplier, symbol.power]); }
+                if(symbol.group === core.groups.N) {c[0] = symbol.multiplier; }
+                else if(symbol.group === core.groups.S) { c[symbol.power] = symbol.multiplier; }
                 else {
                     for(var x in symbol.symbols) {
                         if(core.Utils.isSymbol(p)) throw new Error('power cannot be a Symbol');
                         var sub = symbol.symbols[x],
-                            p = sub.power; 
-                        if(sub.symbols){
-                            c.push.apply(c, self.poly2Arrays(sub));
-                        }
-                        else {
-                            c.push([sub.multiplier, p||0]);
-                        }
+                            p = sub.power || 0; //subract 1 for the index of array
+
+                        if(sub.symbols){ c = __.poly2Array(sub, c); }
+                        else { c[p] = sub.multiplier; }
                     }
                 }
 
-                if(sort) { 
-                    c = c.sort(function(a, b) { return (a[1] > b[1]); }); 
-                }
-
-                return c;
-        },
-        zeroPolynomial: function(a) {
-            return (a[0] === 0 && a[1] === 0);
-        },
-        polyArrayCopy: function(poly_array) {
-            return poly_array.map(function(x) {
-                return x.slice(0);
-            });
+                return __.polyArrayFill(c);
         },
         /**
-         * Expects powers to be from low to high.
-         * Takes an array of coefficient, power pairs and fills missing holes with zero until zero polynomial. For example
-         * __.polyfill([ [ 1, 3 ]]) will return [ [ 1, 3 ], [ 0, 2 ], [ 0, 1 ], [ 0, 0 ] ]
-         * @param {Array} arr
+         * 
+         * @param {Array} parr
          * @returns {Array}
          */
-        polyfill: function(arr) {
-            //if the first power isn't zero make it so
-            if(arr[0][1] !== 0) arr.unshift([0,0]);
-            var n = arr.length-1,
-                o = [],
-                last;
-            for(var i=0; i<n; i++) {
-                last = arr.pop();
-                o.push(last);
-                var last_pow = last[1],
-                    next_pow = arr[n-(i+1)][1],
-                    gap = (last_pow-next_pow)-1;
-                for(var j=0; j<gap; j++) { 
-                    o.push([0,last_pow-(j+1)]);
-                }
+        polyArrayFill: function(parr) {
+            var l = parr.length;
+            for(var i=0; i<l; i++) {
+                if(parr[i] === undefined) { parr[i] = 0; }
             }
-            o.push(arr[0]);
-            return o;
+            return parr;
+        } ,
+        /**
+         * Removes higher order zeros or a specific coefficient
+         * @param {Array} parr
+         * @param {Array} value
+         * @returns {Array}
+         */
+        polyArrayTrim: function(parr, value) { 
+            var l = parr.length;
+            if(value === undefined) value = 0;
+            while(parr[--l] === value) parr.pop();
+            return parr;
         },
         /**
-         * Divides to polynomial arrays and returns the quotient and the remainder as an array
-         * polynomial arrays are in the form [[coefficient_1, power_1],[coefficient_2, power_2], ... ]
-         * @param {Array} dividend_array
-         * @param {Array} divisor_array
+         * Divides one polynomial array by another
+         * @param {Array} parr1
+         * @param {Array} parr2
          * @returns {Array}
          */
-        polyArrayDiv: function(dividend_array, divisor_array, is_reversed) { 
-            //fill in the holes
-            var a = dividend_array.slice(),
-                b = divisor_array.slice();
-            if(!is_reversed) {
-                a.reverse();
-                b.reverse();
-            }
-            var dividend = __.polyfill(a),
-                divisor = __.polyfill(b),
+        polyArrayDiv: function(parr1, parr2) {
+            var dividend = parr1.slice(),
+                divisor = parr2.slice(),
                 n = dividend.length,
-                nn = n,
-                mp = divisor[0][1], //get the maximum power of the divisor
-                coeff = divisor[0][0],
-                quotient = []; //the quotient to be returned
-            //step through the dividend
-            for(var i=0; i<n; i++) { 
-                //get the ratio of the maximum powers of the dividend and the divisor
-                var cur_pow = dividend[0], //get the current power of the polynomial at this position
-                    diff = cur_pow[1] - mp, //get the difference in the powers
-                    row = []; //clear the row
-                if(diff < 0) {
-                    break;//no need to continue since our divisor is now larger than our dividend
-                } 
-                var ratio = cur_pow[0]/coeff; //the ratio of the coefficients
-                //we start at 1 because we already know that the first term in the dividend drops off
-                for(var j=1; j<nn; j++) {
-                    var term = divisor[j];
-                    if(typeof term !== 'undefined') {
-                        row.push([
-                            dividend[j][0] - (term[0]*ratio),
-                            diff+term[1]
-                        ]);
-                    }
-                    else {
-                        row.push(dividend[j]);
-                    }
+                mp = divisor.length-1,
+                quotient = [];
+            //loop through the dividend
+            for(var i=0; i<n; i++) {
+                var p = n-(i+1);
+                //get the difference of the powers
+                var d = p - mp;
+                //get the quotient of the coefficients
+                var q = dividend[p]/divisor[mp];
+                if(d < 0) break;//the divisor is not greater than the dividend
+                //place it in the quotient
+                quotient[d] = q;
+
+                for(var j=0; j<=mp; j++) {
+                    //reduce the dividend
+                    dividend[j+d] -= divisor[j]*q;
                 }
-                dividend = row;
-                quotient.push([ratio, diff]); //add the current term to the quotient
-                nn--; //one term drops so reduce end limit
             }
+            //clean up
+            __.polyArrayTrim(dividend);
+            
             return [quotient, dividend];
         },
-        /*
-         * Takes a polynomial array and returns the coefficients only
-         * @param {Array} a
-         * @param {boolean} all
-         * @returns {Array}
+        /**
+         * Checks to see if all the elements in the array are close enough to zero
+         * @param {Array} arr 
+         * @returns {boolean}
          */
-        polyArrayCoeffs: function(a, all) { 
-            var c = [],
-                l = a.length;
+        polyArrayIsZero: function(arr) {
+            var l = arr.length;
             for(var i=0; i<l; i++) {
-                var coeff = a[i][0];
-                if(coeff !== 0 || all) c.push(coeff);
+                var e = arr[i];
+                if(e !== 0 && Math.abs(e) > EPSILON) return false;
             }
-            return c;
+            return true;
         },
         /**
-         * Divides to polynomials
-         * @param {Symbol} symbol1
-         * @param {Symbol} symbol2
+         * Converts a polynomial array back to a symbol
+         * @param {Array} parr
+         * @param {String} variable
          * @returns {Symbol}
          */
-        polyDiv: function(symbol1, symbol2) {
-            var v1 = variables(symbol1)[0],
-                v2 = variables(symbol2)[0],
-                a = __.poly2Arrays(symbol1),
-                b = __.poly2Arrays(symbol2),
-                variable = v1 ? v1 : v2 ? v2 : 'x', //if there are 2 numbers then we just use x
-                result = __.polyArrayDiv(a, b, true);
-            return [__.polyArray2Symbol(result[0], variable), __.polyArray2Symbol(result[1], variable)|| new core.Symbol(0)];
+        polyArray2Symbol: function(parr, variable) {
+            var l = parr.length;
+            if(l === 0) return new core.Symbol(0);
+            var end = l -1, str = '';
+            
+            for(var i=0; i<l; i++) {
+                //place the plus sign for all but the last one
+                var plus = i === end ? '' : '+',
+                    e = parr[i];
+                if(e !== 0) str += (e+'*'+variable+'^'+i+plus);
+            }
+            return _.parse(str);
         },
         /**
-         * NOTE: This will more than likely get stripped form future versions
-         * 
-         * Given the symbol of group CB it will divide the denominator by the numerator and return an array of the
-         * quotient and the remainder. For example the symbol for (x^3+x)/(x+1) will return an array with 
-         * a symbol -x+x^2+2 and another symbol -2.
-         * If true is passed as the second argument it will return an array containing arrays of coefficient and power
-         * pairs. The above example would return [ [ [ 1, 2 ], [ -1, 1 ], [ 2, 0 ] ], [ [ -2, 0 ] ] ]
-         * @param {Symbol} symbol
-         * @param {bool} asArray - request the result as an array
+         * Sums up all the elements of an array
+         * @param {Array} arr
+         * @returns {Number}
+         */
+        polyArraySum: function(arr) {
+            var sum = 0, l=arr.length;
+            for(var i=0; i<l; i++) sum += arr[i];
+            return sum;
+        },
+        /**
+         * Divides all the coefficients in a polynomial array by a number
+         * @param {Array} parr
+         * @param {Number} n
          * @returns {Array}
          */
-        polydiv: function(symbol, asArray) { 
-            //A numerator and a denominator is expected. The symbol must therefore be of group CB
-            if(symbol.group === CB) {
-                var symbols = symbol.collectSymbols(),
-                    n = symbols.length,
-                    variable = core.Utils.variables(symbol)[0],   
-                    num, denom;
-                for(var i=0; i<n; i++) { 
-                    if(symbols[i].power < 0) {
-                        denom = core.Utils.remove(symbols, i);
-                        break;
-                    }
-                }
-                //A try catch block is used since if either the denominator or the numerator is not a polynomial
-                //or if the symbol does not contain a denominator the an error is thrown and the symbol is 
-                //returned;
-                try{
-                    //if there's no denominator then an error is thrown and goodbye.
-                    if(n-- > 2) {
-                        for(i=0; i<n; i++) {
-                            symbols[i] = '('+symbols[i].text()+')';
-                        }
-                        //it's easier just to parse it back to symbol than to salvage the existing symbols
-                        num = _.parse(symbols.join('*')); 
-                    }
-                    else {
-                        num = symbols[0];
-                    }
-
-                    //collect the coefficients and powers and sort them by powers, ascending
-                    var divisor;
-                    if(denom.group === core.groups.S && denom.value === variable) {
-                        divisor = [[symbol.multiplier, symbol.power]];
-                    }
-                    else {
-                        divisor = core.Algebra.poly2Arrays(denom, true);
-                    }
-                    var dividend = core.Algebra.poly2Arrays(num, true);
-                    //fill the gaps
-                    dividend = core.Algebra.polyfill(dividend); 
-                    divisor = core.Algebra.polyfill(divisor);
-
-                    var result = core.Algebra.polyArrayDiv(dividend, divisor),
-                        top = result[0],
-                        remainder = result[1];
-
-                    if(!asArray) {
-                        var stringify = function(a) {
-                                return a.map(function(item){
-                                    return item[0]+'*'+variable+'^'+item[1];
-                                }).join('+');
-                            };
-                        remainder = _.parse(stringify(remainder));
-                        top = _.parse(stringify(top));
-                    }
-                    return [top, remainder];
-                }
-                catch(e) {;}  
-            }
-            return symbol;
+        polyArrayCoeffDiv: function(parr, n) {
+            var l = parr.length;
+            for(var i=0; i<l; i++) parr[i] = parr[i]/n;
+            return parr;
         },
+        /**
+         * https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor
+         * Calculates the GCD between to polynomial arrays
+         * @param {Array} parr1
+         * @param {Array} parr2
+         * @returns {Array}
+         */
         polyArrayGCD: function(parr1, parr2) {
-            var max_pow_arr1 = parr1[0][1],
-                max_pow_arr2 = parr2[0][1];
-
-            if(max_pow_arr1 === max_pow_arr2 && parr1.length === 1 && parr2.length === 1) {
-                return [[core.Math2.GCD(parr1[0][0], parr2[0][0]), max_pow_arr1]];
+            //get the maximum power of each
+            var mp1 = parr1.length-1, 
+                mp2 = parr2.length-1;
+            //swap so we always have the greater power first
+            if(mp1 < mp2) {
+                var temp = parr1; parr1 = parr2; parr2 = temp;
             }
-
-            //get a common gcd amongst the coefficients
-            var gcd = core.Math2.GCD.apply(undefined, __.polyArrayCoeffs(parr1).concat(__.polyArrayCoeffs(parr2)));
-            if(gcd !== 1) {
-                var gcd_divide = function(a) {
-                    a[0] = a[0]/gcd;
-                    return a;
-                };
-                parr1 = parr1.map(gcd_divide);
-                parr2 = parr2.map(gcd_divide);
-            };
-
-            if(max_pow_arr2 > max_pow_arr1) {
-                var t = parr2; parr2 = parr1; parr1 = t; //swap it all
-            }
-            var dividend = parr1,
-                divisor = parr2,
-                remainder,result;
+            
+            var dividend = parr1.slice(),
+                divisor = parr2.slice(),
+                q,result;
             do {
-                result = __.polyArrayDiv(__.polyArrayCopy(dividend), __.polyArrayCopy(divisor));
-                remainder = result[1];
+                result = __.polyArrayDiv(dividend.slice(), divisor.slice());
                 dividend = divisor;
-                divisor = remainder;
+                divisor = result[1];
+                
+                q = result[0];
             }
-            while(!(remainder[0][0] === 0 && remainder[0][1] === 0));
-            //factor
-            var retval = dividend,
-                l = retval.length;
+            while(__.polyArrayDeg(divisor) > 1);
 
-            var coeff_gcd = core.Math2.GCD.apply(undefined, __.polyArrayCoeffs(retval))/gcd;
-
-            if(coeff_gcd !== 1) {
-                for(var i=0; i<l; i++) { retval[i][0] /= coeff_gcd; }
+            var deg = __.polyArrayDeg(divisor);
+            if(deg < 1) return parr2.slice();
+            if(deg === 1) {
+                return [core.Math2.GCD.apply(undefined, core.Utils.arrayUnique(divisor.concat(parr2)))];
             }
-
-            return retval;
+            return divisor;
         },
         /**
-         * Gets the polynomial gcd for to polynomials and returns it as a polynomial array. This method gets exported
-         * for example polyGCD(x^3, x^4) will return [ [ 1, 3 ], [ 0, 2 ], [ 0, 1 ], [ 0, 0 ] ], the GCD with all 
-         * the remaining holes filled with zeros
-         * @returns {core.Algebra.polyGCD.p1|Algebra_L11.polyGCD.p1}
+         * Returns the degree of the polynomial array
+         * @param {Array} parr
+         * @returns {Number}
          */
-        polyGCD: function() { 
-            var polyArrayGCD = core.Algebra.polyArrayGCD,
-                n = arguments.length,
-                curpos = 0,
-                p1 = __.poly2Arrays(arguments[curpos]);
-            while(n > ++curpos) { 
-                //send in the smallest possible value
-                var p2 = __.poly2Arrays(arguments[curpos]);
-                p1 = polyArrayGCD(__.polyfill(p1),p2 = __.polyfill(p2));
-            }
-            return p1;
+        polyArrayDeg: function(parr) {
+            return __.polyArrayTrim(parr).length-1;
         },
-        /*
-         * Converts a polynomial array to a symbol
-         * @param {Array} array
+        /**
+         * Splits symbol into factors
+         * @param {Symbol} symbol
          * @returns {Symbol}
          */
-        polyArray2Symbol: function(arr, variable) {
-            if(!variable) core.err('polyArray2Symbol expects a variable name');
-            var l = arr.length, 
-                format = core.Utils.format,
-                formatted = []; //the expression
-            for(var i=0; i<l; i++) {
-                var p = arr[i];
-                formatted.push(format(p[0]+'*'+variable+'^'+p[1]));
-            }
-            return _.parse(formatted.join('+'));
-        },
-        /**
-         * Get's all the powers of a particular polynomial including the denominators. The denominators powers
-         * are returned as negative. All remaining polynomials are returned as zero order polynomials.
-         * for example polyPowers(x^2+1/x+y+t) will return [ '-1', 0, '2' ]
-         * @param {Symbol} e
-         * @param {String} for_variable
-         * @param {Array} powers
-         * @returns {Array} An array of the powers
-         */
-        //assumes you've already verified that it's a polynomial
-        polyPowers: function(e, for_variable, powers) { 
-            powers = powers || [];
-            var g = g = e.group; 
-            if(g ===  PL && for_variable === e.value) {
-                powers = powers.concat(keys(e.symbols)); 
-            }
-            else if(g === CP) { 
-                for(var s in e.symbols) {
-                    var symbol = e.symbols[s]; 
-                    var g = symbol.group, v = symbol.value; 
-                    if(g === S && for_variable === v) powers.push(symbol.power);
-                    else if(g === PL || g === CP) powers = __.polyPowers(symbol, for_variable, powers);
-                    else if(g === CB && symbol.contains(for_variable)) {
-                        var t = symbol.symbols[for_variable];
-                        if(t) powers.push((t.power));
-                    }
-                    else if(g === N || for_variable !== v) powers.push(0);
-                }
-            }
-            return core.Utils.arrayUnique(powers).sort();
+        factor: function(symbol) {
+            var parr = __.poly2Array(symbol);
+            return symbol;
         },
         /**
          * Checks to see if a set of "equations" is linear. 
@@ -1526,21 +1226,13 @@ if((typeof module) !== 'undefined') {
             }
             else if(g === S && e.power === 1) status = true;
             return status;
+        },
+        gcd: function(a, b) {
+            return __.polyArray2Symbol(__.polyArrayGCD(__.poly2Array(a), __.poly2Array(b)), core.Utils.variables(a)[0]);
         }
     };
-
+    
     nerdamer.register([
-        {
-            /*
-            * Other than the preparation of the coefficients, 
-            * this function is Mr. David Binner's javascript port of the Jenkins-Traub algorithm.
-            * The original source code can be found here http://www.akiti.ca/PolyRootRe.html.
-            */    
-            name: 'proots',
-            visible: true,
-            numargs: [1,2],
-            build: function() { return __.proots; }
-        },
         {
             name: 'factor',
             visible: true,
@@ -1548,27 +1240,10 @@ if((typeof module) !== 'undefined') {
             build: function() { return __.factor; }
         },
         {
-            name: 'expand',
-            visible: true,
-            numargs: 1,
-            build: function() { return __.expand; }
-        },
-        {
-            /**
-             * Get the gcd of a set of polynomials.
-             * usage: polyGCD(p1, p2, p3, ...)
-             */
-            name: 'polyGCD',
-            visible: true,
-            numargs: -1,
-            build: function() { return __.polyGCD; }
-        },
-        {
-            name: 'polyDiv',
+            name: 'gcd',
             visible: true,
             numargs: 2,
-            build: function() { return __.polyDiv; }
+            build: function() { return __.gcd; }
         }
     ]);
 })();
-
