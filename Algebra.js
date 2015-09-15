@@ -893,7 +893,7 @@ if((typeof module) !== 'undefined') {
         expand: function (symbol) { 
             var is_composite = core.Utils.isComposite(symbol);
 
-            function powerExpand(symbol) {
+            function powerExpand(symbol) { 
                 if(!core.Utils.isComposite(symbol)) return symbol; //nothing to do here
 
                 var p = symbol.power,
@@ -973,12 +973,12 @@ if((typeof module) !== 'undefined') {
                 var expanded_symbol = symbols[0];
                 if(expanded_symbol) {
                     expanded_symbol.multiplier *= symbol.multiplier;
-                    if(expanded_symbol.group !== core.groups.N) {
+                    if(expanded_symbol.group !== core.groups.N && core.Math2.sign(symbol.power) > 0) {
                         expanded_symbol.distributeMultiplier();
                         expanded.power *= symbol.power;
                     }
                         
-                    symbol = expanded_symbol;
+                    symbol = expanded_symbol; 
                     //put back the sign
                 }
             }
