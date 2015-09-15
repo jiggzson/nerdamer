@@ -25,7 +25,19 @@ var nerdamer = (function() {
             //cos(9) for convenience but parse to number will always try to return a number if set to true. 
             PARSE2NUMBER: false,
             //this flag forces the a copy to be returned when add, subtract, etc... is called
-            SAFE: false
+            SAFE: false,
+            //this flag tells the parser to ignore unwrapping the parentheses
+            RESPECT_PARENS: false,
+            
+            EPSILON: (function(){
+                var x = 1.0, y, e;
+                do {
+                    e = x;
+                    x /= 2;
+                    y = 1.0 + x;
+                } while (y > 1.0);
+                return e;
+            })()
         },
 
         //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
@@ -407,6 +419,27 @@ var nerdamer = (function() {
             }
             return a;
         },
+        //modified from http://stackoverflow.com/questions/7837456/comparing-two-arrays-in-javascript
+        arrayEquals = Utils.arrayEquals = function(a, b) {
+            // if the other array is a falsy value, return
+            if(!(a instanceof Array) || !(b instanceof Array)) return false;
+
+            // compare lengths - can save a lot of time 
+            if(a.length !== b.length) return false;
+
+            for(var i=0, l=a.length; i<l; i++) {
+                // Check if we have nested arrays
+                if(a[i] instanceof Array && b[i] instanceof Array) {
+                    // recurse into the nested arrays
+                    if(!arrayEquals(a[i], b[i])) return false;       
+                }           
+                else if(a[i] !== b[i]) { 
+                    // Warning - two different object instances will never be equal: {x:20} != {x:20}
+                    return false;   
+                }           
+            }       
+            return true;
+        },
         
         /**
          * Reserves the names in an object so they cannot be used as function names
@@ -639,8 +672,10 @@ var nerdamer = (function() {
 
                 while(n-- > 0) {
                     var b = Math.abs(args.shift());
+                    
                     while(true) {
                         a %= b;
+
                         if (a === 0) {
                             a = b;
                             break;
@@ -2226,8 +2261,8 @@ var nerdamer = (function() {
                 if(symbol2.multiplier === 0) return symbol1;
 
                 //parens is a function that we want to get rid of as soon as possible so check
-                if(group1 === FN && symbol1.baseName === PARENTHESIS) symbol1 = this.unpack(symbol1);
-                if(group2 === FN && symbol1.baseName === PARENTHESIS) symbol2 = this.unpack(symbol2);
+                if(group1 === FN && symbol1.baseName === PARENTHESIS && !Settings.RESPECT_PARENS) symbol1 = this.unpack(symbol1);
+                if(group2 === FN && symbol1.baseName === PARENTHESIS && !Settings.RESPECT_PARENS) symbol2 = this.unpack(symbol2);
 
                 //always have the lower group on the left
                 if(group1 > group2) { return this.add(symbol2, symbol1); }
@@ -2469,11 +2504,11 @@ var nerdamer = (function() {
                     reInvert = false;
 
                 //parens is a function that we want to get rid of as soon as possible so check
-                if(group1 === FN && symbol1.baseName === PARENTHESIS) symbol1 = this.unpack(symbol1);
-                if(group2 === FN && symbol1.baseName === PARENTHESIS) symbol2 = this.unpack(symbol2);
+                if(group1 === FN && symbol1.baseName === PARENTHESIS && !Settings.RESPECT_PARENS) symbol1 = this.unpack(symbol1);
+                if(group2 === FN && symbol1.baseName === PARENTHESIS && !Settings.RESPECT_PARENS) symbol2 = this.unpack(symbol2);
 
                 if(symbol1.isImgSymbol && symbol2.isImgSymbol) {
-                    var sign = (symbol1.power + symbol2.power) === 0 ? 1 : -1; //i/i = 0
+                    var sign = (symbol1.power + symbol2.power) === 0 ? 1 : -1; //i/i = 1
                     return new Symbol(sign*symbol1.multiplier*symbol2.multiplier);
                 }
 
