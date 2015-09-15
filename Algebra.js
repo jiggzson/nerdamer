@@ -6,8 +6,6 @@
 * Source : https://github.com/jiggzson/nerdamer
 */
 
-/* ~! flag */ 
-
 if((typeof module) !== 'undefined') {
     nerdamer = require('./nerdamer.core.js');
 }
@@ -23,6 +21,9 @@ if((typeof module) !== 'undefined') {
         PL = core.groups.PL,
         CP = core.groups.CP,
         CB = core.groups.CB,
+        isComposite = core.Utils.isComposite,
+        isInt = core.Utils.isInt,
+        Symbol = core.Symbol,
         EPSILON = core.Settings.EPSILON;
     var qc = function() {
         var args = [].slice.call(arguments),
@@ -1244,6 +1245,12 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: 2,
             build: function() { return __.gcd; }
+        },
+        {
+            name: 'expand',
+            visible: true,
+            numargs: 1,
+            build: function() { return __.expand; }
         }
     ]);
 })();
