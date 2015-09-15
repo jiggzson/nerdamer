@@ -40,7 +40,7 @@ QUnit.test( "buildFunction test", function( assert ) {
 
         var __ = core.Tests = {
             foobar: function(symbol) {
-                if (!isNumericSymbol(symbol))
+                if (!(  !isNaN(parseFloat(symbol)) && isFinite(symbol) ))
                 {
                     return  _.symfunction("foobar",[symbol]);
                 }
@@ -69,11 +69,11 @@ QUnit.test( "buildFunction test", function( assert ) {
         ]);
     })();
     var f = nerdamer("foobar(x)").buildFunction();
-    assert.equal( 8, f(-23), "Inputing -23 into foobar(x)");
-    assert.equal( 1, f(0), "Inputing 0 into foobar(x)");
-    assert.equal( -8, f(1), "Inputing 1 into foobar(x)");
-    assert.equal( 3, f(2), "Inputing 2 into foobar(x)");
-    assert.equal( -8, f(5), "Inputing 5 into foobar(x)");
+    assert.equal( f(-23) , 8 , "Inputing -23 into foobar(x)");
+    assert.equal( f(0), 1 , "Inputing 0 into foobar(x)");
+    assert.equal( f(1), -8, "Inputing 1 into foobar(x)");
+    assert.equal( f(2), 3 , "Inputing 2 into foobar(x)");
+    assert.equal( f(5), -8 , "Inputing 5 into foobar(x)");
 });
 
 

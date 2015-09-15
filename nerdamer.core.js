@@ -3866,7 +3866,7 @@ var nerdamer = (function() {
                             }
                             if (search_key != "") // Found function
                             {
-                                xports.push('var '+bn+' = nerdamer(nerdamer.getCore().'+search_key+"."+bn+bracket_args+'.toString()).valueOf(); ');
+                                xports.push('var '+bn+' = '+ C[search_key][bn].toString()+'; ');
                                 supplements.push(bn);
                             }
                             else //Function not found
@@ -3878,16 +3878,10 @@ var nerdamer = (function() {
                     retval = bn;
                 }
 
-                if (extended_function)
-                {
-                   retval = bn;
-                }
-                else
-                {
-                    retval = retval+inBrackets(symbol.args.map(function(x) {
-                        return ftext(x, xports)[0];
-                    }).join(','));
-                }
+                retval = retval+inBrackets(symbol.args.map(function(x) {
+                    return ftext(x, xports)[0];
+                }).join(','));
+
                 return retval;
             };
 
