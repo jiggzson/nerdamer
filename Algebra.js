@@ -6,8 +6,6 @@
 * Source : https://github.com/jiggzson/nerdamer
 */
 
-/* ~! flag */ 
-
 if((typeof module) !== 'undefined') {
     nerdamer = require('./nerdamer.core.js');
 }
@@ -23,6 +21,9 @@ if((typeof module) !== 'undefined') {
         PL = core.groups.PL,
         CP = core.groups.CP,
         CB = core.groups.CB,
+        isComposite = core.Utils.isComposite,
+        isInt = core.Utils.isInt,
+        Symbol = core.Symbol,
         EPSILON = core.Settings.EPSILON;
     var qc = function() {
         var args = [].slice.call(arguments),
@@ -892,7 +893,7 @@ if((typeof module) !== 'undefined') {
         expand: function (symbol) { 
             var is_composite = core.Utils.isComposite(symbol);
 
-            function powerExpand(symbol) {
+            function powerExpand(symbol) { 
                 if(!core.Utils.isComposite(symbol)) return symbol; //nothing to do here
 
                 var p = symbol.power,
@@ -972,12 +973,12 @@ if((typeof module) !== 'undefined') {
                 var expanded_symbol = symbols[0];
                 if(expanded_symbol) {
                     expanded_symbol.multiplier *= symbol.multiplier;
-                    if(expanded_symbol.group !== core.groups.N) {
+                    if(expanded_symbol.group !== core.groups.N && core.Math2.sign(symbol.power) > 0) {
                         expanded_symbol.distributeMultiplier();
                         expanded.power *= symbol.power;
                     }
                         
-                    symbol = expanded_symbol;
+                    symbol = expanded_symbol; 
                     //put back the sign
                 }
             }
@@ -1158,24 +1159,13 @@ if((typeof module) !== 'undefined') {
                 var temp = parr1; parr1 = parr2; parr2 = temp;
             }
             
-            var dividend = parr1.slice(),
-                divisor = parr2.slice(),
-                q,result;
-            do {
-                result = __.polyArrayDiv(dividend.slice(), divisor.slice());
-                dividend = divisor;
-                divisor = result[1];
-                
-                q = result[0];
+            while(!__.polyArrayIsZero(parr2)) {
+                var t = parr2.slice();
+                parr2 = __.polyArrayDiv(parr1.slice(), parr2)[1];
+                parr1 = t;
             }
-            while(__.polyArrayDeg(divisor) > 1);
 
-            var deg = __.polyArrayDeg(divisor);
-            if(deg < 1) return parr2.slice();
-            if(deg === 1) {
-                return [core.Math2.GCD.apply(undefined, core.Utils.arrayUnique(divisor.concat(parr2)))];
-            }
-            return divisor;
+            return __.polyArrayMonic(parr1);
         },
         /**
          * Returns the degree of the polynomial array
@@ -1186,12 +1176,55 @@ if((typeof module) !== 'undefined') {
             return __.polyArrayTrim(parr).length-1;
         },
         /**
+         * Returns the leading coefficient
+         * @param {Array} parr
+         * @returns {Number}
+         */
+        polyArrayLC: function(parr) {
+            parr = __.polyArrayTrim(parr); //remove zeros of higher orders
+            return parr[parr.length-1];
+        },
+        /**
+         * Converts polynomial to a monic polynomial
+         * @param {Array} parr
+         * @returns {Array}
+         */
+        polyArrayMonic: function(parr) {
+            var lc = __.polyArrayLC(parr), l = parr.length;
+            for(var i=0; i<l; i++) parr[i] /= lc;
+            return parr;
+        },
+        /**
+         * Differentiates polynomial
+         * @param {Array} parr
+         * @returns {Array}
+         */
+        polyArrayDiff: function(parr) {
+            var new_array = [], l = parr.length;
+            for(var i=1; i<l; i++) new_array.push(parr[i]*i);
+            return new_array;
+        },
+        /**
+         * Integrates polynomial
+         * @param {Array} parr
+         * @returns {Array}
+         */
+        polyArrayIntegrate: function(parr) {
+            var new_array = [0], l = parr.length;
+            for(var i=0; i<l; i++) {
+                var c = i+1;
+                new_array[c] = parr[i]/c;
+            }
+            return new_array;
+        },
+        /**
          * Splits symbol into factors
          * @param {Symbol} symbol
          * @returns {Symbol}
          */
         factor: function(symbol) {
             var parr = __.poly2Array(symbol);
+            parr = __.polyArrayIntegrate(parr)
             return symbol;
         },
         /**
@@ -1244,6 +1277,12 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: 2,
             build: function() { return __.gcd; }
+        },
+        {
+            name: 'expand',
+            visible: true,
+            numargs: 1,
+            build: function() { return __.expand; }
         }
     ]);
 })();
