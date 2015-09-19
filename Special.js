@@ -78,7 +78,7 @@
                 throw new Error('Must be number > 1');
             }
 
-            subs = {};
+            var subs = {};
             subs[varin.text()] = point.copy();
             //Generate first term
             var terms = [ _.parse(expression.copy(), subs)];
@@ -189,21 +189,14 @@
                         //Frequency shift
                         if (fshift !== undefined)
                         {
-                            var eachmain = eachaddsymbol(mainsymbol);
                             //Get shift
                             var factorout = _.parse(core.Utils.format('2*i*PI*({0})', vin)) ;
                             fshift = core.Utils.format('(({0})-({1}))',vout , _.divide ( fshift.args[0] , factorout ) ) ;
-                            //Split
-                            eachmain.forEach(function (e, i, a) {
-                                //Substitute shift
-                                //var newmainsymbols = eachmuiltisymbol(mainsymbol);
-                                var newmainsymbols = eachmuiltisymbol(e);
-                                newmainsymbols.forEach(function (element, index, array) {
-                                    array[index] = _.parse( element.text().replace( vout.text() , fshift ) ) ;
-                                });
-                                a[i] = joinmuiltisymbols(newmainsymbols);
-                            });
-                            coeffs.push(joinaddsymbols(eachmain));
+
+                            var subs = {};
+                            subs[vout.text()] = _.parse(fshift);
+                            //Substitute shift
+                            coeffs.push(_.parse( mainsymbol ,subs ) );
                         }
                     }
                     else //More functions
@@ -254,7 +247,6 @@
                         return joinmuiltisymbols(coeffs);
                     }
 
-                    //console.log(exp.text());
                     //Amplitude and frequency shift
                     if  ( ((mainsymbol.args[0].multiplier !== 1) || (mainsymbol.args[0].text().indexOf('i') !== -1))) //Hack
                     {
@@ -276,7 +268,9 @@
                         //Add shift
                         var newshift = core.Utils.format('exp(i*2*PI*f*({0}))', joinaddsymbols(shiftcoeffs));
                         coeffs.push(_.parse(newshift));
-                        var newmainsymbol = _.parse( mainsymbol.text().replace(mainsymbol.args[0].text(),vin.text()) );
+
+                        //Substitute
+                        var newmainsymbol = _.parse( mainsymbol.text().replace(mainsymbol.args[0].text() , vin.text()) );
                         //Evalute rest of function
                         newmainsymbol = transform( newmainsymbol,vin.copy(),vout.copy());
                         //Add to coefficients list

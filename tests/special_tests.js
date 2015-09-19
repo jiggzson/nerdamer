@@ -175,6 +175,11 @@ QUnit.test( "Fourier Transform test", function( assert ) {
             description: "Fourier transform (exp(2*PI*i*t)*g*sin(2*PI*t*y+l) + exp(2*PI*i*t)*a*cos(2*PI*t*y+l))",
             expression: "ft( (exp(2*PI*i*t)*g*sin(2*PI*t*y+l) + exp(2*PI*i*t)*a*cos(2*PI*t*y+l)),t,f)",
             expected: "(-0.5*delta(-1+f+y)*exp(-i*l)*i^(-1)+0.5*delta(-1-y+f)*exp(i*l)*i^(-1))*g+(0.5*delta(-1+f+y)*exp(-i*l)+0.5*delta(-1-y+f)*exp(i*l))*a"
+        },
+        {
+            description: "Fourier transform ft(exp(2*a*i*PI)*tri(a),a,s)",
+            expression: "ft(exp(2*a*i*PI)*tri(a),a,s)",
+            expected: "sinc(-1+s)^2"
         }
     ];
     var run_tests = function() {
