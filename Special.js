@@ -55,8 +55,64 @@
             return 0;
         },
         /*
+        * Single variable taylor series
+        * Specification : http://mathworld.wolfram.com/TaylorSeries.html
+        * @param expression symbols to tranform
+        * @param varin Input variable name
+        * @param point Point to evalute taylor series at
+        * @param iterations Number of terms to generate
+        */
+        staylor: function(expression,varin,point,iterations) {
+            if (!isSingleVariable(varin))
+            {
+                throw new Error('Must be single symbol');
+            }
+
+            if (iterations.group !== 1)
+            {
+                throw new Error('Must be number');
+            }
+
+            if (iterations.multiplier <= 1)
+            {
+                throw new Error('Must be number > 1');
+            }
+
+            subs = {};
+            subs[varin.text()] = point.copy();
+            //Generate first term
+            var terms = [ _.parse(expression.copy(), subs)];
+
+            var factorial = function(num){
+
+                if (num < 0){
+                    return 1;
+                }
+                var f = 1;
+                for (var i=2 ; i<=num;i++){
+                    f=f*i;
+                }
+
+                return f;
+            }
+
+            var fac = 1;
+            for (var fac = 1;fac < (iterations.valueOf()) ;++fac)
+            {
+                expression = core.Calculus.diff(expression.copy(),varin.copy(),new Symbol('1'));
+                var expeval = _.parse(expression.copy(), subs);
+                var term = _.multiply( _.divide( expeval ,new Symbol(factorial(fac).toString())) , _.pow(  _.subtract( varin.copy(),point.copy() ) , new Symbol(fac.toString())  )  );
+                terms.push( term );
+            }
+
+            return joinaddsymbols(terms);
+        },
+        /*
         * Fourier Transform function
         * Specification : http://mathworld.wolfram.com/FourierTransform.html
+        * @param expression symbols to tranform
+        * @param varin Input variable name
+        * @param varin Output variable name
         */
         ft: function(expression,varin,varout) {
 
@@ -302,8 +358,7 @@
             };
 
             //Expand expression
-            var temp = core.Utils.format('expand({0})', expression.copy());
-            expression = _.parse(temp);
+            expression = _.parse('expand('+expression.text()+')');
             expression = nerdamer(expression.text()).symbol;
 
             //Seperate each symbol by addition
@@ -329,6 +384,16 @@
                 visible: true,
                 numargs: 1,
                 build: function() { return __.delta; }
+        },
+        {
+                /*
+                * Single variable taylor series
+                * Specification : http://mathworld.wolfram.com/TaylorSeries.html
+                */
+                name: 'staylor',
+                visible: true,
+                numargs: 4,
+                build: function() { return __.staylor; }
         },
         {
                 /*

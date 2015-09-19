@@ -1,5 +1,5 @@
 QUnit.module( "Special.js" );
-QUnit.test( "Functions test", function( assert ) {
+QUnit.test( "Fourier Transform test", function( assert ) {
     nerdamer.clear('all'); //make sure that we start fresh
     var test_cases = [
         {
@@ -200,3 +200,56 @@ QUnit.test( "Functions test", function( assert ) {
     };
     run_tests();
 });
+
+QUnit.test( "Taylor series test", function( assert ) {
+    nerdamer.clear('all'); //make sure that we start fresh
+    var test_cases = [
+        {
+            description: "Single variable Taylor Series invalid input",
+            expression: "staylor( cos(x),u*x,0,2)",
+            expected: "Must be single symbol",
+            error: true
+        },
+        {
+            description: "Single variable Taylor Series invalid input",
+            expression: "staylor( cos(x),x,0,0)",
+            expected: "Must be number > 1",
+            error: true
+        },
+        {
+            description: "Single variable Taylor Series invalid input",
+            expression: "staylor( cos(x),x,0,1)",
+            expected: "Must be number > 1",
+            error: true
+        },
+        {
+            description: "Single variable Taylor Series cos(x)",
+            expression: "staylor( cos(x),x,0,3)",
+            expected: "-0.5*cos(0)*x^2-sin(0)*x+cos(0)",
+            error: false
+        }
+    ];
+    var run_tests = function() {
+        test_cases.forEach(function(element, index, array) {
+            var test_case = element; //get the test case
+            var result = "";
+            var num_result = Infinity;
+            //Test if nerdamer throws and error correctly
+            try {
+                //run it through nerdamer
+                result = nerdamer(test_case.expression).text();
+            }
+            //Catches errors
+            catch(error) {
+                //If an error was expected then save result
+                if (test_case.error)
+                {
+                    result = error.message;
+                }
+            }
+            assert.equal( result, test_case.expected, test_case.description );
+        });
+    };
+    run_tests();
+});
+
