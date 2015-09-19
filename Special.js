@@ -55,8 +55,52 @@
             return 0;
         },
         /*
+        * Single variable taylor series
+        * Specification : http://mathworld.wolfram.com/TaylorSeries.html
+        * @param expression symbols to tranform
+        * @param varin Input variable name
+        * @param point Point to evalute taylor series at
+        * @param iterations Number of terms to generate
+        */
+        staylor: function(expression,varin,point,iterations) {
+            if (!isSingleVariable(varin))
+            {
+                throw new Error('Must be single symbol');
+            }
+
+            if (iterations.group !== N)
+            {
+                throw new Error('Must be number');
+            }
+
+            if (iterations.multiplier <= 1)
+            {
+                throw new Error('Must be number > 1');
+            }
+
+            var subs = {};
+            subs[varin.text()] = point.copy();
+            //Generate first term
+            var terms = [ _.parse(expression.copy(), subs)];
+            //Calculate each term
+            var fac = 1;
+            for (var n = 1;n < (iterations.valueOf()) ;++n)
+            {
+                expression = core.Calculus.diff(expression.copy(),varin.copy(),new Symbol('1'));
+                var expeval = _.parse(expression.copy(), subs);
+                var term = _.multiply( _.divide( expeval ,new Symbol(fac.toString())) , _.pow(  _.subtract( varin.copy(),point.copy() ) , new Symbol(n.toString())  )  );
+                terms.push( term );
+                fac = fac*(n+1);
+            }
+
+            return joinaddsymbols(terms);
+        },
+        /*
         * Fourier Transform function
         * Specification : http://mathworld.wolfram.com/FourierTransform.html
+        * @param expression symbols to tranform
+        * @param varin Input variable name
+        * @param varin Output variable name
         */
         ft: function(expression,varin,varout) {
 
@@ -145,21 +189,14 @@
                         //Frequency shift
                         if (fshift !== undefined)
                         {
-                            var eachmain = eachaddsymbol(mainsymbol);
                             //Get shift
                             var factorout = _.parse(core.Utils.format('2*i*PI*({0})', vin)) ;
                             fshift = core.Utils.format('(({0})-({1}))',vout , _.divide ( fshift.args[0] , factorout ) ) ;
-                            //Split
-                            eachmain.forEach(function (e, i, a) {
-                                //Substitute shift
-                                //var newmainsymbols = eachmuiltisymbol(mainsymbol);
-                                var newmainsymbols = eachmuiltisymbol(e);
-                                newmainsymbols.forEach(function (element, index, array) {
-                                    array[index] = _.parse( element.text().replace( vout.text() , fshift ) ) ;
-                                });
-                                a[i] = joinmuiltisymbols(newmainsymbols);
-                            });
-                            coeffs.push(joinaddsymbols(eachmain));
+
+                            var subs = {};
+                            subs[vout.text()] = _.parse(fshift);
+                            //Substitute shift
+                            coeffs.push(_.parse( mainsymbol ,subs ) );
                         }
                     }
                     else //More functions
@@ -210,7 +247,6 @@
                         return joinmuiltisymbols(coeffs);
                     }
 
-                    //console.log(exp.text());
                     //Amplitude and frequency shift
                     if  ( ((mainsymbol.args[0].multiplier !== 1) || (mainsymbol.args[0].text().indexOf('i') !== -1))) //Hack
                     {
@@ -232,7 +268,9 @@
                         //Add shift
                         var newshift = core.Utils.format('exp(i*2*PI*f*({0}))', joinaddsymbols(shiftcoeffs));
                         coeffs.push(_.parse(newshift));
-                        var newmainsymbol = _.parse( mainsymbol.text().replace(mainsymbol.args[0].text(),vin.text()) );
+
+                        //Substitute
+                        var newmainsymbol = _.parse( mainsymbol.text().replace(mainsymbol.args[0].text() , vin.text()) );
                         //Evalute rest of function
                         newmainsymbol = transform( newmainsymbol,vin.copy(),vout.copy());
                         //Add to coefficients list
@@ -302,8 +340,7 @@
             };
 
             //Expand expression
-            var temp = core.Utils.format('expand({0})', expression.copy());
-            expression = _.parse(temp);
+            expression = _.parse('expand('+expression.text()+')');
             expression = nerdamer(expression.text()).symbol;
 
             //Seperate each symbol by addition
@@ -329,6 +366,16 @@
                 visible: true,
                 numargs: 1,
                 build: function() { return __.delta; }
+        },
+        {
+                /*
+                * Single variable taylor series
+                * Specification : http://mathworld.wolfram.com/TaylorSeries.html
+                */
+                name: 'staylor',
+                visible: true,
+                numargs: 4,
+                build: function() { return __.staylor; }
         },
         {
                 /*
