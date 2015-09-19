@@ -68,7 +68,7 @@
                 throw new Error('Must be single symbol');
             }
 
-            if (iterations.group !== 1)
+            if (iterations.group !== N)
             {
                 throw new Error('Must be number');
             }
@@ -82,27 +82,15 @@
             subs[varin.text()] = point.copy();
             //Generate first term
             var terms = [ _.parse(expression.copy(), subs)];
-
-            var factorial = function(num){
-
-                if (num < 0){
-                    return 1;
-                }
-                var f = 1;
-                for (var i=2 ; i<=num;i++){
-                    f=f*i;
-                }
-
-                return f;
-            }
-
+            //Calculate each term
             var fac = 1;
-            for (var fac = 1;fac < (iterations.valueOf()) ;++fac)
+            for (var n = 1;n < (iterations.valueOf()) ;++n)
             {
                 expression = core.Calculus.diff(expression.copy(),varin.copy(),new Symbol('1'));
                 var expeval = _.parse(expression.copy(), subs);
-                var term = _.multiply( _.divide( expeval ,new Symbol(factorial(fac).toString())) , _.pow(  _.subtract( varin.copy(),point.copy() ) , new Symbol(fac.toString())  )  );
+                var term = _.multiply( _.divide( expeval ,new Symbol(fac.toString())) , _.pow(  _.subtract( varin.copy(),point.copy() ) , new Symbol(n.toString())  )  );
                 terms.push( term );
+                fac = fac*(n+1);
             }
 
             return joinaddsymbols(terms);

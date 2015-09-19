@@ -224,8 +224,32 @@ QUnit.test( "Taylor series test", function( assert ) {
         },
         {
             description: "Single variable Taylor Series cos(x)",
-            expression: "staylor( cos(x),x,0,3)",
-            expected: "-0.5*cos(0)*x^2-sin(0)*x+cos(0)",
+            expression: "staylor( cos(x),x,0,9)",
+            expected: "-0.001388888888888889*x^6-0.5*x^2+0.0000248015873015873*x^8+0.041666666666666664*x^4+1",
+            error: false
+        },
+        {
+            description: "Single variable Taylor Series sin(x)",
+            expression: "staylor( sin(x),x,0,9)",
+            expected: "-0.0001984126984126984*x^7-0.16666666666666666*x^3+0.008333333333333333*x^5+x",
+            error: false
+        },
+        {
+            description: "Single variable Taylor Series exp(x)",
+            expression: "staylor( exp(x),x,0,5)",
+            expected: "0.041666666666666664*x^4+0.16666666666666666*x^3+0.5*x^2+x+1",
+            error: false
+        },
+        {
+            description: "Single variable Taylor Series tan(x)",
+            expression: "staylor( tan(x),x,0,9)",
+            expected: "0.05396825396825397*x^7+0.13333333333333333*x^5+0.3333333333333333*x^3+x",
+            error: false
+        },
+        {
+            description: "Single variable Taylor Series exp(x^2) at 1",
+            expression: "staylor( exp(x^2),x,1,5)",
+            expected: "2.718281828459045+5.43656365691809*(-1+x)+8.154845485377136*(-1+x)^2+8.607892456786976*(-1+x)^4+9.060939428196816*(-1+x)^3",
             error: false
         }
     ];
@@ -237,7 +261,7 @@ QUnit.test( "Taylor series test", function( assert ) {
             //Test if nerdamer throws and error correctly
             try {
                 //run it through nerdamer
-                result = nerdamer(test_case.expression).text();
+                result = nerdamer(test_case.expression).evaluate().text();
             }
             //Catches errors
             catch(error) {
