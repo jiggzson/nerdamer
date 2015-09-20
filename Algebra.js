@@ -21,6 +21,9 @@ if((typeof module) !== 'undefined') {
         PL = core.groups.PL,
         CP = core.groups.CP,
         CB = core.groups.CB,
+        keys = core.Utils.keys,
+        variables = core.Utils.variables,
+        round = core.Utils.round,
         isComposite = core.Utils.isComposite,
         isInt = core.Utils.isInt,
         Symbol = core.Symbol,
@@ -1057,6 +1060,47 @@ if((typeof module) !== 'undefined') {
             while(parr[--l] === value) parr.pop();
             return parr;
         },
+        polyArrayQuad: function(parr, incl_img) {
+            var roots = [];
+            if(parr.length > 3) throw new Error('Cannot calculate quadratic order of '+(parr.length-1));
+            if(parr.length === 0) throw new Error('Polynomial array has no terms');
+            var a = parr[2] || 0, b = parr[1] || 0, c = parr[0];
+            var dsc = b*b-4*a*c;
+            if(dsc < 0 && !incl_img) return roots;
+            else {
+                roots[0] = (-b+Math.sqrt(dsc))/(2*a);
+                roots[1] = (-b-Math.sqrt(dsc))/(2*a);
+            }
+            return roots;
+        },
+        /**
+         * Adds together 2 polynomial arrays
+         * @param {Array} a
+         * @param {Array} b
+         * @returns {Array}
+         */
+        polyArrayAdd: function(a, b) {
+            if(a.length < b.length) {
+                var t = a; a=b; b=t;
+            }
+            var l = a.length;
+            for(var i=0; i<l; i++) a[i] += b[i];
+            return a;
+        },
+        /**
+         * Subtracts 1 polynomial array from another
+         * @param {Array} a
+         * @param {Array} b
+         * @returns {Array}
+         */
+        polyArraySubtract: function(a, b) {
+            var l = b.length;
+            for(var i=0; i<l; i++) {
+                var x = a[i] || 0;
+                a[i] -= b[i];
+            }
+            return a;
+        },
         /**
          * Divides one polynomial array by another
          * @param {Array} parr1
@@ -1091,6 +1135,26 @@ if((typeof module) !== 'undefined') {
             return [quotient, dividend];
         },
         /**
+         * Multiplies together two polynomial arrays
+         * @param {Array} a
+         * @param {Array} b
+         * @returns {Array}
+         */
+        polyArrayMult: function(a, b) {
+            var l1 = a.length, l2 = b.length, 
+                c = []; //array to be returned
+            for(var i=0; i<l1; i++) {
+                var x1 = a[i];
+                for(var j=0; j<l2; j++) {
+                    var k = i+j, //add the powers together
+                        x2 = b[j],
+                        e = c[k] || 0; //get the existing term from the new array
+                    c[k] = e + x1 * x2; //multiply the coefficients and add to new polynomial array
+                }
+            }
+            return c;
+        },
+        /**
          * Checks to see if all the elements in the array are close enough to zero
          * @param {Array} arr 
          * @returns {boolean}
@@ -1102,6 +1166,16 @@ if((typeof module) !== 'undefined') {
                 if(e !== 0 && Math.abs(e) > EPSILON) return false;
             }
             return true;
+        },
+        /**
+         * Checks to see if array evaluates to a value
+         * @param {Array} arr
+         * @param {Number} n - the number value to compare to
+         * @returns {Array}
+         */
+        polyArrayEquals: function(arr, n) {
+            var arr = __.polyArrayTrim(arr);
+            return arr.length === 1 && arr[0] === n;
         },
         /**
          * Converts a polynomial array back to a symbol
@@ -1123,13 +1197,17 @@ if((typeof module) !== 'undefined') {
             return _.parse(str);
         },
         /**
-         * Sums up all the elements of an array
+         * Substitutes in a value 
          * @param {Array} arr
+         * @param {Number} val - the value to substituted in
          * @returns {Number}
          */
-        polyArraySum: function(arr) {
+        polyArraySubstitute: function(arr, val) {
             var sum = 0, l=arr.length;
-            for(var i=0; i<l; i++) sum += arr[i];
+            for(var i=0; i<l; i++) {
+                var t = arr[i];
+                if(t !== 0) sum += t*Math.pow(val, i);
+            }
             return sum;
         },
         /**
@@ -1218,14 +1296,148 @@ if((typeof module) !== 'undefined') {
             return new_array;
         },
         /**
+         * Standard square free factorization 
+         * @param {Array} a
+         * @returns {Array}
+         */
+        polyArraySqFree: function(a) {
+            var i = 1,
+                b = __.polyArrayDiff(a.slice()),
+                c = __.polyArrayGCD(a, b),
+                w = __.polyArrayDiv(a, c)[0],
+                output = [1];
+                
+            while(!__.polyArrayEquals(c, 1)) {
+                var y = __.polyArrayGCD(w, c),
+                    z = __.polyArrayDiv(w, y)[0];
+                output = __.polyArrayMult(output, z); i++;
+                w = y;
+                c = __.polyArrayDiv(c, y)[0];
+            }
+            return [output, w, i];
+        },
+        sumProd: function(sum, prod) {
+            return __.polyArrayQuad([-prod, sum, -1]);
+        },
+        /**
          * Splits symbol into factors
          * @param {Symbol} symbol
          * @returns {Symbol}
          */
         factor: function(symbol) {
-            var parr = __.poly2Array(symbol);
-            parr = __.polyArrayIntegrate(parr)
-            return symbol;
+            var retval = symbol,
+                group = symbol.group,
+                isCompositionGroup = function(group) {
+                    return (group === PL || group === CP);
+                };
+
+            if(isCompositionGroup(group)) {
+                //distribute the multiplier in sub-symbols
+                for(var x in symbol.symbols) symbol.symbols[x].distributeMultiplier(); 
+                //factor the multiplier
+                var gcf = core.Math2.GCD.apply(undefined, symbol.coeffs()),
+                        
+                    factorize = function(symbol) { 
+                        for(var x in symbol.symbols) {
+                            var sub = symbol.symbols[x]; 
+                            if(isCompositionGroup(sub.group)) {
+                                factorize(sub);
+                            }
+                            else {
+                                sub.multiplier /= gcf;
+                            }
+                        }
+                    };
+                
+                if(symbol.power <= 1) {
+                    factorize(symbol);
+                    symbol.multiplier *= Math.pow(gcf, symbol.power);
+
+                    if(group === PL) {
+                        var powers = keys(symbol.symbols),
+                            lowest_power = core.Utils.arrayMin(powers),
+                            factor = _.parse(symbol.value+'^'+lowest_power);
+                        var factored = new core.Symbol(0);
+                        for(var x in symbol.symbols) {
+                            factored = _.add(factored, _.divide(symbol.symbols[x], factor.copy()));
+                        }
+
+                        factored = _.symfunction(core.PARENTHESIS, [factored]);//place it parenthesis
+                        factored.power *= symbol.power;
+                        factored.multiplier *= symbol.multiplier;
+                        factor.power *= symbol.power;
+
+                        retval = _.multiply(factor, factored);
+                    }
+                    else if(group === CP) { 
+                        try{
+                            var p = symbol.power,
+                                roots = core.Algebra.proots(symbol),
+                                all_ints = true; 
+                            for(var i=0; i<roots.length; i++) {
+                                if(!isInt(roots[i])) all_ints = false;
+                            }
+                            var result = new Symbol(1);
+                            if(all_ints)  { 
+                                roots.map(function(root) { 
+                                    result = _.multiply(result, 
+                                        _.symfunction(core.PARENTHESIS, 
+                                        [_.subtract(new Symbol(variables(symbol)[0]), new Symbol(root))]));
+                                });
+                                result.multiplier *= symbol.multiplier;
+                                retval = result; 
+                            }
+                        }
+                        catch(e) { 
+                            try {
+                                //not a polynomial. No biggie. Let's see if we can extract a few variables
+                                var symbols = symbol.collectSymbols(),
+                                    num_symbols = symbol.length,
+                                    hash_table = {};
+                                for(var i=0; i<num_symbols; i++) {
+                                    var cur_symbol = symbols[i], //collect all the variables contained in the symbol
+                                        num_vars = vars.length;
+                                    for(var j=0; j<num_vars; j++) {
+                                        var var_name = vars[j],
+                                            variable = cur_symbol.value === var_name ? cur_symbol : cur_symbol.symbols[var_name],
+                                            var_record = hash_table[var_name];
+                                        if(isSymbol(variable.power)) throw new Error('Cannot factor symbol. Exiting');
+                                        if(!var_record) hash_table[var_name] = [1, variable.power];
+                                        else {
+                                            var_record[0]++;
+                                            var p = variable.power;
+                                            if(p < var_record[1]) var_record[1] = p;
+                                        }
+                                    }
+                                }
+                                var factor = [];
+                                //we now know which variables we have and to which power so we can start reducing
+                                for(var x in hash_table) {
+                                    var_record = hash_table[x];
+                                    //if we have as many recorded as there were sub-symbols then we can divide all of them
+                                    //by that symbol
+                                    if(var_record[0] === num_symbols) { 
+                                        factor.push(x+'^'+var_record[1]);
+                                    }
+                                };
+
+                                //we can now divide each one by that factor
+                                factor = _.parse(factor.join('*'));//make it a Symbol
+                                for(x in symbol.symbols) {
+                                    symbol.symbols[x] = _.divide(symbol.symbols[x], factor.copy());
+                                }
+
+                                retval = _.multiply(_.parse(symbol.text()), factor);
+                            }
+                            catch(e){;}
+                        }
+                    }
+                }     
+            }
+            
+            if(retval.group === core.groups.FN) retval.updateHash();
+            
+            return retval;
         },
         /**
          * Checks to see if a set of "equations" is linear. 
