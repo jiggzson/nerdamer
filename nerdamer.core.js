@@ -632,10 +632,10 @@ var nerdamer = (function() {
                     power = '';
                     break;
                 case PL:
-                    value = obj.collectSymbols(text).join('+').replace('+-', '-');
+                    value = obj.collectSymbols(text).join('+').replace(/\+\-/g, '-');
                     break;
                 case CP:
-                    value = obj.collectSymbols(text).join('+').replace('+-', '-');
+                    value = obj.collectSymbols(text).join('+').replace(/\+\-/g, '-');
                     break;
                 case CB: 
                     value = obj.collectSymbols(function(symbol){
