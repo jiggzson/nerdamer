@@ -1923,7 +1923,13 @@ var nerdamer = (function() {
                     }
                     else {
                         var ofn = operator.fn, result;
-                        if(!ofn) result = operator.resolve(symbol2);//it's the first symbol and negative
+                        //first we assume that it's the first operator in which case it's the first symbol and negative
+                        if(!ofn) {
+                            result = operator.resolve(symbol2);
+                            //if we didn't have a first symbol then we're dealing with a pure prefix operator
+                            //otherwise we need to place it back on the stack
+                            if(symbol1) insert(result); 
+                        }
                         else {
                             if(symbol1.multiplier === Infinity || symbol2.multiplier === Infinity) {
                                 result = new Symbol(Infinity);
