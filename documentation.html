@@ -239,7 +239,7 @@ will only subsitute out the variable name. To change this behaviour numer should
 </code></pre>
 or alternatively
 <pre><code>
-    var result = nerdamer('cos(x)').evaluate();
+    var result = nerdamer('cos(x)',{x:6}).evaluate();
     console.log(result.text());
     //0.960170286650366
 </code></pre>
