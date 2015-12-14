@@ -607,6 +607,24 @@ var test_cases = {
         expression: 'e^(2*i*PI) +e^(i*PI)',
         expected: '0',
         numval: 0
+    },
+    99: {
+        description: "Test prefix",
+        expression: '(r+x)--(r+x)',
+        expected: '2*(r+x)',
+        numval: 20
+    },
+    100: {
+        description: "Test prefix",
+        expression: '-z-(r+x)--(r+x)',
+        expected: '-z',
+        numval: -1
+    },
+    101: {
+        description: "Test prefix",
+        expression: '+-z-(r+x)+--+(r+x)',
+        expected: '-z',
+        numval: -1
     }
 };
 
