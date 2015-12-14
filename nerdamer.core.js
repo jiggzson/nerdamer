@@ -1365,6 +1365,7 @@ var nerdamer = (function() {
         this.is_prefix = is_prefix;
         this.is_postfix = is_postfix || false;
     }
+    
 
     /**
      * 
@@ -1653,14 +1654,22 @@ var nerdamer = (function() {
                     }
                     else {
                         var ofn = operator.fn, result;
+
                         //first we assume that it's the first operator in which case it's the first symbol and negative
                         if(!ofn) {
+                            
                             result = operator.resolve(symbol2);
+                            //let's just do a down and dirty reduction of the prefixes by looping through one at a time 
+                            //and eliminating them
+                            while(symbol1 && last_item_on(stack) instanceof Prefix) {
+                                result = stack.pop().resolve(result);
+                            }
                             //if we didn't have a first symbol then we're dealing with a pure prefix operator
-                            //otherwise we need to place it back on the stack
-                            if(symbol1) insert(result); 
+                            //otherwise we need to place symbol1 back on the stack for reconsideration
+                            if(symbol1) insert(symbol1);
                         }
                         else result = _[ofn].call(_, symbol1, symbol2);
+
                         insert(result);
                     }    
                 },
