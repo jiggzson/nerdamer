@@ -6,10 +6,14 @@
  */
 
 var nerdamer = (function() {
+    "use strict";
+    
     var version = '0.5.8',
         _ = new Parser(), //nerdamer's parser
     
         Groups = {},
+        
+        PRIMES = [],
         
         //this is the class which holds the utilities which are exported to the core
         //All utility functions which are to be made available to the core should be added to this object
@@ -28,8 +32,9 @@ var nerdamer = (function() {
             SAFE: false,
             //this flag tells the parser to ignore unwrapping the parentheses
             RESPECT_PARENS: false,
-            
-            EPSILON: (function(){
+            //Use existing EPSILON else calculate it
+            EPSILON: Number.EPSILON || (function(){
+                if(Number.EPSILON !== undefined) return Number.EPSILON;
                 var x = 1.0, y, e;
                 do {
                     e = x;
@@ -124,7 +129,18 @@ var nerdamer = (function() {
             } while(factorial);
             return expression;
         },
-        
+        /**
+         * Checks if number is a prime number
+         * @param {Number} n - the number to be checked
+         */
+        isPrime  = Utils.isPrime = function(n) {
+            var q = Math.floor(Math.sqrt(n));
+            for (var i = 2; i <= q; i++) {
+                if (n % i === 0) return false;
+            }
+
+            return true;
+        },
         /**
          * Checks to see if a number or Symbol is a fraction
          * @type {Number|Symbol} num
@@ -223,7 +239,6 @@ var nerdamer = (function() {
         stringReplace = Utils.stringReplace = function(str, from, to, with_str) {
             return str.substr(0, from)+with_str+str.substr(to, str.length);
         },
-        
         /**
          * the Parser uses this to check if it's allowed to convert the obj to type Symbol
          * @obj {Object} obj
@@ -307,7 +322,43 @@ var nerdamer = (function() {
             s = s || 14;
             return Math.round( x*Math.pow( 10,s ) )/Math.pow( 10,s );
         },
+        /**
+         * Tries to correct JS rounding error by checking if it reduced it enough
+         * @type Number
+         */
+        cleanNum = Utils.cleanNum = function(x, d) { 
+            //we'll keep accuracy up to the tenth place
+            d = d || 10; 
+            var n = round(x, d);
+            //we don't want division by zero errors so we accept those
+            if(n === 0) return x;
+            
+            var min_gain = 6; //the minimum number of digits we hope to knock off
+            //rounding out the tiny bit at the end causes tremendous division by zero problems and it's better to 
+            //just return the original
+            
+            var gain = String(x).length - String(n).length;//unfortunately this again relies on String
+            if(gain > min_gain) return n;
+            return x;
+//            if(n === 0) return x;
+//            //if we managed to get an int by rounding then we more than likely rounded off the uncertainty.
+//            //Again very hit or miss until some big number library is implemented 
+//            if(n%1 === 0) return n;
+//            return x;
+        },
         
+        /**
+         * A debugging method which formats a functions
+         * @returns String
+         */
+        pfunc = Utils.pfunc = function() {
+            var args = [].slice.call(arguments);
+            for(var i=0; i<args.length; i++) 
+                args[i] =  args[i].toString();
+            var name = args.shift();
+            return name+'('+args.join(',')+')';
+        },
+
         /**
          * Inserts an object into an array at a given index or recursively adds items if an array is given.
          * When inserting another array, passing in false for unpackArray will result in the array being inserted
@@ -552,7 +603,7 @@ var nerdamer = (function() {
          * @
          */
         preprocess = function(str) {
-            s = str;
+            var s = str;
             var l = PREPROCESSORS.length;
             for(var i=0; i<l; i++) {
                 var preprocess = PREPROCESSORS[i];
@@ -632,6 +683,22 @@ var nerdamer = (function() {
                 return _.add(a,b);
             });
         },
+        decp = Utils.decp = function(n) {
+            //skip scientific number
+            if(!/\d*\.*\d+e[\+\-]*\d+/gi.test(n)) {
+                var v = String(n).split('.')[1];
+                if(v) return v.length;
+            } 
+            return 0;
+        },
+        generatePrimes = Utils.generatePrimes = function(upto) {
+            //get the last prime in the array
+            var last_prime = PRIMES[PRIMES.length-1] || 3; //skip 2
+            //no need to check if we've already encountered the number. Just check the cache.
+            for(var i=last_prime; i<upto; i++) {
+                if(isPrime(i)) PRIMES.push(i);
+            }
+        },
 
         //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
         //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the 
@@ -665,17 +732,24 @@ var nerdamer = (function() {
                 return x % y;
             },
             GCD: function() {
-                var args = [].slice.call(arguments)
-                        .map(function(x){ return Math.abs(x); }).sort(),
-                    a = Math.abs(args.shift()),
+                var args = [].slice.call(arguments),
+                    max = 0, l=args.length;
+                for(var i=0; i<l; i++) {
+                    var d = decp(args[i]); 
+                    if(d > max) max = d;//we want the largest decimal place
+                }
+                
+                var p = Math.pow(10, max);
+                for(var i=0; i<l; i++) args[i] *= p;
+                    //if we're dealing with decimals we need to account for those. We do that by multiplying by the 
+                    //largest decimal place this is the reason for looping through all the arguments and calling decp
+                var a = Math.floor(Math.abs(args.shift())),
                     n = args.length;
-
                 while(n-- > 0) {
-                    var b = Math.abs(args.shift());
+                    var b = Math.abs(args.pop());
                     
                     while(true) {
                         a %= b;
-
                         if (a === 0) {
                             a = b;
                             break;
@@ -684,7 +758,23 @@ var nerdamer = (function() {
                         if (b === 0) break;;
                     }
                 }
-                return a;
+                return a/p;
+            },
+            LCM: function(a, b) {
+                return parseInt(a*(b/this.GCD(a,b)));
+                    /*
+                    private static long lcm(long a, long b)
+                    {
+                        return a * (b / gcd(a, b));
+                    }
+
+                    private static long lcm(long[] input)
+                    {
+                        long result = input[0];
+                        for(int i = 1; i < input.length; i++) result = lcm(result, input[i]);
+                        return result;
+                    }
+                     */
             },
             /*
             * Heavyside step function
@@ -892,10 +982,10 @@ var nerdamer = (function() {
                     power = '';
                     break;
                 case PL:
-                    value = obj.collectSymbols(text).join('+').replace('+-', '-');
+                    value = obj.collectSymbols(text).join('+').replace(/\+\-/g, '-');
                     break;
                 case CP:
-                    value = obj.collectSymbols(text).join('+').replace('+-', '-');
+                    value = obj.collectSymbols(text).join('+').replace(/\+\-/g, '-');
                     break;
                 case CB: 
                     value = obj.collectSymbols(function(symbol){
@@ -1072,15 +1162,8 @@ var nerdamer = (function() {
         },
         
         toString: function() {
-            return this.symbol.text();
+            return String(this.symbol.text());
         },
-        /**
-         * Returns true if the expression is a monomial
-         */
-        isMonomial: function() {
-            return this.symbol.group === S;
-        },
-        
         isFraction: function() {
             return isFraction(this.symbol);
         },
@@ -1090,6 +1173,85 @@ var nerdamer = (function() {
         }
     };
     
+        //converts a number to a fraction. 
+    var Fraction = {
+        /**
+         * Converts a decimal to a fraction
+         * @param {number} value
+         * @returns {Array} - an array containing the denominator and the numerator
+         */
+        convert: function( value, opts ) {
+            value = Number(value);
+            var frac;
+            if( value === 0 ) {
+                frac = [ 0, 1];
+            }
+            else {
+                if( value < 1e-6 || value > 1e20) {
+                    var qc = this.quickConversion(value);
+                    if( qc[1] <= 1e20 ) {
+                        var abs = Math.abs( value );
+                        var sign = value/abs;
+                        frac = this.fullConversion( abs.toFixed( (qc[1]+'').length-1 ));
+                        frac[0] = frac[0]*sign;
+                    }
+                    else {
+                        frac = qc;
+                    }
+                }
+                else {
+                    frac = this.fullConversion( value );
+                }
+                //test the value to correct for incorrect zero for safety
+                if(frac[0] === 0 && value !== 0) frac = this.quickConversion(value);
+            }
+            return frac;
+        },
+        /**
+         * If the fraction is too small or too large this gets called instead of fullConversion method
+         * @param {number} dec
+         * @returns {Array} - an array containing the denominator and the numerator
+         */
+        quickConversion: function( dec ) {
+            var x = (dec.toExponential()+'').split('e');
+            var d = x[0].split('.')[1];// get the number of places after the decimal
+            var l = d ? d.length : 0; // maybe the coefficient is an integer;
+            return [Math.pow(10,l)*x[0], Math.pow(10, Math.abs(x[1])+l)];
+        },
+        /**
+         * Returns a good approximation of a fraction. This method gets called by convert
+         * http://mathforum.org/library/drmath/view/61772.html
+         * Decimal To Fraction Conversion - A Simpler Version
+         * Dr Peterson
+         * @param {number} dec
+         * @returns {Array} - an array containing the denominator and the numerator
+         */
+        fullConversion: function( dec ) {
+            var done = false;
+            //you can adjust the epsilon to a larger number if you don't need very high precision
+            var n1 = 0, d1 = 1, n2 = 1, d2 = 0, n = 0, q = dec, epsilon = 1e-13;
+            while(!done) {
+                n++;
+                if( n > 10000 ){
+                    done = true;
+                }
+                var a = parseInt(q);
+                var num = n1 + a * n2;
+                var den = d1 + a * d2;
+                var e = (q - a);
+                if( e < epsilon) {
+                    done = true;
+                }
+                q = 1/e;
+                n1 = n2; d1 = d2; n2 = num; d2 = den;
+                if(Math.abs(num/den-dec) < epsilon || n > 30) {
+                    done = true;
+                }
+            }
+            return [num, den];
+        }
+    };
+
     /**
      * All symbols e.g. x, y, z, etc or functions are wrapped in this class. All symbols have a multiplier and a group. 
      * All symbols except for "numbers (group N)" have a power. 
@@ -1503,6 +1665,7 @@ var nerdamer = (function() {
             else if(!(this.group === S || this.group === PL)) {
                 this.value = text(this, 'hash');
             }
+            return this;
         },
         /**
          * this function defines how every group in stored within a group of 
@@ -1645,12 +1808,16 @@ var nerdamer = (function() {
          * @returns {Symbol}
          */
         resolve: function(obj) {
+            
             if(this.val === '-') {
                 return obj.negate();
             }
             return obj;
         }
     };
+
+
+    
 
     //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
@@ -1923,23 +2090,24 @@ var nerdamer = (function() {
                     }
                     else {
                         var ofn = operator.fn, result;
+
                         //first we assume that it's the first operator in which case it's the first symbol and negative
                         if(!ofn) {
+                            
                             result = operator.resolve(symbol2);
+                            //let's just do a down and dirty reduction of the prefixes by looping through one at a time 
+                            //and eliminating them
+                            while(symbol1 && last_item_on(stack) instanceof Prefix) {
+                                result = stack.pop().resolve(result);
+                            }
                             //if we didn't have a first symbol then we're dealing with a pure prefix operator
-                            //otherwise we need to place it back on the stack
-                            if(symbol1) insert(result); 
+                            //otherwise we need to place symbol1 back on the stack for reconsideration
+                            if(symbol1) insert(symbol1);
                         }
-                        else {
-                            if(symbol1.multiplier === Infinity || symbol2.multiplier === Infinity) {
-                                result = new Symbol(Infinity);
-                            }
-                            else {
-                                result = _[ofn].call(_, symbol1, symbol2);
-                            }
-                        }
+                        else result = _[ofn].call(_, symbol1, symbol2);
+
                         insert(result);
-                    }   
+                    }  
                 },
                 /**
                  * This method inserts the token into the output stack. Here it will attempt to detect if a prefix is 
@@ -2961,81 +3129,6 @@ var nerdamer = (function() {
     };
     
     /* "STATIC" */
-    //converts a number to a fraction. 
-    var Fraction = {
-        /**
-         * Converts a decimal to a fraction
-         * @param {number} value
-         * @returns {Array} - an array containing the denominator and the numerator
-         */
-        convert: function( value, opts ) {
-            var frac;
-            if( value === 0 ) {
-                frac = [ 0, 1];
-            }
-            else {
-                if( value < 1e-6 || value > 1e20) {
-                    var qc = this.quickConversion( Number( value ) );
-                    if( qc[1] <= 1e20 ) {
-                        var abs = Math.abs( value );
-                        var sign = value/abs;
-                        frac = this.fullConversion( abs.toFixed( (qc[1]+'').length-1 ));
-                        frac[0] = frac[0]*sign;
-                    }
-                    else {
-                        frac = qc;
-                    }
-                }
-                else {
-                    frac = this.fullConversion( value );
-                }
-            }
-            return frac;
-        },
-        /**
-         * If the fraction is too small or too large this gets called instead of fullConversion method
-         * @param {number} dec
-         * @returns {Array} - an array containing the denominator and the numerator
-         */
-        quickConversion: function( dec ) {
-            var x = (dec.toExponential()+'').split('e');
-            var d = x[0].split('.')[1];// get the number of places after the decimal
-            var l = d ? d.length : 0; // maybe the coefficient is an integer;
-            return [Math.pow(10,l)*x[0], Math.pow(10, Math.abs(x[1])+l)];
-        },
-        /**
-         * Returns a good approximation of a fraction. This method gets called by convert
-         * http://mathforum.org/library/drmath/view/61772.html
-         * Decimal To Fraction Conversion - A Simpler Version
-         * Dr Peterson
-         * @param {number} dec
-         * @returns {Array} - an array containing the denominator and the numerator
-         */
-        fullConversion: function( dec ) {
-            var done = false;
-            //you can adjust the epsilon to a larger number if you don't need very high precision
-            var n1 = 0, d1 = 1, n2 = 1, d2 = 0, n = 0, q = dec, epsilon = 1e-13;
-            while(!done) {
-                n++;
-                if( n > 10000 ){
-                    done = true;
-                }
-                var a = parseInt(q);
-                var num = n1 + a * n2;
-                var den = d1 + a * d2;
-                var e = (q - a);
-                if( e < epsilon) {
-                    done = true;
-                }
-                q = 1/e;
-                n1 = n2; d1 = d2; n2 = num; d2 = den;
-                if(Math.abs(num/den-dec) < epsilon || n > 30) {
-                    done = true;
-                }
-            }
-            return [num, den];
-        }
-    };
 
     //Depends on Fraction
     //The latex generator
@@ -3825,6 +3918,7 @@ var nerdamer = (function() {
     var finalize = function() {
         reserveNames(_.constants);
         reserveNames(_.functions);
+        generatePrimes(100);//generate the firs 100 primes
     };
     
     var build = Utils.build = function(symbol, arg_array) {
@@ -3846,48 +3940,19 @@ var nerdamer = (function() {
 
             ftext_function = function(bn) {
                 var retval;
-                var extended_function = false;
-                var bracket_args = inBrackets(symbol.args.map(function(x) {
-                    return ftext(x, xports)[0];
-                }));
-                if(bn in Math)
-                {
-                    retval = 'Math.'+bn;
-                }
+                if(bn in Math) retval = 'Math.'+bn;
                 else {
                     if(supplements.indexOf(bn) === -1) { //make sure you're not adding the function twice
-                        if (Math2[bn] != undefined) {
-                            //Math2 functions aren't part of the standard javascript
-                            //Math library and must be exported.
-                            xports.push('var '+bn+' = '+ Math2[bn].toString()+'; ');
-                            supplements.push(bn);
-                        } else {//Extended functions
-                            extended_function = true;
-                            var search_key = "";
-                            //Seach each object in core
-                            for(var key in C) {
-                                if (C[key][bn] != undefined) {
-                                    search_key = key;
-                                }
-                            }
-                            if (search_key != "") // Found function
-                            {
-                                xports.push('var '+bn+' = '+ C[search_key][bn].toString()+'; ');
-                                supplements.push(bn);
-                            }
-                            else //Function not found
-                            {
-                                xports.push('var '+bn+' = 0;');
-                            }
-                        }
+                        //Math2 functions aren't part of the standard javascript
+                        //Math library and must be exported.
+                        xports.push('var '+bn+' = '+ Math2[bn].toString()+'; ');
+                        supplements.push(bn);
                     }
                     retval = bn;
                 }
-
                 retval = retval+inBrackets(symbol.args.map(function(x) {
                     return ftext(x, xports)[0];
                 }).join(','));
-
                 return retval;
             };
 
@@ -3949,6 +4014,7 @@ var nerdamer = (function() {
     C.Math2 = Math2;
     C.Latex = Latex;
     C.Utils = Utils;
+    C.PRIMES = PRIMES;
     C.PARSER = _;
     C.PARENTHESIS = PARENTHESIS;
     C.Settings = Settings;
@@ -4239,7 +4305,7 @@ var nerdamer = (function() {
         if(disallowed.indexOf(setting) !== -1) err('Cannot modify setting: '+setting);
         Settings[setting] = value;
     };
-    
+
     return libExports; //Done
 })();
 
