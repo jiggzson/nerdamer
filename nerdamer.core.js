@@ -2970,9 +2970,13 @@ var nerdamer = (function() {
                         start = match[2]+1;
                     }
                 }
-                else {
+                else { 
                     var curValue = multiplierArray[where] ? multiplierArray[where]+this.space : '';
                     if(sqrtDenom) value = '\\sqrt'+this.inBraces(value);
+                    if(sqrt) {
+                        value = '\\sqrt'+this.inBraces(value);
+                        sqrt = false;
+                    }
                     multiplierArray[where] = curValue+value;
                 }
             }
@@ -2987,7 +2991,7 @@ var nerdamer = (function() {
             //write the value into a fraction
             value = this.fraction(multiplierArray);
             var retval = sign+value;
-            
+
             if(sqrt) retval = '\\sqrt'+this.inBraces(retval);
             
             return retval;
