@@ -6,7 +6,7 @@
  */
 
 var nerdamer = (function() {
-    var version = '0.5.6',
+    var version = '0.5.7',
         _ = new Parser(), //nerdamer's parser
     
         Groups = {},
@@ -100,7 +100,7 @@ var nerdamer = (function() {
          * Replace n! to fact(n)
          * @param {String}
          */
-
+        
         insertFactorial = Utils.insertFactorial = function(expression) {
             var factorial;
             var regex = /(\d+|\w+)!/ig;
@@ -112,7 +112,7 @@ var nerdamer = (function() {
             } while(factorial);
             return expression;
         },
-
+        
         /**
          * Checks to see if a number or Symbol is a fraction
          * @type {Number|Symbol} num
@@ -632,10 +632,10 @@ var nerdamer = (function() {
                     power = '';
                     break;
                 case PL:
-                    value = obj.collectSymbols(text).join('+').replace('+-', '-');
+                    value = obj.collectSymbols(text).join('+').replace(/\+\-/g, '-');
                     break;
                 case CP:
-                    value = obj.collectSymbols(text).join('+').replace('+-', '-');
+                    value = obj.collectSymbols(text).join('+').replace(/\+\-/g, '-');
                     break;
                 case CB: 
                     value = obj.collectSymbols(function(symbol){
@@ -1365,6 +1365,7 @@ var nerdamer = (function() {
         this.is_prefix = is_prefix;
         this.is_postfix = is_postfix || false;
     }
+    
 
     /**
      * 
@@ -1425,7 +1426,7 @@ var nerdamer = (function() {
                 'max'       : [ ,-1],
                 'erf'       : [ , 1],
                 'floor'     : [ ,1],
-                'ceiling'   : [ ,1],
+                'ceil'      : [ ,1],
                 'fact'      : [ , 1],
                 'round'     : [ , 1],
                 'mod'       : [ , 2],
@@ -1582,11 +1583,11 @@ var nerdamer = (function() {
         };
         
         /**
-         * This is the method that triggers the parsing of the string. It generates a parse tree but processes
+         * This is the method that triggers the parsing of the string. It generates a parse tree but processes 
          * it right away. The operator functions are called when their respective operators are reached. For instance
-         * + with cause this.add to be called with the left and right hand values. It works by walking along each
+         * + with cause this.add to be called with the left and right hand values. It works by walking along each 
          * character of the string and placing the operators on the stack and values on the output. When an operator
-         * having a lower order than the last is reached then the stack is processed from the last operator on the
+         * having a lower order than the last is reached then the stack is processed from the last operator on the 
          * stack.
          * @param {String} expression_string
          * @param {Object} substitutions
@@ -1597,7 +1598,7 @@ var nerdamer = (function() {
             expression_string = insertFactorial(expression_string);
             /*
              * Since variables cannot start with a number, the assumption is made that when this occurs the
-             * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for
+             * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
              * a side-by-side close and open parenthesis
              */
             expression_string = String(expression_string).split(' ').join('')//strip empty spaces
@@ -1653,15 +1654,29 @@ var nerdamer = (function() {
                     }
                     else {
                         var ofn = operator.fn, result;
-                        if(!ofn) result = operator.resolve(symbol2);//it's the first symbol and negative
+
+                        //first we assume that it's the first operator in which case it's the first symbol and negative
+                        if(!ofn) {
+                            
+                            result = operator.resolve(symbol2);
+                            //let's just do a down and dirty reduction of the prefixes by looping through one at a time 
+                            //and eliminating them
+                            while(symbol1 && last_item_on(stack) instanceof Prefix) {
+                                result = stack.pop().resolve(result);
+                            }
+                            //if we didn't have a first symbol then we're dealing with a pure prefix operator
+                            //otherwise we need to place symbol1 back on the stack for reconsideration
+                            if(symbol1) insert(symbol1);
+                        }
                         else result = _[ofn].call(_, symbol1, symbol2);
+
                         insert(result);
                     }    
                 },
                 /**
-                 * This method inserts the token into the output stack. Here it will attempt to detect if a prefix is
+                 * This method inserts the token into the output stack. Here it will attempt to detect if a prefix is 
                  * on the stack and will try to resolve it. Additonally it checks if the item is a scientific number
-                 * and if so places the correct number on the output stack.
+                 * and if so places the correct number on the output stack. 
                  * @param token
                  */
                 insert = function(token) { 
@@ -1964,7 +1979,7 @@ var nerdamer = (function() {
 
         //
         /**
-         * This method gets called when the parser finds the + operator. Not the prefix operator. Just like the
+         * This method gets called when the parser finds the + operator. Not the prefix operator. Just like the 
          * multiply, divide, and subract methods it will transform one of the symbols rather than return a new
          * one. The result is slightly faster processing when the parsing is inline but it's the source of much
          * aggravation when the parsing branches out. To alleviate this problem the add method should be called in a
@@ -2051,7 +2066,7 @@ var nerdamer = (function() {
                             symbol1.convert(PL);
                             symbol1.attach(symbol2);
                         }
-                        else if(symbol1.power === 1) {
+                        else if(symbol1.power === 1 && symbol2.power === 1) {
                             //since we swap the symbols to place the lower power symbol on the left we only have to check a
                             if(symbol2.power === 1) { 
                                 var s;
@@ -2955,9 +2970,13 @@ var nerdamer = (function() {
                         start = match[2]+1;
                     }
                 }
-                else {
+                else { 
                     var curValue = multiplierArray[where] ? multiplierArray[where]+this.space : '';
                     if(sqrtDenom) value = '\\sqrt'+this.inBraces(value);
+                    if(sqrt) {
+                        value = '\\sqrt'+this.inBraces(value);
+                        sqrt = false;
+                    }
                     multiplierArray[where] = curValue+value;
                 }
             }
@@ -2972,7 +2991,7 @@ var nerdamer = (function() {
             //write the value into a fraction
             value = this.fraction(multiplierArray);
             var retval = sign+value;
-            
+
             if(sqrt) retval = '\\sqrt'+this.inBraces(retval);
             
             return retval;
@@ -3841,16 +3860,16 @@ var nerdamer = (function() {
     /**
      * Clear the variables from the VARS object
      * @returns {Object} Returns the nerdamer object
-     */
+     */    
     libExports.clearVars = function() {
         VARS = {};
         return this;
     };
-
+    
     /**
      * @param {String} Output format. Can be 'object' (just returns the VARS object), 'text' or 'latex'. Default: 'text'
      * @returns {Object} Returns an object with the variables
-     */
+     */    
     libExports.getVars = function(output) {
         output = output || 'text';
         var variables = {};
