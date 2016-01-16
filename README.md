@@ -69,7 +69,7 @@ var e = nerdamer('x^2+2*(cos(x)+x*x)',{x:'x^2+1'});
 console.log(e.text());
 
 //result:
-//2*cos(1+x^(2))+3*(1+x^(2))^(2)
+//(1+x^2)^2+2*((1+x^2)^2+cos(1+x^2))
 ```            
         
 
