@@ -2066,7 +2066,7 @@ var nerdamer = (function() {
                             symbol1.convert(PL);
                             symbol1.attach(symbol2);
                         }
-                        else if(symbol1.power === 1) {
+                        else if(symbol1.power === 1 && symbol2.power === 1) {
                             //since we swap the symbols to place the lower power symbol on the left we only have to check a
                             if(symbol2.power === 1) { 
                                 var s;
