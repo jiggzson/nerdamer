@@ -1885,10 +1885,7 @@ var nerdamer = (function() {
         
         function log(symbol) { 
             var retval;
-            if(symbol.value === 'e') { 
-                retval = new Symbol(symbol.power);
-            }
-            else if(symbol.group === FN && symbol.baseName === 'exp') {
+            if(symbol.group === FN && symbol.baseName === 'exp') {
                 var s = symbol.args[0];
                 if(symbol.multiplier === 1) retval = _.multiply(s, new Symbol(symbol.power));
                 else retval = _.symfunction('log',[symbol]);
@@ -1989,6 +1986,7 @@ var nerdamer = (function() {
          * @returns {Symbol}
          */
         this.add = function(symbol1, symbol2) { 
+
             var isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2), t;
             if(isSymbolA && isSymbolB) {
                 var group1 = symbol1.group, 
