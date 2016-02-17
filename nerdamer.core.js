@@ -6,6 +6,8 @@
  */
 
 var nerdamer = (function() {
+    "use strict";
+    
     var version = '0.6.0',
         _ = new Parser(), //nerdamer's parser
     
@@ -528,7 +530,7 @@ var nerdamer = (function() {
          * @
          */
         preprocess = function(str) {
-            s = str;
+            var s = str;
             var l = PREPROCESSORS.length;
             for(var i=0; i<l; i++) {
                 var preprocess = PREPROCESSORS[i];
@@ -917,12 +919,12 @@ var nerdamer = (function() {
         greaterThan: function(n) {
             var a = n instanceof Frac ? n.toDecimal() : n,
                 b = this.toDecimal();
-            return a > b;
+            return b > n;
         },
-        lessThan: function(n) {
+        lessThan: function(n) { 
             var a = n instanceof Frac ? n.toDecimal() : n,
                 b = this.toDecimal();
-            return a < b;
+            return b < n;
         },
         negate: function() {
             this.num *= -1;
@@ -1656,7 +1658,9 @@ var nerdamer = (function() {
                     min_args = is_array ? num_allowed_args[0] : num_allowed_args,
                     max_args = is_array ? num_allowed_args[1] : num_allowed_args,
                     num_args = args.length;
+            
                 var error_msg = fn_name+' requires a {0} of {1} arguments. {2} provided!';
+                
                 if(num_args < min_args) err(format(error_msg, 'minimum', min_args, num_args));
                 if(num_args > max_args) err(format(error_msg, 'maximum', max_args, num_args));
             }
@@ -2655,7 +2659,7 @@ var nerdamer = (function() {
 
                 if(group1 !== EX && group2 === N) { 
                     var power = symbol2.multiplier.toDecimal(); 
-                    if(power !== 1) {
+                    if(power !== 1) { 
                         if(power === 0) {
                             symbol2.mutiplier = new Frac(1);
                             symbol1 = symbol2;
@@ -2697,12 +2701,14 @@ var nerdamer = (function() {
                                         }
                                         symbol1 = this.multiply(new Symbol('i'), symbol1);
                                     }
-                                    else {
+                                    else { /*HERE*/
                                         var p = symbol1.power;
                                         symbol1.multiplier.divide(new Frac(m));
-                                        symbol1.power.divide(new Frac(p));
+                                        symbol1.power.divide(p.clone());
                                         symbol1 = this.symfunction(PARENTHESIS, [symbol1]);
-                                        symbol1.power = new Frac(p);
+                                        
+                                        symbol1.power = p;
+                                        
                                     }
                                     symbol1.multiplier = new Frac(m);
                                 }
