@@ -26,7 +26,7 @@ var nerdamer = (function() {
             //the global used to invoke the libary to parse to a number. Normally cos(9) for example returns
             //cos(9) for convenience but parse to number will always try to return a number if set to true. 
             PARSE2NUMBER: false,
-            //this flag forces the a copy to be returned when add, subtract, etc... is called
+            //this flag forces the a clone to be returned when add, subtract, etc... is called
             SAFE: false
         },
 
@@ -1059,29 +1059,32 @@ var nerdamer = (function() {
          * to a new symbol
          * @returns {Symbol}
          */
-        copy: function() { 
-            var copy = new Symbol(0),
-                //list of properties excluding power as this may be a symbol and would also need to be a copy.
+        clone: function() { 
+            var clone = new Symbol(0),
+                //list of properties excluding power as this may be a symbol and would also need to be a clone.
                 properties = [
-                    'multiplier', 'value', 'group', 'length', 'previousGroup', 'isImgSymbol', 'baseName', 'args'],
+                    'value', 'group', 'length', 'previousGroup', 'isImgSymbol', 'baseName', 'args'],
                 l = properties.length, i;
             if(this.symbols) {
-                copy.symbols = {};
+                clone.symbols = {};
                 for(var x in this.symbols) {
-                    copy.symbols[x] = this.symbols[x].copy();
+                    clone.symbols[x] = this.symbols[x].clone();
                 }
             }
 
             for(i=0; i<l; i++) {
                 if(this[properties[i]] !== undefined) {
-                    copy[properties[i]] = this[properties[i]];
+                    clone[properties[i]] = this[properties[i]];
                 }
             }
 
             if(this.power) {
-                copy.power = isSymbol(this.power) ? this.power.copy() : this.power;
+                clone.power = this.power.clone();
             }
-            return copy;
+            
+            clone.multiplier = this.multiplier.clone();
+            
+            return clone;
         },
         each: function(fn) {
             for(var x in this.symbols) {
@@ -1183,7 +1186,7 @@ var nerdamer = (function() {
                         s.power = _.multiply(s.power, new Symbol(p));
                     }
                     else {
-                        this.symbols[x].power *= p;
+                        this.symbols[x].power  = this.symbols[x].power.multiply(p);
                     }
                 }
                 this.power = new Frac(1);
@@ -1198,8 +1201,8 @@ var nerdamer = (function() {
          */
         convert: function(group) { 
             if(group > FN) { 
-                //make a copy of this symbol;
-                var cp = this.copy();
+                //make a clone of this symbol;
+                var cp = this.clone();
                 //attach a symbols object and upgrade the group
                 this.symbols = {};
 
@@ -1225,7 +1228,7 @@ var nerdamer = (function() {
                 if(this.isImgSymbol) delete this.isImgSymbol;
 
                 this.power = new Frac(1);
-                //attach a copy of this symbol to the symbols object using its proper key
+                //attach a clone of this symbol to the symbols object using its proper key
                 this.symbols[cp.keyForGroup(group)] = cp; 
                 this.group = group;
                 //objects by default don't have a length property. However, in order to keep track of the number
@@ -1310,7 +1313,7 @@ var nerdamer = (function() {
                         
                         if(Math.abs(symbol.valueOf()) !== 1) { 
                             if(this.power !== 1) {
-                                var cp = this.copy();
+                                var cp = this.clone();
                                 cp.multiplier = new Frac(1); 
                                 this.power = new Frac(1);
                                 this.symbols = {};
@@ -1379,11 +1382,14 @@ var nerdamer = (function() {
                 //if the order is reversed then we'll assume multiplication
                 //TODO: possible future dilemma
                 if(group === CB) return text(this, 'hash');
-                if(group === CP) {
-                    if(this.power.equals(1)) return this.value;
-                    else return inBrackets(text(this, 'hash'))+'^'+this.power.toDecimal();
+                if(group === CP) { 
+//                    throw new Error()
+                    var key;
+                    if(this.power.equals(1)) key = this.value;
+                    else key = inBrackets(text(this, 'hash'))+'^'+this.power.toDecimal();
                 }
-                return this.value;
+                else key = this.value;
+                return key;
             }
             else if(g === CP) {
                 if(group === CP) return text(this, 'hash');
@@ -1694,7 +1700,7 @@ var nerdamer = (function() {
                 symbol.power = _.add(symbol.power, p);
             }
             else {
-                symbol.power += value;
+                symbol.power = symbol.power.add(value);
             }
             
             if(symbol.power.valueOf() === 0) symbol.convert(N);
@@ -1812,7 +1818,7 @@ var nerdamer = (function() {
                             //TODO: possible redundant check. Needs investigation
                             if(!(token instanceof Symbol) && !(customType(token))) {
                                 var sub = subs[token] || VARS[token]; //handle substitutions
-                                token = sub ? sub.copy() : new Symbol(token);
+                                token = sub ? sub.clone() : new Symbol(token);
                             }
                         }
                         
@@ -1985,7 +1991,7 @@ var nerdamer = (function() {
         }
         
         function abs(symbol) {
-            if(symbol.multiplier < 0) symbol.multiplier *= -1;
+            if(symbol.multiplier < 0) symbol.multiplier.negate();
             if(isNumericSymbol(symbol) || even(symbol.power)) {
                 return symbol;
             }
@@ -2089,7 +2095,7 @@ var nerdamer = (function() {
             if(symbol.power.equals(1)) {
                 //parens should only carry one symbol
                 var unpacked = symbol.args[0];
-                unpacked.multiplier *= symbol.multiplier;
+                unpacked.multiplier.multiply(symbol.multiplier);
                 symbol = unpacked;
             }
             return symbol;
@@ -2107,11 +2113,11 @@ var nerdamer = (function() {
          * @returns {Symbol}
          */
         this.add = function(symbol1, symbol2) { 
+
             var isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2), t;
             if(isSymbolA && isSymbolB) {
                 var group1 = symbol1.group, 
                     group2 = symbol2.group;
-
                 //deal with zero addition
                 if(symbol1.multiplier.equals(0)) return symbol2;
                 if(symbol2.multiplier.equals(0)) return symbol1;
@@ -2122,34 +2128,35 @@ var nerdamer = (function() {
 
                 //always have the lower group on the left
                 if(group1 > group2) { return this.add(symbol2, symbol1); }
-                if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); };
+                if(Settings.SAFE){ symbol1 = symbol1.clone(); symbol2 = symbol2.clone(); };
 
                 //same symbol, same power
                 if(symbol1.value === symbol2.value && !(group1 === CP && symbol1.power !== symbol2.power)) { 
                     var p1 = symbol1.power ? symbol1.power.toString() : undefined;
                     var p2 = symbol2.power ? symbol2.power.toString() : undefined;
                     if(p1 === p2 && group2 !== PL /*if group1 is PL then group2 is PL*/
-                            || (group1 === EX && symbol1.equals(symbol2))) {
+                            || (group1 === EX && symbol1.equals(symbol2))) { 
 
                         symbol1.multiplier = symbol1.multiplier.add(symbol2.multiplier); 
 
                         //exit early
                         if(symbol1.multiplier.equals(0)) symbol1 = Symbol(0);
                     }
-                    else if(group2 === PL) {
-                        if(group1 === PL) {
+                    else if(group2 === PL) { 
+                        if(group1 === PL) { 
                             if(symbol1.power.equals(1) && symbol2.power.equals(1)) {
                                 symbol1.distributeMultiplier();
                                 symbol2.distributeMultiplier();
+
                                 for(var s in symbol2.symbols) {
                                     symbol1.attach(symbol2.symbols[s]);
                                 }
                             }
-                            else if(symbol1.power === symbol2.power) {
+                            else if(symbol1.power.equals(symbol2.power)) { 
                                 symbol1.multiplier = symbol1.multiplier.multiply(symbol2.multiplier);
                             }
-                            else {
-                                if(symbol1.power > symbol2.power) { var t = symbol1; symbol1 = symbol2; symbol2 = t; /*swap*/}
+                            else { 
+                                if(symbol1.power.greaterThan(symbol2.power)) { var t = symbol1; symbol1 = symbol2; symbol2 = t; /*swap*/}
                                 symbol1.convert(CP); 
                                 symbol1.attach(symbol2);
                             } 
@@ -2273,7 +2280,7 @@ var nerdamer = (function() {
             var isMatrixB = isMatrix(symbol2), isMatrixA = isMatrix(symbol1);
             if(isSymbolA && isMatrixB) {
                 symbol2.eachElement(function(e) {
-                   return _.multiply(symbol1.copy(), e); 
+                   return _.multiply(symbol1.clone(), e); 
                 });
             }
             else {
@@ -2283,7 +2290,7 @@ var nerdamer = (function() {
                 else if(isSymbolA && isVector(symbol2)) {
                     symbol2.each(function(x, i) {
                         i--;
-                        symbol2.elements[i] = _.multiply(symbol1.copy(), symbol2.elements[i]);
+                        symbol2.elements[i] = _.multiply(symbol1.clone(), symbol2.elements[i]);
                     });
                 }
                 else {
@@ -2324,7 +2331,7 @@ var nerdamer = (function() {
             }
             if(isSymbolA && isVector(symbol2)) {
                 symbol2 = symbol2.map(function(x) {
-                    return _.subtract(x, symbol1.copy());
+                    return _.subtract(x, symbol1.clone());
                 });
             }
             else if(isVector(symbol1) && isVector(symbol2)) {
@@ -2371,7 +2378,7 @@ var nerdamer = (function() {
                 //accounted for. With multiplication however it's easier to return the symbol on the right.
                 if(group1 > group2) return this.multiply(symbol2, symbol1);
                 
-                if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); }
+                if(Settings.SAFE){ symbol1 = symbol1.clone(); symbol2 = symbol2.clone(); }
 
                 //we want symbol to have a consistent has for example we want (1/x)*(1/y) to have the same hash
                 //as 1/(x*y). To ensure this all symbols are kept negative during multiplacation
@@ -2385,7 +2392,7 @@ var nerdamer = (function() {
                 if(group1 === N ) { 
                     symbol2.multiplier = symbol2.multiplier.multiply(symbol1.multiplier);
                 }
-                else if(symbol1.value === symbol2.value) {
+                else if(symbol1.value === symbol2.value) { 
                     if(group1 === S && group2 === EX) { 
                         if(symbol2.previousGroup === PL) {
                             symbol2.convert(CB);
@@ -2400,7 +2407,7 @@ var nerdamer = (function() {
                             symbol2.convert(CB);
                             symbol2.combine(symbol1);
                         }
-                        else {
+                        else { 
                             //both are EX so we're concerned with their previous groups
                             var pg1 = symbol1.previousGroup, pg2 = symbol2.previousGroup;
                             if((pg1 === S || pg1 === N || pg1 === FN)) {
@@ -2434,7 +2441,7 @@ var nerdamer = (function() {
                         symbol2.distributeMultiplier();
                         if(group1 !== PL) { 
                             if(symbol2.power.equals(1)) {
-                                var cp = symbol2.copy();
+                                var cp = symbol2.clone();
                                 cp.symbols = {};
                                 cp.length = 0;
                                 for(var s in symbol2.symbols) { 
@@ -2454,7 +2461,7 @@ var nerdamer = (function() {
                         }  
                         else { 
                             if(symbol1.value === symbol2.value) {
-                                symbol2.power += symbol1.power;
+                                symbol2.power  = symbol2.power.add(symbol1.power);
                             }
                             else {
                                 symbol2.convert(CB);
@@ -2464,11 +2471,12 @@ var nerdamer = (function() {
                     }
                     else {
 
-                        symbol2.power += symbol1.power;
+                        symbol2.power = symbol2.power.add(symbol1.power);
                     }
-                    symbol2.multiplier *= symbol1.multiplier;
+                    symbol2.multiplier = symbol2.multiplier.multiply(symbol1.multiplier);
                     //early exit
-                    if(Number(symbol2.power) === 0) symbol2 = Symbol(symbol2.multiplier);
+
+                    if(symbol2.power.equals(0)) symbol2 = Symbol(symbol2.multiplier.toDecimal());
 
                 }
                 else if(group1 === CB && group2 === CB) { 
@@ -2479,7 +2487,7 @@ var nerdamer = (function() {
                     if(symbol1.power.equals(1) && symbol2.power !== 1) { var t = symbol1; symbol1 = symbol2 ; symbol2 = t; }
 
                     if(symbol1.power.equals(1) && symbol2.power.equals(1)) {
-                        symbol2.multiplier *= symbol1.multiplier;
+                        symbol2.multiplier = symbol2.multiplier.multiply(symbol1.multiplier);
                         for(var s in symbol1.symbols) {
                             symbol2.combine(symbol1.symbols[s]);
                         }
@@ -2518,7 +2526,7 @@ var nerdamer = (function() {
                 if((symbol2.group === CB) && symbol2.length === 1) { 
                     for(var x in symbol2.symbols) {
                         var symbol = symbol2.symbols[x];
-                        symbol.multiplier *= symbol2.multiplier;
+                        symbol.multiplier = symbol.multiplier.multiply(symbol2.multiplier);
                         symbol2 = symbol;
                     }
                 }
@@ -2536,7 +2544,7 @@ var nerdamer = (function() {
             var isMatrixB = isMatrix(symbol2), isMatrixA = isMatrix(symbol1);
             if(isSymbolA && isMatrixB) {
                 symbol2.eachElement(function(e) {
-                   return _.multiply(symbol1.copy(), e); 
+                   return _.multiply(symbol1.clone(), e); 
                 });
             }
             else {
@@ -2546,7 +2554,7 @@ var nerdamer = (function() {
                 else if(isSymbolA && isVector(symbol2)) {
                     symbol2.each(function(x, i) {
                         i--;
-                        symbol2.elements[i] = _.multiply(symbol1.copy(), symbol2.elements[i]);
+                        symbol2.elements[i] = _.multiply(symbol1.clone(), symbol2.elements[i]);
                     });
                 }
                 else {
@@ -2588,12 +2596,12 @@ var nerdamer = (function() {
             var isVectorA = isVector(symbol1), isVectorB = isVector(symbol2);
             if(isSymbolA && isVectorB) {
                 symbol2 = symbol2.map(function(x){
-                    return _.divide(symbol1.copy(),x);
+                    return _.divide(symbol1.clone(),x);
                 });
             }
             else if(isVectorA && isSymbolB) {
                 symbol2 = symbol1.map(function(x) {
-                    return _.divide(x, symbol2.copy());
+                    return _.divide(x, symbol2.clone());
                 });
             }
             else if(isVectorA && isVectorB) {
@@ -2608,7 +2616,7 @@ var nerdamer = (function() {
                 var isMatrixA = isMatrix(symbol1), isMatrixB = isMatrix(symbol2);
                 if(isMatrixA && isSymbolB) {
                     symbol1.eachElement(function(x) {
-                        return _.divide(x, symbol2.copy());
+                        return _.divide(x, symbol2.clone());
                     });
                     symbol2 = symbol1;
                 }
@@ -2625,7 +2633,7 @@ var nerdamer = (function() {
                 else if(isMatrixA && isVectorB) {
                     if(symbol1.cols() === symbol2.dimensions()) {
                         symbol1.eachElement(function(x, i, j) {
-                            return _.divide(x, symbol2.elements[i].copy());
+                            return _.divide(x, symbol2.elements[i].clone());
                         });
                         symbol2 = symbol1;
                     }
@@ -2655,7 +2663,7 @@ var nerdamer = (function() {
                 var group1 = symbol1.group, 
                     group2 = symbol2.group;
 
-                if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); };
+                if(Settings.SAFE){ symbol1 = symbol1.clone(); symbol2 = symbol2.clone(); };
 
                 if(group1 !== EX && group2 === N) { 
                     var power = symbol2.multiplier.toDecimal(); 
@@ -2747,10 +2755,10 @@ var nerdamer = (function() {
                     //symbol power may be undefined if symbol is of type N
                     if(!isSymbol(spow)) spow = new Symbol(spow || 1);
 
-                    if(Math.abs(symbol1.multiplier).toDecimal() !== 1) {
+                    if(Math.abs(symbol1.multiplier.toDecimal()) !== 1) {
                         m = new Symbol(symbol1.multiplier.toDecimal());
                         m.convert(EX);
-                        m.power = symbol2.copy();
+                        m.power = symbol2.clone();
                         symbol1.multiplier = new Frac(1);
                     }
 
@@ -2774,12 +2782,12 @@ var nerdamer = (function() {
             
             if(isVector(symbol1) && isSymbolB) {
                 symbol1 = symbol1.map(function(x) {
-                    return _.pow(x, symbol2.copy());
+                    return _.pow(x, symbol2.clone());
                 });
             }
             else if(isMatrix(symbol1) && isSymbolB) {
                 symbol1.eachElement(function(x) {
-                    return _.pow(x, symbol2.copy());
+                    return _.pow(x, symbol2.clone());
                 });
             }
             return symbol1;
@@ -2984,7 +2992,7 @@ var nerdamer = (function() {
             for(i=0; i<l; i++) {
                 var s = subSymbols[i];
                 if(s.isInverse() && g === CB) {
-                    denom.push(remove(subSymbols, i).copy().invert());
+                    denom.push(remove(subSymbols, i).clone().invert());
                     i--, l--; //adjust the index and the length since we're one item shorter
                 }
             }
@@ -3175,7 +3183,7 @@ var nerdamer = (function() {
         // Returns the modulus ('length') of the vector
         modulus: function() {
             return block('SAFE', function() {
-                return _.pow((this.dot(this.copy())), new Symbol(0.5));
+                return _.pow((this.dot(this.clone())), new Symbol(0.5));
             }, undefined, this);
         },
 
@@ -3190,13 +3198,13 @@ var nerdamer = (function() {
             return true;
         },
 
-        // Returns a copy of the vector
-        copy: function() {
+        // Returns a clone of the vector
+        clone: function() {
             var V = new Vector(),
                 l = this.elements.length;
             for(var i=0; i<l; i++) {
-                //Rule: all items within the vector must have a copy method.
-                V.elements.push(this.elements[i].copy());
+                //Rule: all items within the vector must have a clone method.
+                V.elements.push(this.elements[i].clone());
             }
             return V;
         },
@@ -3223,7 +3231,7 @@ var nerdamer = (function() {
         toUnitVector: function() {
             return block('SAFE', function() {
                 var r = this.modulus();
-                if (r.valueOf() === 0) { return this.copy(); }
+                if (r.valueOf() === 0) { return this.clone(); }
                 return this.map(function(x) { return _.divide(x, r); });
             }, undefined, this);    
         },
@@ -3290,7 +3298,7 @@ var nerdamer = (function() {
 
         // Returns the result of multiplying the elements of the vector by the argument
         multiply: function(k) {
-            return this.map(function(x) { return x.copy()*k.copy(); });
+            return this.map(function(x) { return x.clone()*k.clone(); });
         },
 
         x: function(k) { return this.multiply(k); },
@@ -3360,7 +3368,7 @@ var nerdamer = (function() {
     function Matrix() {
         var m = arguments,
             l = m.length, i, el = [];
-        if(isMatrix(m)) { //if it's a matrix then make a copy
+        if(isMatrix(m)) { //if it's a matrix then make a clone
             for(i=0; i<l; i++) {
                 el.push(m[i].slice(0));
             }
@@ -3477,14 +3485,14 @@ var nerdamer = (function() {
             }
             return this;
         },
-        copy: function() {
+        clone: function() {
             var r = this.rows(), c = this.cols(),
                 m = new Matrix();
             for(var i=0; i<r; i++) {
                 m.elements[i] = [];
                 for(var j=0; j<c; j++) { 
                     var symbol = this.elements[i][j]; 
-                    m.elements[i][j] = isSymbol(symbol) ? symbol.copy() : symbol;
+                    m.elements[i][j] = isSymbol(symbol) ? symbol.clone() : symbol;
                 }
             }
             return m;
@@ -3507,7 +3515,7 @@ var nerdamer = (function() {
                     divisor = M.elements[i][i];
                     do { 
                         p = kp - np;
-                        new_element = _.divide(M.elements[i][p], divisor.copy());
+                        new_element = _.divide(M.elements[i][p], divisor.clone());
                         els.push(new_element);
                         // Shuffle of the current row of the right hand side into the results
                         // array as it will not be modified by later runs through this loop
@@ -3530,7 +3538,7 @@ var nerdamer = (function() {
         //ported from Sylvester.js
         toRightTriangular: function() {
             return block('SAFE', function(){
-                var M = this.copy(), els, fel, nel, 
+                var M = this.clone(), els, fel, nel, 
                     n = this.elements.length, k = n, i, np, kp = this.elements[0].length, p;
                 do { 
                     i = k-n;
@@ -3542,7 +3550,7 @@ var nerdamer = (function() {
                             els = []; np = kp;
                             do { 
                                 p = kp-np; 
-                                els.push(_.add(M.elements[i][p].copy(), M.elements[j][p].copy()));
+                                els.push(_.add(M.elements[i][p].clone(), M.elements[j][p].clone()));
                             } while (--np);
                             M.elements[i] = els;
                             break;
@@ -3552,7 +3560,7 @@ var nerdamer = (function() {
                     var fel = M.elements[i][i]; 
                     if(fel.valueOf() !== 0) {
                         for (j=i+1; j<k; j++) { 
-                            var multiplier = _.divide(M.elements[j][i].copy(),M.elements[i][i].copy()); 
+                            var multiplier = _.divide(M.elements[j][i].clone(),M.elements[i][i].clone()); 
                             els = []; np = kp;
                             do { p = kp - np;
                                 // Elements with column numbers up to an including the number
@@ -3560,7 +3568,7 @@ var nerdamer = (function() {
                                 // zero, since that's the point of this routine and it avoids having
                                 // to loop over and correct rounding errors later
                                 els.push(p <= i ? new Symbol(0) : 
-                                        _.subtract(M.elements[j][p].copy(), _.multiply(M.elements[i][p].copy(), multiplier.copy())));
+                                        _.subtract(M.elements[j][p].clone(), _.multiply(M.elements[i][p].clone(), multiplier.clone())));
                             } while (--np);
                             M.elements[j] = els;
                         }
@@ -3579,7 +3587,7 @@ var nerdamer = (function() {
                 M.elements[i] = [];
                 nj = rows;
                 do { j = rows - nj;
-                    M.elements[i][j] = this.elements[j][i].copy();
+                    M.elements[i][j] = this.elements[j][i].clone();
                 } while (--nj);
             } while (--ni);
             return M;
