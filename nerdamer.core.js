@@ -41,6 +41,7 @@ var nerdamer = (function() {
         CB  = Groups.CB = 6, // A symbol/expression composed of one or more variables through multiplication e.g. x*y
         CP  = Groups.CP = 7, // A symbol/expression composed of one variable and any other symbol or number x+1 or x+y
         
+        NSYM = '#',
         
         //GLOBALS
         
@@ -664,6 +665,7 @@ var nerdamer = (function() {
                 case EX:
                     var pg = obj.previousGroup,
                         pwg = obj.power.group;
+                
                     //PL are the exception. It's simpler to just collect and set the value
                     if(pg === PL) value = obj.collectSymbols(text).join('+').replace('+-', '-');
                     if(!(pg === N || pg === S || pg === FN)) { value = inBrackets(value); }
@@ -764,7 +766,7 @@ var nerdamer = (function() {
             return Latex.latex(this.symbol);
         },
         
-        valueOf: function() {
+        valueOf: function() { 
             return this.symbol.valueOf();
         },
         
@@ -859,7 +861,7 @@ var nerdamer = (function() {
             var c = this.clone();
             c.num *= m.num;
             c.den *= m.den;
-            return c;
+            return c.simplify();
         },
         divide: function(m) {
             if(m.num === 0) throw new Error('Division by zero!');
@@ -958,7 +960,7 @@ var nerdamer = (function() {
         //define numeric symbols
         if(!isNaN(obj)) {
             this.group = N;
-            this.value = '#'; 
+            this.value = NSYM; 
             this.multiplier = new Frac(obj);
         }
         //define symbolic symbols
@@ -970,8 +972,8 @@ var nerdamer = (function() {
             this.group = S; 
             validateName(obj); 
             this.value = obj;
-            this.multiplier = new Frac(1);
-            this.power = new Frac(1);
+            this.toUnitMultiplier();
+            this.toLinear();
         }
 
         // Added to silence the strict warning.
@@ -1020,7 +1022,7 @@ var nerdamer = (function() {
                  //the following assumptions are made in the next check
                  //1. numbers are represented by an underscore
                  //2. variable and function names must start with a letter
-                if(kl === 2 && k[0] === '#') { 
+                if(kl === 2 && k[0] === NSYM) { 
                     status = this.symbols[k[1]].isPoly(include_denom, multivariate);
                 }
                 else if(this.group === CP && multivariate) { 
@@ -1085,6 +1087,14 @@ var nerdamer = (function() {
             clone.multiplier = this.multiplier.clone();
             
             return clone;
+        },
+        toUnitMultiplier: function() {
+            this.multiplier = new Frac(1);
+            return this;
+        },
+        toLinear: function() {
+            this.power = new Frac(1);
+            return this;
         },
         each: function(fn) {
             for(var x in this.symbols) {
@@ -1167,7 +1177,7 @@ var nerdamer = (function() {
                     s.multiplier = s.multiplier.multiply(this.multiplier);
                     s.distributeMultiplier();
                 }
-                this.multiplier = new Frac(1);
+                this.toUnitMultiplier();
             }
 
             return this;
@@ -1189,7 +1199,7 @@ var nerdamer = (function() {
                         this.symbols[x].power  = this.symbols[x].power.multiply(p);
                     }
                 }
-                this.power = new Frac(1);
+                this.toLinear();
             }
             return this;
         },
@@ -1199,7 +1209,7 @@ var nerdamer = (function() {
          * group to another however. In that case the symbol will remain 
          * unchanged.
          */
-        convert: function(group) { 
+        convert: function(group, value) { 
             if(group > FN) { 
                 //make a clone of this symbol;
                 var cp = this.clone();
@@ -1210,11 +1220,11 @@ var nerdamer = (function() {
                     //symbol of group CB hold symbols bound together through multiplication
                     //because of commutativity this multiplier can technically be anywhere within the group
                     //to keep track of it however it's easier to always have the top level carry it
-                    cp.multiplier = new Frac(1);
+                    cp.toUnitMultiplier();
                 }
                 else {
                     //reset the symbol
-                    this.multiplier = new Frac(1);
+                    this.toUnitMultiplier();
                 }
 
                 if(this.group === FN) {
@@ -1227,7 +1237,7 @@ var nerdamer = (function() {
                 //after copying
                 if(this.isImgSymbol) delete this.isImgSymbol;
 
-                this.power = new Frac(1);
+                this.toLinear();
                 //attach a clone of this symbol to the symbols object using its proper key
                 this.symbols[cp.keyForGroup(group)] = cp; 
                 this.group = group;
@@ -1235,13 +1245,13 @@ var nerdamer = (function() {
                 //of sub-symbols we have to impliment our own.
                 this.length = 1;    
             }
-            else if(group === EX) {
+            else if(group === EX) { 
                 //1^x is just one so check and make sure
                 if(!(this.group === N && this.multiplier.absEquals(1))) {
                     this.previousGroup = this.group;
-                    if(this.group === N) {
-                        this.value = this.multiplier;
-                        this.multiplier = new Frac(1);
+                    if(this.group === N) { 
+                        this.value = value;
+                        this.toUnitMultiplier();
                     }
                     
                     this.group = EX;
@@ -1251,9 +1261,10 @@ var nerdamer = (function() {
                 for(var x in this) {
                     if(this.hasOwnProperty(x) && (x !== 'value' && x !== 'multiplier')) delete this[x];
                 }
-                this.value = '#';
+                this.value = NSYM;
                 this.group = N;
             }
+            return this;
         },
         /**
          * This method is one of the principal methods to make it all possible.
@@ -1309,13 +1320,13 @@ var nerdamer = (function() {
                         }
                         //transfer the multiplier
                         this.multiplier = this.multiplier.multiply(symbol.multiplier);
-                        symbol.multiplier = new Frac(1);
+                        symbol.toUnitMultiplier();
                         
                         if(Math.abs(symbol.valueOf()) !== 1) { 
                             if(this.power !== 1) {
                                 var cp = this.clone();
-                                cp.multiplier = new Frac(1); 
-                                this.power = new Frac(1);
+                                cp.toUnitMultiplier(); 
+                                this.toLinear();
                                 this.symbols = {};
                                 var key2 = cp.keyForGroup(CB);
                                 this.symbols[key2] = cp;
@@ -1400,7 +1411,7 @@ var nerdamer = (function() {
                 if(group === PL) return this.power.toDecimal();
                 return text(this, 'hash');
             }
-            else if(g === EX) {
+            else if(g === EX) { 
                 if(group === PL) return text(this.power);
                 return text(this, 'hash');
             }
@@ -1440,7 +1451,7 @@ var nerdamer = (function() {
          */
         isOne: function() {
             if(this.group === N) return this.multiplier.equals(1);
-            else return this.power === 0;
+            else return this.power.equals(0);
         },
         /**
          * Get's the denominator of the symbol if the symbol is of class CB (multiplication)
@@ -2170,7 +2181,7 @@ var nerdamer = (function() {
                                 for(var s in symbol2.symbols) {
                                     symbol2.symbols[s].multiplier = symbol2.symbols[s].multiplier.multiply(symbol2.multiplier);
                                 }
-                                symbol2.multiplier = new Frac(1);
+                                symbol2.toUnitMultiplier();
                                 symbol2.attach(symbol1);
                             }
                             symbol1 = symbol2;
@@ -2238,7 +2249,7 @@ var nerdamer = (function() {
                                 for(var s in symbol2.symbols) {
                                     symbol2.symbols[s].multiplier = symbol2.symbols[s].multiplier.multiply(symbol2.multiplier);
                                 }
-                                symbol2.multiplier = new Frac(1);
+                                symbol2.toUnitMultiplier();
                                 symbol2.attach(symbol1);
                             }   
                             //swap since symbol a is being returned
@@ -2311,6 +2322,7 @@ var nerdamer = (function() {
                     }
                 }
             }
+            
             return symbol2;
         };
         
@@ -2358,7 +2370,7 @@ var nerdamer = (function() {
          */
         this.multiply = function(symbol1, symbol2) { 
             var isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2), t;
-            
+
             if(isSymbolA && isSymbolB) {
                 if(symbol1.multiplier === 0 || symbol2.multiplier === 0) return new Symbol(0);
                 var group1 = symbol1.group,
@@ -2370,8 +2382,8 @@ var nerdamer = (function() {
                 if(group2 === FN && symbol1.baseName === PARENTHESIS) symbol2 = this.unpack(symbol2);
 
                 if(symbol1.isImgSymbol && symbol2.isImgSymbol) {
-                    var sign = (symbol1.power + symbol2.power) === 0 ? 1 : -1; //i/i = 0
-                    return new Symbol(sign*symbol1.multiplier*symbol2.multiplier);
+                    var sign = (symbol1.power.toDecimal() + symbol2.power.toDecimal()) === 0 ? 1 : -1; //i/i = 0
+                    return new Symbol(sign*symbol1.multiplier.multiply(symbol2.multiplier).toDecimal());
                 }
 
                 //as with addition the lower group symbol is kept on the left so only one side has to symbol2 e 
@@ -2575,6 +2587,7 @@ var nerdamer = (function() {
                     }
                 }
             }
+            
             return symbol2;
         };
         
@@ -2678,14 +2691,14 @@ var nerdamer = (function() {
                                 // Record if we have a negative number as the base.
                                 isNegative = symbol1.multiplier.lessThan(0),
                                 // Make sure that the power is even.
-                                powEven =  even(symbol1.power.toString()),
+                                powEven =  symbol1.power ? even(symbol1.power.toString()) : false,
                                 //check if the power being raised to is a fraction
                                 isRadical = Math.abs(power % 1) > 0;
 
                             if(group1 === N) { 
                                 var isImaginary = isNegative && isRadical;
                                 if(isImaginary) symbol1.multiplier.negate();
-                                symbol1.multiplier = Math.pow(symbol1.multiplier.toDecimal(), power);
+                                symbol1.multiplier = new Frac(Math.pow(symbol1.multiplier.toDecimal(), power));
                                 if(isImaginary) {
                                     symbol1 = this.multiply(symbol1, new Symbol('i'));
                                     if(power < 0) symbol1.negate();
@@ -2703,13 +2716,13 @@ var nerdamer = (function() {
                                 if(isRadical && isNegative) { 
                                     var m = symbol1.multiplier.clone().negate().toDecimal();
                                     if(powEven) {
-                                        symbol1.multiplier = new Frac(1);
+                                        symbol1.toUnitMultiplier();
                                         if(!even(symbol1.power)) {
                                             symbol1 = this.symfunction(ABS, [symbol1]);
                                         }
                                         symbol1 = this.multiply(new Symbol('i'), symbol1);
                                     }
-                                    else { /*HERE*/
+                                    else { 
                                         var p = symbol1.power;
                                         symbol1.multiplier.divide(new Frac(m));
                                         symbol1.power.divide(p.clone());
@@ -2724,7 +2737,7 @@ var nerdamer = (function() {
                                 if(powEven && isRadical && !even(symbol1.power)) {
                                     //we have to wrap the symbol in the abs function to preserve the absolute value
                                     var p = symbol1.power; //save the power
-                                    symbol1.power = new Frac(1);
+                                    symbol1.toLinear();
                                     symbol1 = _.symfunction(ABS,[symbol1]);
                                     symbol1.power = p;
                                     
@@ -2733,10 +2746,10 @@ var nerdamer = (function() {
                                 //Attempt to unwrap abs
                                 if(symbol1.group === FN && symbol1.baseName === ABS) {
                                     var s = symbol1.args[0];
-                                    var ppower = symbol1.power.multipy(s.power);
+                                    var ppower = symbol1.power.multiply(s.power); 
                                     if(even(ppower.toDecimal())) {
                                         s.power = ppower;
-                                        s.multiplier = new Frac(symbol1.multiplier.toDecimal() * Math.pow(s.multiplier, symbol1.power));
+                                        s.multiplier = new Frac(symbol1.multiplier.toDecimal() * Math.pow(s.multiplier.toDecimal(), symbol1.power.toDecimal()));
                                         symbol1 = s;
                                     }
                                 }
@@ -2747,32 +2760,48 @@ var nerdamer = (function() {
                     if(symbol1.group === CB) { 
                         var p = symbol1.power;
                         for(var x in symbol1.symbols) { symbol1.symbols[x].power = symbol1.symbols[x].power.multiply(p.clone()); }
-                        symbol1.power = new Frac(1);
+                        symbol1.toLinear();
                     }
                 }
                 else { 
-                    var m, spow = symbol1.power;
-                    //symbol power may be undefined if symbol is of type N
-                    if(!isSymbol(spow)) spow = new Symbol(spow || 1);
-
-                    if(Math.abs(symbol1.multiplier.toDecimal()) !== 1) {
-                        m = new Symbol(symbol1.multiplier.toDecimal());
-                        m.convert(EX);
-                        m.power = symbol2.clone();
-                        symbol1.multiplier = new Frac(1);
+                    var n = symbol1.multiplier.num,
+                        d = symbol1.multiplier.den,
+                        a, b;
+                    //the most likely to occur
+                    
+                    if(n !== 1) {
+                        //the integer value needs to be passed to convert for handling EX
+                        a = new Symbol(n).convert(EX, n);
+                        a.power = symbol2.clone();
                     }
-
-                    if(symbol1.group !== EX) symbol1.convert(EX);
-
-                    symbol1.power = this.multiply(spow, symbol2);
-                    //reduce symbol to simpler form. 
-                    if(symbol1.power.isOne()) {
-                        symbol1.group = symbol1.previousGroup;
-                        delete symbol1.previousGroup;
-                        symbol1.power = new Frac(1);
+                    
+                    if(d !== 1) { 
+                        b = new Symbol(d).convert(EX, d);
+                        b.power = symbol2.clone();
+                        b.invert();
                     }
+                    
+                    if(symbol1.group !== N) {
+                        var s = symbol1.clone();
+                        s.convert(EX).toUnitMultiplier();
+                        s.power = symbol2.clone();
+                        a = a ? _.multiply(a, s) : s; //multiply in the symbol so 2^y/3^y becomes (2^y*x^y/3^y)
+                    }
+                    
+                    if(a && b) {
+                        symbol1 = _.multiply(a, b);
+                    }
+                    else symbol1 = a || b;
 
-                    if(m) { symbol1 = this.multiply(symbol1, m); }
+//                    //reduce symbol to simpler form. 
+//                    /* TODO: when converting to infinite precision for constants the check for the existence of
+//                     * the power object become absolete since constants will also carry a power */
+//                    //reduce symbol to simpler form. 
+//                    if(symbol1.power && symbol1.power.isOne()) {
+//                        symbol1.group = symbol1.previousGroup;
+//                        delete symbol1.previousGroup;
+//                        symbol1.toLinear();
+//                    }
                 }
 
                 return symbol1;
@@ -2790,6 +2819,7 @@ var nerdamer = (function() {
                     return _.pow(x, symbol2.clone());
                 });
             }
+            
             return symbol1;
             
                 
