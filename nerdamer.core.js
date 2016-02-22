@@ -975,6 +975,8 @@ var nerdamer = (function() {
             this.toUnitMultiplier();
             this.toLinear();
         }
+        
+        this.toLinear();
 
         // Added to silence the strict warning.
         return this; 
@@ -1289,6 +1291,7 @@ var nerdamer = (function() {
                     var existing = this.symbols[key]; //check if there's already a symbol there
                     if(action === 'add') {
                         var hash = key;
+                        
                         if(existing) { 
                             //add them together using the parser
                             this.symbols[hash] = _.add(existing, symbol); 
@@ -2142,7 +2145,7 @@ var nerdamer = (function() {
                 if(Settings.SAFE){ symbol1 = symbol1.clone(); symbol2 = symbol2.clone(); };
 
                 //same symbol, same power
-                if(symbol1.value === symbol2.value && !(group1 === CP && symbol1.power !== symbol2.power)) { 
+                if(symbol1.value === symbol2.value && !(group1 === CP && !symbol1.power.equals(symbol2.power))) { 
                     var p1 = symbol1.power ? symbol1.power.toString() : undefined;
                     var p2 = symbol2.power ? symbol2.power.toString() : undefined;
                     if(p1 === p2 && group2 !== PL /*if group1 is PL then group2 is PL*/
@@ -2601,7 +2604,7 @@ var nerdamer = (function() {
             var isSymbolA = isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2), t;
             
             if(isSymbolA && isSymbolB) {
-                if(symbol2.multiplier === 0) err('Division by zero!');
+                if(symbol2.multiplier.equals(0)) err('Division by zero!');
                 return this.multiply(symbol1, symbol2.invert());
             }
             
