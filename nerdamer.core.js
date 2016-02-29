@@ -8,6 +8,7 @@
 //TODO: test sqrt
 //TODO: imaginary
 //TODO: functions don't evaluate
+//TODO: Symbols must return decimal where possible
 
 var nerdamer = (function() {
     "use strict";
@@ -622,9 +623,7 @@ var nerdamer = (function() {
      * @returns {String}
      */
     function text(obj, option) { 
-        var asHash = (option == 'hash'),
-            finalize = option == 'final';
-
+        var asHash = option === 'hash'
         //if the object is a symbol
         if(isSymbol(obj)) { 
             var multiplier = '', 
@@ -670,6 +669,7 @@ var nerdamer = (function() {
                     value = obj.collectSymbols(text).join('+').replace(/\+\-/g, '-');
                     break;
                 case CB: 
+                    
                     value = obj.collectSymbols(function(symbol){
                         var g = symbol.group;
                         //both groups will already be in brackets if their power is greater than 1
@@ -686,7 +686,8 @@ var nerdamer = (function() {
                 
                     //PL are the exception. It's simpler to just collect and set the value
                     if(pg === PL) value = obj.collectSymbols(text).join('+').replace('+-', '-');
-                    if(!(pg === N || pg === S || pg === FN)) { value = inBrackets(value); }
+                    if(!(pg === N || pg === S || pg === FN) && !asHash) { value = inBrackets(value); }
+ 
                     if((pwg === CP || pwg === CB || pwg === PL || obj.power.multiplier.toString() != '1') && power) {
                         power = inBrackets(power);
                     }
@@ -899,7 +900,7 @@ var nerdamer = (function() {
             this.num *= -1;
             return this;
         },
-        add: function(m) {
+        add: function(m) { 
             var n1 = this.den, n2 = m.den, c = this.clone();
             var a = Number(c.num), b = Number(m.num);
             if(n1 === n2) {
@@ -935,7 +936,7 @@ var nerdamer = (function() {
         absEquals: function(n) {
             var a = n instanceof Frac ? n.toDecimal() : n,
                 b = this.toDecimal();
-            return Math.abs(a) === b;
+            return a === Math.abs(b);
         },
         greaterThan: function(n) {
             var a = n instanceof Frac ? n.toDecimal() : n,
@@ -954,7 +955,7 @@ var nerdamer = (function() {
             this.num *= -1;
             return this;
         },
-        invert: function() {
+        invert: function() { 
             var t = this.den;
             this.den = this.num;
             this.num = t;
@@ -966,7 +967,7 @@ var nerdamer = (function() {
             return this;
         },
         toString: function() {
-            return this.den !== 1 ? this.num+'/'+this.den : this.num;
+            return this.den !== 1 ? this.num+'/'+this.den : String(this.num);
         },
         valueOf: function() {
             return this.num/this.den;
@@ -1013,7 +1014,7 @@ var nerdamer = (function() {
         return s;
     };
     
-    Symbol.shell = function(group, value) {
+    Symbol.shell = function(group, value) { 
         var symbol = new Symbol(value);
         symbol.group = group;
         symbol.symbols = {};
@@ -1200,7 +1201,7 @@ var nerdamer = (function() {
          * Inverts a symbol
          * @returns {boolean}
          */
-        invert: function(power_only) {
+        invert: function(power_only) { 
             //invert the multiplier
             if(!power_only) this.multiplier = this.multiplier.invert();
             //invert the rest
@@ -1267,7 +1268,7 @@ var nerdamer = (function() {
                 //attach a symbols object and upgrade the group
                 this.symbols = {};
 
-                if(group === CB) {
+                if(group === CB) { 
                     //symbol of group CB hold symbols bound together through multiplication
                     //because of commutativity this multiplier can technically be anywhere within the group
                     //to keep track of it however it's easier to always have the top level carry it
@@ -1337,6 +1338,7 @@ var nerdamer = (function() {
                 var group = this.group;
                 if(group > FN) {
                     var key = symbol.keyForGroup(group); 
+
                     var existing = this.symbols[key]; //check if there's already a symbol there
                     if(action === 'add') {
                         var hash = key;
@@ -1361,42 +1363,42 @@ var nerdamer = (function() {
                         }  
                             
                     }
-                    else {
+                    else { 
+                        //transfer the multiplier to the upper symbol
+//                        if(this.length === 0) this.group = symbol.group;
+//                        else this.group = CB;
+                        
+                        this.multiplier = this.multiplier.multiply(symbol.multiplier);
+                        symbol.toUnitMultiplier();
+                        
                         if(existing) {  
                             //remove because the symbol may have changed
                             symbol = _.multiply(remove(this.symbols, key), symbol);
-                            
                             if(this.length === 0) this.convert(N);
                             this.length--;
                             //clean up
                         }
-                        //transfer the multiplier
-                        this.multiplier = this.multiplier.multiply(symbol.multiplier);
-                        symbol.toUnitMultiplier();
                         
-                        if(Math.abs(symbol.valueOf()) !== 1) { 
-                            if(this.power !== 1) {
-                                var cp = this.clone();
-                                cp.toUnitMultiplier(); 
-                                this.toLinear();
-                                this.symbols = {};
-                                var key2 = cp.keyForGroup(CB);
-                                this.symbols[key2] = cp;
-                            }
-                            
-                            //if the power does not equal to zero then we have to create a new symbol
+                        //move the multiplier to the upper symbol
+                        
+                        //don't insert the symbol if it's 1
+                        if(!symbol.isOne(true)) {
                             this.symbols[key] = symbol;
                             this.length++;
                         }
-                        
+                        else if(symbol.multiplier.toDecimal() < 0) {
+                             this.negate(); //put back the sign
+                        }
                     }
+                    
                     //update the hash
                     if(this.group === CP || this.group === CB) {
                         this.updateHash();
                     }
+                   
                 }
             }
-            
+
             return this;
         },  
         //the insert method for addition
@@ -1503,8 +1505,9 @@ var nerdamer = (function() {
         /**
          * Checks if the function evaluates to 1. e.g. x^0 or 1 :)
          */
-        isOne: function() {
-            if(this.group === N) return this.multiplier.equals(1);
+        isOne: function(abs) {
+            var f = abs ? 'absEquals' : 'equals';
+            if(this.group === N) return this.multiplier[f](1);
             else return this.power.equals(0);
         },
         isComposite: function() {
@@ -2073,52 +2076,85 @@ var nerdamer = (function() {
          * @returns {Symbol}
          */
         function sqrt(symbol) { 
-            var img, 
-                isConstant = symbol.isConstant(),
-                p = symbol.power.toDecimal()
-            if((symbol.group === FN && symbol.fname === SQRT)) {
+            var img, retval, 
+                isConstant = symbol.isConstant();
+
+            //if the symbol is already sqrt then it's that symbol^(1/4) and we can unwrap it
+            if(symbol.fname === SQRT) { 
                 var s = symbol.args[0];
                 s.power = symbol.power.multiply(new Frac(0.25));
                 retval = s;
             }
-            else if(!symbol.power.isInteger()) {
+            //if the symbol is a fraction then we don't keep can unwrap it. For instance
+            //no need to keep sqrt(x^(1/3))
+            else if(!symbol.power.isInteger()) { 
                 symbol.power = symbol.power.multiply(new Frac(0.5));
                 retval = symbol;
             }
-            else {
+            else { 
+                //if the symbols is imagary then we place in the imaginary part. We'll return it 
+                //as a product
                 if(isConstant && symbol.multiplier.lessThan(0)) {
                     img = Symbol.imaginary();
                     symbol.multiplier = symbol.multiplier.absoluteValue();
                 }
-
+                
                 var q = symbol.multiplier.toDecimal(),
-                    sign = Math.sign(q),
                     qa = Math.abs(q),
                     t = Math.sqrt(qa);
-                //it's a perfect square so take the square
+           
+                
                 var m;
-
-                if(isInt(t)) m = new Symbol(t);
+                //it's a perfect square so take the square
+                if(isInt(t)) {
+                    m = new Symbol(t);
+                }
                 else if(isInt(q)) { 
                     m = _.symfunction(SQRT, [new Symbol(q)]);
                 }
                 else {
-                    m = _.multiply(_.symfunction(SQRT, [
-                        new Symbol(symbol.multiplier.num),
-                        new Symbol(symbol.multiplier.den).invert()
-                    ]));
+                    var n = symbol.multiplier.num.toString(),
+                        d = symbol.multiplier.den.toString();
+                    m = _.multiply(
+                            n === '1' ? new Symbol(1) : _.symfunction(SQRT, [new Symbol(n)]), 
+                            d === '1' ? new Symbol(1) : _.symfunction(SQRT, [new Symbol(d)]).invert()
+                    );
                 }
 
+                
+                //strip the multiplier since we already took the sqrt
                 symbol = symbol.toUnitMultiplier(true);
+                //if the symbol is one just return one and not the sqrt function
+                if(symbol.isOne()) {
+                    retval = symbol;
+                }
+                else if(even(symbol.power.toString())) { 
+                    //just raise it to the 1/2
+                    retval = _.pow(symbol.clone(), new Symbol(0.5));
+                    
+                    var p = retval.power.toString();
+                    //preserve the absolute value
+                    if(!even(p)) { 
+                        var s = retval.clone().toLinear();
 
-                var retval = symbol.isOne() ? symbol : _.symfunction(SQRT, [symbol]);
-
+                        if(p !== '1') {
+                            retval.power = retval.power.subtract(new Frac(1));
+                        }
+                        else retval = new Symbol(1);
+                        
+                        retval = _.multiply(retval, _.symfunction(ABS, [s]));
+                    }
+                }
+                else {
+                    retval = _.symfunction(SQRT, [symbol]);
+                }
+//                var retval = symbol.isOne() ? symbol : _.symfunction(SQRT, [symbol]);
+                //we've taken the sqrt of the multiplier so return it to the symbol
                 if(m) retval = _.multiply(m, retval);
 
                 if(img) retval = _.multiply(img, retval);
             }
-            
-                
+
             return retval;
         }
         
@@ -2258,15 +2294,14 @@ var nerdamer = (function() {
                     result = result.attach(isPL ? b : a);
                 } 
             }
-            else {
-                //deal with square roots
-                
+            else {  
                 //deal with CP
                 var aIsComposite = a.isComposite();
                 if(aIsComposite) { 
                     var aIsLinear = a.isLinear(),
                         bIsComposite = b.isComposite();
                     if(aIsLinear && !bIsComposite) { 
+                        a.distributeMultiplier();
                         result = a.attach(b);
                     }
                     else if(bIsComposite && b.isLinear()) {
@@ -2335,13 +2370,14 @@ var nerdamer = (function() {
          * @returns {Symbol}
          */
         this.multiply = function(a, b) { 
+            
             var g1 = a.group,
                 g2 = b.group,
                 v1 = a.value,
                 v2 = b.value,
                 result;
             //always keep the greater group on the right
-            if(g2 > g1) return this.multiply(b, a);
+            if(g2 > g1 && !(g2 === CP)) return this.multiply(b, a);
             
             var m = a.multiplier.multiply(b.multiplier),
                 aIsConstant = a.isConstant(),
@@ -2355,44 +2391,90 @@ var nerdamer = (function() {
                 result = a;
             }
             else { 
+                
                 var p;
                 var p1 = a.power,
                     p2 = b.power,
                     isSymbolP1 = isSymbol(p1),
-                    isSymbolP2 = isSymbol(p2);
+                    isSymbolP2 = isSymbol(p2),
+                    pIsSym = false;
 
                 //all we have to do is check if one of them is a symbol and we get to see why
                 //the grouping makes it easy. We now only have to clone a and modify that one
-                if(isSymbolP1 || isSymbolP2) {
+                if(isSymbolP1 || isSymbolP2) { 
                     result = a.clone();
                     a.previousGroup = a.group;
                     p = _.add(
                         !(isSymbol(p1)) ? new Symbol(p1) : p1, 
                         !(isSymbol(p2)) ? new Symbol(p2) : p2
                     );
-                    p.group = EX;
+                    result.previousGroup = result.group;
+                    result.group = EX;
+                    pIsSym = true;
                 }
-                else {
-                    p = p1.add(p2);
+                else { 
+                    p = p1.add(p2); 
                 }
-                
-                if(v1 !== v2) {
-                    result = Symbol.shell(CB);
-                    result.attach(a);
-                    result.attach(b);
+
+                if(v1 !== v2) { 
+                    if(g1 === CB) { 
+                        if(g2 === CB) { 
+                            b.each(function(x) {
+                                a.combine(x);
+                            });
+                        }
+                        else { 
+                            a.combine(b);
+                        }
+                        
+                        result = a.clone();
+                    }
+                    else { 
+                        result = Symbol.shell(CB);
+                        result.combine(a);
+                        result.combine(b);
+                    }
                 }
-                else result = a.clone();
+                else { 
+                    var isZero = pIsSym ? p.multiplier.equals(0): p.equals(0);
+                    if(isZero) {
+                        result = new Symbol(m);
+                    }
+                    else { 
+                        //option 2 check it it's composite
+                        if(g1 !== g2 && !a.isLinear()) {
+                            result = Symbol.shell(CB);
+                            result.combine(a);
+                            result.combine(b);
+                        }
+                        else {
+                            result = !result ?  a.clone() : result;
+                            result.power = !p ? p1.add(p2) : p;
+                        }  
+                    }
+                }
 
                 //reduce square root
-                var ps = isSymbolP1 ? p.muliplier.toString() :  p.toString();
+                var ps = isSymbolP1 ? p.multiplier.toString() :  p.toString();
                 if(even(ps) && result.fname === SQRT) {
                     result = result.args[0];
                     p = isSymbolP1 ? _.divide(p, new Symbol(2)) : p.divide(new Frac(2));
                 }
-
-                result.power = p;
+                
+//                result.power = p;
             }
-
+            
+            //unpack CB
+            
+            if(result.length === 1) {
+                //transfer the multiplier
+                var s = firstObject(result.symbols),
+                    m = result.multiplier;
+                
+                s.multiplier = s.multiplier.multiply(result.multiplier);
+                result = s;
+            }
+            
             return result;
         };
         
@@ -2408,7 +2490,10 @@ var nerdamer = (function() {
                 result = a.clone();
                 result.multiplier = result.multiplier.divide(b.multiplier);
             }
-            
+            else {
+                b.invert();
+                result = _.multiply(a, b);
+            }
             return result;
         };
 
@@ -2428,10 +2513,10 @@ var nerdamer = (function() {
                     nIsOne = n === '1',
                     dIsOne = d === '1'; //toString in case it's BigNumber
                     
-                if(b.isInteger()) {
+                if(b.isInteger()) { 
                     var e = b.multiplier.toDecimal(), symd, symn;
                     symn = new Symbol(nIsOne ? n : Math.pow(n, e));
-                    symd = new Symbol(dIsOne ? n : Math.pow(d, e));
+                    symd = new Symbol(dIsOne ? d : Math.pow(d, e));
                 }
                 else if(b.toString() === '1/2') {
                     //having square root gives us a little boost
@@ -2456,7 +2541,7 @@ var nerdamer = (function() {
 
                 //the multiplier has been prepared and is now just supposed to be a product so make it so.
                 result = _.multiply(symn, symd.invert());
-                
+                //pow
                 //put the symbol back
                 if(!a.isConstant()) {
                     if(!b.isConstant()) {
@@ -2474,15 +2559,17 @@ var nerdamer = (function() {
             }
 
             //reduce square root
-            var ps = b.multiplier.toString();
+            var ps = b.multiplier.toString(); 
             if(even(ps) && result.fname === SQRT) {
                 /*in progress*/
                 var rg = result.group,
-                    p = result.power; 
+                    p = b.multiplier; 
                 result = result.args[0];
-                result.power = result.group === EX ? _.divide(p, new Symbol(2)) : p.divide(new Frac(2));
+
+                return _.pow(result, rg === EX ? _.divide(b, new Symbol(2)) : 
+                        new Symbol(b.multiplier.divide(new Frac(2))));
             }
-            
+
             return result;
         };
         
