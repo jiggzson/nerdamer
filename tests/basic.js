@@ -7,8 +7,17 @@ var values = {
     a: 7.42
 };
 
+//console.log(Math.pow(3.1,3.1)*Math.pow(2,1))
 
 var cases = {
+    '((((((1+1))))))': {
+        expected: '2',
+        number_value: 2
+    },
+    '((((((1+1))+4)))+3)': {
+        expected: '9',
+        number_value: 9
+    },
     '1+1': {
         expected: '2',
         number_value: 2
@@ -43,7 +52,9 @@ var cases = {
     },
     '7*(x+y)+2*(a+x)': { //
         expected: '2*a+7*y+9*x',
-        number_value: 56.84
+        number_value: 56.84,
+        note: 'This test is a huge compromise. Do I expand as much as possible or '+
+                     'do I simplify only at the highest level?'
     },
     '(x+x^2)+x': {
         expected: '2*x+x^2',
@@ -82,7 +93,7 @@ var cases = {
         expected: 'sqrt(2)*sqrt(5)^(-1)',
         number_value: 0.6324555320336759
     },
-    '(2)^(1/2)+sqrt(2)': {
+    '2^(1/2)+sqrt(2)': {
         expected: '2*sqrt(2)',
         number_value: 2.8284271247461903
     },
@@ -94,14 +105,52 @@ var cases = {
         expected: 'x^2',
         number_value: 4.41
     },
-//    'sqrt(1+x)^(20*x)': {
-//        expected: 'x^2',
-//        number_value: 4.41
-//    },
-//    'sqrt(2)^2': {
-//        expected: '2',
-//        number_value: 2
-//    },
+    'sqrt(1/2)': {
+        expected: 'sqrt(2)^(-1)',
+        number_value: 0.7071067811865476
+    },
+    'sqrt(1+x)^(4*x)': {
+        expected: '(1+x)^(2*x)',
+        number_value: 115.80281433592612
+    },
+    'sqrt(2)^2': {
+        expected: '2',
+        number_value: 2
+    },
+    '6*sqrt(2)^4': {
+        expected: '24',
+        number_value: 24
+    },
+    'sqrt(x^2)*sqrt(x^4)': {
+        expected: 'abs(x)*x^2',
+        number_value: 9.261
+    },
+    'sqrt((5/2)*x^10)': {
+        expected: 'abs(x)*sqrt(2)^(-1)*sqrt(5)*x^4',
+        number_value: 2637.3207495816264
+    },
+    '(sqrt((5/2)*x^10))*-sqrt(2)': {
+        expected: '-abs(x)*sqrt(5)*x^4',
+        number_value: -91.3232746297487,
+        note: 'The function is supposed to contain a sqrt(2) which has to be removed but retain the sign'
+    },
+    'y*tan(x)*tan(x)': {
+        expected: 'tan(x)^2*y',
+        number_value: 9.647798160932233
+    },
+    '(x+x^2)*(x+x^2)^x': {
+        expected: '(x+x^2)^(1+x)',
+        number_value: 332.7369754244108
+    },
+    '2*(1+x)*3*(z+x)^x*8': {
+        expected: '48*(1+x)*(x+z)^x',
+        number_value: 1601.2623349876335
+    },
+    '(x+1)^x*(z+1)^z*(x+1)': {
+        expected: '(1+x)^(1+x)*(1+z)^z',
+        number_value: 66.71926395781806
+    },
+    
 };
 
 test(cases, values, true); 
