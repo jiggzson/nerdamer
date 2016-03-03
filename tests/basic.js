@@ -7,8 +7,6 @@ var values = {
     a: 7.42
 };
 
-//console.log(Math.pow(3.1,3.1)*Math.pow(2,1))
-
 var cases = {
     '((((((1+1))))))': {
         expected: '2',
@@ -149,6 +147,26 @@ var cases = {
     '(x+1)^x*(z+1)^z*(x+1)': {
         expected: '(1+x)^(1+x)*(1+z)^z',
         number_value: 66.71926395781806
+    },
+    '2*cos(x)+cos(x)': {
+        expected: '3*cos(x)',
+        number_value: -1.5145383137995727
+    },
+    '2*cos(x)+cos(x+8+5*x)': {
+        expected: '2*cos(x)+cos(6*x+8)',
+        number_value: 0.18041483808986802
+    },
+    'x^2+2*cos(x)+cos(x+8+5*x)+4*x^2': {
+        expected: '2*cos(x)+5*x^2+cos(6*x+8)',
+        number_value: 22.230414838089867
+    },
+    'x-y': {
+        expected: '-y+x',
+        number_value: 1.1999999999999997
+    },
+    'x-x': {
+        expected: '0',
+        number_value: 0
     },
     
 };
