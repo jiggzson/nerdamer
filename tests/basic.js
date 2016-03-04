@@ -136,9 +136,10 @@ var cases = {
         expected: 'tan(x)^2*y',
         number_value: 9.647798160932233
     },
-    '(x+x^2)*(x+x^2)^x': {
-        expected: '(x+x^2)^(1+x)',
-        number_value: 332.7369754244108
+    '5*(x+x^2)*(2*(x+x^2)^x)': {
+        expected: '10*(x+x^2)^(1+x)',
+        number_value: 3327.3697542441078
+//        number_value: 332.7369754244108
     },
     '2*(1+x)*3*(z+x)^x*8': {
         expected: '48*(1+x)*(x+z)^x',
@@ -168,7 +169,38 @@ var cases = {
         expected: '0',
         number_value: 0
     },
-    
+    '3*(x^2+1)^x*(2*(x^2+1))': {
+        expected: '6*(1+x^2)^(1+x)',
+        number_value: 1353.4633360721534
+    },
+    '2*(x+x^2)+1': {
+        expected: '1+2*x+2*x^2',
+        number_value: 14.02
+    },
+    '2*(x+x^2)+3*(x^2+x^3)': {
+        expected: '2*x+3*x^3+5*x^2',
+        number_value: 54.033
+    },
+    '2*(x+x^2)+3*(x^2+x^3)^2': {
+        expected: '2*(x+x^2)+3*(x^2+x^3)^2',
+        number_value: 573.7087230000001
+    },
+    '2*(x+x^2)+3*(x^2+x^3)^2+x': {
+        expected: '2*x^2+3*x+3*(x^2+x^3)^2',
+        number_value: 575.8087230000001
+    },
+    '2*(x+x^2)+3*(x^2+x^3)^2+(x^2+x)': {
+        expected: '3*(x^2+x^3)^2+3*x+3*x^2',
+        number_value: 580.2187230000001
+    },
+    '2*(x+x^2)^2+3*(x^2+x)^2': {
+        expected: '5*(x+x^2)^2',
+        number_value: 32.55
+    },
+    '2*(x+x^2)^2+2*(x+x^2)^3+2*(x+x^2)^2': {
+        expected: '5*(x+x^2)^2',
+        number_value: 32.55
+    },
 };
 
 test(cases, values, true); 
