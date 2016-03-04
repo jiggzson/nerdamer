@@ -623,14 +623,14 @@ var nerdamer = (function() {
      * @param {String} option get is as a hash 
      * @returns {String}
      */
-    function text(obj, option) { 
+    function text(obj, option, useGroup) { 
         var asHash = option === 'hash'
         //if the object is a symbol
         if(isSymbol(obj)) { 
             var multiplier = '', 
             power = '',
             sign = '',
-            group = obj.group,
+            group = obj.group || useGroup,
             value = obj.value;
             //if the value is to be used as a hash then the power and multiplier need to be suppressed
             if(!asHash) { 
@@ -694,6 +694,9 @@ var nerdamer = (function() {
                     }
                     break;
             }
+            //wrap the power since / is less than ^
+            //TODO: introduce method call isSimple
+            if(power && !isInt(power) && group !== EX) { power = inBrackets(power); }
 
             //the following groups are held together by plus or minus. They can be raised to a power or multiplied
             //by a multiplier and have to be in brackets to preserve the order of precedence
@@ -932,12 +935,12 @@ var nerdamer = (function() {
         equals: function(n) {
             var a = n instanceof Frac ? n.toDecimal() : n,
                 b = this.toDecimal();
-            return a === b;
+            return a == b; //needs falsy check
         },
         absEquals: function(n) {
             var a = n instanceof Frac ? n.toDecimal() : n,
                 b = this.toDecimal();
-            return a === Math.abs(b);
+            return a == Math.abs(b); //needs falsy check
         },
         greaterThan: function(n) {
             var a = n instanceof Frac ? n.toDecimal() : n,
@@ -1431,10 +1434,18 @@ var nerdamer = (function() {
         },  
         //the insert method for addition
         attach: function(symbol) {
+            if(isArray(symbol)) {
+                for(var i=0; i<symbol.length; i++) this.insert(symbol[i], 'add');
+                return this;
+            }
             return this.insert(symbol, 'add');
         },
         //the insert method for multiplication
         combine: function(symbol) {
+            if(isArray(symbol)) {
+                for(var i=0; i<symbol.length; i++) this.insert(symbol[i], 'multiply');
+                return this;
+            }
             return this.insert(symbol, 'multiply');
         },
         /**
@@ -1483,6 +1494,7 @@ var nerdamer = (function() {
                     if(this.power.equals(1)) key = this.value;
                     else key = inBrackets(text(this, 'hash'))+'^'+this.power.toDecimal();
                 }
+                else if(group === PL) key = text(this, 'hash');
                 else key = this.value;
                 return key;
             }
@@ -2292,19 +2304,20 @@ var nerdamer = (function() {
                 
             var v1 = a.value, //store the values
                 v2 = b.value,
-                result = b.clone(); 
+                result = b.clone(),
+                equalPow = a.power.toString() ===b.power.toString(); 
 
             //the result will be 3 possibilities
             //1. values equal each other but the powers do
             //2. values equals each other but the powers don't
             //3. value don't equal each other
-            if(v1 === v2 && a.power.equals(b.power) && !(g1 === PL)) { 
+            if(v1 === v2 && equalPow && !(g1 === PL)) { 
                 result.multiplier = b.multiplier.add(a.multiplier);
             }
-            else if(v1 === v2){ 
+            else if(v1 === v2 ){ 
                 var isPL = g1 === PL; 
-                if(g2 === PL) {
-                    if(a.isLinear() && b.isLinear()) {
+                if(g2 === PL) { 
+                    if(a.isLinear() && b.isLinear()) { 
                         //multiply out the multipliers
                         a.distributeMultiplier();
                         b.distributeMultiplier();
@@ -2312,6 +2325,23 @@ var nerdamer = (function() {
                         b.each(function(x) {
                             result = a.attach(x);
                         });
+                    }
+                    else { 
+                        //get the hashes and see if they match. Doing this for an EX returns only their values
+                        var h1 = text(a, 'hash'),
+                            h2 = text(b, 'hash'),
+                            equalHash = h1 === h2;
+                        
+                        if(equalHash && equalPow) { 
+                            result.multiplier = result.multiplier.add(a.multiplier);
+                        }
+                        else if(equalHash) { 
+                            result = Symbol.shell(PL).attach([a, b]);
+                        }
+                        else {
+                            result = Symbol.shell(CP).attach([a, b]);
+                        }
+                                //next check what happens when I add one ore
                     }
                 }
                 else { 
@@ -2350,7 +2380,7 @@ var nerdamer = (function() {
                     result.attach(a);
                 }
             }
-            
+
             //addition may have rendered the symbol with a zero multiplier and effectively making it zero. Return zero.
             if(result.multiplier.equals(0)) result = new Symbol(0);
             
@@ -2413,10 +2443,20 @@ var nerdamer = (function() {
 
             var v1 = a.value,
                 v2 = b.value,
-                m = a.multiplier.multiply(b.multiplier),
+                //since O is just a morphed version of N we need to see if they relate
+                ONN = (g1 === O && g2 === N && b.multiplier.equals(a.value)),
+                //don't multiply the multiplier of b since that's equal to the value of a
+                m = ONN ? new Frac(1).multiply(a.multiplier) : a.multiplier.multiply(b.multiplier),
                 result = a.clone().toUnitMultiplier();
-
-            if(v1 === v2) { 
+            
+            //same issue with (x^2+1)^x*(x^2+1)
+            //EX needs an exception when multiplying because it needs to recognize
+            //that (x+x^2)^x has the same hash as (x+x^2). The latter is kept as x
+            if(g2 === EX && b.previousGroup === PL && g1 === PL) {
+                v1 = text(a, 'hash', EX);
+            }
+            
+            if(v1 === v2 || ONN) { 
                 var p1 = a.power,
                     p2 = b.power,
                     isSymbolP1 = isSymbol(p1),
@@ -2444,10 +2484,7 @@ var nerdamer = (function() {
             else {
                 //the multiplier was already handled so nothing left to do
                 if(g1 !== N) { 
-                    var shell = Symbol.shell(CB);
-                    shell.combine(result);
-                    shell.combine(b);
-                    result = shell;
+                    result = Symbol.shell(CB).combine([result, b]);
                 }     
                 else { 
                     result = b.clone().toUnitMultiplier();
@@ -2502,28 +2539,66 @@ var nerdamer = (function() {
         this.pow = function(a, b) { 
             var n = a.multiplier.num.toString(),
                 d = a.multiplier.den.toString(),
+                bIsInt = b.isInteger(),
                 result;
+        
+            if(!bIsInt) {
+                var nsym, dsym;
+                //1^n = 1 so nsym is always 1
+                nsym = n === '1' ? new Symbol(1) :  new Symbol(n).multiplyPower(b.multiplier.clone()); 
+                if(d !== '1') dsym = new Symbol(d).multiplyPower(b.multiplier.clone());
+                result = nsym && dsym ? _.multiply(nsym, dsym.invert()) : nsym;
+            }
             
             if(b.isConstant()) {
-                if(b.isInteger()) {
+                if(bIsInt) {
                     var p = b.toString(),
                         np = Math.pow(n, p),
                         dp = Math.pow(d, p);
                     result = _.multiply(new Symbol(np), new Symbol(dp).invert());
                 }
-                else {
-                    var nsym, dsym;
-                    //1^n = 1 so nsym is always 1
-                    nsym = n === 1 ? new Symbol(1) :  new Symbol(n).multiplyPower(b.multiplier.clone()); 
-                    if(d !== 1) dsym = new Symbol(d).multiplyPower(b.multiplier.clone());
-
-                    result = nsym && dsym ? _.multiply(nsym, dsym.invert()) : nsym;
+  
+                if(!a.isConstant()) {
+                    var s = a.clone().toUnitMultiplier();
+                    s.power = s.power.multiply(b.multiplier.clone());
+                    result = _.multiply(result, s);
+                    
+                    if(result.group === O && result.power.isInteger()) {
+                        result = this.pow(new Symbol(result.value), new Symbol(result.power));
+                    }
                 }
             }
             else {
-                
+                if(!a.isConstant()) {
+                    var t = a.clone().toUnitMultiplier();
+                    t.convert(EX);
+                    t.power = b.clone();
+                    result = _.multiply(result, t);
+                }
             }
-           
+            
+            //wrap the symbol in sqrt. This eliminates one more check down the line.
+            if(!isSymbol(result.power) && result.power.equals(0.5)) {
+                //don't devide the power directly. Notice the use of toString. This makes it possible
+                //to use a bigNumber library in the future
+                result = sqrt(result.toLinear());
+            }
+            
+            //reduce square root
+            if(result.fname === SQRT) {
+                var isEX = result.group === EX;
+                var t = isEX ? result.power.multiplier.toString() : result.power.toString();
+                if(even(t)) {
+                    var pt = isEX ? _.divide(result.power, new Symbol(2)) : result.power.divide(new Frac(2)),
+                        m = result.multiplier;
+                    result = result.args[0];
+                    result.multiplier = result.multiplier.multiply(m);
+                    
+                    var np = isEX && result.group !== EX ? new Symbol(result.power) : result.power;
+                    result.power = isSymbol(np) ? _.multiply(np, pt) : np.multiply(pt);
+                }
+            }
+            
             return result;
         };
         
