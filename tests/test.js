@@ -1,4 +1,4 @@
-var nerdamer = require('../nerdamer.core.inf_prec');
+var nerdamer = require('../nerdamer.core');
 
 var run_tests = function(test_cases, values, verbose) {
     var num_failed = 0,
