@@ -1,9 +1,11 @@
 var nerdamer = require('../nerdamer.core.inf_prec');
 
 var run_tests = function(test_cases, values, verbose) {
-    var num_failed = 0;
+    var num_failed = 0,
+        num_tests = 0;
     console.log('Running tests ... \n------------------------------------ \n');
     for(var x in test_cases) {
+        num_tests++;
         var test_case = test_cases[x]; //get the test case
 		var result = "";
         	//Test if nerdamer throws and error correctly
@@ -35,7 +37,7 @@ var run_tests = function(test_cases, values, verbose) {
                     if(verbose) console.log('test "'+x+'" passed with result '+result);
                 }
     }
-    console.log('Done!');
+    console.log('Done! '+num_tests+' tests completed');
     console.log(num_failed+' test'+(num_failed === 1 ? '' : 's')+' failed.');
 };
 
