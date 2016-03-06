@@ -20,6 +20,10 @@ var cases = {
         expected: '2',
         number_value: 2
     },
+    '4^2': {
+        expected: '16',
+        number_value: 16
+    },
     '2+(3/4)': {
         expected: '11/4',
         number_value: 2.75
@@ -182,7 +186,7 @@ var cases = {
         number_value: 54.033
     },
     '2*(x+x^2)+3*(x^2+x^3)^2': {
-        expected: '2*(x+x^2)+3*(x^2+x^3)^2',
+        expected: '2*x+2*x^2+3*(x^2+x^3)^2',
         number_value: 573.7087230000001
     },
     '2*(x+x^2)+3*(x^2+x^3)^2+x': {
@@ -197,9 +201,245 @@ var cases = {
         expected: '5*(x+x^2)^2',
         number_value: 32.55
     },
-    '2*(x+x^2)^2+2*(x+x^2)^3+2*(x+x^2)^2': {
-        expected: '5*(x+x^2)^2',
-        number_value: 32.55
+    '2*(x+x^2)^2+2*(x+x^2)^3+4*(x+x^2)^2': {
+        expected: '2*(x+x^2)^3+6*(x+x^2)^2',
+        number_value: 806.069502
+    },
+    '2*x^2+3*x+y+y^2': {
+        expected: '2*x^2+y^2+3*x+y',
+        number_value: 29.31
+    },
+    '(y+y^2)^6+y': {
+        expected: '(y+y^2)^6+y',
+        number_value: 8163841.19820367
+    },
+    '2*(x+x^2)+(y+y^2)^6+y': {
+        expected: '(y+y^2)^6+2*x+2*x^2+y',
+        number_value: 8163854.218203679
+    },
+    '2*(x+x^2)+4': {
+        expected: '2*x+2*x^2+4',
+        number_value: 17.02
+    },
+    '2*(x+x^2)+48*x*y': {
+        expected: '2*(x+x^2)+48*x*y',
+        number_value: 345.66 
+    },
+    '2*(x+x^2)+(48+x+2*y)': {
+        expected: '2*x^2+3*x+2*y+48',
+        number_value: 69.72 
+    },
+    'cos(x)+(x+x^2+x)': {
+        expected: '2*x+cos(x)+x^2',
+        number_value: 8.105153895400228 
+    },
+    'cos(x)+(x+x^2+7)': {
+        expected: '7+cos(x)+x+x^2',
+        number_value: 13.005153895400229 
+    },
+    '(x^2+1)-1': {
+        expected: 'x^2',
+        number_value: 4.41
+    },
+    '(x^2+1)-1+x+x^3+x': {
+        expected: '2*x+x^2+x^3',
+        number_value: 17.871
+    },
+    '5+(x^2+y+1)+(x+y+15)': {
+        expected: '2*y+21+x+x^2',
+        number_value: 34.11
+    },
+    '(x^2+y+1)+(x+y+15)+(x^2+y+1)': {
+        expected: '17+2*x^2+x+3*y',
+        number_value: 37.82
+    },
+    '(x^2+y+1)+(x+x^2)': {
+        expected: '1+2*x^2+x+y',
+        number_value: 15.22 
+    },
+    '(1+(1+x)^2)': {
+        expected: '(1+x)^2+1',
+        number_value: 10.61
+    },
+    '(x+x)^x': {
+        expected: '2^x*x^x',
+        number_value: 20.362144253523596
+    },
+    '1/4*2^x*x^x': {
+        expected: '1/4*2^x*x^x',
+        number_value: 10.61
+    },
+    'x^2+x-x^y+x': {
+        expected: '-x^y+2*x+x^2',
+        number_value: -2.9597419502415643 
+    },
+    'x^x+x^x-1-2*x^x': {
+        expected: '-1',
+        number_value: -1
+    },
+    'x^x+x^x-1-2*x^x+2*y+1-2*y': {
+        expected: '0',
+        number_value: 0
+    },
+    '(x+1)-x*y-5+2*x*y': {
+        expected: '-4+x+x*y',
+        number_value: 5.03
+    },
+    '(2*x-y+7-x+y-x-5)*2+15/3': {
+        expected: '9',
+        number_value: 9
+    },
+    '6.5*2': {
+        expected: '13',
+        number_value: 13
+    },
+    'x*2': {
+        expected: '2*x',
+        number_value: 4.2
+    },
+    'x*y': {
+        expected: 'x*y',
+        number_value: 6.93
+    },
+    'cos(x)*cos(x)': {
+        expected: 'cos(x)^2',
+        number_value: 0.25486958932951276
+    },
+    '(x+x^2)*(x+x^2)': {
+        expected: '(x+x^2)^2',
+        number_value: 42.3801
+    },
+    '(x+x^2)*2*(x+x^2)': {
+        expected: '2*(x+x^2)^2',
+        number_value: 84.7602
+    },
+    '(x*y)*(x*y)': {
+        expected: '(x*y)^2',
+        number_value: 84.7602
+    },
+    '(x*y)*(x*z)': {
+        expected: 'x^2*y*z',
+        number_value: 14.553
+    },
+    '(x+y)*(x+y)': {
+        expected: '(x+y)^2',
+        number_value: 29.16
+    },
+    '(x+y)*(y+x)': {
+        expected: '(x+y)^2',
+        number_value: 29.16
+    },
+    '(1+x)*(x+y)': {
+        expected: '(1+x)*(x+y)',
+        number_value: 16.74
+    },
+    'x*y*x': {
+        expected: 'x^2*y',
+        number_value: 14.553
+    },
+    'x*y*x/x': {
+        expected: 'x*y',
+        number_value: 6.93
+    },
+    'x*y*x/x/x/y': {
+        expected: '1',
+        number_value: 1
+    },
+    'x^x*cos(x)*sin(x)/x': {
+        expected: '(x)^(-1+x)*cos(x)*sin(x)',
+        number_value: -0.985635592498768 
+    },
+    '(x+x^2)^x*x': {
+        expected: '(x+x^2)^x*x',
+        number_value: 107.33450820142276 
+    },
+    '(x+x^2)^x*(x+x^x)': {
+        expected: '(x+x^2)^x*(x+x^x)',
+        number_value: 350.09644568327695 
+    },
+    '(x+x^2)^x*(x+x^2)': {
+        expected: '(x+x^2)^(1+x)',
+        number_value: 332.7369754244108 
+    },
+    '(x+x^2)^2*x': {
+        expected: '(x+x^2)^2*x',
+        number_value: 88.99821 
+    },
+    '(z+z^2)^x*(x+y^2+1)': {
+        expected: '(1+x+y^2)*(z+z^2)^x',
+        number_value: 59.97644296353172 
+    },
+    'tan(x)*tan(x)': {
+        expected: 'tan(x)^2',
+        number_value: 2.923575200282259 
+    },
+    '(x+1)/(x+1)': {
+        expected: '1',
+        number_value: 1
+    },
+    'x*y*z/(x*y*z)': {
+        expected: '1',
+        number_value: 1
+    },
+    'x^y/x^y': {
+        expected: '1',
+        number_value: 1
+    },
+    '5*x^y/x^y': {
+        expected: '5',
+        number_value: 5
+    },
+    '(x+x^6)^y/(x+x^6)^y': {
+        expected: '1',
+        number_value: 1
+    },
+    '2^y*2^y': {
+        expected: '(2)^(2*y)',
+        number_value: 97.00586025666554
+    },
+    '2^x': {
+        expected: '2^x',
+        number_value: 4.28709385014522
+    },
+    '((x^3+x)^x*(x^2+x)^x+1)*x': {
+        expected: '((x+x^2)^x*(x+x^3)^x+1)*x',
+        number_value: 17667.120525566257
+    },
+    'x^x': {
+        expected: 'x^x',
+        number_value: 4.749638091742232
+    },
+    'x^(x)': {
+        expected: 'x^x',
+        number_value: 4.749638091742232
+    },
+    'y^y^3': {
+        expected: 'y^y^3',
+        number_value: 4303635263255155700
+    },
+    'sqrt(9)': {
+        expected: '3',
+        number_value: 3
+    },
+    'sqrt(-9)': {
+        expected: '3*i',
+        number_value: '3*i'
+    },
+    'sqrt(-x)': {
+        expected: 'sqrt(-x)',
+        number_value: 'sqrt(-x)'
+    },
+    'sqrt(-x)*sqrt(-x)': {
+        expected: '-x',
+        number_value: -2.1
+    },
+    'sqrt(-x)*sqrt(-x)+4*x': {
+        expected: '3*x',
+        number_value: 6.3
+    },
+    '(x^6)^(1/4)': {
+        expected: 'abs(x)^(3/2)',
+        number_value: 3.0431891166997898
     },
 };
 
