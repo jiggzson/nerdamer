@@ -2449,7 +2449,7 @@ var nerdamer = (function() {
          * @param {Symbol} b
          * @returns {Symbol}
          */
-        this.multiply = function(a, b) { console.log(a.text(), b.text())
+        this.multiply = function(a, b) { 
             //the quickies
             if(a.isConstant() && b.isConstant() && Settings.PARSE2NUMBER) {
                 return new Symbol(a.multiplier.multiply(b.multiplier).toDecimal());
@@ -2472,7 +2472,8 @@ var nerdamer = (function() {
                 ONN = (g1 === P && g2 === N && b.multiplier.equals(a.value)),
                 //don't multiply the multiplier of b since that's equal to the value of a
                 m = ONN ? new Frac(1).multiply(a.multiplier) : a.multiplier.multiply(b.multiplier),
-                result = a.clone().toUnitMultiplier();
+                result = a.clone().toUnitMultiplier(),
+                b = b.clone().toUnitMultiplier();
             
             //same issue with (x^2+1)^x*(x^2+1)
             //EX needs an exception when multiplying because it needs to recognize
@@ -2501,7 +2502,10 @@ var nerdamer = (function() {
                 //take care of imaginaries
                 if(a.imaginary && b.imaginary) {
                     var isEven = even(result.power % 2);
-                    result = _.multiply(new Symbol(result.multiplier), new Symbol(isEven ? -1 : 1));
+                    if(isEven) {
+                        result = new Symbol(1);
+                        m.negate();
+                    }
                 }
             }
             else if(g1 === CB && a.isLinear()){ 
@@ -2525,11 +2529,11 @@ var nerdamer = (function() {
             }
             
             //unpack CB if length is only one
-            if(result.length === 1) {
+            if(result.length === 1) { 
+                var t = result.multiplier;
                 //transfer the multiplier
-                var s = firstObject(result.symbols);
-                s.multiplier = s.multiplier.multiply(result.multiplier);
-                result = s;
+                result = firstObject(result.symbols);
+                result.multiplier = result.multiplier.multiply(t);
             }
             
             //reduce square root
@@ -2540,8 +2544,7 @@ var nerdamer = (function() {
                 result = _.multiply(new Symbol(m), _.pow(result, new Symbol(p.divide(new Frac(2)))));
             }
             else {
-//                result.multiplier = result.multiplier.multiply(m);
-                result.multiplier = result.multiplier.multiply(m);
+                result.multiplier = m.multiply(result.multiplier);
             }
 
             if(result.power.equals(0)) result = new Symbol(result.multiplier);
@@ -2574,7 +2577,7 @@ var nerdamer = (function() {
          * @param {Symbol} b
          * @returns {Symbol}
          */
-        this.pow = function(a, b) { console.log(a.text())
+        this.pow = function(a, b) { 
             if(a.isConstant() && b.isConstant() && Settings.PARSE2NUMBER) {
                 return new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
             }
