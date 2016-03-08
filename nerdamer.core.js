@@ -1108,6 +1108,11 @@ var nerdamer = (function() {
         isLinear: function() {
             return this.power.equals(1);
         },
+        setPower: function(p) {
+            this.power = p;
+            if(this.group === N && !p.equals(1)) this.convert(P);
+            return this;
+        },
         /**
          * Checks to see if symbol is located in the denominator
          * @returns {boolean}
@@ -2578,11 +2583,15 @@ var nerdamer = (function() {
          * @returns {Symbol}
          */
         this.pow = function(a, b) { 
-            if(a.isConstant() && b.isConstant() && Settings.PARSE2NUMBER) {
+            //cache the 
+            var bIsConstant = b.isConstant(),
+                aIsConstant = a.isConstant();
+        
+            if(aIsConstant && bIsConstant && Settings.PARSE2NUMBER) {
                 return new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
             }
             
-            var bIsInt = bIsInt = b.isInteger();
+            var bIsInt = b.isInteger();
             
             //quick conversion for P. Don't waste time;
             if(a.isInteger() && !bIsInt) {
@@ -2593,6 +2602,7 @@ var nerdamer = (function() {
                     return a; //early exit and needed to shorten logic
                 }
             }
+            
                 
             var n = a.multiplier.num.toString(),
                 d = a.multiplier.den.toString(),
@@ -2600,20 +2610,34 @@ var nerdamer = (function() {
         
             if(!bIsInt) {
                 var nsym, dsym;
-                //1^n = 1 so nsym is always 1
-                nsym = n === '1' ? new Symbol(1) :  _.pow(new Symbol(n), b.clone()); 
-                if(d !== '1') dsym = _.pow(new Symbol(d), b.clone());
-                result = nsym && dsym ? _.multiply(nsym, dsym.invert()) : nsym;
+                if(bIsConstant) {
+                    var r = b.multiplier.den,
+                        e = b.multiplier.num,
+                        //we want to check if the denominator yields an integer. If it does then we add it
+                        test1 = Math.pow(Math.pow(n, 1/r), e),
+                        x = isInt(test1) ? new Symbol(test1) : new Symbol(n).setPower(b.multiplier.clone()),
+                        test2 = Math.pow(Math.pow(d, 1/r), e),
+                        y = isInt(test2) ? new Symbol(test2) : new Symbol(d).setPower(b.multiplier.clone()).invert();
+                    result = _.multiply(x, y);
+                }
+                //handle symbolic powers
+                else {
+                    //1^n = 1 so nsym is always 1
+                    nsym = n === '1' ? new Symbol(1) :  _.pow(new Symbol(n), b.clone()); 
+                    if(d !== '1') dsym = _.pow(new Symbol(d), b.clone());
+                    result = nsym && dsym ? _.multiply(nsym, dsym.invert()) : nsym;
+                }
+                    
             }
             
-            if(b.isConstant()) { 
+            if(bIsConstant) { 
                 if(bIsInt) {
                     var p = b.toString(),
                         np = Math.pow(n, p),
                         dp = Math.pow(d, p);
                     result = _.multiply(new Symbol(np), new Symbol(dp).invert());
                 }
-
+                //must be live check
                 if(!a.isConstant()) { 
                     var s = a.clone().toUnitMultiplier();
                     s.power = s.power.multiply(b.multiplier.clone());
@@ -2624,7 +2648,7 @@ var nerdamer = (function() {
                 }
             }
             else {
-                if(!a.isConstant()) {
+                if(!aIsConstant) {
                     var t = a.clone().toUnitMultiplier();
                     t.convert(EX);
                     t.power = b.clone();
