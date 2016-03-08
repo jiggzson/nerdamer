@@ -596,6 +596,18 @@ var nerdamer = (function() {
                     }
                 }
                 return a;
+            },
+            //pow but with the handling of negative numbers
+            //http://stackoverflow.com/questions/12810765/calculating-cubic-root-for-negative-number
+            pow: function(b, e) {
+                if (b < 0) {
+                    if (Math.abs(e) < 1) {
+                        //nth root of a negative number is imaginary when n is even
+                        if (1 / e % 2 === 0) return NaN;
+                        return -Math.pow(Math.abs(b), e);
+                    }
+                }
+                return Math.pow(b, e);
             }
         };
         
@@ -2284,6 +2296,7 @@ var nerdamer = (function() {
             }
             return symbol;
         }
+
         //extended functions. Because functions like log aren't directly 
         //stored in an object, it's difficult to find out about them unless you know of them 
         //outside of the library. This serves as registry. That's all.
@@ -2641,11 +2654,10 @@ var nerdamer = (function() {
                     if(d !== '1') dsym = _.pow(new Symbol(d), b.clone());
                     result = nsym && dsym ? _.multiply(nsym, dsym.invert()) : nsym; 
                 }
-                    
             }
             
             if(bIsConstant) { 
-                if(bIsInt) {
+                if(bIsInt) { 
                     var p = b.toString(),
                         np = Math.pow(n, p),
                         dp = Math.pow(d, p);
@@ -2659,7 +2671,14 @@ var nerdamer = (function() {
                         evenp = even(s.power);
                     s.power = s.power.multiply(b.multiplier.clone());
                     result = _.multiply(result, s);
-                    if(result.group === P && result.power.isInteger()) {
+                    //eliminate imaginary if possible
+                    if(a.imaginary) {
+                        var rp = b.multiplier.multiply(new Frac(1/2)),
+                            test = Math2.pow(-1, rp.toDecimal());
+                        result = isNaN(test) ? new Symbol(-1).setPower(rp) : new Symbol(test);
+                    } 
+                    //take care of group P
+                    if(result.group === P && result.power.isInteger()) { 
                         result = _.pow(new Symbol(result.value), new Symbol(result.power));
                     }
                     
