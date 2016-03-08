@@ -968,6 +968,9 @@ var nerdamer = (function() {
         isOne: function() {
             return this.num === 1 && this.den === 1;
         },
+        sign: function() {
+            return this.toDecimal() < 0 ? -1 : 1;
+        },
         absoluteValue: function() {
             this.num = Math.abs(this.num);
             this.den = Math.abs(this.den);
@@ -2193,16 +2196,16 @@ var nerdamer = (function() {
                     
                     var p = retval.power.toString();
                     //preserve the absolute value
-                    if(!even(p)) { 
-                        var s = retval.clone().toLinear();
-
-                        if(p !== '1') {
-                            retval.power = retval.power.subtract(new Frac(1));
-                        }
-                        else retval = new Symbol(1);
-                        
-                        retval = _.multiply(retval, _.symfunction(ABS, [s]));
-                    }
+//                    if(!even(p)) { 
+//                        var s = retval.clone().toLinear();
+//
+//                        if(p !== '1') {
+//                            retval.power = retval.power.subtract(new Frac(1));
+//                        }
+//                        else retval = new Symbol(1);
+//                        
+//                        retval = _.multiply(retval, _.symfunction(ABS, [s]));
+//                    }
                 }
                 else { 
                     retval = _.symfunction(SQRT, [symbol]);
@@ -2271,6 +2274,16 @@ var nerdamer = (function() {
             err('invert expects a matrix');
         }
         
+        function testSQRT(symbol) { 
+            //wrap the symbol in sqrt. This eliminates one more check down the line.
+            if(!isSymbol(symbol.power) && symbol.power.absEquals(0.5)) { 
+                var sign = symbol.power.sign();
+                //don't devide the power directly. Notice the use of toString. This makes it possible
+                //to use a bigNumber library in the future
+                return sqrt(symbol.toLinear()).setPower(new Frac(sign));
+            }
+            return symbol;
+        }
         //extended functions. Because functions like log aren't directly 
         //stored in an object, it's difficult to find out about them unless you know of them 
         //outside of the library. This serves as registry. That's all.
@@ -2612,20 +2625,21 @@ var nerdamer = (function() {
                 var nsym, dsym;
                 if(bIsConstant) {
                     var r = b.multiplier.den,
-                        e = b.multiplier.num,
+                        e = b.multiplier.num;
+                    
                         //we want to check if the denominator yields an integer. If it does then we add it
-                        test1 = Math.pow(Math.pow(n, 1/r), e),
-                        x = isInt(test1) ? new Symbol(test1) : new Symbol(n).setPower(b.multiplier.clone()),
+                    var test1 = Math.pow(Math.pow(n, 1/r), e),
+                        n1 = testSQRT(isInt(test1) ? new Symbol(test1) : new Symbol(n).setPower(b.multiplier.clone())),
                         test2 = Math.pow(Math.pow(d, 1/r), e),
-                        y = isInt(test2) ? new Symbol(test2) : new Symbol(d).setPower(b.multiplier.clone()).invert();
-                    result = _.multiply(x, y);
+                        n2 = testSQRT(isInt(test2) ? new Symbol(test2) : new Symbol(d).setPower(b.multiplier.clone()).invert());
+                    result = _.multiply(n1, n2);
                 }
                 //handle symbolic powers
                 else {
                     //1^n = 1 so nsym is always 1
                     nsym = n === '1' ? new Symbol(1) :  _.pow(new Symbol(n), b.clone()); 
                     if(d !== '1') dsym = _.pow(new Symbol(d), b.clone());
-                    result = nsym && dsym ? _.multiply(nsym, dsym.invert()) : nsym;
+                    result = nsym && dsym ? _.multiply(nsym, dsym.invert()) : nsym; 
                 }
                     
             }
@@ -2637,15 +2651,33 @@ var nerdamer = (function() {
                         dp = Math.pow(d, p);
                     result = _.multiply(new Symbol(np), new Symbol(dp).invert());
                 }
+
                 //must be live check
                 if(!a.isConstant()) { 
-                    var s = a.clone().toUnitMultiplier();
+                    var s = a.clone().toUnitMultiplier(),
+                        evenr = even(b.multiplier.den),
+                        evenp = even(s.power);
                     s.power = s.power.multiply(b.multiplier.clone());
                     result = _.multiply(result, s);
                     if(result.group === P && result.power.isInteger()) {
                         result = _.pow(new Symbol(result.value), new Symbol(result.power));
                     }
-                }
+                    
+                    //if the radical denominator is even and the power was even retain absolute value
+                    if(evenr && evenp) {
+                        var p = Number(result.power.toString()),
+                            unevenPow = !even(p);
+                        //check if the power is int
+                        if(isInt(p) && p > 1 && unevenPow) { 
+                            result = _.multiply(_.symfunction(ABS, [result.clone().toLinear()]), result.clone().setPower(new Frac(p-1)));
+                        }
+                        else if(unevenPow){
+                            var pp = result.power;
+                            result = _.symfunction(ABS, [result.clone().toLinear()]).setPower(pp);
+                        }
+                    }
+                } 
+                
             }
             else {
                 if(!aIsConstant) {
@@ -2656,12 +2688,7 @@ var nerdamer = (function() {
                 }
             }
 
-            //wrap the symbol in sqrt. This eliminates one more check down the line.
-            if(!isSymbol(result.power) && result.power.equals(0.5)) { 
-                //don't devide the power directly. Notice the use of toString. This makes it possible
-                //to use a bigNumber library in the future
-                result = sqrt(result.toLinear());
-            }
+            result = testSQRT(result);
             
             //reduce square root
             if(result.fname === SQRT) { 
@@ -2674,7 +2701,7 @@ var nerdamer = (function() {
                     result.multiplier = result.multiplier.multiply(m);
                 }
             }
-            
+
             return result;
         };
         
