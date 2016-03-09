@@ -599,7 +599,7 @@ var nerdamer = (function() {
             },
             //pow but with the handling of negative numbers
             //http://stackoverflow.com/questions/12810765/calculating-cubic-root-for-negative-number
-            pow: function(b, e) {
+            pow: function(b, e) { 
                 if (b < 0) {
                     if (Math.abs(e) < 1) {
                         //nth root of a negative number is imaginary when n is even
@@ -710,6 +710,7 @@ var nerdamer = (function() {
             //by a multiplier and have to be in brackets to preserve the order of precedence
             if(((group === CP || group === PL) && (multiplier && multiplier != '1' || sign === '-')) 
                     || ((group === CB || group === CP || group === PL) && (power && power != '1'))
+                    || !asHash && group === P && value == -1
                     || obj.fname === PARENTHESIS) { 
                 
                 value = inBrackets(value);
@@ -1123,9 +1124,9 @@ var nerdamer = (function() {
         isLinear: function() {
             return this.power.equals(1);
         },
-        setPower: function(p) {
+        setPower: function(p, retainSign) { 
             this.power = p;
-            if(this.group === N && !p.equals(1)) this.convert(P);
+            if(this.group === N && !p.equals(1)) this.convert(P, retainSign);
             return this;
         },
         /**
@@ -1308,7 +1309,7 @@ var nerdamer = (function() {
          * group to another however. In that case the symbol will remain 
          * unchanged.
          */
-        convert: function(group, value) { 
+        convert: function(group, imaginary) { 
             if(group > FN) { 
                 //make a clone of this symbol;
                 var cp = this.clone();
@@ -1368,8 +1369,8 @@ var nerdamer = (function() {
             }
             else if(group === P && this.group === N) {
                 if(this.multiplier.den.toString() !== '1') throw new Error('Attempting conversion of group N with non-unit denominator!');
-                this.value = this.multiplier.num.toString();
-                this.toUnitMultiplier();
+                this.value = imaginary ? this.multiplier.num.toString() : Math.abs(this.multiplier.num.toString());
+                this.toUnitMultiplier(!imaginary);
                 this.group = P;
             }
             return this;
@@ -2148,7 +2149,7 @@ var nerdamer = (function() {
          * @returns {Symbol}
          */
         function sqrt(symbol) { 
-            if(Settings.PARSE2NUMBER && symbol.isConstant()) return new Symbol(Math.sqrt(symbol));
+            if(Settings.PARSE2NUMBER && symbol.isConstant()) return new Symbol(Math.sqrt(symbol.multiplier.toDecimal()));
             
             var img, retval, 
                 isConstant = symbol.isConstant();
@@ -2205,25 +2206,11 @@ var nerdamer = (function() {
                 else if(even(symbol.power.toString())) { 
                     //just raise it to the 1/2
                     retval = _.pow(symbol.clone(), new Symbol(0.5));
-                    
-                    var p = retval.power.toString();
-                    //preserve the absolute value
-//                    if(!even(p)) { 
-//                        var s = retval.clone().toLinear();
-//
-//                        if(p !== '1') {
-//                            retval.power = retval.power.subtract(new Frac(1));
-//                        }
-//                        else retval = new Symbol(1);
-//                        
-//                        retval = _.multiply(retval, _.symfunction(ABS, [s]));
-//                    }
                 }
                 else { 
                     retval = _.symfunction(SQRT, [symbol]);
                 }
-//                var retval = symbol.isOne() ? symbol : _.symfunction(SQRT, [symbol]);
-                //we've taken the sqrt of the multiplier so return it to the symbol
+
                 if(m) retval = _.multiply(m, retval);
 
                 if(img) retval = _.multiply(img, retval);
@@ -2636,13 +2623,14 @@ var nerdamer = (function() {
         
             if(!bIsInt) {
                 var nsym, dsym;
-                if(bIsConstant) {
+                if(bIsConstant) { 
                     var r = b.multiplier.den,
-                        e = b.multiplier.num;
-                    
+                        e = b.multiplier.num,
+                        //is this an even root of -1?
+                        img = even(r) && n < 0; 
                         //we want to check if the denominator yields an integer. If it does then we add it
                     var test1 = Math.pow(Math.pow(n, 1/r), e),
-                        n1 = testSQRT(isInt(test1) ? new Symbol(test1) : new Symbol(n).setPower(b.multiplier.clone())),
+                        n1 = testSQRT(isInt(test1) ? new Symbol(test1) : new Symbol(n).setPower(b.multiplier.clone(), img)),
                         test2 = Math.pow(Math.pow(d, 1/r), e),
                         n2 = testSQRT(isInt(test2) ? new Symbol(test2) : new Symbol(d).setPower(b.multiplier.clone()).invert());
                     result = _.multiply(n1, n2);
@@ -2672,10 +2660,13 @@ var nerdamer = (function() {
                     s.power = s.power.multiply(b.multiplier.clone());
                     result = _.multiply(result, s);
                     //eliminate imaginary if possible
-                    if(a.imaginary) {
+                    if(a.imaginary) { 
                         var rp = b.multiplier.multiply(new Frac(1/2)),
-                            test = Math2.pow(-1, rp.toDecimal());
-                        result = isNaN(test) ? new Symbol(-1).setPower(rp) : new Symbol(test);
+                            test = Math2.pow(-1, rp.toDecimal()),
+                            isnan = isNaN(test); 
+                        result = isnan ? new Symbol(-1).setPower(rp, isnan) : new Symbol(test);
+                        
+                        result = _.multiply(result, _.pow(new Symbol(a.multiplier), new Symbol(rp)))
                     } 
                     //take care of group P
                     if(result.group === P && result.power.isInteger()) { 
@@ -3981,3 +3972,7 @@ var nerdamer = (function() {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
+
+//var x = nerdamer('(256*i)^(1/8)');
+// var x = nerdamer('256^(1/16)');
+// console.log(x.text('decimal'))
