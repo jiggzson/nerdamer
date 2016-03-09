@@ -888,7 +888,11 @@ var nerdamer = (function() {
             this.den = frac[1];
         }
     }
-
+    
+    Frac.isFrac = function(o) {
+        return (o instanceof Frac);
+    };
+    
     Frac.prototype = {
         multiply: function(m) {
             if(this.isOne()) return m.clone();
@@ -1361,9 +1365,15 @@ var nerdamer = (function() {
                 }
             }
             else if(group === N) { 
-                for(var x in this) {
-                    if(this.hasOwnProperty(x) && (x !== 'value' && x !== 'multiplier')) delete this[x];
+                if(this.symbols) {
+                    for(var x in this) {
+                        if(this.hasOwnProperty(x) && (x !== 'value' && x !== 'multiplier')) delete this[x];
+                    }
                 }
+                else { 
+                    this.multiplier = new Frac(this.value).multiply(this.multiplier);
+                }
+                    
                 this.value = CONST_HASH;
                 this.group = N;
             }
@@ -2283,6 +2293,13 @@ var nerdamer = (function() {
             }
             return symbol;
         }
+        //try to reduce a symbol by pulling its power
+        function testPow(symbol, e) {
+            var v = Frac.isFrac(symbol) ? symbol.toDecimal() : 
+                    symbol.group === N ? symbol.multiplier.toDecimal() : symbol.value,
+                t = Math.pow(v, e);
+            return isInt(t) ? new Symbol(t) : symbol;
+        }
 
         //extended functions. Because functions like log aren't directly 
         //stored in an object, it's difficult to find out about them unless you know of them 
@@ -2564,9 +2581,11 @@ var nerdamer = (function() {
             else {
                 result.multiplier = m.multiply(result.multiplier);
             }
-
+            //eliminate zero power values and convert them to numbers
             if(result.power.equals(0)) result = new Symbol(result.multiplier);
-
+            //back convert group P to a simpler group N if possible
+            if(result.group === P && isInt(result.power.toDecimal())) result = result.convert(N);
+            
             return result;
         };
         
@@ -2608,7 +2627,11 @@ var nerdamer = (function() {
             
             //quick conversion for P. Don't waste time;
             if(a.isInteger() && !bIsInt) {
-                if(b.isConstant()) a.convert(P);
+                if(b.isConstant()) { 
+                    //try to simplify
+                    var t = testPow(a, b.multiplier.toDecimal())
+                    result = t === a ? a.convert(p) : t;
+                }
                 else {
                     a.convert(EX);
                     a.power = b.clone();
@@ -2621,7 +2644,7 @@ var nerdamer = (function() {
                 d = a.multiplier.den.toString(),
                 result;
         
-            if(!bIsInt) {
+            if(!bIsInt) { 
                 var nsym, dsym;
                 if(bIsConstant) { 
                     var r = b.multiplier.den,
@@ -2633,6 +2656,7 @@ var nerdamer = (function() {
                         n1 = testSQRT(isInt(test1) ? new Symbol(test1) : new Symbol(n).setPower(b.multiplier.clone(), img)),
                         test2 = Math.pow(Math.pow(d, 1/r), e),
                         n2 = testSQRT(isInt(test2) ? new Symbol(test2) : new Symbol(d).setPower(b.multiplier.clone()).invert());
+                
                     result = _.multiply(n1, n2);
                 }
                 //handle symbolic powers
@@ -2659,14 +2683,14 @@ var nerdamer = (function() {
                         evenp = even(s.power);
                     s.power = s.power.multiply(b.multiplier.clone());
                     result = _.multiply(result, s);
+                    
                     //eliminate imaginary if possible
                     if(a.imaginary) { 
                         var rp = b.multiplier.multiply(new Frac(1/2)),
                             test = Math2.pow(-1, rp.toDecimal()),
                             isnan = isNaN(test); 
                         result = isnan ? new Symbol(-1).setPower(rp, isnan) : new Symbol(test);
-                        
-                        result = _.multiply(result, _.pow(new Symbol(a.multiplier), new Symbol(rp)))
+                        result = _.multiply(result, testPow(a.multiplier, b.multiplier.toDecimal()))
                     } 
                     //take care of group P
                     if(result.group === P && result.power.isInteger()) { 
@@ -3972,7 +3996,3 @@ var nerdamer = (function() {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
-//var x = nerdamer('(256*i)^(1/8)');
-// var x = nerdamer('256^(1/16)');
-// console.log(x.text('decimal'))
