@@ -437,9 +437,53 @@ var cases = {
         expected: '3*x',
         number_value: 6.3
     },
+    '4*x^2': {
+        expected: '4*x^2',
+        number_value: 6.3
+    },
+    'sqrt(4*x^2)': {
+        expected: '2*abs(x)',
+        number_value: 4.2
+    },
+    '2*cos(x)+5*cos(2*x)': {
+        expected: '2*cos(x)+5*cos(2*x)',
+        number_value: 2.4750626589174187
+    },
+    '2*cos(x)*5*cos(2*x)': {
+        expected: '10*cos(2*x)*cos(x)',
+        number_value: 3.0431891166997898
+    },
+    '(8*x)^(2/3)': {
+        expected: '4*x^(2/3)',
+        number_value: 6.559531991200376
+    },
+    '(y^3+2)/(z^4*(y^3/2))^2*cos(x)*sqrt(x)': {
+        expected: '4*(2+y^3)*(y^3*z^4)^(-2)*cos(x)*sqrt(x)',
+        number_value: -0.08596229339343128
+    },
+    '2*x^4*(1+log(x)^2)-(-x^4)': {
+        expected: '2*(1+log(x)^2)*x^4+x^4',
+        number_value: 79.75553102441694
+    },
     '(x^6)^(1/4)': {
         expected: 'abs(x)^(3/2)',
         number_value: 3.0431891166997898
+    },
+    'i*i': {
+        expected: '-1',
+        number_value: -1
+    },
+    'i*8*i': {
+        expected: '-8',
+        number_value: -8
+    },
+    'i^(2/3)': {
+        expected: '-1',
+        number_value: -1
+    },
+    '(256*i)^(1/8)': {
+        expected: '2*(-1^(1/16))',
+        number_value: '2*(-1^(1/16))'
     },
 };
 
