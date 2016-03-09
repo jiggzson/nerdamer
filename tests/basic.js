@@ -482,8 +482,16 @@ var cases = {
         number_value: -1
     },
     '(256*i)^(1/8)': {
-        expected: '2*(-1^(1/16))',
-        number_value: '2*(-1^(1/16))'
+        expected: '2*(-1)^(1/16)',
+        number_value: '2*(-1)^(1/16)'
+    },
+    '2*x*(4^(1/3))^3': {
+        expected: '8*x',
+        number_value: 16.8
+    },
+    '6*(4^(1/3)*4^(2/3))': {
+        expected: '24',
+        number_value: 24
     },
 };
 
