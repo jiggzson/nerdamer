@@ -2726,10 +2726,12 @@ var nerdamer = (function() {
             if(aIsConstant && bIsConstant && Settings.PARSE2NUMBER) {
                 result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
             }
-            else if(bIsInt && !m.equals(1)) { 
+            else if(bIsInt && !m.equals(1)) { console.log(m)
                 var p = b.multiplier.toDecimal(),
                     multiplier = Frac.quick(Math.pow(m.num, p), Math.pow(m.den, p)).simplify(); 
-                result.multiplier = multiplier;
+                //multiplying is justified since after mulltiplyPower if it was of group P it will now be of group N
+                result.multiplier = result.multiplier.multiply(multiplier);
+                
             }
             else {
 
