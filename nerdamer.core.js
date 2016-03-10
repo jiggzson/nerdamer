@@ -20,12 +20,18 @@ var nerdamer = (function() {
     
         Groups = {},
         
+        //container of pregenerated primes
+        PRIMES = [],
+        
         //this is the class which holds the utilities which are exported to the core
         //All utility functions which are to be made available to the core should be added to this object
         Utils = {},
         
         //Settings
         Settings = {
+            //the max number up to which to cache primes. Making this too high causes performance issues
+            init_primes: 1000,
+            
             exclude: [],
             //If you don't care about division by zero for example then this can be set to true. 
             //Has some nasty side effects so choose carefully.
@@ -134,7 +140,17 @@ var nerdamer = (function() {
             } while(factorial);
             return expression;
         },
-        
+        /**
+         * Checks if number is a prime number
+         * @param {Number} n - the number to be checked
+         */
+        isPrime  = Utils.isPrime = function(n) {
+            var q = Math.floor(Math.sqrt(n));
+            for (var i = 2; i <= q; i++) {
+                if (n % i === 0) return false;
+            }
+            return true;
+        },
         /**
          * Checks to see if a number or Symbol is a fraction
          * @type {Number|Symbol} num
@@ -545,7 +561,14 @@ var nerdamer = (function() {
             }
             return s;
         },
-
+        generatePrimes = Utils.generatePrimes = function(upto) {
+            //get the last prime in the array
+            var last_prime = PRIMES[PRIMES.length-1] || 2; 
+            //no need to check if we've already encountered the number. Just check the cache.
+            for(var i=last_prime; i<upto; i++) {
+                if(isPrime(i)) PRIMES.push(i);
+            }
+        },
         //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
         //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the 
         //functions within are pretty self-explanatory.
@@ -715,12 +738,15 @@ var nerdamer = (function() {
                 
                 value = inBrackets(value);
             }
-
+            
+            var c = sign+multiplier;
+            if(multiplier && !isInt(multiplier)) c = inBrackets(c);
+            
             if(power < 0) power = inBrackets(power);
-            if(multiplier) multiplier = multiplier + '*';
+            if(multiplier) c = c + '*';
             if(power) power = '^' + power;
 
-            return sign+multiplier+value+power;
+            return c+value+power;
         }
         else if(isVector(obj)) { 
             var l = obj.elements.length,
@@ -891,6 +917,13 @@ var nerdamer = (function() {
     
     Frac.isFrac = function(o) {
         return (o instanceof Frac);
+    };
+    
+    Frac.quick = function(n, d) {
+        var frac = new Frac();
+        frac.num = n;
+        frac.den = d;
+        return frac;
     };
     
     Frac.prototype = {
@@ -1128,9 +1161,80 @@ var nerdamer = (function() {
         isLinear: function() {
             return this.power.equals(1);
         },
+        multiplyPower: function(p2) {
+            //leave out 1
+            if(this.group === N && this.multiplier.equals(1)) return this;
+            
+            var p1 = this.power;
+            
+            if(p2.group === N) {
+                var p = p2.multiplier;
+                if(this.group === N && !p.isInteger()) {
+                    this.convert(P);
+                }
+                this.power = p1.equals(1) ? p.clone() : p1.multiply(p);
+            }
+            else {
+                if(this.group !== EX) {
+                    p1 = new Symbol(p1);
+                    this.convert(EX);
+                }
+                this.power = _.multiply(p1, p2);
+            }
+            return this.testPow();
+        },
         setPower: function(p, retainSign) { 
-            this.power = p;
-            if(this.group === N && !p.equals(1)) this.convert(P, retainSign);
+            //leave out 1
+            if(this.group === N && this.multiplier.equals(1)) return this;
+            
+            var isIntP = false,
+                isSymbolic = false;
+            if(isSymbol(p)) {
+                if(p.group === N) {
+                    //p should be the multiplier instead
+                    p = p.multiplier;
+                    //check if p is an int so to convert to P
+                    var isIntP = isInt(p);
+                }
+                else {
+                    isSymbolic = true;
+                }
+            }
+            var group = isSymbolic ? EX : !isIntP ? P : null;
+            this.power = p; 
+            if(this.group === N && group) this.convert(group, retainSign);
+            
+            return this.testPow();
+        },
+        testPow: function() { 
+            if(this.group === N || this.group === P && !isSymbol(this.power)) {
+                var num = this.power.num,
+                    den = this.power.den,
+                    e = num/den,
+                    v = this.group === N ? this.multiplier.toDecimal() : this.value,
+                    fs = primeFactors(v),//new
+                    t = Math.pow(v, e); 
+                if(isInt(t)) { 
+                    new Symbol(t).clone(this);
+                }
+                else {
+                    if(fs.length === 1) {
+                        //if we found n then we can reduce everything by n-1
+                        var n = Math.log(v)/Math.log(fs[0]);
+                        if(isInt(n)) {
+                            //reduce the denominator of the radical
+                            var nn = den/n;
+                            //if the denominator tested to be an int then we can reduce the entire symbol
+                            //raised to nn e.g. 256^(1/16) has a prime factor of 2 so log(256)/log(2) = 8 so 16 
+                            //can be reduced by this factor
+                            if(isInt(nn)) {
+                                new Symbol(fs[0]).setPower(new Frac(num/nn)).clone(this);
+                            }
+                        }
+                    }
+                }
+            }
+                
             return this;
         },
         /**
@@ -1146,8 +1250,8 @@ var nerdamer = (function() {
          * to a new symbol
          * @returns {Symbol}
          */
-        clone: function() { 
-            var clone = new Symbol(0),
+        clone: function(c) { 
+            var clone = c || new Symbol(0),
                 //list of properties excluding power as this may be a symbol and would also need to be a clone.
                 properties = [
                     'value', 'group', 'length', 'previousGroup', 'imaginary', 'fname', 'args'],
@@ -1175,25 +1279,6 @@ var nerdamer = (function() {
                 this.multiplier.den /= Math.abs(this.multiplier.den);
             }
             else this.multiplier = new Frac(1);
-            return this;
-        },
-        multiplyPower: function(p2) {
-            var p1 = this.power;
-            
-            if(isSymbol(p2)) {
-                if(this.group !== EX) {
-                    p1 = new Symbol(p1);
-                    this.convert(EX);
-                }
-                this.power = _.multiply(p1, p2);
-            }
-            else {
-                if(this.group === N && !p2.isInteger()) {
-                    this.convert(P);
-                    this.isRad = !p2.isInteger();
-                }
-                this.power = p1.equals(1) ? p2.clone() : p1.multiply(p2);
-            }
             return this;
         },
         toLinear: function() {
@@ -1430,9 +1515,6 @@ var nerdamer = (function() {
                     }
                     else { 
                         //transfer the multiplier to the upper symbol
-//                        if(this.length === 0) this.group = symbol.group;
-//                        else this.group = CB;
-                        
                         this.multiplier = this.multiplier.multiply(symbol.multiplier);
                         symbol.toUnitMultiplier();
                         
@@ -1611,6 +1693,22 @@ var nerdamer = (function() {
         toString: function() {
             return this.text();
         }
+    };
+    
+    function primeFactors(num) {
+        var l = num, i=1, factors = [], 
+            epsilon = 2.2204460492503130808472633361816E-16;
+        while(i<l) {
+            var quotient = num/i; 
+            var whole = Math.floor(quotient);
+            var remainder = quotient-whole;
+            if(remainder <= epsilon && i>1) {
+                if(PRIMES.indexOf(i) !== -1) factors.push(i);
+                l = whole;
+            }
+            i++;
+        }
+        return factors.sort(function(a, b){return a-b;});
     };
     
     //EXPERIMENTAL -  Might be stripped
@@ -1845,19 +1943,6 @@ var nerdamer = (function() {
             }
             return retval;
         };
-        
-//        this.powerAdd = function(symbol, value, thisIsEX) {
-//            var isNumeric = !isNaN(value);
-//            if(!isNumeric || thisIsEX || isSymbol(symbol.power)) {
-//                var p = !isSymbol(value) ? new Symbol(value) : value;
-//                symbol.power = _.add(symbol.power, p);
-//            }
-//            else {
-//                symbol.power = symbol.power.add(value);
-//            }
-//            
-//            if(symbol.power.valueOf() === 0) symbol.convert(N);
-//        };
         
         /**
          * This is the method that triggers the parsing of the string. It generates a parse tree but processes 
@@ -2294,10 +2379,23 @@ var nerdamer = (function() {
             return symbol;
         }
         //try to reduce a symbol by pulling its power
-        function testPow(symbol, e) {
-            var v = Frac.isFrac(symbol) ? symbol.toDecimal() : 
-                    symbol.group === N ? symbol.multiplier.toDecimal() : symbol.value,
-                t = Math.pow(v, e);
+        function testPow(symbol, num, den) {
+            var e = num/den,
+                v = Frac.isFrac(symbol) ? symbol.toDecimal() : 
+                symbol.group === N ? symbol.multiplier.toDecimal() : symbol.value,
+                fs = primeFactors(v, true, true),//new
+                t = Math.pow(v, e); 
+            if(fs.length === 1) {
+                //if we found n then we can reduce everything by n-1
+                var n = Math.log(v)/Math.log(fs[0]);
+                if(isInt(n)) {
+                    //reduce the denominator of the radical
+                    var nn = den/n;
+                    if(isInt(nn)) {
+                        return new Symbol(fs[0]).setPower(new Frac(num/nn));
+                    }
+                }
+            }
             return isInt(t) ? new Symbol(t) : symbol;
         }
 
@@ -2617,111 +2715,51 @@ var nerdamer = (function() {
         this.pow = function(a, b) { 
             //cache the 
             var bIsConstant = b.isConstant(),
-                aIsConstant = a.isConstant();
-        
+                aIsConstant = a.isConstant(), 
+                bIsInt = b.isInteger(),
+                m = a.multiplier,
+                result = a.clone();
+            //take care of the symbolic part
+            result.toUnitMultiplier();
+            result.multiplyPower(b);
+            
             if(aIsConstant && bIsConstant && Settings.PARSE2NUMBER) {
-                return new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
+                result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
             }
-            
-            var bIsInt = b.isInteger();
-            
-            //quick conversion for P. Don't waste time;
-            if(a.isInteger() && !bIsInt) {
-                if(b.isConstant()) { 
-                    //try to simplify
-                    var t = testPow(a, b.multiplier.toDecimal())
-                    result = t === a ? a.convert(p) : t;
-                }
-                else {
-                    a.convert(EX);
-                    a.power = b.clone();
-                    return a; //early exit and needed to shorten logic
-                }
-            }
-            
-                
-            var n = a.multiplier.num.toString(),
-                d = a.multiplier.den.toString(),
-                result;
-        
-            if(!bIsInt) { 
-                var nsym, dsym;
-                if(bIsConstant) { 
-                    var r = b.multiplier.den,
-                        e = b.multiplier.num,
-                        //is this an even root of -1?
-                        img = even(r) && n < 0; 
-                        //we want to check if the denominator yields an integer. If it does then we add it
-                    var test1 = Math.pow(Math.pow(n, 1/r), e),
-                        n1 = testSQRT(isInt(test1) ? new Symbol(test1) : new Symbol(n).setPower(b.multiplier.clone(), img)),
-                        test2 = Math.pow(Math.pow(d, 1/r), e),
-                        n2 = testSQRT(isInt(test2) ? new Symbol(test2) : new Symbol(d).setPower(b.multiplier.clone()).invert());
-                
-                    result = _.multiply(n1, n2);
-                }
-                //handle symbolic powers
-                else {
-                    //1^n = 1 so nsym is always 1
-                    nsym = n === '1' ? new Symbol(1) :  _.pow(new Symbol(n), b.clone()); 
-                    if(d !== '1') dsym = _.pow(new Symbol(d), b.clone());
-                    result = nsym && dsym ? _.multiply(nsym, dsym.invert()) : nsym; 
-                }
-            }
-            
-            if(bIsConstant) { 
-                if(bIsInt) { 
-                    var p = b.toString(),
-                        np = Math.pow(n, p),
-                        dp = Math.pow(d, p);
-                    result = _.multiply(new Symbol(np), new Symbol(dp).invert());
-                }
-
-                //must be live check
-                if(!a.isConstant()) { 
-                    var s = a.clone().toUnitMultiplier(),
-                        evenr = even(b.multiplier.den),
-                        evenp = even(s.power);
-                    s.power = s.power.multiply(b.multiplier.clone());
-                    result = _.multiply(result, s);
-                    
-                    //eliminate imaginary if possible
-                    if(a.imaginary) { 
-                        var rp = b.multiplier.multiply(new Frac(1/2)),
-                            test = Math2.pow(-1, rp.toDecimal()),
-                            isnan = isNaN(test); 
-                        result = isnan ? new Symbol(-1).setPower(rp, isnan) : new Symbol(test);
-                        result = _.multiply(result, testPow(a.multiplier, b.multiplier.toDecimal()))
-                    } 
-                    //take care of group P
-                    if(result.group === P && result.power.isInteger()) { 
-                        result = _.pow(new Symbol(result.value), new Symbol(result.power));
-                    }
-                    
-                    //if the radical denominator is even and the power was even retain absolute value
-                    if(evenr && evenp) {
-                        var p = Number(result.power.toString()),
-                            unevenPow = !even(p);
-                        //check if the power is int
-                        if(isInt(p) && p > 1 && unevenPow) { 
-                            result = _.multiply(_.symfunction(ABS, [result.clone().toLinear()]), result.clone().setPower(new Frac(p-1)));
-                        }
-                        else if(unevenPow){
-                            var pp = result.power;
-                            result = _.symfunction(ABS, [result.clone().toLinear()]).setPower(pp);
-                        }
-                    }
-                } 
-                
+            else if(bIsInt) { 
+                var p = b.multiplier.toDecimal(),
+                    multiplier = Frac.quick(Math.pow(m.num, p), Math.pow(m.den, p)).simplify(); 
+                result.multiplier = multiplier;
             }
             else {
-                if(!aIsConstant) {
-                    var t = a.clone().toUnitMultiplier();
-                    t.convert(EX);
-                    t.power = b.clone();
-                    result = _.multiply(result, t);
-                }
-            }
 
+                //b is a symbol
+                var num = testSQRT(new Symbol(m.num).setPower(b.clone())),
+                    den = testSQRT(new Symbol(m.den).setPower(b.clone()).invert());
+                result = _.multiply(result, _.multiply(num, den));
+                
+                
+                //retain the absolute value
+                if(bIsConstant) {
+                    var evenr = even(b.multiplier.den),
+                        evenp = even(a.power),
+                        n = result.power.toDecimal(),
+                        evennp = even(n);
+                    if(evenr && evenp && !evennp) {
+                        if(n === 1 ) result = _.symfunction(ABS, [result]);
+                        else if(!isInt(n)) {
+                            var p = result.power;
+                            result = _.symfunction(ABS, [result.toLinear()]).setPower(p);
+                        }
+                        else {
+                            result = _.multiply(_.symfunction(ABS, [result.clone().toLinear()]), 
+                                result.clone().setPower(new Frac(n-1)));
+                        }
+                    }
+                }   
+            }
+            
+            
             result = testSQRT(result);
             
             //reduce square root
@@ -3611,6 +3649,7 @@ var nerdamer = (function() {
     var finalize = function() {
         reserveNames(_.constants);
         reserveNames(_.functions);
+        generatePrimes(Settings.init_primes);//generate the firs 100 primes
     };
     
     var build = Utils.build = function(symbol, arg_array) {
@@ -3706,6 +3745,7 @@ var nerdamer = (function() {
     C.Math2 = Math2;
     C.Latex = Latex;
     C.Utils = Utils;
+    C.PRIMES = PRIMES;
     C.PARSER = _;
     C.PARENTHESIS = PARENTHESIS;
     C.Settings = Settings;
