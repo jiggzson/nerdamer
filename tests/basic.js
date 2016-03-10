@@ -129,7 +129,7 @@ var cases = {
     },
     'sqrt((5/2)*x^10)': {
         expected: 'abs(x)*sqrt(2)^(-1)*sqrt(5)*x^4',
-        number_value: 2637.3207495816264
+        number_value: 64.5753067708499
     },
     '(sqrt((5/2)*x^10))*-sqrt(2)': {
         expected: '-abs(x)*sqrt(5)*x^4',
@@ -266,8 +266,8 @@ var cases = {
         number_value: 20.362144253523596
     },
     '1/4*2^x*x^x': {
-        expected: '1/4*2^x*x^x',
-        number_value: 10.61
+        expected: '(1/4)*2^x*x^x',
+        number_value: 5.090536063380899
     },
     'x^2+x-x^y+x': {
         expected: '-x^y+2*x+x^2',
@@ -493,6 +493,20 @@ var cases = {
         expected: '24',
         number_value: 24
     },
+    '(5*(4^(1/3)))^3': {
+        expected: '500',
+        number_value: 500
+    },
+    '2*x*(5*(4^(1/3)))^3': {
+        expected: '1000*x',
+        number_value: 2100
+    },
 };
+
+//(-2/3*x)^x
+//(x)^(3-x)
+//(1/2*x)^(1/2)
+//256^(1/8)
+//2*x*(5*(4^(1/3)))^3
 
 test(cases, values, true); 
