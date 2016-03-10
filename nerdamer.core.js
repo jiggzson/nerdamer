@@ -2726,7 +2726,7 @@ var nerdamer = (function() {
             if(aIsConstant && bIsConstant && Settings.PARSE2NUMBER) {
                 result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
             }
-            else if(bIsInt) { 
+            else if(bIsInt && !m.equals(1)) { 
                 var p = b.multiplier.toDecimal(),
                     multiplier = Frac.quick(Math.pow(m.num, p), Math.pow(m.den, p)).simplify(); 
                 result.multiplier = multiplier;
@@ -2738,6 +2738,14 @@ var nerdamer = (function() {
                     den = testSQRT(new Symbol(m.den).setPower(b.clone()).invert());
                 result = _.multiply(result, _.multiply(num, den));
                 
+                //eliminate imaginary if possible
+                if(a.imaginary) { 
+                    var rp = b.multiplier.multiply(new Frac(1/2)),
+                        test = Math2.pow(-1, rp.toDecimal()),
+                        isnan = isNaN(test); 
+                    result = isnan ? new Symbol(-1).setPower(rp, isnan) : new Symbol(test);
+                    result = _.multiply(result, testPow(a.multiplier, b.multiplier.num, b.multiplier.den))
+                } 
                 
                 //retain the absolute value
                 if(bIsConstant) {
@@ -2758,8 +2766,7 @@ var nerdamer = (function() {
                     }
                 }   
             }
-            
-            
+
             result = testSQRT(result);
             
             //reduce square root
