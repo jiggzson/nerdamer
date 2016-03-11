@@ -66,6 +66,10 @@ var cases = {
         expected: '5+x',
         number_value: 7.1
     },
+    'x+x+1+x': {
+        expected: '1+3*x',
+        number_value: 7.3
+    },
     '(x+1)+(8+y)': {
         expected: '9+x+y',
         number_value: 14.4
@@ -501,12 +505,100 @@ var cases = {
         expected: '1000*x',
         number_value: 2100
     },
-};
+    'y^y^y': {
+        expected: 'y^y^y',
+        number_value: 4.568487550255984e+26
+    },
+    '(x^4)^(1/4)': {
+        expected: 'abs(x)',
+        number_value: 2.1
+    },
+    'x/cos(x)*cos(x)': {
+        expected: 'x',
+        number_value: 2.1
+    },
+    '(-2*x)^2': {
+        expected: '4*x^2',
+        number_value: 17.64
+    },
+    '-4*x^3--x^3+x^2-(-2*x)^2+y': {
+        expected: '-3*x^2-3*x^3+y',
+        number_value: -37.713
+    },
+    '2*x/x': {
+        expected: '2',
+        number_value: 2
+    },
+    '2*(tan(x)+tan(2*x)+7)-6*tan(x)': {
+        expected: '-4*tan(x)+14+2*tan(2*x)',
+        number_value: 24.394945720635487
+    },
+    '(x^2*y)^2': {
+        expected: '(x^2*y)^2',
+        number_value: 211.789809
+    },
+    '((3+y)*2-(cos(x)*4+z))': {
+        expected: '-4*cos(x)-z+2*y+6',
+        number_value: 13.619384418399054
+    },
+    'i/i': {
+        expected: '1',
+        number_value: 1
+    },
+    '(1/i)*i': {
+        expected: '1',
+        number_value: 1
+    },
+    'cos(x^2)*cos(x^2)^x': {
+        expected: 'cos(x^2)^(1+x)',
+        number_value: '0.02339774318212161*(-1)^3.1'
+    },
+    '(x+1)^(z+1)*(1+x)^(1+z)': {
+        expected: '(1+x)^(2*(1+z))',
+        number_value: 92.3521
+    },
+    '(x+1)^(z+1)*(1+x)^4': {
+        expected: '(1+x)^(5+z)',
+        number_value: 887.5036810000004
+    },
+    '(-1)^x': {
+        expected: '(-1)^x',
+        number_value: '(-1)^x'
+    },
+    'E^(2*i*PI)+E^(i*PI)': {
+        expected: '0',
+        number_value: '0'
+    },
+    //parser related
+    '(x+y)--(x+y)': {
+        expected: '2*(x+y)',
+        number_value: '10.8'
+    },
+    '-z-(r+x)--(r+x)': {
+        expected: '-z',
+        number_value: '-1'
+    },
+    '+-z-(r+x)+--+(r+x)': {
+        expected: '-z',
+        number_value: '-1'
+    },
+    '(-2/3*x)^x': {
+        expected: '((-x)^x*2^x)/3^x',
+        number_value: '2.027070600493585*(-1)^2.1'
+    },
+    '(x)^(3-x)': {
+        expected: 'x^(-x+3)',
+        number_value: 1.9498327706486434
+    },
+    '(1/2*x)^(1/2)': {
+        expected: 'x^(-x+3)',
+        number_value: 1.9498327706486434
+    },
+    '256^(1/8)': {
+        expected: '2',
+        number_value: 2
+    },
 
-//(-2/3*x)^x
-//(x)^(3-x)
-//(1/2*x)^(1/2)
-//256^(1/8)
-//2*x*(5*(4^(1/3)))^3
+};
 
 test(cases, values, true); 
