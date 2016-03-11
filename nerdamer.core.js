@@ -746,6 +746,9 @@ var nerdamer = (function() {
             if(multiplier) c = c + '*';
             if(power) power = '^' + power;
 
+            //this needs serious rethinking. Must fix
+            if(group === EX && value.charAt(0) === '-') value = inBrackets(value);
+
             return c+value+power;
         }
         else if(isVector(obj)) { 
@@ -1173,6 +1176,13 @@ var nerdamer = (function() {
                     this.convert(P);
                 }
                 this.power = p1.equals(1) ? p.clone() : p1.multiply(p);
+                
+                if(this.group === P && isInt(this.power)) {
+                    //bring it back to an N
+                    this.value = Math.pow(this.value, this.power);
+                    this.toLinear();
+                    this.convert(N);
+                }
             }
             else {
                 if(this.group !== EX) {
@@ -1193,8 +1203,7 @@ var nerdamer = (function() {
                 if(p.group === N) {
                     //p should be the multiplier instead
                     p = p.multiplier;
-                    //check if p is an int so to convert to P
-                    var isIntP = isInt(p);
+
                 }
                 else {
                     isSymbolic = true;
@@ -1406,7 +1415,7 @@ var nerdamer = (function() {
             }
             else if(group === EX) { 
                 //1^x is just one so check and make sure
-                if(!(this.group === N && this.multiplier.absEquals(1))) {
+                if(!(this.group === N && this.multiplier.equals(1))) {
                     this.previousGroup = this.group;
                     if(this.group === N) { 
                         this.value = this.multiplier.num.toString();
@@ -1419,17 +1428,9 @@ var nerdamer = (function() {
                 }
             }
             else if(group === N) { 
-                if(this.symbols) {
-                    for(var x in this) {
-                        if(this.hasOwnProperty(x) && (x !== 'value' && x !== 'multiplier')) delete this[x];
-                    }
-                }
-                else { 
-                    this.multiplier = new Frac(this.value).multiply(this.multiplier);
-                }
-                    
-                this.value = CONST_HASH;
-                this.group = N;
+                var m = this.multiplier.toDecimal();
+                new Symbol(this.group === P ? m*Math.pow(this.value, this.power) : m).clone(this);
+//                this.multiplier = this.multiplier.multiply(m);
             }
             else if(group === P && this.group === N) {
                 if(this.multiplier.den.toString() !== '1') throw new Error('Attempting conversion of group N with non-unit denominator!');
@@ -1483,6 +1484,10 @@ var nerdamer = (function() {
                         }  
                     }
                     else { 
+                        //check if this is of group P and unwrap before inserting
+                        if(symbol.group === P && isInt(symbol.power)) {
+                            symbol.convert(N);
+                        }
                         //transfer the multiplier to the upper symbol
                         this.multiplier = this.multiplier.multiply(symbol.multiplier);
                         symbol.toUnitMultiplier();
@@ -2241,10 +2246,11 @@ var nerdamer = (function() {
                 var q = symbol.multiplier.toDecimal(),
                     qa = Math.abs(q),
                     t = Math.sqrt(qa);
- 
+           
+                
                 var m;
                 //it's a perfect square so take the square
-                if(isInt(t)) { 
+                if(isInt(t)) {
                     m = new Symbol(t);
                 }
                 else if(isInt(q)) { 
@@ -2347,52 +2353,26 @@ var nerdamer = (function() {
             return symbol;
         }
         //try to reduce a symbol by pulling its power
-        function testPow(symbol) {
-//            var isP = symbol.isConstant(),
-//                isSQRT = symbol.group === FN && symbol.fname === SQRT && symbol.args[0].isConstant(),
-//                testable = isP || isSQRT || symbol.group === P,
-//                p, sym;
-//            if(testable) {
-//                if(isSQRT) {
-//                    sym = symbol.args[0].toString(); p = 0.5;
-//                }
-//                else {
-//                    sym = symbol.value; p = symbol.power.toDecimal();
-//                }
-//                console.log(9)
-//                var t = Math.pow(sym, p);
-//                
-//                if(isInt(t)) return new Symbol(t);
-//            }
-            if(symbol.group === N || symbol.group === P) {
+        function testPow(symbol) { 
+            if(symbol.group === P) {
                 var v = symbol.group === N ? symbol.multiplier.toDecimal() : symbol.value,
-                    pfs = primeFactors(v);
-                if(pfs.length === 1) {
-                    var fct = pfs[0],
-                        n = Math.log(v)/Math.log(fct),
-                        np = new Frac(n).multiply(symbol.power);
-                    console.log(fct, n, np.toString())
-                    return new Symbol(Math.pow(fct, np.num/symbol.power.num)).setPower(new Frac(symbol.power.num/np.den))
-                }
-            }
-            return symbol;
-//            var e = num/den,
-//                v = Frac.isFrac(symbol) ? symbol.toDecimal() : 
-//                symbol.group === N ? symbol.multiplier.toDecimal() : symbol.value,
-//                fs = primeFactors(v, true, true),//new
-//                t = Math.pow(v, e); 
-//            if(fs.length === 1) {
-//                //if we found n then we can reduce everything by n-1
-//                var n = Math.log(v)/Math.log(fs[0]);
-//                if(isInt(n)) {
-//                    //reduce the denominator of the radical
-//                    var nn = den/n;
-//                    if(isInt(nn)) {
-//                        return new Symbol(fs[0]).setPower(new Frac(num/nn));
-//                    }
+                    fct = primeFactors(v)[0],
+                    n = new Frac(Math.log(v)/Math.log(fct)),
+                    p = n.multiply(symbol.power);
+            if(isInt(p)) symbol = Symbol(Math.pow(fct, p));
+            else symbol = new Symbol(fct).setPower(p);
+//                if(pfs.length === 1) {
+//                    var fct = pfs[0],
+//                        n = Math.log(v)/Math.log(fct),
+//                        np = new Frac(n).multiply(symbol.power),
+//                        ct = Math.pow(fct, np.num/symbol.power.num),
+//                        xt = new Frac(symbol.power.num/np.den);
+//                console.log(n)
+//                    return new Symbol(ct).setPower(xt);
 //                }
-//            }
-//            return isInt(t) ? new Symbol(t) : symbol;
+            }
+//            console.log(symbol.text())
+            return symbol;
         }
 
         //extended functions. Because functions like log aren't directly 
@@ -2624,12 +2604,15 @@ var nerdamer = (function() {
                     !(isSymbol(p1)) ? new Symbol(p1) : p1, 
                     !(isSymbol(p2)) ? new Symbol(p2) : p2
                 ): (g1 === N /*don't add powers for N*/? p1 : p1.add(p2));
-        
+                
+                //eliminate zero power values and convert them to numbers
+                if(result.power.equals(0)) result = result.convert(N);
+
                 //properly convert to EX
                 if(toEX) result.convert(EX);
                 
                 //take care of imaginaries
-                if(a.imaginary && b.imaginary) {
+                if(a.imaginary && b.imaginary) { 
                     var isEven = even(result.power % 2);
                     if(isEven) {
                         result = new Symbol(1);
@@ -2675,8 +2658,8 @@ var nerdamer = (function() {
             else {
                 result.multiplier = m.multiply(result.multiplier);
             }
-            //eliminate zero power values and convert them to numbers
-            if(result.power.equals(0)) result = new Symbol(result.multiplier);
+//            //eliminate zero power values and convert them to numbers
+//            if(result.power.equals(0)) result = new Symbol(result.multiplier);
             //back convert group P to a simpler group N if possible
             if(result.group === P && isInt(result.power.toDecimal())) result = result.convert(N);
             
@@ -2718,7 +2701,7 @@ var nerdamer = (function() {
             //take care of the symbolic part
             result.toUnitMultiplier();
             result.multiplyPower(b);
-            
+
             if(aIsConstant && bIsConstant && Settings.PARSE2NUMBER) {
                 result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
             }
@@ -2727,21 +2710,23 @@ var nerdamer = (function() {
                     multiplier = Frac.quick(Math.pow(m.num, p), Math.pow(m.den, p)).simplify(); 
                 //multiplying is justified since after mulltiplyPower if it was of group P it will now be of group N
                 result.multiplier = result.multiplier.multiply(multiplier);
+                
             }
             else {
                 //b is a symbol
                 var num = testSQRT(new Symbol(m.num).setPower(b.clone())),
-                    den = testSQRT(new Symbol(m.den).setPower(b.clone()).invert());
-                result = _.multiply(result, _.multiply(num, den));
+                    den = testSQRT(new Symbol(m.den).setPower(b.clone()).invert());             
                 
                 //eliminate imaginary if possible
                 if(a.imaginary) { 
-                    var rp = b.multiplier.multiply(new Frac(1/2)),
-                        test = Math2.pow(-1, rp.toDecimal()),
-                        isnan = isNaN(test); 
-                    result = isnan ? new Symbol(-1).setPower(rp, isnan) : new Symbol(test);
-                    result = _.multiply(result, testPow(a.multiplier, b.multiplier.num, b.multiplier.den))
+                    //assume i = sqrt(-1) -> (-1)^(1/2)
+                    var nr = b.multiplier.multiply(Frac.quick(1, 2)),
+                        //the denominator denotes the power so raise to it. It will turn positive it round
+                        tn = Math.pow(-1, nr.num);
+                    result = even(nr.den) ? new Symbol(-1).setPower(nr, true) : new Symbol(tn);
                 } 
+
+                result = _.multiply(result, testPow(_.multiply(num, den)));
                 
                 //retain the absolute value
                 if(bIsConstant) {
@@ -2764,9 +2749,6 @@ var nerdamer = (function() {
             }
 
             result = testSQRT(result);
-            
-            result = testPow(result);
-            
             //reduce square root
             if(result.fname === SQRT) { 
                 var isEX = result.group === EX;
@@ -4041,8 +4023,3 @@ var nerdamer = (function() {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
-console.time('a')
-var x = nerdamer('4^(1/2)');
-console.log(x.text())
-console.timeEnd('a')
