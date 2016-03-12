@@ -748,8 +748,12 @@ var nerdamer = (function() {
 
             //this needs serious rethinking. Must fix
             if(group === EX && value.charAt(0) === '-') value = inBrackets(value);
+            
+            var cv = c+value;
+            
+            if(obj.parens) cv = inBrackets(cv);
 
-            return c+value+power;
+            return cv+power;
         }
         else if(isVector(obj)) { 
             var l = obj.elements.length,
@@ -1027,6 +1031,10 @@ var nerdamer = (function() {
         absoluteValue: function() {
             this.num = Math.abs(this.num);
             this.den = Math.abs(this.den);
+            return this;
+        },
+        abs: function() {
+            this.num = Math.abs(this.num);
             return this;
         },
         toString: function() {
@@ -1488,9 +1496,18 @@ var nerdamer = (function() {
                         if(symbol.group === P && isInt(symbol.power)) {
                             symbol.convert(N);
                         }
-                        //transfer the multiplier to the upper symbol
-                        this.multiplier = this.multiplier.multiply(symbol.multiplier);
-                        symbol.toUnitMultiplier();
+                        
+                        //transfer the multiplier to the upper symbol but only if the symbol numeric
+                        if(symbol.group !== EX) {
+                            this.multiplier = this.multiplier.multiply(symbol.multiplier);
+                            symbol.toUnitMultiplier();
+                        }
+                        else {
+                            symbol.parens = symbol.multiplier.lessThan(0);
+                            this.multiplier = this.multiplier.multiply(symbol.multiplier.clone().abs());
+                            symbol.toUnitMultiplier(true);
+                        }
+                            
                         
                         if(existing) {  
                             //remove because the symbol may have changed
@@ -2580,9 +2597,9 @@ var nerdamer = (function() {
                 //since P is just a morphed version of N we need to see if they relate
                 ONN = (g1 === P && g2 === N && b.multiplier.equals(a.value)),
                 //don't multiply the multiplier of b since that's equal to the value of a
-                m = ONN ? new Frac(1).multiply(a.multiplier) : a.multiplier.multiply(b.multiplier),
-                result = a.clone().toUnitMultiplier(),
-                b = b.clone().toUnitMultiplier();
+                m = ONN ? new Frac(1).multiply(a.multiplier).abs() : a.multiplier.multiply(b.multiplier).abs(),
+                result = a.clone().toUnitMultiplier();
+            b = b.clone().toUnitMultiplier(true);
             
             //same issue with (x^2+1)^x*(x^2+1)
             //EX needs an exception when multiplying because it needs to recognize
@@ -2592,7 +2609,6 @@ var nerdamer = (function() {
             }
             
             if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P))) { 
-  
                 var p1 = a.power,
                     p2 = b.power,
                     isSymbolP1 = isSymbol(p1),
@@ -2710,13 +2726,13 @@ var nerdamer = (function() {
                     multiplier = Frac.quick(Math.pow(m.num, p), Math.pow(m.den, p)).simplify(); 
                 //multiplying is justified since after mulltiplyPower if it was of group P it will now be of group N
                 result.multiplier = result.multiplier.multiply(multiplier);
-                
             }
             else {
                 //b is a symbol
-                var num = testSQRT(new Symbol(m.num).setPower(b.clone())),
+                var sign = Math.sign(m.num),
+                    neg_num = a.group === N && sign < 0,
+                    num = testSQRT(new Symbol(neg_num ? m.num : Math.abs(m.num)).setPower(b.clone())),
                     den = testSQRT(new Symbol(m.den).setPower(b.clone()).invert());             
-                
                 //eliminate imaginary if possible
                 if(a.imaginary) { 
                     //assume i = sqrt(-1) -> (-1)^(1/2)
@@ -2725,7 +2741,10 @@ var nerdamer = (function() {
                         tn = Math.pow(-1, nr.num);
                     result = even(nr.den) ? new Symbol(-1).setPower(nr, true) : new Symbol(tn);
                 } 
-
+                //ensure that the sign is carried by the symbol and not the multiplier
+                //this enables us to check down the line if the multiplier can indeed be transferred
+                if(sign < 0 && !neg_num) result.negate();
+    
                 result = _.multiply(result, testPow(_.multiply(num, den)));
                 
                 //retain the absolute value
