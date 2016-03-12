@@ -7,6 +7,7 @@ var values = {
     a: 7.42
 };
 
+/* CORE tests*/
 var cases = {
     '((((((1+1))))))': {
         expected: '2',
@@ -23,6 +24,10 @@ var cases = {
     '4^2': {
         expected: '16',
         number_value: 16
+    },
+    '2*-4': {
+        expected: '-8',
+        number_value: -8
     },
     '2+(3/4)': {
         expected: '11/4',
@@ -108,6 +113,14 @@ var cases = {
         number_value: 2
     },
     'x*x': {
+        expected: 'x^2',
+        number_value: 4.41
+    },
+    '-x*x': {
+        expected: '-x^2',
+        number_value: -4.41
+    },
+    '-x*-x': {
         expected: 'x^2',
         number_value: 4.41
     },
@@ -564,11 +577,11 @@ var cases = {
         expected: '(-1)^x',
         number_value: '(-1)^x'
     },
-//    'E^(2*i*PI)+E^(i*PI)': {
-//        expected: '0',
-//        number_value: '0'
-//    },
-    //parser related
+    //Here you go Brosnan.
+    'e^(i*pi)+e^(2*i*pi)': {
+        expected: '0',
+        number_value: '0'
+    },
     '(x+y)--(x+y)': {
         expected: '2*(x+y)',
         number_value: '10.8'
@@ -597,7 +610,39 @@ var cases = {
         expected: '2',
         number_value: 2
     },
-
+    '-2*256^(1/8)': {
+        expected: '-4',
+        number_value: -4
+    },
+    'sqrt((1/2*x)^(1/2))': {
+        expected: '2^(-1/4)*x^(1/4)',
+        number_value: 1.0122722344289652
+    },
+    'sqrt(4*sqrt(2)^(-1)*x^(1/2))': {
+        expected: '2^(3/4)*x^(1/4)',
+        number_value: 2.0245444688580756
+    },
+    'sqrt(4+x)': {
+        expected: 'sqrt(4+x)',
+        number_value: 2.4698178070456565
+    },
+    'sqrt((4+x)^2)': {
+        expected: 'abs(4+x)',
+        number_value: 6.1
+    },
+    'log(e)': {
+        expected: '1',
+        number_value: 1
+    },
+    'log(e^e)': {
+        expected: 'e',
+        number_value: 2.718281828459065
+    },
+    'log(1/e^e)': {
+        expected: '-e',
+        number_value: -2.718281828459065
+    },
+    
 };
 
 test(cases, values, true); 
