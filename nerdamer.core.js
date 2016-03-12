@@ -6,11 +6,12 @@
  */
 
 //TODO: test sqrt ✓
-//TODO: add BigInt
-//TODO: imaginary
+//TODO: add BigInt - to be implemented in future version
+//TODO: imaginary ✓
 //TODO: functions don't evaluate ✓
 //TODO: Symbols must return decimal where possible
-//TODO: remove unnecessary brackets from EX
+//TODO: remove unnecessary brackets from EX ✓
+//TODO: hyperbolic functions ✓
 
 var nerdamer = (function() {
     "use strict";
@@ -635,12 +636,50 @@ var nerdamer = (function() {
         };
         
         //safeties
+        //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/
         Math.sign = Math.sign || function(x) {
             x = +x; // convert to a number
             if (x === 0 || isNaN(x)) {
                 return x;
             }
             return x > 0 ? 1 : -1;
+        };
+        
+        Math.cosh = Math.cosh || function(x) {
+            var y = Math.exp(x);
+            return (y + 1 / y) / 2;
+        };
+        
+        Math.sinh = Math.sinh || function(x) {
+            var y = Math.exp(x);
+            return (y - 1 / y) / 2;
+        };
+        
+        Math.tanh = Math.tanh || function(x) {
+            if (x === Infinity) {
+                return 1;
+            } else if (x === -Infinity) {
+                return -1;    
+            } else {
+                var y = Math.exp(2 * x);
+                return (y - 1) / (y + 1);
+            }
+        };
+        
+        Math.asinh = Math.asinh || function(x) {
+            if (x === -Infinity) {
+              return x;
+            } else {
+              return Math.log(x + Math.sqrt(x * x + 1));
+            }
+        };
+        
+        Math.acosh = Math.acosh || function(x) {
+            return Math.log(x + Math.sqrt(x * x - 1));
+        };
+        
+        Math.atanh = Math.atanh || function(x) {
+            return Math.log((1+x)/(1-x)) / 2;
         };
         
         reserveNames(Math2); //reserve the names in Math2
@@ -765,6 +804,7 @@ var nerdamer = (function() {
             return obj.toString();
         }
     }
+    
     Utils.text = text;
     /* END GLOBAL FUNCTIONS */
     
@@ -945,7 +985,7 @@ var nerdamer = (function() {
             return c.simplify();
         },
         divide: function(m) {
-            if(m.num === 0) throw new Error('Division by zero!');
+            if(m.num === 0) err('Division by zero!');
             return this.clone().multiply(m.clone().inv()).simplify();
         },
         subtract: function(m) {
@@ -1162,6 +1202,12 @@ var nerdamer = (function() {
                 }
             }
             return status;
+        },
+        isPi: function() {
+            return this.value === 'pi';
+        },
+        isE: function() {
+            return this.value === 'e';
         },
         isConstant: function() {
             return this.value === CONST_HASH;
@@ -1441,7 +1487,7 @@ var nerdamer = (function() {
 //                this.multiplier = this.multiplier.multiply(m);
             }
             else if(group === P && this.group === N) {
-                if(this.multiplier.den.toString() !== '1') throw new Error('Attempting conversion of group N with non-unit denominator!');
+                if(this.multiplier.den.toString() !== '1') err('Attempting conversion of group N with non-unit denominator!');
                 this.value = imaginary ? this.multiplier.num.toString() : Math.abs(this.multiplier.num.toString());
                 this.toUnitMultiplier(!imaginary);
                 this.group = P;
@@ -1701,12 +1747,7 @@ var nerdamer = (function() {
         }
         return factors.sort(function(a, b){return a-b;});
     };
-    
-    //EXPERIMENTAL -  Might be stripped
-    function Equation(equation1, equation2) {
-        this.e1 = equation1;
-        this.e2 = equation2;
-    }
+ 
     
     /**
      * This class defines the operators in nerdamer. The thinking is that with using these parameters
@@ -1784,7 +1825,12 @@ var nerdamer = (function() {
                 'cot'       : [ , 1],
                 'acos'      : [ , 1],
                 'asin'      : [ , 1],
-                'atan'      : [ , 1],
+                'sinh'      : [ , 1],
+                'cosh'      : [ , 1],
+                'tanh'      : [ , 1],
+                'asinh'      : [ , 1],
+                'acosh'      : [ , 1],
+                'atanh'      : [ , 1],
                 'exp'       : [ , 1],
                 'min'       : [ , -1],
                 'max'       : [ ,-1],
@@ -2239,11 +2285,19 @@ var nerdamer = (function() {
             
             var img, retval, 
                 isConstant = symbol.isConstant();
-
+        
+            if(symbol.group === CB && symbol.isLinear()) {
+                var m = sqrt(Symbol(symbol.multiplier));
+                symbol.each(function(x) {
+                    m = _.multiply(m, sqrt(x));
+                });
+                
+                retval = m;
+            }
             //if the symbol is already sqrt then it's that symbol^(1/4) and we can unwrap it
-            if(symbol.fname === SQRT) { 
+            else if(symbol.fname === SQRT) { 
                 var s = symbol.args[0];
-                s.power = symbol.power.multiply(new Frac(0.25));
+                s.setPower(symbol.power.multiply(new Frac(0.25)));
                 retval = s;
             }
             //if the symbol is a fraction then we don't keep can unwrap it. For instance
@@ -2307,7 +2361,20 @@ var nerdamer = (function() {
         
         function log(symbol) { 
             var retval;
-            if(symbol.group === FN && symbol.fname === 'exp') {
+            if(symbol.equals(0)) {
+                err('log(0) is undefined!');
+            }
+            
+            if(symbol.group === EX && symbol.power.multiplier.lessThan(0) || symbol.power == -1) {
+                symbol.power.negate();
+                //move the negative outside but keep the positive inside :)
+                retval = log(symbol).negate();
+            } 
+            else if(symbol.value === 'e' && symbol.multiplier.equals(1)) {
+                var p = symbol.power;
+                retval = isSymbol(p) ? p : new Symbol(p); 
+            }
+            else if(symbol.group === FN && symbol.fname === 'exp') {
                 var s = symbol.args[0];
                 if(symbol.multiplier.equals(1)) retval = _.multiply(s, new Symbol(symbol.power));
                 else retval = _.symfunction('log',[symbol]);
@@ -2378,17 +2445,9 @@ var nerdamer = (function() {
                     p = n.multiply(symbol.power);
             if(isInt(p)) symbol = Symbol(Math.pow(fct, p));
             else symbol = new Symbol(fct).setPower(p);
-//                if(pfs.length === 1) {
-//                    var fct = pfs[0],
-//                        n = Math.log(v)/Math.log(fct),
-//                        np = new Frac(n).multiply(symbol.power),
-//                        ct = Math.pow(fct, np.num/symbol.power.num),
-//                        xt = new Frac(symbol.power.num/np.den);
-//                console.log(n)
-//                    return new Symbol(ct).setPower(xt);
-//                }
+
             }
-//            console.log(symbol.text())
+
             return symbol;
         }
 
@@ -2594,13 +2653,14 @@ var nerdamer = (function() {
 
             var v1 = a.value,
                 v2 = b.value,
+                sign = new Frac(Math.sign(a.multiplier)),
                 //since P is just a morphed version of N we need to see if they relate
                 ONN = (g1 === P && g2 === N && b.multiplier.equals(a.value)),
                 //don't multiply the multiplier of b since that's equal to the value of a
                 m = ONN ? new Frac(1).multiply(a.multiplier).abs() : a.multiplier.multiply(b.multiplier).abs(),
                 result = a.clone().toUnitMultiplier();
             b = b.clone().toUnitMultiplier(true);
-            
+
             //same issue with (x^2+1)^x*(x^2+1)
             //EX needs an exception when multiplying because it needs to recognize
             //that (x+x^2)^x has the same hash as (x+x^2). The latter is kept as x
@@ -2635,6 +2695,9 @@ var nerdamer = (function() {
                         m.negate();
                     }
                 }
+                //the sign for b is floating around. Remember we are assuming that the odd variable will carry
+                //the sign but this isn't true if they're equals symbols
+                result.multiplier = result.multiplier.multiply(b.multiplier);
             }
             else if(g1 === CB && a.isLinear()){ 
                 if(g2 === CB && b.isLinear()) { 
@@ -2655,7 +2718,7 @@ var nerdamer = (function() {
                     result = b.clone().toUnitMultiplier();
                 }
             }
-            
+ 
             //unpack CB if length is only one
             if(result.length === 1) { 
                 var t = result.multiplier;
@@ -2672,10 +2735,9 @@ var nerdamer = (function() {
                 result = _.multiply(new Symbol(m), _.pow(result, new Symbol(p.divide(new Frac(2)))));
             }
             else {
-                result.multiplier = m.multiply(result.multiplier);
+                result.multiplier = m.multiply(result.multiplier).multiply(sign);
             }
-//            //eliminate zero power values and convert them to numbers
-//            if(result.power.equals(0)) result = new Symbol(result.multiplier);
+            
             //back convert group P to a simpler group N if possible
             if(result.group === P && isInt(result.power.toDecimal())) result = result.convert(N);
             
@@ -2768,6 +2830,7 @@ var nerdamer = (function() {
             }
 
             result = testSQRT(result);
+
             //reduce square root
             if(result.fname === SQRT) { 
                 var isEX = result.group === EX;
@@ -2779,7 +2842,15 @@ var nerdamer = (function() {
                     result.multiplier = result.multiplier.multiply(m);
                 }
             }
-
+            //detect Euler's identity
+            else if(result.isE() && result.group === EX && result.power.contains('pi') 
+                    && result.power.contains(Settings.IMAGINARY)) {
+                //we have a match
+                var m1 = result.multiplier,
+                    m2 = result.power.multiplier; 
+                result = new Symbol(even(m2) ? m1 : m1.negate());
+            }
+            
             return result;
         };
         
@@ -3369,7 +3440,7 @@ var nerdamer = (function() {
                 if(isVector(row)) row = row.elements;
                 if(!isArray(row)) row = [row];
                 rl = row.length;
-                if(lw && lw !== rl) throw new Error('Unable to create Matrix. Row dimensions do not match!');
+                if(lw && lw !== rl) err('Unable to create Matrix. Row dimensions do not match!');
                 el.push(row);
                 lw = rl;
             }
@@ -3468,7 +3539,7 @@ var nerdamer = (function() {
         },
         augment: function(m) {
             var r = this.rows(), rr = m.rows();
-            if(r !== rr) throw new Error("Cannot augment matrix. Rows don't match.");
+            if(r !== rr) err("Cannot augment matrix. Rows don't match.");
             for(var i=0; i<r; i++) {
                 this.elements[i] = this.elements[i].concat(m.elements[i]);
             }
@@ -4012,15 +4083,6 @@ var nerdamer = (function() {
             }
         }
         return variables;
-    };
-    
-    libExports.addPreprocessor = function(f) {
-        return PREPROCESSORS.push(f);
-    };
-    
-    libExports.removePreprocessor = function(n) {
-        if(n===PREPROCESSORS.length) PREPROCESSORS.pop();
-        PREPROCESSORS.splice(n-1, 1, undefined);
     };
     
     /**
