@@ -5,13 +5,14 @@
  * Source : https://github.com/jiggzson/nerdamer
  */
 
-//TODO: test sqrt ✓
-//TODO: add BigInt - to be implemented in future version
-//TODO: imaginary ✓
-//TODO: functions don't evaluate ✓
 //TODO: Symbols must return decimal where possible
 //TODO: remove unnecessary brackets from EX ✓
-//TODO: hyperbolic functions ✓
+//TODO: rewrite text function
+//TODO: rewrite keyForGroup function
+//TODO: rewrite build function 
+//TODO: rewrite latex function - in progress
+//TODO: add to asciiMath function 
+//TODO: in testPow if denominator of power expands return simpler representation ✓
 
 var nerdamer = (function() {
     "use strict";
@@ -72,10 +73,6 @@ var nerdamer = (function() {
         SQRT = 'sqrt',
         
         ABS = 'abs',
-        
-        //the idea is to have the ability to do some processing on the string before passing it
-        //to the parser. EXPERIMENTAL and might be stripped.
-        PREPROCESSORS = [],
 
         //the storage container "memory" for parsed expressions
         EQNS = [],
@@ -331,30 +328,30 @@ var nerdamer = (function() {
             return Math.round( x*Math.pow( 10,s ) )/Math.pow( 10,s );
         },
         
-        /**
-         * Inserts an object into an array at a given index or recursively adds items if an array is given.
-         * When inserting another array, passing in false for unpackArray will result in the array being inserted
-         * rather than its items.
-         * @param {Array} arr - The target array
-         * @param {Array} item - The item being inserted
-         * @param {Number} index - Where to place the item
-         * @param {boolean} unpackArray - Will insert the array instead of adding its items
-         */
-        insertArray = Utils.insertArray = function( arr, item, index, unpackArray ) {
-            unpackArray = unpackArray === false ? unpackArray : true;
-
-            if( isArray( item ) && unpackArray ) {
-                for( var i=0; i<=item.length+1; i++ ){
-                    insertArray( arr, item.pop(), index );
-                }
-            }
-            else if( typeof index === 'undefined ') {
-                arr.push( item );
-            }
-            else{
-                arr.splice( index, 0, item );
-            }
-        },
+//        /**
+//         * Inserts an object into an array at a given index or recursively adds items if an array is given.
+//         * When inserting another array, passing in false for unpackArray will result in the array being inserted
+//         * rather than its items.
+//         * @param {Array} arr - The target array
+//         * @param {Array} item - The item being inserted
+//         * @param {Number} index - Where to place the item
+//         * @param {boolean} unpackArray - Will insert the array instead of adding its items
+//         */
+//        insertArray = Utils.insertArray = function( arr, item, index, unpackArray ) {
+//            unpackArray = unpackArray === false ? unpackArray : true;
+//
+//            if( isArray( item ) && unpackArray ) {
+//                for( var i=0; i<=item.length+1; i++ ){
+//                    insertArray( arr, item.pop(), index );
+//                }
+//            }
+//            else if( typeof index === 'undefined ') {
+//                arr.push( item );
+//            }
+//            else{
+//                arr.splice( index, 0, item );
+//            }
+//        },
         
         /**
          * This method traverses the symbol structure and grabs all the variables in a symbol. The variable
@@ -544,23 +541,6 @@ var nerdamer = (function() {
         format_subs = function(subs) {
             for(var x in subs) subs[x] = _.parse(subs[x].toString());
             return subs;
-        },
-        
-        /**
-         * The idea is to have the ability to do some preprocessing on the string. This can have some nice 
-         * possibilities such as being able to make a pseudo programming language and out the the result in the form
-         * of an expression or equation. Currently not used
-         * @param {String} str
-         * @
-         */
-        preprocess = function(str) {
-            var s = str;
-            var l = PREPROCESSORS.length;
-            for(var i=0; i<l; i++) {
-                var preprocess = PREPROCESSORS[i];
-                if(typeof preprocess === 'function') s = preprocess(s);
-            }
-            return s;
         },
         generatePrimes = Utils.generatePrimes = function(upto) {
             //get the last prime in the array
@@ -868,8 +848,8 @@ var nerdamer = (function() {
          * Returns the latex representation of the expression
          * @returns {String}
          */
-        latex: function() {
-            return Latex.latex(this.symbol);
+        latex: function(option) {
+            return Latex.latex(this.symbol, option);
         },
         
         valueOf: function() { 
@@ -1484,7 +1464,6 @@ var nerdamer = (function() {
             else if(group === N) { 
                 var m = this.multiplier.toDecimal();
                 new Symbol(this.group === P ? m*Math.pow(this.value, this.power) : m).clone(this);
-//                this.multiplier = this.multiplier.multiply(m);
             }
             else if(group === P && this.group === N) {
                 if(this.multiplier.den.toString() !== '1') err('Attempting conversion of group N with non-unit denominator!');
@@ -1579,7 +1558,6 @@ var nerdamer = (function() {
                     if(this.group === CP || this.group === CB) {
                         this.updateHash();
                     }
-                   
                 }
             }
 
@@ -1626,24 +1604,24 @@ var nerdamer = (function() {
          */
         keyForGroup: function(group, suggest) {
             var g = this.group;
+            var key; 
+            
             if(g === N) {
-                return this.value;
+                key = this.value;
             }
             else if(g === S || g === P) {
-                if(group === PL) return this.power.toDecimal();
-                else return this.value;
+                if(group === PL) key = this.power.toDecimal();
+                else key = this.value;
             }
             else if(g === FN) {
-                if(group === PL) return this.power.toDecimal();
-                return text(this, 'hash');
+                if(group === PL) key = this.power.toDecimal();
+                key = text(this, 'hash');
             }
             else if(g === PL) { 
                 //if the order is reversed then we'll assume multiplication
                 //TODO: possible future dilemma
-                if(group === CB) return text(this, 'hash');
-                if(group === CP) { 
-                    
-                    var key;
+                if(group === CB) key = text(this, 'hash');
+                else if(group === CP) { 
                     if(this.power.equals(1)) key = this.value;
                     else key = inBrackets(text(this, 'hash'))+'^'+this.power.toDecimal();
                 }
@@ -1652,18 +1630,20 @@ var nerdamer = (function() {
                 return key;
             }
             else if(g === CP) {
-                if(group === CP) return text(this, 'hash');
-                if(group === PL) return this.power.toString();
-                return this.value;
+                if(group === CP) key = text(this, 'hash');
+                if(group === PL) key = this.power.toString();
+                key = this.value;
             }
             else if(g === CB) {
-                if(group === PL) return this.power.toDecimal();
-                return text(this, 'hash');
+                if(group === PL) key = this.power.toDecimal();
+                key = text(this, 'hash');
             }
             else if(g === EX) { 
-                if(group === PL) return text(this.power);
-                return text(this, 'hash');
+                if(group === PL) key = text(this.power);
+                key = text(this, 'hash');
             }
+            
+            return key;
         },
         /** 
          * Symbols are typically stored in an object which works fine for most
@@ -1680,12 +1660,6 @@ var nerdamer = (function() {
                 collected.push( fn ? fn(symbol) : symbol );
             }
             return collected.sort();//sort hopefully gives us some sort of consistency
-        },
-        hasImaginary: function() {
-            for(var x in this.symbols) {
-                if(this.symbols[x].imaginary) return true;
-            }
-            return false;
         },
         /**
          * Returns the latex representation of the symbol
@@ -1733,6 +1707,7 @@ var nerdamer = (function() {
     };
     
     function primeFactors(num) {
+        if(isPrime(num)) return [num];
         var l = num, i=1, factors = [], 
             epsilon = 2.2204460492503130808472633361816E-16;
         while(i<l) {
@@ -2442,10 +2417,12 @@ var nerdamer = (function() {
                 var v = symbol.group === N ? symbol.multiplier.toDecimal() : symbol.value,
                     fct = primeFactors(v)[0],
                     n = new Frac(Math.log(v)/Math.log(fct)),
-                    p = n.multiply(symbol.power);
-            if(isInt(p)) symbol = Symbol(Math.pow(fct, p));
-            else symbol = new Symbol(fct).setPower(p);
-
+                    p = n.multiply(symbol.power); 
+                //we don't want a more complex number than before 
+                if(p.den > symbol.power.den) return symbol;
+ 
+                if(isInt(p)) symbol = Symbol(Math.pow(fct, p));
+                else symbol = new Symbol(fct).setPower(p);
             }
 
             return symbol;
@@ -2475,18 +2452,18 @@ var nerdamer = (function() {
             return _.parse(this.body, subs);
         };
         
-        //the simpler the structure of the symbol, the better. Unpack tries to
-        //remove the parens function and return it in a simpler form.
-        this.unpack = function(symbol) { 
-            //we only touch this bad boy if the power is one 
-            if(symbol.power.equals(1)) {
-                //parens should only carry one symbol
-                var unpacked = symbol.args[0];
-                unpacked.multiplier.multiply(symbol.multiplier);
-                symbol = unpacked;
-            }
-            return symbol;
-        };
+//        //the simpler the structure of the symbol, the better. Unpack tries to
+//        //remove the parens function and return it in a simpler form.
+//        this.unpack = function(symbol) { 
+//            //we only touch this bad boy if the power is one 
+//            if(symbol.power.equals(1)) {
+//                //parens should only carry one symbol
+//                var unpacked = symbol.args[0];
+//                unpacked.multiplier.multiply(symbol.multiplier);
+//                symbol = unpacked;
+//            }
+//            return symbol;
+//        };
 
         //
         /**
@@ -2647,7 +2624,9 @@ var nerdamer = (function() {
             if(a.multiplier.equals(0) || b.multiplier.equals(0)) return new Symbol(0);
             
             var g1 = a.group,
-                g2 = b.group;
+                g2 = b.group,
+                bnum = b.multiplier.num,
+                bden = b.multiplier.den;
             
             if(g2 > g1 && !(g2 === CP)) return this.multiply(b, a);
 
@@ -2705,17 +2684,33 @@ var nerdamer = (function() {
                         result = result.combine(x);
                     });
                 }
-                else {
+                else { 
                     result.combine(b);
                 }
             }
             else {
                 //the multiplier was already handled so nothing left to do
                 if(g1 !== N) { 
-                    result = Symbol.shell(CB).combine([result, b]);
+                    if(!b.isOne()) result = Symbol.shell(CB).combine([result, b]);
                 }     
                 else { 
                     result = b.clone().toUnitMultiplier();
+                }
+            }
+            
+            if(result.group === P) { 
+                var logV = Math.log(result.value),
+                    n1 = Math.log(bnum)/logV,
+                    n2 = Math.log(bden)/logV;
+
+                //we don't want to divide by zero no do we? Strange things happen.
+                if(n1 !== 0 && isInt(n1)) {
+                    result.power = result.power.add(new Frac(n1));
+                    m.num /= bnum; //BigInt? Keep that in mind for the future.
+                }
+                if(n2 !== 0 && isInt(n2)) {
+                    result.power = result.power.subtract(new Frac(n2));
+                    m.den /= bden; //BigInt? Keep that in mind for the future.
                 }
             }
  
@@ -2943,270 +2938,75 @@ var nerdamer = (function() {
     //The latex generator
     var Latex = {
         space: '~',
-        latex: function(obj, abs, group, addParens) { 
-            abs = abs || false;
-            group = group || obj.group; 
+        latex: function(symbol, option) { 
+            var group = symbol.group,
+                decimal = option === 'decimal',
+                m = [symbol.multiplier.num, symbol.multiplier.den],
+                //get the value as a two part array
+                v = this.value(symbol),
+                //the power is simple since it requires no additional formatting. We can get it to a
+                //string right away. pass in true to neglect unit powers
+                p = isSymbol(symbol.power) ? this.latex(symbol.power) : this.formatFrac(symbol.power, true);
             
-            var output = '',
-                inBraces = this.inBraces, 
-                value;
-            if(isSymbol(obj)) { 
-                switch(group) {
-                    case N:
-                        value = obj.multiplier;
-                        
-                        if(abs) value = Math.abs(value);
-
-                        if(isInt(value)) {
-                            output = value;
-                        }
-                        else if(Math.abs(value) === Infinity) {
-                            output = '\\infty';
-                            if(value === -Infinity) output = '-'+output;
-                        }
-                        else {
-                            var result = Fraction.convert(value);
-                            output = this.fraction(result);
-                        }  
-                        break;
-                    case S:
-                        output = this.renderSymbolLatex(obj, undefined, abs);
-                        break;
-                    case FN: 
-                        var name = obj.fname;
-                        if(name === PARENTHESIS) name = '';
-                        else if(name in Math || name in Math2) name = '\\'+name;
-
-                        var fnInput = obj.args.slice(0).map(function(item) {
-                            return Latex.latex(item);
-                        });
-                        if(name === '\\abs') {
-                            value = '\\left|'+fnInput+'\\right|';
-                        }
-                        else {
-                            value = name+this.inBrackets(fnInput);
-                        }
-                        
-                        output = this.renderSymbolLatex(obj, value, abs);
-                        
-                        break;
-                    case PL:
-                        var value = this.renderSubSymbolsLatex(obj, function(a,b) {
-                            return a.power < b.power;
-                        }, undefined, abs);
-
-                        output = this.renderSymbolLatex(obj, value, abs, obj.group === EX);
-                        break;
-                    case CP:
-                        value = this.renderSubSymbolsLatex(obj, function(a,b) {
-                            return a.group < b.group;
-                        }, undefined, abs);
-
-                        output = this.renderSymbolLatex(obj, value, abs, obj.group === EX);
-                        break;
-                    case CB: 
-                        value = this.renderSubSymbolsLatex(obj, function(a,b) {
-                            return a.group < b.group;
-                        }, true, abs);
-                        
-                        output = this.renderSymbolLatex(obj,value, abs);
-                        break;
-                    case EX:
-                        var pg = obj.previousGroup;
-                        if(pg === N) {
-                            //:) lie about the previous group and render it as a symbol
-                            pg = S;
-                        }
-                        output = this.latex(obj, abs, pg);
-
-                        break;
-                }
-            }
-            else if(isArray(obj)) {
-                var l = obj.length;
-                for(var i=0; i<l; i++) {
-                    output = '\\left['+obj.map(function(a) { return Latex.latex(a); }).join(' ,')+'\\right]';
-                }
-            }
-            else if(typeof obj.latex === 'function') {
-                output = obj.latex();
-            }
-            else {
-                output = obj;
-            }
-
-            if(addParens) output = this.inBrackets(output);
-            
-            return output;
+            return this.set(m, v, p);
         },
-        //renders the sub-symbols in complex symbols
-        renderSubSymbolsLatex: function(symbol, sortFunction, suppressPlus, abs) { 
-            var subSymbols = symbol.collectSymbols().sort(sortFunction),
-                l = subSymbols.length, 
-                denom = [], i,
-                self = this,
-                g = symbol.group,
-                sqrt = Math.abs(symbol.power) === 0.5;
-
-            for(i=0; i<l; i++) {
-                var s = subSymbols[i];
-                if(s.isInverse() && g === CB) {
-                    denom.push(remove(subSymbols, i).clone().invert());
-                    i--, l--; //adjust the index and the length since we're one item shorter
-                }
-            }
-            if(sortFunction) {
-                subSymbols.sort(sortFunction);
-                denom.sort(sortFunction);
-            }
-            
-            function convert(arr) { 
-                var i, l = arr.length, rendered = '';
-                for(var i=0; i<l; i++) {
-                    var curSymbol = arr[i], delimiter;
-
-                    if(curSymbol.multiplier.lessThan(0)) {
-                        delimiter = '-';
-                    }
-                    else if(suppressPlus){
-                        delimiter = '';
-                    }
-                    else {
-                        delimiter = '+';
-                    }
-                    //leave the negative for the first symbol
-                    abs = abs || i > 0;
-                    //TODO: redundant brackets in denominator when denominator is CP or PL
-                    var latex = self.latex(curSymbol, abs, undefined, 
-                        symbol.group === CB && (curSymbol.group === PL || curSymbol.group === CP));
-                        
-                    //only add the delimiter to the first one
-                    if(i > 0) latex = delimiter+latex;
-                    //add it to the total rendered
-
-                    rendered += latex;
-                }
-                
-                return rendered;
-            }
-            var num = convert(subSymbols),
-                denom = convert(denom); 
-            if(g === CP || g === PL) {
-                //TODO
-                if(num && !denom && Math.abs(symbol.multiplier) !== 1 || Math.abs(symbol.power !== 1)) {
-                    if(!sqrt) num = Latex.inBrackets(num);
-                }
-            }
-
-            if(denom && !num) num = 1;
-            if(denom) return format('\\frac{{0}}{{1}}', num, denom);
-            else return num;
+        //get the raw value of the symbol as an array
+        value: function(symbol) {
+            var group = symbol.group,
+                blank = '';
+            if(group === N) return [blank, blank];
+            else if(group === S || group === P) return [symbol.value, blank];
         },
-        //renders the style for the multiplier and power of the symbol.
-        renderSymbolLatex: function(symbol, value, abs, bracketed) { 
-            if(symbol.group === N) return this.latex(symbol, abs);
-            value = value || symbol.value;
-            
-            var multiplierArray = Fraction.convert(symbol.multiplier),
-                power = symbol.power || '',
-                sign = symbol.multiplier < 0 ? '-' : '',//store the sign
-                sqrt = (power) === 0.5,
-                sqrtDenom = power === -0.5;
-            
-            //if the latex was requested as absolute value remove the sign
-            if(abs) sign = '';
-            
-            //make the multiplier array positive
-            multiplierArray[0] = Math.abs(multiplierArray[0]);
-            
-            //handle powers
-            if(isSymbol(power)) {
-                power = this.latex(power, true);
-            }
-            else {
-                if(Math.abs(power) === 1 || sqrt || sqrtDenom) { 
-                    power = '';
-                }
-                else {
-                    var powerArray = Fraction.convert(power);
-                    if(powerArray[1] === 1) powerArray.pop();
-                    
-                    if(symbol.power < 0) {
-                        powerArray[0] = Math.abs(powerArray[0]);
-                    }
-                    power = this.fraction(powerArray);
-                }
-            }
-
-            //remove the one from the base of the fraction
-            if(multiplierArray[1] === 1) multiplierArray.pop();
-            
-            //if there's a power, the location where we attach it depends on the sign of the power.
-            //if negative it's bottom, otherwise we attach it to the top.
-            var where  = isNegative(symbol.power) ? 1 : 0,
-                valueIsFraction = /^\\frac/.test(value); 
-            if(multiplierArray[where] === 1) { 
-                var dn = multiplierArray[1];
-                if(valueIsFraction && dn && dn !== 1) {
-                    //TODO: needs a better way of getting denominator
-                    var v = betweenBrackets('{', '}', value, betweenBrackets('{', '}', value, 0)[2]+1);
-                    value = stringReplace(value, v[1], v[2], multiplierArray.pop()+this.space+v[0])   
-                }
-
-                multiplierArray[where] = value;
-            }
-            else {
-                //sub out the multipliers to the top and bottom
-                if(valueIsFraction) { 
-                    var start = 4;
-                    for(var i=0; i<2; i++) {
-                        var m0 = multiplierArray[i],
-                            m = !(m0 === 1 || m0 === undefined) ? m0+this.space : '';
-                        var match = betweenBrackets('{', '}', value, start);
-                        multiplierArray[i] = m+match[0];
-                        start = match[2]+1;
-                    }
-                }
-                else { 
-                    var curValue = multiplierArray[where] ? multiplierArray[where]+this.space : '';
-                    if(sqrtDenom) value = '\\sqrt'+this.inBraces(value);
-                    if(sqrt) {
-                        value = '\\sqrt'+this.inBraces(value);
-                        sqrt = false;
-                    }
-                    multiplierArray[where] = curValue+value;
-                }
-            }
-            
-            if(power) { 
-                multiplierArray[where] = this[bracketed ? 'inBrackets': 'inBraces'](multiplierArray[where]);
-                if(!sqrt) {
-                    multiplierArray[where] += '^'+this.inBraces(power);
-                }
-            }
-
-            //write the value into a fraction
-            value = this.fraction(multiplierArray);
-            var retval = sign+value;
-
-            if(sqrt) retval = '\\sqrt'+this.inBraces(retval);
-            
-            return retval;
+        set: function(m, v, p) {
+            var mn = m[0], md = m[1], vn = v[0], vd = v[1];
+            //filters
+            //if the top has a variable but the numerator is one drop it
+            if(vn && mn === 1) mn = '';
+            //if denominator is 1 drop it always
+            if(md === 1) md = '';
+//            console.log('mn:', mn, 'md:', md, 'vn:', vn, 'vd:', vd, 'p:', p)
+            //format the power if it exists
+            if(p) p = '^'+this.braces(p);
+            //prepare the top portion
+            var top = this.join(mn, vn, '~');
+            //prepare the bottom portion
+            var bottom = this.join(md, vd, '~');
+            //format the power if it exists
+            if(p) top = this.braces(top)+p;
+            //make it a fraction if both top and bottom exists
+            if(top && bottom) return this.frac(top, bottom);
+            //otherwise only the top exists so return that
+            else return top;
         },
-
-        fraction: function(fractionArray) {
-            if(fractionArray.length === 1) return fractionArray[0];
-            return '\\frac'+this.inBraces(fractionArray[0])+this.inBraces(fractionArray[1]);
+        //joins together two strings if both exist
+        join: function(n, d, glue) {
+            if(!n && !d) return '';
+            if(n && !d) return n;
+            if(d && !n) return d;
+            return n+glue+d;
         },
-        inBraces: function(contents, index) {
-            index = index === undefined ? '' : '$'+index;
-            return '{'+contents+index+'}';
+        /**
+         * formats the fractions accordingly.
+         * @param {Frac} f
+         * @param {bool} make_1_blank - let's the function know to return blank for denominators == 1
+         */ 
+        formatFrac: function(f, make_1_blank) { 
+            var n = f.num === 1 && make_1_blank ? '' :f.num, 
+                d = f.den; 
+            if(d === 1) return n;
+            return this.frac(n, d);
         },
-        inBrackets: function(contents) {
-            return '\\left('+contents+'\\right)';
+        setOuter: function(symbol) {
+            
         },
-        write2Fraction: function(fraction, top, bottom) {
-            return fraction.replace('$1', top).replace('$2', bottom);
+        frac: function(n, d) {
+            return '\\frac'+this.braces(n)+this.braces(d);
+        },
+        braces: function(e) {
+            return '{'+e+'}';
+        },
+        brackets: function(e) {
+            return '\\left('+e+'\\right)';
         }
     };
     
@@ -3846,8 +3646,6 @@ var nerdamer = (function() {
         var variable;
         var fn;
         var args;
-        //handle preprocessors
-        expression = preprocess(expression);
         //convert any expression passed in to a string
         if(expression instanceof Expression) expression = expression.toString();
         
