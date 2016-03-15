@@ -2420,7 +2420,7 @@ var nerdamer = (function() {
                     p = n.multiply(symbol.power); 
                 //we don't want a more complex number than before 
                 if(p.den > symbol.power.den) return symbol;
- 
+
                 if(isInt(p)) symbol = Symbol(Math.pow(fct, p));
                 else symbol = new Symbol(fct).setPower(p);
             }
@@ -2701,14 +2701,15 @@ var nerdamer = (function() {
             if(result.group === P) { 
                 var logV = Math.log(result.value),
                     n1 = Math.log(bnum)/logV,
-                    n2 = Math.log(bden)/logV;
-
+                    n2 = Math.log(bden)/logV,
+                    ndiv = m.num/bnum,
+                    ddiv = m.den/bden;
                 //we don't want to divide by zero no do we? Strange things happen.
-                if(n1 !== 0 && isInt(n1)) {
+                if(n1 !== 0 && isInt(n1) && isInt(ndiv)) {
                     result.power = result.power.add(new Frac(n1));
                     m.num /= bnum; //BigInt? Keep that in mind for the future.
                 }
-                if(n2 !== 0 && isInt(n2)) {
+                if(n2 !== 0 && isInt(n2) && isInt(ddiv)) {
                     result.power = result.power.subtract(new Frac(n2));
                     m.den /= bden; //BigInt? Keep that in mind for the future.
                 }
