@@ -7,10 +7,11 @@
 
 if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     nerdamer = require('./nerdamer.core.js');
-//    require('./Algebra.js');
 }
 
 (function() {
+    "use strict";
+    
     var core = nerdamer.getCore(),
         _ = core.PARSER,
         Frac = core.Frac,
@@ -25,7 +26,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         PL = core.groups.PL,
         CP = core.groups.CP,
         CB = core.groups.CB,
-        EX = core.groups.EX;
+        EX = core.groups.EX,
+        P = core.groups.P;
     var __ = core.Calculus = {
         version: '1.1.3',
         sum: function(fn, index, start, end) {
@@ -67,6 +69,18 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             nth = isSymbol(nth) ? nth.multiplier : nth || 1;
 
             if(d === undefined) d = core.Utils.variables(symbol)[0];
+            
+            //unwrap sqrt
+            if(symbol.group === FN && symbol.fname === 'sqrt') {
+                var s = symbol.args[0];
+                //these groups go to zero anyway so why waste time?
+                if(s.group !== N || s.group !== P) {
+                    s.power = isSymbol(s.power) ? _.multiply(s.power, new Symbol(1/2)) : s.power.multiply(new Frac(0.5));
+                    s.multiplier = s.multiplier.multiply(symbol.multiplier);
+                }
+                    
+                symbol = s;
+            }
 
             if(symbol.group === FN && !isSymbol(symbol.power)) {
                 var a = derive(symbol); 
@@ -87,18 +101,19 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
              // Equivalent to "derivative of the outside".
             function polydiff(symbol) { 
                 if(symbol.value === d || symbol.contains(d, true)) { 
-                    symbol.multiplier *= symbol.power;
+                    symbol.multiplier = symbol.multiplier.multiply(symbol.power);
                     symbol.power = symbol.power.subtract(new Frac(1)); 
                     if(symbol.power.equals(0)) {
                         symbol = Symbol(symbol.multiplier);
                     }
                 } 
+                
                 return symbol;
             };
             function derive(symbol) { 
                 var g = symbol.group, a, b, cp; 
 
-                if(g === N || g === S && symbol.value !== d) { 
+                if(g === N || g === S && symbol.value !== d || g === P) { 
                     symbol = Symbol(0);
                 }
                 else if(g === S) {  
@@ -118,7 +133,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             cp = symbol.clone();
                             symbol = symbol.args[0].clone();//get the arguments
 
-                            if( isSymbol(symbol.power) ) {
+                            if(isSymbol(symbol.power)) {
                                 symbol.power.negate();
                             }
                             else {
@@ -175,6 +190,32 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             //see product rule: f'.g goes to zero since f' will return zero. This way we only get back
                             //1*g'
                             symbol = Symbol(1);
+                            break;
+                        case 'cosh':
+                            //cos -> -sin
+                            symbol.fname = 'sinh';
+                            break;
+                        case 'sinh': 
+                            //sin -> cos
+                            symbol.fname = 'cosh';
+                            break;
+                        case 'tanh':
+                            //tanh -> sech^2
+                            symbol.fname = 'sech';
+                            symbol.power = new Frac(2);
+                            break;
+                        case 'sech': 
+                            // Use a clone if this gives errors
+                            symbol = qdiff(symbol, '-tanh');
+                            break;
+                        case 'asinh':
+                            symbol = _.parse('(sqrt(1+('+text(symbol.args[0])+')^2))^(-1)');
+                            break;
+                        case 'acosh':
+                            symbol = _.parse('(sqrt(-1+('+text(symbol.args[0])+')^2))^(-1)');
+                            break;
+                        case 'atanh':
+                            symbol = _.parse('(1-('+text(symbol.args[0])+')^2)^(-1)');
                             break;
                     }
                 }
