@@ -14,6 +14,7 @@
 //TODO: add to asciiMath function 
 //TODO: in testPow if denominator of power expands return simpler representation ✓
 //TODO: fix sqrt(x)^y which currently return sqrt(x)^y. Preferred is x^(y/2)
+//TODO: fix 1/2*2^(2/3)*x+x*x -> LaTeX
 
 var nerdamer = (function() {
     "use strict";
@@ -904,7 +905,7 @@ var nerdamer = (function() {
         }
     };
     //Aliases
-    Expression.prototype.toTex = Expression.prototype.latex;
+    Expression.prototype.toTeX = Expression.prototype.latex;
     
     function Frac(n) { 
         if(n === undefined) return this;
@@ -2908,45 +2909,57 @@ var nerdamer = (function() {
         //grab a list of supported functions but remove the excluded ones found in exclFN
         
         latex: function(symbol, option) { 
+            
             symbol = symbol.clone();
-            var group = symbol.group,
-                decimal = option === 'decimal',
+            var decimal = option === 'decimal',
                 power = symbol.power,
                 invert = isNegative(power),
                 negative = symbol.multiplier.lessThan(0);
-        
-            symbol.multiplier = symbol.multiplier.abs();
             
-                //if the user wants the result in decimal format then return it as such by placing it at the top part
-            var m_array;
-            
-            if(decimal) {
-                m_array = [String(symbol.multiplier.toDecimal()), '']
+            if(symbol.group === P && decimal) {
+                return String(symbol.multiplier.toDecimal()*Math.pow(symbol.value, symbol.power.toDecimal()));
             }
             else {
-                m_array = [symbol.multiplier.num, symbol.multiplier.den]
+                symbol.multiplier = symbol.multiplier.abs();
+
+                    //if the user wants the result in decimal format then return it as such by placing it at the top part
+                var m_array;
+
+                if(decimal) {
+                    m_array = [String(symbol.multiplier.toDecimal()), '']
+                }
+                else {
+                    m_array = [symbol.multiplier.num, symbol.multiplier.den]
+                }
+                    //get the value as a two part array
+                var v_array = this.value(symbol, invert),
+                    p;    
+                //make it all positive since we know whether to push the power to the numerator or denominator already.
+                if(invert) power.negate();
+                //the power is simple since it requires no additional formatting. We can get it to a
+                //string right away. pass in true to neglect unit powers
+                if(decimal)  {
+                    p = String(power.toDecimal());
+                    if(p === '1') p = '';
+                }
+                //get the latex representation
+                else if(isSymbol(power)) p = this.latex(power);
+                //get it as a fraction
+                else p = this.formatFrac(power, true);
+                //use this array to specify if the power is getting attached to the top or the bottom
+                var p_array = ['', ''],
+                    //stick it to the top or the bottom. If it's negative then the power gets placed on the bottom
+                    index = invert ? 1 : 0;
+                p_array[index] = p;
+
+                //special case group P and decimal
+
+
+                var retval = (negative ? '-': '')+this.set(m_array, v_array, p_array);
+
+                return retval.replace(/\+\-/gi, '-');
             }
-                //get the value as a two part array
-            var v_array = this.value(symbol, invert),
-                p;    
-            //make it all positive since we know whether to push the power to the numerator or denominator already.
-            if(invert) power.negate();
-            //the power is simple since it requires no additional formatting. We can get it to a
-            //string right away. pass in true to neglect unit powers
-            if(decimal)  p = String(power.toDecimal());
-            //get the latex representation
-            else if(isSymbol(power)) p = this.latex(power);
-            //get it as a fraction
-            else p = this.formatFrac(power, true);
-            //use this array to specify if the power is getting attached to the top or the bottom
-            var p_array = ['', ''],
-                //stick it to the top or the bottom. If it's negative then the power gets placed on the bottom
-                index = invert ? 1 : 0;
-            p_array[index] = p;
-            
-            var retval = (negative ? '-': '')+this.set(m_array, v_array, p_array);
-            
-            return retval.replace(/\+\-/gi, '-');
+                
         },
         //get the raw value of the symbol as an array
         value: function(symbol, inverted) {
@@ -2956,7 +2969,8 @@ var nerdamer = (function() {
                 index =  inverted ? 1 : 0;;
             /*if(group === N) //do nothing since we want to return top & bottom blank; */
             if(group === S || group === P || previousGroup === S || previousGroup === P) {
-                v[index] = symbol.value;
+                var value = symbol.value;
+                v[index] = value;
             }
             else if(group === FN || previousGroup === FN) { 
                 var name,
@@ -2991,9 +3005,8 @@ var nerdamer = (function() {
                 //in brackets or not. We'll do this by checking the value of the numerator and then comparing it 
                 //to whether the symbol value is "simple" or not.
                 var denominator = [],
-                    numerator = [],
-                    isUnitDenomMult = symbol.den === 1,
-                    isUnitNumMult = symbol.num === 1;
+                    numerator = [];
+            
                 //generate latex for each of them
                 symbol.each(function(x) { 
                     var isDenom = isNegative(x.power),
