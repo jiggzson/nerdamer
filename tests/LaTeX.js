@@ -1,12 +1,14 @@
 var nerdamer = require('../nerdamer.core');
 //test latex
-var testTex = function(test_cases, verbose) {
+var testTex = function(test_cases, verbose, opt) {
+    opt = opt || 'tex';
     var result, num_failed = 0, num_tests = 0;
     console.log('Running LaTex tests ... \n------------------------------------ \n');
     for(var test_case in test_cases) {
         num_tests++;
-        result = nerdamer(test_case).latex();
-        var expected = test_cases[test_case].tex;
+        result = nerdamer(test_case).toTeX(opt);
+        
+        var expected = test_cases[test_case][opt];
         if(result != expected) {
             num_failed++;
             console.log(test_case+' failed! Expected '+expected+' but received '+result);
@@ -30,59 +32,59 @@ var test_cases = {
     },
     '2*x': {
         tex: '2 \\cdot x',
-        decimal: '2*x'
+        decimal: '2 \\cdot x'
     },
     '2/5*x': {
         tex: '\\frac{2 \\cdot x}{5}',
-        decimal: '0.4*x'
+        decimal: '0.4 \\cdot x'
     },
     '2/5*x^2': {
         tex: '\\frac{2 \\cdot x^{2}}{5}',
-        decimal: '0.4*x^2'
+        decimal: '0.4 \\cdot x^{2}'
     },
     '1/2*x': {
         tex: '\\frac{x}{2}',
-        decimal: '0.5*x'
+        decimal: '0.5 \\cdot x'
     },
     '1/2*x^2': {
         tex: '\\frac{x^{2}}{2}',
-        decimal: '0.5*x^2'
+        decimal: '0.5 \\cdot x^{2}'
     },
     '1/2*2^(2/3)': {
         tex: '\\frac{1}{2^{\\frac{1}{3}}}',
-        decimal: '0.7937005259840799'
+        decimal: '0.7937005259840998'
     },
     '2^(2/3)': {
         tex: '2^{\\frac{2}{3}}',
-        decimal: '1.5874010519681598'
+        decimal: '1.5874010519681994'
     },
     '5/8*2^(2/3)*4': {
         tex: '\\frac{5}{2^{\\frac{1}{3}}}',
-        decimal: '3.9685026299204'
+        decimal: '3.968502629920499'
     },
     '3*x^(2/3)/4': {
         tex: '\\frac{3 \\cdot x^{\\frac{2}{3}}}{4}',
-        decimal: '0.75*x^0.6666666666666666'
+        decimal: '0.75 \\cdot x^{0.6666666666666666}'
     },
     '4*cos(x)': {
         tex: '4 \\cdot \\mathrm{cos}\\left(x\\right)',
-        decimal: ''
+        decimal: '4 \\cdot \\mathrm{cos}\\left(x\\right)'
     },
     '(1/4)*cos(x)': {
         tex: '\\frac{\\mathrm{cos}\\left(x\\right)}{4}',
-        decimal: ''
+        decimal: '0.25 \\cdot \\mathrm{cos}\\left(x\\right)'
     },
     '(5/4)*cos(x)': {
         tex: '\\frac{5 \\cdot \\mathrm{cos}\\left(x\\right)}{4}',
-        decimal: ''
+        decimal: '1.25 \\cdot \\mathrm{cos}\\left(x\\right'
     },
     '7/8*sqrt(x)': {
         tex: '\\frac{7 \\cdot \\sqrt{x}}{8}',
-        decimal: ''
+        decimal: '0.875 \\cdot \\sqrt{x}'
     },
     '1/8*sqrt(x+8)': {
         tex: '\\frac{\\sqrt{x+8}}{8}',
-        decimal: ''
+        decimal: '0.125 \\cdot \\sqrt{x+8}'
     },
     'x/(x+y)': {
         tex: '\\frac{x}{x+y}',
@@ -127,5 +129,11 @@ var test_cases = {
     },
     
 };
+console.log()
+console.log('Testing regular output')
 
 testTex(test_cases, true);
+
+console.log()
+console.log('Testing decimal output')
+testTex(test_cases, true, 'decimal');
