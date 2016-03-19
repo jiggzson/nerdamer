@@ -16,13 +16,12 @@ if((typeof module) !== 'undefined') {
         keys = core.Utils.keys,
         build = core.Utils.build,
         Symbol = core.Symbol,
-        S = core.groups.S,
         round = core.Utils.round,
         isInt = core.Utils.isInt,
         Math2 = core.Math2,
         variables = core.Utils.variables,
-        isComposite = core.Utils.isComposite,
         isSymbol = core.Utils.isSymbol,
+        S = core.groups.S,
         N = core.groups.N,
         EX = core.groups.EX,
         FN = core.groups.FN,
@@ -865,226 +864,31 @@ if((typeof module) !== 'undefined') {
          * Factors a symbol.
          */
         factor: function(symbol) {
-            var retval = symbol,
-                group = symbol.group,
-                isCompositionGroup = function(group) {
-                    return (group === PL || group === CP);
-                };
-
-            if(isCompositionGroup(group)) {
-                //distribute the multiplier in sub-symbols
-                for(var x in symbol.symbols) symbol.symbols[x].distributeMultiplier(); 
-                //factor the multiplier
-                var gcf = Math2.GCD.apply(undefined, symbol.coeffs()),
-                        
-                    factorize = function(symbol) { 
-                        for(var x in symbol.symbols) {
-                            var sub = symbol.symbols[x]; 
-                            if(isCompositionGroup(sub.group)) {
-                                factorize(sub);
-                            }
-                            else {
-                                sub.multiplier /= gcf;
-                            }
-                        }
-                    };
-                
-                if(symbol.power <= 1) {
-                    factorize(symbol);
-                    symbol.multiplier *= Math.pow(gcf, symbol.power);
-
-                    if(group === PL) {
-                        var powers = keys(symbol.symbols),
-                            lowest_power = core.Utils.arrayMin(powers),
-                            factor = _.parse(symbol.value+'^'+lowest_power);
-                        var factored = new core.Symbol(0);
-                        for(var x in symbol.symbols) {
-                            factored = _.add(factored, _.divide(symbol.symbols[x], factor.copy()));
-                        }
-
-                        factored = _.symfunction(core.PARENTHESIS, [factored]);//place it parenthesis
-                        factored.power *= symbol.power;
-                        factored.multiplier *= symbol.multiplier;
-                        factor.power *= symbol.power;
-
-                        retval = _.multiply(factor, factored);
-                    }
-                    else if(group === CP) { 
-                        try{
-                            var p = symbol.power,
-                                roots = core.Utils.arrayUnique(core.Algebra.proots(symbol)),
-                                all_ints = true; 
-                            for(var i=0; i<roots.length; i++) {
-                                if(!isInt(roots[i])) all_ints = false;
-                            }
-                            var result = new Symbol(1);
-                            if(all_ints)  {
-                                roots.map(function(root) {
-                                    result = _.multiply(result, 
-                                        _.symfunction(core.PARENTHESIS, 
-                                        [_.subtract(new Symbol(variables(symbol)[0]), new Symbol(root))]));
-                                });
-                                result.multiplier *= symbol.multiplier;
-                                retval = result; 
-                                retval.power = p;
-                            }
-                        }
-                        catch(e) {
-                            try {
-                                //not a polynomial. No biggie. Let's see if we can extract a few variables
-                                var symbols = symbol.collectSymbols(),
-                                    num_symbols = symbol.length,
-                                    hash_table = {};
-                                for(var i=0; i<num_symbols; i++) {
-                                    var cur_symbol = symbols[i], //collect all the variables contained in the symbol
-                                        num_vars = vars.length;
-                                    for(var j=0; j<num_vars; j++) {
-                                        var var_name = vars[j],
-                                            variable = cur_symbol.value === var_name ? cur_symbol : cur_symbol.symbols[var_name],
-                                            var_record = hash_table[var_name];
-                                        if(isSymbol(variable.power)) throw new Error('Cannot factor symbol. Exiting');
-                                        if(!var_record) hash_table[var_name] = [1, variable.power];
-                                        else {
-                                            var_record[0]++;
-                                            var p = variable.power;
-                                            if(p < var_record[1]) var_record[1] = p;
-                                        }
-                                    }
-                                }
-                                var factor = [];
-                                //we now know which variables we have and to which power so we can start reducing
-                                for(var x in hash_table) {
-                                    var_record = hash_table[x];
-                                    //if we have as many recorded as there were sub-symbols then we can divide all of them
-                                    //by that symbol
-                                    if(var_record[0] === num_symbols) { 
-                                        factor.push(x+'^'+var_record[1]);
-                                    }
-                                };
-
-                                //we can now divide each one by that factor
-                                factor = _.parse(factor.join('*'));//make it a Symbol
-                                for(x in symbol.symbols) {
-                                    symbol.symbols[x] = _.divide(symbol.symbols[x], factor.copy());
-                                }
-
-                                retval = _.multiply(_.parse(symbol.text()), factor);
-                            }
-                            catch(e){;}
-                        }
-                    }
-                }     
+            var PLs = [],
+                poly,
+                coeffs = symbol.coeffs();
+            //go around the symbol and collect all the PLs
+            symbol.each(function(x) {
+                if(x.group === PL) PLs.push(x);
+            });
+            //find a PL that is actually a polynomial
+            for(var i=0; i<PLs.length; i++) {
+                var s = PLs[i]; 
+                if(s.isPoly()) {
+                    poly = s;
+                    break;
+                }
             }
-            
-            if(retval.group === core.groups.FN) retval.updateHash();
-            
-            return retval;
+            //did we manage to find a polynomial?
+            if(poly) {
+                var powers = keys(poly.symbols),
+                    minpower = Math.min.apply(undefined, powers),
+                    minpowsym = poly.symbols[minpower];
+                //we only care about the numerator
+
+            }
         },
-        /**
-         * Expands a symbol
-         */
-        expand: function (symbol) { 
-            var is_composite = isComposite(symbol);
-
-            function powerExpand(symbol) {
-                if(!isComposite(symbol)) return symbol; //nothing to do here
-
-                var p = symbol.power,
-                    n = Math.abs(p); //store the power
-                if(isInt(p) && n !== 1) { 
-                    var sign = p / n,
-                        multiplier = symbol.multiplier;//store the multiplier
-                    n--; //iterations should be n-1 times
-                    symbol.power = 1;
-                    symbol.multiplier = 1;
-                    var result = symbol.copy();
-                    for(var i=0; i<n; i++) { 
-                        result = polyExpand(result, i === n ? symbol : symbol.copy());
-                    }
-                    result.multiplier = multiplier;
-                    if(result.power) result.power *= sign;
-                    symbol = result;
-               }
-
-               return symbol;  
-            }
-
-            function polyExpand(symbol1, symbol2) { 
-                var result = new Symbol(0),
-                    s1_is_comp = isComposite(symbol1),
-                    s2_is_comp = isComposite(symbol2);
-
-                if(!s1_is_comp && s2_is_comp || symbol1.power < 0 && !(symbol2.power < 0)) { 
-                    var t = symbol2; symbol2 = symbol1; symbol1 = t; //swap
-                    //reuse t and also swap bools
-                    t = s2_is_comp; s2_is_comp = s1_is_comp; s1_is_comp = t;
-                }
-                var result = new Symbol(0),
-                    //make sure that their both positive or both negative
-                    same_sign = core.Utils.sameSign(symbol1.power, symbol2.power);
-                if(s1_is_comp) {
-                    for(var x in symbol1.symbols) {
-                        var symbolx = symbol1.symbols[x];
-                        if(s2_is_comp  && same_sign) {
-                            for(var y in symbol2.symbols) {
-                                var symboly = symbol2.symbols[y],
-                                    expanded;
-                                if(isComposite(symbolx) || isComposite(symboly)) {
-                                    expanded = polyExpand(symbolx.copy(), symboly.copy());
-                                }
-                                else {
-                                    expanded = _.multiply(symbolx.copy(), symboly.copy());
-                                }
-                                result = _.add(result, expanded);
-                            }
-                        }
-                        else {
-                            result = _.add(result, _.multiply(symbolx.copy(), symbol2.copy()));
-                        }
-                    }
-                }
-                else {
-                    result = _.multiply(symbol1, symbol2);
-                }
-                
-                return result;
-            }
-            symbol = powerExpand(symbol); 
-
-            if(symbol.symbols && symbol.group !== core.groups.EX) { 
-                //there is no way to know if one of the symbols contained within
-                //the CB is a composite so unfortunately we have to loop over each one of them.
-                var symbols = symbol.collectSymbols(),
-                    l = symbols.length;
-                for(var i=0; i<l-1; i++) { 
-                    var symbol1 = powerExpand(symbols.pop()),
-                        symbol2 = powerExpand(symbols.pop());
-                    var expanded = !is_composite ? polyExpand(symbol1, symbol2) : _.add(symbol1, symbol2.copy());
-                    symbols.push(expanded);
-                }
-
-                var expanded_symbol = symbols[0];
-                if(expanded_symbol) {
-                    expanded_symbol.multiplier *= symbol.multiplier;
-                    if(expanded_symbol.group !== core.groups.N) {
-                        expanded_symbol.distributeMultiplier();
-                        expanded.power *= symbol.power;
-                    }
-                        
-                    symbol = expanded_symbol;
-                    //put back the sign
-                }
-            }
-            else if(symbol.args) {
-                symbol.args[0] = __.expand(symbol.args[0]);
-                if(symbol.group === core.groups.FN) symbol.updateHash();
-            }
-            else if(symbol.group === core.groups.EX) {
-                symbol.power = __.expand(symbol.power);
-            }
-            
-            return symbol;
-        },
+        
         /**
          * Converts a symbol into an equivalent polynomial arrays of 
          * the form [[coefficient_1, power_1],[coefficient_2, power_2], ... ]
@@ -1096,7 +900,7 @@ if((typeof module) !== 'undefined') {
             var self = this; 
             if(!symbol.isPoly()) throw new Error('Polynomial Expected! Received '+core.Utils.text(symbol));
             var c = [];
-                if(Math.abs(symbol.power) !== 1) symbol = core.Algebra.expand(symbol);
+                if(Math.abs(symbol.power) !== 1) symbol = _.expand(symbol);
 
                 if(symbol.group === core.groups.N) {c.push([symbol.multiplier, 0]); }
                 else if(symbol.group === core.groups.S) { c.push([symbol.multiplier, symbol.power]); }
@@ -1432,12 +1236,6 @@ if((typeof module) !== 'undefined') {
             build: function() { return __.factor; }
         },
         {
-            name: 'expand',
-            visible: true,
-            numargs: 1,
-            build: function() { return __.expand; }
-        },
-        {
             /**
              * Get the gcd of a set of polynomials.
              * usage: polyGCD(p1, p2, p3, ...)
@@ -1449,4 +1247,3 @@ if((typeof module) !== 'undefined') {
         }
     ]);
 })();
-
