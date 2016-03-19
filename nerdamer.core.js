@@ -15,6 +15,7 @@
 //TODO: in testPow if denominator of power expands return simpler representation ✓
 //TODO: fix sqrt(x)^y which currently return sqrt(x)^y. Preferred is x^(y/2)
 //TODO: fix 1/2*2^(2/3)*x+x*x -> LaTeX
+//TODO: fix 4^y -> LaTeX
 
 var nerdamer = (function() {
     "use strict";
@@ -218,16 +219,6 @@ var nerdamer = (function() {
                 obj = obj.multiplier;
             }
             return obj.lessThan(0);
-        },
-        
-        /**
-         * Checks to see if symbol is a symbol of symbols held together by addition
-         * e.g. (x+z+6) or (x^2+x) etc
-         * @param {Symbol} symbol
-         * @return {boolean}
-         */
-        isComposite = Utils.isComposite = function(symbol) {
-            return (symbol.group === PL || symbol.group === CP);
         },
         
         /**
@@ -1783,9 +1774,9 @@ var nerdamer = (function() {
                 'sinh'      : [ , 1],
                 'cosh'      : [ , 1],
                 'tanh'      : [ , 1],
-                'asinh'      : [ , 1],
-                'acosh'      : [ , 1],
-                'atanh'      : [ , 1],
+                'asinh'     : [ , 1],
+                'acosh'     : [ , 1],
+                'atanh'     : [ , 1],
                 'exp'       : [ , 1],
                 'min'       : [ , -1],
                 'max'       : [ ,-1],
@@ -1800,6 +1791,7 @@ var nerdamer = (function() {
                 'parens'    : [parens, -1],
                 'sqrt'      : [sqrt, 1],
                 'log'       : [log , 1],
+                'expand'    : [expand , 1],
                 'abs'       : [abs , 1],
                 'invert'    : [invert, 1],
                 'transpose' : [transpose, 1],
@@ -2349,6 +2341,93 @@ var nerdamer = (function() {
             return retval;
         }
         
+        /**
+         * Expands a symbol
+         */
+        
+        function expand(symbol) { 
+            var p = symbol.power,
+                m = symbol.multiplier,
+                pn = Number(p);
+        
+            if(isInt(p) && pn > 0 && symbol.isComposite()) {
+                //leave original untouched
+                symbol = symbol.clone().toLinear().toUnitMultiplier();
+                
+                var result = symbol.clone();
+                for(var i=0; i<pn-1; i++) {
+                    var t = new Symbol(0); 
+                    symbol.each(function(x) { 
+                        result.each(function(y) { 
+                            t = _.add(t, _.multiply(x.clone(), y.clone()));
+                        });
+                    });
+                    result = t;
+                }
+                
+                //put back the multiplier
+                result.each(function(x) {
+                    x.multiplier = x.multiplier.multiply(m);
+                });
+                
+                return result;
+            }
+            else if(symbol.group === CB) {
+                var result = new Symbol(0);
+                var composites = [],
+                    non_composites = new Symbol(symbol.multiplier);
+                //sort them out
+                symbol.each(function(x) {
+                    if(x.isComposite()) {
+                        var p = x.power, isDenom = false;;
+                        if(isInt(p)) {
+                            if(p < 0) {
+                                x.power.negate();
+                                isDenom = true;
+                            }
+                            x = expand(x);
+                        }
+                        
+                        if(isDenom) {
+                            x.power.negate();
+                            non_composites = _.multiply(non_composites, x);
+                        }
+                        else composites.push(x);
+                    }
+                    else non_composites = _.multiply(non_composites, x);
+                });
+                
+
+                
+                //multiply out the remainder
+                var l = composites.length,
+                    //grab the first symbol since we'll loop over that one to begin
+                    result = composites[0]; 
+                for(var i=1; i<l; i++) {
+                    var t = new Symbol(0);
+                    var s = composites[i];
+                    result.each(function(x) { 
+                        s.each(function(y) {
+                            t = _.add(t, _.multiply(x.clone(),y.clone() ));
+                        });
+                    });
+                    result = t;
+                }
+                
+                var finalResult = new Symbol(0);
+                //put back the multiplier
+                result.each(function(x) { 
+                    finalResult = _.add(finalResult, _.multiply(non_composites, x));
+                });
+                
+                symbol = finalResult;
+            }
+            
+            return symbol;
+        }
+        //link this back to the parser
+        this.expand = expand;
+        
         //the constructor for vectors
         function vector() {
             return new Vector([].slice.call(arguments));
@@ -2439,6 +2518,10 @@ var nerdamer = (function() {
          * @returns {Symbol}
          */
         this.add = function(a, b) { 
+            //no need to waste time on zeroes
+            if(a.multiplier.equals(0)) return b;
+            if(b.multiplier.equals(0)) return a;
+            
             if(a.isConstant() && b.isConstant() && Settings.PARSE2NUMBER) {
                 return new Symbol(a.multiplier.add(b.multiplier).toDecimal());
             }
@@ -2740,7 +2823,17 @@ var nerdamer = (function() {
                 result = a.clone();
             //take care of the symbolic part
             result.toUnitMultiplier();
-            result.multiplyPower(b);
+            //simpifly sqrt
+            if(result.group === FN && result.fname === SQRT && !bIsConstant) {
+                var s = result.args[0];
+                s.multiplyPower(new Symbol(0.5));
+                s.multiplier.multiply(result.multiplier);
+                s.multiplyPower(b);
+                result = s;
+            }
+            else {
+                result.multiplyPower(b);
+            }
 
             if(aIsConstant && bIsConstant && Settings.PARSE2NUMBER) {
                 result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
