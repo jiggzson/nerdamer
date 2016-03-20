@@ -5,17 +5,19 @@
  * Source : https://github.com/jiggzson/nerdamer
  */
 
-//TODO: Symbols must return decimal where possible
+//TODO: Symbols must return decimal where possible - in progress
 //TODO: remove unnecessary brackets from EX ✓
-//TODO: rewrite text function
-//TODO: rewrite keyForGroup function
-//TODO: rewrite build function 
+//TODO: rewrite text function - low priority(version 0.6.1)
+//TODO: rewrite keyForGroup function ✓
+//TODO: update build function ✓
+//TODO: write tests for build function ✓
 //TODO: rewrite latex function - in progress
-//TODO: add to asciiMath function 
+//TODO: add to asciiMath function - low priority(version 0.6.1+)
 //TODO: in testPow if denominator of power expands return simpler representation ✓
-//TODO: fix sqrt(x)^y which currently return sqrt(x)^y. Preferred is x^(y/2)
-//TODO: fix 1/2*2^(2/3)*x+x*x -> LaTeX
-//TODO: fix 4^y -> LaTeX
+//TODO: fix sqrt(x)^y which currently return sqrt(x)^y. Preferred is x^(y/2) ✓
+//TODO: fix 1/2*2^(2/3)*x+x*x -> LaTeX ✓
+//TODO: fix 4^y -> LaTeX ✓
+//TODO: put back matrix and vector support
 
 var nerdamer = (function() {
     "use strict";
@@ -340,6 +342,8 @@ var nerdamer = (function() {
             if(isSymbol(obj)) { 
                 var group = obj.group,
                     prevgroup = obj.previousGroup;
+                if(group === EX) variables(obj.power, vars);
+                
                 if(group === CP || group === CB || prevgroup === CP || prevgroup === CB) {
                     for(var x in obj.symbols) variables(obj.symbols[x], vars);
                 }
@@ -568,6 +572,9 @@ var nerdamer = (function() {
                     }
                 }
                 return a;
+            },
+            QGCD: function() {
+                
             },
             //pow but with the handling of negative numbers
             //http://stackoverflow.com/questions/12810765/calculating-cubic-root-for-negative-number
@@ -1771,6 +1778,7 @@ var nerdamer = (function() {
                 'cot'       : [ , 1],
                 'acos'      : [ , 1],
                 'asin'      : [ , 1],
+                'atan'      : [ , 1],
                 'sinh'      : [ , 1],
                 'cosh'      : [ , 1],
                 'tanh'      : [ , 1],
@@ -3019,10 +3027,10 @@ var nerdamer = (function() {
                 var m_array;
 
                 if(decimal) {
-                    m_array = [String(symbol.multiplier.toDecimal()), '']
+                    m_array = [String(symbol.multiplier.toDecimal()), ''];
                 }
                 else {
-                    m_array = [symbol.multiplier.num, symbol.multiplier.den]
+                    m_array = [symbol.multiplier.num, symbol.multiplier.den];
                 }
                     //get the value as a two part array
                 var v_array = this.value(symbol, invert),
@@ -3055,13 +3063,13 @@ var nerdamer = (function() {
                 
         },
         //get the raw value of the symbol as an array
-        value: function(symbol, inverted) {
+        value: function(symbol, inverted) { 
             var group = symbol.group,
                 previousGroup = symbol.previousGroup,
                 v = ['', ''],
                 index =  inverted ? 1 : 0;;
             /*if(group === N) //do nothing since we want to return top & bottom blank; */
-            if(group === S || group === P || previousGroup === S || previousGroup === P) {
+            if(group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) { 
                 var value = symbol.value;
                 v[index] = value;
             }
@@ -3079,6 +3087,9 @@ var nerdamer = (function() {
                 }
                 else if(fname === ABS) {
                     v[index] = this.brackets(input.join(','), 'abs');
+                }
+                else if(fname === PARENTHESIS) {
+                    v[index] = this.brackets(input.join(','), 'parens');
                 }
                 else { 
                     var name = '\\mathrm'+this.braces(fname);
@@ -3715,7 +3726,7 @@ var nerdamer = (function() {
         generatePrimes(Settings.init_primes);//generate the firs 100 primes
     };
     
-    var build = Utils.build = function(symbol, arg_array) {
+    var build = Utils.build = function(symbol, arg_array) { 
         var args = variables(symbol);
         var supplements = [];
         var ftext = function(symbol, xports) { 
@@ -3729,10 +3740,10 @@ var nerdamer = (function() {
                     cc = [];
                 for(var x in symbol.symbols) cc.push(ftext(symbol.symbols[x], xports)[0]);
                 var retval = cc.join(d);
-                return retval ? inBrackets(retval) : retval;
+                return retval && !symbol.multiplier.equals(1)? inBrackets(retval) : retval;
             },
 
-            ftext_function = function(bn) {
+            ftext_function = function(bn) { 
                 var retval;
                 if(bn in Math) retval = 'Math.'+bn;
                 else {
@@ -3747,15 +3758,17 @@ var nerdamer = (function() {
                 retval = retval+inBrackets(symbol.args.map(function(x) {
                     return ftext(x, xports)[0];
                 }).join(','));
+
                 return retval;
             };
 
             //the multiplier
             if(group === N) c.push(symbol.multiplier.toDecimal());
             else if(symbol.multiplier.equals(-1)) prefix = '-';
-            else if(symbol.multiplier.equals(1)) c.push(symbol.multiplier.toDecimal());
+            else if(!symbol.multiplier.equals(1)) c.push(symbol.multiplier.toDecimal());
             //the value
-            var value = null;
+            var value;
+            
 
             if(group === S) value = symbol.value;
             else if(group === FN) { 
@@ -3771,15 +3784,17 @@ var nerdamer = (function() {
                 value = ftext_complex(symbol.group);
             }     
 
-            if(symbol.power !== undefined && symbol.power !== 1) {
-                value = 'Math.pow'+inBrackets(value+','+text(symbol.power));
+            if(symbol.group !== N && !symbol.power.equals(1)) {
+                var pow = ftext(_.parse(symbol.power));
+                xports.push(pow[1]);
+                value = 'Math.pow'+inBrackets(value+','+pow[0]);
             }
 
             if(value) c.push(prefix+value);
 
             return [c.join('*'), xports.join('').replace(/\n+\s+/g, ' ')];
         };
-        if(arg_array) {
+        if(arg_array) { 
             if(args.length !== arg_array.length) err('Argument array contains wrong number of arguments');
             for(var i=0; i<args.length; i++) {
                 var arg = args[i];
