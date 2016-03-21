@@ -559,6 +559,14 @@ var nerdamer = (function() {
                 }
                 return a;
             },
+            QGCD: function() {
+                var args = [].slice.call(arguments);
+                var a = args[0];
+                for(var i=0; i<args.length; i++) {
+                    a = args[i].gcd(a);
+                }
+                return a;
+            },
             LCM: function(a, b) {
                 return (a * b) / Math2.GCD(a, b); 
             },
@@ -892,6 +900,7 @@ var nerdamer = (function() {
     Expression.prototype.toTeX = Expression.prototype.latex;
     
     function Frac(n) { 
+        if(n instanceof Frac) return n;
         if(n === undefined) return this;
         if(isInt(n)) {
             this.num = Number(n);
@@ -3966,6 +3975,7 @@ var nerdamer = (function() {
     C.groups = Groups;
     C.Symbol = Symbol;
     C.Expression = Expression;
+    C.Frac = Frac;
     C.Vector = Vector;
     C.Matrix = Matrix;
     C.Parser = Parser;
