@@ -908,8 +908,8 @@ var nerdamer = (function(imports) {
         }
         else {
             var frac = Fraction.convert(n);
-            this.num = frac[0];
-            this.den = frac[1];
+            this.num = new bigInt(frac[0]);
+            this.den = new bigInt(frac[1]);
         }
     }
     
@@ -925,13 +925,18 @@ var nerdamer = (function(imports) {
     };
     
     Frac.prototype = {
-        multiply: function(m) {
-            if(this.isOne()) return m.clone();
-            if(m.isOne()) return this.clone();
+        multiply: function(m) { 
+            if(this.isOne()) {
+                return m.clone();
+            }
+            if(m.isOne()) {
+                return this.clone();
+            }
             
             var c = this.clone();
             c.num = c.num.multiply(m.num);
-            c.den = c.den.multiply(m.den);
+            c.den = c.den.multiply(m.den); 
+
             return c.simplify();
         },
         divide: function(m) {
@@ -992,7 +997,7 @@ var nerdamer = (function(imports) {
             
             return q[0].equals(q[1]);
         },
-        absEquals: function(n) {
+        absEquals: function(n) { 
             if(!isNaN(n)) n = new Frac(n);
             var q = this.qcompare(n);
             
@@ -1027,12 +1032,12 @@ var nerdamer = (function(imports) {
             return this;
         },
         isOne: function() {
-            return this.num === 1 && this.den === 1;
+            return this.num.equals(1) && this.den.equals(1);
         },
         sign: function() {
             return this.num.isNegative() ? -1 : 1;
         },
-        abs: function() {
+        abs: function() { 
             this.num = this.num.abs();
             return this;
         },
@@ -1040,7 +1045,7 @@ var nerdamer = (function(imports) {
             return Frac.quick(bigInt.gcd(f.num, this.num), bigInt.lcm(f.den, this.den));
         },
         toString: function() {
-            return this.den !== 1 ? this.num+'/'+this.den : String(this.num);
+            return !this.den.equals(1) ? this.num+'/'+this.den : String(this.num);
         },
         valueOf: function() {
             return this.num/this.den;
@@ -1058,9 +1063,8 @@ var nerdamer = (function(imports) {
     function Symbol(obj) { 
         //this enables the class to be instantiated without the new operator
         if(!(this instanceof Symbol)) { return new Symbol(obj); };
-        
         //define numeric symbols
-        if(!isNaN(obj)) {
+        if(!isNaN(obj)) { 
             this.group = N;
             this.value = CONST_HASH; 
             this.multiplier = new Frac(obj);
@@ -1070,14 +1074,14 @@ var nerdamer = (function(imports) {
             this.group = S; 
             validateName(obj); 
             this.value = obj;
-            this.toUnitMultiplier();
+            this.multiplier = new Frac(1);
             this.imaginary = obj === Settings.IMAGINARY;
         }
         
         //As of 6.0.0 we switched to infinite precision so all objects have a power
         //Although this is still redundant in constants, it simplifies the logic in
         //other parts so we'll keep it
-        this.toLinear();
+        this.power = new Frac(1);
 
         // Added to silence the strict warning.
         return this; 
@@ -1271,11 +1275,8 @@ var nerdamer = (function(imports) {
             return clone;
         },
         toUnitMultiplier: function(keepSign) {
-            if(keepSign) {
-                this.multiplier.num /= Math.abs(this.multiplier.num);
-                this.multiplier.den /= Math.abs(this.multiplier.den);
-            }
-            else this.multiplier = new Frac(1);
+            this.multiplier.num = new bigInt(this.multiplier.num.isNegative() && keepSign ? -1 : 1);
+            this.multiplier.den = new bigInt(1);
             return this;
         },
         toLinear: function() {
@@ -1450,7 +1451,7 @@ var nerdamer = (function(imports) {
                 var m = this.multiplier.toDecimal(); 
                 new Symbol(this.group === P ? m*Math.pow(this.value, this.power) : m).clone(this);
             }
-            else if(group === P && this.group === N) {
+            else if(group === P && this.group === N) { 
                 if(this.multiplier.den.toString() !== '1') err('Attempting conversion of group N with non-unit denominator!');
                 this.value = imaginary ? this.multiplier.num.toString() : Math.abs(this.multiplier.num.toString());
                 this.toUnitMultiplier(!imaginary);
@@ -2254,14 +2255,13 @@ var nerdamer = (function(imports) {
                 //as a product
                 if(isConstant && symbol.multiplier.lessThan(0)) {
                     img = Symbol.imaginary();
-                    symbol.multiplier = symbol.multiplier.absoluteValue();
+                    symbol.multiplier = symbol.multiplier.abs();
                 }
                 
                 var q = symbol.multiplier.toDecimal(),
                     qa = Math.abs(q),
                     t = Math.sqrt(qa);
-           
-                
+
                 var m;
                 //it's a perfect square so take the square
                 if(isInt(t)) {
@@ -2735,12 +2735,13 @@ var nerdamer = (function(imports) {
 
                 var v1 = a.value,
                     v2 = b.value,
-                    sign = new Frac(Math.sign(a.multiplier)),
+                    sign = new Frac(a.multiplier.lessThan(0) ? -1 : 1),
                     //since P is just a morphed version of N we need to see if they relate
                     ONN = (g1 === P && g2 === N && b.multiplier.equals(a.value)),
                     //don't multiply the multiplier of b since that's equal to the value of a
                     m = ONN ? new Frac(1).multiply(a.multiplier).abs() : a.multiplier.multiply(b.multiplier).abs(),
                     result = a.clone().toUnitMultiplier();
+
                 b = b.clone().toUnitMultiplier(true);
 
                 //same issue with (x^2+1)^x*(x^2+1)
@@ -2777,9 +2778,11 @@ var nerdamer = (function(imports) {
                             m.negate();
                         }
                     }
+                    
                     //the sign for b is floating around. Remember we are assuming that the odd variable will carry
                     //the sign but this isn't true if they're equals symbols
                     result.multiplier = result.multiplier.multiply(b.multiplier);
+                    
                 }
                 else if(g1 === CB && a.isLinear()){ 
                     if(g2 === CB && b.isLinear()) { 
@@ -2834,7 +2837,7 @@ var nerdamer = (function(imports) {
                     result = _.multiply(new Symbol(m), _.pow(result, new Symbol(p.divide(new Frac(2)))));
                 }
                 else {
-                    result.multiplier = m.multiply(result.multiplier).multiply(sign);
+                    result.multiplier = result.multiplier.multiply(m).multiply(sign);
                 }
 
                 //back convert group P to a simpler group N if possible
@@ -3079,7 +3082,7 @@ var nerdamer = (function(imports) {
                     });
                 }
                 return a;
-                }
+            }
         };
         
         //gets called when the parser finds the , operator. 
