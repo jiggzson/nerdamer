@@ -49,9 +49,21 @@ var cases = {
         expected: 'x+y',
         number_value: 5.2
     },
+    '-9-x+y-11': {
+        expected: '-20-x+y',
+        number_value: -18.8 
+    },
     '(x+1)+(1+x)': {
         expected: '2*(1+x)',
         number_value: 6.2
+    },
+    '9+(x+1)-(1+x)': {
+        expected: '9',
+        number_value: 9
+    },
+    '0-x-2*x+6': {
+        expected: '-3*x+6',
+        number_value: -0.3
     },
     '(x+y)+(a+x)': {
         expected: '2*x+a+y',
@@ -127,6 +139,10 @@ var cases = {
     'sqrt(1/2)': {
         expected: 'sqrt(2)^(-1)',
         number_value: 0.7071067811865476
+    },
+    '74689676.31109099*sqrt(5578547747455547)': {
+        expected: '(824947474856/11045)*sqrt(5578547747455547)',
+        number_value: 5578547747455546 
     },
     'sqrt(1+x)^(4*x)': {
         expected: '(1+x)^(2*x)',
