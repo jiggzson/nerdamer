@@ -300,6 +300,17 @@ var nerdamer = (function(imports) {
         },
         
         /**
+         * Clones array with clonable items
+         * @param {Array} arr
+         * @returns {Array}
+         */
+        arrayClone = Utils.arrayClone = function(arr) {
+            var new_array = [], l = arr.length;
+            for(var i=0; i<l; i++) new_array[i] = arr[i].clone();
+            return new_array;
+        },
+        
+        /**
          * Rounds a number up to x decimal places
          * @param {Number} x
          * @param {Number} s
@@ -940,18 +951,10 @@ var nerdamer = (function(imports) {
             return c.simplify();
         },
         divide: function(m) {
-            return this.clone().multiply(m.clone().inv()).simplify();
+            return this.clone().multiply(m.clone().invert()).simplify();
         },
         subtract: function(m) {
             return this.clone().add(m.clone().neg());
-        },
-        inv: function() {
-            var t = this.den;
-            var isNegative = this.num.isNegative();
-            this.den = this.num.abs();
-            this.num = t;
-            if(isNegative) this.den.multiply(-1);
-            return this;
         },
         neg: function() {
             this.num = this.num.multiply(-1);
@@ -1028,7 +1031,7 @@ var nerdamer = (function(imports) {
             var isnegative = this.num.isNegative();
             this.den = this.num.abs();
             this.num = t;
-            if(isnegative) this.num.multiply(-1);
+            if(isnegative) this.num = this.num.multiply(-1);
             return this;
         },
         isOne: function() {
