@@ -114,7 +114,12 @@ if((typeof module) !== 'undefined') {
             */
             trim: function() { 
                 var l = this.coeffs.length;
-                while(this.coeffs[--l]) this.coeffs.pop();
+                while(l--) {
+                    var c = this.coeffs[l];
+                    if(c && c.equals(0)) this.coeffs.pop();
+                    else break;
+                }
+
                 return this;
             },
             /**
@@ -145,16 +150,18 @@ if((typeof module) !== 'undefined') {
             },
             divide: function(poly) {
                 var variable = this.variable,
-                    dividend = this.coeffs.slice(),
-                    divisor = poly.coeffs.slice(),
+                    dividend = core.Utils.arrayClone(this.coeffs),
+                    divisor = core.Utils.arrayClone(poly.coeffs),
                     n = dividend.length,
                     mp = divisor.length-1,
                     quotient = [];
+
                 //loop through the dividend
                 for(var i=0; i<n; i++) {
                     var p = n-(i+1);
                     //get the difference of the powers
                     var d = p - mp;
+                    var inBrackets = core.Utils.inBrackets;
                     //get the quotient of the coefficients
                     var q = dividend[p].divide(divisor[mp]);
 
@@ -167,6 +174,7 @@ if((typeof module) !== 'undefined') {
                         dividend[j+d] = dividend[j+d].subtract((divisor[j].multiply(q)));
                     }
                 }
+
                 //clean up
                 var p1 = Polynomial.fromArray(dividend, variable).trim(),
                     p2 = Polynomial.fromArray(quotient, variable);
@@ -217,15 +225,16 @@ if((typeof module) !== 'undefined') {
                 this.trim();
                 return this.coeffs.length-1;
             },
-            lc: function() {
+            lc: function() { 
                 return this.coeffs[this.deg()].clone();
             },
             monic: function() {
-                var lc = this.lc(), l = this.coeffs.length;
-                for(var i=0; i<l; i++) this.coeffs[i] = this.coeff[i].divide(lc);
+                var lc = this.lc(), l = this.coeffs.length; 
+                for(var i=0; i<l; i++) this.coeffs[i] = this.coeffs[i].divide(lc);
                 return this;
             },
             gcd: function(poly) { 
+                var result = this.divide(poly);
                 //get the maximum power of each
                 var mp1 = this.coeffs.length-1, 
                     mp2 = poly.coeffs.length-1,
@@ -236,15 +245,23 @@ if((typeof module) !== 'undefined') {
                 }
                 var a = this;
 
-                while(!poly.isZero()) {    
+                while(!poly.isZero()) {   
                     var t = poly.clone(); 
-                    a = a.clone();
+                    a = a.clone(); 
                     T = a.divide(t); 
-                    poly = T[1];
+                    poly = T[1]; 
                     a = t;
                 }
+                
+                var gcd = core.Math2.QGCD.apply(null, a.coeffs);
 
-                return poly.monic();
+                if(!gcd.equals(1)) { 
+                    var l = a.coeffs.length;
+                    for(var i=0; i<l; i++) {
+                        a.coeffs[i] = a.coeffs[i].divide(gcd);
+                    }
+                }
+                return a;
             },
             /**
              * Differentiates the polynomial
@@ -1227,7 +1244,7 @@ qf
             var w = a.divide(c)[0],
                 output = Polynomial.fromArray([1], a.variable);
             while(!c.equalsNumber(1)) {
-                var y = w.gcd(c);
+                var y = w.gcd(c); 
                 var z = w.divide(y)[0];
                 output = output.multiply(z); 
                 i++;
@@ -1236,11 +1253,23 @@ qf
             }
             return [output, w, i];
         },
-        sumProd: function(sum, prod, variable) {
-            return __.polyArrayQuad(Polymomial.fromArray([-prod, sum, -1], variable || 'x'));
+        quad: function(a, b, c) {
+            return _.parse('-('+b+'+sqrt(('+b+')^2-4*('+a+')*('+c+')))/(2*'+a+')');
+        },
+        sumProd: function(a, b) {
+            var quad = function(a, b, c) { 
+                return [(-b+Math.sqrt(b*b-4*a*c))/(2*a), (-b-Math.sqrt(b*b-4*a*c))/(2*a)];
+            };
+            
+            var x = quad(-b, a, -1);
+            
+            return x.map(function(x){
+               return 1/x; 
+            });
         },
         qfactor: function(symbol) {
-            var sqf = __.sqfr(new Polynomial(symbol));
+            
+//            var sqf = __.sqfr(new Polynomial(symbol));
         },
         /**
          * http://www.ams.org/journals/mcom/1978-32-144/S0025-5718-1978-0568284-3/S0025-5718-1978-0568284-3.pdf
@@ -1424,7 +1453,3 @@ qf
         },
     ]);
 })();
-
-
-// var x = nerdamer('qfactor((x^2+1))');
-// console.log(x)
