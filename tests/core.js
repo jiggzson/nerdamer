@@ -112,6 +112,10 @@ var cases = {
         expected: 'sqrt(2)',
         number_value: 23.13948390048293
     },
+    '3/4/-5/7': {
+        expected: '-3/140',
+        number_value: -0.02142857142857143
+    },
     '(2/5)^(1/2)': {
         expected: 'sqrt(2)*sqrt(5)^(-1)',
         number_value: 0.6324555320336759
