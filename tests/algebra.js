@@ -60,15 +60,77 @@ var test_cases = {
     'gcd(7*x^4+7*x^3+4*x^2+5*x+1, 21*x^6+47*x^4+80*x^3+20*x^2+49*x+11)': {
         expected: '1+4*x+7*x^3'
     },
+    'x^2+1': {
+        expected: true,
+        method: 'isPoly'
+    },
+    '51': {
+        expected: true,
+        method: 'isPoly'
+    },
+    '51/x': {
+        expected: false,
+        method: 'isPoly'
+    },
+    'x^2+1/x': {
+        expected: false,
+        method: 'isPoly'
+    },
+    'y*x^2+1/x': {
+        expected: false,
+        method: 'isPoly',
+        params: [true]
+    },
+    'y*x^2+x': {
+        expected: true,
+        method: 'isPoly',
+        params: [true]
+    },
+    '7*y*x^2+z*x+4': {
+        expected: true,
+        method: 'isPoly',
+        params: [true]
+    },
+    '7*y*x^2+z*x^-1+4': {
+        expected: false,
+        method: 'isPoly',
+        params: [true]
+    },
+    'sqrt(5*x)+7': {
+        expected: false,
+        method: 'isPoly',
+        params: [true]
+    },
+    'abs(5*x^3)-x+7': {
+        expected: false,
+        method: 'isPoly',
+        params: [true]
+    },
+    'abs(5*x^2)-x+11': {
+        expected: true,
+        method: 'isPoly',
+        params: [true],
+        note: "Abs gets evaluated right way because it's redundant"
+    },
+    'cos(x)^2+cos(x)+1': {
+        expected: false,
+        method: 'isPoly',
+        params: [true],
+        note: "Abs gets evaluated right way because it's redundant"
+    },
 };
 
 
 var report = test('Algebra', test_cases, function(expression, report) {
-    var result = nerdamer(expression).toString();
+    var parsed = nerdamer(expression), result;
+    if(this.method) {
+        result = parsed.symbol[this.method].apply(parsed.symbol, this.params || []);
+    }
+    else result = parsed.toString();
     return {
         passed: this.expected === result,
         contents: result
     };
 }, true);
 
-console.log(report.getReport())
+console.log(report.getReport());
