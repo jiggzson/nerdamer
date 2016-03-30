@@ -74,7 +74,7 @@ var nerdamer = (function(imports) {
         //the container used to store all the reserved functions
         RESERVED = [],
 
-        
+
         WARNINGS = '',
         
         /**
@@ -1203,23 +1203,29 @@ var nerdamer = (function(imports) {
         setPower: function(p, retainSign) { 
             //leave out 1
             if(this.group === N && this.multiplier.equals(1)) return this;
-            
-            var isIntP = false,
-                isSymbolic = false;
-            if(isSymbol(p)) {
-                if(p.group === N) {
-                    //p should be the multiplier instead
-                    p = p.multiplier;
-
-                }
-                else {
-                    isSymbolic = true;
-                }
+            if(this.group === EX && !isSymbol(p)) {
+                this.group = this.previousGroup; 
+                delete this.previousGroup;
+                this.power = p;
             }
-            var group = isSymbolic ? EX : !isIntP ? P : null;
-            this.power = p; 
-            if(this.group === N && group) this.convert(group, retainSign);
-            
+            else {
+                var isIntP = false,
+                    isSymbolic = false;
+                if(isSymbol(p)) {
+                    if(p.group === N) {
+                        //p should be the multiplier instead
+                        p = p.multiplier;
+
+                    }
+                    else {
+                        isSymbolic = true;
+                    }
+                }
+                var group = isSymbolic ? EX : !isIntP ? P : null;
+                this.power = p; 
+                if(this.group === N && group) this.convert(group, retainSign);
+            }
+
             return this;
         },
         /**
@@ -1265,7 +1271,7 @@ var nerdamer = (function(imports) {
             return this;
         },
         toLinear: function() {
-            this.power = new Frac(1);
+            this.setPower(new Frac(1));
             return this;
         },
         each: function(fn) {
@@ -2231,7 +2237,7 @@ var nerdamer = (function(imports) {
             //if the symbol is a fraction then we don't keep can unwrap it. For instance
             //no need to keep sqrt(x^(1/3))
             else if(!symbol.power.isInteger()) { 
-                symbol.power = symbol.power.multiply(new Frac(0.5));
+                symbol.setPower(symbol.power.multiply(new Frac(0.5)));
                 retval = symbol;
             }
             else { 
@@ -2288,11 +2294,10 @@ var nerdamer = (function(imports) {
         
         function log(symbol) { 
             var retval;
-<<<<<<< HEAD
             if(symbol.equals(0)) {
                 err('log(0) is undefined!');
             }
-            
+
             if(symbol.group === EX && symbol.power.multiplier.lessThan(0) || symbol.power == -1) {
                 symbol.power.negate();
                 //move the negative outside but keep the positive inside :)
@@ -2303,9 +2308,6 @@ var nerdamer = (function(imports) {
                 retval = isSymbol(p) ? p : new Symbol(p); 
             }
             else if(symbol.group === FN && symbol.fname === 'exp') {
-=======
-            if(symbol.group === FN && symbol.baseName === 'exp') {
->>>>>>> master
                 var s = symbol.args[0];
                 if(symbol.multiplier.equals(1)) retval = _.multiply(s, new Symbol(symbol.power));
                 else retval = _.symfunction('log',[symbol]);
@@ -2320,7 +2322,15 @@ var nerdamer = (function(imports) {
                 if(img_part) retval = _.add(retval, img_part);
             }
             else {
-                retval = _.symfunction('log', arguments); 
+                var s;
+                if(!symbol.power.equals(1)) {
+                    s = symbol.group === EX ? symbol.power : new Symbol(symbol.power);
+                    symbol.toLinear(); console.log(symbol)
+                }
+                retval = _.symfunction('log', [symbol]); 
+                
+                if(s) retval = _.multiply(s, retval);
+
             }
             return retval;
         }
@@ -2502,7 +2512,6 @@ var nerdamer = (function(imports) {
          * @param {Symbol} b
          * @returns {Symbol}
          */
-<<<<<<< HEAD
         this.add = function(a, b) { 
             var aIsSymbol = isSymbol(a),
                 bIsSymbol = isSymbol(b);
@@ -2549,67 +2558,6 @@ var nerdamer = (function(imports) {
                     if(g1 === PL && (g2 === S || g2 === P)) { 
                         a.distributeMultiplier();
                         result = a.attach(b);
-=======
-        this.add = function(symbol1, symbol2) { 
-
-            var isSymbolA = isSymbol(symbol1), isSymbolB = isSymbol(symbol2), t;
-            if(isSymbolA && isSymbolB) {
-                var group1 = symbol1.group, 
-                    group2 = symbol2.group;
-
-                //deal with zero addition
-                if(symbol1.multiplier === 0) return symbol2;
-                if(symbol2.multiplier === 0) return symbol1;
-
-                //parens is a function that we want to get rid of as soon as possible so check
-                if(group1 === FN && symbol1.baseName === PARENTHESIS) symbol1 = this.unpack(symbol1);
-                if(group2 === FN && symbol1.baseName === PARENTHESIS) symbol2 = this.unpack(symbol2);
-
-                //always have the lower group on the left
-                if(group1 > group2) { return this.add(symbol2, symbol1); }
-                if(Settings.SAFE){ symbol1 = symbol1.copy(); symbol2 = symbol2.copy(); };
-
-                //same symbol, same power
-                if(symbol1.value === symbol2.value && !(group1 === CP && symbol1.power !== symbol2.power)) {
-                    if(symbol1.power === symbol2.power && group2 !== PL /*if group1 is PL then group2 is PL*/
-                            || (group1 === EX && symbol1.equals(symbol2))) {
-                        symbol1.multiplier += symbol2.multiplier;
-                        //exit early
-                        if(symbol1.multiplier === 0) symbol1 = Symbol(0);
-                    }
-                    else if(group2 === PL) {
-                        if(group1 === PL) {
-                            if(symbol1.power ===1 && symbol2.power === 1) {
-                                symbol1.distributeMultiplier();
-                                symbol2.distributeMultiplier();
-                                for(var s in symbol2.symbols) {
-                                    symbol1.attach(symbol2.symbols[s]);
-                                }
-                            }
-                            else if(symbol1.power === symbol2.power) {
-                                symbol1.multiplier += symbol2.multiplier;
-                            }
-                            else {
-                                if(symbol1.power > symbol2.power) { var t = symbol1; symbol1 = symbol2; symbol2 = t; /*swap*/}
-                                symbol1.convert(CP); 
-                                symbol1.attach(symbol2);
-                            } 
-                        }
-                        else {
-                            if(symbol2.multiplier === 1) {
-                                symbol2.attach(symbol1);
-                            }
-                            else {
-                                //force the multiplier downhill
-                                for(var s in symbol2.symbols) {
-                                    symbol2.symbols[s].multiplier *= symbol2.multiplier;
-                                }
-                                symbol2.multiplier = 1;
-                                symbol2.attach(symbol1);
-                            }
-                            symbol1 = symbol2;
-                        }
->>>>>>> master
                     }
                     else {
                         result = a;//CL
@@ -5520,4 +5468,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
