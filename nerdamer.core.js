@@ -1066,6 +1066,20 @@ var nerdamer = (function(imports) {
         valueOf: function() {
             return this.num/this.den;
         }
+        /*cache: (function() {
+            var c = {}, n = 100;
+            for (var i=0; i<n; i++) {
+                for(var j=0; j<n; j++) {
+                    //skip 1
+                    if(1 !== j) {
+                        var dec = i/j;
+                        if(typeof dec !== 'undefined') c[dec] = [i, j];
+                    }
+                }
+            }
+            
+            return c;
+        })() */
     };
     
     
@@ -2262,10 +2276,13 @@ var nerdamer = (function(imports) {
                 }
                 else {
                     var n = symbol.multiplier.num.toString(),
-                        d = symbol.multiplier.den.toString();
+                        d = symbol.multiplier.den.toString(),
+                        sqrtN = Math.sqrt(n),
+                        sqrtD = Math.sqrt(d);
+                
                     m = _.multiply(
-                            n === '1' ? new Symbol(1) : _.symfunction(SQRT, [new Symbol(n)]), 
-                            d === '1' ? new Symbol(1) : _.symfunction(SQRT, [new Symbol(d)]).invert()
+                            n === '1' ? new Symbol(1) : isInt(sqrtN) ? new Symbol(sqrtN) : _.symfunction(SQRT, [new Symbol(n)]), 
+                            d === '1' ? new Symbol(1) : isInt(sqrtD) ? new Symbol(sqrtD).invert() : _.symfunction(SQRT, [new Symbol(d)]).invert()
                     );
                 }
 
@@ -2325,7 +2342,7 @@ var nerdamer = (function(imports) {
                 var s;
                 if(!symbol.power.equals(1)) {
                     s = symbol.group === EX ? symbol.power : new Symbol(symbol.power);
-                    symbol.toLinear(); console.log(symbol)
+                    symbol.toLinear(); 
                 }
                 retval = _.symfunction('log', [symbol]); 
                 
@@ -2711,7 +2728,7 @@ var nerdamer = (function(imports) {
          * @param {Symbol} b
          * @returns {Symbol}
          */
-        this.multiply = function(a, b) { 
+        this.multiply = function(a, b) { warn('Multiplying');
             var aIsSymbol = isSymbol(a),
                 bIsSymbol = isSymbol(b);
         
@@ -2988,12 +3005,12 @@ var nerdamer = (function(imports) {
                 //take care of the symbolic part
                 result.toUnitMultiplier();
                 //simpifly sqrt
-                if(result.group === FN && result.fname === SQRT && !bIsConstant) {
+                if(result.group === FN && result.fname === SQRT && !bIsConstant) { 
                     var s = result.args[0];
                     s.multiplyPower(new Symbol(0.5));
                     s.multiplier.multiply(result.multiplier);
                     s.multiplyPower(b);
-                    result = s;
+                    result = s; 
                 }
                 else {
                     result.multiplyPower(b);
@@ -3004,7 +3021,7 @@ var nerdamer = (function(imports) {
                 }
                 else if(bIsInt && !m.equals(1)) { 
                     var p = b.multiplier.toDecimal(),
-                        multiplier = Frac.quick(Math.pow(m.num, p), Math.pow(m.den, p)).simplify(); 
+                        multiplier = new Frac(Math.pow(m.num, p) / Math.pow(m.den, p)); 
                     //multiplying is justified since after mulltiplyPower if it was of group P it will now be of group N
                     result.multiplier = result.multiplier.multiply(multiplier);
                 }
@@ -3103,7 +3120,7 @@ var nerdamer = (function(imports) {
          * @param {number} value
          * @returns {Array} - an array containing the denominator and the numerator
          */
-        convert: function( value, opts ) {
+        convert: function( value, opts ) { 
             var frac;
             if( value === 0 ) {
                 frac = [ 0, 1];
@@ -4061,6 +4078,14 @@ var nerdamer = (function(imports) {
      */
     libExports.version = function() {
         return version;
+    };
+    
+    /**
+     * Get nerdamer generated warnings
+     * @returns {String}
+     */
+    libExports.getWarnings = function() {
+        return WARNINGS;
     };
     
     /**
