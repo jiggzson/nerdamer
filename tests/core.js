@@ -655,6 +655,14 @@ var cases = {
         expected: 'abs(4+x)',
         evaluated_value: 6.1
     },
+    '2*sqrt(3/4)': {
+        expected: 'sqrt(3)',
+        evaluated_value: 1.7320508075689423
+    },
+    'sqrt(4)^-1': {
+        expected: '1/2',
+        evaluated_value: 0.5
+    },
     'log(e)': {
         expected: '1',
         evaluated_value: 1
@@ -675,8 +683,8 @@ var report = test('Core', cases, function(expression, report, nerdamer) {
     result = parsed.toString();
     var passed = result === this.expected;
     if(!passed) {
-        report.write('(WARNING!)');
-        var evaluated_value = nerdamer(result).evaluate(values).toNumber(),
+        report.write('(WARNING!)'); console.log(expression)
+        var evaluated_value = nerdamer(result).evaluate(values).text('decimals'),
             second_test_passed = evaluated_value === this.evaluated_value;
         if(second_test_passed) report.write('Although '+expression+' evaluated correctly to '+evaluated_value+' ...');
         else {
