@@ -75,17 +75,14 @@ if((typeof module) !== 'undefined') {
                 if(symbol.group === core.groups.N) { c[0] = symbol.multiplier; }
                 else if(symbol.group === core.groups.S) { c[symbol.power.toDecimal()] = symbol.multiplier; }
                 else { 
-                    for(var x in symbol.symbols) {
+                    for(var x in symbol.symbols) { 
                         var sub = symbol.symbols[x],
                             p = sub.power; 
-                    
                         if(core.Utils.isSymbol(p)) throw new Error('power cannot be a Symbol');
                         
                         p = sub.group === N ? 0 : p.toDecimal();
-                    
                         if(sub.symbols){ 
                             this.parse(sub, c);  
-                            return;
                         }
                         else { 
                             c[p] = sub.multiplier; 
@@ -94,6 +91,7 @@ if((typeof module) !== 'undefined') {
                 }
                 
                 this.coeffs = c;
+                
                 this.fill();
             },
             /**
@@ -234,7 +232,6 @@ if((typeof module) !== 'undefined') {
                 return this;
             },
             gcd: function(poly) { 
-                var result = this.divide(poly);
                 //get the maximum power of each
                 var mp1 = this.coeffs.length-1, 
                     mp2 = poly.coeffs.length-1,
@@ -248,9 +245,9 @@ if((typeof module) !== 'undefined') {
                 while(!poly.isZero()) {   
                     var t = poly.clone(); 
                     a = a.clone(); 
-                    T = a.divide(t); 
+                    T = a.divide(t);
                     poly = T[1]; 
-                    a = t;
+                    a = t; 
                 }
                 
                 var gcd = core.Math2.QGCD.apply(null, a.coeffs);
@@ -262,6 +259,9 @@ if((typeof module) !== 'undefined') {
                     }
                 }
                 return a;
+            },
+            polyGCD: function(poly) {
+                
             },
             /**
              * Differentiates the polynomial
@@ -364,8 +364,45 @@ if((typeof module) !== 'undefined') {
             }
         };
         
-        //make the polynomial class available to EVERYONE!
-        core.Polynomial = Polynomial;
+    //make the polynomial class available to EVERYONE!
+    core.Polynomial = Polynomial;
+    
+    /**
+    * If the symbols is of group PL or CP it will return the multipliers of each symbol
+    * as these are polynomial coefficients. CB symbols are glued together by multiplication
+    * so the symbol multiplier carries the coefficients for all contained symbols.
+    * For S it just returns it's own multiplier. This function doesn't care if it's a polynomial or not
+    * @param {Array} c The coefficient array
+    * @return {Array}
+    */
+    Symbol.prototype.coeffs = function(c, with_order) {
+        if(with_order && !this.isPoly(true)) _.error('Polynomial expected when requesting coefficients with order');
+        c = c || [];
+        var s = this.clone().distributeMultiplier(); 
+        if(s.isComposite()) {
+            for(var x in s.symbols) { 
+                var sub = s.symbols[x];
+                if(sub.isComposite()) { 
+                    sub.clone().distributeMultiplier().coeffs(c, with_order);
+                }
+                else { 
+                    if(with_order) c[sub.isConstant() ? 0 : sub.power.toDecimal()] = sub.multiplier;
+                    else c.push(sub.multiplier);
+                }
+            }
+        }
+        else { 
+            if(with_order) c[s.isConstant() ? 0 : s.power.toDecimal()] = s.multiplier;
+            else c.push(s.multiplier);
+        }
+        //fill the holes
+        if(with_order) {
+            for(var i=0; i<c.length; i++)
+                if(c[i] === undefined) c[i] = new Frac(0);
+        }
+        
+        return c;
+    };
     /**
      * A debugging method to be stripped
      * @returns {String}
@@ -395,23 +432,22 @@ if((typeof module) !== 'undefined') {
                 return roots;
             };
             
-            if(symbol instanceof Symbol && symbol.isPoly(true)) { 
+            if(symbol instanceof Symbol && symbol.isPoly()) { 
                 if(symbol.group === core.groups.S) { 
                     return [0];
                 }
                 else if(symbol.group === core.groups.PL) { 
                     var powers = keys(symbol.symbols),
                         minpower = core.Utils.arrayMin(powers),
-                        factor = core.PARSER.parse(symbol.value+'^'+minpower);
-                    zeros = minpower;
                     symbol = core.PARSER.divide(symbol, core.PARSER.parse(symbol.value+'^'+minpower));
                 }
-                var variable = keys( symbol.symbols ).sort().pop(), 
+                var variable = keys(symbol.symbols).sort().pop(), 
                     sym = symbol.group === core.groups.PL ? symbol.symbols : symbol.symbols[variable], 
                     g = sym.group,
-                    powers = g === S ? [sym.power] : keys( sym.symbols ),
+                    powers = g === S ? [sym.power.toDecimal()] : keys(sym.symbols),
                     rarr = [],
                     max = core.Utils.arrayMax(powers); //maximum power and degree of polynomial to be solved
+
                 // Prepare the data
                 for(var i=1; i<=max; i++) { 
                     var c = 0; //if there is no power then the hole must be filled with a zero
@@ -966,7 +1002,7 @@ if((typeof module) !== 'undefined') {
                    } 
                    return;
                }  
-qf
+
                function rpSolve(degPar, p, zeror, zeroi){ 
                    var N = degPar.Degree,
                        RADFAC = 3.14159265358979323846/180,  // Degrees-to-radians conversion factor = PI/180
@@ -1206,10 +1242,10 @@ qf
             var newtonraph = function(xn) {
                 var mesh = 1e-12,
                     // If the derivative was already provided then don't recalculate.
-                    df = dx ? dx : build(core.Calculus.diff(f.clone())),
+                    df = dx ? dx : core.Utils.build(core.Calculus.diff(f.clone())),
                     
                     // If the function was passed in as a function then don't recalculate.
-                    fn = f instanceof Function ? f : build(f),
+                    fn = f instanceof Function ? f : core.Utils.build(f),
                     max = 10000,
                     done = false, 
                     safety = 0;
@@ -1254,24 +1290,49 @@ qf
             return [output, w, i];
         },
         quad: function(a, b, c) {
-            return _.parse('-('+b+'+sqrt(('+b+')^2-4*('+a+')*('+c+')))/(2*'+a+')');
+            var q = function(a, b, c, sign) {
+                return _.parse('-('+b+'+'+sign+'*sqrt(('+b+')^2-4*('+a+')*('+c+')))/(2*'+a+')');
+            };
+            return [q(a, b, c, 1), q(a, b, c, -1)];
         },
         sumProd: function(a, b) {
-            var quad = function(a, b, c) { 
-                return [(-b+Math.sqrt(b*b-4*a*c))/(2*a), (-b-Math.sqrt(b*b-4*a*c))/(2*a)];
-            };
-            
-            var x = quad(-b, a, -1);
-            
-            return x.map(function(x){
-               return 1/x; 
+            return __.quad(-b, a, -1).map(function(x){
+                return x.invert(); 
             });
         },
-        qfactor: function(symbol) {
-            
-//            var sqf = __.sqfr(new Polynomial(symbol));
+        /**
+         * Get's all the powers of a particular polynomial including the denominators. The denominators powers
+         * are returned as negative. All remaining polynomials are returned as zero order polynomials.
+         * for example polyPowers(x^2+1/x+y+t) will return [ '-1', 0, '2' ]
+         * @param {Symbol} e
+         * @param {String} for_variable
+         * @param {Array} powers
+         * @returns {Array} An array of the powers
+         */
+        //assumes you've already verified that it's a polynomial
+        polyPowers: function(e, for_variable, powers) { 
+            powers = powers || [];
+            var g = g = e.group; 
+            if(g ===  PL && for_variable === e.value) {
+                powers = powers.concat(keys(e.symbols)); 
+            }
+            else if(g === CP) { 
+                for(var s in e.symbols) {
+                    var symbol = e.symbols[s]; 
+                    var g = symbol.group, v = symbol.value; 
+                    if(g === S && for_variable === v) powers.push(symbol.power);
+                    else if(g === PL || g === CP) powers = __.polyPowers(symbol, for_variable, powers);
+                    else if(g === CB && symbol.contains(for_variable)) {
+                        var t = symbol.symbols[for_variable];
+                        if(t) powers.push((t.power));
+                    }
+                    else if(g === N || for_variable !== v) powers.push(0);
+                }
+            }
+            return core.Utils.arrayUnique(powers).sort();
         },
         /**
+         * WARNING: THIS IS NOT A PROPER FACTORING ALGORITHM. JUST A QUICK FIX
          * http://www.ams.org/journals/mcom/1978-32-144/S0025-5718-1978-0568284-3/S0025-5718-1978-0568284-3.pdf
          * Splits symbol into factors
          * @param {Symbol} symbol
@@ -1439,17 +1500,16 @@ qf
             build: function() { return __.factor; }
         },
         {
-            //development method to be stripped
-            name: 'qfactor',
-            visible: true,
-            numargs: 1,
-            build: function() { return __.qfactor; }
-        },
-        {
             name: 'gcd',
             visible: true,
             numargs: 2,
             build: function() { return __.gcd; }
         },
+        {
+            name: 'proots',
+            visible: true,
+            numargs: -1,
+            build: function() { return __.proots; }
+        }
     ]);
 })();
