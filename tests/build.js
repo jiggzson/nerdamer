@@ -1,6 +1,8 @@
-var nerdamer = require('../nerdamer.core');
+var nerdamer = require('../nerdamer.core'),
+    settings = require('./settings.js'),
+    test = require('./test.js');
 
-var test_cases = {
+var cases = {
     '-x^2+1': {
         params: ['x'],
         one_expected: -3.41,
@@ -83,45 +85,26 @@ var test_cases = {
     },
 };
 
-var runtests = function(test_cases, verbose) {
-    var args = [2.1, 3.3, 1],
-        report = 'Running tests for core build function... \n------------------------------------ \n',
-        failed = 0,
-        num_tests = 0;
+var args = [2.1, 3.3, 1];
 
-    for(var x in test_cases) { console.log(x)
-        num_tests += 2;
-        var test_case = test_cases[x],
-            f = nerdamer(x).buildFunction(),
-            f2 = nerdamer(x).buildFunction(test_case.params),
-            result1 = f.apply(null, args),
-            passed1 = result1 === test_case.one_expected,
-            result2 = f2.apply(null, args),
-            passed2 =  result2 === test_case.two_expected;
-
-        if(!passed1) {
-            report += 'Test 1 failed for '+x+'. Expected '+test_case.one_expected+' but received '+result1+'\n';
-            failed++;
-        }
-        else if(verbose) {
-            report += 'Test1 for '+x+' passed with '+result1+'\n';
-        }
-        if(!passed2) {
-            report += 'Test 2 failed for '+x+'. Expected '+test_case.two_expected+' but received '+result2+'\n';
-            failed++;
-        }
-        else if(verbose) {
-            report += 'Test2 for '+x+' passed with '+ result2+'\n';
-        }
+var report = test('Core', cases, function(expression, report, nerdamer) {
+    var f = nerdamer(expression).buildFunction(),
+        f2 = nerdamer(expression).buildFunction(this.params),
+        result1 = f.apply(null, args),
+        passed1 = result1 === this.one_expected,
+        result2 = f2.apply(null, args),
+        passed2 =  result2 === this.two_expected;   
+    if(!passed1) {
+        report.write('Test 1 failed for '+expression+'. Expected '+this.one_expected+' but received '+result1);
+    }
+    if(!passed2) {
+        report.write('Test 2 failed for '+expression+'. Expected '+this.two_expected+' but received '+result2);
+    }
+    return {
+        passed: passed1 && passed2
     };
-    
-    report += 'Completed '+num_tests+' tests \n';
-    report += failed+' tests failed.';
-    
-    return report;
-};
+}, settings.verbose || settings.build_verbose); 
 
-var report = runtests(test_cases, true);
 
-console.log(report);
+console.log(report.getReport());
 
