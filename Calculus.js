@@ -7,6 +7,7 @@
 
 if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     nerdamer = require('./nerdamer.core.js');
+//    require('./Algebra.js');
 }
 
 (function() {
@@ -63,7 +64,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
             return retval;
         },
-        diff: function(symbol, wrt, nth) {
+        diff: function(symbol, wrt, nth) { 
             var d = isSymbol(wrt) ? wrt.text() : wrt; 
             
             nth = isSymbol(nth) ? nth.multiplier : nth || 1;
@@ -72,10 +73,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             
             //unwrap sqrt
             if(symbol.group === FN && symbol.fname === 'sqrt') {
-                var s = symbol.args[0];
+                var s = symbol.args[0],
+                    sp = symbol.power.clone();
                 //these groups go to zero anyway so why waste time?
                 if(s.group !== N || s.group !== P) {
-                    s.power = isSymbol(s.power) ? _.multiply(s.power, new Symbol(1/2)) : s.power.multiply(new Frac(0.5));
+                    s.power = isSymbol(s.power) ? _.multiply(s.power, _.multiply(new Symbol(1/2)), sp) : s.power.multiply(new Frac(0.5)).multiply(sp);
                     s.multiplier = s.multiplier.multiply(symbol.multiplier);
                 }
                     
@@ -95,11 +97,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 nth--;
                 symbol = __.diff(symbol, wrt, nth);
             }
-            
+           
             return symbol;
             
+            
              // Equivalent to "derivative of the outside".
-            function polydiff(symbol) { 
+            function polydiff(symbol) {
                 if(symbol.value === d || symbol.contains(d, true)) { 
                     symbol.multiplier = symbol.multiplier.multiply(symbol.power);
                     symbol.power = symbol.power.subtract(new Frac(1)); 
@@ -120,8 +123,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     symbol = polydiff(symbol);
                 }
                 else if(g === CB) { 
-                    var m = symbol.multiplier;
-                    symbol.multiplier.equals(1);
+                    var m = symbol.multiplier.clone();
+                    symbol.toUnitMultiplier();
                     var retval =  _.multiply(product_rule(symbol),polydiff(symbol.clone()));
                     retval.multiplier = retval.multiplier.multiply(m);
                     return retval;
@@ -132,13 +135,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         case 'log':
                             cp = symbol.clone();
                             symbol = symbol.args[0].clone();//get the arguments
-
-                            if(isSymbol(symbol.power)) {
-                                symbol.power.negate();
-                            }
-                            else {
-                                symbol.power = symbol.power.negate();
-                            }
+                            symbol.power = symbol.power.negate();
                             symbol.multiplier = cp.multiplier.divide(symbol.multiplier); 
                             break;
                         case 'cos':
@@ -176,9 +173,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         case 'atan':
                             symbol = _.parse('(1+('+text(symbol.args[0])+')^2)^(-1)');
                             break;
-                        case 'abs':
-                            m = symbol.multiplier; 
-                            symbol.multiplier = 1;
+                        case 'abs': 
+                            m = symbol.multiplier.clone(); 
+                            symbol.toUnitMultiplier();
                             //depending on the complexity of the symbol it's easier to just parse it into a new symbol
                             //this should really be readdressed soon
                             b = symbol.args[0].clone();
@@ -236,9 +233,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 }
                 else if(g === FN && !symbol.power.equals(1)) { 
                     b = symbol.clone();
-                    //turn b into a vanilla powerless, multiplier-less symbol
-                    b.toLinear(); 
-                    b.unitMultiplier();
+                    b.toLinear();
+                    b.toUnitMultiplier();
                     symbol = _.multiply(polydiff( symbol.clone(), d ), derive(b));  
                 }
                 else if( g === CP || g === PL ) { 
@@ -278,87 +274,119 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 return result; //done
             };
         },
-        integral: function(symbol, ig) {
-            return _.symfunction('integrate', [symbol, ig]);
-        },
         integrate: function(symbol, integrand) {   
-            var u, du, a, b, //the parts used for testing cases which are globals
-                g = symbol.group,
-                dx = text(integrand),
-                option = {
-                /*************************************************************************************
-                 * 1. get the denominator
-                 * 2. get all symbols which contain the symbol and place in new symbol - this is your u
-                 * 3. the remaining symbols are your a - finding your b is trickier
-                 * 4. get numerator
-                 * 5. generate du
-                 * 6. start testing all of the cases
-                 * This significantly simplifies integration and maybe even makes it feasible
-                 *************************************************************************************/
-                // du/u 
-                1: function() {
-                    
-                },
-                // du/(a^2+u^2)
-                2: function() {
-                    
-                },
-                // du/sqrt(a^2-u^2)
-                3: function() {
-                    
-                },
-                // du/(au+b)
-                4: function() {
-                    
-                },
-                // udu/(au+b)^2
-                5: function() {
-                    
-                }
+            var g = symbol.group, result;
+            
+            var integral = function() {
+                return _.symfunction('integrate', [symbol]);
             };
-            var separate = function(symbol, variable) { 
-                var fraction = symbol.asFraction(true),
-                    organized = {
-                        num: [new Symbol(0), new Symbol(0)],
-                        denom: [new Symbol(0), new Symbol(0)],
-                        pows: []
-                    },
-                    organize = function(arr, target, multiplier, index) {
-                        var l = arr.length;
-                        for(var i=0; i<l; i++) {
-                            var s = arr.pop(),
-                                g = s.group;
-                            if(s.contains(variable, true)) {
-                                var p = Math.abs(s.power);
-                                organized.pows[index] = p; //make a note of the power
-                                //we want to know the structure for all denominators having powers 1, 2, 0.5
-                                if((g === PL || g === CP) && (p === 1 || p === 2 || p === 0.5)) {
-                                    for(var x in s.symbols) {
-                                        var s2 = _.multiply(s.symbols[x], multiplier.clone());
 
-                                        if(s2.contains(variable, true)) target[0] = _.add(target[0], s2);
-                                        else target[1] = _.add(target[1], s2);
-                                    }
-                                }
-                                else {
-                                    target[0] = _.add(target[0], _.multiply(s, multiplier.clone()));
-                                }
-                            }
-                            else {
-                                target[1] = _.add(target[1], _.multiply(s, multiplier.clone()));
-                            }   
-                        }
-                    };
+            if(g === N || g === P) {
+                result = _.multiply(symbol, integrand.clone());
+            }
+            else if(g === S) {
+                symbol.power = symbol.power.add(new Frac(1));
+                symbol.multiplier = symbol.multiplier.divide(symbol.power);
                 
-                organize(fraction.num, organized.num, fraction.num_multiplier, 0);
-                organize(fraction.denom, organized.denom, fraction.denom_multiplier, 1);
-                return organized;
-            };
-            //prepare the parts we need for integration
-            //convert the symbol to a fraction so we can start running tests
-            var frac = separate(symbol, dx);
-            //try case 1
-            return symbol;
+                result = symbol;
+            }
+            else if(g === FN) {
+                // Table of known derivatives
+                switch(symbol.fname) {
+                    case 'log':
+                        cp = symbol.clone();
+                        symbol = symbol.args[0].clone();//get the arguments
+                        symbol.power = symbol.power.negate();
+                        symbol.multiplier = cp.multiplier.divide(symbol.multiplier); 
+                        break;
+                    case 'cos':
+                        //cos -> -sin
+                        symbol.fname = 'sin';
+                        symbol.multiplier.negate();
+                        break;
+                    case 'sin': 
+                        //sin -> cos
+                        symbol.fname = 'cos';
+                        break;
+                    case 'tan':
+                        //tan -> sec^2
+                        symbol.fname = 'sec';
+                        symbol.power = new Frac(2);
+                        break;
+                    case 'sec': 
+                        // Use a clone if this gives errors
+                        symbol = qdiff(symbol, 'tan');
+                        break;
+                    case 'csc':
+                        symbol = qdiff(symbol, '-cot');
+                        break;
+                    case 'cot':
+                        symbol.fname = 'csc';
+                        symbol.multiplier.negate();
+                        symbol.power = new Frac(2);
+                        break;
+                    case 'asin':
+                        symbol = _.parse('(sqrt(1-('+text(symbol.args[0])+')^2))^(-1)');
+                        break;
+                    case 'acos':
+                        symbol = _.parse('-(sqrt(1-('+text(symbol.args[0])+')^2))^(-1)');
+                        break;
+                    case 'atan':
+                        symbol = _.parse('(1+('+text(symbol.args[0])+')^2)^(-1)');
+                        break;
+                    case 'abs': 
+                        m = symbol.multiplier.clone(); 
+                        symbol.toUnitMultiplier();
+                        //depending on the complexity of the symbol it's easier to just parse it into a new symbol
+                        //this should really be readdressed soon
+                        b = symbol.args[0].clone();
+                        b.toUnitMultiplier();
+                        symbol = _.parse(inBrackets(text(symbol.args[0]))+'/abs'+inBrackets(text(b)));
+                        symbol.multiplier = m;
+                        break;
+                    case 'parens':
+                        //see product rule: f'.g goes to zero since f' will return zero. This way we only get back
+                        //1*g'
+                        symbol = Symbol(1);
+                        break;
+                    case 'cosh':
+                        //cos -> -sin
+                        symbol.fname = 'sinh';
+                        break;
+                    case 'sinh': 
+                        //sin -> cos
+                        symbol.fname = 'cosh';
+                        break;
+                    case 'tanh':
+                        //tanh -> sech^2
+                        symbol.fname = 'sech';
+                        symbol.power = new Frac(2);
+                        break;
+                    case 'sech': 
+                        // Use a clone if this gives errors
+                        symbol = qdiff(symbol, '-tanh');
+                        break;
+                    case 'asinh':
+                        symbol = _.parse('(sqrt(1+('+text(symbol.args[0])+')^2))^(-1)');
+                        break;
+                    case 'acosh':
+                        symbol = _.parse('(sqrt(-1+('+text(symbol.args[0])+')^2))^(-1)');
+                        break;
+                    case 'atanh':
+                        symbol = _.parse('(1-('+text(symbol.args[0])+')^2)^(-1)');
+                        break;
+                }
+            }
+            else if(symbol.isComposite() && symbol.isLinear()) {
+                result = new Symbol(0);
+                symbol.each(function(x) {
+                    result = _.add(result, __.integrate(x, integrand));
+                });
+            }
+            else {
+                result = integral();
+            }
+            return result;
         }
     };
     
@@ -389,3 +417,4 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
     ]);
 })();
+
