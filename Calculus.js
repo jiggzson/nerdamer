@@ -273,120 +273,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 }
                 return result; //done
             };
-        },
-        integrate: function(symbol, integrand) {   
-            var g = symbol.group, result;
-            
-            var integral = function() {
-                return _.symfunction('integrate', [symbol]);
-            };
-
-            if(g === N || g === P) {
-                result = _.multiply(symbol, integrand.clone());
-            }
-            else if(g === S) {
-                symbol.power = symbol.power.add(new Frac(1));
-                symbol.multiplier = symbol.multiplier.divide(symbol.power);
-                
-                result = symbol;
-            }
-            else if(g === FN) {
-                // Table of known derivatives
-                switch(symbol.fname) {
-                    case 'log':
-                        cp = symbol.clone();
-                        symbol = symbol.args[0].clone();//get the arguments
-                        symbol.power = symbol.power.negate();
-                        symbol.multiplier = cp.multiplier.divide(symbol.multiplier); 
-                        break;
-                    case 'cos':
-                        //cos -> -sin
-                        symbol.fname = 'sin';
-                        symbol.multiplier.negate();
-                        break;
-                    case 'sin': 
-                        //sin -> cos
-                        symbol.fname = 'cos';
-                        break;
-                    case 'tan':
-                        //tan -> sec^2
-                        symbol.fname = 'sec';
-                        symbol.power = new Frac(2);
-                        break;
-                    case 'sec': 
-                        // Use a clone if this gives errors
-                        symbol = qdiff(symbol, 'tan');
-                        break;
-                    case 'csc':
-                        symbol = qdiff(symbol, '-cot');
-                        break;
-                    case 'cot':
-                        symbol.fname = 'csc';
-                        symbol.multiplier.negate();
-                        symbol.power = new Frac(2);
-                        break;
-                    case 'asin':
-                        symbol = _.parse('(sqrt(1-('+text(symbol.args[0])+')^2))^(-1)');
-                        break;
-                    case 'acos':
-                        symbol = _.parse('-(sqrt(1-('+text(symbol.args[0])+')^2))^(-1)');
-                        break;
-                    case 'atan':
-                        symbol = _.parse('(1+('+text(symbol.args[0])+')^2)^(-1)');
-                        break;
-                    case 'abs': 
-                        m = symbol.multiplier.clone(); 
-                        symbol.toUnitMultiplier();
-                        //depending on the complexity of the symbol it's easier to just parse it into a new symbol
-                        //this should really be readdressed soon
-                        b = symbol.args[0].clone();
-                        b.toUnitMultiplier();
-                        symbol = _.parse(inBrackets(text(symbol.args[0]))+'/abs'+inBrackets(text(b)));
-                        symbol.multiplier = m;
-                        break;
-                    case 'parens':
-                        //see product rule: f'.g goes to zero since f' will return zero. This way we only get back
-                        //1*g'
-                        symbol = Symbol(1);
-                        break;
-                    case 'cosh':
-                        //cos -> -sin
-                        symbol.fname = 'sinh';
-                        break;
-                    case 'sinh': 
-                        //sin -> cos
-                        symbol.fname = 'cosh';
-                        break;
-                    case 'tanh':
-                        //tanh -> sech^2
-                        symbol.fname = 'sech';
-                        symbol.power = new Frac(2);
-                        break;
-                    case 'sech': 
-                        // Use a clone if this gives errors
-                        symbol = qdiff(symbol, '-tanh');
-                        break;
-                    case 'asinh':
-                        symbol = _.parse('(sqrt(1+('+text(symbol.args[0])+')^2))^(-1)');
-                        break;
-                    case 'acosh':
-                        symbol = _.parse('(sqrt(-1+('+text(symbol.args[0])+')^2))^(-1)');
-                        break;
-                    case 'atanh':
-                        symbol = _.parse('(1-('+text(symbol.args[0])+')^2)^(-1)');
-                        break;
-                }
-            }
-            else if(symbol.isComposite() && symbol.isLinear()) {
-                result = new Symbol(0);
-                symbol.each(function(x) {
-                    result = _.add(result, __.integrate(x, integrand));
-                });
-            }
-            else {
-                result = integral();
-            }
-            return result;
         }
     };
     
@@ -408,13 +294,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             visible: true,
             numargs: 4,
             build: function(){ return __.sum; }
-        },
-        {
-            name: 'integrate',
-            visible: true,
-            numargs: [2, 3], 
-            build: function(){ return __.integrate; }
         }
     ]);
 })();
-
