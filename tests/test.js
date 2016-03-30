@@ -1,46 +1,50 @@
 var nerdamer = require('../nerdamer.core');
 
-var run_tests = function(test_cases, values, verbose) {
-    var num_failed = 0,
-        num_tests = 0;
-    console.log('Running tests ... \n------------------------------------ \n');
+var line = function(ch, n) {
+    n = n || 40;
+    var str = '';
+    for(var i=0; i<=n; i++) str += ch;
+    return str;
+};
+
+var tester = function(header, test_cases, f, verbose) {
+    var report = {
+        REPORT: 'Running tests for '+header+' \n'+line('-')+'\n',
+        write: function(msg) {
+            this.REPORT += msg+'\n';
+        },
+        getReport: function() {
+            this.write(line('='));
+            this.write(this.num_tests+' tests completed');
+            this.write(this.failed+' tests failed \n');
+            this.write('Time elapsed: '+this.time+' ms');
+            return this.REPORT;
+        },
+        failed: 0,
+        num_tests: 0
+    };
+    var start = new Date().getTime();
     for(var x in test_cases) {
-        num_tests++;
-        var test_case = test_cases[x]; //get the test case
-		var result = "";
-        	//Test if nerdamer throws and error correctly
-		try {
-                    //run it through nerdamer
-                    result = nerdamer(x).text();
-                    
-		}
-		//Catches errors
-		catch(error) {
-                    //If an error was expected then save result
-                    if (test_case.error)
-                    {
-                        result = error.message;
-                    }
-		}
-
-		if(result !== test_case.expected) {
-			num_failed++;
-			//the first test failed but this might not mean anything other than that the structure of the
-			//output string has changed. Let's take a look at the number value. It might not have one but then it's
-			//up to you to decide if the test did test did indeed fail
-			console.log('Case "'+x+'" did not get expected value! Expected "'+test_case.expected+'" but received "'+result+'". Testing number value:');
-			var num_val = Number(nerdamer(x).evaluate(values).valueOf());
-
-			console.log('Number value does'+(num_val === test_case.number_value ? '': ' not')+' match. Received '+num_val+' \n')
-		}
-                else {
-                    if(verbose) console.log('test "'+x+'" passed with result '+result);
-                }
+        report.num_tests++;
+        var test_case = test_cases[x];
+        var result = f.call(test_case, x, report, nerdamer);
+        if(verbose && result.passed) {
+            var result_report = result.contents ? ' with result '+result.contents : '';
+            report.write(x+' passed'+result_report);
+        }
+        else if(!result.passed) {
+            report.failed++;
+            var expected_msg = test_case.expected ? ' Expected '+test_case.expected+' but received '+result.contents : '';
+            report.write(x+' did NOT pass.'+expected_msg);
+        }
     }
-    console.log('Done! '+num_tests+' tests completed');
-    console.log(num_failed+' test'+(num_failed === 1 ? '' : 's')+' failed.');
+    var stop = new Date().getTime();
+    
+    report.time = stop - start;
+    
+    return report;
 };
 
 if((typeof module) !== 'undefined') {
-    module.exports = run_tests;
+    module.exports = tester;
 }
