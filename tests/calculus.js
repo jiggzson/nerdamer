@@ -73,10 +73,10 @@ var test = require('./test.js'),
         expected: '(-4/5)*abs(cos(x^(4/5)))^(-1)*cos(x^(4/5))*sec(abs(cos(x^(4/5))))*sin(x^(4/5))*tan(abs(cos(x^(4/5))))*x^(-1/5)'
     },
     'diff(log(log(log(cos(t*t)^z))),t)': {
-        expected: '-2*(cos(t^2))^(-1)*log(cos(t^2)^z)^(-1)*log(log(cos(t^2)^z))^(-1)*sin(t^2)*t*z'
+        expected: '-2*(log(cos(t^2))*z)^(-1)*cos(t^2)^(-1)*sin(t^2)*t*z*log(log(cos(t^2))*z)^(-1)'
     },
     'diff(6*log(x)^(3*log(x^2)),x)': {
-        expected: '18*(2*log(log(x))*x^(-1)+log(x)^(-1)*log(x^2)*x^(-1))*log(x)^(3*log(x^2))'
+        expected: '36*(log(log(x))*x^(-1)+x^(-1))*log(x)^(6*log(x))'
     },
     'diff(sinh(x^2)^cos(x),x)': {
         expected: '(-log(sinh(x^2))*sin(x)+2*cos(x)*cosh(x^2)*sinh(x^2)^(-1)*x)*sinh(x^2)^cos(x)'
@@ -99,19 +99,21 @@ var test = require('./test.js'),
     'diff(x*y,x)': {
         expected: 'y'
     },
-    'integrate(sqrt(5)*x,x)': {
-        expected: '2*sqrt(5)*x'
+    'sum(x+y, x, 0, 3)': {
+        expected: '4*y+6'
     },
-    'integrate(x,x)': {
-        expected: '(1/2)*x^2'
+    'sum(x^2+x, x, 0, 10)': {
+        expected: '440'
     },
-    'integrate(x+5,x)': {
-        expected: '(1/2)*x^2+5*x'
+    'sum(x^2*z^2+x*y-z+1, x, 0, 10)': {
+        expected: '-11*z+385*z^2+11+55*y'
     },
-    'integrate(3*x^2+3*x^5,x)': {
-        expected: '(1/2)*x^6+x^3'
+    'sum(x^2*z^2+x*y-z+1, z, 0, 10)': {
+        expected: '-44+11*x*y+385*x^2'
     },
-    
+    'sum(sqrt(x)*sin(x), x, 0, 10)': {
+        expected: '895753/430206'
+    }
 };
 
 
