@@ -27,11 +27,10 @@ isn't particularly usefull at the moment other than getting its text representat
 
 ```javascript             
 var e = nerdamer('x^2+2*(cos(x)+x*x)');
-
 console.log(e.text());
 
 //result: 
-//2*cos(x)+3*x^(2)
+//2*cos(x)+3*x^2
 ```            
         
 
@@ -39,7 +38,6 @@ You can also pass in an object with known values as the second parameter.
 
 ```javascript             
 var e = nerdamer('x^2+2*(cos(x)+x*x)',{x:6});
-
 console.log(e.text());
 
 //result:
@@ -52,41 +50,53 @@ Note that evaluate returns a text string or a number not an object.
 
 ```javascript             
 var e = nerdamer('x^2+2*(cos(x)+x*x)',{x:6}).evaluate();
-
-console.log(e);
+console.log(e.text());
 
 //result:
-//109.92034057330073
+//429607273/3908351
 ```            
-        
+In previous versions this would return a decimal or an integer. However since 0.6.0 nerdamer keeps numbers as a ratio of integers. Use getNumber to try and get back a decimal. Be aware that you'll get back a string if your answer still contains variables   
+
+```javascript             
+var e = nerdamer('x^2+2*(cos(x)+x*x)',{x:6}).evaluate();
+console.log(e.text('decimals'));
+
+//result:
+//109.9203405733006
+```    
 
 Alternatively you can pass an object containing known values into evaluate instead of nerdamer to get back 
 the value right away. The values passed in don't have to be number the can be another expression if needed.
 
 ```javascript             
 var e = nerdamer('x^2+2*(cos(x)+x*x)',{x:'x^2+1'});
-
 console.log(e.text());
 
 //result:
-//(1+x^2)^2+2*((1+x^2)^2+cos(1+x^2))
+//2*cos(1+x^2)+3*(1+x^2)^2
 ```            
-        
+or preferably
+```javascript             
+var e = nerdamer('x^2+2*(cos(x)+x*x)').evaluate({x:'x^2+1'});
+console.log(e.text());
+
+//result:
+//2*cos(1+x^2)+3*(1+x^2)^2
+```             
 
 Every time you parse an expression it's stored in nerdamer. To get a list of all the expressions you just call 
 nerdamer.expressions().
 
 ```javascript             
 var knownValues = {x:'x^2+1'};
-nerdamer('x^2+2*(cos(x)+x*x)', knownValues );
-nerdamer('sin(x)^2+cos(x)^2', knownValues );
+nerdamer('x^2+2*(cos(x)+x*x)').evaluate(knownValues);
+nerdamer('sin(x)^2+cos(x)^2').evaluate(knownValues);
 
 console.log(nerdamer.expressions());
 
 //result:
 //[ 46.692712758272776, 1 ]
 ```            
-        
 
 You can request it as an object as well by passing in true. This can be convenient in some 
 situations as the numbering starts at 1;
@@ -119,26 +129,19 @@ console.log(result.text());
 or alternatively
 
 ```javascript
-var result = nerdamer('cos(x)').evaluate();
-console.log(result.text());
+var result = nerdamer('cos(x)').evaluate({x:6});
+console.log(result.text('decimals'));
 //0.960170286650366
 ```
 The difference however is that the first option directly substitutes the variables while the second first evaluates
-the variable and then makes the substitutions. This library utilizes native javascript functions as much as possible. As a result it inherits whatever rounding errors they possess. Take this example for instance.
+the variable and then makes the substitutions. This library utilizes native javascript functions as much as possible. As a result it inherits whatever rounding errors they possess. One major change with version 0.6.0 is the pesky sqrt problem. 
 
 ```javascript
-var result = nerdamer('sqrt(x)*sqrt(x)-2', {x:2});
-console.log(result.text());
-//4.440892098500626e-16
-```
-Yup, it's not zero. To minimize this error it would be better to first simplify the expression and then make your substitutions. The above example would then be
-
-```javascript
-var result = nerdamer('sqrt(x)*sqrt(x)-2').evaluate({x:2});
+var result = nerdamer('sqrt(x)*sqrt(x)-2', {x: 2});
 console.log(result.text());
 //0
-//the expression first becomes x-2 and therefore avoids rounding errors
 ```
+The above expample now returns zero whereas in previous version the result would be 4.440892098500626e-16
 
 An expression can be replaced directly by passing in the index of which expression to override. For example
 
@@ -157,13 +160,14 @@ console.log(e.text());
 //-14*y+y^2+49.7539022543433
 ```
 
-If you need the code as latex you can pass in true as the second parameter when requesting the expressions.
+If you need the code as LaTeX you can pass in true as the second parameter when requesting the expressions.
 
 ```javascript             
 nerdamer('x^2+2*(cos(x)+x*x)');
 nerdamer('sin(x)^0.25+cos(x)^0.5' );
-
-console.log(nerdamer.expressions(true, true));
+var asObject = true;
+var asLaTeX = true;
+console.log(nerdamer.expressions(asObject, asLaTeX));
 
 //{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
 //'2': '\\sin\\left(x\\right)^{\\frac{1}{4}}+\\sqrt{\\cos\\left(x\\right)}' }
@@ -176,31 +180,31 @@ You can specify a particular location when adding an expression, which is specif
 nerdamer('x^2+2*(cos(x)+x*x)');
 nerdamer('sin(x)^0.25+cos(x)^0.5' );
 nerdamer('expr-override', undefined, 2 );
-
-console.log(nerdamer.expressions(true, true));
+var asObject = false;
+var asLaTeX = true;
+console.log(nerdamer.expressions(asObject, asLaTeX));
 
 //{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
 //'2': '-override+expr' 
 ```
 
-Here's an example of reserved keywords.
+Here's an example of reserved variable and function names.
 
 ```javascript 
-nerdamer.reserved();
+var reserved = nerdamer.reserved();
+console.log(reserved);
 //result:
 //parens, cos, sin, tan, sec, csc, cot, acos, asin, atan, exp, log, abs, sqrt, diff, 
 //integrate, sec, cot, csc, pi, e
 
 //or as an array
 
-nerdamer.reserved(true);
+var reserved = nerdamer.reserved(true);
+console.log(reserved);
 //result:
 //[ 'parens','cos','sin','tan','sec','csc','cot','acos','asin','atan','exp','log','abs',
 // 'sqrt','diff','integrate','sec','cot','csc','pi','e' ]
 ```            
-        
-
-A list can and should be generated by calling the reserved method.
 
 Most math functions are passed in as part of the expression. If you want to differentiate for instance you just use the function diff which is located in the Calculus add-on as of 0.5.0
 
@@ -237,14 +241,13 @@ console.log(answer);
 //result: 9
 ```
 
-
-Set custom functions using this example:
+Custom functions alternatively set in following manner.
 
 ```javascript
 nerdamer('hyp(a, b) = sqrt(a^2 + b^2) ');
-var result = nerdamer('hyp(7, 2)').valueOf();
-
-//result: 7.280109889280518
+var result = nerdamer('hyp(3, 4)').evaluate().text();
+console.log(result);
+//result: 5
 ```
 
 
@@ -252,20 +255,23 @@ If you need to add a constant use the setConstant method
 
 ```javascript             
 nerdamer.setConstant( 'g', 9.81);
-
-var weight = nerdamer('100*g').evaluate();
-
+var weight = nerdamer('100*g').text();
 console.log(weight);
-
 //result:
 //981
 ```            
         
-
 To delete just set it to delete
 
 ```javascript             
+nerdamer.setConstant( 'g', 9.81);
+var weight = nerdamer('100*g').text();
+console.log(weight);
+//981
 nerdamer.setConstant( 'g', 'delete');
+var weight = nerdamer('100*g').text();
+console.log(weight);
+//100*g
 ```        
 
 You also have the option of exporting your function to a javascript function which can be useful if you need some 
@@ -327,11 +333,11 @@ sake of simplicity we'll just assume that there is no particular order
 ----------------------------------------------------------------------------------------------------------------------
 Using the solver
 ===============
-To solve equations first load Solve.js. Just remember that Solve also required Algebra.js and Calculus.js to be loaded. You can then solve equations using nerdamer. For example
+To solve equations first load Solve.js. Just remember that Solve also required Algebra.js and Calculus.js to be loaded. You can then solve equations using nerdamer. Important: State the variable for which you are trying to solve.
 ```javascript
 var sol = nerdamer.solveEquations('x^3+8=x^2+6','x');
 console.log(sol.toString());
-//1+1.000000000000001*i,-1.000000000000001*i+1,-1
+//1+i,-i+1,-1
 ```
 
 Notice that we use toString rather than text as this returns a javascript array.
@@ -400,7 +406,7 @@ console.log(product.valueOf());
 ```
 
 This may or may not be useful but do keep in mind that when doing this one 
-or both symbols may be modified. To prevent this call a copy if you intent to
+or both symbols may be modified. To prevent this call a clone if you intent to
 reuse the symbol. So the above example would be
 
 ```javascript
@@ -408,7 +414,7 @@ reuse the symbol. So the above example would be
 var core = nerdamer.getCore();
 var x = new core.Symbol('x');
 
-var product = core.PARSER.multiply(x.copy(),x.copy());
+var product = core.PARSER.multiply(x.clone(),x.clone());
 
 console.log(product.valueOf());
 //x^2
@@ -470,8 +476,8 @@ nerdamer.register({
         var Symbol = core.Symbol;//grab the symbol class or use it directly
         return function(a, b, c) {
             //apply algorithm (-b+sqrt(b^2-4ac))/2a
-            var det = _.subtract(_.pow(b.copy(), new Symbol(2)),
-                _.multiply(_.multiply(a.copy(), c), new Symbol(4)));
+            var det = _.subtract(_.pow(b.clone(), new Symbol(2)),
+                _.multiply(_.multiply(a.clone(), c), new Symbol(4)));
             return _.divide(_.add(b.negate(), _.pow(det, new Symbol(0.5))),
                         _.multiply(new Symbol(2), a));
         };
@@ -487,7 +493,7 @@ console.log(e.text());
 //-3
 ```
 
-Notice the use of the copy method when the symbol is used more than once. When parsing one or more symbols drop per operation. On the next cycle a fresh new Symbol is created. To minimize the creation of new Symbols nerdamer reuses one of the symbols supplied so the return symbol is usually a modified version of one of the parameters. This usually does not cause a problem when the parsing is in a linear fashion but it creates a problem when applying algorithms in which symbols get called again. This is one of the issues I'll be tackling in the future but for now either use a safe block or call the copy method on symbols which get reused.
+Notice the use of the clone method when the symbol is used more than once. When parsing one or more symbols drop per operation. On the next cycle a fresh new Symbol is created. To minimize the creation of new Symbols nerdamer reuses one of the symbols supplied so the return symbol is usually a modified version of one of the parameters. This usually does not cause a problem when the parsing is in a linear fashion but it creates a problem when applying algorithms in which symbols get called again. This is one of the issues I'll be tackling in the future but for now either use a safe block or call the clone method on symbols which get reused.
 
 In this example the layer is used directly. When an algorithm is applied in this fashion the additional cost is negligible. You could alternatively use the parse method as in example 2.
 
@@ -522,15 +528,3 @@ core.PARSER.extend('add', function(symbol1, symbol2, add){
     //do stuff with your new types
 });
 ```
-
-Internally the library is more of an exercise in organizing rather than mathematics and as such I avoid using such terms in comments to avoid confusion. That doesn't mean that mathematicals checks can't be done. They basically have to be created and done using a function call e.g. isPolynomial, etc. The library is divided into 7 groups:
-
-1. N - A number
-2. S - A single variable e.g. x
-3. EX - A symbol/expression with an exponent that is not a number e.g. x^y
-4. FN - A function
-5. PL - A symbol/expression having same name with different powers e.g. 1/x + x^2 or tan(x)+tan(x)^2
-6. CB - A symbol/expression composed of one or more variables through multiplication e.g. x*y
-7. CP - A symbol/expression composed of one variable and any other symbol or number x+1 or x+y
-
-All groups have a multiplier which must be a number, and all groups except for N have a power which can be a Number or a Symbol. Symbols of group EX are basically exponentials and have Symbols as powers.

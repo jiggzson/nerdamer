@@ -1,6 +1,21 @@
+/*
+* Author : Martin Donk
+* Website : http://www.nerdamer.com
+* Email : martin.r.donk@gmail.com
+* Source : https://github.com/jiggzson/nerdamer
+*/
+
+if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
+    nerdamer = require('./nerdamer.core.js');
+//    require('./Algebra.js');
+}
+
 (function() {
+    "use strict";
+    
     var core = nerdamer.getCore(),
         _ = core.PARSER,
+        Frac = core.Frac,
         isSymbol = core.Utils.isSymbol,
         FN = core.groups.FN,
         Symbol = core.Symbol,
@@ -12,9 +27,10 @@
         PL = core.groups.PL,
         CP = core.groups.CP,
         CB = core.groups.CB,
-        EX = core.groups.EX;
+        EX = core.groups.EX,
+        P = core.groups.P;
     var __ = core.Calculus = {
-        version: '1.0.0',
+        version: '1.1.3',
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
             index = index.value;
@@ -48,16 +64,29 @@
 
             return retval;
         },
-        diff: function(symbol, wrt, nth) {
+        diff: function(symbol, wrt, nth) { 
             var d = isSymbol(wrt) ? wrt.text() : wrt; 
             
             nth = isSymbol(nth) ? nth.multiplier : nth || 1;
 
             if(d === undefined) d = core.Utils.variables(symbol)[0];
+            
+            //unwrap sqrt
+            if(symbol.group === FN && symbol.fname === 'sqrt') {
+                var s = symbol.args[0],
+                    sp = symbol.power.clone();
+                //these groups go to zero anyway so why waste time?
+                if(s.group !== N || s.group !== P) {
+                    s.power = isSymbol(s.power) ? _.multiply(s.power, _.multiply(new Symbol(1/2)), sp) : s.power.multiply(new Frac(0.5)).multiply(sp);
+                    s.multiplier = s.multiplier.multiply(symbol.multiplier);
+                }
+                    
+                symbol = s;
+            }
 
             if(symbol.group === FN && !isSymbol(symbol.power)) {
-                var a = derive(symbol);
-                var b = __.diff(symbol.args[0].copy(), d); 
+                var a = derive(symbol); 
+                var b = __.diff(symbol.args[0].clone(), d); 
                 symbol = _.multiply(a, b);//chain rule
             }
             else {
@@ -68,73 +97,72 @@
                 nth--;
                 symbol = __.diff(symbol, wrt, nth);
             }
-            
+           
             return symbol;
             
+            
              // Equivalent to "derivative of the outside".
-            function polydiff(symbol) { 
+            function polydiff(symbol) {
                 if(symbol.value === d || symbol.contains(d, true)) { 
-                    symbol.multiplier *= symbol.power;
-                    symbol.power -= 1; 
-                    if(symbol.power === 0) {
+                    symbol.multiplier = symbol.multiplier.multiply(symbol.power);
+                    symbol.power = symbol.power.subtract(new Frac(1)); 
+                    if(symbol.power.equals(0)) {
                         symbol = Symbol(symbol.multiplier);
                     }
                 } 
+                
                 return symbol;
             };
             function derive(symbol) { 
-                var g = symbol.group, t, a, b, cp; 
+                var g = symbol.group, a, b, cp; 
 
-                if(g === N || g === S && symbol.value !== d) { 
+                if(g === N || g === S && symbol.value !== d || g === P) { 
                     symbol = Symbol(0);
                 }
                 else if(g === S) {  
                     symbol = polydiff(symbol);
                 }
                 else if(g === CB) { 
-                    var m = symbol.multiplier;
-                    symbol.multiplier = 1;
-                    var retval =  _.multiply(product_rule(symbol),polydiff(symbol.copy()));
-                    retval.multiplier *= m;
+                    var m = symbol.multiplier.clone();
+                    symbol.toUnitMultiplier();
+                    var retval =  _.multiply(product_rule(symbol),polydiff(symbol.clone()));
+                    retval.multiplier = retval.multiplier.multiply(m);
                     return retval;
                 }
-                else if(g === FN && symbol.power === 1) {
+                else if(g === FN && symbol.power.equals(1)) { 
                     // Table of known derivatives
-                    switch(symbol.baseName) {
+                    switch(symbol.fname) {
                         case 'log':
-                            cp = symbol.copy();
-                            symbol = symbol.args[0].copy();//get the arguments
-
-                            if( isSymbol( symbol.power ) ) {
-                                symbol.power = _.multiply(symbol.power, Symbol(-1));
-                            }
-                            else {
-                                symbol.power *= -1;
-                            }
-                            symbol.multiplier = cp.multiplier/symbol.multiplier; 
+                            cp = symbol.clone();
+                            symbol = symbol.args[0].clone();//get the arguments
+                            symbol.power = symbol.power.negate();
+                            symbol.multiplier = cp.multiplier.divide(symbol.multiplier); 
                             break;
                         case 'cos':
-                            symbol.baseName = 'sin';
-                            symbol.multiplier *= -1;
+                            //cos -> -sin
+                            symbol.fname = 'sin';
+                            symbol.multiplier.negate();
                             break;
                         case 'sin': 
-                            symbol.baseName = 'cos';
+                            //sin -> cos
+                            symbol.fname = 'cos';
                             break;
                         case 'tan':
-                            symbol.baseName = 'sec';
-                            symbol.power = 2;
+                            //tan -> sec^2
+                            symbol.fname = 'sec';
+                            symbol.power = new Frac(2);
                             break;
                         case 'sec': 
-                            // Use a copy if this gives errors
+                            // Use a clone if this gives errors
                             symbol = qdiff(symbol, 'tan');
                             break;
                         case 'csc':
                             symbol = qdiff(symbol, '-cot');
                             break;
                         case 'cot':
-                            symbol.baseName = 'csc';
-                            symbol.multiplier *= -1;
-                            symbol.power = 2;
+                            symbol.fname = 'csc';
+                            symbol.multiplier.negate();
+                            symbol.power = new Frac(2);
                             break;
                         case 'asin':
                             symbol = _.parse('(sqrt(1-('+text(symbol.args[0])+')^2))^(-1)');
@@ -145,18 +173,46 @@
                         case 'atan':
                             symbol = _.parse('(1+('+text(symbol.args[0])+')^2)^(-1)');
                             break;
-                        case 'abs':
-                            m = symbol.multiplier; 
-                            symbol.multiplier = 1;
+                        case 'abs': 
+                            m = symbol.multiplier.clone(); 
+                            symbol.toUnitMultiplier();
                             //depending on the complexity of the symbol it's easier to just parse it into a new symbol
                             //this should really be readdressed soon
-                            b = symbol.args[0].copy();
-                            b.multiplier = 1;
+                            b = symbol.args[0].clone();
+                            b.toUnitMultiplier();
                             symbol = _.parse(inBrackets(text(symbol.args[0]))+'/abs'+inBrackets(text(b)));
                             symbol.multiplier = m;
                             break;
                         case 'parens':
+                            //see product rule: f'.g goes to zero since f' will return zero. This way we only get back
+                            //1*g'
                             symbol = Symbol(1);
+                            break;
+                        case 'cosh':
+                            //cos -> -sin
+                            symbol.fname = 'sinh';
+                            break;
+                        case 'sinh': 
+                            //sin -> cos
+                            symbol.fname = 'cosh';
+                            break;
+                        case 'tanh':
+                            //tanh -> sech^2
+                            symbol.fname = 'sech';
+                            symbol.power = new Frac(2);
+                            break;
+                        case 'sech': 
+                            // Use a clone if this gives errors
+                            symbol = qdiff(symbol, '-tanh');
+                            break;
+                        case 'asinh':
+                            symbol = _.parse('(sqrt(1+('+text(symbol.args[0])+')^2))^(-1)');
+                            break;
+                        case 'acosh':
+                            symbol = _.parse('(sqrt(-1+('+text(symbol.args[0])+')^2))^(-1)');
+                            break;
+                        case 'atanh':
+                            symbol = _.parse('(1-('+text(symbol.args[0])+')^2)^(-1)');
                             break;
                     }
                 }
@@ -166,29 +222,29 @@
                         value = symbol.value;
                     }
                     else if(g === FN && symbol.contains(d)) { 
-                        value = symbol.baseName + inBrackets(text(symbol.args[0]));
+                        value = symbol.fname + inBrackets(text(symbol.args[0]));
                     }
                     else {
                         value = symbol.value + inBrackets(text(symbol.args[0]));
                     }
-                        a = _.multiply(_.parse('log'+inBrackets(value)), symbol.power.copy()); 
-                        b = __.diff(_.multiply(_.parse('log'+inBrackets(value)), symbol.power.copy()), d); 
+                        a = _.multiply(_.parse('log'+inBrackets(value)), symbol.power.clone()); 
+                        b = __.diff(_.multiply(_.parse('log'+inBrackets(value)), symbol.power.clone()), d); 
                     symbol = _.multiply(symbol, b);
                 }
-                else if( g === FN && symbol.power !== 1 ) { 
-                    b = symbol.copy();
-                    //turn b into a vanilla powerless, multiplier-less symbol
-                    b.power = 1; 
-                    b.multiplier = 1;
-                    symbol = _.multiply(polydiff( symbol.copy(), d ), derive(b));  
+                else if(g === FN && !symbol.power.equals(1)) { 
+                    b = symbol.clone();
+                    b.toLinear();
+                    b.toUnitMultiplier();
+                    symbol = _.multiply(polydiff( symbol.clone(), d ), derive(b));  
                 }
                 else if( g === CP || g === PL ) { 
                     var result = new Symbol(0);
                     for(var x in symbol.symbols) {
-                        result = _.add(result, __.diff(symbol.symbols[x].copy(), d));
+                        result = _.add(result, __.diff(symbol.symbols[x].clone(), d));
                     }
-                    symbol = _.multiply(polydiff(symbol.copy()), result);
+                    symbol = _.multiply(polydiff(symbol.clone()), result);
                 }
+
                 symbol.updateHash();
                 return symbol;
             };
@@ -204,15 +260,15 @@
                     l = symbols.length;
                 //loop over all the symbols
                 for(var i=0; i<l; i++) {
-                    var df = __.diff(symbols[i].copy(), d);
+                    var df = __.diff(symbols[i].clone(), d);
                     for(var j=0; j<l; j++) {
                         //skip the symbol of which we just pulled the derivative
                         if(i !== j) {
                             //multiply out the remaining symbols
-                            df = _.multiply(df, symbols[j].copy());
+                            df = _.multiply(df, symbols[j].clone());
                         }
                     }
-                    //add the derivative to the resutl
+                    //add the derivative to the result
                     result = _.add(result, df);
                 }
                 return result; //done
