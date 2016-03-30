@@ -4,6 +4,12 @@
  * Email : martin.r.donk@gmail.com
  * Source : https://github.com/jiggzson/nerdamer
  */
+if((typeof module) !== 'undefined') {
+    nerdamer = require('./nerdamer.core.js');
+    require('./Calculus.js');
+    require('./Algebra.js');
+}
+
 (function() {
     //handle imports
     var core = nerdamer.getCore(),
@@ -20,7 +26,7 @@
         variables = core.Utils.variables,
         isArray = core.Utils.isArray;
         
-    var make_equal_zero = function(eqn) {
+    var toLHS = function(eqn) {
         var es = eqn.split('=');
         if(es[1] === undefined) es[1] = '0';
         var e1 = _.parse(es[0]), e2 = _.parse(es[1]);
@@ -28,7 +34,7 @@
     };
     
     var sys_solve = function(eqns) {
-        for(var i=0; i<eqns.length; i++) eqns[i] = make_equal_zero(eqns[i]);
+        for(var i=0; i<eqns.length; i++) eqns[i] = toLHS(eqns[i]);
         
         if(!_A.allLinear(eqns)) core.err('System must contain all linear equations!');
         var vars = variables(eqns[0]), m = new core.Matrix(),
@@ -56,19 +62,19 @@
         return solutions;
     };
         
-    var quad = function(a, b, c, plus_or_min) {
+    var quad = function(a, b, c, plus_or_min) { 
         var plus_or_minus = plus_or_min === '-' ? 'subtract': 'add';
-        var bsqmin4ac = _.subtract(_.pow(b.copy(), Symbol(2)), _.multiply(_.multiply(a.copy(), c.copy()),Symbol(4)))/*b^2 - 4ac*/; 
+        var bsqmin4ac = _.subtract(_.pow(b.clone(), Symbol(2)), _.multiply(_.multiply(a.clone(), c.clone()),Symbol(4)))/*b^2 - 4ac*/; 
         var det = _.pow(bsqmin4ac, Symbol(0.5));
-        return _.divide(_[plus_or_minus](b.copy().negate(), det),_.multiply(new Symbol(2), a.copy()));
+        return _.divide(_[plus_or_minus](b.clone().negate(), det),_.multiply(new Symbol(2), a.clone()));
     };
     
-    var cubic = function(a, b, c, d) {
+    var cubic = function(a, b, c, d) { 
         var a_ = a.text(), b_ = b.text(), c_ = c.text(), d_ = d.text();
         var a_1 = _.parse('0.86602540378443*i-0.5'),//((sqrt(3)*i)/2-1/2)
             a_2 = _.parse('-0.86602540378443*i-0.5'),//(-(sqrt(3)*i)/2-1/2)
             a_3 = _.parse(core.Utils.format('(3*({0})*({2})-({1})^2)', a_, b_, c_)),
-            a_4 = _.parse(core.Utils.format('({1})/(3*({0}))'), a_, b_),
+            a_4 = _.parse(core.Utils.format('({1})/(3*({0}))', a_, b_)),
             a_5 = _.parse(core.Utils.format('9*({0})^2', a_)),
             //sqrt(27*a^2*d^2+(4*b^3-18*a*b*c)*d+4*a*c^3-b^2*c^2)
             b_1 = _.parse(core.Utils.format(
@@ -78,11 +84,11 @@
             ));
     
             return [
-                _.subtract(_.subtract(_.multiply(a_2.copy(), b_1.copy()), _.divide(_.multiply(a_5.copy(), a_3.copy()),
-                    b_1.copy())), a_4.copy()),
-                _.subtract(_.subtract(_.multiply(a_1.copy(), b_1.copy()), _.divide(_.multiply(a_2.copy(), a_3.copy()), 
-                    _.multiply(a_5.copy(), b_1.copy()))), a_4.copy()),
-                _.subtract(_.subtract(b_1.copy(), _.divide(a_3.copy(), _.multiply(a_5.copy(), b_1.copy()))), a_4.copy())
+                _.subtract(_.subtract(_.multiply(a_2.clone(), b_1.clone()), _.divide(_.multiply(a_5.clone(), a_3.clone()),
+                    b_1.clone())), a_4.clone()),
+                _.subtract(_.subtract(_.multiply(a_1.clone(), b_1.clone()), _.divide(_.multiply(a_2.clone(), a_3.clone()), 
+                    _.multiply(a_5.clone(), b_1.clone()))), a_4.clone()),
+                _.subtract(_.subtract(b_1.clone(), _.divide(a_3.clone(), _.multiply(a_5.clone(), b_1.clone()))), a_4.clone()).negate()
             ];
     };
     
@@ -117,7 +123,7 @@
 
             if(starting_point === 0) add_to_result(new Symbol(starting_point));//we're done
             else {
-                var df = build(_C.diff(symbol.copy())), ls;
+                var df = build(_C.diff(symbol.clone())), ls;
 
                 //get two points so we can get the slope of the function
                 for(var i=0; i<10; i++) {
@@ -160,13 +166,13 @@
         };
 
 
-        var eq = make_equal_zero(eqns),
+        var eq = toLHS(eqns),
             vars = core.Utils.variables(eq),//get a list of all the variables
             numvars = vars.length;//how many variables are we dealing with
         //if we're dealing with a single variable then we first check if it's a 
         //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.
         if(numvars === 1) {
-            if(eq.isPoly(true)) {
+            if(eq.isPoly(true)) { 
                 if(vars[0] === solve_for) _A.proots(eq).map(add_to_result);
             }
             else {
@@ -189,26 +195,26 @@
                             if(!existing) coeff_array[key] = value;
                             else coeff_array[key] = _.add(existing, value);
                         },
-                        remainder = eq.copy(); 
+                        remainder = eq.clone(); 
                     for(var s in eq.symbols) {
-                        var sym = eq.symbols[s];
+                        var sym = eq.symbols[s]; 
                         //place all the coefficient
-                        if(sym.contains(solve_for)) {
+                        if(sym.contains(solve_for)) { 
                             var g = sym.group;
-                            if(g === CB) {
+                            if(g === CB) { 
                                 var t = sym.symbols[solve_for];
-                                remainder = _.subtract(remainder, sym.copy());//make sure to remove the polynomial
-                                add_to_coeff_array(t.power-1, _.divide(sym, t.copy()));//add the coefficient to the array
+                                remainder = _.subtract(remainder, sym.clone());//make sure to remove the polynomial
+                                add_to_coeff_array(t.power-1, _.divide(sym, t.clone()));//add the coefficient to the array
                             }
                             else if(g === PL) {
                                 for(var x in sym.symbols) {
                                     var sub_sym = sym.symbols[x];
                                     add_to_coeff_array(sub_sym.power-1, new Symbol(sub_sym.multiplier));
                                 }
-                                remainder = _.subtract(remainder, sym.copy());
+                                remainder = _.subtract(remainder, sym.clone());
                             }
                             else if(g === S) {
-                                remainder = _.subtract(remainder, sym.copy()); 
+                                remainder = _.subtract(remainder, sym.clone()); 
                                 add_to_coeff_array(sym.power-1, new Symbol(sym.multiplier).negate());
                             }
                         }
