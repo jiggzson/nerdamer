@@ -22,8 +22,7 @@ You can see nerdamer in action at http://www.nerdamer.com/demo
 
 All operations are done using the 'nerdamer' object. 
 
-To add an expression just add it to the nerdamer object which will return a expression object which 
-isn't particularly usefull at the moment other than getting its text representation.
+To add an expression just add it to the nerdamer object which will return a expression object.
 
 ```javascript             
 var e = nerdamer('x^2+2*(cos(x)+x*x)');
@@ -32,7 +31,6 @@ console.log(e.text());
 //result: 
 //2*cos(x)+3*x^2
 ```            
-        
 
 You can also pass in an object with known values as the second parameter.
 
@@ -64,9 +62,17 @@ console.log(e.text('fractions'));
 //result:
 //429607273/3908351
 ```    
+You can get your expression back as LaTeX by calling the toTeX method
+```javascript             
+var LaTeX = nerdamer('x^2+2*(cos(x)+x*x)',{x:0.25}).toTeX();
+console.log(LaTeX);
 
-Alternatively you can pass an object containing known values into evaluate instead of nerdamer to get back 
-the value right away. The values passed in don't have to be number the can be another expression if needed.
+//result:
+//2 \cdot \mathrm{cos}\left(\frac{1}{4}\right)+\frac{3}{16}
+```     
+
+
+Alternatively you can pass an object containing known values into evaluate method instead. The values passed in don't have to be number they can be another expression if needed.
 
 ```javascript             
 var e = nerdamer('x^2+2*(cos(x)+x*x)',{x:'x^2+1'});
@@ -75,14 +81,6 @@ console.log(e.text());
 //result:
 //2*cos(1+x^2)+3*(1+x^2)^2
 ```            
-or preferably
-```javascript             
-var e = nerdamer('x^2+2*(cos(x)+x*x)').evaluate({x:'x^2+1'});
-console.log(e.text());
-
-//result:
-//2*cos(1+x^2)+3*(1+x^2)^2
-```             
 
 Every time you parse an expression it's stored in nerdamer. To get a list of all the expressions you just call 
 nerdamer.expressions().
@@ -134,14 +132,14 @@ console.log(result.text());
 //0.960170286650366
 ```
 The difference however is that the first option directly substitutes the variables while the second first evaluates
-the variable and then makes the substitutions. This library utilizes native javascript functions as much as possible. As a result it inherits whatever rounding errors they possess. One major change with version 0.6.0 is the pesky sqrt problem. 
+the expression and then makes the substitutions. This library utilizes native javascript functions as much as possible. As a result it inherits whatever rounding errors they possess. One major change with version 0.6.0 however, is dealing with floating point issues.
 
 ```javascript
 var result = nerdamer('sqrt(x)*sqrt(x)-2', {x: 2});
 console.log(result.text());
 //0
 ```
-The above expample now returns zero whereas in previous version the result would be 4.440892098500626e-16
+The above expample now returns zero whereas in previous version the result would be 4.440892098500626e-16. Same goes for 0.1+0.2.
 
 An expression can be replaced directly by passing in the index of which expression to override. For example
 
@@ -152,7 +150,7 @@ console.log(nerdamer.expressions());
 //[ 'sin(6)+y' ]
 ```
 
-If multiple modifier options need to be passed into nerdamer you can do so using an array. For example, if the Algebra add-on is loaded you can pass in the expand modifier along with the numer modifier.
+If multiple modifier options need to be passed into nerdamer you can do so using an array. For example ...
 
 ```javascript
 var e = nerdamer('cos(x)+(y-x)^2', {x:7}, ['expand', 'numer']);
@@ -169,8 +167,8 @@ var asObject = true;
 var asLaTeX = true;
 console.log(nerdamer.expressions(asObject, asLaTeX));
 
-//{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
-//'2': '\\sin\\left(x\\right)^{\\frac{1}{4}}+\\sqrt{\\cos\\left(x\\right)}' }
+/*{ '1': '2 \\cdot \\mathrm{cos}\\left(x\\right)+3 \\cdot x^{2}',
+  '2': '\\sqrt{\\mathrm{cos}\\left(x\\right)}+\\mathrm{sin}\\left(x\\right)^{\\frac{1}{4}}' }*/
 ```            
         
 
@@ -184,8 +182,10 @@ var asObject = false;
 var asLaTeX = true;
 console.log(nerdamer.expressions(asObject, asLaTeX));
 
-//{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
-//'2': '-override+expr' 
+/* [ '2 \\cdot \\mathrm{cos}\\left(x\\right)+3 \\cdot x^{2}',
+  '\\sqrt{\\mathrm{cos}\\left(x\\right)}+\\mathrm{sin}\\left(x\\right)^{\\frac{1}{4}}',
+  'expr-override' ]
+ */
 ```
 
 Here's an example of reserved variable and function names.
@@ -194,19 +194,18 @@ Here's an example of reserved variable and function names.
 var reserved = nerdamer.reserved();
 console.log(reserved);
 //result:
-//parens, cos, sin, tan, sec, csc, cot, acos, asin, atan, exp, log, abs, sqrt, diff, 
-//integrate, sec, cot, csc, pi, e
+/* csc, sec, cot, erf, fact, mod, GCD, QGCD, LCM, pow, PI, E, cos, sin, tan, acos, asin, atan, sinh, cosh, tanh, asinh, acosh, atanh, exp, min, max, floor, ceil, round, vector, matrix, parens, sqrt, log, expand, abs, invert, transpose, dot */
 
 //or as an array
 
 var reserved = nerdamer.reserved(true);
 console.log(reserved);
 //result:
-//[ 'parens','cos','sin','tan','sec','csc','cot','acos','asin','atan','exp','log','abs',
-// 'sqrt','diff','integrate','sec','cot','csc','pi','e' ]
+/* [ 'csc', 'sec', 'cot', 'erf', 'fact', 'mod', 'GCD', 'QGCD', 'LCM', 'pow', 'PI', 'E', 'cos', 'sin', 'tan', 'acos', 'asin', 'atan', 'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh', 'exp', 'min', 'max', 'floor', 'ceil', 'round', 'vector', 'matrix',
+  'parens', 'sqrt', 'log', 'expand', 'abs', 'invert', 'transpose', 'dot' ]  */
 ```            
 
-Most math functions are passed in as part of the expression. If you want to differentiate for instance you just use the function diff which is located in the Calculus add-on as of 0.5.0
+Most math functions are passed in as part of the expression. If you want to differentiate for instance you just use the function diff which is located in the Calculus add-on as of version 0.5.0
 
 ```javascript             
 var e = nerdamer('diff(x^2+2*(cos(x)+x*x),x)');
@@ -241,7 +240,7 @@ console.log(answer);
 //result: 9
 ```
 
-Custom functions alternatively set in following manner.
+Custom functions alternatively be set in following manner.
 
 ```javascript
 nerdamer('hyp(a, b) = sqrt(a^2 + b^2) ');
@@ -312,7 +311,6 @@ console.log(nerdamer.expressions(true));
 
 nerdamer.clear('all');
 console.log(nerdamer.expressions(true));
-
 //result:
 //{}
 ```            
