@@ -3292,7 +3292,7 @@ var nerdamer = (function(imports) {
                     symbols.push(LaTeX.latex(x));
                 });
                 var value = symbols.join('+'); 
-                v[index] = symbol.isLinear() ? value : this.brackets(value, 'parens');
+                v[index] = symbol.isLinear() && symbol.multiplier.equals(1) ? value : this.brackets(value, 'parens');
             }
             else if(group === CB || previousGroup === EX) {
                 //this almost feels a little like cheating but I need to know if I should be wrapping the symbol
@@ -3324,6 +3324,9 @@ var nerdamer = (function(imports) {
             return v;
         },
         set: function(m, v, p, negative) { 
+            var isBracketed = function(v) {
+                return /^\\left\(.+\\right\)$/.test(v);
+            };
             //format the power if it exists
             if(p) p = this.formatP(p);
             //merge v and p. Not that v MUST be first since the order matters
@@ -3333,11 +3336,11 @@ var nerdamer = (function(imports) {
             //if the top has a variable but the numerator is one drop it
             if(vn && mn == 1) mn = '';
             //if denominator is 1 drop it always
-            if(md == 1) md = '';
-            //prepare the top portion
-            var top = this.join(mn, vn, this.dot);
-            //prepare the bottom portion
-            var bottom = this.join(md, vd, this.dot);
+            if(md == 1) md = ''; 
+            //prepare the top portion but check that it's not already bracketed. If it is then leave out the cdot
+            var top = this.join(mn, vn, !isBracketed(vn) ? this.dot : '');
+            //prepare the bottom portion but check that it's not already bracketed. If it is then leave out the cdot
+            var bottom = this.join(md, vd, !isBracketed(vd) ? this.dot : '');
             //format the power if it exists
             //make it a fraction if both top and bottom exists
             if(top && bottom) return this.frac(top, bottom);
