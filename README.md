@@ -53,16 +53,16 @@ var e = nerdamer('x^2+2*(cos(x)+x*x)',{x:6}).evaluate();
 console.log(e.text());
 
 //result:
-//429607273/3908351
+//109.9203405733006
 ```            
-In previous versions this would return a decimal or an integer. However since 0.6.0 nerdamer keeps numbers as a ratio of integers. Use getNumber to try and get back a decimal. Be aware that you'll get back a string if your answer still contains variables   
+To get back the text as a fraction, call the text method and pass in the string 'fractions'.
 
 ```javascript             
 var e = nerdamer('x^2+2*(cos(x)+x*x)',{x:6}).evaluate();
-console.log(e.text('decimals'));
+console.log(e.text('fractions'));
 
 //result:
-//109.9203405733006
+//429607273/3908351
 ```    
 
 Alternatively you can pass an object containing known values into evaluate instead of nerdamer to get back 
@@ -130,7 +130,7 @@ or alternatively
 
 ```javascript
 var result = nerdamer('cos(x)').evaluate({x:6});
-console.log(result.text('decimals'));
+console.log(result.text());
 //0.960170286650366
 ```
 The difference however is that the first option directly substitutes the variables while the second first evaluates
