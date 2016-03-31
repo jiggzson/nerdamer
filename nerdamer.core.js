@@ -706,7 +706,6 @@ var nerdamer = (function(imports) {
                     value = obj.collectSymbols(text, opt).join('+').replace(/\+\-/g, '-');
                     break;
                 case CB: 
-                    
                     value = obj.collectSymbols(function(symbol){
                         var g = symbol.group;
                         //both groups will already be in brackets if their power is greater than 1
@@ -722,13 +721,19 @@ var nerdamer = (function(imports) {
                         pwg = obj.power.group;
                 
                     //PL are the exception. It's simpler to just collect and set the value
-                    if(pg === PL) value = obj.collectSymbols(text).join('+').replace('+-', '-');
+                    if(pg === PL) value = obj.collectSymbols(text, opt).join('+').replace('+-', '-');
                     if(!(pg === N || pg === S || pg === FN) && !asHash) { value = inBrackets(value); }
  
                     if((pwg === CP || pwg === CB || pwg === PL || obj.power.multiplier.toString() != '1') && power) {
                         power = inBrackets(power);
                     }
                     break;
+            }
+            
+            if(group === FN && asDecimal) {
+                value = obj.fname+inBrackets(obj.args.map(function(symbol) {
+                    return text(symbol, opt);
+                }).join(','));
             }
             //wrap the power since / is less than ^
             //TODO: introduce method call isSimple
@@ -3204,7 +3209,7 @@ var nerdamer = (function(imports) {
                 power = symbol.power,
                 invert = isNegative(power),
                 negative = symbol.multiplier.lessThan(0);
-            
+
             if(symbol.group === P && decimal) {
                 return String(symbol.multiplier.toDecimal()*Math.pow(symbol.value, symbol.power.toDecimal()));
             }
@@ -3234,7 +3239,7 @@ var nerdamer = (function(imports) {
                     if(p == '1') p = '';
                 }
                 //get the latex representation
-                else if(isSymbol(power)) p = this.latex(power);
+                else if(isSymbol(power)) p = this.latex(power, opt);
                 //get it as a fraction
                 else p = this.formatFrac(power, true);
                 //use this array to specify if the power is getting attached to the top or the bottom
