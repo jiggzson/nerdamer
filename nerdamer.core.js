@@ -827,6 +827,7 @@ var nerdamer = (function(imports) {
          * @returns {String}
          */
         text: function(opt) { 
+            opt = opt || 'decimals';
             return text(this.symbol, opt);
         },
         /**
@@ -1303,7 +1304,7 @@ var nerdamer = (function(imports) {
             if(this.group === N) { return this.multiplier; }
             else if(this.power === 0){ return 1; }
             else if(this.multiplier === 0) { return 0; }
-            else { return text(this); }
+            else { return text(this, 'decimals'); }
         },
         /**
          * Checks to see if a symbols has a particular variable within it.
