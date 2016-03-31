@@ -83,8 +83,8 @@ var cases = {
         decimal_TeX: '\\frac{2}{\\left(x+y\\right)^{3}}'
     },
     '2*(x+1)/(x+y)^3': {
-        TeX: '\\frac{2 \\cdot \\left(x+1\\right)}{\\left(x+y\\right)^{3}}',
-        decimal_TeX: '\\frac{2 \\cdot \\left(x+1\\right)}{\\left(x+y\\right)^{3}}'
+        TeX: '\\frac{2\\left(x+1\\right)}{\\left(x+y\\right)^{3}}',
+        decimal_TeX: '\\frac{2\\left(x+1\\right)}{\\left(x+y\\right)^{3}}'
     },
     '2*(x+1)^2/(x+y)^3': {
         TeX: '\\frac{2 \\cdot \\left(x+1\\right)^{2}}{\\left(x+y\\right)^{3}}',
@@ -106,6 +106,10 @@ var cases = {
     '-(x^wtf+1)^6-(t+1)/(x+3)^2': {
         TeX: '-\\left(x^{wtf}+1\\right)^{6}-\\frac{t+1}{\\left(x+3\\right)^{2}}',
         decimal_TeX: '-\\left(x^{wtf}+1\\right)^{6}-\\frac{t+1}{\\left(x+3\\right)^{2}}'
+    },
+    '2*(-log(x)*sin(x)+cos(x)*x^(-1))': {
+        TeX: '2\\left(-\\mathrm{log}\\left(x\\right) \\cdot \\mathrm{sin}\\left(x\\right)+\\frac{\\mathrm{cos}\\left(x\\right)}{x}\\right)',
+        decimal_TeX: '2\\left(-\\mathrm{log}\\left(x\\right) \\cdot \\mathrm{sin}\\left(x\\right)+\\frac{\\mathrm{cos}\\left(x\\right)}{x}\\right)'
     },
     
 };
