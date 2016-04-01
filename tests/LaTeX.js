@@ -78,6 +78,14 @@ var cases = {
         TeX: '\\frac{\\left(x+y\\right)^{3}}{x}',
         decimal_TeX: '\\frac{\\left(x+y\\right)^{3}}{x}'
     },
+    '((x+1)*(x+2))/(x+5)': {
+        TeX: '\\frac{\\left(x+1\\right) \\cdot \\left(x+2\\right)}{x+5}',
+        decimal_TeX: '\\frac{\\left(x+1\\right) \\cdot \\left(x+2\\right)}{x+5}'
+    },
+    '((x+1)*(x+2)*u)/((x+5)*z)': {
+        TeX: '\\frac{\\left(x+1\\right) \\cdot \\left(x+2\\right) \\cdot u}{\\left(x+5\\right) \\cdot z}',
+        decimal_TeX: '\\frac{\\left(x+1\\right) \\cdot \\left(x+2\\right) \\cdot u}{\\left(x+5\\right) \\cdot z}'
+    },
     '2/(x+y)^3': {
         TeX: '\\frac{2}{\\left(x+y\\right)^{3}}',
         decimal_TeX: '\\frac{2}{\\left(x+y\\right)^{3}}'
