@@ -44,7 +44,7 @@ var nerdamer = (function(imports) {
         //The groups that help with organizing during parsing. Note that for FN is still a function even 
         //when it's raised to a symbol, which typically results in an EX
         N   = Groups.N  = 1, // A number
-        P   = Groups.P  = 2, // A single variable e.g. x. 
+        P   = Groups.P  = 2, // A number with a rational power e.g. 2^(3/5). 
         S   = Groups.S  = 3, // A single variable e.g. x. 
         EX  = Groups.EX = 4, // An exponential
         FN  = Groups.FN = 5, // A function
@@ -3305,25 +3305,49 @@ var nerdamer = (function(imports) {
                 //to whether the symbol value is "simple" or not.
                 var denominator = [],
                     numerator = [];
-            
+                //generate a profile
+                var den_map = [], num_map = [], num_c = 0, den_c = 0;
+                var setBrackets = function(container, map, counter) {
+                    if(counter > 1 && map.length > 0) {
+                        var l = map.length;
+                        for(var i=0; i<l; i++) {
+                            var idx = map[i];
+                            container[idx] = LaTeX.brackets(container[idx], 'parens');
+                        }
+                    }  
+                    return container;
+                };
                 //generate latex for each of them
                 symbol.each(function(x) { 
                     var isDenom = isNegative(x.power),
-                        laTex;
+                        laTex
+                    
                     if(isDenom) { 
                         laTex = LaTeX.latex(x.invert(), option);
-                        if(x.isComposite() && symbol.multiplier.den != 1 && Math.abs(x.power) == 1) 
-                            laTex = LaTeX.brackets(laTex, 'parens');
+                        den_c++;
+                        if(x.isComposite()) {
+                            if(symbol.multiplier.den != 1 && Math.abs(x.power) == 1) laTex = LaTeX.brackets(laTex, 'parens');
+                            den_map.push(denominator.length); //make a note of where the composite was found 
+                        }
+                        
                         denominator.push(laTex);
                     }
                     else {
                         laTex = LaTeX.latex(x, option);
-                        if(x.isComposite() && symbol.multiplier.num != 1 && Math.abs(x.power) == 1) 
-                            laTex = LaTeX.brackets(laTex, 'parens');
+                        num_c++;
+                        if(x.isComposite()) {
+                            if(symbol.multiplier.num != 1 && Math.abs(x.power) == 1) laTex = LaTeX.brackets(laTex, 'parens');
+                            num_map.push(numerator.length);   //make a note of where the composite was found 
+                        }
+                        
                         numerator.push(laTex);
                     }
                 });
-                v[0] = numerator.join(this.dot);
+                //apply brackets
+                setBrackets(numerator, num_map, num_c);
+                v[0] = numerator.join(this.dot); //collapse the numerator into one string
+                
+                setBrackets(denominator, den_map, den_c);
                 v[1] = denominator.join(this.dot);
             }
             return v;
