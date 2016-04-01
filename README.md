@@ -69,8 +69,17 @@ console.log(LaTeX);
 
 //result:
 //2 \cdot \mathrm{cos}\left(\frac{1}{4}\right)+\frac{3}{16}
-```     
+```   
 
+To have numbers returned as decimals pass in the string 'decimals' to the toTeX method
+
+```javascript             
+var LaTeX = nerdamer('x^2+2*(cos(x)+x*x)',{x:0.25}).toTeX('decimal');
+console.log(LaTeX);
+
+//result:
+//2 \cdot \mathrm{cos}\left(0.25\right)+0.1875
+```   
 
 Alternatively you can pass an object containing known values into evaluate method instead. The values passed in don't have to be number they can be another expression if needed.
 
