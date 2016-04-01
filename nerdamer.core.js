@@ -2573,7 +2573,7 @@ var nerdamer = (function(imports) {
                     valEQ = (v1 === v2 || h1 === h2 && !h1 === undefined || (PN && PNEQ));
 
                 //equal values, equal powers
-                if(valEQ && powEQ) { 
+                if(valEQ && powEQ && g1 ===  g2) { 
                     //make sure to convert N to something P can work with
                     if(PN) b = b.convert(P);//CL
 
