@@ -3221,25 +3221,25 @@ var nerdamer = (function(imports) {
 
                 if(decimal) {
                     var m = String(symbol.multiplier.toDecimal());
-                    if(m == '1') m = '';
+                    if(m == '1' && !decimal) m = '';
                     m_array = [m, ''];
                 }
                 else {
                     m_array = [symbol.multiplier.num, symbol.multiplier.den];
                 }
                     //get the value as a two part array
-                var v_array = this.value(symbol, invert),
+                var v_array = this.value(symbol, invert, option),
                     p;    
                 //make it all positive since we know whether to push the power to the numerator or denominator already.
                 if(invert) power.negate();
                 //the power is simple since it requires no additional formatting. We can get it to a
                 //string right away. pass in true to neglect unit powers
-                if(decimal)  {
-                    p = String(power.toDecimal());
+                if(decimal)  { 
+                    p = isSymbol(power) ? LaTeX.latex(power, option) : String(power.toDecimal());
                     if(p == '1') p = '';
                 }
                 //get the latex representation
-                else if(isSymbol(power)) p = this.latex(power, opt);
+                else if(isSymbol(power)) p = this.latex(power, option);
                 //get it as a fraction
                 else p = this.formatFrac(power, true);
                 //use this array to specify if the power is getting attached to the top or the bottom
@@ -3258,7 +3258,7 @@ var nerdamer = (function(imports) {
                 
         },
         //get the raw value of the symbol as an array
-        value: function(symbol, inverted) { 
+        value: function(symbol, inverted, option) { 
             var group = symbol.group,
                 previousGroup = symbol.previousGroup,
                 v = ['', ''],
@@ -3274,7 +3274,7 @@ var nerdamer = (function(imports) {
                     fname = symbol.fname;
                 //collect the arguments
                 for(var i=0; i<symbol.args.length; i++) {
-                    input.push(this.latex(symbol.args[i]));
+                    input.push(this.latex(symbol.args[i], option));
                 }
 
                 if(fname === SQRT) {
@@ -3294,7 +3294,7 @@ var nerdamer = (function(imports) {
             else if(symbol.isComposite()) { 
                 var symbols = [];
                 symbol.each(function(x) {
-                    symbols.push(LaTeX.latex(x));
+                    symbols.push(LaTeX.latex(x, option));
                 });
                 var value = symbols.join('+'); 
                 v[index] = symbol.isLinear() && symbol.multiplier.equals(1) ? value : this.brackets(value, 'parens');
@@ -3311,13 +3311,13 @@ var nerdamer = (function(imports) {
                     var isDenom = isNegative(x.power),
                         laTex;
                     if(isDenom) { 
-                        laTex = LaTeX.latex(x.invert());
+                        laTex = LaTeX.latex(x.invert(), option);
                         if(x.isComposite() && symbol.multiplier.den != 1 && Math.abs(x.power) == 1) 
                             laTex = LaTeX.brackets(laTex, 'parens');
                         denominator.push(laTex);
                     }
                     else {
-                        laTex = LaTeX.latex(x);
+                        laTex = LaTeX.latex(x, option);
                         if(x.isComposite() && symbol.multiplier.num != 1 && Math.abs(x.power) == 1) 
                             laTex = LaTeX.brackets(laTex, 'parens');
                         numerator.push(laTex);
@@ -3611,10 +3611,10 @@ var nerdamer = (function(imports) {
         toString: function() {
             return this.text();
         },
-        latex: function() {
+        latex: function(option) {
             var tex = [];
             for(var el in this.elements) {
-                tex.push(LaTeX.latex.call(LaTeX, this.elements[el]));
+                tex.push(LaTeX.latex.call(LaTeX, this.elements[el], option));
             }
             return '['+tex.join(', ')+']';
         }
@@ -3899,14 +3899,14 @@ var nerdamer = (function(imports) {
         text: function() {
             return 'matrix('+this.toString('')+')';
         },
-        latex: function() {
+        latex: function(option) {
             var cols = this.cols(), elements = this.elements; 
             return format('\\begin{vmatrix}{0}\\end{vmatrix}', function() {
                 var tex = []; 
                 for(var row in elements) {
                     var row_tex = [];
                     for(var i=0; i<cols; i++) {
-                        row_tex.push(LaTeX.latex.call(LaTeX, elements[row][i]));
+                        row_tex.push(LaTeX.latex.call(LaTeX, elements[row][i], option));
                     }
                     tex.push(row_tex.join(' & '));
                 }
@@ -4190,10 +4190,10 @@ var nerdamer = (function(imports) {
      * @param {Boolean} asLaTeX
      * @returns {Array}
      */
-    libExports.expressions = function( asObject, asLaTeX ) {
+    libExports.expressions = function( asObject, asLaTeX, option ) {
         var result = asObject ? {} : [];
         for(var i=0; i<EXPRESSIONS.length; i++) {
-            var eq = asLaTeX ? LaTeX.latex(EXPRESSIONS[i]) : text(EXPRESSIONS[i]);
+            var eq = asLaTeX ? LaTeX.latex(EXPRESSIONS[i], option) : text(EXPRESSIONS[i], option);
             asObject ? result[i+1] = eq : result.push(eq);
         }
         return result;
@@ -4288,9 +4288,9 @@ var nerdamer = (function(imports) {
         else {
             for (var v in VARS) {
                 if (output === 'latex') {
-                    variables[v] = VARS[v].latex();
+                    variables[v] = VARS[v].latex(option);
                 } else if (output === 'text') {
-                    variables[v] = VARS[v].text();
+                    variables[v] = VARS[v].text(option);
                 }
             }
         }
