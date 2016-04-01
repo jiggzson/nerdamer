@@ -7,9 +7,13 @@
   nerdamer(expression, subs, option, location)
 
 **version 0.6.x**
-- Switched multipliers to fractions. I hope to implement a BigInt library in the future
+- Switched multipliers to fractions. 
+- Implemented bigInt library (https://github.com/peterolson/BigInteger.js)
 - Deferred processing of numbers. Previously sqrt(2) was process right away but is now only processed when evaluate is called.
 - Preliminary support for hyperbolic functions in the core
 - e and pi are added as symbolic placeholders for PI and E
 - Better support for imaginary numbers
-- Added detection of Euler's identity
+- Get numbers as fractions when getting LaTeX
+- Get numbers as fractions when get text
+- Fixed numerous bugs
+
