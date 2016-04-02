@@ -2368,7 +2368,11 @@ var nerdamer = (function(imports) {
             var p = symbol.power,
                 m = symbol.multiplier,
                 pn = Number(p);
-        
+            //expand all the symbols
+            symbol.each(function(x) {
+                x = expand(x);
+            });
+            
             if(isInt(p) && pn > 0 && symbol.isComposite()) { 
                 //leave original untouched
                 symbol = symbol.clone().toLinear().toUnitMultiplier();
@@ -2390,24 +2394,31 @@ var nerdamer = (function(imports) {
                 result.each(function(x) {
                     x.multiplier = x.multiplier.multiply(m);
                 });
-                
+
                 return result;
             }
             else if(symbol.group === CB) { 
                 //check if the symbol has composites
-                var hascomposites = false;
+                var hascomposites = false, sp = symbol.power;
                 for(var x in symbol.symbols) {
-                    if(symbol.symbols[x].isComposite()) {
+                    var sub = symbol.symbols[x];
+                    if(sub.isComposite()) {
                         hascomposites = true;
                         break;
                     }
+                    sub.power = sub.power.multiply(sp);
                 }
+                symbol.toLinear();
+                
+                //I'm going to be super lazy here and take the easy way out. TODO: do this without re-parsing
+                symbol = _.parse(symbol.text());
                 
                 if(!hascomposites) return symbol; //nothing to do here
                 
                 var result = new Symbol(0);
                 var composites = [],
                     non_composites = new Symbol(symbol.multiplier);
+
                 //sort them out
                 symbol.each(function(x) { 
                     if(x.isComposite()) {
@@ -2447,12 +2458,12 @@ var nerdamer = (function(imports) {
                 var finalResult = new Symbol(0);
                 //put back the multiplier
                 result.each(function(x) { 
-                    finalResult = _.add(finalResult, _.multiply(non_composites, x));
+                    finalResult = _.add(finalResult, expand(_.multiply(non_composites, x)));
                 });
 
                 symbol = finalResult;
             }
-            
+
             return symbol;
         }
         //link this back to the parser
@@ -2576,7 +2587,7 @@ var nerdamer = (function(imports) {
                     var t = a; a = b; b = t;
                     g1 = a.group; g2 = b.group; ap = a.power.toString(); bp = b.power.toString();
                 }
-//console.log(a.text(), b.text(), g1, g2)
+
                 var powEQ = ap === bp,
                     v1 = a.value,
                     v2 = b.value,
@@ -2772,12 +2783,16 @@ var nerdamer = (function(imports) {
 
                 if(a.multiplier.equals(0) || b.multiplier.equals(0)) return new Symbol(0);
 
+                if(b.group > a.group && !(b.group === CP)) return this.multiply(b, a);
+                //correction for PL/CB dilemma
+                if(a.group === CB && b.group === PL && a.value === b.value) { 
+                    var t = a; a = b; b = t;//swap
+                }
+                
                 var g1 = a.group,
                     g2 = b.group,
                     bnum = b.multiplier.num,
                     bden = b.multiplier.den;
-
-                if(g2 > g1 && !(g2 === CP)) return this.multiply(b, a);
 
                 var v1 = a.value,
                     v2 = b.value,
@@ -2797,7 +2812,7 @@ var nerdamer = (function(imports) {
                     v1 = text(a, 'hash', EX);
                 }
 
-                if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P))) { 
+                if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P)) && !(g1 === PL && g2 === CB)) { 
                     var p1 = a.power,
                         p2 = b.power,
                         isSymbolP1 = isSymbol(p1),
@@ -5546,7 +5561,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
-//var x = nerdamer('(81*(x*y)^2+9*x*y)+(9*x*y)', undefined, ['expand']);
-var x = nerdamer('(9*y*x+1)^2', undefined, ['expand']);
-console.log(x.text())
