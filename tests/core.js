@@ -635,6 +635,10 @@ var cases = {
         expected: '-4',
         evaluated_value: -4
     },
+    '(81*(x*y)^2+9*x*y)+(9*x*y)': {
+        expected: '18*x*y+81*(x*y)^2',
+        evaluated_value: 4014.7569
+    },
     'sqrt((1/2*x)^(1/2))': {
         expected: '2^(-1/4)*x^(1/4)',
         evaluated_value: 1.0122722344289652
@@ -675,17 +679,53 @@ var cases = {
         expected: '-e',
         evaluated_value: -2.718281828459065
     },
+    'expand((9*y*x+1)^2)': {
+        expected: '1+18*x*y+81*x^2*y^2',
+        evaluated_value: 4015.7569
+    },
+    '(9*y*x+1)^3': {
+        expected: '(1+9*x*y)^3',
+        evaluated_value: 254478.51475299997
+    },
+    '(81*(x*y)^2+9*x*y)*(9*x*y)': {
+        expected: '9*(81*(x*y)^2+9*x*y)*x*y',
+        evaluated_value: 246510.370953
+    },
+    '2*((81*(x*y)^2+9*x*y))*(5*(9*x*y))': {
+        expected: '90*(81*(x*y)^2+9*x*y)*x*y',
+        evaluated_value: '2465103.70953'
+    },
+    'expand((9*y*x+1)^3)': {
+        expected: '1+243*x^2*y^2+27*x*y+729*x^3*y^3',
+        evaluated_value: '254478.51475299997'
+    },
+    'expand(x*(x+1))': {
+        expected: 'x+x^2',
+        evaluated_value: 6.51
+    },
+    'expand(x*(x+1)^5)': {
+        expected: '10*x^3+10*x^4+5*x^2+5*x^5+x+x^6',
+        evaluated_value: 601.212171
+    },
+    'expand((x*y)^x+(x*y)^2)': {
+        expected: '(x*y)^x+x^2*y^2',
+        evaluated_value: 106.3076174497575
+    },
+    'expand((3*x+4*y)^4)': {
+        expected: '256*y^4+432*x^3*y+768*x*y^3+81*x^4+864*x^2*y^2',
+        evaluated_value: 144590.0625
+    }
     
 };
 
-var report = test('Core', cases, function(expression, report, nerdamer) {
+var report = test('Core', cases, function(expression, report, nerdamer) { 
     var parsed = nerdamer(expression), result;
     result = parsed.toString();
     var passed = result === this.expected;
     if(!passed) {
-        report.write('(WARNING!)'); console.log(expression)
+        report.write('(WARNING!)'); 
         var evaluated_value = nerdamer(result).evaluate(values).text('decimals'),
-            second_test_passed = evaluated_value === this.evaluated_value;
+            second_test_passed = evaluated_value == this.evaluated_value;
         if(second_test_passed) report.write('Although '+expression+' evaluated correctly to '+evaluated_value+' ...');
         else {
             report.write(expression+' evaluated incorrectly to '+evaluated_value+'. Expected '+this.evaluated_value);
