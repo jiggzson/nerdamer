@@ -579,7 +579,7 @@ var nerdamer = (function(imports) {
             QGCD: function() {
                 var args = [].slice.call(arguments);
                 var a = args[0];
-                for(var i=0; i<args.length; i++) {
+                for(var i=1; i<args.length; i++) {
                     a = args[i].gcd(a);
                 }
                 return a;
@@ -1823,7 +1823,9 @@ var nerdamer = (function(imports) {
                 'abs'       : [abs , 1],
                 'invert'    : [invert, 1],
                 'transpose' : [transpose, 1],
-                'dot'       : [dot, 2]
+                'dot'       : [dot, 2],
+                'vecget'    : [vecget, 2],
+                'vecset'    : [vecset, 3]
             };
         
         var brackets = {}, //the storage container for the brackets
@@ -1898,7 +1900,7 @@ var nerdamer = (function(imports) {
             if(typeof params === 'object') params = [].slice.call(params);//ensure an array
             
             f.args = params;
-            f.fname = fn_name;
+            f.fname = fn_name === PARENTHESIS ? '' : fn_name;
             f.updateHash();
             return f;
         };
@@ -2363,7 +2365,6 @@ var nerdamer = (function(imports) {
         /**
          * Expands a symbol
          */
-        
         function expand(symbol) { 
             var p = symbol.power,
                 m = symbol.multiplier,
@@ -2466,6 +2467,16 @@ var nerdamer = (function(imports) {
 
             return symbol;
         }
+        
+        function vecget(vector, index) {
+            return vector.elements[index];
+        }
+        
+        function vecset(vector, index, value) {
+            vector.elements[index] = value;
+            return vector;
+        }
+        
         //link this back to the parser
         this.expand = expand;
         
@@ -3040,6 +3051,8 @@ var nerdamer = (function(imports) {
                 bIsSymbol = isSymbol(b);
             
             if(aIsSymbol && bIsSymbol) {
+                if(a.equals(0) && b.equals(0)) err('0^0 is undefined!');
+                
                 var bIsConstant = b.isConstant(),
                     aIsConstant = a.isConstant(), 
                     bIsInt = b.isInteger(),
@@ -3240,7 +3253,6 @@ var nerdamer = (function(imports) {
         //grab a list of supported functions but remove the excluded ones found in exclFN
         
         latex: function(symbol, option) { 
-            
             symbol = symbol.clone();
             var decimal = option === 'decimal',
                 power = symbol.power,
@@ -3329,10 +3341,16 @@ var nerdamer = (function(imports) {
                 }  
             }
             else if(symbol.isComposite()) { 
-                var symbols = [];
-                symbol.each(function(x) {
-                    symbols.push(LaTeX.latex(x, option));
-                });
+                var collected = symbol.collectSymbols().sort(
+                        group === CP || previousGroup === CP ? 
+                        function(a, b) { return a.group < b.group;}:
+                        function(a, b) { return a.power < b.power;}
+                    ),
+                    symbols = [],
+                    l = collected.length;
+                for(var i=0; i<l; i++) {
+                    symbols.push(LaTeX.latex(collected[i], option));
+                }
                 var value = symbols.join('+'); 
                 v[index] = symbol.isLinear() && symbol.multiplier.equals(1) ? value : this.brackets(value, 'parens');
             }
@@ -3357,7 +3375,7 @@ var nerdamer = (function(imports) {
                 //generate latex for each of them
                 symbol.each(function(x) { 
                     var isDenom = isNegative(x.power),
-                        laTex
+                        laTex;
                     
                     if(isDenom) { 
                         laTex = LaTeX.latex(x.invert(), option);
