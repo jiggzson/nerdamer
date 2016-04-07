@@ -3277,7 +3277,7 @@ var nerdamer = (function(imports) {
                     m_array = [symbol.multiplier.num, symbol.multiplier.den];
                 }
                     //get the value as a two part array
-                var v_array = this.value(symbol, invert, option),
+                var v_array = this.value(symbol, invert, option, negative),
                     p;    
                 //make it all positive since we know whether to push the power to the numerator or denominator already.
                 if(invert) power.negate();
@@ -3307,7 +3307,7 @@ var nerdamer = (function(imports) {
                 
         },
         //get the raw value of the symbol as an array
-        value: function(symbol, inverted, option) { 
+        value: function(symbol, inverted, option, negative) { 
             var group = symbol.group,
                 previousGroup = symbol.previousGroup,
                 v = ['', ''],
@@ -3352,7 +3352,8 @@ var nerdamer = (function(imports) {
                     symbols.push(LaTeX.latex(collected[i], option));
                 }
                 var value = symbols.join('+'); 
-                v[index] = symbol.isLinear() && symbol.multiplier.equals(1) ? value : this.brackets(value, 'parens');
+
+                v[index] = !(symbol.isLinear() && symbol.multiplier.equals(1)) || negative ? this.brackets(value, 'parens') : value;
             }
             else if(group === CB || previousGroup === EX) {
                 //this almost feels a little like cheating but I need to know if I should be wrapping the symbol
@@ -3394,10 +3395,10 @@ var nerdamer = (function(imports) {
                             if(symbol.multiplier.num != 1 && Math.abs(x.power) == 1) laTex = LaTeX.brackets(laTex, 'parens');
                             num_map.push(numerator.length);   //make a note of where the composite was found 
                         }
-                        
                         numerator.push(laTex);
                     }
                 });
+
                 //apply brackets
                 setBrackets(numerator, num_map, num_c);
                 v[0] = numerator.join(this.dot); //collapse the numerator into one string
@@ -3405,6 +3406,7 @@ var nerdamer = (function(imports) {
                 setBrackets(denominator, den_map, den_c);
                 v[1] = denominator.join(this.dot);
             }
+
             return v;
         },
         set: function(m, v, p, negative) { 
