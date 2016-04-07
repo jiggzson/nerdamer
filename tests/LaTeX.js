@@ -128,8 +128,12 @@ var cases = {
         decimal_TeX: '\\frac{x \\cdot \\left(x+1\\right)}{x^{2}+2 \\cdot x+1}'
     },
     'x^2+2*x+y^2+y+6': {
-        TeX: '\\frac{x \\cdot \\left(x+1\\right)}{x^{2}+2 \\cdot x+1}',
-        decimal_TeX: '\\frac{x \\cdot \\left(x+1\\right)}{x^{2}+2 \\cdot x+1}'
+        TeX: 'x^{2}+2 \\cdot x+y^{2}+y+6',
+        decimal_TeX: 'x^{2}+2 \\cdot x+y^{2}+y+6'
+    },
+    '(-1*(x-1))': {
+        TeX: '-\\left(x-1\\right)',
+        decimal_TeX: '-\\left(x-1\\right)'
     },
 };
 
