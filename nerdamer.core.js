@@ -913,12 +913,6 @@ var nerdamer = (function(imports) {
         toDecimal: function() {
             return this.symbol.toDecimal();
         },
-        /**
-         * Returns true if the expression is a monomial
-         */
-        isMonomial: function() {
-            return this.symbol.group === S;
-        },
         
         isFraction: function() {
             return isFraction(this.symbol);
