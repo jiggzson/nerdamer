@@ -1443,10 +1443,7 @@ var nerdamer = (function(imports) {
             else if(group === EX) { 
                 //1^x is just one so check and make sure
                 if(!(this.group === N && this.multiplier.equals(1))) {
-                    //don't override the previous group when EX is called again. Previous group is to let me know where the symbol
-                    //came from
-                    if(this.group !== EX) this.previousGroup = this.group;
-
+                    this.previousGroup = this.group;
                     if(this.group === N) { 
                         this.value = this.multiplier.num.toString();
                         this.toUnitMultiplier();
@@ -1454,8 +1451,7 @@ var nerdamer = (function(imports) {
                     //update the hash to reflect the accurate hash
                     else this.value = text(this, 'hash');
                     
-                    if(isInt(this.power)) this.group = this.previousGroup;
-                    else this.group = EX;
+                    this.group = EX;
                 }
             }
             else if(group === N) { 
