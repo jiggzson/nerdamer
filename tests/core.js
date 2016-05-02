@@ -10,6 +10,14 @@ var values = {
 
 /* CORE tests*/
 var cases = {
+    '0/0': {
+        expected: 'error',
+        evaluated_value: 'error'
+    },
+    '0^0': {
+        expected: 'error',
+        evaluated_value: 'error'
+    },
     '((((((1+1))))))': {
         expected: '2',
         evaluated_value: 2
@@ -683,6 +691,10 @@ var cases = {
         expected: '1+18*x*y+81*x^2*y^2',
         evaluated_value: 4015.7569
     },
+    'expand((x+5)*(x-3)-x^2)': {
+        expected: '-15+2*x',
+        evaluated_value: -10.8
+    },
     '(9*y*x+1)^3': {
         expected: '(1+9*x*y)^3',
         evaluated_value: 254478.51475299997
@@ -719,8 +731,15 @@ var cases = {
 };
 
 var report = test('Core', cases, function(expression, report, nerdamer) { 
-    var parsed = nerdamer(expression), result;
+    var parsed, result;
+    try {
+        parsed = nerdamer(expression);
+    }
+    catch(e) {
+        parsed = 'error';
+    }
     result = parsed.toString();
+    
     var passed = result === this.expected;
     if(!passed) {
         report.write('(WARNING!)'); 
