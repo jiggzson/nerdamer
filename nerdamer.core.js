@@ -2363,15 +2363,18 @@ var nerdamer = (function(imports) {
             var p = symbol.power,
                 m = symbol.multiplier,
                 pn = Number(p);
+            
             //expand all the symbols
-            symbol.each(function(x) {
-                x = expand(x);
+            symbol.each(function(x, y) {
+                this.symbols[y] = expand(x);
             });
             
-            if(isInt(p) && pn > 0 && symbol.isComposite()) { 
+            symbol = _.parse(symbol);
+            
+            if(isInt(p) && pn > 0 && symbol.isComposite()) {
                 //leave original untouched
-                symbol = symbol.clone().toLinear().toUnitMultiplier();
-                
+                symbol = symbol.toLinear().toUnitMultiplier();
+
                 var result = symbol.clone();
                 for(var i=0; i<pn-1; i++) {
                     var t = new Symbol(0); 
