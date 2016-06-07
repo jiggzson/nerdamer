@@ -38,19 +38,20 @@
 		* if x < 0 then 0
 		*/
 		step: function(symbol) {
-			if (symbol.group === N)//Check if a number
-			{
-				if (symbol > 0)
-				{
-					return 1;
-				}
-				else if (symbol < 0)
-				{
-					return 0;
-				}
-				return 1/2;
-			}
-			return  _.symfunction("step",[symbol]);
+                    if (symbol.group === N)//Check if a number
+                    {
+                        var x = symbol.multiplier.toDecimal();
+                        if (x > 0)
+                        {
+                                return 1;
+                        }
+                        else if (x < 0)
+                        {
+                                return 0;
+                        }
+                        return 1/2;
+                    }
+                    return  _.symfunction("step",[symbol]);
 		},
 		/*
 		* Sign function
@@ -60,17 +61,19 @@
 		* if x < 0 then -1
 		*/
 		sign: function(symbol) {
+                    //Check if a number
 			if (symbol.group === N)//Check if a number
 			{
-				if (symbol > 0)
-				{
-					return 1;
-				}
-				else if (symbol < 0)
-				{
-					return -1;
-				}
-				return 0;
+                            var x = symbol.multiplier.toDecimal();
+                            if (x > 0)
+                            {
+                                    return 1;
+                            }
+                            else if (x < 0)
+                            {
+                                    return -1;
+                            }
+                            return 0;
 			}
 			return  _.symfunction("sign",[symbol]);
 		},
@@ -92,15 +95,16 @@
 		* otherwise sin(x)/x
 		*/
 		sinc: function(symbol) {
-			if (symbol.group === N)//Check if a number
-			{
-				if (symbol == 0)
-				{
-					return 1;
-				}
-				return Math.sin(symbol)/symbol;
-			}
-			return  _.symfunction("sinc",[symbol]);
+                    if (symbol.group === N)//Check if a number
+                    {
+                        var x = symbol.multiplier.toDecimal();
+                        if (x === 0)
+                        {
+                                return 1;
+                        }
+                        return Math.sin(symbol)/symbol;
+                    }
+                    return  _.symfunction("sinc",[symbol]);
 		},
 		/*
 		* Triangle function
