@@ -2404,7 +2404,12 @@ var nerdamer = (function(imports) {
                         hascomposites = true;
                         break;
                     }
-                    sub.power = sub.power.multiply(sp);
+                    
+                    if(isSymbol(sub.power) || isSymbol(sp)) {
+                        sub.power = _.multiply(sub.power, Symbol(sp));
+                        sub.group = EX;
+                    }
+                    else sub.power = sub.power.multiply(sp);
                 }
                 symbol.toLinear();
                 
@@ -2567,7 +2572,7 @@ var nerdamer = (function(imports) {
          * @param {Symbol} b
          * @returns {Symbol}
          */
-        this.add = function(a, b) { 
+        this.add = function(a, b) {  
             var aIsSymbol = isSymbol(a),
                 bIsSymbol = isSymbol(b);
             //we're dealing with two symbols
@@ -2625,7 +2630,12 @@ var nerdamer = (function(imports) {
                     }
                     else {
                         result = a;//CL
-                        result.multiplier = result.multiplier.add(b.multiplier);
+                        if(a.multiplier.isOne() && b.multiplier.isOne() && g1 === CP) {
+                            b.each(function(x) {
+                                result.attach(x);
+                            });
+                        }
+                        else result.multiplier = result.multiplier.add(b.multiplier);
                     }
                 }
                 //equal values uneven powers
