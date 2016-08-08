@@ -1772,13 +1772,13 @@ var nerdamer = (function(imports) {
                 E:  Math.E
             };
         //list all the supported operators
-        var operators = {
-                '^': new Operator('^', 'pow', 4, false, false),
-                '*': new Operator('*', 'multiply', 3, true, false),
-                '/': new Operator('/', 'divide', 3, true, false),
-                '+': new Operator('+', 'add', 2, true, true),
-                '-': new Operator('-', 'subtract', 2, true, true),
-                ',': new Operator(',', 'comma', 1, true, false)
+        var operators = this.operators = {
+                '^' : new Operator('^', 'pow', 4, false, false),
+                '*' : new Operator('*', 'multiply', 3, true, false),
+                '/' : new Operator('/', 'divide', 3, true, false),
+                '+' : new Operator('+', 'add', 2, true, true),
+                '-' : new Operator('-', 'subtract', 2, true, true),
+                ',' : new Operator(',', 'comma', 1, true, false)
             },
 
             // Supported functions.
@@ -1951,7 +1951,7 @@ var nerdamer = (function(imports) {
             }
             return retval;
         };
-        
+
         /**
          * This is the method that triggers the parsing of the string. It generates a parse tree but processes 
          * it right away. The operator functions are called when their respective operators are reached. For instance
@@ -2093,7 +2093,7 @@ var nerdamer = (function(imports) {
                 //collect the substitutions
                 for(var x in constants) subs[x] = new Symbol(constants[x]);
             }
-            
+
             for(curpos=0; curpos<len; curpos++) { 
                 var cur_char = expression_string.charAt(curpos);
                 var operator = operators[cur_char], //a possible operator
@@ -2104,6 +2104,19 @@ var nerdamer = (function(imports) {
                     //the token has to be from the last position up to the current position
                     var token = expression_string.substring(pos,curpos),
                         isSquareBracket = bracket === LEFT_SQUARE_BRACKET;
+                    
+                    // support for compound operators
+                    var next_char = expression_string.charAt(curpos + 1);
+                    var also_operator = operators[next_char];
+                    if(also_operator) {
+                        var combined = cur_char+next_char;
+                        var compound_operator = operators[combined];
+                        if(compound_operator) { 
+                            operator = compound_operator;
+                            curpos++;
+                        }
+                    }
+                    
                     if(bracket === LEFT_PAREN && token || isSquareBracket) {
                         //make sure you insert the variables
                         if(isSquareBracket && token) insert(token);
@@ -2115,6 +2128,7 @@ var nerdamer = (function(imports) {
                         last_opr_pos = curpos; 
                         continue;
                     }
+                    
                     //place the token on the output stack. 
                     //This may be empty if we're at a unary or bracket so skip those.
                     insert(token);
@@ -4099,6 +4113,7 @@ var nerdamer = (function(imports) {
     //This contains all the parts of nerdamer and enables nerdamer's internal functions
     //to be used.
     var C = {};
+    C.Operator = Operator;
     C.groups = Groups;
     C.Symbol = Symbol;
     C.Expression = Expression;
