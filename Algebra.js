@@ -1509,12 +1509,12 @@ if((typeof module) !== 'undefined') {
              * extra terms on both sides of the sign are generated. However due to the sign
              * the just end up canceling out.
              */
-            var divisor = b.collectSymbols(undefined, undefined, Symbol.LSORT); //remains constant throughout function
+            var divisor = b.collectSymbols(undefined, undefined, Symbol.LSORT, true); //remains constant throughout function
             var quotient = new Symbol(0);
             var remainder = new Symbol(0);
             /* check if symbol has denominator */
             
-            var dividend = a.collectSymbols(undefined, undefined, Symbol.LSORT);
+            var dividend = a.collectSymbols(undefined, undefined, Symbol.LSORT, true);
             var divisor_vars = [];
             var ndividend = a.clone();
             //cache the variables for the divisor. No need to keep fetching them
@@ -1591,11 +1591,10 @@ if((typeof module) !== 'undefined') {
                 for(var i=0; i<selected.length; i++) {
                     q_div = _.add(q_div, _.multiply(q.clone(), selected[i][0].clone()));
                 }
-
+                
                 ndividend = _.subtract(ndividend, q_div);
                 if(ndividend.group === core.groups.CB) dividend = [ndividend];
-                else dividend = ndividend.collectSymbols(undefined, undefined, Symbol.LSORT);
-                    
+                else dividend = ndividend.collectSymbols(undefined, undefined, Symbol.LSORT, true);  
             }
             
             //clean the output
@@ -1640,5 +1639,3 @@ if((typeof module) !== 'undefined') {
         }
     ]);
 })();
-
- //var x = nerdamer('divide(y*z+x*z+x^2*y^2+x^3*y+2*x, x+y)'); //wth? something went wrong
