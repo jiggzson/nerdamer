@@ -403,6 +403,9 @@ if((typeof module) !== 'undefined') {
         
         return c;
     };
+    Symbol.prototype.LSORT = function(a, b) {
+        return (a.length || 1) - (b.length || 1);
+    };
     /**
      * A debugging method to be stripped
      * @returns {String}
@@ -418,7 +421,7 @@ if((typeof module) !== 'undefined') {
     };
     var __ = core.Algebra = {
 
-        version: '1.3.1',
+        version: '1.3.2',
         init: (function() {})(),
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
@@ -1489,6 +1492,119 @@ if((typeof module) !== 'undefined') {
         gcd: function(a, b) { 
             a = new Polynomial(a); b = new Polynomial(b);
             return a.gcd(b).toSymbol();
+        },
+        /**
+         * Divides one expression by another
+         * @param {Symbol} a
+         * @param {Symbol} b
+         * @returns {Array}
+         */
+        divide: function(a, b) {
+            
+            /* imports */
+            var variables = core.Utils.variables;
+            var safety = 1000;
+            var iter = 0;
+            /*
+             * This function follows a similar principle as the Euclidian algorithm by 
+             * attempting to reduce one term during each iteration
+             * except that it doesn't care about the order. This presents some inefficiency as 
+             * extra terms on both sides of the sign are generated. However due to the sign
+             * the just end up canceling out.
+             */
+            var divisor = b.collectSymbols().sort(Symbol.LSORT); //remains constant throughout function
+            var quotient = new Symbol(0);
+            var remainder = new Symbol(0);
+            /* check if symbol has denominator */
+            
+            var dividend = a.collectSymbols().sort(Symbol.LSORT);
+            var divisor_vars = [];
+            var ndividend = a.clone();
+            //cache the variables for the divisor. No need to keep fetching them
+            for(var i=0; i<divisor.length; i++) {
+                divisor_vars[i] = variables(divisor[i]);
+            }
+            
+            while(!ndividend.equals(0)) {
+                //safety 
+                iter++;
+                if(iter > safety) {
+                    console.log('Max iter reached. Breaking! \n \n');
+                    break;
+                }
+                
+                var selected = [];
+                var seen = [];
+                //loop through the divisor variables and look for a match
+                for(var i=0; i<divisor_vars.length; i++) {
+                    var vars = divisor_vars[i],
+                        divisor_term = divisor[i];//store the diversor terms
+                    
+                    //loop through the variables and look for match
+                    for(var j=0; j<dividend.length; j++) {
+                        var dividend_term = dividend[j];
+                        var select_term = true;
+                        if(seen.indexOf(j) === -1) {
+                            var variable = vars[k];
+                            for(var k=0; k<vars.length; k++) {
+                                if(!dividend_term.contains(variable)) {                                   
+                                    select_term = false; //we need to know if this is a good term to use
+                                    break; //don't keep looking since this term doesn't satisfy
+                                }
+                                else {
+                                    //the second symbol might be of group PL
+                                    var p1 = (divisor_term.group === S ? divisor_term.power : divisor_term.symbols[variable].power).toString();
+                                    var p2;
+                                    //A very unfortunate side effect of how symbols are stored
+                                    if(dividend_term.group === PL) {
+                                        p2 = Math.max(core.Utils.keys(dividend_term.symbols));
+                                    }
+                                    else {
+                                        p2 = (dividend_term.group === S ? dividend_term.power : dividend_term.symbols[variable].power).toString();
+                                    }
+                                    if(p1 > p2) {
+                                        select_term = false;
+                                        break;
+                                    }
+                                };
+                            }
+                            if(select_term) { 
+                                seen.push(j);
+                                selected.push([divisor[i], dividend_term, i]);
+                                break; //we can move to the next set of variables
+                            }
+                        }   
+                    }
+                }
+                //grab a term to use for division. The idea is to knock off one term.
+                //the first one will do just fine
+                var sl = selected.length;
+                if(sl === 0) {
+                    //we're done 
+                    remainder = ndividend;
+//                    remainder = _.add(remainder, ndividend);
+                    break;
+                }
+                var first_div_term = selected[0];               
+                var q = _.divide(first_div_term[1].clone(), first_div_term[0].clone());
+                
+                if(sl < divisor.length) {
+                    //handle remainder
+                }
+                
+                quotient = _.add(quotient, q.clone());
+                var q_div = new Symbol(0);
+                for(var i=0; i<selected.length; i++) {
+                    q_div = _.add(q_div, _.multiply(q.clone(), selected[i][0].clone()));
+                }
+console.log(ndividend.toString(), '       ', q_div.toString(), '        ', selected.toString(), '     ', q.toString())
+                ndividend = _.subtract(ndividend, q_div);
+                dividend = ndividend.collectSymbols().sort(Symbol.LSORT);
+                    
+            }
+
+            return [quotient, remainder];
+
         }
     };
     
@@ -1510,6 +1626,14 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: -1,
             build: function() { return __.proots; }
+        },
+        {
+            name: 'divide',
+            visible: true,
+            numargs: 2,
+            build: function() { return __.divide; }
         }
     ]);
 })();
+
+// var x = nerdamer('divide(y*z+x*z+x^2*y^2+x^3*y+x^2, x+y)');
