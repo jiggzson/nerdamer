@@ -1645,13 +1645,13 @@ var nerdamer = (function(imports) {
          * function is called on every symbol contained within the object.
          * @returns {Array}
          */
-        collectSymbols: function(fn, opt) { 
+        collectSymbols: function(fn, opt, sort_fn) { 
             var collected = [];
             for(var x in this.symbols) {
                 var symbol = this.symbols[x];
                 collected.push( fn ? fn(symbol, opt) : symbol );
             }
-            return collected.sort();//sort hopefully gives us some sort of consistency
+            return collected.sort(sort_fn);//sort hopefully gives us some sort of consistency
         },
         /**
          * Returns the latex representation of the symbol
