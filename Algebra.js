@@ -1499,12 +1499,9 @@ if((typeof module) !== 'undefined') {
          * @param {Symbol} b
          * @returns {Array}
          */
-        divide: function(a, b) {
-            
+        divide: function(a, b) {         
             /* imports */
             var variables = core.Utils.variables;
-            var safety = 1000;
-            var iter = 0;
             /*
              * This function follows a similar principle as the Euclidian algorithm by 
              * attempting to reduce one term during each iteration
@@ -1512,12 +1509,12 @@ if((typeof module) !== 'undefined') {
              * extra terms on both sides of the sign are generated. However due to the sign
              * the just end up canceling out.
              */
-            var divisor = b.collectSymbols().sort(Symbol.LSORT); //remains constant throughout function
+            var divisor = b.collectSymbols(undefined, undefined, Symbol.LSORT); //remains constant throughout function
             var quotient = new Symbol(0);
             var remainder = new Symbol(0);
             /* check if symbol has denominator */
             
-            var dividend = a.collectSymbols().sort(Symbol.LSORT);
+            var dividend = a.collectSymbols(undefined, undefined, Symbol.LSORT);
             var divisor_vars = [];
             var ndividend = a.clone();
             //cache the variables for the divisor. No need to keep fetching them
@@ -1526,13 +1523,6 @@ if((typeof module) !== 'undefined') {
             }
             
             while(!ndividend.equals(0)) {
-                //safety 
-                iter++;
-                if(iter > safety) {
-                    console.log('Max iter reached. Breaking! \n \n');
-                    break;
-                }
-                
                 var selected = [];
                 var seen = [];
                 //loop through the divisor variables and look for a match
@@ -1581,30 +1571,45 @@ if((typeof module) !== 'undefined') {
                 var sl = selected.length;
                 if(sl === 0) {
                     //we're done 
-                    remainder = ndividend;
-//                    remainder = _.add(remainder, ndividend);
+                    remainder = _.add(remainder, ndividend);
                     break;
                 }
                 var first_div_term = selected[0];               
                 var q = _.divide(first_div_term[1].clone(), first_div_term[0].clone());
                 
                 if(sl < divisor.length) {
+                    var idx = first_div_term[2];
                     //handle remainder
+                    for(var i=0; i<divisor.length; i++) {
+                        if(i !== idx) {
+                            remainder = _.subtract(remainder, _.multiply(q.clone(), divisor[i].clone()));
+                        }
+                    }
                 }
-                
                 quotient = _.add(quotient, q.clone());
                 var q_div = new Symbol(0);
                 for(var i=0; i<selected.length; i++) {
                     q_div = _.add(q_div, _.multiply(q.clone(), selected[i][0].clone()));
                 }
-console.log(ndividend.toString(), '       ', q_div.toString(), '        ', selected.toString(), '     ', q.toString())
+
                 ndividend = _.subtract(ndividend, q_div);
-                dividend = ndividend.collectSymbols().sort(Symbol.LSORT);
+                if(ndividend.group === core.groups.CB) dividend = [ndividend];
+                else dividend = ndividend.collectSymbols(undefined, undefined, Symbol.LSORT);
                     
             }
-
+            
+            //clean the output
+            var constants = [];
+            quotient.each(function(x) { 
+                if(x.isConstant()) constants.push(x);
+            });
+            
+            for(var i=0; i<constants.length; i++) {
+                var c = constants[i], d = _.multiply(c, b.clone());
+                quotient = _.subtract(quotient, c.clone());
+                remainder = _.add(remainder, d);
+            }
             return [quotient, remainder];
-
         }
     };
     
@@ -1636,4 +1641,4 @@ console.log(ndividend.toString(), '       ', q_div.toString(), '        ', selec
     ]);
 })();
 
-// var x = nerdamer('divide(y*z+x*z+x^2*y^2+x^3*y+x^2, x+y)');
+ //var x = nerdamer('divide(y*z+x*z+x^2*y^2+x^3*y+2*x, x+y)'); //wth? something went wrong
