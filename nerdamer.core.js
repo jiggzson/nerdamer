@@ -907,7 +907,8 @@ var nerdamer = (function(imports) {
         },
         
         toString: function() {
-            return this.symbol.text();
+            if(isArray(this.symbol)) return '['+this.symbol.toString()+']'
+            return this.symbol.toString();
         },
         
         toDecimal: function() {
@@ -1645,11 +1646,14 @@ var nerdamer = (function(imports) {
          * function is called on every symbol contained within the object.
          * @returns {Array}
          */
-        collectSymbols: function(fn, opt, sort_fn) { 
+        collectSymbols: function(fn, opt, sort_fn, expand_symbol) { 
             var collected = [];
             for(var x in this.symbols) {
                 var symbol = this.symbols[x];
-                collected.push( fn ? fn(symbol, opt) : symbol );
+                if(expand_symbol && symbol.group === PL || x.group === CP) {
+                    collected = collected.concat(symbol.collectSymbols());
+                }
+                else collected.push( fn ? fn(symbol, opt) : symbol );
             }
             return collected.sort(sort_fn);//sort hopefully gives us some sort of consistency
         },
