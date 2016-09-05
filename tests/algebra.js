@@ -23,6 +23,7 @@ var test = function(header, test_cases, f, verbose) {
         if(verbose && result.passed) report.write(x+' passed with result '+result.contents);
         else if(!result.passed) {
             report.failed++;
+            report.write('\n(FAILED)');
             report.write(x+' did NOT pass. Expected '+test_cases[x].expected+' but received '+result.contents);
         }
     }
@@ -118,9 +119,78 @@ var test_cases = {
         params: [true],
         note: "Abs gets evaluated right way because it's redundant"
     },
+    'divide(x^2*y^3+b*y^2+3*a*x^2*y+3*a*b, y^2+3*a)': {
+        expected: '[b+x^2*y,0]'
+    },
+    'divide(x^2, x^3)': {
+        expected: '[0,x^2]'
+    },
+    'divide(cos(x^2)^2+2*cos(x^2)+1, cos(x^2)+1)': {
+        expected: '[1+cos(x^2),0]',
+        note: 'Division functions'
+    },
+    'divide(2*x^2+2*x+1, x+1)': {
+        expected: '[2*x,1]'
+    },
+    'divide(7*x,2*x)': {
+        expected: '[7/2,0]'
+    },
+    
+    'divide(7*b*z^2+14*y*z+14*a*x^2*z-b*t*z-2*t*y-2*a*t*x^2, 7*z-t)': {
+        expected: '[2*a*x^2+2*y+b*z,0]'
+    },
+    'divide(x^2+5, y-1)': {
+        expected: '[0,5+x^2]'
+    },
+    'divide(4*a*x^2*y^2+4*a*y^2+b*x^2+a*x^2+b+a, x^2+1)': {
+        expected: '[4*a*y^2+a+b,0]'
+    },
+//    'divide(4*a*x^2*y^2+4*a*y^2+b*x^2+a*x^2+b+a+u^6+1, x^2+1)': {
+//        expected: '[4*a*y^2+a+b,1+u^6]'
+//    },
+    'divide(15*x^9-25*x^7-35*x^6+6*x^5+3*x^4-10*x^3-19*x^2-7*x, 3*x^3-5*x-7)': {
+        expected: '[2*x^2+5*x^6+x,0]'
+    },
+    'divide(sin(x)^2*tan(x)-4*cos(x)*tan(x)+cos(x)*sin(x)^2-4*cos(x)^2, sin(x)^2-4*cos(x)^2)': {
+        expected: '[cos(x)+tan(x),-4*cos(x)*tan(x)-4*cos(x)^2+4*cos(x)^3+4*cos(x)^2*tan(x)]'
+    },
+    'divide(-5*y^2+16*a*y+5*x^4+14*a*x^2-3*a^2, 3*a-y+x^2)': {
+        expected: '[-a+5*x^2+5*y,0]'
+    },
+    'divide(y^2+2*x*y+x^2,x+y)': {
+        expected: '[x+y,0]'
+    },
+    'divide(x*y^2+x^2*y-y-x, x*y-1)': {
+        expected: '[x+y,0]'
+    },
+    'divide(7*x^6*z-a*x*z+28*a*x^6*y^3-4*a^2*x*y^3+7*b*x^6-a*b*x, 4*y^3*a+z+b)': {
+        expected: '[-a*x+7*x^6,0]'
+    },
+    'divide(x^2+5, cos(x)-1)': {
+        expected: '[0,5+x^2]'
+    },
+    'divide((1+z), t*x+7)': {
+        expected: '[0,1+z]'
+    },
+    'divide(-x^2*y-y+4*a*x^2+t+4*a+6*b, x^2+1)': {
+        expected: '[-y+4*a,6*b+t]'
+    },
+    'divide(15*x^9-25*x^7-35*x^6+6*x^5+3*x^4-10*x^3-19*x^2-7*x+y, 3*x^3-5*x-7)': {
+        expected: '[2*x^2+5*x^6+x,y]'
+    },
+    'divide(x^2+2*x+1+u, x+1)': {
+        expected: '[1+x,u]'
+    },
+    'divide(b*y*z+7*x^6*z-a*x*z-7*z+4*a*b*y^4+28*a*x^6*y^3-4*a^2*x*y^3-28*a*y^3+b^2*y+7*b*x^6-a*b*x-7*b, 4*y^3*a+z+b)': {
+        expected: '[-7-a*x+7*x^6+b*y,0]'
+    },
+    'divide(b*y*z-a*x*z+4*a*b*y^4-4*a^2*x*y^3+b^2*y-a*b*x, 4*y^3*a+z+b)': {
+        expected: '[-a*x+b*y,0]'
+    },
+    
 };
 
-
+console.time('elapsed');
 var report = test('Algebra', test_cases, function(expression, report) {
     var parsed = nerdamer(expression), result;
     if(this.method) {
@@ -132,5 +202,6 @@ var report = test('Algebra', test_cases, function(expression, report) {
         contents: result
     };
 }, true);
+console.timeEnd('elapsed');
 
 console.log(report.getReport());

@@ -63,7 +63,7 @@ var cases = {
         evaluated_value: -18.8 
     },
     '(x+1)+(1+x)': {
-        expected: '2*(1+x)',
+        expected: '2+2*x',
         evaluated_value: 6.2
     },
     '9+(x+1)-(1+x)': {
@@ -391,8 +391,8 @@ var cases = {
         evaluated_value: 1
     },
     'x^x*cos(x)*sin(x)/x': {
-        expected: '(x)^(-1+x)*cos(x)*sin(x)',
-        evaluated_value: -0.985635592498768 
+        expected: 'cos(x)*sin(x)*x^(-1+x)',
+        evaluated_value: -0.9856355924987209 
     },
     '(x+x^2)^x*x': {
         expected: '(x+x^2)^x*x',
@@ -439,7 +439,7 @@ var cases = {
         evaluated_value: 1
     },
     '2^y*2^y': {
-        expected: '(2)^(2*y)',
+        expected: '2^(2*y)',
         evaluated_value: 97.00586025666554
     },
     '2^x': {
@@ -595,7 +595,7 @@ var cases = {
         evaluated_value: '0.02339774318212161*(-1)^3.1'
     },
     '(x+1)^(z+1)*(1+x)^(1+z)': {
-        expected: '(1+x)^(2*(1+z))',
+        expected: '(1+x)^(2+2*z)',
         evaluated_value: 92.3521
     },
     '(x+1)^(z+1)*(1+x)^4': {
@@ -612,7 +612,7 @@ var cases = {
         evaluated_value: '0'
     },
     '(x+y)--(x+y)': {
-        expected: '2*(x+y)',
+        expected: '2*x+2*y',
         evaluated_value: '10.8'
     },
     '-z-(r+x)--(r+x)': {
@@ -687,6 +687,10 @@ var cases = {
         expected: '-e',
         evaluated_value: -2.718281828459065
     },
+    '((x)^(1/2)*x^(1/3))-x^(5/6)': {
+        expected: '0',
+        evaluated_value: 0
+    },
     'expand((9*y*x+1)^2)': {
         expected: '1+18*x*y+81*x^2*y^2',
         evaluated_value: 4015.7569
@@ -757,3 +761,5 @@ var report = test('Core', cases, function(expression, report, nerdamer) {
 }, settings.verbose || settings.core_verbose); 
 
 console.log(report.getReport());
+
+

@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.6.0',
+    var version = '0.6.1',
         _ = new Parser(), //nerdamer's parser
         //import bigInt
         bigInt = imports.bigInt,
@@ -1444,7 +1444,7 @@ var nerdamer = (function(imports) {
             else if(group === EX) { 
                 //1^x is just one so check and make sure
                 if(!(this.group === N && this.multiplier.equals(1))) {
-                    this.previousGroup = this.group;
+                    if(this.group !== EX) this.previousGroup = this.group;
                     if(this.group === N) { 
                         this.value = this.multiplier.num.toString();
                         this.toUnitMultiplier();
@@ -2829,7 +2829,15 @@ var nerdamer = (function(imports) {
                     g2 = b.group,
                     bnum = b.multiplier.num,
                     bden = b.multiplier.den;
-
+                
+//                if(g1 === FN && a.fname === SQRT && !b.isConstant() && a.args[0].value === b.value) {
+//                    //unwrap sqrt
+//                    console.log(a.text(), b.text())
+//                    a = a.args[0];
+//                    a.setPower(new Frac(0.5));
+//                    g1 = a.group;
+//                };
+                
                 var v1 = a.value,
                     v2 = b.value,
                     sign = new Frac(a.multiplier.lessThan(0) ? -1 : 1),
@@ -2847,6 +2855,7 @@ var nerdamer = (function(imports) {
                 if(g2 === EX && b.previousGroup === PL && g1 === PL) {
                     v1 = text(a, 'hash', EX);
                 }
+                
 
                 if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P)) && !(g1 === PL && g2 === CB)) { 
                     var p1 = a.power,
@@ -2881,7 +2890,8 @@ var nerdamer = (function(imports) {
                     result.multiplier = result.multiplier.multiply(b.multiplier);
                     
                 }
-                else if(g1 === CB && a.isLinear()){ 
+                else if(g1 === CB && a.isLinear()){
+                    if(g2 === CB) b.distributeExponent();
                     if(g2 === CB && b.isLinear()) { 
                         b.each(function(x) {
                             result = result.combine(x);
@@ -2984,6 +2994,7 @@ var nerdamer = (function(imports) {
                         }
                     }
                 }
+
                 return b;
             }
         };
@@ -5607,3 +5618,4 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
+
