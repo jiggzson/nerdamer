@@ -2829,14 +2829,13 @@ var nerdamer = (function(imports) {
                     g2 = b.group,
                     bnum = b.multiplier.num,
                     bden = b.multiplier.den;
-                
-//                if(g1 === FN && a.fname === SQRT && !b.isConstant() && a.args[0].value === b.value) {
-//                    //unwrap sqrt
-//                    console.log(a.text(), b.text())
-//                    a = a.args[0];
-//                    a.setPower(new Frac(0.5));
-//                    g1 = a.group;
-//                };
+
+                if(g1 === FN && a.fname === SQRT && !b.isConstant() && a.args[0].value === b.value) {
+                    //unwrap sqrt
+                    a = a.args[0].clone();
+                    a.setPower(new Frac(0.5));
+                    g1 = a.group;
+                };
                 
                 var v1 = a.value,
                     v2 = b.value,
@@ -5618,4 +5617,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
