@@ -3108,7 +3108,14 @@ var nerdamer = (function(imports) {
                 }
 
                 if(aIsConstant && bIsConstant && Settings.PARSE2NUMBER) {
-                    result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.valueOf()));
+                    var base = a.multiplier.toDecimal(), e = b.multiplier.toDecimal();
+                    var sign = new Symbol(1);
+                    if(b.multiplier.den.isOdd) {
+                        var abs_base = Math.abs(base);
+                        sign = new Symbol(base/abs_base);
+                        base = abs_base;
+                    }
+                    result = _.multiply(new Symbol(Math.pow(base, e)), sign);
                 }
                 else if(bIsInt && !m.equals(1)) { 
                     var p = b.multiplier.toDecimal(),
@@ -3137,7 +3144,7 @@ var nerdamer = (function(imports) {
                     result = _.multiply(result, testPow(_.multiply(num, den)));
 
                     //retain the absolute value
-                    if(bIsConstant) {
+                    if(bIsConstant) { 
                         var evenr = even(b.multiplier.den),
                             evenp = even(a.power),
                             n = result.power.toDecimal(),
