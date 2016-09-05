@@ -28,7 +28,7 @@ var test = require('./test.js'),
         expected: '4*x'
     },
     'diff(sqrt(x)*x,x)': {
-        expected: '(3/2)*sqrt(x)'
+        expected: '(3/2)*x^(1/2)'
     },
     'diff(sqrt(x)-1/sqrt(x),x)': {
         expected: '(1/2)*x^(-1/2)+(1/2)*x^(-3/2)'
@@ -37,7 +37,7 @@ var test = require('./test.js'),
         expected: '(2/3)*x+6*x^(-3)'
     },
     'diff(sqrt(x)*(x^2+1),x)': {
-        expected: '(1/2)*(1+x^2)*x^(-1/2)+2*sqrt(x)*x'
+        expected: '(1/2)*(1+x^2)*x^(-1/2)+2*x^(3/2)'
     },
     'diff(e^x/(e^x-1),x)': {
         expected: '(-1+e^x)^(-1)*e^x-(-1+e^x)^(-2)*e^(2*x)'
