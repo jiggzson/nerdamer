@@ -644,7 +644,7 @@ var cases = {
         evaluated_value: -4
     },
     '(81*(x*y)^2+9*x*y)+(9*x*y)': {
-        expected: '18*x*y+81*(x*y)^2',
+        expected: '18*x*y+81*x^2*y^2',
         evaluated_value: 4014.7569
     },
     'sqrt((1/2*x)^(1/2))': {
@@ -704,11 +704,11 @@ var cases = {
         evaluated_value: 254478.51475299997
     },
     '(81*(x*y)^2+9*x*y)*(9*x*y)': {
-        expected: '9*(81*(x*y)^2+9*x*y)*x*y',
+        expected: '9*(81*x^2*y^2+9*x*y)*x*y',
         evaluated_value: 246510.370953
     },
     '2*((81*(x*y)^2+9*x*y))*(5*(9*x*y))': {
-        expected: '90*(81*(x*y)^2+9*x*y)*x*y',
+        expected: '90*(81*x^2*y^2+9*x*y)*x*y',
         evaluated_value: '2465103.70953'
     },
     'expand((9*y*x+1)^3)': {
@@ -761,5 +761,4 @@ var report = test('Core', cases, function(expression, report, nerdamer) {
 }, settings.verbose || settings.core_verbose); 
 
 console.log(report.getReport());
-
 
