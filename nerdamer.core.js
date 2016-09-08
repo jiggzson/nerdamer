@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.6.2',
+    var version = '0.6.3',
         _ = new Parser(), //nerdamer's parser
         //import bigInt
         bigInt = imports.bigInt,
@@ -3422,8 +3422,10 @@ var nerdamer = (function(imports) {
                     if(counter > 1 && map.length > 0) {
                         var l = map.length;
                         for(var i=0; i<l; i++) {
-                            var idx = map[i];
-                            container[idx] = LaTeX.brackets(container[idx], 'parens');
+                            var idx = map[i], item = container[idx];
+                            if(!(/^\\left\(.+\\right\)\^\{.+\}$/g.test(item) || /^\\left\(.+\\right\)$/g.test(item))) {
+                                container[idx] = LaTeX.brackets(item, 'parens');
+                            }
                         }
                     }  
                     return container;
@@ -3460,12 +3462,11 @@ var nerdamer = (function(imports) {
 
                 setBrackets(denominator, den_map, den_c);
                 v[1] = denominator.join(this.dot); 
- 
             }
 
             return v;
         },
-        set: function(m, v, p, combine_power) {
+        set: function(m, v, p, combine_power) { 
             var isBracketed = function(v) {
                 return /^\\left\(.+\\right\)$/.test(v);
             };
@@ -3490,6 +3491,7 @@ var nerdamer = (function(imports) {
             if(md == 1) md = ''; 
             //prepare the top portion but check that it's not already bracketed. If it is then leave out the cdot
             var top = this.join(mn, vn, !isBracketed(vn) ? this.dot : '');
+
             //prepare the bottom portion but check that it's not already bracketed. If it is then leave out the cdot
             var bottom = this.join(md, vd, !isBracketed(vd) ? this.dot : '');
             //format the power if it exists
