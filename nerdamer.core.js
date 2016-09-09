@@ -1173,7 +1173,7 @@ var nerdamer = (function(imports) {
             return true;
         },
         isPi: function() {
-            return this.value === 'pi';
+            return this.group === S && this.value === 'pi';
         },
         isE: function() {
             return this.value === 'e';
@@ -2388,7 +2388,7 @@ var nerdamer = (function(imports) {
                     if(d == 2) retval = new Symbol(0);
                     else if(d == 3) retval = _.parse('1/2');
                     else if(d == 4) retval = _.parse('1/sqrt(2)');
-                    else if(d == 6) retval = new Symbol('sqrt(3)/2');
+                    else if(d == 6) retval = _.parse('sqrt(3)/2');
                     else retval = _.symfunction('cos', [symbol]);
                     
                     if(even(n)) retval.negate();
@@ -2396,7 +2396,7 @@ var nerdamer = (function(imports) {
             }
            
             if(!retval) retval = _.symfunction('cos', [symbol]);
-            
+
             return retval;
         }
         
@@ -2464,6 +2464,7 @@ var nerdamer = (function(imports) {
         
         /**
          * Expands a symbol
+         * @param symbol
          */
         function expand(symbol) { 
             var p = symbol.power,
@@ -3449,6 +3450,44 @@ var nerdamer = (function(imports) {
             }
                 
         },
+        //greek mapping
+        greek: {
+            alpha:      '\\alpha',
+            beta:       '\\beta',
+            gamma:      '\\gamma',
+            delta:      '\\delta',
+            epsilon:    '\\epsilon',
+            zeta:       '\\zeta',
+            eta:        '\\eta',
+            theta:      '\\theta',
+            iota:       '\\iota',
+            kappa:      '\\kappa',
+            lambda:     '\\lambda',
+            mu:         '\\mu',
+            nu:         '\\nu',
+            xi:         '\\xi',
+            omnikron:   '\\omnikron',
+            pi:         '\\pi',
+            rho:        '\\rho',
+            sigma:      '\\sigma',
+            tau:        '\\tau',
+            upsilon:    '\\upsilon',
+            phi:        '\\phi',
+            chi:        '\\chi',
+            psi:        '\\psi',
+            omega:      '\\omega',
+            Gamma:      '\\Gamma',
+            Delta:      '\\Delta',
+            Epsilon:    '\\Epsilon',
+            Theta:      '\\Theta',
+            Lambda:     '\\Lambda',
+            Xi:         '\\Xi',
+            Pi:         '\\Pi',
+            Sigma:      '\\Sigma',
+            Phi:        '\\Phi',
+            Psi:        '\\Psi',
+            Omega:      '\\Omega'
+        },
         //get the raw value of the symbol as an array
         value: function(symbol, inverted, option, negative) { 
             var group = symbol.group,
@@ -3458,6 +3497,8 @@ var nerdamer = (function(imports) {
             /*if(group === N) //do nothing since we want to return top & bottom blank; */
             if(group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) { 
                 var value = symbol.value;
+                var greek = this.greek[value];
+                if(greek) value = greek;
                 v[index] = value;
             }
             else if(group === FN || previousGroup === FN) { 
