@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.6.3',
+    var version = '0.6.4',
         _ = new Parser(), //nerdamer's parser
         //import bigInt
         bigInt = imports.bigInt,
@@ -1788,9 +1788,9 @@ var nerdamer = (function(imports) {
             // Supported functions.
             // Format: function_name: [mapped_function, number_of_parameters]
             functions = this.functions = {
-                'cos'       : [ , 1],
-                'sin'       : [ , 1],
-                'tan'       : [ , 1],
+                'cos'       : [ cos, 1],
+                'sin'       : [ sin, 1],
+                'tan'       : [ cos, 1],
                 'sec'       : [ , 1],
                 'csc'       : [ , 1],
                 'cot'       : [ , 1],
@@ -2371,6 +2371,94 @@ var nerdamer = (function(imports) {
                 if(s) retval = _.multiply(s, retval);
 
             }
+            return retval;
+        }
+        
+        function cos(symbol) {
+            var retval, 
+                m = symbol.multiplier.abs();
+            symbol.multiplier = m;
+            
+            if(symbol.isPi() && symbol.isLinear()) { 
+                if(isInt(m)) {
+                    retval  = new Symbol(even(m) ? -1 : 1);
+                } 
+                else {
+                    var n = m.num, d = m.den;
+                    if(d == 2) retval = new Symbol(0);
+                    else if(d == 3) retval = _.parse('1/2');
+                    else if(d == 4) retval = _.parse('1/sqrt(2)');
+                    else if(d == 6) retval = new Symbol('sqrt(3)/2');
+                    else retval = _.symfunction('cos', [symbol]);
+                    
+                    if(even(n)) retval.negate();
+                }
+            }
+           
+            if(!retval) retval = _.symfunction('cos', [symbol]);
+            
+            return retval;
+        }
+        
+        function sin(symbol) {
+            var retval, 
+                sign = Math.sign(symbol.multiplier),
+                m = symbol.multiplier.abs();
+
+            symbol.multiplier = m;
+            
+            if(symbol.isPi() && symbol.isLinear()) { 
+                if(isInt(m)) {
+                    retval  = new Symbol(0);
+                } 
+                else {
+                    var n = m.num, d = m.den;
+                    if(d == 2) retval = new Symbol(1);
+                    else if(d == 3) retval = _.parse('sqrt(3)/2');
+                    else if(d == 4) retval = _.parse('1/sqrt(2)');
+                    else if(d == 6) retval = _.parse('1/2');
+                    else retval = _.symfunction('sin', [symbol]);
+                }
+            }
+           
+            if(!retval) retval = _.symfunction('sin', [symbol]);
+            
+            if(sign < 0) retval.negate();
+            
+            return retval;
+        }
+        
+        function tan(symbol) {
+            var retval, 
+                m = symbol.multiplier;
+
+            symbol.multiplier = m;
+            
+            if(symbol.isPi() && symbol.isLinear()) { 
+                if(isInt(m)) {
+                    retval  = new Symbol(0);
+                } 
+                else {
+                    var n = m.num, d = m.den;
+                    if(d == 2) err('tan is undefined for pi/2');
+                    else if(d == 3) {
+                        retval = _.parse('sqrt(3)');
+                        if(n%3 == 2) retval.negate();
+                    }
+                    else if(d == 4) {
+                        retval = new Symbol(1);
+                        if((n+1)%4 == 0) retval.negate();
+                    }
+                    else if(d == 6) {
+                        retval = _.parse('sqrt(3)').negate();
+                        if(n%3 == 2) retval.negate();
+                    }
+                    else retval = _.symfunction('tan', [symbol]);
+                }
+            }
+           
+            if(!retval) retval = _.symfunction('tan', [symbol]);
+            
             return retval;
         }
         
