@@ -4,11 +4,12 @@
  * Email : martin.r.donk@gmail.com
  * Source : https://github.com/jiggzson/nerdamer
  */
+//better accuracy
 
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.6.3',
+    var version = '0.6.4',
         _ = new Parser(), //nerdamer's parser
         //import bigInt
         bigInt = imports.bigInt,
@@ -1173,7 +1174,7 @@ var nerdamer = (function(imports) {
             return true;
         },
         isPi: function() {
-            return this.value === 'pi';
+            return this.group === S && this.value === 'pi';
         },
         isE: function() {
             return this.value === 'e';
@@ -2374,8 +2375,107 @@ var nerdamer = (function(imports) {
             return retval;
         }
         
+        function cos(symbol) {
+            if(Settings.PARSE2NUMBER && symbol.isConstant()) {
+                return new Symbol(Math.cos(symbol.valueOf()));
+            }
+            
+            var retval, 
+                m = symbol.multiplier.abs();
+            symbol.multiplier = m;
+
+            if(symbol.isPi() && symbol.isLinear()) { 
+                if(isInt(m)) {
+                    retval  = new Symbol(even(m) ? -1 : 1);
+                } 
+                else {
+                    var n = m.num, d = m.den;
+                    if(d == 2) retval = new Symbol(0);
+                    else if(d == 3) retval = _.parse('1/2');
+                    else if(d == 4) retval = _.parse('1/sqrt(2)');
+                    else if(d == 6) retval = _.parse('sqrt(3)/2');
+                    else retval = _.symfunction('cos', [symbol]);
+                    
+                    if(even(n)) retval.negate();
+                }
+            }
+           
+            if(!retval) retval = _.symfunction('cos', [symbol]);
+
+            return retval;
+        }
+        
+        function sin(symbol) {
+            if(Settings.PARSE2NUMBER && symbol.isConstant()) {
+                return new Symbol(Math.sin(symbol.valueOf()));
+            }
+            var retval, 
+                sign = Math.sign(symbol.multiplier),
+                m = symbol.multiplier.abs();
+
+            symbol.multiplier = m;
+            
+            if(symbol.isPi() && symbol.isLinear()) { 
+                if(isInt(m)) {
+                    retval  = new Symbol(0);
+                } 
+                else {
+                    var n = m.num, d = m.den;
+                    if(d == 2) retval = new Symbol(1);
+                    else if(d == 3) retval = _.parse('sqrt(3)/2');
+                    else if(d == 4) retval = _.parse('1/sqrt(2)');
+                    else if(d == 6) retval = _.parse('1/2');
+                    else retval = _.symfunction('sin', [symbol]);
+                }
+            }
+           
+            if(!retval) retval = _.symfunction('sin', [symbol]);
+            
+            if(sign < 0) retval.negate();
+            
+            return retval;
+        }
+        
+        function tan(symbol) {
+            if(Settings.PARSE2NUMBER && symbol.isConstant()) {
+                return new Symbol(Math.sin(symbol.valueOf()));
+            }
+            var retval, 
+                m = symbol.multiplier;
+
+            symbol.multiplier = m;
+            
+            if(symbol.isPi() && symbol.isLinear()) { 
+                if(isInt(m)) {
+                    retval  = new Symbol(0);
+                } 
+                else {
+                    var n = m.num, d = m.den;
+                    if(d == 2) err('tan is undefined for pi/2');
+                    else if(d == 3) {
+                        retval = _.parse('sqrt(3)');
+                        if(n%3 == 2) retval.negate();
+                    }
+                    else if(d == 4) {
+                        retval = new Symbol(1);
+                        if((n+1)%4 == 0) retval.negate();
+                    }
+                    else if(d == 6) {
+                        retval = _.parse('sqrt(3)').negate();
+                        if(n%3 == 2) retval.negate();
+                    }
+                    else retval = _.symfunction('tan', [symbol]);
+                }
+            }
+           
+            if(!retval) retval = _.symfunction('tan', [symbol]);
+            
+            return retval;
+        }
+        
         /**
          * Expands a symbol
+         * @param symbol
          */
         function expand(symbol) { 
             var p = symbol.power,
@@ -3115,12 +3215,16 @@ var nerdamer = (function(imports) {
 
                 if(aIsConstant && bIsConstant && Settings.PARSE2NUMBER) {
                     var base = a.multiplier.toDecimal(), e = b.multiplier.toDecimal();
+
                     var sign = new Symbol(1);
-                    if(b.multiplier.den.isOdd) {
+                    if(b.multiplier.den.isOdd()) {
                         var abs_base = Math.abs(base);
                         sign = new Symbol(base/abs_base);
                         base = abs_base;
                     }
+                    
+                    if(even(e)) sign = new Symbol(1);
+                    
                     result = _.multiply(new Symbol(Math.pow(base, e)), sign);
                 }
                 else if(bIsInt && !m.equals(1)) { 
@@ -3270,7 +3374,7 @@ var nerdamer = (function(imports) {
         fullConversion: function( dec ) {
             var done = false;
             //you can adjust the epsilon to a larger number if you don't need very high precision
-            var n1 = 0, d1 = 1, n2 = 1, d2 = 0, n = 0, q = dec, epsilon = 1e-13;
+            var n1 = 0, d1 = 1, n2 = 1, d2 = 0, n = 0, q = dec, epsilon = 1e-16;
             while(!done) {
                 n++;
                 if( n > 10000 ){
@@ -3361,6 +3465,44 @@ var nerdamer = (function(imports) {
             }
                 
         },
+        //greek mapping
+        greek: {
+            alpha:      '\\alpha',
+            beta:       '\\beta',
+            gamma:      '\\gamma',
+            delta:      '\\delta',
+            epsilon:    '\\epsilon',
+            zeta:       '\\zeta',
+            eta:        '\\eta',
+            theta:      '\\theta',
+            iota:       '\\iota',
+            kappa:      '\\kappa',
+            lambda:     '\\lambda',
+            mu:         '\\mu',
+            nu:         '\\nu',
+            xi:         '\\xi',
+            omnikron:   '\\omnikron',
+            pi:         '\\pi',
+            rho:        '\\rho',
+            sigma:      '\\sigma',
+            tau:        '\\tau',
+            upsilon:    '\\upsilon',
+            phi:        '\\phi',
+            chi:        '\\chi',
+            psi:        '\\psi',
+            omega:      '\\omega',
+            Gamma:      '\\Gamma',
+            Delta:      '\\Delta',
+            Epsilon:    '\\Epsilon',
+            Theta:      '\\Theta',
+            Lambda:     '\\Lambda',
+            Xi:         '\\Xi',
+            Pi:         '\\Pi',
+            Sigma:      '\\Sigma',
+            Phi:        '\\Phi',
+            Psi:        '\\Psi',
+            Omega:      '\\Omega'
+        },
         //get the raw value of the symbol as an array
         value: function(symbol, inverted, option, negative) { 
             var group = symbol.group,
@@ -3370,6 +3512,8 @@ var nerdamer = (function(imports) {
             /*if(group === N) //do nothing since we want to return top & bottom blank; */
             if(group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) { 
                 var value = symbol.value;
+                var greek = this.greek[value];
+                if(greek) value = greek;
                 v[index] = value;
             }
             else if(group === FN || previousGroup === FN) { 
