@@ -459,7 +459,7 @@ if((typeof module) !== 'undefined') {
     };
     var __ = core.Algebra = {
 
-        version: '1.3.2',
+        version: '1.3.3',
         init: (function() {})(),
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
@@ -1550,7 +1550,7 @@ if((typeof module) !== 'undefined') {
          * @param {Symbol} symbol2
          * @returns {Array}
          */
-        divide: function(symbol1, symbol2) {     
+        div: function(symbol1, symbol2) {     
             /*
              * This function follows a similar principle as the Euclidian algorithm by 
              * attempting to reduce one term during each iteration
@@ -1700,6 +1700,11 @@ if((typeof module) !== 'undefined') {
             result[1] = _.parse(result[1].text(), subs);
                 
             return result;
+        },
+        divide: function(symbol1, symbol2) {
+            var result = __.div(symbol1, symbol2);
+            var remainder = _.divide(result[1], symbol2);
+            return _.add(result[0], remainder);
         }
     };
     
@@ -1730,4 +1735,3 @@ if((typeof module) !== 'undefined') {
         }
     ]);
 })();
-
