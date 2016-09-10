@@ -4,6 +4,7 @@
  * Email : martin.r.donk@gmail.com
  * Source : https://github.com/jiggzson/nerdamer
  */
+//better accuracy
 
 var nerdamer = (function(imports) { 
     "use strict";
@@ -1788,9 +1789,9 @@ var nerdamer = (function(imports) {
             // Supported functions.
             // Format: function_name: [mapped_function, number_of_parameters]
             functions = this.functions = {
-                'cos'       : [ cos, 1],
-                'sin'       : [ sin, 1],
-                'tan'       : [ cos, 1],
+                'cos'       : [ , 1],
+                'sin'       : [ , 1],
+                'tan'       : [ , 1],
                 'sec'       : [ , 1],
                 'csc'       : [ , 1],
                 'cot'       : [ , 1],
@@ -2375,10 +2376,14 @@ var nerdamer = (function(imports) {
         }
         
         function cos(symbol) {
+            if(Settings.PARSE2NUMBER && symbol.isConstant()) {
+                return new Symbol(Math.cos(symbol.valueOf()));
+            }
+            
             var retval, 
                 m = symbol.multiplier.abs();
             symbol.multiplier = m;
-            
+
             if(symbol.isPi() && symbol.isLinear()) { 
                 if(isInt(m)) {
                     retval  = new Symbol(even(m) ? -1 : 1);
@@ -2401,6 +2406,9 @@ var nerdamer = (function(imports) {
         }
         
         function sin(symbol) {
+            if(Settings.PARSE2NUMBER && symbol.isConstant()) {
+                return new Symbol(Math.sin(symbol.valueOf()));
+            }
             var retval, 
                 sign = Math.sign(symbol.multiplier),
                 m = symbol.multiplier.abs();
@@ -2429,6 +2437,9 @@ var nerdamer = (function(imports) {
         }
         
         function tan(symbol) {
+            if(Settings.PARSE2NUMBER && symbol.isConstant()) {
+                return new Symbol(Math.sin(symbol.valueOf()));
+            }
             var retval, 
                 m = symbol.multiplier;
 
@@ -3204,12 +3215,16 @@ var nerdamer = (function(imports) {
 
                 if(aIsConstant && bIsConstant && Settings.PARSE2NUMBER) {
                     var base = a.multiplier.toDecimal(), e = b.multiplier.toDecimal();
+
                     var sign = new Symbol(1);
-                    if(b.multiplier.den.isOdd) {
+                    if(b.multiplier.den.isOdd()) {
                         var abs_base = Math.abs(base);
                         sign = new Symbol(base/abs_base);
                         base = abs_base;
                     }
+                    
+                    if(even(e)) sign = new Symbol(1);
+                    
                     result = _.multiply(new Symbol(Math.pow(base, e)), sign);
                 }
                 else if(bIsInt && !m.equals(1)) { 
@@ -3359,7 +3374,7 @@ var nerdamer = (function(imports) {
         fullConversion: function( dec ) {
             var done = false;
             //you can adjust the epsilon to a larger number if you don't need very high precision
-            var n1 = 0, d1 = 1, n2 = 1, d2 = 0, n = 0, q = dec, epsilon = 1e-13;
+            var n1 = 0, d1 = 1, n2 = 1, d2 = 0, n = 0, q = dec, epsilon = 1e-16;
             while(!done) {
                 n++;
                 if( n > 10000 ){
