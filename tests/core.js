@@ -659,6 +659,134 @@ var cases = {
         expected: 'sqrt(4+x)',
         evaluated_value: 2.4698178070456565
     },
+    'cos(pi)': {
+        expected: '-1',
+        evaluated_value: -1
+    },
+    'cos(x)': {
+        expected: 'cos(x)',
+        evaluated_value: -0.5048461045998576
+    },
+    'cos(2*pi)': {
+        expected: '1',
+        evaluated_value: 1
+    },
+    'cos(2*pi/3)': {
+        expected: '-1/2',
+        evaluated_value: -0.5
+    },
+    'cos(3*pi/4)': {
+        expected: '-sqrt(2)^(-1)',
+        evaluated_value: -0.7071067811865475
+    },
+    'sin(x)': {
+        expected: 'sin(x)',
+        evaluated_value: 0.8632093666488737
+    },
+    'sin(pi)': {
+        expected: '0',
+        evaluated_value: 0
+    },
+    'sin(pi/2)': {
+        expected: '1',
+        evaluated_value: 1
+    },
+    'sin(-pi/2)': {
+        expected: '-1',
+        evaluated_value: -1
+    },
+    'sin(3*pi/4)': {
+        expected: 'sqrt(2)^(-1)',
+        evaluated_value: 0.7071067811865475
+    },
+    'tan(x)': {
+        expected: 'tan(x)',
+        evaluated_value: -1.7098465429045073
+    },
+    'tan(3*pi/4)': {
+        expected: '-1',
+        evaluated_value: -1
+    },
+    'tan(2*pi/3)': {
+        expected: '-sqrt(3)',
+        evaluated_value: -1.7320508075688772
+    },
+    'tan(4*pi/3)': {
+        expected: 'sqrt(3)',
+        evaluated_value: 1.7320508075688772
+    },
+    'tan(pi/2)': {
+        expected: 'error',
+        evaluated_value: 'error'
+    },
+    'tan(pi/3)': {
+        expected: 'sqrt(3)',
+        evaluated_value: 1.7320508075688772
+    },
+    'tan(pi)': {
+        expected: '0',
+        evaluated_value: 0
+    },
+    'sec(pi)': {
+        expected: '-1',
+        evaluated_value: -1
+    },
+    'sec(pi/2)': {
+        expected: 'error',
+        evaluated_value: 'error'
+    },
+    'sec(2*pi/3)': {
+        expected: '-2',
+        evaluated_value: -2
+    },
+    'sec(4*pi/3)': {
+        expected: '-2',
+        evaluated_value: -2
+    },
+    'sec(5*pi/3)': {
+        expected: '2',
+        evaluated_value: 2
+    },
+    'sec(pi/6)': {
+        expected: '2*sqrt(3)^(-1)',
+        evaluated_value: 1.1547005383792517
+    },
+    'csc(5*pi/3)': {
+        expected: '-2*sqrt(3)^(-1)',
+        evaluated_value: -1.1547005383792517
+    },
+    'csc(pi)': {
+        expected: 'error',
+        evaluated_value: 'error'
+    },
+    'csc(2*pi)': {
+        expected: 'error',
+        evaluated_value: 'error'
+    },
+    'cot(pi)': {
+        expected: 'error',
+        evaluated_value: 'error'
+    },
+    'cot(2*pi)': {
+        expected: 'error',
+        evaluated_value: 'error'
+    },
+    'cot(pi/2)': {
+        expected: '0',
+        evaluated_value: 0
+    },
+    'cot(2*pi/3)': {
+        expected: '-sqrt(3)^(-1)',
+        evaluated_value: -0.5773502691896258
+    },
+    'cot(4*pi/3)': {
+        expected: 'sqrt(3)^(-1)',
+        evaluated_value: 0.5773502691896258
+    },
+    'cot(5*pi/6)': {
+        expected: '-sqrt(3)',
+        evaluated_value: -1.7320508075688772
+    },
     '(1/2)*x^(1/2)+sqrt(x)': {
         expected: '(3/2)*sqrt(x)',
         evaluated_value: 2.1737065119284886
@@ -670,6 +798,14 @@ var cases = {
     '2*sqrt(3/4)': {
         expected: 'sqrt(3)',
         evaluated_value: 1.7320508075689423
+    },
+    'sqrt(2)*sqrt(8)': {
+        expected: '4',
+        evaluate_value: 4
+    },
+    'sqrt(242)': {
+        expected: '11*sqrt(2)',
+        evaluate_value: 15.556349186104047
     },
     'sqrt(4)^-1': {
         expected: '1/2',
@@ -761,4 +897,3 @@ var report = test('Core', cases, function(expression, report, nerdamer) {
 }, settings.verbose || settings.core_verbose); 
 
 console.log(report.getReport());
-
