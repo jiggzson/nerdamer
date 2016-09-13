@@ -2431,7 +2431,7 @@ var nerdamer = (function(imports) {
             if(symbol.isPi() && symbol.isLinear()) { 
                 //return for 1 or -1 for multiples of pi
                 if(isInt(m)) {
-                    retval  = new Symbol(even(m) ? -1 : 1);
+                    retval  = new Symbol(even(m) ? 1 : -1);
                 } 
                 else {
                     var n = m.num, d = m.den;
@@ -2499,7 +2499,7 @@ var nerdamer = (function(imports) {
         
         function tan(symbol) {
             if(Settings.PARSE2NUMBER && symbol.isConstant()) {
-                return new Symbol(Math.sin(symbol.valueOf()));
+                return new Symbol(Math.tan(symbol.valueOf()));
             }
             var retval, 
                 c = false,
@@ -2551,7 +2551,7 @@ var nerdamer = (function(imports) {
             if(symbol.isPi() && symbol.isLinear()) { 
                 //return for 1 or -1 for multiples of pi
                 if(isInt(m)) {
-                    retval  = new Symbol(even(m) ? -1 : 1);
+                    retval  = new Symbol(even(m) ? 1 : -1);
                 } 
                 else {
                     var n = m.num, d = m.den;
@@ -2578,7 +2578,7 @@ var nerdamer = (function(imports) {
         
         function csc(symbol) {
             if(Settings.PARSE2NUMBER && symbol.isConstant()) {
-                return new Symbol(Math.sin(symbol.valueOf()));
+                return new Symbol(Math2.csc(symbol.valueOf()));
             }
             var retval, 
                 c = false,
@@ -2619,7 +2619,7 @@ var nerdamer = (function(imports) {
         
         function cot(symbol) {
             if(Settings.PARSE2NUMBER && symbol.isConstant()) {
-                return new Symbol(Math.sin(symbol.valueOf()));
+                return new Symbol(Math2.cot(symbol.valueOf()));
             }
             var retval, 
                 c = false,
@@ -2635,7 +2635,7 @@ var nerdamer = (function(imports) {
                 } 
                 else {
                     var n = m.num, d = m.den;
-                    if(d == 2) err('tan is undefined for '+symbol.toString());
+                    if(d == 2) retval = new Symbol(0);
                     else if(d == 3) {
                         retval = _.parse('1/sqrt(3)'); c = true;
                     }
