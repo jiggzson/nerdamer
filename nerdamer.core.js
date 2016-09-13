@@ -4,7 +4,6 @@
  * Email : martin.r.donk@gmail.com
  * Source : https://github.com/jiggzson/nerdamer
  */
-//better accuracy
 
 var nerdamer = (function(imports) { 
     "use strict";
@@ -599,6 +598,24 @@ var nerdamer = (function(imports) {
                     }
                 }
                 return Math.pow(b, e);
+            },
+            //uses trial division to get factors
+            ifactor: function(n, factors) {
+                factors = factors || {};
+                var r = Math.floor(Math.sqrt(n));
+                var lcprime = PRIMES[PRIMES.length-1];
+                if(r > lcprime) generatePrimes(r); //a one-time cost... Hopefully ...
+                var l = PRIMES.length;
+                for(var i=0; i<l; i++) {
+                    var prime = PRIMES[i];
+                    //trial division
+                    while(n%prime === 0) {
+                        n = n/prime;
+                        factors[prime] = (factors[prime] || 0)+1;
+                    }
+                }
+                if(n > 1) factors[n] = 1;
+                return factors;
             }
         };
         
@@ -2295,7 +2312,18 @@ var nerdamer = (function(imports) {
                     m = new Symbol(t);
                 }
                 else if(isInt(q)) { 
-                    m = _.symfunction(SQRT, [new Symbol(q)]);
+                    var factors = Math2.ifactor(q);
+                    var tw = 1;
+                    for(var x in factors) {
+                        var n = factors[x],
+                            nn = (n - (n%2)); //get out the whole numbers
+                        if(nn) { //if there is a whole number ...
+                            var w = Math.pow(x, nn);
+                            tw *= Math.pow(x, nn/2); //add to total wholes
+                            q /= w; //reduce the number by the wholes
+                        }
+                    }
+                    m = _.multiply(_.symfunction(SQRT, [new Symbol(q)]), new Symbol(tw));
                 }
                 else {
                     var n = symbol.multiplier.num.toString(),
@@ -2535,13 +2563,13 @@ var nerdamer = (function(imports) {
                     else if(d == 6) {
                         retval = _.parse('2/sqrt(3)'); c = true;
                     }
-                    else retval = _.symfunction('cos', [symbol]);
+                    else retval = _.symfunction('sec', [symbol]);
                 }
             }
             
             if(c && (q === 2 || q === 3)) retval.negate();
            
-            if(!retval) retval = _.symfunction('cos', [symbol]);
+            if(!retval) retval = _.symfunction('sec', [symbol]);
 
             return retval;
         }
@@ -2576,11 +2604,11 @@ var nerdamer = (function(imports) {
                     else if(d == 6) {
                         retval = new Symbol(2); c = true;
                     }
-                    else retval = _.symfunction('sin', [symbol]);
+                    else retval = _.symfunction('csc', [symbol]);
                 }
             }
            
-            if(!retval) retval = _.symfunction('sin', [symbol]);
+            if(!retval) retval = _.symfunction('csc', [symbol]);
             
             if(c && (q === 3 || q === 4)) retval.negate();
             
@@ -2615,11 +2643,11 @@ var nerdamer = (function(imports) {
                     else if(d == 6) {
                         retval = _.parse('sqrt(3)'); c = true;
                     }
-                    else retval = _.symfunction('tan', [symbol]);
+                    else retval = _.symfunction('cot', [symbol]);
                 }
             }
            
-            if(!retval) retval = _.symfunction('tan', [symbol]);
+            if(!retval) retval = _.symfunction('cot', [symbol]);
             
             if(c && (q === 2 || q === 4)) retval.negate();
             
