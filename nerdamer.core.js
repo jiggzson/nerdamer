@@ -604,7 +604,9 @@ var nerdamer = (function(imports) {
                 factors = factors || {};
                 var r = Math.floor(Math.sqrt(n));
                 var lcprime = PRIMES[PRIMES.length-1];
-                if(r > lcprime) generatePrimes(r); //a one-time cost... Hopefully ...
+                //a one-time cost... Hopefully ... And don't bother for more than a million
+                //takes too long
+                if(r > lcprime && n < 1e6) generatePrimes(r);
                 var l = PRIMES.length;
                 for(var i=0; i<l; i++) {
                     var prime = PRIMES[i];
