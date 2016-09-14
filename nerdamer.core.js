@@ -1550,12 +1550,19 @@ var nerdamer = (function(imports) {
                         if(existing) {  
                             //remove because the symbol may have changed
                             symbol = _.multiply(remove(this.symbols, key), symbol);
+                            if(symbol.isConstant()) {
+                                 this.multiplier = this.multiplier.multiply(symbol.multiplier);
+                                 symbol = new Symbol(1); //the dirty work gets done down the line when it detects 1
+                            }
+//                            if(this.group === CB && symbol.isConstant()) {
+//                                remove(this.symbols, key);
+//                                this.multiplier = this.multiplier.multiply(symbol.multiplier);
+//                                this.length--;
+//                            }
                             if(this.length === 0) this.convert(N);
                             this.length--;
                             //clean up
                         }
-                        
-                        //move the multiplier to the upper symbol
                         
                         //don't insert the symbol if it's 1
                         if(!symbol.isOne(true)) {
@@ -1566,7 +1573,7 @@ var nerdamer = (function(imports) {
                              this.negate(); //put back the sign
                         }
                     }
-                    
+
                     //update the hash
                     if(this.group === CP || this.group === CB) {
                         this.updateHash();
@@ -3108,7 +3115,7 @@ var nerdamer = (function(imports) {
                 if(a.group === CB && b.group === PL && a.value === b.value) { 
                     var t = a; a = b; b = t;//swap
                 }
-                
+
                 var g1 = a.group,
                     g2 = b.group,
                     bnum = b.multiplier.num,
@@ -3173,7 +3180,6 @@ var nerdamer = (function(imports) {
                     //the sign for b is floating around. Remember we are assuming that the odd variable will carry
                     //the sign but this isn't true if they're equals symbols
                     result.multiplier = result.multiplier.multiply(b.multiplier);
-                    
                 }
                 else if(g1 === CB && a.isLinear()){ 
                     if(g2 === CB) b.distributeExponent();
@@ -3236,6 +3242,7 @@ var nerdamer = (function(imports) {
                 else {
                     result.multiplier = result.multiplier.multiply(m).multiply(sign);
                 }
+
 
                 //back convert group P to a simpler group N if possible
                 if(result.group === P && isInt(result.power.toDecimal())) result = result.convert(N);
