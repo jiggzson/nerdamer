@@ -459,7 +459,7 @@ if((typeof module) !== 'undefined') {
     };
     var __ = core.Algebra = {
 
-        version: '1.3.3',
+        version: '1.3.2',
         init: (function() {})(),
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
@@ -1550,7 +1550,7 @@ if((typeof module) !== 'undefined') {
          * @param {Symbol} symbol2
          * @returns {Array}
          */
-        div: function(symbol1, symbol2) {     
+        divide: function(symbol1, symbol2) {     
             /*
              * This function follows a similar principle as the Euclidian algorithm by 
              * attempting to reduce one term during each iteration
@@ -1627,6 +1627,7 @@ if((typeof module) !== 'undefined') {
                                 for(var k=0; k<vl; k++) {
                                     var variable = vars[k];
                                     if(dividend_term.group === EX || divisor_term.group === EX) break;
+
                                     if(!dividend_term.contains(variable) || divisor_term.symbols && !dividend_term.symbols) {                                   
                                         select_term = false; //we need to know if this is a good term to use
                                         break; //don't keep looking since this term doesn't satisfy
@@ -1652,29 +1653,28 @@ if((typeof module) !== 'undefined') {
                     //grab a term to use for division. The idea is to knock off one term.
                     //the first one will do just fine
                     var sl = selected.length;
+                    
                     if(sl === 0) {
                         //we're done 
                         remainder = _.add(remainder, ndividend);
                         break;
                     }
-                    //we want the short term first
-                    else if(selected[0][1].group === CB) {
-                        for(var i=1; i<sl; i++) {
-                            var s = selected[i];
-                            if(s[1].group !== CB && !s[0].isConstant()) {
-                                selected.unshift(core.Utils.remove(selected, i));
-                            }
-                        }
-                    }
                     
                     var first_div_term = selected[0];   
                     
                     var q = _.divide(first_div_term[1].clone(), first_div_term[0].clone());
+                    /*
+                    //no need to start dipping into the divisor again.
+                    if(q.isConstant() && remainder.equals(0) && !quotient.equals(0)) {
+                        remainder = ndividend;
+                        break;
+                    }
+                    */
 
                     if(sl < divisor.length) {
                         var idx = first_div_term[2];
                         //handle remainder
-                        for(var i=0; i<divisor.length; i++) {
+                        for(var i=0; i<divisor.length; i++) { 
                             if(i !== idx) {
                                 remainder = _.subtract(remainder, _.multiply(q.clone(), divisor[i].clone()));
                             }
@@ -1689,8 +1689,9 @@ if((typeof module) !== 'undefined') {
 
                     ndividend = _.subtract(ndividend, q_div);
 
-                    if(ndividend.group === core.groups.CB) dividend = [ndividend];
+                    if(ndividend.group === CB || ndividend.group === S) dividend = [ndividend];
                     else dividend = ndividend.collectSymbols(undefined, undefined, Symbol.LSORT, true);  
+
                 }
                 
                 result = [quotient, remainder];
@@ -1700,11 +1701,6 @@ if((typeof module) !== 'undefined') {
             result[1] = _.parse(result[1].text(), subs);
                 
             return result;
-        },
-        divide: function(symbol1, symbol2) {
-            var result = __.div(symbol1, symbol2);
-            var remainder = _.divide(result[1], symbol2);
-            return _.add(result[0], remainder);
         }
     };
     
