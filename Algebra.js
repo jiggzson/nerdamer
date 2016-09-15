@@ -419,6 +419,14 @@ if((typeof module) !== 'undefined') {
         }
         return false;
     };
+    Symbol.prototype.hasConstant = function() {
+        if(this.group === CP) {
+            for(var x in this.symbols) {
+                if(this.symbols[x].isConstant()) return true;
+            }
+        }
+        return false;
+    };
     core.Utils.subFunctions = function(symbol, map) {
         map = map || {};
         var subbed = [];
@@ -1663,13 +1671,12 @@ if((typeof module) !== 'undefined') {
                     var first_div_term = selected[0];   
                     
                     var q = _.divide(first_div_term[1].clone(), first_div_term[0].clone());
-                    /*
+                    
                     //no need to start dipping into the divisor again.
-                    if(q.isConstant() && remainder.equals(0) && !quotient.equals(0)) {
+                    if(q.isConstant() && selected.length === 1 && !quotient.hasConstant()) {
                         remainder = ndividend;
                         break;
                     }
-                    */
 
                     if(sl < divisor.length) {
                         var idx = first_div_term[2];
