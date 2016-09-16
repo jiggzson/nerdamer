@@ -1560,11 +1560,23 @@ if((typeof module) !== 'undefined') {
          */
         div: function(symbol1, symbol2) {     
             /*
-             * This function follows a similar principle as the Euclidian algorithm by 
+             * * This function follows a similar principle as the Euclidian algorithm by 
              * attempting to reduce one term during each iteration
              * except that it doesn't care about the order. This presents some inefficiency as 
              * extra terms on both sides of the sign are generated. However due to the sign
              * the just end up canceling out.
+             * ---------------------------------------------------------------------------------
+             * Roughly explained. Given: dividend ==  (symbol1) & divisor == polynomial (symbol2)
+             * 1. Find a monomial in the dividend containing the variable which has a power <= to the monomial in the divisor
+             *  e.g. x^2*y*z is a suitable divisor for x^2*y^2*z (the order of the variable doesn't matter)
+             * 2. Repeat this step for all the terms in the divisor
+             * 3. Make sure to mark terms which already have been selected in the dividend
+             * 3a. If no suitable match was found for one of the terms then it goes to the remainder
+             * 3b. If no suitable match was found for any of the terms in the divisor then we're done
+             * 4. Get a q by dividing the first terms in the selected array by its match
+             * 5. Multiply all terms in the divisor by q. Call this q_div
+             * 6. Subtract q_div from the dividend
+             * 7. Repeat 1,2,3,4,5,6 until either 3b is true or dividend = 0
              */
             //enable support for functions by temporarily substituting them for a variable
             var variables = core.Utils.variables,
