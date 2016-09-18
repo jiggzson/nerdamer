@@ -1527,7 +1527,7 @@ if((typeof module) !== 'undefined') {
                     else {
                         if(sg === PL || sg === CP) status = __.isLinear(symbol);
                         else {
-                            if(symbol.group !== N && symbol.power !== 1) { status = false; break; }
+                            if(symbol.group !== N && symbol.power.toString() !== '1') { status = false; break; }
                         }
                     }
                 }
