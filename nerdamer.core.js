@@ -4163,7 +4163,7 @@ var nerdamer = (function(imports) {
         custom: true, 
         set: function(row, column, value) {
             if(!this.elements[row]) this.elements[row] = [];
-            this.elements[row][column] = new Symbol(value);
+            this.elements[row][column] = isSymbol(value) ? value : new Symbol(value);
         },
         cols: function() {
             return this.elements[0].length;
@@ -4225,6 +4225,7 @@ var nerdamer = (function(imports) {
             for(var i=0; i<r; i++) {
                 this.elements[i] = this.elements[i].concat(m.elements[i]);
             }
+            
             return this;
         },
         clone: function() {
@@ -4244,7 +4245,8 @@ var nerdamer = (function(imports) {
             if(!this.isSquare()) err('Matrix is not square!');
             return block('SAFE', function() {
                 var ni = this.elements.length, ki = ni, i, j;
-                var M = this.augment(Matrix.identity(ni)).toRightTriangular(); 
+                var imatrix = Matrix.identity(ni);
+                var M = this.augment(imatrix).toRightTriangular(); 
                 var np, kp = M.elements[0].length, p, els, divisor;
                 var inverse_elements = [], new_element;
                 // Matrix is non-singular so there will be no zeros on the diagonal
@@ -4268,8 +4270,8 @@ var nerdamer = (function(imports) {
                     // give the identity matrix on the left hand side
                     for (j=0; j<i; j++) {
                       els = []; np = kp;
-                      do { p = kp - np;
-                        els.push(_.subtract(M.elements[j][p],_.multiply(M.elements[i][p], M.elements[j][i])));
+                      do { p = kp - np; 
+                        els.push(_.subtract(M.elements[j][p].clone(),_.multiply(M.elements[i][p].clone(), M.elements[j][i].clone())));
                       } while (--np);
                       M.elements[j] = els;
                     }
