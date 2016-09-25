@@ -404,6 +404,7 @@ if((typeof module) !== 'undefined') {
         return c;
     };
     Symbol.LSORT = function(a, b) {
+        if(a.value === b.value && a.multiplier > b.multiplier) return b.power - a.power;
         return (a.length || 1) - (b.length || 1);
     };
     Symbol.prototype.altVar = function(x) {
