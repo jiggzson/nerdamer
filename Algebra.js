@@ -367,6 +367,14 @@ if((typeof module) !== 'undefined') {
     //make the polynomial class available to EVERYONE!
     core.Polynomial = Polynomial;
     
+    //function to turn array to object with counters
+    core.Utils.arrayToCounterObj = function(arr, default_val) {
+        default_val = default_val || 0;
+        var o = {};
+        for(var i=0; i<arr.length; i++) o[arr[i]] = default_val;
+        return o;
+    };
+    
     /**
     * If the symbols is of group PL or CP it will return the multipliers of each symbol
     * as these are polynomial coefficients. CB symbols are glued together by multiplication
@@ -404,7 +412,15 @@ if((typeof module) !== 'undefined') {
         return c;
     };
     Symbol.LSORT = function(a, b) {
+//        console.log(a.value, b.value, a.text('hash'), b.text('hash'))
+//        var aa, bb;
+//        (a.group < b.group) ? (aa=b, bb=a) : (aa=a, bb=b);
+//        if(aa.group === CB && bb.group === S) {
+//            var v = bb.value;
+//            if(aa.contains(v)) return bb.power - aa.symbols[v].power;
+//        }
         if(a.value === b.value && a.multiplier > b.multiplier) return b.power - a.power;
+//        if(a.group === b.group) return b.multiplier - a.multiplier;
         return (a.length || 1) - (b.length || 1);
     };
     Symbol.prototype.altVar = function(x) {
@@ -468,7 +484,7 @@ if((typeof module) !== 'undefined') {
     };
     var __ = core.Algebra = {
 
-        version: '1.3.3',
+        version: '1.3.4',
         init: (function() {})(),
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
@@ -1382,7 +1398,6 @@ if((typeof module) !== 'undefined') {
             return core.Utils.arrayUnique(powers).sort();
         },
         /**
-         * WARNING: THIS IS NOT A PROPER FACTORING ALGORITHM. JUST A QUICK FIX
          * http://www.ams.org/journals/mcom/1978-32-144/S0025-5718-1978-0568284-3/S0025-5718-1978-0568284-3.pdf
          * Splits symbol into factors
          * @param {Symbol} symbol
@@ -1537,8 +1552,28 @@ if((typeof module) !== 'undefined') {
             return status;
         },
         gcd: function(a, b) { 
-            a = new Polynomial(a); b = new Polynomial(b);
-            return a.gcd(b).toSymbol();
+            var vars_a = variables(a), vars_b = variables(b);
+            if(vars_a.length === vars_b.length && vars_a.length === 1 && vars_a[0] === vars_b[0]) {
+                a = new Polynomial(a); b = new Polynomial(b);
+                return a.gcd(b).toSymbol();
+            }
+            else {
+                var T;
+                while(!b.equals(0)) {  
+                    
+                    var t = b.clone(); 
+                    a = a.clone(); 
+                    console.log('in')
+                    T = __.div(a, t);
+                    b = T[1]; 
+                    if(T[0].equals(0)) {
+                        return new Symbol(core.Math2.GCD(a.multiplier, b.multiplier));
+                    }
+                    a = t; 
+                    
+                }
+                return a;
+            }
         },
         hasLargerPower: function(a, b, variable) {
             var p1;
@@ -1554,12 +1589,76 @@ if((typeof module) !== 'undefined') {
             return p2 > p1;
         },
         /**
+         * Gets out extra factors from denominator
+         * @param {Symbol} symbol
+         * @returns {Symbol[]}
+         */
+        dfactors: function(symbol) {
+            var symbols = symbol.collectSymbols(); 
+            var factors = {};
+            var matched = [], gcd, l = symbols.length-1;
+            var cp = {}, GCD = core.Math2.GCD, variables = core.Utils.variables;
+            var key;
+            var add_factor = function() {
+                if(matched.length > 0) { 
+                    var fct_str = '';
+                    for(var x in cp) {
+                        fct_str += x+'^'+cp[x];
+                    }
+                    var fct = _.parse(gcd+'*'+core.Utils.inBrackets(fct_str));
+                    for(var z=0; z<matched.length; z++) {
+                        matched[z] = _.divide(matched[z], fct.clone());
+                    }
+                    factors[key] = _.parse(matched.join('+'));
+                }
+            };
+            //first we get out all the matching terms
+            for(var i=0; i<l; i++) { 
+                var cur = symbols[i], nxt = symbols[i+1];
+                if(cur.length === nxt.length) {
+                    var vars_cur = variables(cur),
+                        vars_nxt = variables(nxt),
+                        tgcd = GCD(cur.multiplier.toDecimal(), nxt.multiplier.toDecimal()),
+                        key = vars_cur.join(' ');
+                    //compare the two variable arrays to make sure that they're equal
+                    if(key === vars_nxt.join(' ')) {
+                        gcd = gcd ? GCD(tgcd, gcd) : tgcd;
+                        if(matched.length === 0) matched.push(cur.clone());
+                        matched.push(nxt.clone());
+                        cur.each(function(x){
+                            var v = x.value, y = nxt.symbols[v], 
+                                p1 = x.power.toDecimal(), p2 = y.power.toDecimal(),
+                                ep = cp[v], min = Math.min(p1, p2);
+                            cp[v] = ep ? Math.min(ep, min) : min;
+                        });
+                    }
+                    else {
+                        //reset everything
+                        add_factor();
+                        //reset everything
+                        gcd = undefined;
+                        matched = [];
+                        cp = {};
+                    }
+                }
+            }
+            add_factor();
+            return factors;
+        },
+        /**
          * Divides one expression by another
          * @param {Symbol} symbol1
          * @param {Symbol} symbol2
          * @returns {Array}
          */
         div: function(symbol1, symbol2) {     
+            /**
+             * CASES
+             * if symbol1 is one variable -> loop over the first divided if possible (sing_divide)
+             * if symbol1 and two have denominators
+             * 
+             */
+
             /*
              * * This function follows a similar principle as the Euclidian algorithm by 
              * attempting to reduce one term during each iteration
@@ -1591,7 +1690,7 @@ if((typeof module) !== 'undefined') {
             for(var x in map) subs[map[x]] = _.parse(x);
 
             var al = vars_a.length, bl = vars_b.length, result;
-            //quick test to see if we can get ways with univariate division
+            //quick test to see if we can get away with univariate division
             if( al <= 1 && bl <= 1 && (vars_a[0] || vars_b[0]) === (vars_b[0] || vars_a[0]) && !symbol1.hasFunc() && !symbol2.hasFunc()) {
                 if(al === bl && al === 0) {
                     result = [];
@@ -1609,21 +1708,77 @@ if((typeof module) !== 'undefined') {
                 }
             }
             else { 
+                //checks to see that x^3*y > x^2*y
+                var hasLargerVars = function(dividend, divisor, key) {
+                    for(var i=0; i<divisor.length; i++) {
+                        var t1 = divisor[i];
+                        for(var j=0; j<dividend.length; j++) {
+                            var t2 = dividend[j];
+                            if(t1.group === CB && t1.group === t2.group) {
+                                var vars_a = core.Utils.variables(t1),
+                                    vars_b = core.Utils.variables(t2),
+                                    key_a = vars_a.join(' ');
+                                if(key_a === key && key_a === vars_b.join(' ')) {
+                                    for(var x in t2.symbols) {
+                                        if(t2.symbols[x].power > t1.symbols[x].power)
+                                            return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return false;
+                };
                 /* check if symbol has denominator */
-                //remains constant throughout function
+                var factors = __.dfactors(b), 
+                    divisor_ = b.collectSymbols(undefined, undefined, Symbol.LSORT, true),
+                    dividend_ = a.collectSymbols(undefined, undefined, Symbol.LSORT, true);
+            console.log(dividend_.toString())
+            console.log(divisor_.toString())
+                for(var x in factors) {
+                    if(hasLargerVars(dividend_, divisor_, x))
+                        delete factors[x];
+                    else a = _.expand(_.multiply(a, factors[x].clone()));
+                }
+                
                 var divisor = b.collectSymbols(undefined, undefined, Symbol.LSORT, true),
                     quotient = new Symbol(0),
                     remainder = new Symbol(0),
                     dividend = a.collectSymbols(undefined, undefined, Symbol.LSORT, true),
                     divisor_vars = [],
-                    ndividend = a.clone();
-                    
+                    ndividend = a.clone(),
+                    adj = new Symbol(1); //balance if divisor > dividend
+
+                //the terms containing the same variables in the divisor and dividend have to explicitly be larger dividend
+                for(var i=0; i<divisor.length; i++) {
+                    var t1 = divisor[i];
+                    for(var j=0; j<dividend.length; j++) {
+                        var t2 = dividend[j];
+                        if(t1.group === CB && t1.group === t2.group) {
+                            if(t1.value === t2.value) {
+                                t2.each(function(x) { 
+                                    if(x.power.toDecimal() > 1) {
+                                        adj = _.multiply(adj, _.parse(core.Utils.inBrackets(x.value)).invert());
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                var hasAdj = !adj.equals(1);
+                
+                if(hasAdj) {
+                    ndividend = _.expand(_.divide(ndividend, adj.clone()));
+                    dividend = ndividend.collectSymbols();
+                }
+                
                 //constants at the beginning cause problems. x^0/x^0=x^0 causing no reduction each iteration
                 while(divisor[0].isConstant()) divisor.push(divisor.shift());
                 
                 //cache the variables for the divisor. No need to keep fetching them
                 for(var i=0; i<divisor.length; i++) divisor_vars[i] = variables(divisor[i]); 
-
+                var s = 0; //safety
                 while(!ndividend.equals(0)) {
                     var selected = [];
                     var seen = [];
@@ -1706,6 +1861,12 @@ if((typeof module) !== 'undefined') {
                     for(var i=0; i<selected.length; i++) {
                         q_div = _.add(q_div, _.multiply(q.clone(), selected[i][0].clone()));
                     }
+                    
+//                    console.log(s+' ndividend: '+ndividend.text('fractions')+'     q_div: '+q_div.text('fractions')+
+//                    '     q: '+q.text('fractions')+'     selected: '+selected);
+//                    console.log();
+                    s++;
+                    if(s > 50) break;
 
                     ndividend = _.subtract(ndividend, q_div);
 
@@ -1714,11 +1875,23 @@ if((typeof module) !== 'undefined') {
 
                 }
                 
+                if(hasAdj) {
+                    quotient = _.expand(_.multiply(quotient, adj.clone()));
+                    remainder = _.expand(_.multiply(remainder, adj));
+                }
+                
+                for(var i=0; i<factors.length; i++) {
+                    var factor = _.parse(factors[i].text(), subs);
+                    quotient = _.divide(quotient, factor.clone());
+                    remainder = _.divide(remainder, factor);
+                }
+                
                 result = [quotient, remainder];
             }
             
             result[0] = _.parse(result[0].text(), subs);
             result[1] = _.parse(result[1].text(), subs);
+            
                 
             return result;
         },
@@ -1762,3 +1935,25 @@ if((typeof module) !== 'undefined') {
         }
     ]);
 })();
+
+
+//problem cases
+//var x = nerdamer('div(-33*x-9*x^2-8*y+17*x^2*y+4+2*x*y,(-11)*x^3+(-17)*x^4+(-51)*x+(57)*x^(-1)+33*x^2+23*x^(-1)*y+5*x*y+3)');
+//var x = nerdamer('div(3*(x^2*y)+5,6*x^2*y+3*x*y+7)');
+//var x = nerdamer('div(3*(x^2*y)+5, 3*x*y+7)'); 
+//console.time('a')
+var x = nerdamer('div(3*(x^2*y)+5,6*x^2*y+3*x*y+7)'); //problem child
+//console.timeEnd('a')
+//var x = nerdamer('div(6*x^3*y+3*x^2*y+10*x+5,6*x^2*y+3*x*y+7)');//works 
+//var x = nerdamer('div(6*x^3*y+3*x^2*y+10*x+5,6*x^2*y+3*x*y+7)');//works 
+//var x = nerdamer('div(6*x^3*y+5*x^2*y+x*y+10*x+5,6*x^2*y+3*x*y+7)'); //works
+
+
+//var x = nerdamer('div(6*x^2*y+3*x*y+x^2*y^2+7, x)');
+
+
+//get gcd from coefficients and subtract qoutient by same amount
+//multiply entire by lowest factor and divide quotient by same amount
+
+//var x = nerdamer('div(y^2*z-4*x*z+x*y^2-4*x^2+x^2, y^2-4*x^2)');
+console.log(x.text('fractions'))
