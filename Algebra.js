@@ -1719,10 +1719,13 @@ if((typeof module) !== 'undefined') {
                                     vars_b = core.Utils.variables(t2),
                                     key_a = vars_a.join(' ');
                                 if(key_a === key && key_a === vars_b.join(' ')) {
+                                    var status = true; //try and disprove
                                     for(var x in t2.symbols) {
-                                        if(t2.symbols[x].power > t1.symbols[x].power)
-                                            return true;
+                                        var p1 = t2.symbols[x].power.toDecimal(), p2 = t1.symbols[x].power.toDecimal();
+                                        if(p1 > p2) return true;
+                                        status = status && (p1 > p2);
                                     }
+                                    return status;
                                 }
                             }
                         }
@@ -1733,8 +1736,7 @@ if((typeof module) !== 'undefined') {
                 var factors = __.dfactors(b), 
                     divisor_ = b.collectSymbols(undefined, undefined, Symbol.LSORT, true),
                     dividend_ = a.collectSymbols(undefined, undefined, Symbol.LSORT, true);
-            console.log(dividend_.toString())
-            console.log(divisor_.toString())
+
                 for(var x in factors) {
                     if(hasLargerVars(dividend_, divisor_, x))
                         delete factors[x];
@@ -1880,8 +1882,8 @@ if((typeof module) !== 'undefined') {
                     remainder = _.expand(_.multiply(remainder, adj));
                 }
                 
-                for(var i=0; i<factors.length; i++) {
-                    var factor = _.parse(factors[i].text(), subs);
+                for(var x in factors) {
+                    var factor = _.parse(factors[x].text(), subs);
                     quotient = _.divide(quotient, factor.clone());
                     remainder = _.divide(remainder, factor);
                 }
@@ -1935,25 +1937,3 @@ if((typeof module) !== 'undefined') {
         }
     ]);
 })();
-
-
-//problem cases
-//var x = nerdamer('div(-33*x-9*x^2-8*y+17*x^2*y+4+2*x*y,(-11)*x^3+(-17)*x^4+(-51)*x+(57)*x^(-1)+33*x^2+23*x^(-1)*y+5*x*y+3)');
-//var x = nerdamer('div(3*(x^2*y)+5,6*x^2*y+3*x*y+7)');
-//var x = nerdamer('div(3*(x^2*y)+5, 3*x*y+7)'); 
-//console.time('a')
-var x = nerdamer('div(3*(x^2*y)+5,6*x^2*y+3*x*y+7)'); //problem child
-//console.timeEnd('a')
-//var x = nerdamer('div(6*x^3*y+3*x^2*y+10*x+5,6*x^2*y+3*x*y+7)');//works 
-//var x = nerdamer('div(6*x^3*y+3*x^2*y+10*x+5,6*x^2*y+3*x*y+7)');//works 
-//var x = nerdamer('div(6*x^3*y+5*x^2*y+x*y+10*x+5,6*x^2*y+3*x*y+7)'); //works
-
-
-//var x = nerdamer('div(6*x^2*y+3*x*y+x^2*y^2+7, x)');
-
-
-//get gcd from coefficients and subtract qoutient by same amount
-//multiply entire by lowest factor and divide quotient by same amount
-
-//var x = nerdamer('div(y^2*z-4*x*z+x*y^2-4*x^2+x^2, y^2-4*x^2)');
-console.log(x.text('fractions'))
