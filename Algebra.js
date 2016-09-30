@@ -1558,12 +1558,17 @@ if((typeof module) !== 'undefined') {
                 return a.gcd(b).toSymbol();
             }
             else {
+                //get rid of gcd in coeffs
+                var multipliers = [];
+                a.each(function(x) {
+                    multipliers.push(x.multiplier);
+                });
+                var gcd = core.Math2.QGCD.apply(undefined, multipliers);
+
                 var T;
                 while(!b.equals(0)) {  
-                    
                     var t = b.clone(); 
                     a = a.clone(); 
-                    console.log('in')
                     T = __.div(a, t);
                     b = T[1]; 
                     if(T[0].equals(0)) {
@@ -1572,6 +1577,13 @@ if((typeof module) !== 'undefined') {
                     a = t; 
                     
                 }
+                
+                if(!gcd.equals(1)) {
+                    a.each(function(x) {
+                        x.multiplier = x.multiplier.divide(gcd);
+                    });
+                }
+                
                 return a;
             }
         },
