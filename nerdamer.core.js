@@ -360,7 +360,7 @@ var nerdamer = (function(imports) {
          * automatically. In the future this will be a Collector object.
          * @returns {String[]} - An array containing variable names
          */
-        variables = Utils.variables = function( obj, vars ) { 
+        variables = Utils.variables = function(obj, poly, vars) { 
             vars = vars || {
                 c: [],
                 add: function(value) {
@@ -371,24 +371,24 @@ var nerdamer = (function(imports) {
             if(isSymbol(obj)) { 
                 var group = obj.group,
                     prevgroup = obj.previousGroup;
-                if(group === EX) variables(obj.power, vars);
+                if(group === EX) variables(obj.power, poly, vars);
                 
                 if(group === CP || group === CB || prevgroup === CP || prevgroup === CB) {
-                    for(var x in obj.symbols) variables(obj.symbols[x], vars);
+                    for(var x in obj.symbols) variables(obj.symbols[x], poly, vars);
                 }
                 else if(group === S) {
                     vars.add(obj.value);
                 }
                 else if(group === PL) {
-                    variables(firstObject(obj.symbols), vars);
+                    variables(firstObject(obj.symbols), poly, vars);
                 }
                 else if(group === EX) { 
                     if(!isNaN(obj.value)) vars.add(obj.value);
-                    variables(obj.power, vars);
+                    variables(obj.power, poly, vars);
                 }
-                else if(group === FN) {
+                else if(group === FN && !poly) { 
                     for(var i=0; i<obj.args.length; i++) {
-                        variables(obj.args[i], vars);
+                        variables(obj.args[i], poly, vars);
                     }
                 }
             }
@@ -1629,6 +1629,8 @@ var nerdamer = (function(imports) {
          * function has changed it will update the hash of the symbol.
          */
         updateHash: function() {
+            if(this.group === N) return;
+            
             if(this.group === FN) {
                 var contents = '',
                     args = this.args,
