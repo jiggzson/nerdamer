@@ -116,12 +116,38 @@ var nerdamer = (function(imports) {
                 throw new Error(name+' is not a valid '+typ+' name');
             }
         },
-        
+        /**
+         * Finds intersection of two arrays
+         * @param {array} a
+         * @param {Array} b
+         * @returns {Array}
+         */
+        intersection = Utils.intersection = function(a, b, compare_fn) {
+            var c = [];
+            if(a.length > b.length) {
+                var t = a; a = b; b = t;
+            }
+            b = b.slice();
+            var l = a.length, l2 = b.length;
+            for(var i=0; i<l; i++) {
+                var item = a[i];
+                for(var j=0; j<l2; j++) {
+                    var item2 = b[j];
+                    if(item2 === undefined) continue;
+                    var equals = compare_fn ? compare_fn(item, item2) : item === item2;
+                    if(equals) {
+                        b[j] = undefined;
+                        c.push(item);
+                        continue;
+                    }
+                }
+            }
+            return c;
+        },
         /**
          * Replace n! to fact(n)
          * @param {String}
          */
-        
         insertFactorial = Utils.insertFactorial = function(expression) {
             var factorial;
             var regex = /(\d+|\w+)!/ig;
@@ -334,7 +360,7 @@ var nerdamer = (function(imports) {
          * automatically. In the future this will be a Collector object.
          * @returns {String[]} - An array containing variable names
          */
-        variables = Utils.variables = function( obj, vars ) { 
+        variables = Utils.variables = function(obj, poly, vars) { 
             vars = vars || {
                 c: [],
                 add: function(value) {
@@ -345,24 +371,24 @@ var nerdamer = (function(imports) {
             if(isSymbol(obj)) { 
                 var group = obj.group,
                     prevgroup = obj.previousGroup;
-                if(group === EX) variables(obj.power, vars);
+                if(group === EX) variables(obj.power, poly, vars);
                 
                 if(group === CP || group === CB || prevgroup === CP || prevgroup === CB) {
-                    for(var x in obj.symbols) variables(obj.symbols[x], vars);
+                    for(var x in obj.symbols) variables(obj.symbols[x], poly, vars);
                 }
                 else if(group === S) {
                     vars.add(obj.value);
                 }
                 else if(group === PL) {
-                    variables(firstObject(obj.symbols), vars);
+                    variables(firstObject(obj.symbols), poly, vars);
                 }
                 else if(group === EX) { 
                     if(!isNaN(obj.value)) vars.add(obj.value);
-                    variables(obj.power, vars);
+                    variables(obj.power, poly, vars);
                 }
-                else if(group === FN) {
+                else if(group === FN && !poly) { 
                     for(var i=0; i<obj.args.length; i++) {
-                        variables(obj.args[i], vars);
+                        variables(obj.args[i], poly, vars);
                     }
                 }
             }
@@ -1477,6 +1503,7 @@ var nerdamer = (function(imports) {
             }
             else if(group === N) { 
                 var m = this.multiplier.toDecimal(); 
+                if(this.symbols) this.symbols = undefined;
                 new Symbol(this.group === P ? m*Math.pow(this.value, this.power) : m).clone(this);
             }
             else if(group === P && this.group === N) { 
@@ -1554,12 +1581,7 @@ var nerdamer = (function(imports) {
                                  this.multiplier = this.multiplier.multiply(symbol.multiplier);
                                  symbol = new Symbol(1); //the dirty work gets done down the line when it detects 1
                             }
-//                            if(this.group === CB && symbol.isConstant()) {
-//                                remove(this.symbols, key);
-//                                this.multiplier = this.multiplier.multiply(symbol.multiplier);
-//                                this.length--;
-//                            }
-                            if(this.length === 0) this.convert(N);
+
                             this.length--;
                             //clean up
                         }
@@ -1573,7 +1595,9 @@ var nerdamer = (function(imports) {
                              this.negate(); //put back the sign
                         }
                     }
-
+                    
+                    //clean up
+                    if(this.length === 0) this.convert(N);
                     //update the hash
                     if(this.group === CP || this.group === CB) {
                         this.updateHash();
@@ -1605,6 +1629,8 @@ var nerdamer = (function(imports) {
          * function has changed it will update the hash of the symbol.
          */
         updateHash: function() {
+            if(this.group === N) return;
+            
             if(this.group === FN) {
                 var contents = '',
                     args = this.args,
@@ -1839,6 +1865,7 @@ var nerdamer = (function(imports) {
                 'fact'      : [ , 1],
                 'round'     : [ , 1],
                 'mod'       : [ , 2],
+                'pfactor'   : [pfactor , 1],
                 'vector'    : [vector, -1],
                 'matrix'    : [matrix, -1],
                 'parens'    : [parens, -1],
@@ -2366,6 +2393,26 @@ var nerdamer = (function(imports) {
                 if(img) retval = _.multiply(img, retval);
             }
 
+            return retval;
+        }
+        
+        function pfactor(symbol) {
+            var retval = new Symbol(1);
+            if(symbol.isConstant()) {
+                var m = symbol.multiplier.toDecimal();
+                if(isInt(m)) {
+                    var factors = Math2.ifactor(m);
+                    for(var factor in factors) {
+                        var p = factors[factor];
+                        retval = _.multiply(retval, _.symfunction('parens', [new Symbol(factor).setPower(p)]))
+                    }
+                }
+                else {
+                    var n = pfactor(new Symbol(symbol.multiplier.num));
+                    var d = pfactor(new Symbol(symbol.multiplier.den));
+                    retval = _.multiply(_.symfunction('parens', [n]), _.symfunction('parens', [d]).invert());
+                }
+            }
             return retval;
         }
         
@@ -4769,7 +4816,7 @@ var nerdamer = (function(imports) {
      * @param {String} Output format. Can be 'object' (just returns the VARS object), 'text' or 'latex'. Default: 'text'
      * @returns {Object} Returns an object with the variables
      */    
-    libExports.getVars = function(output) {
+    libExports.getVars = function(output, option) {
         output = output || 'text';
         var variables = {};
         if (output === 'object') variables = VARS;
