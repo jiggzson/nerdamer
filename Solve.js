@@ -34,6 +34,7 @@ if((typeof module) !== 'undefined') {
     };
     
     var sys_solve = function(eqns) {
+        nerdamer.clearVars();
         for(var i=0; i<eqns.length; i++) eqns[i] = toLHS(eqns[i]);
         
         if(!_A.allLinear(eqns)) core.err('System must contain all linear equations!');

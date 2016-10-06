@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.6.4',
+    var version = '0.6.5',
         _ = new Parser(), //nerdamer's parser
         //import bigInt
         bigInt = imports.bigInt,
@@ -1703,7 +1703,7 @@ var nerdamer = (function(imports) {
             var collected = [];
             for(var x in this.symbols) {
                 var symbol = this.symbols[x];
-                if(expand_symbol && symbol.group === PL || x.group === CP) {
+                if(expand_symbol && (symbol.group === PL || symbol.group === CP)) {
                     collected = collected.concat(symbol.collectSymbols());
                 }
                 else collected.push( fn ? fn(symbol, opt) : symbol );
