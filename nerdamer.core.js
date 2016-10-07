@@ -1746,9 +1746,10 @@ var nerdamer = (function(imports) {
         getDenom: function() {
             if(this.group === CB) {
                 for(var x in this.symbols) {
-                    if(this.symbols[x].power < 0) return this.symbols[x];
+                    if(this.symbols[x].power < 0) return this.symbols[x].clone();
                 }
             }
+            return new Symbol(1);
         },
         toString: function() {
             return this.text();
@@ -6037,3 +6038,5 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
+
+//console.log(nerdamer('(-225*b*r^2*t^(-1)-25*b*r^2*t^(-1)*z-45*b*r-5*b*r*z)*(9+z)^(-1)', null, ['expand']))

@@ -260,6 +260,9 @@ if((typeof module) !== 'undefined') {
                 }
                 return a;
             },
+            polyGCD: function(poly) {
+                
+            },
             /**
              * Differentiates the polynomial
              */
@@ -408,6 +411,15 @@ if((typeof module) !== 'undefined') {
         }
         if(g1 > g2) return g2 - g1; //I have no idea why but this solves the remaining cases. Luck or a future bug?
         return b.totalPow() - a.totalPow(); //keep x*y^2 before x*y
+    };
+    Symbol.prototype.sameVars = function(symbol) {
+        if(!(this.symbols || this.group === symbol.group)) return false;
+        for(var x in this.symbols) {
+            var a = this.symbols[x], b = symbol.symbols[x];
+            if(!b) return false;
+            if(a.value !== b.value) return false;
+        }
+        return true;
     };
     Symbol.prototype.altVar = function(x) {
         var m = this.multiplier.toString(), p = this.power.toString();
@@ -1429,7 +1441,6 @@ if((typeof module) !== 'undefined') {
             var c = __.gcd(a, b);
             var w = __.div(a, c)[0],
                 output = new Symbol(1);
-
             while(!c.equals(1)) { 
                 var y = __.gcd(w, c); 
                 var z = __.div(w, y)[0]; 
@@ -1495,7 +1506,6 @@ if((typeof module) !== 'undefined') {
                 isCompositionGroup = function(group) {
                     return (group === PL || group === CP);
                 };
-            
             if(isCompositionGroup(group)) {
                 //distribute the multiplier in sub-symbols
                 for(var x in symbol.symbols) symbol.symbols[x].distributeMultiplier(); 
@@ -1672,8 +1682,7 @@ if((typeof module) !== 'undefined') {
                 return a;
             }
         },
-        freduce: function(a, CB_only) {
-            CB_only = CB_only || true;
+        freduce: function(a) {
             //grab and order the terms in descending group, and alphabetical order
             var terms = a.collectSymbols(undefined, undefined, function(a, b) {
                 if(a.group === CB && b.group === CB) {
@@ -1694,11 +1703,16 @@ if((typeof module) !== 'undefined') {
             if(!first_term) return new Symbol(1); //nothing to do
             var ftg = first_term.group;
             if(ftg !== CB) return new Symbol(1); //nothing to do again
-            var retval = new Symbol(0);//the value to be returned
-            var l = terms.length;
-            var groups = [ftg]; //keep track of the groups
             
-            if(first_term.group !== CB) return retval;
+            var groups = [ftg]; //keep track of the groups
+
+            //terms of equal length cause problems if they don't have the same variables
+            var nxt = terms[1];
+            while(nxt && nxt.group === CB && !first_term.sameVars(nxt)) {
+                core.Utils.remove(terms, 1);
+                nxt = terms[1];
+            }
+            var l = terms.length;
             var coeffs = [first_term.multiplier.clone()]; //container for the coefficients
             //by now we're dealing with a CB for sure so loop
             for(var x in first_term.symbols) {
@@ -1719,7 +1733,6 @@ if((typeof module) !== 'undefined') {
                     powers[i].push(p);
                 }
             }
-
             //find the reducer powers
             var l2 = powers.length, l3 = map.length;
             var term = powers[0].slice(); //start off with the first and loop through the remainder finding the smalles possible term
@@ -1727,7 +1740,7 @@ if((typeof module) !== 'undefined') {
             for(i=1; i<l2; i++) {
                 var cur = powers[i];
                 for(var k=0; k<l3; k++) {
-                    var a = term[k], b = cur[k], max = first_powers[k];                    
+                    var a = term[k], b = cur[k], max = first_powers[k];  
                     if(groups[i] !== CB) {
                         if(cur[k] === 0) {
                             for(var z=0; z<l3; z++) if(cur[z] !== 0) break; //which variable is it?
@@ -1749,6 +1762,9 @@ if((typeof module) !== 'undefined') {
                     term[k] = Math.min(a, b);
                 }
             }
+            if(core.Utils.arrSum(term) === 0) {
+                return new Symbol(1);
+            } //nothing to factor
             //trim all the terms
             for(i=0; i<l2; i++) {
                 cur = powers[i];
@@ -1808,9 +1824,10 @@ if((typeof module) !== 'undefined') {
                     }
                     else if(g1 === CB && g2 === CB) {
                         var select_current = true;
+                        var ft_is_S = dividend[0].group === S;
                         for(var x in divisor_term.symbols) {
                             var t1 = divisor_term.symbols[x], t2 = dividend_term.symbols[x];
-                            if(t1 && t2 && t1.power > t2.power){
+                            if(!ft_is_S && t1 && t2 && t1.power > t2.power){
                                 select_current = false;
                                 break;
                             }
@@ -1888,18 +1905,32 @@ if((typeof module) !== 'undefined') {
                 }
             }
             else {
-                var factor = __.freduce(b);    
+                if(b.group === CB) {
+                    var den = b.getDenom().invert();
+                    b = _.multiply(b, den.clone());
+                    a = _.expand(_.multiply(a, den));
+                }
+                var factor = __.freduce(b);   
+                var d = __.freduce(factor);
+
+                while(!d.equals(1)) { //reduce the smallest possible
+                    d =  __.freduce(factor);
+                    factor = d;
+                }
+
                 //we don't want to have squares in the numerator 
                 var unit_factor = factor.equals(1);
                 if(!unit_factor) {
                     var other_factor = __.freduce(a);
+
                     if(other_factor.toString() === factor.toString()) {
                         factor = new Symbol(1); //reset it since all we end up with is a square
                         unit_factor = true;//save a function call
                     }
                 }
+
                 if(!unit_factor) a = _.expand(_.multiply(a, factor.clone()));
-                
+
                 var divisor = b.collectSymbols(undefined, undefined, Symbol.LSORT, true),
                     quotient = new Symbol(0),
                     remainder = new Symbol(0),
@@ -1907,7 +1938,7 @@ if((typeof module) !== 'undefined') {
                     ndividend = a.clone(),
                     //solve this another way. The logic is sound but the construct is weird
                     last_divisor_term = divisor[divisor.length-1],
-                    s = 0; //safety                
+                    s = 0; //safety              
                 while(!ndividend.equals(0)) {
                     var selected = __.selectSymbol(dividend, divisor);
                     //we're done. We can't divide anymore since the dividend is not smaller wrt to the divisor terms
@@ -1915,12 +1946,11 @@ if((typeof module) !== 'undefined') {
                     var sl = selected.length, dl = divisor.length;
                     if(last_divisor_term.group === N) dl--;//so... adjust for constants
                     if(sl < dl) break; //done
-                    
                     var divider_term = selected[0];   
                     if(divider_term) {
                         var row = new Symbol(0); //the row to be subtracted
                         var q = _.divide(divider_term[1].clone(), divider_term[0].clone());
-
+                        
                         for(var i=0; i<divisor.length; i++) {
                             //performance? return same q instead of clone. Improvement in core.
                             row = _.add(row, _.multiply(q.clone(), divisor[i].clone()));
@@ -1956,8 +1986,15 @@ if((typeof module) !== 'undefined') {
                 remainder = _.add(ndividend, remainder);
                 
                 if(!unit_factor) {
-                    quotient = _.divide(quotient, factor.clone()); //put back factor
-                    remainder = _.divide(remainder, factor); //no need for a clone
+                    //try dividing out the factor
+                    var divided = __.div(quotient, factor.clone());
+                    if(!divided[1].equals(0)) {
+                        quotient = _.divide(quotient, factor.clone()); //put back factor
+                        remainder = _.divide(remainder, factor); //no need for a clone
+                    }
+                    else {
+                        return divided;
+                    }    
                 }
                 
                 result = [quotient, remainder];
