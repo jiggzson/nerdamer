@@ -154,6 +154,9 @@ var test_cases = {
     'div(sin(x)^2*tan(x)-4*cos(x)*tan(x)+cos(x)*sin(x)^2-4*cos(x)^2, sin(x)^2-4*cos(x)^2)': {
         expected: '[cos(x)+tan(x),-4*cos(x)*tan(x)-4*cos(x)^2+4*cos(x)^3+4*cos(x)^2*tan(x)]'
     },
+    'div(y^2*z-4*x*z+x*y^2-4*x^2, y^2-4*x^2)': {
+        expected: '[x+z,-4*x*z-4*x^2+4*x^3+4*x^2*z]'
+    },
     'div(-5*y^2+16*a*y+5*x^4+14*a*x^2-3*a^2, 3*a-y+x^2)': {
         expected: '[-a+5*x^2+5*y,0]'
     },
@@ -181,6 +184,9 @@ var test_cases = {
     'div(15*x^9-25*x^7-35*x^6+6*x^5+3*x^4-10*x^3-19*x^2-7*x+y, 3*x^3-5*x-7)': {
         expected: '[2*x^2+5*x^6+x,y]'
     },
+    'div(25*x^6*y+10*x^5*y, 5*x^2*y+3-17*x^5)': {
+        expected: '[2*x^3+5*x^4,-15*x^4-6*x^3+34*x^8+85*x^9]'
+    },
     'div(x^2+2*x+1+u, x+1)': {
         expected: '[1+x,u]'
     },
@@ -193,6 +199,16 @@ var test_cases = {
     'div(b*y*z-a*x*z+4*a*b*y^4-4*a^2*x*y^3+b^2*y-a*b*x, 4*y^3*a+z+b)': {
         expected: '[-a*x+b*y,0]'
     },
+    'div(17*x^3*y+3*x^2*y+34*x+6, x^2*y+2)': {
+        expected: '[17*x+3,0]'
+    },
+    'div(-5*x^2+17*x^2*y+4+3*x*y, 2*x^2*y+4)': {
+        expected: '[(3/2)*x^(-1)+17/2,-30-5*x^2-6*x^(-1)]'
+    },
+    'div(3*(x^2*y)+5,6*x^2*y+3*x*y+7)': {
+        expected: '[(1+2*x)^(-1)*x,(1+2*x)^(-1)*(3*x+5)]'
+    },
+    
     
 };
 
@@ -207,7 +223,7 @@ var report = test('Algebra', test_cases, function(expression, report) {
         passed: this.expected === result,
         contents: result
     };
-}, true);
+}, false);
 console.timeEnd('elapsed');
 
 console.log(report.getReport());

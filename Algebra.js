@@ -5,7 +5,7 @@
 * License : MIT
 * Source : https://github.com/jiggzson/nerdamer
 */
-
+require('./Calculus.js');
 if((typeof module) !== 'undefined') {
     nerdamer = require('./nerdamer.core.js');
 }
@@ -29,7 +29,8 @@ if((typeof module) !== 'undefined') {
         Frac = core.Frac,
         isInt = core.Utils.isInt,
         Symbol = core.Symbol,
-        EPSILON = core.Settings.EPSILON;
+        EPSILON = core.Settings.EPSILON,
+        CONST_HASH = core.Settings.CONST_HASH;
         
         /**
         * Converts a symbol into an equivalent polynomial arrays of 
@@ -53,7 +54,6 @@ if((typeof module) !== 'undefined') {
             else if(typeof symbol === 'string') {
                 this.parse(_.parse(symbol));
             }
-            
         }
         
         Polynomial.fromArray = function(arr, variable) {
@@ -372,6 +372,7 @@ if((typeof module) !== 'undefined') {
     * so the symbol multiplier carries the coefficients for all contained symbols.
     * For S it just returns it's own multiplier. This function doesn't care if it's a polynomial or not
     * @param {Array} c The coefficient array
+    * @param {boolean} with_order 
     * @return {Array}
     */
     Symbol.prototype.coeffs = function(c, with_order) {
@@ -401,16 +402,40 @@ if((typeof module) !== 'undefined') {
         }
         return c;
     };
-    Symbol.LSORT = function(a, b) {
-        var g1 = a.group, g2 = b.group;
-        var p1 = a.totalPow(), p2 = b.totalPow();
-        if(p1 === p2)  {
-            if(g2 === N || g1 === N) return g2 - g1; //keep N at the end
-            if(g1 > g2) return g2 - g1;
-            //return g2 - g1; //keep y^2 before x*y
+    Symbol.prototype.hasFunc = function() {
+        if(this.group === FN || this.group === EX) return true;
+        if(this.symbols) {
+            for(var x in this.symbols) {
+                if(this.symbols[x].hasFunc()) return true;
+            }
         }
-        if(g1 > g2) return g2 - g1; //I have no idea why but this solves the remaining cases. Luck or a future bug?
-        return b.totalPow() - a.totalPow(); //keep x*y^2 before x*y
+        return false;
+    };
+    Symbol.prototype.tBase = function(map) {
+        if(typeof map === 'undefined') throw new Error('Symbol.tBase requires a map object!');
+        var terms= [];
+        var symbols = this.collectSymbols(null, null, null, true),
+            l = symbols.length;
+        for(var i=0; i<l; i++) {
+            var symbol = symbols[i],
+                g = symbol.group,
+                nterm = new MVTerm(symbol.multiplier, [], map);
+            if(g === CB) {
+                for(var x in symbol.symbols) {
+                    var sym = symbol.symbols[x];
+                    nterm.terms[map[x]] = sym.power;
+                }
+            }
+            else {
+                nterm.terms[map[symbol.value]] = symbol.power;
+            }
+            terms.push(nterm.fill());
+        }
+        return terms;
+    };
+    Symbol.prototype.altVar = function(x) {
+        var m = this.multiplier.toString(), p = this.power.toString();
+        return (m === '1' ? '' : m+'*')+ x + (p === '1' ? '' : '^'+p);
     };
     Symbol.prototype.sameVars = function(symbol) {
         if(!(this.symbols || this.group === symbol.group)) return false;
@@ -421,122 +446,123 @@ if((typeof module) !== 'undefined') {
         }
         return true;
     };
-    Symbol.prototype.altVar = function(x) {
-        var m = this.multiplier.toString(), p = this.power.toString();
-        return (m === '1' ? '' : m+'*')+ x + (p === '1' ? '' : '^'+p);
+    function MVTerm(coeff, terms, map) {
+        this.terms = terms || [];
+        this.coeff = coeff;
+        this.map = map; //careful! all maps are the same object
+        this.sum = new core.Frac(0);
+        this.image = undefined;
     };
-    Symbol.prototype.hasFunc = function() {
-        if(this.group === FN || this.group === EX) return true;
-        if(this.symbols) {
-            for(var x in this.symbols) {
-                if(this.symbols[x].hasFunc()) return true;
-            }
+    MVTerm.prototype.updateCount = function() {
+        this.count = this.count || 0;
+        for(var i=0; i<this.terms.length; i++) {
+            if(!this.terms[i].equals(0)) this.count++;
         }
-        return false;
+        return this;
     };
-    Symbol.prototype.hasConstant = function() {
-        if(this.group === CP) {
-            for(var x in this.symbols) {
-                if(this.symbols[x].isConstant()) return true;
-            }
+    MVTerm.prototype.getVars = function() {
+        var vars = [];
+        for(var i=0; i<this.terms.length; i++) {
+            var term = this.terms[i],
+                rev_map = this.getRevMap();
+            if(!term.equals(0)) vars.push(this.rev_map[i]);
         }
-        return false;
+        return vars.join(' ');
     };
-    Symbol.prototype.totalPow = function() {
-        if(this.group === EX) return 0;
-        if(this.group === CB) {
-            var t = 0;
-            for(var x in this.symbols) {
-                var s = this.symbols[x];
-                if(s.group === EX) return 0; //I don't yet support EX
-                else t += s.power.toDecimal();
-            }
-            return t;
+    MVTerm.prototype.len = function() {
+        if(typeof this.count === 'undefined') {
+            this.updateCount();
         }
-        return this.power.toDecimal();
+        return this.count;
     };
-    //converts symbol to object for easy comparison
-    Symbol.prototype.simple = function(o) { 
-        o = o || {};
-        var g = this.group;
-        if(g === N) {
-            //always x^0
-            o[this.value] = {0: this};
+    MVTerm.prototype.toSymbol = function(rev_map) {
+        rev_map = rev_map || this.getRevMap();
+        var symbol = new Symbol(this.coeff); 
+        for(var i=0; i<this.terms.length; i++) {
+            var v = rev_map[i],
+                t = this.terms[i];
+            if(t.equals(0) || v === CONST_HASH) continue;
+            var mapped = new Symbol(v);
+            mapped.power = t;
+            symbol = _.multiply(symbol, mapped);
         }
-        else {
-            var v, p;
-            if(g === CB) {
-                v = variables(this).join(' '); //Caution. Cannot have functions
-                p = this.totalPow();
-            }
-            else if(g === CP || g === PL) {
-                for(var x in this.symbols) {
-                    o = this.symbols[x].simple(o);
-                }
-                return o;
-            }
-            else {
-                v = this.value; 
-                p = this.power.toDecimal();
-            }
-            var so = o[v] = o[v] || {
-                powers: []
-            };
-            var a = so[p] = so[p] || [];
-            a.push(this);
-            so.powers.push(p);
-        }
+        return symbol;
+    };
+    MVTerm.prototype.getRevMap = function() {
+        if(this.rev_map) return this.rev_map;
+        var o = {};
+        for(var x in this.map) o[this.map[x]] = x;
+        this.rev_map = o;
         return o;
     };
-    Symbol.prototype.isLarger = function(symbol, key) {
-        var o1 = this.simple(), o2 = symbol.simple(), k1, k2;
-        if(key) {
-            k1 = o1[key]; k2 = o2[key];
-            return Math.max.apply(null, k1.powers) > Math.max.apply(null, k2.powers);
-        }
-        else {
-            for(var x in o1) {
-                if(x !== 'powers') {
-                    k1 = o1[x]; k2 = o2[x];
-                    if(Math.max.apply(null, k1.powers) > Math.max.apply(null, k2.powers))
-                        return true;
-                }
+    MVTerm.prototype.generateImage = function() {
+        this.image = this.terms.join(' ');
+        return this;
+    },
+    MVTerm.prototype.getImg = function() {
+        if(!this.image) this.generateImage();
+        return this.image;
+    },
+    MVTerm.prototype.fill = function() {
+        var l = this.map.length;
+        for(var i=0; i<l; i++) {
+            if(typeof this.terms[i] === 'undefined') this.terms[i] = new core.Frac(0);
+            else {
+                this.sum = this.sum.add(this.terms[i]);
             }
         }
-        return false;
+        return this;
+    };
+    MVTerm.prototype.divide = function(mvterm) {
+        var c = this.coeff.divide(mvterm.coeff),
+            l = this.terms.length,
+            new_mvterm = new MVTerm(c, [], this.map);
+        for(var i=0; i<l; i++) {
+            new_mvterm.terms[i] = this.terms[i].subtract(mvterm.terms[i]);
+            new_mvterm.sum = new_mvterm.sum.add(new_mvterm.terms[i]);
+        }
+        return new_mvterm;
+    };
+    MVTerm.prototype.multiply = function(mvterm) {
+        var c = this.coeff.multiply(mvterm.coeff),
+            l = this.terms.length,
+            new_mvterm = new MVTerm(c, [], this.map);
+        for(var i=0; i<l; i++) {
+            new_mvterm.terms[i] = this.terms[i].add(mvterm.terms[i]);
+            new_mvterm.sum = new_mvterm.sum.add(new_mvterm.terms[i]);
+        }
+        return new_mvterm;
+    };
+    MVTerm.prototype.isZero = function() {
+        return this.coeff.equals(0);
+    };
+    MVTerm.prototype.toString = function() {
+        return '{ coeff: '+this.coeff.toString()+', terms: ['+
+                this.terms.join(',')+']: sum: '+this.sum.toString()+', count: '+this.count+'}';
+    };
+    
+    core.Utils.toMapObj = function(arr) {
+        var c = 0, o = {};
+        for(var i=0; i<arr.length; i++) {
+            var v = arr[i];
+            if(typeof o[v] === 'undefined') {
+                o[v] = c; c++;
+            }
+        }
+        o.length = c;
+        return o;
+    };
+    core.Utils.filledArray = function(v, n, clss) {
+        var a = [];
+        while (n--) {
+          a[n] = clss ? new clss(v) : v;
+        }
+        return a;
     };
     core.Utils.arrSum = function(arr) {
         var sum = 0, l = arr.length;
         for(var i=0; i<l; i++) sum += arr[i];
         return sum;
-    };
-    //function to turn array to object with counters
-    core.Utils.arrayToCounterObj = function(arr, default_val) {
-        default_val = default_val || 0;
-        var o = {};
-        for(var i=0; i<arr.length; i++) o[arr[i]] = default_val;
-        return o;
-    };
-    //returns hightest number in array and where they were found in the array
-    core.Utils.getHighest = function(arr, key, extra_cond) {
-        var selected = [], indices = [];
-        for(var i=0; i<arr.length; i++){
-            var item = arr[i];
-            if(typeof item !== 'undefined') {
-                var has_key = typeof key !== 'undefined';
-                var t = has_key ? item[key] : item;
-                var s = selected[0];
-                var cond = extra_cond ?  extra_cond(item, selected) : true;
-                var c = has_key && s? s[key]: s, greater = t > c;
-
-                if((!c || c === t || greater) && cond) {
-                    if(greater) { selected = []; indices = []; };//reset
-                    selected.push(item);
-                    indices.push(i);
-                }
-            }
-        }
-        return [selected[0], indices];
     };
     core.Utils.subFunctions = function(symbol, map) {
         map = map || {};
@@ -562,19 +588,6 @@ if((typeof module) !== 'undefined') {
         if(symbol.group === CP || symbol.group === PL) return symbol.altVar(core.Utils.inBrackets(subbed.join('+')));;
         if(symbol.group === CB) return symbol.altVar(core.Utils.inBrackets(subbed.join('*')));
         return symbol.text();
-    };
-    /**
-     * A debugging method to be stripped
-     * @returns {String}
-     */    
-    var qc = function() {
-        var args = [].slice.call(arguments),
-            name = args.shift();
-        args = args.map(function(a) {
-            return __.polyArray2Symbol(a, 'x').text();
-        });
-        
-        return name+'('+args.join(',')+')';
     };
     var __ = core.Algebra = {
 
@@ -1661,11 +1674,9 @@ if((typeof module) !== 'undefined') {
                     T = __.div(a, t);
                     b = T[1]; 
                     if(T[0].equals(0)) {
-                        if(!abs) return __.gcd(b, a, true); //one or the other
-                        return new Symbol(core.Math2.GCD(a.multiplier, b.multiplier));
+                        return new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier));
                     }
                     a = t; 
-                    
                 }
                 //get rid of gcd in coeffs
                 var multipliers = [];
@@ -1786,230 +1797,258 @@ if((typeof module) !== 'undefined') {
             }
             return factor;
         },
-        selectSymbol: function(dividend, divisor) {
-            var selected = [], divisor_length = divisor.length, dividend_length = dividend.length;
-            var a_seen = [], b_seen = [];
-            var select = function(term1, term2, index1, index2) {
-                a_seen[index1] = 1; b_seen[index2] = 1;
-                selected.push([term1, term2]);
-            };
-            //loop through the divisor and try to find a term that's good for division
-            for(var i=0; i<dividend_length; i++) {
-                if(a_seen[i]) continue;
-                var dividend_term = dividend[i];
-                for(var j=0; j<divisor_length; j++) {
-                    if(b_seen[j]) continue;
-                    var divisor_term = divisor[j];
-                    var g1 = dividend_term.group, g2 = divisor_term.group;
-                    //skip if it's empty since we've already seen this term
-                    if(g2 > g1) continue;
-                    if(g1 === CB && g2 === S) { 
-                        //check if it contains the variable
-                        var e = dividend_term.symbols[divisor_term.value];
-                        if(e) {
-                            var p1 = e.power, p2 = divisor_term.power;
-                            //if the divisor term power is larger then we skip
-                            if(p2 > p1) continue;
-                            else {
-                                select(divisor_term, dividend_term, i, j);
-                                break;
-                            }
-                        }
-                    }
-                    else if(g1 === S && dividend_term.value === divisor_term.value) { 
-                        if(dividend_term.power >= divisor_term.power) {
-                            select(divisor_term, dividend_term, i, j);
-                            break;
-                        } 
-                    }
-                    else if(g1 === CB && g2 === CB) {
-                        var select_current = true;
-                        var ft_is_S = dividend[0].group === S;
-                        for(var x in divisor_term.symbols) {
-                            var t1 = divisor_term.symbols[x], t2 = dividend_term.symbols[x];
-                            if(!ft_is_S && t1 && t2 && t1.power > t2.power){
-                                select_current = false;
-                                break;
-                            }
-                        }
-                        if(select_current) {
-                            select(divisor_term, dividend_term, i, j);
-                            break;
-                        }
-                    }
-                    //group N cannot be the only match: INFINITE LOOP
-                    else if(g2 === N && selected.length > 0) { 
-                        select(divisor_term, dividend_term, i, j);
-                        break;
-                    }
-                }
-            }
-            return selected;
-        },
         /**
          * Divides one expression by another
          * @param {Symbol} symbol1
          * @param {Symbol} symbol2
          * @returns {Array}
          */
-        div: function(symbol1, symbol2) {               
-            /*
-             * * This function follows a similar principle as the Euclidian algorithm by 
-             * attempting to reduce one term during each iteration
-             * except that it doesn't care about the order. This presents some inefficiency as 
-             * extra terms on both sides of the sign are generated. However due to the sign
-             * the just end up canceling out.
-             * ---------------------------------------------------------------------------------
-             * Roughly explained. Given: dividend ==  (symbol1) & divisor == polynomial (symbol2)
-             * 1. Find a monomial in the dividend containing the variable which has a power <= to the monomial in the divisor
-             *  e.g. x^2*y*z is a suitable divisor for x^2*y^2*z (the order of the variable doesn't matter)
-             * 2. Repeat this step for all the terms in the divisor
-             * 3. Make sure to mark terms which already have been selected in the dividend
-             * 3a. If no suitable match was found for one of the terms then it goes to the remainder
-             * 3b. If no suitable match was found for any of the terms in the divisor then we're done
-             * 4. Get a q by dividing the first terms in the selected array by its match
-             * 5. Multiply all terms in the divisor by q. Call this q_div
-             * 6. Subtract q_div from the dividend
-             * 7. Repeat 1,2,3,4,5,6 until either 3b is true or dividend = 0
-             */
-            //get rid of the obvious
-            if(symbol2.isConstant()) { 
-                return [_.expand(_.divide(symbol1, symbol2)), new Symbol(0)];
-            }
-            
-            //enable support for functions by temporarily substituting them for a variable
-            var vars_a = variables(symbol1), vars_b = variables(symbol2),
-                map = {},
-                a = _.expand(_.parse(core.Utils.subFunctions(symbol1, map))),
-                b = _.parse(core.Utils.subFunctions(symbol2, map)),
-                subs = {};
-            //prepare substitutions
-            for(var x in map) subs[map[x]] = _.parse(x);
-
-            var al = vars_a.length, bl = vars_b.length, result;
-            //quick test to see if we can get away with univariate division
-            if( al <= 1 && bl <= 1 && (vars_a[0] || vars_b[0]) === (vars_b[0] || vars_a[0]) && !symbol1.hasFunc() && !symbol2.hasFunc()) {
-                if(al === bl && al === 0) {
-                    result = [];
-                    var t = a.multiplier.num.divide(a.multiplier.den)
-                            .divmod(b.multiplier.num.divide(b.multiplier.den));
-                    result[0] = new Symbol(t.quotient);
-                    result[1] = new Symbol(t.remainder);
-                }
-                else {
-                    var aa = new Polynomial(a),
-                        bb = new Polynomial(b);
-                    result = aa.divide(bb).map(function(x) {
-                        return x.toSymbol();
-                    });
-                }
-            }
-            else {
-                if(b.group === CB) {
-                    var den = b.getDenom().invert();
-                    b = _.multiply(b, den.clone());
-                    a = _.expand(_.multiply(a, den));
-                }
-                var factor = __.freduce(b);   
-                var d = __.freduce(factor);
-
-                while(!d.equals(1)) { //reduce the smallest possible
-                    d =  __.freduce(factor);
-                    factor = d;
-                }
-
-                //we don't want to have squares in the numerator 
-                var unit_factor = factor.equals(1);
-                if(!unit_factor) {
-                    var other_factor = __.freduce(a);
-
-                    if(other_factor.toString() === factor.toString()) {
-                        factor = new Symbol(1); //reset it since all we end up with is a square
-                        unit_factor = true;//save a function call
-                    }
-                }
-
-                if(!unit_factor) a = _.expand(_.multiply(a, factor.clone()));
-
-                var divisor = b.collectSymbols(undefined, undefined, Symbol.LSORT, true),
-                    quotient = new Symbol(0),
-                    remainder = new Symbol(0),
-                    dividend = a.collectSymbols(undefined, undefined, Symbol.LSORT, true),
-                    ndividend = a.clone(),
-                    //solve this another way. The logic is sound but the construct is weird
-                    last_divisor_term = divisor[divisor.length-1],
-                    s = 0; //safety              
-                while(!ndividend.equals(0)) {
-                    var selected = __.selectSymbol(dividend, divisor);
-                    //we're done. We can't divide anymore since the dividend is not smaller wrt to the divisor terms
-                    //but beware: constants at the end tell lies. They match everybody so they don't tell us anything new.
-                    var sl = selected.length, dl = divisor.length;
-                    if(last_divisor_term.group === N) dl--;//so... adjust for constants
-                    if(sl < dl) break; //done
-                    var divider_term = selected[0];   
-                    if(divider_term) {
-                        var row = new Symbol(0); //the row to be subtracted
-                        var q = _.divide(divider_term[1].clone(), divider_term[0].clone());
-                        
-                        for(var i=0; i<divisor.length; i++) {
-                            //performance? return same q instead of clone. Improvement in core.
-                            row = _.add(row, _.multiply(q.clone(), divisor[i].clone()));
-                        }
-                        //add the divided term to quotient
-                        quotient = _.add(quotient, q.clone());
-                        ndividend = _.subtract(ndividend, row);
-                        //We might be done since if the first term in divisor is of group CB and the that in the denominator is S
-                        //the the divisor is already smaller and we can exit.
-                        dividend = ndividend.collectSymbols(undefined, undefined, Symbol.LSORT, true);
-                        var nft = dividend[0]; //the new first term
-                        if(nft) {
-                            var fdt = divisor[0]; //first divisor term
-                            var is_smaller = false, g1 = nft.group, g2 = fdt.group;
-                            if(g1 === g2 && fdt.value === nft.value) {
-                                is_smaller = nft.power < fdt.power;
-                            }
-                            else if(g2 === CB && g1 === S) { //<% x*y/x^2*y2:investigate %>
-                                var eq = fdt.symbols[nft.value];
-                                if(eq) is_smaller = eq.power < nft.power;
-                            }
-                        }
-                    }
-
-                    if(!divider_term || is_smaller) { 
-                        remainder = _.add(remainder, ndividend);
-                        ndividend = new Symbol(0); //terminate
-                    }
-                    s++;
-                    if(s > 100) return [new Symbol(0), symbol1]; //trigger the safety
-                }
-
-                remainder = _.add(ndividend, remainder);
-                
-                if(!unit_factor) {
-                    //try dividing out the factor
-                    var divided = __.div(quotient, factor.clone());
-                    if(!divided[1].equals(0)) {
-                        quotient = _.divide(quotient, factor.clone()); //put back factor
-                        remainder = _.divide(remainder, factor); //no need for a clone
-                    }
-                    else {
-                        return divided;
-                    }    
-                }
-                
-                result = [quotient, remainder];
-            }
-            
-            result[0] = _.parse(result[0].text(), subs);
-            result[1] = _.parse(result[1].text(), subs);
- 
-            return result;
-        },
         divide: function(symbol1, symbol2) {
             var result = __.div(symbol1, symbol2);
             var remainder = _.divide(result[1], symbol2);
             return _.add(result[0], remainder);
-         }
+        },
+        div: function(symbol1, symbol2) {
+            var symbol1_has_func = symbol1.hasFunc(),
+                symbol2_has_func = symbol2.hasFunc(),
+                parse_funcs = false;
+            
+            //substitute out functions so we can treat them as regular variables
+            if(symbol1_has_func || symbol2_has_func) {
+                parse_funcs = true;
+                var map = {},
+                    symbol1 = _.parse(core.Utils.subFunctions(symbol1, map)),
+                    symbol2 = _.parse(core.Utils.subFunctions(symbol2, map)),
+                    subs = {};
+                //prepare substitutions
+                for(var x in map) subs[map[x]] = _.parse(x);
+            }
+            
+            var factor = __.freduce(symbol2);   
+            var d = __.freduce(factor);
+
+            while(!d.equals(1)) { //reduce the smallest possible
+                d =  __.freduce(factor);
+                factor = d;
+            }
+
+            //we don't want to have squares in the numerator 
+            var unit_factor = factor.equals(1);
+            if(!unit_factor) {
+                var other_factor = __.freduce(symbol1);
+                if(other_factor.toString() === factor.toString()) {
+                    factor = new Symbol(1); //reset it since all we end up with is a square
+                    unit_factor = true;//save a function call
+                }
+            }
+            if(!unit_factor) symbol1 = _.expand(_.multiply(symbol1, factor.clone()));
+        
+            var reconvert = function(arr) {
+                var symbol = new Symbol(0);
+                for(var i=0; i<arr.length; i++) {
+                    var x = arr[i].toSymbol();
+                    symbol = _.add(symbol, x);
+                }
+                return symbol;
+            };
+            var get_unique_max = function(term) {
+                var max = Math.max.apply(null, term.terms),
+                    count = 0, idx;
+                for(var i=0; i<term.terms.length; i++) {
+                    if(term.terms[i].equals(max)) {
+                        idx = i; count++;
+                    }
+                    if(count > 1) return;
+                }
+                return [max, idx, term];
+            };
+            var get_det = function(s, lookat) {
+                lookat = lookat || 0;
+                var det = s[lookat], l = s.length;
+                if(!det) return;
+                //eliminate the first term if it doesn't apply
+                var umax = get_unique_max(det); 
+                for(var i=lookat+1; i<l; i++) {
+                    var term = s[i],   
+                        is_equal = det.sum.equals(term.sum);
+                    if(!is_equal && umax) { 
+                        break;
+                    } 
+                    if(is_equal) {
+                        //check the differences of their maxes. The one with the biggest difference governs
+                        //e.g. x^2*y^3 vs x^2*y^3 is unclear but this isn't the case in x*y and x^2
+                        var max1, max2, idx1, idx2, l2 = det.terms.length;
+                        for(var j=0; j<l2; j++) {
+                            var item1 = det.terms[j], item2 = term.terms[j];
+                            if(typeof max1 === 'undefined' || item1.greaterThan(max1)) {
+                                max1 = item1; idx1 = j;
+                            }
+                            if(typeof max2 === 'undefined' || item2.greaterThan(max2)) {
+                                max2 = item2; idx2 = j;
+                            }
+                        }
+                        //check their differences
+                        var d1 = max1.subtract(term.terms[idx1]),
+                            d2 = max2.subtract(det.terms[idx2]);
+                        if(d2 > d1) {
+                            umax = [max2, idx2, term];
+                            break;
+                        }
+                        if(d1 > d2) {
+                            umax = [max1, idx1, det];
+                            break;
+                        }
+                    }
+                    else {
+                        //check if it's a suitable pick to determine the order
+                        umax = get_unique_max(term);
+                        //if(umax) return umax;
+                        if(umax) break;
+                    }
+                    umax = get_unique_max(term); //calculate a new unique max
+                }
+
+                var e, idx;
+                for(var i=0; i<s2.length; i++) {
+                    var cterm = s2[i].terms;
+                    //confirm that this is a good match for the denominator
+                    idx = umax[1];
+                    if(idx === cterm.length - 1) return;
+                    e = cterm[idx]; 
+                    if(!e.equals(0)) break;
+                }
+
+                if(e.equals(0)) return get_det(s, ++lookat); //look at the next term
+                return umax;
+            };
+            
+            var vars = variables(symbol1).concat(variables(symbol2));
+            vars.push(CONST_HASH); //this is for the numbers
+            var t_map = core.Utils.toMapObj(vars);
+            var init_sort = function(a, b) {
+                return b.sum.subtract(a.sum);
+            };
+            var s1 = symbol1.tBase(t_map).sort(init_sort),
+                s2 = symbol2.tBase(t_map).sort(init_sort),
+                det = get_det(s1);//we'll begin by assuming that this will let us know which term governs
+            var quotient = [];
+            if(det) {
+                var lead_var = det[1];
+                var can_divide = function(a, b) { 
+                    if(a[0].sum.equals(b[0].sum)) return a.length >= b.length;
+                    return true;
+                };
+                var is_larger = function(a, b) { 
+                    if(!a || !b) return false; //it's empty so...
+                    for(var i=0; i<a.terms.length; i++) {
+                        if(a.terms[i].lessThan(b.terms[i])) return false;
+                    }
+                    return true;
+                };
+                var try_better_lead_var = function(s1, s2, lead_var) {
+                    var checked = [];
+                    for(var i=0; i<s1.length; i++) { 
+                        var t = s1[i];
+                        for(var j=0; j<t.terms.length; j++) {
+                            var cf = checked[j], tt = t.terms[j];
+                            if(i === 0) checked[j] = tt; //add the terms for the first one
+                            else if(cf && !cf.equals(tt)) checked[j] = undefined;
+                        }
+                    }
+                    for(var i=0; i<checked.length; i++) {
+                        var t = checked[i];
+                        if(t && !t.equals(0)) return i;
+                    }
+                    return lead_var;
+                };
+                var sf = function(a, b){ 
+                    var l1 = a.len(), l2 = b.len();
+                    var blv = b.terms[lead_var], alv = a.terms[lead_var];
+                    if(l2 > l1 && blv.greaterThan(alv)) return l2 - l1;
+                    return blv.subtract(alv); 
+                };
+
+                //check to see if there's a better lead_var
+                lead_var = try_better_lead_var(s1, s2, lead_var);
+                //reorder both according to the max power
+                s1.sort(sf); //sort them both according to the leading variable power
+                s2.sort(sf);
+
+                //try to adjust if den is larger
+                var fdt = s2[0], fnt = s1[0];
+                
+                var den = new MVTerm(new Frac(1), [], fnt.map);
+                if(fdt.sum.greaterThan(fnt.sum)&& fnt.len() > 1) {
+                    for(var i=0; i<fnt.terms.length; i++) {
+                        var d = fdt.terms[i].subtract(fnt.terms[i]);
+                        if(!d.equals(0)) {
+                            var nd = d.add(new Frac(1));
+                            den.terms[i] = d;
+                            for(var j=0; j<s1.length; j++) {
+                                s1[j].terms[i] = s1[j].terms[i].add(nd);
+                            }
+                        }
+                        else den.terms[i] = new Frac(0);
+                    }
+                }
+
+                while(is_larger(s1[0], s2[0]) && can_divide(s1, s2)) {
+                    var q = s1[0].divide(s2[0]);
+                    quotient.push(q); //add what's divided to the quotient
+                    s1.shift();//the first one is guaranteed to be gone so remove from dividend
+                    for(var i=1; i<s2.length; i++) { //loop through the denominator
+                        var t = s2[i].multiply(q).generateImage(), 
+                            l2 = s1.length;
+                        //if we're subtracting from 0
+                        if(l2 === 0) { 
+                            t.coeff = t.coeff.neg();
+                            s1.push(t); 
+                            s1.sort(sf);
+                        }
+
+                        for(var j=0; j<l2; j++) {
+                            var cur = s1[j];
+                            if(cur.getImg() === t.getImg()) {
+                                cur.coeff = cur.coeff.subtract(t.coeff);
+                                if(cur.coeff.equals(0)) {
+                                    core.Utils.remove(s1, j);
+                                    j--; //adjust the iterator
+                                }
+                                break;
+                            }
+                            if(j === l2 - 1) { 
+                                t.coeff = t.coeff.neg();
+                                s1.push(t); 
+                                s1.sort(sf);
+                            }
+                        }
+                    }
+//                    adjust(s1, s2);
+                }
+            }
+            
+            var quot = reconvert(quotient),
+                rem = reconvert(s1);
+            if(!unit_factor) {
+               quot = _.multiply(quot, factor.clone().invert());
+               rem = _.multiply(rem, factor.invert());
+            };
+            
+            if(typeof den !== 'undefined') {
+                den = den.toSymbol();
+                quot = _.divide(quot, den.clone());
+                rem = _.divide(rem, den);
+            }
+                
+            
+            //put back the functions
+            if(parse_funcs) {
+                quot = _.parse(quot.text(), subs);
+                rem = _.parse(rem.text(), subs);
+            }
+            
+            return [quot, rem];
+        }
     };
     
     nerdamer.register([
@@ -2042,6 +2081,12 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: 2,
             build: function() { return __.div; }
+        },
+        {
+            name: 'sqfr',
+            visible: true,
+            numargs: 1,
+            build: function() { return __.sqfr; }
         }
     ]);
 })();
