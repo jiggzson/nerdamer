@@ -3212,8 +3212,9 @@ var nerdamer = (function(imports) {
 
                 if(g1 === FN && a.fname === SQRT && !b.isConstant() && a.args[0].value === b.value) {
                     //unwrap sqrt
+                    var a_pow = a.power;
                     a = a.args[0].clone();
-                    a.setPower(new Frac(0.5));
+                    a.setPower(new Frac(0.5).multiply(a_pow));
                     g1 = a.group;
                 };
                 
@@ -3828,8 +3829,12 @@ var nerdamer = (function(imports) {
             else if(symbol.isComposite()) { 
                 var collected = symbol.collectSymbols().sort(
                         group === CP || previousGroup === CP ? 
-                        function(a, b) { return a.group < b.group;}:
-                        function(a, b) { return a.power < b.power;}
+                        function(a, b) { return b.group - a.group;}:
+                        function(a, b) { 
+                            var x = isSymbol(a.power) ? -1 : a.power;
+                            var y = isSymbol(b.power) ? -1 : b.power;
+                            return y-x;
+                        }
                     ),
                     symbols = [],
                     l = collected.length;

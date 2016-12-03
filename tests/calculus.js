@@ -58,7 +58,7 @@ var test = require('./test.js'),
         expected: '2*(-log(x)*sin(x)+cos(x)*x^(-1))'
     },
     'diff(cos(5*x)*log(sec(sqrt(cos(x^(4/5))^2))/y^2)*y,x)': {
-        expected: '(-4/5)*(sec(abs(cos(x^(4/5))))*y^(-2))^(-1)*abs(cos(x^(4/5)))^(-1)*cos(x^(4/5))*sec(abs(cos(x^(4/5))))*sin(x^(4/5))*tan(abs(cos(x^(4/5))))*x^(-1/5)*y^(-2)*cos(5*x)*y-5*log(sec(abs(cos(x^(4/5))))*y^(-2))*sin(5*x)*y'
+        expected: '(-4/5)*abs(cos(x^(4/5)))^(-1)*cos(x^(4/5))*sec(abs(cos(x^(4/5))))*sin(x^(4/5))*tan(abs(cos(x^(4/5))))*x^(-1/5)*y^(-2)*cos(5*x)*sec(abs(cos(x^(4/5))))^(-1)*y^3-5*log(sec(abs(cos(x^(4/5))))*y^(-2))*sin(5*x)*y'
     },
     'diff(x*cos(x)^log(x),x)': {
         expected: '(-cos(x)^(-1)*log(x)*sin(x)+log(cos(x))*x^(-1))*cos(x)^log(x)*x+cos(x)^log(x)'
@@ -73,7 +73,7 @@ var test = require('./test.js'),
         expected: '(-4/5)*abs(cos(x^(4/5)))^(-1)*cos(x^(4/5))*sec(abs(cos(x^(4/5))))*sin(x^(4/5))*tan(abs(cos(x^(4/5))))*x^(-1/5)'
     },
     'diff(log(log(log(cos(t*t)^z))),t)': {
-        expected: '-2*(log(cos(t^2))*z)^(-1)*cos(t^2)^(-1)*sin(t^2)*t*z*log(log(cos(t^2))*z)^(-1)'
+        expected: '-2*cos(t^2)^(-1)*sin(t^2)*t*z*log(cos(t^2))^(-1)*log(log(cos(t^2))*z)^(-1)*z^(-1)'
     },
     'diff(6*log(x)^(3*log(x^2)),x)': {
         expected: '36*(log(log(x))*x^(-1)+x^(-1))*log(x)^(6*log(x))'
@@ -112,7 +112,7 @@ var test = require('./test.js'),
         expected: '-44+11*x*y+385*x^2'
     },
     'sum(sqrt(x)*sin(x), x, 0, 10)': {
-        expected: '895753/430206'
+        expected: '775334583/372372283' //much more accurate
     }
 };
 
