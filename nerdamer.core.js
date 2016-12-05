@@ -64,6 +64,8 @@ var nerdamer = (function(imports) {
         SQRT = 'sqrt',
         
         ABS = 'abs',
+        
+        FACTORIAL = 'fact',
 
         //the storage container "memory" for parsed expressions
         EXPRESSIONS = [],
@@ -143,21 +145,6 @@ var nerdamer = (function(imports) {
                 }
             }
             return c;
-        },
-        /**
-         * Replace n! to fact(n)
-         * @param {String}
-         */
-        insertFactorial = Utils.insertFactorial = function(expression) {
-            var factorial;
-            var regex = /(\d+|\w+)!/ig;
-            do {
-                factorial = regex.exec(expression);
-                if (factorial !== null) {
-                    expression = expression.replace(factorial[0], 'fact(' + factorial[0] + ')').expression.replace('!', '');
-                }
-            } while(factorial);
-            return expression;
         },
         /**
          * Checks if number is a prime number
@@ -594,6 +581,33 @@ var nerdamer = (function(imports) {
                 }
                 return 2 * sum / Math.sqrt(3.14159265358979);
             },
+            //http://stackoverflow.com/questions/15454183/how-to-make-a-function-that-computes-the-factorial-for-numbers-with-decimals
+            gamma: function(z) {
+                var g = 7;
+                var C = [
+                    0.99999999999980993, 
+                    676.5203681218851, 
+                    -1259.1392167224028,
+                    771.32342877765313, 
+                    -176.61502916214059, 
+                    12.507343278686905, 
+                    -0.13857109526572012, 
+                    9.9843695780195716e-6, 
+                    1.5056327351493116e-7]
+                ;
+
+                if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+                else {
+                    z -= 1;
+
+                    var x = C[0];
+                    for (var i = 1; i < g + 2; i++)
+                    x += C[i] / (z + i);
+
+                    var t = z + g + 0.5;
+                    return Math.sqrt(2 * Math.PI) * Math.pow(t, (z + 0.5)) * Math.exp(-t) * x;
+                }
+            },
             fact: function(x) {
                 var retval=1;
                 for (var i = 2; i <= x; i++) retval = retval * i;
@@ -667,7 +681,7 @@ var nerdamer = (function(imports) {
             }
         };
         
-        //safeties
+        //polyfills
         //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/
         Math.sign = Math.sign || function(x) {
             x = +x; // convert to a number
@@ -714,6 +728,9 @@ var nerdamer = (function(imports) {
             return Math.log((1+x)/(1-x)) / 2;
         };
         
+        Math.log10 = Math.log10 || function(x) {
+            return Math.log(x) * Math.LOG10E;
+        };
         reserveNames(Math2); //reserve the names in Math2
         
     /* GLOBAL FUNCTIONS */
@@ -1762,6 +1779,11 @@ var nerdamer = (function(imports) {
                 pg = this.previousGroup;
             return g === CP || g === PL || pg === PL || pg === CP;
         },
+        isCombination: function() {
+            var g = this.group,
+                pg = this.previousGroup;
+            return g === CB || pg === CB;
+        },
         /**
          * Get's the denominator of the symbol if the symbol is of class CB (multiplication)
          * with other classes the symbol is either the denominator or not. 
@@ -1821,6 +1843,9 @@ var nerdamer = (function(imports) {
         this.is_postfix = is_postfix || false;
     }
     
+    Operator.prototype.toString = function() {
+        return this.val;
+    };
 
     /**
      * 
@@ -1842,6 +1867,9 @@ var nerdamer = (function(imports) {
                 return obj.negate();
             }
             return obj;
+        },
+        toString: function() {
+            return this.val;
         }
     };
 
@@ -1856,6 +1884,7 @@ var nerdamer = (function(imports) {
             };
         //list all the supported operators
         var operators = this.operators = {
+                '!' : new Operator('!', 'factorial', 5, false, false, true),
                 '^' : new Operator('^', 'pow', 4, false, false),
                 '*' : new Operator('*', 'multiply', 3, true, false),
                 '/' : new Operator('/', 'divide', 3, true, false),
@@ -1882,13 +1911,14 @@ var nerdamer = (function(imports) {
                 'asinh'     : [ , 1],
                 'acosh'     : [ , 1],
                 'atanh'     : [ , 1],
+                'log10'     : [ , 1],
                 'exp'       : [ , 1],
                 'min'       : [ , -1],
                 'max'       : [ ,-1],
                 'erf'       : [ , 1],
                 'floor'     : [ ,1],
                 'ceil'      : [ ,1],
-                'fact'      : [ , 1],
+                'fact'      : [factorial , 1],
                 'round'     : [ , 1],
                 'mod'       : [ , 2],
                 'pfactor'   : [pfactor , 1],
@@ -2048,8 +2078,6 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         this.parse = function(expression_string, substitutions) {  
-            //Replace n! to fact(n!)
-            expression_string = insertFactorial(expression_string);
             /*
              * Since variables cannot start with a number, the assumption is made that when this occurs the
              * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
@@ -2108,7 +2136,7 @@ var nerdamer = (function(imports) {
                     }
                     else {
                         var ofn = operator.fn, result;
-
+                        
                         //first we assume that it's the first operator in which case it's the first symbol and negative
                         if(!ofn) {
                             
@@ -2135,7 +2163,7 @@ var nerdamer = (function(imports) {
                  * and if so places the correct number on the output stack. 
                  * @param token
                  */
-                insert = function(token) { 
+                insert = function(token) {
                     //if the number is a scientifc number then use that instead
                     if(/&/.test(token)) {
                         token = scientific_numbers.shift();
@@ -2145,6 +2173,12 @@ var nerdamer = (function(imports) {
                     //out of range inside of the output or stack. We have to make sure the token even exists 
                     //before entering.
                     if(token !== '' && token !== undefined) { 
+                        //factorials etc...
+//                        if(operator && !operator.left_assoc && operator.is_postfix) { 
+//                            token = _[operator.fn](token); //call the relevant function
+//                            operator = operators[expression_string.charAt(++curpos)]; //move to the next operator
+//                        }
+                        
                         //this could be function parameters or a vector
                         if(!(token instanceof Array)) { 
                             //TODO: possible redundant check. Needs investigation
@@ -2183,12 +2217,12 @@ var nerdamer = (function(imports) {
                 var operator = operators[cur_char], //a possible operator
                     bracket = brackets[cur_char]; //a possible bracket
                 //if the character is a bracket or an operator but not a scientific number
-                if(operator || bracket) {
+                if(operator || bracket) { 
                     //if an operator is found then we assume that the preceeding is a variable.
                     //the token has to be from the last position up to the current position
                     var token = expression_string.substring(pos,curpos),
                         isSquareBracket = bracket === LEFT_SQUARE_BRACKET;
-                    
+                
                     // support for compound operators
                     var next_char = expression_string.charAt(curpos + 1);
                     var also_operator = operators[next_char];
@@ -2201,7 +2235,7 @@ var nerdamer = (function(imports) {
                         }
                     }
                     
-                    if(bracket === LEFT_PAREN && token || isSquareBracket) {
+                    if(bracket === LEFT_PAREN && token || isSquareBracket) { 
                         //make sure you insert the variables
                         if(isSquareBracket && token) insert(token);
                         
@@ -2212,7 +2246,7 @@ var nerdamer = (function(imports) {
                         last_opr_pos = curpos; 
                         continue;
                     }
-                    
+
                     //place the token on the output stack. 
                     //This may be empty if we're at a unary or bracket so skip those.
                     insert(token);
@@ -2229,6 +2263,17 @@ var nerdamer = (function(imports) {
                     }
                     //note that open brackets count as operators in this case
                     if(cur_char !== RIGHT_PAREN) last_opr_pos = curpos; 
+
+                    if(operator && !operator.left_assoc && operator.is_postfix) { 
+                        //resolve the postfix operator
+                        output.push(_[operator.fn](output.pop()));
+
+                        operator = operators[expression_string.charAt(++curpos)]; //move to the next operator
+                        if(!operator) {
+                            if(curpos === len) break;//we've reached the end of the string and it's a postfix
+                            curpos--; //adjust the current position
+                        } 
+                    }
 
                     if(operator) { 
                         //we may be at the first operator, in which case the last operator may be undefined
@@ -2291,7 +2336,7 @@ var nerdamer = (function(imports) {
                     
                     pos = curpos+1; //move along
                 }
-                else if(curpos === len-1) {
+                else if(curpos === len-1) { 
                     insert(expression_string.substring(pos, curpos+1));
                 }
                 last_char = cur_char;
@@ -2324,7 +2369,18 @@ var nerdamer = (function(imports) {
             }
             return _.symfunction(ABS, [symbol]);
         }
-        
+        /**
+         * 
+         * @param {Symbol} symbol
+         * @return {Symbol)
+         */
+        function factorial(symbol) {
+            if(Settings.PARSE2NUMBER && symbol.isConstant()) {
+                if(isInt(symbol)) return Math2.fact(symbol);
+                return Math2.gamma(symbol.multiplier.toDecimal()+1);
+            }
+            return _.symfunction(FACTORIAL, [symbol]);
+        };
         /**
          * It just raises the symbol's power to 1/2
          * @param {Symbol} symbol
@@ -3605,6 +3661,10 @@ var nerdamer = (function(imports) {
             else a = [a,b];
             return a;
         };
+        //wraps the factorial
+        this.factorial = function(a) {
+            return this.symfunction(FACTORIAL, [a]);
+        };
     };
     
     /* "STATIC" */
@@ -3820,6 +3880,13 @@ var nerdamer = (function(imports) {
                 }
                 else if(fname === PARENTHESIS) { 
                     v[index] = this.brackets(input.join(','), 'parens');
+                }
+                else if(fname === FACTORIAL) {
+                    var arg = symbol.args[0];
+                    if(arg.power.equals(1) && (arg.isComposite() || arg.isCombination())) {
+                        input[0] = this.brackets(input[0]);
+                    }
+                    v[index] = input[0]+'!';
                 }
                 else { 
                     var name = '\\mathrm'+this.braces(fname);
