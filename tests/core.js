@@ -149,6 +149,30 @@ var cases = {
         expected: 'x^2',
         evaluated_value: 4.41
     },
+    '(1+x^2)!': {
+        expected: 'fact(1+x^2)',
+        evaluated_value: 245.1516183677083
+    },
+    '10!': {
+        expected: 'fact(10)',
+        evaluated_value: 3628800
+    },
+    'x!': {
+        expected: 'fact(x)',
+        evaluated_value: 2.197620278392476
+    },
+    'x!*x!': {
+        expected: 'fact(x)^2',
+        evaluated_value: 4.829534888001823
+    },
+    '3*(1+x!*x!)': {
+        expected: '3*(1+fact(x)^2)',
+        evaluated_value: 17.488604664005468
+    },
+    '3*(1+x!*x!)!': {
+        expected: '3*fact(1+fact(x)^2)',
+        evaluated_value: 1573.2041488172601
+    },
     'sqrt(1/2)': {
         expected: 'sqrt(2)^(-1)',
         evaluated_value: 0.7071067811865476

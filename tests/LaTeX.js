@@ -135,6 +135,18 @@ var cases = {
         TeX: '-\\left(x-1\\right)',
         decimal_TeX: '-\\left(x-1\\right)'
     },
+    'x!': {
+        TeX: 'x!',
+        decimal_TeX: 'x!'
+    },
+    '(x+1)!': {
+        TeX: '\\left(x+1\\right)!',
+        decimal_TeX: '\\left(x+1\\right)!'
+    },
+    'x!+(x+1)!': {
+        TeX: '\\left(x+1\\right)!+x!',
+        decimal_TeX: '\\left(x+1\\right)!+x!'
+    },
 };
 
 var report = test('LaTeX', cases, function(expression, report, nerdamer) {
