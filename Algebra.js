@@ -1809,6 +1809,7 @@ if((typeof module) !== 'undefined') {
             return _.add(result[0], remainder);
         },
         div: function(symbol1, symbol2) {
+            console.log(symbol1.text(), symbol2.text())
             var symbol1_has_func = symbol1.hasFunc(),
                 symbol2_has_func = symbol2.hasFunc(),
                 parse_funcs = false;
@@ -2048,6 +2049,41 @@ if((typeof module) !== 'undefined') {
             }
             
             return [quot, rem];
+        },
+        nfactor: function(symbol, factors) {
+            factors = factors || [];
+            var vars = variables(symbol);
+            var symbols = symbol.collectSymbols();
+            var sorted = {};
+            var maxes = {};
+            var l = vars.length, n = symbols.length;
+            for(var i=0; i<l; i++) {
+                var v = vars[i];
+                sorted[v] = new Symbol(0);
+                for(var j=0; j<n; j++) {
+                    var s = symbols[j];
+                    if(s.contains(v)) {
+                        var p = s.value === v ? s.power.toDecimal() : s.symbols[v].power.toDecimal();
+                        if(!maxes[v] || p < maxes[v]) maxes[v] = p;
+                        sorted[v] = _.add(sorted[v], s.clone());
+                    }
+                }
+            }
+
+            for(var x in sorted) {
+                var r = _.parse(x+'^'+maxes[x]);
+                var new_factor = _.expand(_.divide(sorted[x], r));
+                var divided = __.div(symbol.clone(), new_factor);
+                if(divided[0].equals(0)) { //cant factor anymore
+                    factors.push(divided[1]);
+                    return factors;
+                }
+                if(divided[1].equals(0)) { //we found at least one factor
+                    factors.push(divided[0]);
+                    return __.nfactor(__.divide(symbol, divided[0].clone()), factors);
+                }
+            }
+            return factors;
         }
     };
     
@@ -2087,6 +2123,25 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: 1,
             build: function() { return __.sqfr; }
-        }
+        },
+        {
+            name: 'nfactor',
+            visible: true,
+            numargs: 1,
+            build: function() { return __.nfactor; }
+        },
     ]);
 })();
+
+//console.log(nerdamer('nfactor(-t*x*y+b*x*y-a*t+a*b)').toString());
+console.log(nerdamer('nfactor(t*x*y+b*x*y+a*t+a*b)').toString());
+////console.log()
+console.log(nerdamer('nfactor(c^2*t+b*t+a^2*t+a*c^2+a*b+a^3)').toString());
+////console.log()
+//console.log(nerdamer('nfactor(c^2*t+b*t+a^2*t+a*b*c^2+a*b^2+a^3*b)'));
+//console.log(/*b*c^2+b^2+a*t+a^2*b*/)
+//console.log(nerdamer('nfactor(b*c^2+b^2+a*t+a^2*b)'))
+//console.log(nerdamer('div(c^2*t+b*t+a^2*t+a*b*c^2+a*b^2+a^3*b, t+a*b)').text())
+
+//console.log(nerdamer('nfactor(6*c^2*t+2*b*t+2*a^2*t+3*a*b*c^2+a*b^2+a^3*b)'))
+//console.log(nerdamer('div(6*c^2*t+2*b*t+2*a^2*t+3*a*b*c^2+a*b^2+a^3*b, 3*a*b+6*t)').text())

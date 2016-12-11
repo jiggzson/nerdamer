@@ -383,7 +383,7 @@ var nerdamer = (function(imports) {
                 if(group === CP || group === CB || prevgroup === CP || prevgroup === CB) {
                     for(var x in obj.symbols) variables(obj.symbols[x], poly, vars);
                 }
-                else if(group === S) {
+                else if(group === S) { 
                     vars.add(obj.value);
                 }
                 else if(group === PL) {
