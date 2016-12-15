@@ -429,7 +429,9 @@ if((typeof module) !== 'undefined') {
             else {
                 nterm.terms[map[symbol.value]] = symbol.power;
             }
+            
             terms.push(nterm.fill());
+            nterm.updateCount();
         }
         return terms;
     };
@@ -1809,7 +1811,6 @@ if((typeof module) !== 'undefined') {
             return _.add(result[0], remainder);
         },
         div: function(symbol1, symbol2) {
-            console.log(symbol1.text(), symbol2.text())
             var symbol1_has_func = symbol1.hasFunc(),
                 symbol2_has_func = symbol2.hasFunc(),
                 parse_funcs = false;
@@ -1852,20 +1853,31 @@ if((typeof module) !== 'undefined') {
                 }
                 return symbol;
             };
-            var get_unique_max = function(term) {
+            //Silly Martin. This is why you document. I don't remember now
+            var get_unique_max = function(term, any) {
                 var max = Math.max.apply(null, term.terms),
                     count = 0, idx;
-                for(var i=0; i<term.terms.length; i++) {
-                    if(term.terms[i].equals(max)) {
-                        idx = i; count++;
+            
+                if(!any) {
+                    for(var i=0; i<term.terms.length; i++) {
+                        if(term.terms[i].equals(max)) {
+                            idx = i; count++;
+                        }
+                        if(count > 1) return;
                     }
-                    if(count > 1) return;
+                }
+                if(any) {
+                    for(i=0; i<term.terms.length; i++) 
+                        if(term.terms[i].equals(max)) {
+                            idx = i; break;
+                        }
                 }
                 return [max, idx, term];
             };
-            var get_det = function(s, lookat) {
+            //tries to find an LT in the dividend that will satisfy division
+            var get_det = function(s, lookat) { 
                 lookat = lookat || 0;
-                var det = s[lookat], l = s.length;
+                var det = s[lookat], l = s.length; 
                 if(!det) return;
                 //eliminate the first term if it doesn't apply
                 var umax = get_unique_max(det); 
@@ -1900,15 +1912,17 @@ if((typeof module) !== 'undefined') {
                             break;
                         }
                     }
-                    else {
+                    else { 
                         //check if it's a suitable pick to determine the order
-                        umax = get_unique_max(term);
+                        umax = get_unique_max(term); 
                         //if(umax) return umax;
                         if(umax) break;
                     }
                     umax = get_unique_max(term); //calculate a new unique max
                 }
-
+                
+                //if still no umax then any will do since we have a tie
+                if(!umax) return get_unique_max(s[0], true);
                 var e, idx;
                 for(var i=0; i<s2.length; i++) {
                     var cterm = s2[i].terms;
@@ -1933,6 +1947,7 @@ if((typeof module) !== 'undefined') {
                 s2 = symbol2.tBase(t_map).sort(init_sort),
                 det = get_det(s1);//we'll begin by assuming that this will let us know which term governs
             var quotient = [];
+            
             if(det) {
                 var lead_var = det[1];
                 var can_divide = function(a, b) { 
@@ -1992,8 +2007,9 @@ if((typeof module) !== 'undefined') {
                         else den.terms[i] = new Frac(0);
                     }
                 }
-
-                while(is_larger(s1[0], s2[0]) && can_divide(s1, s2)) {
+                var dividend_larger = is_larger(s1[0], s2[0]);
+                
+                while(dividend_larger && can_divide(s1, s2)) {
                     var q = s1[0].divide(s2[0]);
                     quotient.push(q); //add what's divided to the quotient
                     s1.shift();//the first one is guaranteed to be gone so remove from dividend
@@ -2024,7 +2040,20 @@ if((typeof module) !== 'undefined') {
                             }
                         }
                     }
-//                    adjust(s1, s2);
+                    dividend_larger = is_larger(s1[0], s2[0]);
+                    
+                    if(!dividend_larger && s1.length >= s2.length) {
+                        //One more try since there might be a terms that is larger than the LT of the divisor
+                        for(var i=1; i<s1.length; i++) {
+                            dividend_larger = is_larger(s1[i], s2[0]);
+                            if(dividend_larger) {
+                                console.log(9)
+                                //take it from its current position and move it to the front
+                                s1.unshift(core.Utils.remove(s1, i)); 
+                                break;
+                            }
+                        }
+                    }
                 }
             }
             
@@ -2047,10 +2076,49 @@ if((typeof module) !== 'undefined') {
                 quot = _.parse(quot.text(), subs);
                 rem = _.parse(rem.text(), subs);
             }
-            
+
             return [quot, rem];
         },
+        cfactor: function(symbol) {
+            var gcd = core.Math2.QGCD.apply(null, symbol.coeffs());
+            if(!gcd.equals(1)) {
+                return [_.expand(_.divide(symbol, new Symbol(gcd))), gcd];
+            }
+            return [symbol, gcd];
+        },
+        //a rough version of square free
+        sqfactor: function(symbol, factors, vars) {
+            factors = factors || [];
+            vars = vars || variables(symbol);
+            var l = vars.length;
+            var exit = false;
+            for(var i=0; i<l; i++) {
+                if(exit) break;
+                do {
+                    var d = core.Calculus.diff(symbol.clone(), vars[i]);
+                    var f = __.cfactor(d);
+                    if(f[0].equals(1)) {
+                        exit = true;
+                        factors.push(symbol);
+                        break;
+                    }
+//                    console.log(symbol.toString(), f[0].toString(), 'dividing')
+//                    console.log(d.toString())
+                    var div = __.div(symbol.clone(), f[0].clone());
+//                    console.log(symbol.toString(), div.toString(), 'div')
+                    if(div[1].equals(0)) {
+                        factors.push(f[0]);
+                        symbol = div[0];
+                    }
+                }
+                while(div[1].equals(0))
+                    
+            }
+            return factors;
+        },
         nfactor: function(symbol, factors) {
+//            console.log(__.sqfactor(symbol).toString(), 'factors')
+//            console.log(symbol.toString())
             factors = factors || [];
             var vars = variables(symbol);
             var symbols = symbol.collectSymbols();
@@ -2069,18 +2137,19 @@ if((typeof module) !== 'undefined') {
                     }
                 }
             }
-
+            
             for(var x in sorted) {
                 var r = _.parse(x+'^'+maxes[x]);
                 var new_factor = _.expand(_.divide(sorted[x], r));
                 var divided = __.div(symbol.clone(), new_factor);
+//                console.log(x, '['+divided.toString()+']', new_factor.toString())
                 if(divided[0].equals(0)) { //cant factor anymore
                     factors.push(divided[1]);
                     return factors;
                 }
                 if(divided[1].equals(0)) { //we found at least one factor
                     factors.push(divided[0]);
-                    return __.nfactor(__.divide(symbol, divided[0].clone()), factors);
+                    return __.nfactor(__.div(symbol, divided[0].clone())[0], factors);
                 }
             }
             return factors;
@@ -2132,16 +2201,3 @@ if((typeof module) !== 'undefined') {
         },
     ]);
 })();
-
-//console.log(nerdamer('nfactor(-t*x*y+b*x*y-a*t+a*b)').toString());
-console.log(nerdamer('nfactor(t*x*y+b*x*y+a*t+a*b)').toString());
-////console.log()
-console.log(nerdamer('nfactor(c^2*t+b*t+a^2*t+a*c^2+a*b+a^3)').toString());
-////console.log()
-//console.log(nerdamer('nfactor(c^2*t+b*t+a^2*t+a*b*c^2+a*b^2+a^3*b)'));
-//console.log(/*b*c^2+b^2+a*t+a^2*b*/)
-//console.log(nerdamer('nfactor(b*c^2+b^2+a*t+a^2*b)'))
-//console.log(nerdamer('div(c^2*t+b*t+a^2*t+a*b*c^2+a*b^2+a^3*b, t+a*b)').text())
-
-//console.log(nerdamer('nfactor(6*c^2*t+2*b*t+2*a^2*t+3*a*b*c^2+a*b^2+a^3*b)'))
-//console.log(nerdamer('div(6*c^2*t+2*b*t+2*a^2*t+3*a*b*c^2+a*b^2+a^3*b, 3*a*b+6*t)').text())
