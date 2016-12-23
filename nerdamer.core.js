@@ -2600,8 +2600,8 @@ var nerdamer = (function(imports) {
             var retval, 
                 c = false,
                 q = getQuadrant(symbol.multiplier.toDecimal()),
+                sign = symbol.multiplier.sign(),
                 m = symbol.multiplier.abs();
-
             symbol.multiplier = m;
             
             if(symbol.isPi() && symbol.isLinear()) { 
@@ -2626,11 +2626,11 @@ var nerdamer = (function(imports) {
                     else retval = _.symfunction('sin', [symbol]);
                 }
             }
-           
-            if(!retval) retval = _.symfunction('sin', [symbol]);
+
+            if(!retval) retval = _.multiply(new Symbol(sign), _.symfunction('sin', [symbol]));
             
             if(c && (q === 3 || q === 4)) retval.negate();
-            
+
             return retval;
         }
         
