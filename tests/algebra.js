@@ -214,7 +214,15 @@ var test_cases = {
     'div(2*a*b*x+2*a*b*y+a^2*x+a^2*y+b^2*x+b^2*y, x+y)': {
         expected: '[2*a*b+a^2+b^2,0]'
     },
-    
+    'factor(x^2+2*x+1)': {
+        expected: '(1+x)^2'
+    },
+    'factor(x^4+25*x^3+234*x^2+972*x+1512)': {
+        expected: '(6+x)^3*(7+x)'
+    },
+    'factor(x^5+32*x^4+288*x^3-418*x^2-16577*x-55902)': {
+        expected: '(-7+x)*(11+3*x+x^2)^3*(6+x)'
+    }
     
 };
 

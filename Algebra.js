@@ -31,7 +31,7 @@ if((typeof module) !== 'undefined') {
         Symbol = core.Symbol,
         EPSILON = core.Settings.EPSILON,
         CONST_HASH = core.Settings.CONST_HASH;
-        
+
         /**
         * Converts a symbol into an equivalent polynomial arrays of 
         * the form [[coefficient_1, power_1],[coefficient_2, power_2], ... ]
@@ -251,7 +251,6 @@ if((typeof module) !== 'undefined') {
                 }
                 
                 var gcd = core.Math2.QGCD.apply(null, a.coeffs);
-
                 if(!gcd.equals(1)) { 
                     var l = a.coeffs.length;
                     for(var i=0; i<l; i++) {
@@ -352,9 +351,9 @@ if((typeof module) !== 'undefined') {
                 }
                 return _.parse(str);
             },
-            equalsNumber: function(x) {
+            equalsNumber: function(x) { 
                 this.trim();
-                return this.coeffs.length === 1 && this.coeffs[0] === x;
+                return this.coeffs.length === 1 && this.coeffs[0].toDecimal() === x;
             },
             toString: function() {
                 return this.toSymbol().toString();
@@ -445,6 +444,29 @@ if((typeof module) !== 'undefined') {
         }
         return true;
     };
+    //a wrapper for factors
+    function Factors() {
+        this.factors = {};
+    };
+    Factors.prototype.add = function(s) {
+        var is_constant = s.isConstant();
+        if(is_constant && s.equals(1)) return this; //don't add 1
+        var v = is_constant ? s.value: s.text();
+        if(v in this.factors) 
+            this.factors[v] = _.multiply(this.factors[v], s);
+        else this.factors[v] = s;
+        return this;
+    };
+    Factors.prototype.toSymbol = function() {
+        var factored = new Symbol(1);
+        for(var x in this.factors) {
+            var factor = this.factors[x].power.equals(1) ? 
+                _.symfunction(core.PARENTHESIS, [this.factors[x]]) : this. factors[x];
+            factored = _.multiply(factored, factor);
+        }
+        return factored;
+    };
+    //a wrapper for performing multivariate division
     function MVTerm(coeff, terms, map) {
         this.terms = terms || [];
         this.coeff = coeff;
@@ -613,6 +635,7 @@ if((typeof module) !== 'undefined') {
                         minpower = core.Utils.arrayMin(powers),
                     symbol = core.PARSER.divide(symbol, core.PARSER.parse(symbol.value+'^'+minpower));
                 }
+                console.log(symbol.toString(), symbol.toString())
                 var variable = keys(symbol.symbols).sort().pop(), 
                     sym = symbol.group === core.groups.PL ? symbol.symbols : symbol.symbols[variable], 
                     g = sym.group,
@@ -1441,27 +1464,24 @@ if((typeof module) !== 'undefined') {
             return newtonraph( Number( guess ) );
         },
         /**
-         * Standard square free factorization 
+         * Standard square free factorization univariate
          * @param {Polynomial} a
          * @returns {Array}
          */
-        sqfr: function(a) { 
-            if(!core.Calculus) throw new Error('sqfr requires Calculus to be loaded!');
-            var vars = variables(a); 
-            var i = 1;
-            var b = core.Calculus.diff(a, vars[0]); 
-            var c = __.gcd(a, b);   
-            var w = __.div(a, c)[0],
-                output = new Symbol(1);
-            while(!c.equals(1)) { 
-                break;
-                var y = __.gcd(w, c); 
-                var z = __.div(w, y)[0]; 
-                
-                output = _.multiply(output, z); 
+        sqfr: function(symbol) { 
+            var a = new Polynomial(symbol),
+                i = 1,
+                b = a.clone().diff(),
+                c = a.clone().gcd(b),
+                w = a.divide(c)[0],
+                output = Polynomial.fromArray([new Frac(1)], a.variable);
+            while(!c.equalsNumber(1)) { 
+                var y = w.gcd(c); 
+                var z = w.divide(y)[0];
+                output = output.multiply(z); 
                 i++;
                 w = y;
-                c = __.div(c, y)[0];
+                c = c.divide(y)[0];
             }
             return [output, w, i];
         },
@@ -1967,10 +1987,12 @@ if((typeof module) !== 'undefined') {
         qfactor: function(symbol, factors) {
             var vars = variables(symbol).reverse();
             for(var i=0; i<vars.length; i++) {
-                var d = __.cfactor(core.Calculus.diff(symbol, vars[i]));
                 do {
-                    var div = __.div(symbol, d[0].clone());
-                    var is_factor = div[1].equals(0);
+                    var d = __.cfactor(core.Calculus.diff(symbol, vars[i]));
+                    if(d[0].equals(0)) 
+                        break;
+                    var div = __.div(symbol, d[0].clone()),
+                        is_factor = div[1].equals(0);
                     if(div[0].isConstant()) {
                         factors.add(div[0]);
                         break;
@@ -1996,18 +2018,7 @@ if((typeof module) !== 'undefined') {
         },
         _factor: function(symbol, factors) {
             //the container for storing factors
-            factors = factors || {
-                add: function(s) {
-                    var is_constant = s.isConstant();
-                    if(is_constant && s.equals(1)) return this; //don't add 1
-                    var v = is_constant ? s.value: s.text();
-                    if(v in this.factors) 
-                        this.factors[v] = _.multiply(this.factors[v], s);
-                    else this.factors[v] = s;
-                    return this;
-                }, 
-                factors: {}
-            };
+            factors = factors || new Factors();
             symbol = __.qfactor(symbol, factors);
             var vars = variables(symbol),
                 symbols = symbol.collectSymbols(),
@@ -2053,18 +2064,50 @@ if((typeof module) !== 'undefined') {
             return factors;
         },
         nfactor: function(symbol, asObj) {
-            var factors = __._factor(symbol).factors;
-            if(asObj) return factors;
-            var factored = new Symbol(1);
-            for(var x in factors) {
-                var factor = factors[x].power.equals(1) ? _.symfunction(core.PARENTHESIS, [factors[x]]) : factors[x];
-                factored = _.multiply(factored, factor);
+            var factors = __._factor(symbol);
+            if(asObj) return factors.factors;
+            return factors.toSymbol();
+        },
+        __factor: function(symbol) {
+            var factors = new Factors();
+            var vars = variables(symbol);
+            if(vars.length === 1) {
+                var x = vars[0];//the variable name
+                //Deal with the squares
+                var sqfr = __.sqfr(symbol);
+                var sq_factor = sqfr[1].toSymbol(); //convert the returned factor back to a symbol
+                sq_factor.power = sq_factor.power.multiply(new Frac(sqfr[2]));
+                factors.add(sq_factor); //insert the squared factor
+                //factor the remainder
+                if(sqfr[0].coeffs.length > 1) {
+                    var rem = sqfr[0];
+                    var roots = __.proots(rem.toSymbol()); //first find the zeros
+                    for(var i=0; i<roots.length; i++) {
+                        var root = roots[i];
+                        var factor = Polynomial.fromArray([new Frac(root).negate(), new Frac(1)], x);
+                        var div = rem.divide(factor);
+                        rem = div[0];
+                        factors.add(factor.toSymbol());
+                    }
+                    symbol = rem.toSymbol();
+                }
+                else {
+                    symbol = sqfr[0].toSymbol()
+                }
+
+                factors.add(symbol);
+                return factors.toSymbol();
             }
-            return factored;
         }
     };
     
     nerdamer.register([
+        {
+            name: '__factor',
+            visible: true,
+            numargs: 1,
+            build: function() { return __.__factor; }
+        },
         {
             name: 'factor',
             visible: true,
@@ -2109,3 +2152,25 @@ if((typeof module) !== 'undefined') {
         }
     ]);
 })();
+
+//console.log(nerdamer('nfactor(c^2*t+b*t+a^2*t+a*b*c^2+a*b^2+a^3*b)'));
+//console.log(/*b*c^2+b^2+a*t+a^2*b*/)
+//console.log(nerdamer('nfactor(b*c^2+b^2+a*t+a^2*b)'))
+//console.log(nerdamer('div(c^2*t+b*t+a^2*t+a*b*c^2+a*b^2+a^3*b, t+a*b)').text())
+
+//console.log(nerdamer('nfactor(6*c^2*t+2*b*t+2*a^2*t+3*a*b*c^2+a*b^2+a^3*b)').toString())
+//console.log(nerdamer('nfactor(b^2+2*a*b+a^2)').toString()) //here
+
+
+//console.log(nerdamer('div(c^2*t+b*t+a^2*t+a*b*c^2+a*b^2+a^3*b, 2*c*t+2*a*b*c)').toString()) //here
+
+//console.log(nerdamer('nfactor(b^2*y+2*a*b*y+a^2*y+b^2*x+2*a*b*x+a^2*x)').toString(), 'factored') //here
+var x = nerdamer('factor(x^2+2*x+1)');
+console.log(x.text());
+var y = nerdamer('__factor(x^8+8*x^7+9*x^6-213*x^5-2085*x^4-9021*x^3-27478*x^2-47069*x-55902)');
+console.log(y.text())
+
+//console.log(nerdamer('div(2*a*b*c^2+2*a*b*d^2+2*a^2*c*d+2*b^2*c*d+4*a*b*c*d+a^2*c^2+a^2*d^2+b^2*c^2+b^2*d^2, 2*a*c^2+2*a*d^2+2*b*c^2+2*b*d^2+4*a*c*d+4*b*c*d)').toString())
+//console.log('==============================================================================================================================================================')
+//console.log(nerdamer('div(b*d+a*d+b*c+a*c+b^2+3*a*b+2*a^2, a+b)').toString())
+//console.log(nerdamer('div(6*c^2*t+2*b*t+2*a^2*t+3*a*b*c^2+a*b^2+a^3*b, 3*a*b+6*t)').text())

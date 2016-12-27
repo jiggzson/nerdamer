@@ -21,6 +21,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         Symbol = core.Symbol,
         text = core.Utils.text,
         inBrackets = core.Utils.inBrackets,
+        format = core.Utils.format,
         N = core.groups. N,
         S = core.groups.S,
         FN = core.groups.FN,
@@ -273,6 +274,77 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 }
                 return result; //done
             };
+        },
+        integrate: function(symbol, dt) {
+            var dx = isSymbol(dt) ? dt.toString() : dt;
+            var has_dx = symbol.contains(dx);
+            var g = symbol.group, 
+                retval;
+            if(g === N || g === P) 
+                retval = _.multiply(symbol.clone(), _.parse(dx));
+            else if(g === S && has_dx) {
+                retval = symbol.clone();
+                retval.power = retval.power.add(new Frac(1));
+                retval.multiplier = retval.multiplier.divide(retval.power);
+            }
+            else if(g === PL && has_dx) {
+                retval = new Symbol(0);
+                symbol.each(function(x) {
+                    retval = _.add(retval, __.integrate(x, dx));
+                });
+            }
+            else if(g === CB && has_dx) {
+                retval = new Symbol(1);
+                symbol.each(function(x) {
+                    var t = x.contains(dx) ? __.integrate(x, dx) : x;
+                    retval = _.multiply(retval, t);
+                });
+            }
+            else if(g === CP && has_dx) {
+                retval = new Symbol(0);
+                symbol.each(function(x) {
+                    retval = _.add(retval, __.integrate(x, dx));
+                });
+            }
+            else if(g === FN && has_dx && symbol.args[0].isLinear()) {
+                retval = symbol.clone();
+                if(symbol.fname === 'acos') {
+                    var arg = symbol.args[0].clone(),
+                        a = __.diff(arg.clone(), dx);
+                console.log(arg.toString())
+                console.log(format('{0}*acos({0})-sqrt(1-{0}^2)/({1})^2', arg, a))
+                    retval = _.parse(format('{2}*acos({0})-sqrt(1-({0})^2)/({1})^2', arg.toString(), a.toString(), dx));
+                }
+                else {
+                    switch(symbol.fname) {
+                        case 'cos':
+                            retval.fname = 'sin';
+                            break;
+                        case 'sin':
+                            retval.fname = 'cos';
+                            retval.negate();
+                            break;
+                        case 'tan':
+                            retval = _.parse(format('log(sec({0}))', symbol.args[0].toString()));
+                            break;
+                        case 'sec':
+                            retval = _.parse(format('log(tan({0})+sec({0}))', symbol.args[0].toString()));
+                            break;
+                        case 'csc':
+                            retval = _.parse(format('-log(csc({0})+cot({0}))', symbol.args[0].toString()));
+                            break;
+                        case 'cot':
+                            retval = _.parse(format('log(sin({0}))', symbol.args[0].toString()));
+                            break;
+                    }
+                    retval.updateHash();
+                    retval = _.divide(retval, __.diff(symbol.args[0], dx));
+                }
+            }
+            else {
+                retval = _.multiply(symbol, _.parse(dx));
+            }
+            return retval;
         }
     };
     
@@ -294,6 +366,15 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             visible: true,
             numargs: 4,
             build: function(){ return __.sum; }
+        },
+        {
+            name: 'integrate',
+            visible: true,
+            numargs: 2,
+            build: function() { return __.integrate; }
         }
     ]);
 })();
+//var x = nerdamer('integrate(acos(x+1),x)');
+//
+//console.log(x.toString())
