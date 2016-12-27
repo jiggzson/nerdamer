@@ -276,6 +276,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             };
         },
         integrate: function(symbol, dt) {
+            var stop = function() {
+                throw new Error('Stopping!');
+            };
             var dx = isSymbol(dt) ? dt.toString() : dt;
             var has_dx = symbol.contains(dx);
             var g = symbol.group, 
@@ -306,14 +309,23 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     retval = _.add(retval, __.integrate(x, dx));
                 });
             }
+            //has to be all linear
             else if(g === FN && has_dx && symbol.args[0].isLinear()) {
                 retval = symbol.clone();
                 if(symbol.fname === 'acos') {
                     var arg = symbol.args[0].clone(),
                         a = __.diff(arg.clone(), dx);
-                console.log(arg.toString())
-                console.log(format('{0}*acos({0})-sqrt(1-{0}^2)/({1})^2', arg, a))
+                    var b = new Symbol(0),
+                        c = arg.toString();
+                    if(arg.group === CP) {
+                        arg.each(function(x) {
+                            if(!x.isLinear() || x.group !== S && x.contains(dx)) stop();
+                            if(x.value !== dx)
+                                b = _.add(b, _.multiply(x.clone(), _.parse(format('asin(-({0}))', c))));
+                        });
+                    }
                     retval = _.parse(format('{2}*acos({0})-sqrt(1-({0})^2)/({1})^2', arg.toString(), a.toString(), dx));
+                    retval = _.add(retval, b);
                 }
                 else {
                     switch(symbol.fname) {

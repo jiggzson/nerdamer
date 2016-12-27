@@ -466,6 +466,22 @@ if((typeof module) !== 'undefined') {
         }
         return factored;
     };
+    Factors.prototype.merge = function(o) {
+        for(var x in o) {
+            if(x in this.factors) 
+                this.factors[x] = _.multiply(this.factors[x], o[x]);
+            else this.factors[x] = o[x];
+        }
+        return this;
+    };
+    Factors.prototype.each = function(f) {
+        for(var x in this.factors) {
+            var factor = this.factors[x];
+            if(factor.fname === core.PARENTHESIS && factor.isLinear())
+                factor = factor.args[0];
+            f.call(this, factor, x);
+        }
+    };
     //a wrapper for performing multivariate division
     function MVTerm(coeff, terms, map) {
         this.terms = terms || [];
@@ -635,7 +651,7 @@ if((typeof module) !== 'undefined') {
                         minpower = core.Utils.arrayMin(powers),
                     symbol = core.PARSER.divide(symbol, core.PARSER.parse(symbol.value+'^'+minpower));
                 }
-                console.log(symbol.toString(), symbol.toString())
+
                 var variable = keys(symbol.symbols).sort().pop(), 
                     sym = symbol.group === core.groups.PL ? symbol.symbols : symbol.symbols[variable], 
                     g = sym.group,
@@ -2042,7 +2058,7 @@ if((typeof module) !== 'undefined') {
 
             for(var x in sorted) {
                 var r = _.parse(x+'^'+maxes[x]); 
-                var new_factor = _.expand(_.divide(sorted[x], r));
+                var new_factor = _.expand(_.divide(sorted[x], r)); 
                 var divided = __.div(symbol.clone(), new_factor);
                 if(divided[0].equals(0)) { //cant factor anymore
                     factors.add(divided[1]);
@@ -2052,6 +2068,7 @@ if((typeof module) !== 'undefined') {
                 if(divided[1].equals(0)) { //we found at least one factor
                     var factor = divided[0];
                     factors.add(factor); 
+                    factors.add(new_factor);
                     var d = __.div(symbol, divided[0].clone());
                     var r = d[0];
                     if(r.isConstant()) { 
@@ -2063,13 +2080,21 @@ if((typeof module) !== 'undefined') {
             }
             return factors;
         },
-        nfactor: function(symbol, asObj) {
+        nfactor: function(symbol, raw) {
             var factors = __._factor(symbol);
-            if(asObj) return factors.factors;
+            if(raw) return factors;
             return factors.toSymbol();
         },
         __factor: function(symbol) {
-            var factors = new Factors();
+            var factors = __.nfactor(symbol, true);
+            var all_factors = new Factors();
+            factors.each(function(x, y) {
+                __.simpfactor(x, all_factors);
+            });
+            return all_factors.toSymbol();
+        },
+        simpfactor: function(symbol, factors) {
+            factors = factors || new Factors();
             var vars = variables(symbol);
             if(vars.length === 1) {
                 var x = vars[0];//the variable name
@@ -2091,13 +2116,12 @@ if((typeof module) !== 'undefined') {
                     }
                     symbol = rem.toSymbol();
                 }
-                else {
-                    symbol = sqfr[0].toSymbol()
-                }
-
-                factors.add(symbol);
-                return factors.toSymbol();
+                return factors;
             }
+            else {
+                factors.add(symbol);
+            }
+            return factors;
         }
     };
     
@@ -2152,3 +2176,7 @@ if((typeof module) !== 'undefined') {
         }
     ]);
 })();
+
+var x = nerdamer('__factor(x^2*y*z+x*z+t*x^2*y+t*x)');
+
+console.log(x.toString())
