@@ -8,7 +8,7 @@
     "license": "MIT",
     "version": "0.6.1",
     "homepage": "http://nerdamer.com/",
-    "directory" :{
+    "directory": {
         "lib": "./"
     },
     "main": "nerdamer.core.js",
@@ -43,5 +43,11 @@
     },
     "engines": {
         "node": ">=0.10.0"
+    },
+    "scripts": {
+        "test": "jasmine"
+    },
+    "devDependencies": {
+        "jasmine": "^2.5.2"
     }
 }
