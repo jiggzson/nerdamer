@@ -1967,14 +1967,16 @@ if((typeof module) !== 'undefined') {
         qfactor: function(symbol, factors) {
             var vars = variables(symbol).reverse();
             for(var i=0; i<vars.length; i++) {
-                var d = __.cfactor(core.Calculus.diff(symbol, vars[i]));
                 do {
+                    var d = __.cfactor(core.Calculus.diff(symbol, vars[i]));
                     var div = __.div(symbol, d[0].clone());
+                    console.log('div('+symbol+', '+d[0]+')')
                     var is_factor = div[1].equals(0);
                     if(div[0].isConstant()) {
                         factors.add(div[0]);
                         break;
                     }
+                    console.log(div.toString(), vars[i])
                     if(is_factor) {
                         factors.add(div[0]);
                         symbol = d[0];
@@ -2109,3 +2111,23 @@ if((typeof module) !== 'undefined') {
         }
     ]);
 })();
+
+//console.log(nerdamer('nfactor(c^2*t+b*t+a^2*t+a*b*c^2+a*b^2+a^3*b)'));
+//console.log(/*b*c^2+b^2+a*t+a^2*b*/)
+//console.log(nerdamer('nfactor(b*c^2+b^2+a*t+a^2*b)'))
+//console.log(nerdamer('div(c^2*t+b*t+a^2*t+a*b*c^2+a*b^2+a^3*b, t+a*b)').text())
+
+//console.log(nerdamer('nfactor(6*c^2*t+2*b*t+2*a^2*t+3*a*b*c^2+a*b^2+a^3*b)').toString())
+//console.log(nerdamer('nfactor(b^2+2*a*b+a^2)').toString()) //here
+
+
+//console.log(nerdamer('div(c^2*t+b*t+a^2*t+a*b*c^2+a*b^2+a^3*b, 2*c*t+2*a*b*c)').toString()) //here
+
+//console.log(nerdamer('nfactor(b^2*y+2*a*b*y+a^2*y+b^2*x+2*a*b*x+a^2*x)').toString(), 'factored') //here
+console.log(nerdamer('nfactor(216*x^4+108*b*x^3+324*a*x^3+18*b^2*x^2+144*a*b*x^2+126*a^2*x^2+b^3*x+21*a*b^2*x+39*a^2*b*x+19*a^3*x+a*b^3+3*a^2*b^2+3*a^3*b+a^4)').toString()) //here
+console.log('done')
+
+//console.log(nerdamer('div(2*a*b*c^2+2*a*b*d^2+2*a^2*c*d+2*b^2*c*d+4*a*b*c*d+a^2*c^2+a^2*d^2+b^2*c^2+b^2*d^2, 2*a*c^2+2*a*d^2+2*b*c^2+2*b*d^2+4*a*c*d+4*b*c*d)').toString())
+//console.log('==============================================================================================================================================================')
+//console.log(nerdamer('div(b*d+a*d+b*c+a*c+b^2+3*a*b+2*a^2, a+b)').toString())
+//console.log(nerdamer('div(6*c^2*t+2*b*t+2*a^2*t+3*a*b*c^2+a*b^2+a^3*b, 3*a*b+6*t)').text())
