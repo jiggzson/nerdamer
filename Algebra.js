@@ -2116,7 +2116,12 @@ if((typeof module) !== 'undefined') {
                     }
                     symbol = rem.toSymbol();
                 }
-                return factors;
+                else {
+                    symbol = sqfr[0].toSymbol();
+                }
+
+                factors.add(symbol);
+                return factors.toSymbol();
             }
             else {
                 factors.add(symbol);
@@ -2176,7 +2181,3 @@ if((typeof module) !== 'undefined') {
         }
     ]);
 })();
-
-var x = nerdamer('__factor(x^2*y*z+x*z+t*x^2*y+t*x)');
-
-console.log(x.toString())
