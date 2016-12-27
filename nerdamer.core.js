@@ -640,7 +640,10 @@ var nerdamer = (function(imports) {
                 var args = [].slice.call(arguments);
                 var a = args[0];
                 for(var i=1; i<args.length; i++) {
-                    a = args[i].gcd(a);
+                    var b = args[i];
+                    var sign = a.isNegative() && b.isNegative() ? -1 : 1;
+                    a = b.gcd(a);
+                    if(sign < 0) a.negate();
                 }
                 return a;
             },
@@ -1151,6 +1154,9 @@ var nerdamer = (function(imports) {
         },
         valueOf: function() {
             return this.num/this.den;
+        },
+        isNegative: function() {
+            return this.toDecimal() < 0;
         }
         /*cache: (function() {
             var c = {}, n = 100;
