@@ -2092,7 +2092,7 @@ if((typeof module) !== 'undefined') {
                     symbol = rem.toSymbol();
                 }
                 else {
-                    symbol = sqfr[0].toSymbol()
+                    symbol = sqfr[0].toSymbol();
                 }
 
                 factors.add(symbol);

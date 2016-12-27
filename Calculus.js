@@ -375,6 +375,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
     ]);
 })();
-//var x = nerdamer('integrate(acos(x+1),x)');
-//
-//console.log(x.toString())
+var x = nerdamer('integrate(acos(x+1),x)');
+
+console.log(x.toString())
