@@ -286,16 +286,24 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             if(g === N || g === P) 
                 retval = _.multiply(symbol.clone(), _.parse(dx));
             else if(g === S && has_dx) {
-                retval = symbol.clone();
-                retval.power = retval.power.add(new Frac(1));
-                retval.multiplier = retval.multiplier.divide(retval.power);
+                //1/x
+                if(symbol.power.equals(-1)) 
+                    retval = _.symfunction('log', [new Symbol(dx)]);
+                //all other x's
+                else {
+                    retval = symbol.clone();
+                    retval.power = retval.power.add(new Frac(1));
+                    retval.multiplier = retval.multiplier.divide(retval.power);
+                }
             }
+            //x+x^2
             else if(g === PL && has_dx) {
                 retval = new Symbol(0);
                 symbol.each(function(x) {
                     retval = _.add(retval, __.integrate(x, dx));
                 });
             }
+            //a*x
             else if(g === CB && has_dx) {
                 retval = new Symbol(1);
                 symbol.each(function(x) {
@@ -303,29 +311,50 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     retval = _.multiply(retval, t);
                 });
             }
+            //x+1
             else if(g === CP && has_dx) {
                 retval = new Symbol(0);
                 symbol.each(function(x) {
                     retval = _.add(retval, __.integrate(x, dx));
                 });
             }
+            //log(x)
+            else if(g === FN && has_dx) {
+                retval = symbol.clone();
+                var a = symbol.args[0].clone(),
+                    m = _.parse(retval.multiplier.toString()),
+                    b = core.Calculus.diff(a.clone(), dx);
+                retval.toUnitMultiplier();
+                retval = _.multiply(_.divide(_.subtract(_.multiply(a, retval), a.clone()), b), m);
+            }
             //has to be all linear
+            //trig functions 
             else if(g === FN && has_dx && symbol.args[0].isLinear()) {
                 retval = symbol.clone();
-                if(symbol.fname === 'acos') {
+                var inv_trig = function(symbol, istr, dl, f) {
                     var arg = symbol.args[0].clone(),
-                        a = __.diff(arg.clone(), dx);
-                    var b = new Symbol(0),
+                        a = __.diff(arg.clone(), dx).toString(),
+                        b = new Symbol(0),
                         c = arg.toString();
                     if(arg.group === CP) {
                         arg.each(function(x) {
                             if(!x.isLinear() || x.group !== S && x.contains(dx)) stop();
                             if(x.value !== dx)
-                                b = _.add(b, _.multiply(x.clone(), _.parse(format('asin(-({0}))', c))));
+                                b = _.add(b, _.multiply(x.clone(), _.parse(format(dl, c, a))));
                         });
                     }
-                    retval = _.parse(format('{2}*acos({0})-sqrt(1-({0})^2)/({1})^2', arg.toString(), a.toString(), dx));
-                    retval = _.add(retval, b);
+                    symbol = _.parse(format(istr, arg.toString(), a, dx));
+                    symbol = _[f](symbol, b);
+                    return symbol;
+                };
+                if(symbol.fname === 'acos') {
+                    return inv_trig(retval, '{2}*acos({0})-sqrt(1-({0})^2)/({1})', 'asin(-({0}))', 'add');
+                }
+                else if(symbol.fname === 'asin') {
+                    return inv_trig(retval, '{2}*asin({0})+sqrt(1-({0})^2)/({1})', 'asin(-({0}))', 'subtract');
+                }
+                else if(symbol.fname === 'atan') {
+                    return inv_trig(retval, '{2}*atan({0})-log(1+({0})^2)/(2*({1}))', 'atan(({0}))/({1})', 'add');
                 }
                 else {
                     switch(symbol.fname) {
@@ -353,9 +382,29 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     retval = _.divide(retval, __.diff(symbol.args[0], dx));
                 }
             }
+            else if(g === EX && symbol.contains(dx, true)) {
+                //we cover all variables raised to the x here including e
+                if(!symbol.contains(dx)) { 
+                    if(symbol.isE()) //e^x
+                        retval = symbol.clone();
+                    else {
+                        var a = _.symfunction('log', [_.parse(symbol.value)]);
+                        retval = _.divide(symbol.clone(), a);
+                    }
+                }
+                else if(!symbol.power.contains(dx)) {
+                    //simple integration
+                    retval = symbol.clone();
+                    retval.power = _.add(retval.power, new Symbol(1));
+                    retval = _.divide(retval, retval.power.clone());
+                }
+            }
             else {
                 retval = _.multiply(symbol, _.parse(dx));
             }
+            
+            if(!retval) return _.symfunction('integrate', [symbol.clone()]);//if all else fails
+            
             return retval;
         }
     };
@@ -387,6 +436,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
     ]);
 })();
-//var x = nerdamer('integrate(acos(x+1),x)');
-//
-//console.log(x.toString())
+var x = nerdamer('integrate(log((x+1)^2), x)');
+console.log(x.toString())
+//integrate(x*sin(x),x)
