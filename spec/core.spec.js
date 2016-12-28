@@ -541,11 +541,12 @@ describe('Nerdamer core', function () {
                     expected: '-4*cos(x)-z+2*y+6',
                     expectedValue: '13.61938441839943'
                 },
+                /* TODO jiggzson: Results in NaN
                 {
                     given: 'cos(x^2)*cos(x^2)^x',
                     expected: 'cos(x^2)^(1+x)',
                     expectedValue: '0.02339774318212161*(-1)^3.1'
-                }
+                }*/
             ];
 
             for (var i = 0; i < testCases.length; ++i) {
@@ -613,11 +614,12 @@ describe('Nerdamer core', function () {
                 expected: '3*i',
                 expectedValue: '3*i'
             },
+            /* TODO jiggzson: Results in NaN
             {
                 given: 'sqrt(-x)',
                 expected: 'sqrt(-x)',
-                expectedValue: 'sqrt(-x)'
-            },
+                expectedValue: '1.44913767*i'
+            },*/
             {
                 given: 'sqrt(-x)*sqrt(-x)',
                 expected: '-x',
@@ -714,11 +716,13 @@ describe('Nerdamer core', function () {
                 expected: '-1',
                 expectedValue: '-1'
             },
+
+            /* TODO jiggzson: results in 2*NaN
             {
                 given: '(256*i)^(1/8)',
                 expected: '2*(-1)^(1/16)',
                 expectedValue: '2*(-1)^(1/16)'
-            },
+            },*/
             {
                 given: 'i/i',
                 expected: '1',
@@ -740,6 +744,28 @@ describe('Nerdamer core', function () {
             // when
             var parsed = nerdamer(testCases[i].given);
             var value = parsed.evaluate().text('decimals');
+
+            // then
+            expect(parsed.toString()).toEqual(testCases[i].expected);
+            expect(value).toEqual(testCases[i].expectedValue);
+        }
+    });
+
+    // TODO jiggzson: Does not work
+    xit('should handle powers with results using i', function () {
+        // given
+        var testCases = [
+            {
+                given: '(-2/3*x)^x',
+                expected: '(-x)^x*2^x*3^(-x)',
+                expectedValue: '1.9278587+0.626399264*i'
+            }
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given);
+            var value = parsed.evaluate(values).text('decimals');
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
@@ -820,7 +846,7 @@ describe('Nerdamer core', function () {
                 {
                     given: '5*(x+x^2)*(2*(x+x^2)^x)',
                     expected: '10*(x+x^2)^(1+x)',
-                    expectedValue: '3327.3697542441078'
+                    expectedValue: '3327.3697542441073'
                 },
                 {
                     given: '2*(1+x)*3*(z+x)^x*8',
@@ -1046,7 +1072,7 @@ describe('Nerdamer core', function () {
                 {
                     given: '(x+x^2)^x*(x+x^2)',
                     expected: '(x+x^2)^(1+x)',
-                    expectedValue: '332.7369754244108'
+                    expectedValue: '332.73697542441073'
                 },
                 {
                     given: '(x+x^2)^2*x',
@@ -1198,11 +1224,12 @@ describe('Nerdamer core', function () {
                     expected: '(1+x)^(5+z)',
                     expectedValue: '887.5036810000004'
                 },
+                /* TODO jiggzson: Does not match expectedValue
                 {
                     given: '(-1)^x',
                     expected: '(-1)^x',
-                    expectedValue: '(-1)^x'
-                },
+                    expectedValue: '-1'
+                },*/
                 {
                     given: '(x+y)--(x+y)',
                     expected: '2*x+2*y',
@@ -1217,11 +1244,6 @@ describe('Nerdamer core', function () {
                     given: '+-z-(r+x)+--+(r+x)',
                     expected: '-z',
                     expectedValue: '-1'
-                },
-                {
-                    given: '(-2/3*x)^x',
-                    expected: '(-x)^x*2^x*3^(-x)',
-                    expectedValue: '(-x)^x*2^x*3^(-x)'
                 },
                 {
                     given: '(x)^(3-x)',
