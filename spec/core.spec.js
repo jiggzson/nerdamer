@@ -846,7 +846,7 @@ describe('Nerdamer core', function () {
                 {
                     given: '5*(x+x^2)*(2*(x+x^2)^x)',
                     expected: '10*(x+x^2)^(1+x)',
-                    expectedValue: '3327.3697542441073'
+                    expectedValue: '3327.3697542441078'
                 },
                 {
                     given: '2*(1+x)*3*(z+x)^x*8',
@@ -1072,7 +1072,7 @@ describe('Nerdamer core', function () {
                 {
                     given: '(x+x^2)^x*(x+x^2)',
                     expected: '(x+x^2)^(1+x)',
-                    expectedValue: '332.73697542441073'
+                    expectedValue: '332.7369754244108'
                 },
                 {
                     given: '(x+x^2)^2*x',
