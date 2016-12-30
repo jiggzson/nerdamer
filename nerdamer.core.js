@@ -1261,11 +1261,27 @@ var nerdamer = (function(imports) {
             //all tests must have passed so we must be dealing with a polynomial
             return true;
         },
+        isMonomial: function() {
+            if(this.group === S) return true;
+            if(this.group === CB) {
+                for(var x in this.symbols) 
+                    if(this.symbols[x].group !== S)
+                        return false;
+            }
+            else return false;
+            return true;
+        },
         isPi: function() {
             return this.group === S && this.value === 'pi';
         },
+        sign: function() {
+            return this.multiplier.sign();
+        },
         isE: function() {
             return this.value === 'e';
+        },
+        isSQRT: function() {
+            return this.fname === SQRT;
         },
         isConstant: function() {
             return this.value === CONST_HASH;
@@ -1797,12 +1813,20 @@ var nerdamer = (function(imports) {
          * denominator and has to be found by looking at the actual symbols themselves.
          */
         getDenom: function() {
-            if(this.group === CB) {
-                for(var x in this.symbols) {
+            if(this.group === CB) 
+                for(var x in this.symbols) 
                     if(this.symbols[x].power < 0) return this.symbols[x].clone();
-                }
-            }
             return new Symbol(1);
+        },
+        getNum: function() {
+            if(this.group === CB) {
+                var newSymbol = new Symbol(1);
+                for(var x in this.symbols) 
+                    if(this.symbols[x].power > 0)
+                        newSymbol = _.multiply(newSymbol, x);
+                return newSymbol;
+            }
+            return this.clone();
         },
         toString: function() {
             return this.text();

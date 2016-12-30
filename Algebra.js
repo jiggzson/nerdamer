@@ -482,6 +482,9 @@ if((typeof module) !== 'undefined') {
             f.call(this, factor, x);
         }
     };
+    Factors.prototype.count = function() {
+        return keys(this.factors).length;
+    };
     //a wrapper for performing multivariate division
     function MVTerm(coeff, terms, map) {
         this.terms = terms || [];
@@ -611,7 +614,7 @@ if((typeof module) !== 'undefined') {
                 var val = core.Utils.text(x, 'hash'), tvar = map[val];
                 if(!tvar) {
                     //generate a unique enough name
-                    var t = x.fname+core.Utils.keys(map).length;
+                    var t = x.fname+keys(map).length;
                     map[val] = t;
                     subbed.push(x.altVar(t));
                 }
@@ -2059,7 +2062,7 @@ if((typeof module) !== 'undefined') {
             for(var x in sorted) {
                 var r = _.parse(x+'^'+maxes[x]); 
                 var new_factor = _.expand(_.divide(sorted[x], r)); 
-                var divided = __.div(symbol.clone(), new_factor);
+                var divided = __.div(symbol.clone(), new_factor); 
                 if(divided[0].equals(0)) { //cant factor anymore
                     factors.add(divided[1]);
                     return factors;
@@ -2075,27 +2078,40 @@ if((typeof module) !== 'undefined') {
                         factors.add(r);
                         return factors;
                     }
+                    
                     return __._factor(r, factors);
                 }
             }
+
             return factors;
         },
         nfactor: function(symbol, raw) {
+            if(variables(symbol).length === 1) {
+                var factors = new Factors();
+                factors.add(symbol);
+                return factors;
+            }
             var factors = __._factor(symbol);
             if(raw) return factors;
             return factors.toSymbol();
         },
+        kronecker: function(symbol, factors) {
+            factors = factors || new Factors();
+            
+        },
         __factor: function(symbol) {
+            __.kronecker(symbol.clone());
+            var vars = variables(symbol);
             var factors = __.nfactor(symbol, true);
             var all_factors = new Factors();
             factors.each(function(x, y) {
-                __.simpfactor(x, all_factors);
+                __.simpfactor(x, all_factors, vars);
             });
             return all_factors.toSymbol();
         },
-        simpfactor: function(symbol, factors) {
+        simpfactor: function(symbol, factors, vars) {
             factors = factors || new Factors();
-            var vars = variables(symbol);
+            vars = vars || variables(symbol);
             if(vars.length === 1) {
                 var x = vars[0];//the variable name
                 //Deal with the squares
@@ -2181,3 +2197,7 @@ if((typeof module) !== 'undefined') {
         }
     ]);
 })();
+var x = nerdamer('__factor(x^4+9*x^3+30*x^2+47*x+21)');
+console.log(x.toString())
+var x = nerdamer('__factor(b*x^2*y+a*x^2*y+b*x+a*x)');
+console.log(x.toString())

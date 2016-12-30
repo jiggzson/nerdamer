@@ -22,6 +22,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         text = core.Utils.text,
         inBrackets = core.Utils.inBrackets,
         format = core.Utils.format,
+        CONST_HASH = core.Settings.CONST_HASH,
         N = core.groups. N,
         S = core.groups.S,
         FN = core.groups.FN,
@@ -305,11 +306,41 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }
             //a*x
             else if(g === CB && has_dx) {
-                retval = new Symbol(1);
-                symbol.each(function(x) {
-                    var t = x.contains(dx) ? __.integrate(x, dx) : x;
-                    retval = _.multiply(retval, t);
-                });
+                if(!symbol.isMonomial()) {
+                    var denom = symbol.getDenom();
+                    if(denom.isSQRT()) {
+                        var arg = denom.args[0];
+                        //try to see if it's asin in the form x +- constant
+                        if(arg.group === CP && arg.length === 2 && dx in arg.symbols 
+                                &&arg.symbols[dx].group === S && CONST_HASH in arg.symbols) {
+                            //get the sign and power of x
+                            var sym = arg.symbols[dx],
+                                p = sym.power;
+                            if(p.equals(1)) { //rewrite it and send it back
+                                arg.power = arg.power.multiply(new Frac(-0.5));
+                                symbol.each(function(x) {
+                                    if(!x.power.isNegative()) arg = _.multiply(arg, x);
+                                });
+                                //return integrateLinCB
+                            }
+                            else if(p.equals(2)) {
+                                if(sym.sign() < 0) {
+                                    var num = symbol.getNum().toString(),
+                                        c = 'sqrt'+core.Utils.inBrackets(sym.multiplier.negate()),
+                                        n = arg.symbols[CONST_HASH].toString();
+                                    return _.parse(format('(({0})*asin(({1}*{2})/sqrt({3}))/({1}))', num, c, dx, n));
+                                }
+                            }
+                        }
+                    }
+                }
+                else {
+                    retval = new Symbol(1);
+                    symbol.each(function(x) {
+                        var t = x.contains(dx) ? __.integrate(x, dx) : x;
+                        retval = _.multiply(retval, t);
+                    });
+                } 
             }
             //x+1
             else if(g === CP && has_dx) {
@@ -399,11 +430,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     retval = _.divide(retval, retval.power.clone());
                 }
             }
-            else {
-                retval = _.multiply(symbol, _.parse(dx));
-            }
             
-            if(!retval) return _.symfunction('integrate', [symbol.clone()]);//if all else fails
+            if(!retval) return _.symfunction('integrate', [symbol.clone(), dx]);//if all else fails
             
             return retval;
         }
@@ -436,6 +464,3 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
     ]);
 })();
-var x = nerdamer('integrate(log((x+1)^2), x)');
-console.log(x.toString())
-//integrate(x*sin(x),x)
