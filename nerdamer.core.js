@@ -613,9 +613,6 @@ var nerdamer = (function(imports) {
                 for (var i = 2; i <= x; i++) retval = retval * i;
                 return retval;
             },
-            mod: function(x, y) {
-                return x % y;
-            },
             GCD: function() {
                 var args = arrayUnique([].slice.call(arguments)
                         .map(function(x){ return Math.abs(x); })).sort(),
@@ -681,6 +678,34 @@ var nerdamer = (function(imports) {
                 }
                 if(n > 1) factors[n] = 1;
                 return factors;
+            },
+            //factors a number into rectangular box. If sides are primes that this will be
+            //their prime factors. e.g. 21 -> (7)(3), 133 -> (7)(19)
+            boxfactor: function(n, max) {
+                max = max || 200; //stop after this number of iterations
+                var c, r,
+                    d = Math.floor((5/12)*n), //the divisor
+                    i = 0, //number of iterations
+                    safety = false;
+                while(true)  {
+                    c = Math.floor(n/d);
+                    r = n % d;
+                    if(r === 0) break; //we're done
+                    if(safety) return [n, 1];
+                    d = Math.max(r, d-r);
+                    i++;
+                    safety = i > max;
+                }
+                return [c, d, i];
+            },
+            fib: function(n) {
+                var a = 0, b = 1, f = 1;
+                for(var i = 2; i <= n; i++) {
+                    f = a + b;
+                    a = b;
+                    b = f;
+                }
+                return f;
             }
         };
         
@@ -1074,6 +1099,17 @@ var nerdamer = (function(imports) {
             }
 
             return c.simplify();
+        },
+        mod: function(m) {
+            var a = this.clone(),
+                b = m.clone();
+            //make their denominators even and return the mod of their numerators
+            a.num = a.num.multiply(b.den);
+            a.den = a.den.multiply(b.den);
+            b.num = b.num.multiply(this.den);
+            b.den = b.den.multiply(this.den);
+            a.num = a.num.mod(b.num);
+            return a.simplify();
         },
         simplify: function() { 
             var gcd = bigInt.gcd(this.num, this.den);
@@ -1948,9 +1984,9 @@ var nerdamer = (function(imports) {
                 'erf'       : [ , 1],
                 'floor'     : [ ,1],
                 'ceil'      : [ ,1],
-                'fact'      : [factorial , 1],
+                'fact'      : [factorial, 1],
                 'round'     : [ , 1],
-                'mod'       : [ , 2],
+                'mod'       : [mod, 2],
                 'pfactor'   : [pfactor , 1],
                 'vector'    : [vector, -1],
                 'matrix'    : [matrix, -1],
@@ -2400,7 +2436,7 @@ var nerdamer = (function(imports) {
             return _.symfunction(ABS, [symbol]);
         }
         /**
-         * 
+         * The factorial functions
          * @param {Symbol} symbol
          * @return {Symbol)
          */
@@ -2412,7 +2448,21 @@ var nerdamer = (function(imports) {
             return _.symfunction(FACTORIAL, [symbol]);
         };
         /**
-         * It just raises the symbol's power to 1/2
+         * The mod function
+         * @param {Symbol} symbol1
+         * @param {Symbol} symbol2
+         * @returns {Symbol}
+         */
+        function mod(symbol1, symbol2) {
+            if(symbol1.isConstant() && symbol2.isConstant()) {
+                var retval = new Symbol(1);
+                retval.multiplier = retval.multiplier.multiply(symbol1.multiplier.mod(symbol2.multiplier));
+                return retval;
+            }
+            return _.symfunction('mod', [symbol1, symbol2]);
+        }
+        /**
+         * The square root function
          * @param {Symbol} symbol
          * @returns {Symbol}
          */
@@ -4960,6 +5010,16 @@ var nerdamer = (function(imports) {
      */    
     libExports.clearVars = function() {
         VARS = {};
+        return this;
+    };
+    
+    /**
+     * 
+     * @param {Function} loader
+     * @returns {nerdamer}
+     */
+    libExports.load = function(loader) {
+        loader.call(this);
         return this;
     };
     

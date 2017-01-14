@@ -413,7 +413,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     retval = _.divide(retval, __.diff(symbol.args[0], dx));
                 }
             }
-            else if(g === EX && symbol.contains(dx, true)) {
+            else if(g === EX && symbol.contains(dx, true) && symbol.power.isLinear()) {
                 //we cover all variables raised to the x here including e
                 if(!symbol.contains(dx)) { 
                     if(symbol.isE()) //e^x

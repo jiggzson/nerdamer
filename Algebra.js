@@ -5,6 +5,11 @@
 * License : MIT
 * Source : https://github.com/jiggzson/nerdamer
 */
+/*
+ * TODO
+ * mod fraction
+ * make mprime use Frac class
+ */
 require('./Calculus.js');
 if((typeof module) !== 'undefined') {
     nerdamer = require('./nerdamer.core.js');
@@ -29,336 +34,469 @@ if((typeof module) !== 'undefined') {
         Frac = core.Frac,
         isInt = core.Utils.isInt,
         Symbol = core.Symbol,
-        EPSILON = core.Settings.EPSILON,
         CONST_HASH = core.Settings.CONST_HASH;
-
-        /**
-        * Converts a symbol into an equivalent polynomial arrays of 
-        * the form [[coefficient_1, power_1],[coefficient_2, power_2], ... ]
-        * @param {Symbol|Number} symbol
-        * @param {String} variable The variable name of the polynomial
-        * @param {int} order
-        */
-        function Polynomial(symbol, variable, order) { 
-            if(core.Utils.isSymbol(symbol)) {
-                this.parse(symbol);
-            }
-            else if(!isNaN(symbol)) { 
-                order = order || 0;
-                if(variable === undefined) 
-                    throw new Error('Polynomial expects a variable name when creating using order');
-                this.coeffs = [];
-                this.coeffs[order] = symbol;
-                this.fill(symbol);
-            }
-            else if(typeof symbol === 'string') {
-                this.parse(_.parse(symbol));
-            }
+        
+    //*************** CLASSES ***************//
+    /**
+    * Converts a symbol into an equivalent polynomial arrays of 
+    * the form [[coefficient_1, power_1],[coefficient_2, power_2], ... ]
+    * Univariate polymials only. 
+    * @param {Symbol|Number} symbol
+    * @param {String} variable The variable name of the polynomial
+    * @param {int} order
+    */
+    function Polynomial(symbol, variable, order) { 
+        if(core.Utils.isSymbol(symbol)) {
+            this.parse(symbol);
         }
+        else if(!isNaN(symbol)) { 
+            order = order || 0;
+            if(variable === undefined) 
+                throw new Error('Polynomial expects a variable name when creating using order');
+            this.coeffs = [];
+            this.coeffs[order] = symbol;
+            this.fill(symbol);
+        }
+        else if(typeof symbol === 'string') {
+            this.parse(_.parse(symbol));
+        }
+    }
+    /**
+     * Creates a Polynomial given an array of coefficients
+     * @param {int[]} arr
+     * @param {String} variable
+     * @returns {Polynomial}
+     */
+    Polynomial.fromArray = function(arr, variable) {
+        if(typeof variable === 'undefined') 
+            throw new Error('A variable name must be specified when creating polynomial from array');
+        var p = new Polynomial();
+        p.coeffs = arr;
+        p.variable = variable;
+        return p;
+    };
+    
+    Polynomial.fit = function(c1, c2, n, base, p, variable) {
+        //after having looped through and mod 10 the number to get the matching factor
+        var terms = new Array(p+1),
+            t = n-c2;
+        terms[0] = c2; //the constants is assumed to be correct
+        //constant for x^p is also assumed know so add
+        terms[p] = c1;
+        t -= c1*Math.pow(base, p);
+        //start fitting
+        for(var i=p-1; i>0; i--) {
+            var b = Math.pow(base, i), //we want as many wholes as possible
+                q = t/b,
+                sign = Math.sign(q); 
+            var c = sign*Math.floor(Math.abs(q));
+            t -= c*b;
+            terms[i] = c;
+        }
+        if(t !== 0) return null;
+        for(var i=0; i<terms.length; i++)
+            terms[i] = new Frac(terms[i]);
         
-        Polynomial.fromArray = function(arr, variable) {
-            if(typeof variable === 'undefined') 
-                throw new Error('A variable name must be specified when creating polynomial from array');
-            var p = new Polynomial();
-            p.coeffs = arr;
-            p.variable = variable;
-            return p;
-        };
-        
-        Polynomial.prototype = { 
-            parse: function(symbol, c) { 
-                this.variable = variables(symbol)[0]; 
-                if(!symbol.isPoly()) throw new Error('Polynomial Expected! Received '+core.Utils.text(symbol));
-                c = c || [];
-                if(!symbol.power.absEquals(1)) symbol = _.expand(symbol);
+        return Polynomial.fromArray(terms, variable);
+    };
 
-                if(symbol.group === core.groups.N) { c[0] = symbol.multiplier; }
-                else if(symbol.group === core.groups.S) { c[symbol.power.toDecimal()] = symbol.multiplier; }
-                else { 
-                    for(var x in symbol.symbols) { 
-                        var sub = symbol.symbols[x],
-                            p = sub.power; 
-                        if(core.Utils.isSymbol(p)) throw new Error('power cannot be a Symbol');
-                        
-                        p = sub.group === N ? 0 : p.toDecimal();
-                        if(sub.symbols){ 
-                            this.parse(sub, c);  
-                        }
-                        else { 
-                            c[p] = sub.multiplier; 
-                        }
+    Polynomial.prototype = { 
+        /**
+         * Converts Symbol to Polynomial
+         * @param {Symbol} symbol
+         * @param {Array} c - a collector array
+         * @returns {Polynomial}
+         */
+        parse: function(symbol, c) { 
+            this.variable = variables(symbol)[0]; 
+            if(!symbol.isPoly()) throw new Error('Polynomial Expected! Received '+core.Utils.text(symbol));
+            c = c || [];
+            if(!symbol.power.absEquals(1)) symbol = _.expand(symbol);
+
+            if(symbol.group === core.groups.N) { c[0] = symbol.multiplier; }
+            else if(symbol.group === core.groups.S) { c[symbol.power.toDecimal()] = symbol.multiplier; }
+            else { 
+                for(var x in symbol.symbols) { 
+                    var sub = symbol.symbols[x],
+                        p = sub.power; 
+                    if(core.Utils.isSymbol(p)) throw new Error('power cannot be a Symbol');
+
+                    p = sub.group === N ? 0 : p.toDecimal();
+                    if(sub.symbols){ 
+                        this.parse(sub, c);  
+                    }
+                    else { 
+                        c[p] = sub.multiplier; 
                     }
                 }
-                
-                this.coeffs = c;
-                
-                this.fill();
-            },
-            /**
-            * Fills in the holes in a polynomial with zeroes
-            * @param {Number} x - The number to fill the holes with
-            */
-            fill: function(x) {
-                x = Number(x) || 0;
-                var l = this.coeffs.length;
-                for(var i=0; i<l; i++) {
-                    if(this.coeffs[i] === undefined) { this.coeffs[i] = new Frac(x); }
-                }
-                return this;
-            },
-            /**
-            * Removes higher order zeros or a specific coefficient
-            * @returns {Array}
-            */
-            trim: function() { 
-                var l = this.coeffs.length;
-                while(l--) {
-                    var c = this.coeffs[l];
-                    if(c && c.equals(0)) this.coeffs.pop();
-                    else break;
-                }
-
-                return this;
-            },
-            /**
-            * Adds together 2 polynomials
-            * @param {Polynomial} poly
-            */
-            add: function(poly) {
-                var l = Math.max(this.coeffs.length, poly.coeffs.length);
-                for(var i=0; i<l; i++) {
-                    var a = (this.coeffs[i] || new Frac(0)),
-                        b = (poly.coeffs[i] || new Frac(0));
-                    this.coeffs[i] = a.add(b);
-                }
-                return this;
-            },
-            /**
-            * Adds together 2 polynomials
-            * @param {Polynomial} poly
-            */
-            subtract: function(poly) {
-                var l = Math.max(this.coeffs.length, poly.coeffs.length);
-                for(var i=0; i<l; i++) {
-                    var a = (this.coeffs[i] || new Frac(0)),
-                        b = (poly.coeffs[i] || new Frac(0));
-                    this.coeffs[i] = a.subtract(b);
-                }
-                return this;
-            },
-            divide: function(poly) {
-                var variable = this.variable,
-                    dividend = core.Utils.arrayClone(this.coeffs),
-                    divisor = core.Utils.arrayClone(poly.coeffs),
-                    n = dividend.length,
-                    mp = divisor.length-1,
-                    quotient = [];
-
-                //loop through the dividend
-                for(var i=0; i<n; i++) {
-                    var p = n-(i+1);
-                    //get the difference of the powers
-                    var d = p - mp;
-                    var inBrackets = core.Utils.inBrackets;
-                    //get the quotient of the coefficients
-                    var q = dividend[p].divide(divisor[mp]);
-
-                    if(d < 0) break;//the divisor is not greater than the dividend
-                    //place it in the quotient
-                    quotient[d] = q;
-
-                    for(var j=0; j<=mp; j++) {
-                        //reduce the dividend
-                        dividend[j+d] = dividend[j+d].subtract((divisor[j].multiply(q)));
-                    }
-                }
-
-                //clean up
-                var p1 = Polynomial.fromArray(dividend, variable || 'x').trim(), //pass in x for safety
-                    p2 = Polynomial.fromArray(quotient, variable || 'x');
-                return [p2, p1];
-            },
-            multiply: function(poly) {
-                var l1 = this.coeffs.length, l2 = poly.coeffs.length, 
-                    c = []; //array to be returned
-                for(var i=0; i<l1; i++) {
-                    var x1 = this.coeffs[i];
-                    for(var j=0; j<l2; j++) {
-                        var k = i+j, //add the powers together
-                            x2 = poly.coeffs[j],
-                            e = c[k] || new Frac(0); //get the existing term from the new array
-                        c[k] = e.add(x1.multiply(x2)); //multiply the coefficients and add to new polynomial array
-                    }
-                }
-                this.coeffs = c;
-                return this;
-            },
-            /**
-             * Checks if a polynomial is zero
-             * @returns {Boolean}
-             */
-            isZero: function() {
-                var l = this.coeffs.length;
-                for(var i=0; i<l; i++) {
-                    var e = this.coeffs[i];
-                    if(!e.equals(0)) return false;
-                }
-                return true;
-            },
-            sub: function(n) {
-                var sum = new Frac(0), l=this.coeffs.length;
-                for(var i=0; i<l; i++) {
-                    var t = this.coeffs[i];
-                    if(!t.equals(0)) sum = sum.add(t.multiply(new Frac(Math.pow(n, i))));
-                }
-                return sum;
-            },
-            clone: function() {
-                var p = new Polynomial();
-                p.coeffs = this.coeffs;
-                p.variable = this.variable;
-                return p;
-            },
-            deg: function() {
-                this.trim();
-                return this.coeffs.length-1;
-            },
-            lc: function() { 
-                return this.coeffs[this.deg()].clone();
-            },
-            monic: function() {
-                var lc = this.lc(), l = this.coeffs.length; 
-                for(var i=0; i<l; i++) this.coeffs[i] = this.coeffs[i].divide(lc);
-                return this;
-            },
-            gcd: function(poly) { 
-                //get the maximum power of each
-                var mp1 = this.coeffs.length-1, 
-                    mp2 = poly.coeffs.length-1,
-                    T;
-                //swap so we always have the greater power first
-                if(mp1 < mp2) {
-                    return poly.gcd(this);
-                }
-                var a = this;
-
-                while(!poly.isZero()) {   
-                    var t = poly.clone(); 
-                    a = a.clone(); 
-                    T = a.divide(t);
-                    poly = T[1]; 
-                    a = t; 
-                }
-                
-                var gcd = core.Math2.QGCD.apply(null, a.coeffs);
-                if(!gcd.equals(1)) { 
-                    var l = a.coeffs.length;
-                    for(var i=0; i<l; i++) {
-                        a.coeffs[i] = a.coeffs[i].divide(gcd);
-                    }
-                }
-                return a;
-            },
-            /**
-             * Differentiates the polynomial
-             */
-            diff: function() {
-                var new_array = [], l = this.coeffs.length;
-                for(var i=1; i<l; i++) new_array.push(this.coeffs[i].multiply(new Frac(i)));
-                this.coeffs = new_array;
-                return this;
-            },
-            /**
-             * Integrates the polynomial
-             */
-            integrate: function() {
-                var new_array = [0], l = this.coeffs.length;
-                for(var i=0; i<l; i++) {
-                    var c = new Frac(i+1);
-                    new_array[c] = this.coeffs[i].divide(c);
-                }
-                this.coeffs = new_array;
-                return this;
-            },
-            gcf: function(toPolynomial) {
-                //get the first nozero coefficient and returns its power
-                var fnz = function(a) {
-                        for(var i=0; i<a.length; i++)
-                            if(!a[i].equals(0)) return i;
-                    },
-                    ca = [];
-                for(var i=0; i<this.coeffs.length; i++) {
-                    var c = this.coeffs[i];
-                    if(!c.equals(0) && ca.indexOf(c) === -1) ca.push(c);
-                }
-                var p = [core.Math2.QGCD.apply(undefined, ca), fnz(this.coeffs)].toDecimal(); 
-                
-                if(toPolynomial) {
-                    var parr = [];
-                    parr[p[1]-1] = p[0];
-                    p = Polynomial.fromArray(parr, this.variable).fill();
-                }
-                
-                return p;
-            },
-            /**
-             * Raises a polynomial P to a power p -> P^p. e.g. (x+1)^2
-             * @param {Int} p - The power to be raised to 
-             *
-            raiseTo: function(p) {
-                var a = this.coeffs.slice(), ll=this.coeffs.length;
-                while(--p) { 
-                    var l = a.length, r=[];
-                    for(var i=0; i<l; i++) {
-                        for(var j=0; j<ll; j++) {
-                            var idx = i+j, e = r[idx] || 0;
-                            r[idx] = e+a[i]*this.coeffs[j];
-                        }
-                    }
-                    a = r;
-                }
-                this.coeffs = r;
-                return this;
-            },*/
-            quad: function(incl_img) {
-                var roots = [];
-                if(this.coeffs.length > 3) throw new Error('Cannot calculate quadratic order of '+(this.coeffs.length-1));
-                if(this.coeffs.length === 0) throw new Error('Polynomial array has no terms');
-                var a = this.coeffs[2] || 0, b = this.coeffs[1] || 0, c = this.coeffs[0];
-                var dsc = b*b-4*a*c;
-                if(dsc < 0 && !incl_img) return roots;
-                else {
-                    roots[0] = (-b+Math.sqrt(dsc))/(2*a);
-                    roots[1] = (-b-Math.sqrt(dsc))/(2*a);
-                }
-                return roots;
-            },
-            /**
-             * Converts polynomial to Symbol
-             * @returns {Symbol}
-             */
-            toSymbol: function() {
-                var l = this.coeffs.length,
-                    variable = this.variable;
-                if(l === 0) return new core.Symbol(0);
-                var end = l -1, str = '';
-
-                for(var i=0; i<l; i++) {
-                    //place the plus sign for all but the last one
-                    var plus = i === end ? '' : '+',
-                        e = this.coeffs[i];
-                    if(!e.equals(0)) str += (e+'*'+variable+'^'+i+plus);
-                }
-                return _.parse(str);
-            },
-            equalsNumber: function(x) { 
-                this.trim();
-                return this.coeffs.length === 1 && this.coeffs[0].toDecimal() === x;
-            },
-            toString: function() {
-                return this.toSymbol().toString();
             }
-        };
+
+            this.coeffs = c;
+
+            this.fill();
+        },
+        /**
+        * Fills in the holes in a polynomial with zeroes
+        * @param {Number} x - The number to fill the holes with
+        */
+        fill: function(x) {
+            x = Number(x) || 0;
+            var l = this.coeffs.length;
+            for(var i=0; i<l; i++) {
+                if(this.coeffs[i] === undefined) { this.coeffs[i] = new Frac(x); }
+            }
+            return this;
+        },
+        /**
+        * Removes higher order zeros or a specific coefficient
+        * @returns {Array}
+        */
+        trim: function() { 
+            var l = this.coeffs.length;
+            while(l--) {
+                var c = this.coeffs[l];
+                var equalsZero = c.equals(0);
+                if(c && equalsZero) {
+                    if(l === 0) break;
+                    this.coeffs.pop();
+                }
+                else break;
+            }
+
+            return this;
+        },
+        /*
+         * Returns polynomial mod p **currently fails**
+         * @param {Number} p
+         * @returns {Polynomial}
+         */
+        modP: function(p) {
+            var l = this.coeffs.length;
+            for(var i=0; i<l; i++) {
+                var c = this.coeffs[i];
+                if(c < 0) { //go borrow
+                    var b; //a coefficient > 0
+                    for(var j=i; j<l; j++) {//starting from where we left off
+                        if(this.coeffs[j] > 0) {
+                            b = this.coeffs[j];
+                            break;
+                        }
+                    }
+
+                    if(b) { //if such a coefficient exists
+                        for(j; j>i; j--) { //go down the line and adjust using p
+                            this.coeffs[j] = this.coeffs[j].subtract(new Frac(1));
+                            this.coeffs[j-1] = this.coeffs[j-1].add(new Frac(p));
+                        }
+                        c = this.coeffs[i]; //reset c
+                    }
+                }
+
+                var d = c.mod(p);
+                var w = c.subtract(d).divide(p);
+                if(!w.equals(0)) {
+                    var up_one = i+1;
+                    var next = this.coeffs[up_one] || new Frac(0);
+                    next = next.add(w);
+                    this.coeffs[up_one] = new Frac(next);
+                    this.coeffs[i] = new Frac(d);
+                }
+            }
+
+            return this;
+        },
+        /**
+        * Adds together 2 polynomials
+        * @param {Polynomial} poly
+        */
+        add: function(poly) {
+            var l = Math.max(this.coeffs.length, poly.coeffs.length);
+            for(var i=0; i<l; i++) {
+                var a = (this.coeffs[i] || new Frac(0)),
+                    b = (poly.coeffs[i] || new Frac(0));
+                this.coeffs[i] = a.add(b);
+            }
+            return this;
+        },
+        /**
+        * Adds together 2 polynomials
+        * @param {Polynomial} poly
+        */
+        subtract: function(poly) {
+            var l = Math.max(this.coeffs.length, poly.coeffs.length);
+            for(var i=0; i<l; i++) {
+                var a = (this.coeffs[i] || new Frac(0)),
+                    b = (poly.coeffs[i] || new Frac(0));
+                this.coeffs[i] = a.subtract(b);
+            }
+            return this;
+        },
+        divide: function(poly) {
+            var variable = this.variable,
+                dividend = core.Utils.arrayClone(this.coeffs),
+                divisor = core.Utils.arrayClone(poly.coeffs),
+                n = dividend.length,
+                mp = divisor.length-1,
+                quotient = [];
+
+            //loop through the dividend
+            for(var i=0; i<n; i++) {
+                var p = n-(i+1);
+                //get the difference of the powers
+                var d = p - mp;
+                var inBrackets = core.Utils.inBrackets;
+                //get the quotient of the coefficients
+                var q = dividend[p].divide(divisor[mp]);
+
+                if(d < 0) break;//the divisor is not greater than the dividend
+                //place it in the quotient
+                quotient[d] = q;
+
+                for(var j=0; j<=mp; j++) {
+                    //reduce the dividend
+                    dividend[j+d] = dividend[j+d].subtract((divisor[j].multiply(q)));
+                }
+            }
+
+            //clean up
+            var p1 = Polynomial.fromArray(dividend, variable || 'x').trim(), //pass in x for safety
+                p2 = Polynomial.fromArray(quotient, variable || 'x');
+            return [p2, p1];
+        },
+        multiply: function(poly) {
+            var l1 = this.coeffs.length, l2 = poly.coeffs.length, 
+                c = []; //array to be returned
+            for(var i=0; i<l1; i++) {
+                var x1 = this.coeffs[i];
+                for(var j=0; j<l2; j++) {
+                    var k = i+j, //add the powers together
+                        x2 = poly.coeffs[j],
+                        e = c[k] || new Frac(0); //get the existing term from the new array
+                    c[k] = e.add(x1.multiply(x2)); //multiply the coefficients and add to new polynomial array
+                }
+            }
+            this.coeffs = c;
+            return this;
+        },
+        /**
+         * Checks if a polynomial is zero
+         * @returns {Boolean}
+         */
+        isZero: function() {
+            var l = this.coeffs.length;
+            for(var i=0; i<l; i++) {
+                var e = this.coeffs[i];
+                if(!e.equals(0)) return false;
+            }
+            return true;
+        },
+        /** 
+         * Substitutes in a number n into the polynomial p(n)
+         * @param {Number} n
+         * @returns {Frac}
+         */
+        sub: function(n) {
+            var sum = new Frac(0), l=this.coeffs.length;
+            for(var i=0; i<l; i++) {
+                var t = this.coeffs[i];
+                if(!t.equals(0)) sum = sum.add(t.multiply(new Frac(Math.pow(n, i))));
+            }
+            return sum;
+        },
+        /**
+         * Returns a clone of the polynomial
+         * @returns {Polynomial}
+         */
+        clone: function() {
+            var p = new Polynomial();
+            p.coeffs = this.coeffs;
+            p.variable = this.variable;
+            return p;
+        },
+        /**
+         * Gets the degree of the polynomial
+         * @returns {Number}
+         */
+        deg: function() {
+            this.trim();
+            return this.coeffs.length-1;
+        },
+        /**
+         * Returns a lead coefficient
+         * @returns {Frac}
+         */
+        lc: function() { 
+            return this.coeffs[this.deg()].clone();
+        },
+        /**
+         * Converts polynomial into a monic polynomial
+         * @returns {Polynomial}
+         */
+        monic: function() {
+            var lc = this.lc(), l = this.coeffs.length; 
+            for(var i=0; i<l; i++) this.coeffs[i] = this.coeffs[i].divide(lc);
+            return this;
+        },
+        /**
+         * Returns the GCD of two polynomials
+         * @param {Polynomial} poly
+         * @returns {Polynomial}
+         */
+        gcd: function(poly) { 
+            //get the maximum power of each
+            var mp1 = this.coeffs.length-1, 
+                mp2 = poly.coeffs.length-1,
+                T;
+            //swap so we always have the greater power first
+            if(mp1 < mp2) {
+                return poly.gcd(this);
+            }
+            var a = this;
+
+            while(!poly.isZero()) {   
+                var t = poly.clone(); 
+                a = a.clone(); 
+                T = a.divide(t);
+                poly = T[1]; 
+                a = t; 
+            }
+
+            var gcd = core.Math2.QGCD.apply(null, a.coeffs);
+            if(!gcd.equals(1)) { 
+                var l = a.coeffs.length;
+                for(var i=0; i<l; i++) {
+                    a.coeffs[i] = a.coeffs[i].divide(gcd);
+                }
+            }
+            return a;
+        },
+        /**
+         * Differentiates the polynomial
+         * @returns {Polynomial}
+         */
+        diff: function() {
+            var new_array = [], l = this.coeffs.length;
+            for(var i=1; i<l; i++) new_array.push(this.coeffs[i].multiply(new Frac(i)));
+            this.coeffs = new_array;
+            return this;
+        },
+        /**
+         * Integrates the polynomial
+         * @returns {Polynomial} 
+         */
+        integrate: function() {
+            var new_array = [0], l = this.coeffs.length;
+            for(var i=0; i<l; i++) {
+                var c = new Frac(i+1);
+                new_array[c] = this.coeffs[i].divide(c);
+            }
+            this.coeffs = new_array;
+            return this;
+        },
+        /**
+         * Returns the Greatest common factor of the polynomial
+         * @param {bool} toPolynomial - true if a polynomial is wanted
+         * @returns {Frac|Polynomial}
+         */
+        gcf: function(toPolynomial) {
+            //get the first nozero coefficient and returns its power
+            var fnz = function(a) {
+                    for(var i=0; i<a.length; i++)
+                        if(!a[i].equals(0)) return i;
+                },
+                ca = [];
+            for(var i=0; i<this.coeffs.length; i++) {
+                var c = this.coeffs[i];
+                if(!c.equals(0) && ca.indexOf(c) === -1) ca.push(c);
+            }
+            var p = [core.Math2.QGCD.apply(undefined, ca), fnz(this.coeffs)].toDecimal(); 
+
+            if(toPolynomial) {
+                var parr = [];
+                parr[p[1]-1] = p[0];
+                p = Polynomial.fromArray(parr, this.variable).fill();
+            }
+
+            return p;
+        },
+        /**
+         * Raises a polynomial P to a power p -> P^p. e.g. (x+1)^2
+         * @param {Int} p - The power to be raised to 
+         *
+         */
+        quad: function(incl_img) {
+            var roots = [];
+            if(this.coeffs.length > 3) throw new Error('Cannot calculate quadratic order of '+(this.coeffs.length-1));
+            if(this.coeffs.length === 0) throw new Error('Polynomial array has no terms');
+            var a = this.coeffs[2] || 0, b = this.coeffs[1] || 0, c = this.coeffs[0];
+            var dsc = b*b-4*a*c;
+            if(dsc < 0 && !incl_img) return roots;
+            else {
+                roots[0] = (-b+Math.sqrt(dsc))/(2*a);
+                roots[1] = (-b-Math.sqrt(dsc))/(2*a);
+            }
+            return roots;
+        },
+        /**
+         * Makes polynomial square free
+         * @returns {Array}
+         */
+        squareFree: function() { 
+            var a = this.clone(),
+                i = 1,
+                b = a.clone().diff(),
+                c = a.clone().gcd(b),
+                w = a.divide(c)[0];
+            var output = Polynomial.fromArray([new Frac(1)], a.variable);
+            while(!c.equalsNumber(1)) { 
+                var y = w.gcd(c); 
+                var z = w.divide(y)[0];
+                //one of the factors may have shown up since it's square but smaller than the 
+                //one where finding
+                if(!z.equalsNumber(1) && i>1) {
+                    var t = z.clone();
+                    for(var j=1; j<i; j++)
+                        t.multiply(z.clone());
+                    z = t;
+                }
+                output = output.multiply(z); 
+                i++;
+                w = y;
+                c = c.divide(y)[0];
+            }
+            return [output, w, i];
+        },
+        /**
+         * Converts polynomial to Symbol
+         * @returns {Symbol}
+         */
+        toSymbol: function() {
+            var l = this.coeffs.length,
+                variable = this.variable;
+            if(l === 0) return new core.Symbol(0);
+            var end = l -1, str = '';
+
+            for(var i=0; i<l; i++) {
+                //place the plus sign for all but the last one
+                var plus = i === end ? '' : '+',
+                    e = this.coeffs[i];
+                if(!e.equals(0)) str += (e+'*'+variable+'^'+i+plus);
+            }
+            return _.parse(str);
+        },
+        /**
+         * Checks if polynomial is equal to a number
+         * @param {Number} x
+         * @returns {Boolean}
+         */
+        equalsNumber: function(x) { 
+            this.trim();
+            return this.coeffs.length === 1 && this.coeffs[0].toDecimal() === x;
+        },
+        toString: function() {
+            return this.toSymbol().toString();
+        }
+    };
         
     //make the polynomial class available to EVERYONE!
     core.Polynomial = Polynomial;
@@ -435,6 +573,11 @@ if((typeof module) !== 'undefined') {
         var m = this.multiplier.toString(), p = this.power.toString();
         return (m === '1' ? '' : m+'*')+ x + (p === '1' ? '' : '^'+p);
     };
+    /**
+     * Checks to see if the symbols contain the same variables
+     * @param {Symbol} symbol
+     * @returns {Boolean}
+     */
     Symbol.prototype.sameVars = function(symbol) {
         if(!(this.symbols || this.group === symbol.group)) return false;
         for(var x in this.symbols) {
@@ -444,10 +587,18 @@ if((typeof module) !== 'undefined') {
         }
         return true;
     };
-    //a wrapper for factors
+    /**
+     * A container class for factors
+     * @returns {Factors}
+     */
     function Factors() {
         this.factors = {};
     };
+    /**
+     * Adds the factors to the factor object
+     * @param {Symbol} s
+     * @returns {Factors}
+     */
     Factors.prototype.add = function(s) {
         var is_constant = s.isConstant();
         if(is_constant && s.equals(1)) return this; //don't add 1
@@ -457,6 +608,10 @@ if((typeof module) !== 'undefined') {
         else this.factors[v] = s;
         return this;
     };
+    /**
+     * Converts the factor object to a Symbol
+     * @returns {Symbol}
+     */
     Factors.prototype.toSymbol = function() {
         var factored = new Symbol(1);
         for(var x in this.factors) {
@@ -466,6 +621,11 @@ if((typeof module) !== 'undefined') {
         }
         return factored;
     };
+    /**
+     * Merges 2 factor objects into one
+     * @param {Factor} o
+     * @returns {Factors}
+     */
     Factors.prototype.merge = function(o) {
         for(var x in o) {
             if(x in this.factors) 
@@ -474,6 +634,11 @@ if((typeof module) !== 'undefined') {
         }
         return this;
     };
+    /**
+     * The iterator for the factor object
+     * @param {Function} f - callback
+     * @returns {Factor}
+     */
     Factors.prototype.each = function(f) {
         for(var x in this.factors) {
             var factor = this.factors[x];
@@ -481,9 +646,17 @@ if((typeof module) !== 'undefined') {
                 factor = factor.args[0];
             f.call(this, factor, x);
         }
+        return this;
     };
+    /**
+     * Return the number of factors contained in the factor object
+     * @returns {int}
+     */
     Factors.prototype.count = function() {
         return keys(this.factors).length;
+    };
+    Factors.prototype.toString = function() {
+        return this.toSymbol().toString();
     };
     //a wrapper for performing multivariate division
     function MVTerm(coeff, terms, map) {
@@ -604,11 +777,16 @@ if((typeof module) !== 'undefined') {
         for(var i=0; i<l; i++) sum += arr[i];
         return sum;
     };
+    /**
+     * Substitutes out functions as variables so they can be used in regular algorithms
+     * @param {Symbol} symbol
+     * @param {Object} map
+     * @returns {String} The expression string
+     */
     core.Utils.subFunctions = function(symbol, map) {
         map = map || {};
         var subbed = [];
         symbol.each(function(x) {
-
             if(x.group === FN || x.previousGroup === FN) {
                 //we need a new variable name so why not use one of the existing
                 var val = core.Utils.text(x, 'hash'), tvar = map[val];
@@ -629,9 +807,14 @@ if((typeof module) !== 'undefined') {
         if(symbol.group === CB) return symbol.altVar(core.Utils.inBrackets(subbed.join('*')));
         return symbol.text();
     };
+    core.Utils.getFunctionsSubs = function(map) {
+        var subs = {};
+        //prepare substitutions
+        for(var x in map) subs[map[x]] = _.parse(x);
+        return subs;
+    };
     var __ = core.Algebra = {
-
-        version: '1.3.5',
+        version: '1.3.6',
         init: (function() {})(),
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
@@ -1482,28 +1665,28 @@ if((typeof module) !== 'undefined') {
             };
             return newtonraph( Number( guess ) );
         },
-        /**
-         * Standard square free factorization univariate
-         * @param {Polynomial} a
-         * @returns {Array}
-         */
-        sqfr: function(symbol) { 
-            var a = new Polynomial(symbol),
-                i = 1,
-                b = a.clone().diff(),
-                c = a.clone().gcd(b),
-                w = a.divide(c)[0],
-                output = Polynomial.fromArray([new Frac(1)], a.variable);
-            while(!c.equalsNumber(1)) { 
-                var y = w.gcd(c); 
-                var z = w.divide(y)[0];
-                output = output.multiply(z); 
-                i++;
-                w = y;
-                c = c.divide(y)[0];
-            }
-            return [output, w, i];
-        },
+//        /**
+//         * Standard square free factorization univariate
+//         * @param {Polynomial} a
+//         * @returns {Array}
+//         */
+//        sqfr: function(symbol) { 
+//            var a = new Polynomial(symbol),
+//                i = 1,
+//                b = a.clone().diff(),
+//                c = a.clone().gcd(b),
+//                w = a.divide(c)[0],
+//                output = Polynomial.fromArray([new Frac(1)], a.variable);
+//            while(!c.equalsNumber(1)) { 
+//                var y = w.gcd(c); 
+//                var z = w.divide(y)[0];
+//                output = output.multiply(z); 
+//                i++;
+//                w = y;
+//                c = c.divide(y)[0];
+//            }
+//            return [output, w, i];
+//        },
         quad: function(a, b, c) {
             var q = function(a, b, c, sign) {
                 return _.parse('-('+b+'+'+sign+'*sqrt(('+b+')^2-4*('+a+')*('+c+')))/(2*'+a+')');
@@ -1546,13 +1729,234 @@ if((typeof module) !== 'undefined') {
             }
             return core.Utils.arrayUnique(powers).sort();
         },
+        //The factor object
+        Factor: {
+            factor: function(symbol, factors) {
+                factors = factors || new Factors();
+                var map = {};
+                symbol = _.parse(core.Utils.subFunctions(symbol, map));
+                var vars = variables(symbol);
+                symbol = __.Factor.coeffFactor(symbol, factors);
+                symbol = __.Factor.powerFactor(symbol, factors);
+                if(vars.length === 1) {
+                    symbol = __.Factor.squareFree(symbol, factors);
+                    symbol = __.Factor.trialAndError(symbol, factors);
+                }
+                else {
+                    symbol = __.Factor.mfactor(symbol, factors);
+                }
+                symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
+                factors.add(symbol);
+                return factors.toSymbol();
+            },
+            /**
+             * Makes Symbol square free
+             * @param {Symbol} symbol
+             * @param {Factors} factors
+             * @returns {[Symbol, Factor]}
+             */
+            squareFree: function(symbol, factors) {
+                if(symbol.isConstant() || symbol.group === S) return symbol;
+                var poly = new Polynomial(symbol);
+                var sqfr = poly.squareFree();
+                var p = sqfr[2];
+                //if we found a square then the p entry in the array will be non-unit
+                if(p !== 1) {
+                    //make sure the remainder doesn't have factors
+                    var t = sqfr[1].toSymbol();
+                    t.power = t.power.multiply(new Frac(p));
+                    factors.add(t);
+                    return __.Factor.squareFree(sqfr[0].toSymbol(), factors);
+                }
+                return symbol;
+            },
+            /**
+             * Factors the powers such that the lowest power is a constant
+             * @param {Symbol} symbol
+             * @param {Factors} factors
+             * @returns {[Symbol, Factor]}
+             */
+            powerFactor: function(symbol, factors) {
+                if(symbol.group !== PL) return symbol; //only PL need apply
+                var d = core.Utils.arrayMin(keys(symbol.symbols));
+                var retval = new Symbol(0);
+                var q = _.parse(symbol.value+'^'+d);
+                symbol.each(function(x) {
+                    x = _.divide(x, q.clone());
+                    retval = _.add(retval, x);
+                });
+                factors.add(q);
+                return retval;
+            },
+            /**
+             * Removes GCD from coefficients
+             * @param {Symbol} symbol
+             * @param {Factor} factors
+             * @returns {Symbol}
+             */
+            coeffFactor: function(symbol, factors) {
+                if(symbol.isComposite()) {
+                    var gcd = core.Math2.QGCD.apply(null, symbol.coeffs());
+                    if(!gcd.equals(1)) { 
+                        symbol.each(function(x) {
+                            if(x.isComposite()) {
+                                x.each(function(y){
+                                    y.multiplier = y.multiplier.divide(gcd);
+                                });
+                            }
+                            else x.multiplier = x.multiplier.divide(gcd);
+                        });
+                    }
+                    symbol.updateHash();
+                    if(factors) factors.add(new Symbol(gcd));
+                }
+                return symbol;
+            },
+            /**
+             * 
+             * @param {Symbol} symbol
+             * @param {Factor} factors
+             * @param {int} base
+             * @returns {Symbol}
+             */
+            trialAndError: function(symbol, factors, base) {
+                if(symbol.isConstant() || symbol.group === S) return symbol;
+                base = base || 2;
+                var poly = new Polynomial(symbol),
+                    cfactors = core.Math2.ifactor(poly.coeffs[0]),
+                    roots = __.proots(symbol);
+                for(var i=0; i<roots.length; i++) {
+                    var r = roots[i],
+                        p = 1;
+                    if(!isNaN(r)) { //if it's a number
+                        for(var x in cfactors) {
+                            var n = core.Utils.round(Math.log(x)/Math.log(Math.abs(r)), 8);
+                            if(isInt(n)) {
+                                r = x; //x must be the root since n gave us a whole
+                                p = n; break;
+                            }
+                        }
+                        var root = new Frac(r),
+                            terms = [new Frac(root.num).negate()];
+                        terms[p] = new Frac(root.den);
+                            //convert to Frac. The den is coeff of LT and the num is coeff of constant
+                        var div = Polynomial.fromArray(terms, poly.variable).fill(),
+                            t = poly.divide(div);
+                        if(t[1].equalsNumber(0)) { //if it's zero we have a root and divide it out
+                            poly = t[0];
+                            factors.add(div.toSymbol());
+                        }
+                    }
+                }
+                if(!poly.equalsNumber(1)) {
+                    var ltfactors = core.Math2.ifactor(poly.lc()),
+                        subbed = poly.sub(base),
+                        nfactors = core.Math2.ifactor(subbed),
+                        cp = Math.ceil(poly.coeffs.length/2);
+                    ltfactors['1'] = 1;
+                    cfactors['1'] = 1;
+                    while(cp--) {
+                        for(var x in ltfactors) {
+                            for(var y in cfactors) {
+                                for(var z in nfactors) {
+                                    var candidate = Polynomial.fit(x, -y, z, base, cp, poly.variable);
+                                    if(candidate) {
+                                        t = poly.divide(candidate);
+                                        if(t[1].equalsNumber(0)) {
+                                            poly = t[0];
+                                            factors.add(candidate.toSymbol());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                return poly.toSymbol();
+            },
+            /**
+             * Equivalent of square free factor for multivariate polynomials
+             * @param {type} symbol
+             * @param {type} factors
+             * @returns {AlgebraL#18.Factor.mSqfrFactor.symbol|Array|AlgebraL#18.__.Factor.mSqfrFactor.d}
+             */
+            mSqfrFactor: function(symbol, factors) {
+                var vars = variables(symbol).reverse();
+                for(var i=0; i<vars.length; i++) {
+                    do {
+                        var d = __.Factor.coeffFactor(core.Calculus.diff(symbol, vars[i]));
+                        if(d.equals(0)) 
+                            break;
+                        var div = __.div(symbol, d.clone()),
+                            is_factor = div[1].equals(0);
+                        if(div[0].isConstant()) {
+                            factors.add(div[0]);
+                            break;
+                        }
+                        if(is_factor) {
+                            factors.add(div[0]);
+                            symbol = d;
+                        }
+                    }
+                    while(is_factor)
+                }
+                return symbol;
+            },
+            mfactor: function(symbol, factors) {
+                symbol = __.Factor.mSqfrFactor(symbol, factors);
+                var vars = variables(symbol),
+                    symbols = symbol.collectSymbols(),
+                    sorted = {},
+                    maxes = {},
+                    l = vars.length, n = symbols.length;
+                //take all the variables in the symbol and organize by variable name
+                //e.g. a^2+a^2+b*a -> {a: {a^3, a^2, b*a}, b: {b*a}}
+                for(var i=0; i<l; i++) {
+                    var v = vars[i];
+                    sorted[v] = new Symbol(0);
+                    for(var j=0; j<n; j++) {
+                        var s = symbols[j];
+                        if(s.contains(v)) {
+                            var p = s.value === v ? s.power.toDecimal() : s.symbols[v].power.toDecimal();
+                            if(!maxes[v] || p < maxes[v]) maxes[v] = p;
+                            sorted[v] = _.add(sorted[v], s.clone());
+                        }
+                    }
+                }
+
+                for(var x in sorted) {
+                    var r = _.parse(x+'^'+maxes[x]); 
+                    var new_factor = _.expand(_.divide(sorted[x], r)); 
+                    var divided = __.div(symbol.clone(), new_factor); 
+                    if(divided[0].equals(0)) { //cant factor anymore
+                        factors.add(divided[1]);
+                        return factors;
+                    }
+
+                    if(divided[1].equals(0)) { //we found at least one factor
+                        var factor = divided[0];
+                        factors.add(factor); 
+                        factors.add(new_factor);
+                        var d = __.div(symbol, divided[0].clone());
+                        var r = d[0];
+                        if(r.isConstant()) { 
+                            factors.add(r);
+                            return factors;
+                        }
+
+                        return __.Factor.mfactor(r, factors);
+                    }
+                }
+                return symbol;
+            }
+        },
         /**
          * http://www.ams.org/journals/mcom/1978-32-144/S0025-5718-1978-0568284-3/S0025-5718-1978-0568284-3.pdf
          * Splits symbol into factors
          * @param {Symbol} symbol
          * @returns {Symbol}
          */
-        factor: function(symbol) {
+        factor: function(symbol) { 
             var retval = symbol,
                 group = symbol.group,
                 isCompositionGroup = function(group) {
@@ -1765,9 +2169,7 @@ if((typeof module) !== 'undefined') {
                 var map = {},
                     symbol1 = _.parse(core.Utils.subFunctions(symbol1, map)),
                     symbol2 = _.parse(core.Utils.subFunctions(symbol2, map)),
-                    subs = {};
-                //prepare substitutions
-                for(var x in map) subs[map[x]] = _.parse(x);
+                    subs = core.Utils.getFunctionsSubs(map);
             }
         
             var reconvert = function(arr) {
@@ -2002,162 +2404,14 @@ if((typeof module) !== 'undefined') {
 
             return [quot, rem];
         },
-        //removes squares (hopefully)
-        qfactor: function(symbol, factors) {
-            var vars = variables(symbol).reverse();
-            for(var i=0; i<vars.length; i++) {
-                do {
-                    var d = __.cfactor(core.Calculus.diff(symbol, vars[i]));
-                    if(d[0].equals(0)) 
-                        break;
-                    var div = __.div(symbol, d[0].clone()),
-                        is_factor = div[1].equals(0);
-                    if(div[0].isConstant()) {
-                        factors.add(div[0]);
-                        break;
-                    }
-                    if(is_factor) {
-                        factors.add(div[0]);
-                        symbol = d[0];
-                    }
-                }
-                while(is_factor)
-            }
-            return symbol;
-        },
-        cfactor: function(symbol) {
-            var gcd = core.Math2.QGCD.apply(null, symbol.coeffs());
-            if(!gcd.equals(1)) { 
-                symbol.each(function(x) {
-                    x.multiplier = x.multiplier.divide(gcd);
-                });
-            }
-            symbol.updateHash();
-            return [symbol, gcd];
-        },
-        _factor: function(symbol, factors) {
-            //the container for storing factors
-            factors = factors || new Factors();
-            symbol = __.qfactor(symbol, factors);
-            var vars = variables(symbol),
-                symbols = symbol.collectSymbols(),
-                sorted = {},
-                maxes = {},
-                l = vars.length, n = symbols.length;
-            //take all the variables in the symbol and organize by variable name
-            //e.g. a^2+a^2+b*a -> {a: {a^3, a^2, b*a}, b: {b*a}}
-            for(var i=0; i<l; i++) {
-                var v = vars[i];
-                sorted[v] = new Symbol(0);
-                for(var j=0; j<n; j++) {
-                    var s = symbols[j];
-                    if(s.contains(v)) {
-                        var p = s.value === v ? s.power.toDecimal() : s.symbols[v].power.toDecimal();
-                        if(!maxes[v] || p < maxes[v]) maxes[v] = p;
-                        sorted[v] = _.add(sorted[v], s.clone());
-                    }
-                }
-            }
-
-            for(var x in sorted) {
-                var r = _.parse(x+'^'+maxes[x]); 
-                var new_factor = _.expand(_.divide(sorted[x], r)); 
-                var divided = __.div(symbol.clone(), new_factor); 
-                if(divided[0].equals(0)) { //cant factor anymore
-                    factors.add(divided[1]);
-                    return factors;
-                }
-                
-                if(divided[1].equals(0)) { //we found at least one factor
-                    var factor = divided[0];
-                    factors.add(factor); 
-                    factors.add(new_factor);
-                    var d = __.div(symbol, divided[0].clone());
-                    var r = d[0];
-                    if(r.isConstant()) { 
-                        factors.add(r);
-                        return factors;
-                    }
-                    
-                    return __._factor(r, factors);
-                }
-            }
-
-            return factors;
-        },
-        nfactor: function(symbol, raw) {
-            if(variables(symbol).length === 1) {
-                var factors = new Factors();
-                factors.add(symbol);
-                return factors;
-            }
-            var factors = __._factor(symbol);
-            if(raw) return factors;
-            return factors.toSymbol();
-        },
-        kronecker: function(symbol, factors) {
-            factors = factors || new Factors();
-            
-        },
-        __factor: function(symbol) {
-            __.kronecker(symbol.clone());
-            var vars = variables(symbol);
-            var factors = __.nfactor(symbol, true);
-            var all_factors = new Factors();
-            factors.each(function(x, y) {
-                __.simpfactor(x, all_factors, vars);
-            });
-            return all_factors.toSymbol();
-        },
-        simpfactor: function(symbol, factors, vars) {
-            factors = factors || new Factors();
-            vars = vars || variables(symbol);
-            if(vars.length === 1) {
-                var x = vars[0];//the variable name
-                //Deal with the squares
-                var sqfr = __.sqfr(symbol);
-                var sq_factor = sqfr[1].toSymbol(); //convert the returned factor back to a symbol
-                sq_factor.power = sq_factor.power.multiply(new Frac(sqfr[2]));
-                factors.add(sq_factor); //insert the squared factor
-                //factor the remainder
-                if(sqfr[0].coeffs.length > 1) {
-                    var rem = sqfr[0];
-                    var roots = __.proots(rem.toSymbol()); //first find the zeros
-                    for(var i=0; i<roots.length; i++) {
-                        var root = roots[i];
-                        var factor = Polynomial.fromArray([new Frac(root).negate(), new Frac(1)], x);
-                        var div = rem.divide(factor);
-                        rem = div[0];
-                        factors.add(factor.toSymbol());
-                    }
-                    symbol = rem.toSymbol();
-                }
-                else {
-                    symbol = sqfr[0].toSymbol();
-                }
-
-                factors.add(symbol);
-                return factors.toSymbol();
-            }
-            else {
-                factors.add(symbol);
-            }
-            return factors;
-        }
     };
     
     nerdamer.register([
         {
-            name: '__factor',
-            visible: true,
-            numargs: 1,
-            build: function() { return __.__factor; }
-        },
-        {
             name: 'factor',
             visible: true,
             numargs: 1,
-            build: function() { return __.factor; }
+            build: function() { return __.Factor.factor; }
         },
         {
             name: 'gcd',
@@ -2182,22 +2436,6 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: 2,
             build: function() { return __.div; }
-        },
-        {
-            name: 'sqfr',
-            visible: true,
-            numargs: 1,
-            build: function() { return __.sqfr; }
-        },
-        {
-            name: 'nfactor',
-            visible: true,
-            numargs: 1,
-            build: function() { return __.nfactor; }
         }
     ]);
 })();
-var x = nerdamer('__factor(x^4+9*x^3+30*x^2+47*x+21)');
-console.log(x.toString())
-var x = nerdamer('__factor(b*x^2*y+a*x^2*y+b*x+a*x)');
-console.log(x.toString())
