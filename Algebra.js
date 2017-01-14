@@ -421,8 +421,7 @@ if((typeof module) !== 'undefined') {
         },
         /**
          * Raises a polynomial P to a power p -> P^p. e.g. (x+1)^2
-         * @param {Int} p - The power to be raised to 
-         *
+         * @param {bool} incl_img - Include imaginary numbers 
          */
         quad: function(incl_img) {
             var roots = [];
@@ -497,9 +496,7 @@ if((typeof module) !== 'undefined') {
             return this.toSymbol().toString();
         }
     };
-        
-    //make the polynomial class available to EVERYONE!
-    core.Polynomial = Polynomial;
+
     /**
     * If the symbols is of group PL or CP it will return the multipliers of each symbol
     * as these are polynomial coefficients. CB symbols are glued together by multiplication
@@ -535,15 +532,6 @@ if((typeof module) !== 'undefined') {
                 if(c[i] === undefined) c[i] = new Frac(0);
         }
         return c;
-    };
-    Symbol.prototype.hasFunc = function() {
-        if(this.group === FN || this.group === EX) return true;
-        if(this.symbols) {
-            for(var x in this.symbols) {
-                if(this.symbols[x].hasFunc()) return true;
-            }
-        }
-        return false;
     };
     Symbol.prototype.tBase = function(map) {
         if(typeof map === 'undefined') throw new Error('Symbol.tBase requires a map object!');
@@ -600,6 +588,9 @@ if((typeof module) !== 'undefined') {
      * @returns {Factors}
      */
     Factors.prototype.add = function(s) {
+        if(this.preAdd) {
+            s = this.preAdd(s);
+        }
         var is_constant = s.isConstant();
         if(is_constant && s.equals(1)) return this; //don't add 1
         var v = is_constant ? s.value: s.text();
@@ -658,6 +649,7 @@ if((typeof module) !== 'undefined') {
     Factors.prototype.toString = function() {
         return this.toSymbol().toString();
     };
+    
     //a wrapper for performing multivariate division
     function MVTerm(coeff, terms, map) {
         this.terms = terms || [];
@@ -814,7 +806,7 @@ if((typeof module) !== 'undefined') {
         return subs;
     };
     var __ = core.Algebra = {
-        version: '1.3.6',
+        version: '1.4.0',
         init: (function() {})(),
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
@@ -1665,28 +1657,6 @@ if((typeof module) !== 'undefined') {
             };
             return newtonraph( Number( guess ) );
         },
-//        /**
-//         * Standard square free factorization univariate
-//         * @param {Polynomial} a
-//         * @returns {Array}
-//         */
-//        sqfr: function(symbol) { 
-//            var a = new Polynomial(symbol),
-//                i = 1,
-//                b = a.clone().diff(),
-//                c = a.clone().gcd(b),
-//                w = a.divide(c)[0],
-//                output = Polynomial.fromArray([new Frac(1)], a.variable);
-//            while(!c.equalsNumber(1)) { 
-//                var y = w.gcd(c); 
-//                var z = w.divide(y)[0];
-//                output = output.multiply(z); 
-//                i++;
-//                w = y;
-//                c = c.divide(y)[0];
-//            }
-//            return [output, w, i];
-//        },
         quad: function(a, b, c) {
             var q = function(a, b, c, sign) {
                 return _.parse('-('+b+'+'+sign+'*sqrt(('+b+')^2-4*('+a+')*('+c+')))/(2*'+a+')');
@@ -1731,10 +1701,35 @@ if((typeof module) !== 'undefined') {
         },
         //The factor object
         Factor: {
+            mix: function(o, include_negatives) {
+                var factors = keys(o);
+                var l = factors.length;
+                var m = [];//create a row which we'r going to be mixing
+                for(var i=0; i<l; i++) {
+                    var factor = factors[i],
+                        p = o[factor];
+                    var ll = m.length;
+                    for(var j=0; j<ll; j++) {
+                        var t = m[j]*factor;
+                        m.push(t);
+                        if(include_negatives) m.push(-t);
+                    }
+ 
+                    for(var j=1; j<=p; j++)
+                        m.push(Math.pow(factor, j));
+                }
+                return m;
+            },
             factor: function(symbol, factors) {
                 factors = factors || new Factors();
                 var map = {};
                 symbol = _.parse(core.Utils.subFunctions(symbol, map));
+                if(keys(map).length > 0) { //it might have functions
+                    factors.preAdd = function(factor) {
+                        return _.parse(factor, core.Utils.getFunctionsSubs(map));
+                    };
+                }
+                    
                 var vars = variables(symbol);
                 symbol = __.Factor.coeffFactor(symbol, factors);
                 symbol = __.Factor.powerFactor(symbol, factors);
@@ -1819,11 +1814,11 @@ if((typeof module) !== 'undefined') {
              * @param {int} base
              * @returns {Symbol}
              */
-            trialAndError: function(symbol, factors, base) {
+            trialAndError: function(symbol, factors) {
                 if(symbol.isConstant() || symbol.group === S) return symbol;
-                base = base || 2;
                 var poly = new Polynomial(symbol),
-                    cfactors = core.Math2.ifactor(poly.coeffs[0]),
+                    cnst = poly.coeffs[0],
+                    cfactors = core.Math2.ifactor(cnst),
                     roots = __.proots(symbol);
                 for(var i=0; i<roots.length; i++) {
                     var r = roots[i],
@@ -1849,30 +1844,66 @@ if((typeof module) !== 'undefined') {
                     }
                 }
                 if(!poly.equalsNumber(1)) {
-                    var ltfactors = core.Math2.ifactor(poly.lc()),
-                        subbed = poly.sub(base),
-                        nfactors = core.Math2.ifactor(subbed),
-                        cp = Math.ceil(poly.coeffs.length/2);
-                    ltfactors['1'] = 1;
-                    cfactors['1'] = 1;
-                    while(cp--) {
-                        for(var x in ltfactors) {
-                            for(var y in cfactors) {
-                                for(var z in nfactors) {
-                                    var candidate = Polynomial.fit(x, -y, z, base, cp, poly.variable);
-                                    if(candidate) {
-                                        t = poly.divide(candidate);
-                                        if(t[1].equalsNumber(0)) {
-                                            poly = t[0];
-                                            factors.add(candidate.toSymbol());
-                                        }
-                                    }
+                    poly = __.Factor.search(poly, factors);
+                }
+                return poly.toSymbol();
+            },
+            search: function(poly, factors, base) {
+                base = base || 10; //I like 10 because numbers exhibit similar behaviours at 10
+                var v = poly.variable; //the polynmial variable name
+                /**
+                 * Attempt to remove a root by division given a number by first creating
+                 * a polynomial fromt he given information
+                 * @param {int} c1 - coeffient for the constant
+                 * @param {int} c2 - coefficient for the LT
+                 * @param {int} n - the number to be used to construct the polynomial
+                 * @param {int} p - the power at which to create the polynomial
+                 * @returns {null|Polynomial} - returns polynomial if successful otherwise null
+                 */
+                var check = function(c1, c2, n, p) {
+                    var candidate = Polynomial.fit(c1, c2, n, base, p, v);
+                    if(candidate && candidate.coeffs.length > 1) {
+                        var t = poly.divide(candidate);
+                        if(t[1].equalsNumber(0)) {
+                            factors.add(candidate.toSymbol());
+                            return [t[0], candidate];
+                        }
+                    }
+                    return null;
+                };
+                var cnst = poly.coeffs[0],
+                    cfactors = core.Math2.ifactor(cnst),
+                    lc = poly.lc(),
+                    ltfactors = core.Math2.ifactor(lc),
+                    subbed = poly.sub(base),
+                    nfactors = __.Factor.mix(core.Math2.ifactor(subbed), subbed < 0),
+                    cp = Math.ceil(poly.coeffs.length/2),
+                    lc_is_neg = lc.lessThan(0),
+                    cnst_is_neg = cnst.lessThan(0);
+                ltfactors['1'] = 1;
+                cfactors['1'] = 1;
+                while(cp--) {
+                    for(var x in ltfactors) {
+                        for(var y in cfactors) {
+                            for(var i=0; i<nfactors.length; i++) {
+                                var factor_found = check(x, y, nfactors[i], cp);
+                                if(factor_found) {
+                                    poly = factor_found[0];
+                                    if(!core.Utils.isPrime(poly.sub(base)))
+                                        poly = __.Factor.search(poly, factors);
+                                    return poly;
                                 }
+                                if(!factor_found && lc_is_neg)
+                                    factor_found = check(-x, y, nfactors[i], cp); //check a negative lc
+                                else if(!factor_found && cnst_is_neg)
+                                    factor_found = check(x, -y, nfactors[i], cp); //check a negative constant
+                                else if(!factor_found && lc_is_neg && cnst_is_neg)
+                                    factor_found = check(-x, -y, nfactors[i], cp);
                             }
                         }
                     }
                 }
-                return poly.toSymbol();
+                return poly;
             },
             /**
              * Equivalent of square free factor for multivariate polynomials
@@ -1949,126 +1980,6 @@ if((typeof module) !== 'undefined') {
                 }
                 return symbol;
             }
-        },
-        /**
-         * http://www.ams.org/journals/mcom/1978-32-144/S0025-5718-1978-0568284-3/S0025-5718-1978-0568284-3.pdf
-         * Splits symbol into factors
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        factor: function(symbol) { 
-            var retval = symbol,
-                group = symbol.group,
-                isCompositionGroup = function(group) {
-                    return (group === PL || group === CP);
-                };
-            if(isCompositionGroup(group)) {
-                //distribute the multiplier in sub-symbols
-                for(var x in symbol.symbols) symbol.symbols[x].distributeMultiplier(); 
-                //factor the multiplier
-                var gcf = core.Math2.GCD.apply(undefined, symbol.coeffs()),
-                       
-                    factorize = function(symbol) { 
-                        for(var x in symbol.symbols) {
-                            var sub = symbol.symbols[x]; 
-                            if(isCompositionGroup(sub.group)) {
-                                factorize(sub);
-                            }
-                            else {
-                                sub.multiplier /= gcf;
-                            }
-                        }
-                    };
-                
-                if(symbol.power <= 1) {
-                    factorize(symbol);
-                    symbol.multiplier *= Math.pow(gcf, symbol.power);
-
-                    if(group === PL) {
-                        var powers = keys(symbol.symbols),
-                            lowest_power = core.Utils.arrayMin(powers),
-                            factor = _.parse(symbol.value+'^'+lowest_power);
-                        var factored = new core.Symbol(0);
-                        for(var x in symbol.symbols) {
-                            factored = _.add(factored, _.divide(symbol.symbols[x], factor.clone()));
-                        }
-
-                        factored = _.symfunction(core.PARENTHESIS, [factored]);//place it parenthesis
-                        factored.power *= symbol.power;
-                        factored.multiplier *= symbol.multiplier;
-                        factor.power *= symbol.power;
-
-                        retval = _.multiply(factor, factored);
-                    }
-                    else if(group === CP) { 
-                        try{
-                            var p = symbol.power,
-                                roots = core.Algebra.proots(symbol),
-                                all_ints = true; 
-                            for(var i=0; i<roots.length; i++) {
-                                if(!isInt(roots[i])) all_ints = false;
-                            }
-                            var result = new Symbol(1);
-                            if(all_ints)  { 
-                                roots.map(function(root) { 
-                                    result = _.multiply(result, 
-                                        _.symfunction(core.PARENTHESIS, 
-                                        [_.subtract(new Symbol(variables(symbol)[0]), new Symbol(root))]));
-                                });
-                                result.multiplier *= symbol.multiplier;
-                                retval = result; 
-                            }
-                        }
-                        catch(e) { 
-                            try {
-                                //not a polynomial. No biggie. Let's see if we can extract a few variables
-                                var symbols = symbol.collectSymbols(),
-                                    num_symbols = symbol.length,
-                                    hash_table = {};
-                                for(var i=0; i<num_symbols; i++) {
-                                    var cur_symbol = symbols[i], //collect all the variables contained in the symbol
-                                        num_vars = vars.length;
-                                    for(var j=0; j<num_vars; j++) {
-                                        var var_name = vars[j],
-                                            variable = cur_symbol.value === var_name ? cur_symbol : cur_symbol.symbols[var_name],
-                                            var_record = hash_table[var_name];
-                                        if(isSymbol(variable.power)) throw new Error('Cannot factor symbol. Exiting');
-                                        if(!var_record) hash_table[var_name] = [1, variable.power];
-                                        else {
-                                            var_record[0]++;
-                                            var p = variable.power;
-                                            if(p < var_record[1]) var_record[1] = p;
-                                        }
-                                    }
-                                }
-                                var factor = [];
-                                //we now know which variables we have and to which power so we can start reducing
-                                for(var x in hash_table) {
-                                    var_record = hash_table[x];
-                                    //if we have as many recorded as there were sub-symbols then we can divide all of them
-                                    //by that symbol
-                                    if(var_record[0] === num_symbols) { 
-                                        factor.push(x+'^'+var_record[1]);
-                                    }
-                                };
-
-                                //we can now divide each one by that factor
-                                factor = _.parse(factor.join('*'));//make it a Symbol
-                                for(x in symbol.symbols) {
-                                    symbol.symbols[x] = _.divide(symbol.symbols[x], factor.clone());
-                                }
-
-                                retval = _.multiply(_.parse(symbol.text()), factor);
-                            }
-                            catch(e){;}
-                        }
-                    }
-                }     
-            }
-            
-            if(retval.group === core.groups.FN) retval.updateHash();
-            
-            return retval;
         },
         /**
          * Checks to see if a set of "equations" is linear. 
@@ -2404,6 +2315,11 @@ if((typeof module) !== 'undefined') {
 
             return [quot, rem];
         },
+        Classes: {
+            Polynomial: Polynomial,
+            Factors: Factors,
+            MVTerm: MVTerm
+        }
     };
     
     nerdamer.register([

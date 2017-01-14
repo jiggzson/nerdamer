@@ -1297,6 +1297,15 @@ var nerdamer = (function(imports) {
             //all tests must have passed so we must be dealing with a polynomial
             return true;
         },
+        hasFunc: function() {
+            if(this.group === FN || this.group === EX) return true;
+            if(this.symbols) {
+                for(var x in this.symbols) {
+                    if(this.symbols[x].hasFunc()) return true;
+                }
+            }
+            return false;
+        },
         isMonomial: function() {
             if(this.group === S) return true;
             if(this.group === CB) {

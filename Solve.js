@@ -20,6 +20,7 @@ if((typeof module) !== 'undefined') {
         PL = core.groups.PL,
         S = core.groups.S,
         build = core.Utils.build,
+        isInt = core.Utils.isInt,
         same_sign = core.Utils.sameSign,
         Symbol = core.Symbol,
         isSymbol = core.Utils.isSymbol,
@@ -63,7 +64,7 @@ if((typeof module) !== 'undefined') {
         return solutions;
     };
         
-    var quad = function(a, b, c, plus_or_min) { 
+    var quad = function(c, b, a,  plus_or_min) { 
         var plus_or_minus = plus_or_min === '-' ? 'subtract': 'add';
         var bsqmin4ac = _.subtract(_.pow(b.clone(), Symbol(2)), _.multiply(_.multiply(a.clone(), c.clone()),Symbol(4)))/*b^2 - 4ac*/; 
         var det = _.pow(bsqmin4ac, Symbol(0.5));
@@ -93,7 +94,9 @@ if((typeof module) !== 'undefined') {
             ];
     };
     
-    var solve = function(eqns, solve_for) {
+    var solve = function(eqns, solve_for) { 
+        solve_for = solve_for || 'x'; //assumes x by default
+        
         if(isArray(eqns)) return sys_solve.apply(undefined, arguments);
         var solutions = [],
             add_to_result = function(r) {
@@ -166,13 +169,12 @@ if((typeof module) !== 'undefined') {
             }
         };
 
-
         var eq = toLHS(eqns),
             vars = core.Utils.variables(eq),//get a list of all the variables
             numvars = vars.length;//how many variables are we dealing with
         //if we're dealing with a single variable then we first check if it's a 
         //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.
-        if(numvars === 1) {
+        if(numvars === 1) { 
             if(eq.isPoly(true)) { 
                 if(vars[0] === solve_for) _A.proots(eq).map(add_to_result);
             }
@@ -183,66 +185,61 @@ if((typeof module) !== 'undefined') {
             }
         }
         else {
-            //if it's multivariate but has no functions
-            if(eq.isPoly(false, true)) { 
-                    //get a list of all the power of the polynomial we're solving for
-                var pwrs = _A.polyPowers(eq, solve_for),
-                    //get the highest power wrt to the variable we're solving for    
-                    max_pwr = core.Utils.arrayMax(pwrs); 
+            //The idea here is to go through the equation and collect the coefficients
+            //place them in an array and call the quad or cubic function to get the results
+            if(!eq.hasFunc() && eq.isComposite()) { 
+                try {
+                    //remove extra powers
+                    
+                    //the terms of the polynomial
+                    var coeffs = [];
+                    var add = function(c, p) {
+                        p = Number(p);
+                        if(!isInt(p)) throw new Error('Stopping');
+                        var xterm = _.parse(solve_for+'^'+p); //create a term of equal power to divide out
+                        coeffs[p] = _.divide(c, xterm);
+                    };
 
-                    var coeff_array = [],
-                        add_to_coeff_array = function(key, value) {
-                            var existing = coeff_array[key];
-                            if(!existing) coeff_array[key] = value;
-                            else coeff_array[key] = _.add(existing, value);
-                        },
-                        remainder = eq.clone(); 
-                    for(var s in eq.symbols) {
-                        var sym = eq.symbols[s]; 
-                        //place all the coefficient
-                        if(sym.contains(solve_for)) { 
-                            var g = sym.group;
-                            if(g === CB) { 
+                    for(var x in eq.symbols) {
+                        var sym = eq.symbols[x];
+                        if(sym.group === PL && sym.value === solve_for) {
+                            sym.each(function(y, p) {
+                                add(y, p);
+                            });
+                        }
+                        else {
+                            var t, p;
+                            if(sym.symbols) {
                                 var t = sym.symbols[solve_for];
-                                remainder = _.subtract(remainder, sym.clone());//make sure to remove the polynomial
-                                add_to_coeff_array(t.power-1, _.divide(sym, t.clone()));//add the coefficient to the array
+                                add(sym, t ? t.power : 0);
                             }
-                            else if(g === PL) {
-                                for(var x in sym.symbols) {
-                                    var sub_sym = sym.symbols[x];
-                                    add_to_coeff_array(sub_sym.power-1, new Symbol(sub_sym.multiplier));
-                                }
-                                remainder = _.subtract(remainder, sym.clone());
-                            }
-                            else if(g === S) {
-                                remainder = _.subtract(remainder, sym.clone()); 
-                                add_to_coeff_array(sym.power-1, new Symbol(sym.multiplier).negate());
-                            }
+                            else add(sym, sym.value === solve_for ? sym.power : 0);
                         }
                     }
-
-                    coeff_array.reverse().push(remainder);
-
-                    //fill in the zeroes
-                    for(var i=0; i<max_pwr; i++){
-                        var u = coeff_array[i];
-                        if(!u) coeff_array[i] = new Symbol(0);
-                    }
-
-                    switch(max_pwr) {
+                    var l = coeffs.length,
+                        deg = l-1; //the degree of the polynomial
+                    //fill the holes
+                    for(var i=0; i<l; i++)
+                        if(coeffs[i] === undefined)
+                            coeffs[i] = new Symbol(0);
+                    //handle the problem based on the degree
+                    switch(deg) {
                         case 1:
-                            add_to_result(_.divide(coeff_array[1], coeff_array[0]));
+                            //nothing to do but to return the quotient of the constant and the LT
+                            //e.g. 2*x-1
+                            add_to_result(_.divide(coeffs[0], coeffs[1].negate()));
                             break;
                         case 2:
-                            add_to_result(_A.factor(quad.apply(undefined, coeff_array)));
-                            coeff_array.push('-');
-                            add_to_result(_A.factor(quad.apply(undefined, coeff_array)));
+                            add_to_result(quad.apply(undefined, coeffs));
+                            coeffs.push('-');
+                            add_to_result(quad.apply(undefined, coeffs));
                             break;
                         case 3:
-                            add_to_result(cubic.apply(undefined, coeff_array));
+                            add_to_result(cubic.apply(undefined, coeffs.reverse()));
                             break;
                     }
-
+                }
+                catch(e) { /*something went wrong. EXITING*/;} 
             }
         }
         
@@ -256,3 +253,7 @@ if((typeof module) !== 'undefined') {
         build: function(){ return solve; }
     });
 })();
+
+var x = nerdamer.solveEquations(['x+y=6', '2*x-y=0']);
+
+console.log(x.toString())
