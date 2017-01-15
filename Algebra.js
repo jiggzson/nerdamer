@@ -10,6 +10,7 @@
  * mod fraction
  * make mprime use Frac class
  */
+
 require('./Calculus.js');
 if((typeof module) !== 'undefined') {
     nerdamer = require('./nerdamer.core.js');
@@ -588,15 +589,25 @@ if((typeof module) !== 'undefined') {
      * @returns {Factors}
      */
     Factors.prototype.add = function(s) {
-        if(this.preAdd) {
-            s = this.preAdd(s);
+        if(s.group === CB) {
+            var factors = this;
+            s.each(function(x){
+                factors.add(x);
+            });
         }
-        var is_constant = s.isConstant();
-        if(is_constant && s.equals(1)) return this; //don't add 1
-        var v = is_constant ? s.value: s.text();
-        if(v in this.factors) 
-            this.factors[v] = _.multiply(this.factors[v], s);
-        else this.factors[v] = s;
+        else {
+            if(this.preAdd) //if a preAdd function was defined call it to do prep
+                s = this.preAdd(s);
+            if(this.pFactor) //if the symbol isn't linear add back the power
+                s = _.pow(s, new Symbol(this.pFactor));
+
+            var is_constant = s.isConstant();
+            if(is_constant && s.equals(1)) return this; //don't add 1
+            var v = is_constant ? s.value: s.text();
+            if(v in this.factors) 
+                this.factors[v] = _.multiply(this.factors[v], s);
+            else this.factors[v] = s;
+        }
         return this;
     };
     /**
@@ -1721,28 +1732,36 @@ if((typeof module) !== 'undefined') {
                 return m;
             },
             factor: function(symbol, factors) {
-                factors = factors || new Factors();
-                var map = {};
-                symbol = _.parse(core.Utils.subFunctions(symbol, map));
-                if(keys(map).length > 0) { //it might have functions
-                    factors.preAdd = function(factor) {
-                        return _.parse(factor, core.Utils.getFunctionsSubs(map));
-                    };
-                }
+                if(isInt(symbol.power)) {
+                    factors = factors || new Factors();
+                    var map = {};
+                    symbol = _.parse(core.Utils.subFunctions(symbol, map));
+                    if(keys(map).length > 0) { //it might have functions
+                        factors.preAdd = function(factor) {
+                            return _.parse(factor, core.Utils.getFunctionsSubs(map));
+                        };
+                    }
+                    //strip the power
+                    if(!symbol.isLinear()) {
+                        factors.pFactor = symbol.power.toString();
+                        symbol.toLinear();
+                    } 
                     
-                var vars = variables(symbol);
-                symbol = __.Factor.coeffFactor(symbol, factors);
-                symbol = __.Factor.powerFactor(symbol, factors);
-                if(vars.length === 1) {
-                    symbol = __.Factor.squareFree(symbol, factors);
-                    symbol = __.Factor.trialAndError(symbol, factors);
+                    var vars = variables(symbol);
+                    symbol = __.Factor.coeffFactor(symbol, factors);
+                    symbol = __.Factor.powerFactor(symbol, factors);
+                    if(vars.length === 1) {
+                        symbol = __.Factor.squareFree(symbol, factors);
+                        symbol = __.Factor.trialAndError(symbol, factors);
+                    }
+                    else {
+                        symbol = __.Factor.mfactor(symbol, factors);
+                    }
+                    symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
+                    factors.add(symbol);
+                    return factors.toSymbol();
                 }
-                else {
-                    symbol = __.Factor.mfactor(symbol, factors);
-                }
-                symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
-                factors.add(symbol);
-                return factors.toSymbol();
+                return symbol;    
             },
             /**
              * Makes Symbol square free
@@ -1759,8 +1778,10 @@ if((typeof module) !== 'undefined') {
                 if(p !== 1) {
                     //make sure the remainder doesn't have factors
                     var t = sqfr[1].toSymbol();
+                    //see if it's truly factored
+                    var factored = __.Factor.factor(t);
                     t.power = t.power.multiply(new Frac(p));
-                    factors.add(t);
+                    factors.add(__.Factor.factor(t));
                     return __.Factor.squareFree(sqfr[0].toSymbol(), factors);
                 }
                 return symbol;

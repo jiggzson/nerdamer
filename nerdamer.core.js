@@ -37,7 +37,7 @@ var nerdamer = (function(imports) {
             //this flag forces the a clone to be returned when add, subtract, etc... is called
             SAFE: false,
             //the symbol to use for imaginary symbols
-            IMAGINARY: 'i'
+            IMAGINARY: 'i',
         },
 
         //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
@@ -56,16 +56,16 @@ var nerdamer = (function(imports) {
         
         //GLOBALS
         
-        PARENTHESIS = 'parens',
+        PARENTHESIS = Settings.PARENTHESIS = 'parens',
 
         //the function which represent vector
-        VECTOR = 'vector',
+        VECTOR = Settings.VECTOR = 'vector',
 
-        SQRT = 'sqrt',
+        SQRT = Settings.SQRT = 'sqrt',
         
-        ABS = 'abs',
+        ABS = Settings.ABS = 'abs',
         
-        FACTORIAL = 'fact',
+        FACTORIAL = Settings.FACTORIAL = 'fact',
 
         //the storage container "memory" for parsed expressions
         EXPRESSIONS = [],
@@ -575,9 +575,9 @@ var nerdamer = (function(imports) {
                     s = 1.00,
                     sum = x * 1.0;
                 for(var i = 1; i < 50; i++){
-                m *= i;
-                s *= -1;
-                sum += (s * Math.pow(x, 2.0 * i + 1.0)) / (m * (2.0 * i + 1.0));
+                    m *= i;
+                    s *= -1;
+                    sum += (s * Math.pow(x, 2.0 * i + 1.0)) / (m * (2.0 * i + 1.0));
                 }
                 return 2 * sum / Math.sqrt(3.14159265358979);
             },
@@ -1258,7 +1258,16 @@ var nerdamer = (function(imports) {
         symbol.length = 0;
         return symbol;
     };
-    
+    //sqrt(x) -> x^(1/2)
+    Symbol.unwrapSQRT = function(symbol) {
+        if(symbol.fname === SQRT) {
+            var t = symbol.args[0];
+            t.power = t.power.multiply(new Frac(1/2));
+            t.multiplier = t.multiplier.multiply(symbol.multiplier);
+            symbol = t;
+        }
+        return symbol;
+    };
     Symbol.prototype = {
         /**
          * Checks to see if two functions are of equal value

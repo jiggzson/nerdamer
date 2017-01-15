@@ -280,160 +280,228 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             var stop = function() {
                 throw new Error('Stopping!');
             };
-            var dx = isSymbol(dt) ? dt.toString() : dt;
-            var has_dx = symbol.contains(dx);
-            var g = symbol.group, 
-                retval;
-            if(g === N || g === P) 
-                retval = _.multiply(symbol.clone(), _.parse(dx));
-            else if(g === S && has_dx) {
-                //1/x
-                if(symbol.power.equals(-1)) 
-                    retval = _.symfunction('log', [new Symbol(dx)]);
-                //all other x's
-                else {
-                    retval = symbol.clone();
-                    retval.power = retval.power.add(new Frac(1));
-                    retval.multiplier = retval.multiplier.divide(retval.power);
+            //unwrap sqrt
+            symbol = Symbol.unwrapSQRT(symbol);
+
+            try {
+                var dx = isSymbol(dt) ? dt.toString() : dt;
+                var has_dx = symbol.contains(dx);
+                var g = symbol.group, 
+                    retval;
+                if(g === N || g === P) 
+                    retval = _.multiply(symbol.clone(), _.parse(dx));
+                else if(g === S && has_dx) {
+                    //1/x
+                    if(symbol.power.equals(-1)) 
+                        retval = _.symfunction('log', [new Symbol(dx)]);
+                    //all other x's
+                    else {
+                        retval = symbol.clone();
+                        retval.power = retval.power.add(new Frac(1));
+                        retval.multiplier = retval.multiplier.divide(retval.power);
+                    }
                 }
-            }
-            //x+x^2
-            else if(g === PL && has_dx) {
-                retval = new Symbol(0);
-                symbol.each(function(x) {
-                    retval = _.add(retval, __.integrate(x, dx));
-                });
-            }
-            //a*x
-            else if(g === CB && has_dx) {
-                if(!symbol.isMonomial()) {
-                    var denom = symbol.getDenom();
-                    if(denom.isSQRT()) {
-                        var arg = denom.args[0];
-                        //try to see if it's asin in the form x +- constant
-                        if(arg.group === CP && arg.length === 2 && dx in arg.symbols 
-                                &&arg.symbols[dx].group === S && CONST_HASH in arg.symbols) {
-                            //get the sign and power of x
-                            var sym = arg.symbols[dx],
-                                p = sym.power;
-                            if(p.equals(1)) { //rewrite it and send it back
-                                arg.power = arg.power.multiply(new Frac(-0.5));
-                                symbol.each(function(x) {
-                                    if(!x.power.isNegative()) arg = _.multiply(arg, x);
-                                });
-                                //return integrateLinCB
+                //x+x^2
+                else if(g === PL && has_dx) {
+                    retval = new Symbol(0);
+                    symbol.each(function(x) {
+                        retval = _.add(retval, __.integrate(x, dx));
+                    });
+                }
+                //a*x
+                else if(g === CB && has_dx) { 
+                    var get_udv = function(symbol) { 
+                        var parts = [[/*L*/], [/*I*/], [/*A*/], [/*T*/], [/*E*/]];
+                        //first we sort them 
+                        symbol.each(function(x) {
+                            var g = x.group;
+                            if(g === FN) {
+                                var inv_trig_fns = ['asin', 'acos', 'atan', 'acsc', 'asec', 'acot'],
+                                    trig_fns = ['cos', 'sin', 'tan', 'sec', 'csc', 'cot'],
+                                    fname = x.fname;
+                                if(trig_fns.indexOf(fname) !== -1)
+                                    parts[3].push(x);
+                                else if(inv_trig_fns.indexOf(fname) !== -1)
+                                    parts[1].push(x);
+                                else if(fname === 'log')
+                                    parts[0].push(x);
+                                else {
+                                    stop();
+                                }
+                                    
+
                             }
-                            else if(p.equals(2)) {
-                                if(sym.sign() < 0) {
-                                    var num = symbol.getNum().toString(),
-                                        c = 'sqrt'+core.Utils.inBrackets(sym.multiplier.negate()),
-                                        n = arg.symbols[CONST_HASH].toString();
-                                    return _.parse(format('(({0})*asin(({1}*{2})/sqrt({3}))/({1}))', num, c, dx, n));
+                            else if(g === S || symbol.isComposite() || g === CB && symbol.contains(dx))
+                                parts[2].push(x);
+                            else if(g === EX)
+                                parts[4].push(x);
+                            else
+                                stop();
+                        });
+                        
+                        var u,
+                            dv = new Symbol(1);
+                        //compile u and dv
+                        for(var i=0; i<5; i++) { 
+                            var part = parts[i], t,
+                                l = part.length;
+                            if(l > 0) {
+                                if(l > 1) {
+                                    t = new Symbol(1);
+                                    for(var j=0; j<l; j++) {
+                                        t = _.multiply(t, part[j].clone());
+                                    }
+                                }
+                                else
+                                    t = part[0].clone();
+
+                                if(!u) u = t; //the first u encountered gets chosen
+                                else dv = _.multiply(dv, t); //everything else belongs to dv
+                            }  
+                        }
+                        return [u, dv];
+                    };
+                    if(!symbol.isMonomial()) { 
+                        var denom = symbol.getDenom();
+                        if(denom.isSQRT()) {
+                            var arg = denom.args[0];
+                            //try to see if it's asin in the form x +- constant
+                            if(arg.group === CP && arg.length === 2 && dx in arg.symbols 
+                                    &&arg.symbols[dx].group === S && CONST_HASH in arg.symbols) {
+                                //get the sign and power of x
+                                var sym = arg.symbols[dx],
+                                    p = sym.power;
+                                if(p.equals(1)) { //rewrite it and send it back
+                                    arg.power = arg.power.multiply(new Frac(-0.5));
+                                    symbol.each(function(x) {
+                                        if(!x.power.isNegative()) arg = _.multiply(arg, x);
+                                    });
+                                    //return integrateLinCB
+                                }
+                                else if(p.equals(2)) {
+                                    if(sym.sign() < 0) {
+                                        var num = symbol.getNum().toString(),
+                                            c = 'sqrt'+core.Utils.inBrackets(sym.multiplier.negate()),
+                                            n = arg.symbols[CONST_HASH].toString();
+                                        return _.parse(format('(({0})*asin(({1}*{2})/sqrt({3}))/({1}))', num, c, dx, n));
+                                    }
                                 }
                             }
                         }
+                        else {
+                            /** INTEGRATION BY PARTS **/
+                            //first LIATE
+                            var udv, u, dv, du, v, vdu, uv;
+                            udv = get_udv(symbol);
+                            u = udv[0];
+                            dv = udv[1];
+                            du = __.diff(u.clone(), dx);
+                            v = __.integrate(dv.clone(), dx);
+                            vdu = _.multiply(v.clone(), du);
+                            uv = _.multiply(u, v);
+                            return _.subtract(uv, __.integrate(vdu.clone(), dx));
+                        }
                     }
-                }
-                else {
-                    retval = new Symbol(1);
-                    symbol.each(function(x) {
-                        var t = x.contains(dx) ? __.integrate(x, dx) : x;
-                        retval = _.multiply(retval, t);
-                    });
-                } 
-            }
-            //x+1
-            else if(g === CP && has_dx) {
-                retval = new Symbol(0);
-                symbol.each(function(x) {
-                    retval = _.add(retval, __.integrate(x, dx));
-                });
-            }
-            //log(x)
-            else if(g === FN && has_dx) {
-                retval = symbol.clone();
-                var a = symbol.args[0].clone(),
-                    m = _.parse(retval.multiplier.toString()),
-                    b = core.Calculus.diff(a.clone(), dx);
-                retval.toUnitMultiplier();
-                retval = _.multiply(_.divide(_.subtract(_.multiply(a, retval), a.clone()), b), m);
-            }
-            //has to be all linear
-            //trig functions 
-            else if(g === FN && has_dx && symbol.args[0].isLinear()) {
-                retval = symbol.clone();
-                var inv_trig = function(symbol, istr, dl, f) {
-                    var arg = symbol.args[0].clone(),
-                        a = __.diff(arg.clone(), dx).toString(),
-                        b = new Symbol(0),
-                        c = arg.toString();
-                    if(arg.group === CP) {
-                        arg.each(function(x) {
-                            if(!x.isLinear() || x.group !== S && x.contains(dx)) stop();
-                            if(x.value !== dx)
-                                b = _.add(b, _.multiply(x.clone(), _.parse(format(dl, c, a))));
+                    else { 
+                        retval = new Symbol(1);
+                        symbol.each(function(x) {
+                            var t = x.contains(dx) ? __.integrate(x, dx) : x;
+                            retval = _.multiply(retval, t);
                         });
-                    }
-                    symbol = _.parse(format(istr, arg.toString(), a, dx));
-                    symbol = _[f](symbol, b);
-                    return symbol;
-                };
-                if(symbol.fname === 'acos') {
-                    return inv_trig(retval, '{2}*acos({0})-sqrt(1-({0})^2)/({1})', 'asin(-({0}))', 'add');
+                    } 
                 }
-                else if(symbol.fname === 'asin') {
-                    return inv_trig(retval, '{2}*asin({0})+sqrt(1-({0})^2)/({1})', 'asin(-({0}))', 'subtract');
+                //x+1
+                else if(g === CP && has_dx) {
+                    retval = new Symbol(0);
+                    symbol.each(function(x) {
+                        retval = _.add(retval, __.integrate(x, dx));
+                    });
                 }
-                else if(symbol.fname === 'atan') {
-                    return inv_trig(retval, '{2}*atan({0})-log(1+({0})^2)/(2*({1}))', 'atan(({0}))/({1})', 'add');
-                }
-                else {
-                    switch(symbol.fname) {
-                        case 'cos':
-                            retval.fname = 'sin';
-                            break;
-                        case 'sin':
-                            retval.fname = 'cos';
-                            retval.negate();
-                            break;
-                        case 'tan':
-                            retval = _.parse(format('log(sec({0}))', symbol.args[0].toString()));
-                            break;
-                        case 'sec':
-                            retval = _.parse(format('log(tan({0})+sec({0}))', symbol.args[0].toString()));
-                            break;
-                        case 'csc':
-                            retval = _.parse(format('-log(csc({0})+cot({0}))', symbol.args[0].toString()));
-                            break;
-                        case 'cot':
-                            retval = _.parse(format('log(sin({0}))', symbol.args[0].toString()));
-                            break;
-                    }
-                    retval.updateHash();
-                    retval = _.divide(retval, __.diff(symbol.args[0], dx));
-                }
-            }
-            else if(g === EX && symbol.contains(dx, true) && symbol.power.isLinear()) {
-                //we cover all variables raised to the x here including e
-                if(!symbol.contains(dx)) { 
-                    if(symbol.isE()) //e^x
-                        retval = symbol.clone();
-                    else {
-                        var a = _.symfunction('log', [_.parse(symbol.value)]);
-                        retval = _.divide(symbol.clone(), a);
-                    }
-                }
-                else if(!symbol.power.contains(dx)) {
-                    //simple integration
+                //has to be all linear
+                //trig functions 
+                else if(g === FN && has_dx && symbol.args[0].isLinear()) { 
                     retval = symbol.clone();
-                    retval.power = _.add(retval.power, new Symbol(1));
-                    retval = _.divide(retval, retval.power.clone());
+                    var inv_trig = function(symbol, istr, dl, f) {
+                        var arg = symbol.args[0].clone(),
+                            a = __.diff(arg.clone(), dx).toString(),
+                            b = new Symbol(0),
+                            c = arg.toString();
+                        if(arg.group === CP) {
+                            arg.each(function(x) {
+                                if(!x.isLinear() || x.group !== S && x.contains(dx)) stop();
+                                if(x.value !== dx)
+                                    b = _.add(b, _.multiply(x.clone(), _.parse(format(dl, c, a))));
+                            });
+                        }
+                        symbol = _.parse(format(istr, arg.toString(), a, dx));
+                        symbol = _[f](symbol, b);
+                        return symbol;
+                    };
+                    if(symbol.fname === 'acos') {
+                        return inv_trig(retval, '{2}*acos({0})-sqrt(1-({0})^2)/({1})', 'asin(-({0}))', 'add');
+                    }
+                    else if(symbol.fname === 'asin') {
+                        return inv_trig(retval, '{2}*asin({0})+sqrt(1-({0})^2)/({1})', 'asin(-({0}))', 'subtract');
+                    }
+                    else if(symbol.fname === 'atan') {
+                        return inv_trig(retval, '{2}*atan({0})-log(1+({0})^2)/(2*({1}))', 'atan(({0}))/({1})', 'add');
+                    }
+                    else {
+                        switch(symbol.fname) {
+                            case 'cos':
+                                retval.fname = 'sin';
+                                break;
+                            case 'sin':
+                                retval.fname = 'cos';
+                                retval.negate();
+                                break;
+                            case 'tan':
+                                retval = _.parse(format('log(sec({0}))', symbol.args[0].toString()));
+                                break;
+                            case 'sec':
+                                retval = _.parse(format('log(tan({0})+sec({0}))', symbol.args[0].toString()));
+                                break;
+                            case 'csc':
+                                retval = _.parse(format('-log(csc({0})+cot({0}))', symbol.args[0].toString()));
+                                break;
+                            case 'cot':
+                                retval = _.parse(format('log(sin({0}))', symbol.args[0].toString()));
+                                break;
+                            case 'log':
+                                var a = symbol.args[0].clone(),
+                                    m = _.parse(retval.multiplier.toString()),
+                                    b = core.Calculus.diff(a.clone(), dx);
+                                retval.toUnitMultiplier();
+                                retval = _.multiply(_.divide(_.subtract(_.multiply(a, retval), a.clone()), b), m);
+                        }
+                        retval.updateHash();
+                        retval = _.divide(retval, __.diff(symbol.args[0].clone(), dx));
+                    }
                 }
+                else if(g === EX && symbol.contains(dx, true) && symbol.power.isLinear()) {
+                    //we cover all variables raised to the x here including e
+                    if(!symbol.contains(dx)) { 
+                        if(symbol.isE()) //e^x
+                            retval = symbol.clone();
+                        else {
+                            var a = _.symfunction('log', [_.parse(symbol.value)]);
+                            retval = _.divide(symbol.clone(), a);
+                        }
+                    }
+                    else if(!symbol.power.contains(dx)) {
+                        //simple integration
+                        retval = symbol.clone();
+                        retval.power = _.add(retval.power, new Symbol(1));
+                        retval = _.divide(retval, retval.power.clone());
+                    }
+                }
+
+                if(retval) return retval;
             }
-            
-            if(!retval) return _.symfunction('integrate', [symbol.clone(), dx]);//if all else fails
-            
-            return retval;
+            catch(e){ /* no integral found */; 
+                console.log(e.stack);
+            }
+            return _.symfunction('integrate', [symbol.clone(), dt]);
         }
     };
     
