@@ -16,9 +16,8 @@ if((typeof module) !== 'undefined') {
         _ = core.PARSER,
         _A = core.Algebra,
         _C = core.Calculus,
-        CB = core.groups.CB,
         PL = core.groups.PL,
-        S = core.groups.S,
+        format = core.Utils.format,
         build = core.Utils.build,
         isInt = core.Utils.isInt,
         same_sign = core.Utils.sameSign,
@@ -71,27 +70,29 @@ if((typeof module) !== 'undefined') {
         return _.divide(_[plus_or_minus](b.clone().negate(), det),_.multiply(new Symbol(2), a.clone()));
     };
     
-    var cubic = function(a, b, c, d) { 
-        var a_ = a.text(), b_ = b.text(), c_ = c.text(), d_ = d.text();
-        var a_1 = _.parse('0.86602540378443*i-0.5'),//((sqrt(3)*i)/2-1/2)
-            a_2 = _.parse('-0.86602540378443*i-0.5'),//(-(sqrt(3)*i)/2-1/2)
-            a_3 = _.parse(core.Utils.format('(3*({0})*({2})-({1})^2)', a_, b_, c_)),
-            a_4 = _.parse(core.Utils.format('({1})/(3*({0}))', a_, b_)),
-            a_5 = _.parse(core.Utils.format('9*({0})^2', a_)),
-            //sqrt(27*a^2*d^2+(4*b^3-18*a*b*c)*d+4*a*c^3-b^2*c^2)
-            b_1 = _.parse(core.Utils.format(
-                    '(sqrt(27*({0})^2*({3})^2+(4*({1})^3-18*({0})*({1})*({2}))*({3})+4*({0})*({2})^3-({1})^2*({2})^2)'+
-                    '/(10.39230484541326*({0})^2)-(27*({0})^2*({3})-9*({0})*({1})*({2})+2*({1})^3)/(54*({0})^3))^(1/3)', 
-                a_, b_, c_, d_
-            ));
-    
-            return [
-                _.subtract(_.subtract(_.multiply(a_2.clone(), b_1.clone()), _.divide(_.multiply(a_5.clone(), a_3.clone()),
-                    b_1.clone())), a_4.clone()),
-                _.subtract(_.subtract(_.multiply(a_1.clone(), b_1.clone()), _.divide(_.multiply(a_2.clone(), a_3.clone()), 
-                    _.multiply(a_5.clone(), b_1.clone()))), a_4.clone()),
-                _.subtract(_.subtract(b_1.clone(), _.divide(a_3.clone(), _.multiply(a_5.clone(), b_1.clone()))), a_4.clone()).negate()
-            ];
+    //http://math.stackexchange.com/questions/61725/is-there-a-systematic-way-of-solving-cubic-equations
+    var cubic = function(d_o, c_o, b_o, a_o) { 
+        //convert everything to text
+        var a = a_o.text(), b = b_o.text(), c = c_o.text(), d = d_o.text(); 
+        var d0s = '{1}^2-3*{0}*{2}',
+            d0 = _.parse(format(d0s, a, b, c)),
+            Q = _.parse(format('sqrt((2*{1}^3-9*{0}*{1}*{2}+27*{0}^2*{3})^2-4*({1}^2-3*{0}*{2})^3)', a, b, c, d)),
+            C = _.parse(format('((1/2)*({4}+2*{1}^3-9*{0}*{1}*{2}+27*{0}^2*{3}))^(1/3)', a, b, c, d, Q));
+        //check if C equals 0
+        var Ct = core.Utils.block('PARSE2NUMBER', function() {
+            return _.parse(C, {a: new Symbol(1), b: new Symbol(1), c: new Symbol(1),d: new Symbol(1)});
+        });
+        if(Number(d0) === 0 && Number(Ct) === 0) //negate Q such that C != 0
+            C = _.parse(format('((1/2)*(-{4}+2*{1}^3-9*{0}*{1}*{2}+27*{0}^2*{3}))^(1/3)', a, b, c, d, Q));
+        var xs = [
+            '-(b/(3*a))+C/(3*a)+((b^2-3*a*c))/(3*a*C)',
+            '-(b/(3*a))+(C*(1+i*sqrt(3)))/(6*a)+((1-i*sqrt(3))*(b^2-3*a*c))/6*a*C'.replace(/i/g, core.Settings.IMAGINARY),
+            '-(b/(3*a))+(C*(1-i*sqrt(3)))/(6*a)+((1+i*sqrt(3))*(b^2-3*a*c))/(6*a*C)'.replace(/i/g, core.Settings.IMAGINARY)
+        ];
+
+        for(var i=0; i<3; i++) 
+            xs[i] = _.parse(xs[i], { a: a_o.clone(), b: b_o.clone(), c: c_o.clone(), d: d_o.clone(), C: C.clone()});
+        return xs;
     };
     
     var solve = function(eqns, solve_for) { 
@@ -235,7 +236,7 @@ if((typeof module) !== 'undefined') {
                             add_to_result(quad.apply(undefined, coeffs));
                             break;
                         case 3:
-                            add_to_result(cubic.apply(undefined, coeffs.reverse()));
+                            add_to_result(cubic.apply(undefined, coeffs));
                             break;
                     }
                 }
@@ -253,7 +254,3 @@ if((typeof module) !== 'undefined') {
         build: function(){ return solve; }
     });
 })();
-
-var x = nerdamer.solveEquations(['x+y=6', '2*x-y=0']);
-
-console.log(x.toString())
