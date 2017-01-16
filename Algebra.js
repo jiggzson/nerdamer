@@ -1778,9 +1778,8 @@ if((typeof module) !== 'undefined') {
                 if(p !== 1) {
                     //make sure the remainder doesn't have factors
                     var t = sqfr[1].toSymbol();
-                    //see if it's truly factored
-                    var factored = __.Factor.factor(t);
                     t.power = t.power.multiply(new Frac(p));
+                    //send the factor to be fatored to be sure it's completely factored
                     factors.add(__.Factor.factor(t));
                     return __.Factor.squareFree(sqfr[0].toSymbol(), factors);
                 }
@@ -1829,10 +1828,9 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             /**
-             * 
+             * The name says it all :)
              * @param {Symbol} symbol
              * @param {Factor} factors
-             * @param {int} base
              * @returns {Symbol}
              */
             trialAndError: function(symbol, factors) {
@@ -1846,6 +1844,7 @@ if((typeof module) !== 'undefined') {
                         p = 1;
                     if(!isNaN(r)) { //if it's a number
                         for(var x in cfactors) {
+                            //check it's raised to a power
                             var n = core.Utils.round(Math.log(x)/Math.log(Math.abs(r)), 8);
                             if(isInt(n)) {
                                 r = x; //x must be the root since n gave us a whole

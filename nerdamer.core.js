@@ -1259,13 +1259,17 @@ var nerdamer = (function(imports) {
         return symbol;
     };
     //sqrt(x) -> x^(1/2)
-    Symbol.unwrapSQRT = function(symbol) {
-        if(symbol.fname === SQRT) {
-            var t = symbol.args[0];
+    Symbol.unwrapSQRT = function(symbol, all) {
+        var p = symbol.power;
+        if(symbol.fname === SQRT && (symbol.isLinear() || all )) {
+            var t = symbol.args[0].clone(); 
             t.power = t.power.multiply(new Frac(1/2));
             t.multiplier = t.multiplier.multiply(symbol.multiplier);
             symbol = t;
+            if(all) 
+                symbol.power = p.multiply(new Frac(1/2));
         }
+            
         return symbol;
     };
     Symbol.prototype = {
@@ -1305,6 +1309,36 @@ var nerdamer = (function(imports) {
             
             //all tests must have passed so we must be dealing with a polynomial
             return true;
+        },
+        //removes the requested variable from the symbol and returns the remainder
+        stripVar: function(x) {
+            var retval;
+            if((this.group === PL || this.group === S) && this.value === x) 
+                retval = new Symbol(this.multiplier);
+            else if(this.group === CB && this.isLinear()) {
+                retval = new Symbol(1);
+                this.each(function(s) {
+                    if(!s.contains(x)) 
+                        retval = _.multiply(retval, s.clone());
+                });
+                retval.multiplier = retval.multiplier.multiply(this.multiplier);
+            }
+            else if(this.group === CP && !this.isLinear()) {
+                retval = new Symbol(this.multiplier);
+            }
+            else if(this.group === CP && this.isLinear()) {
+                retval = new Symbol(0);
+                this.each(function(s) {
+                    if(!s.contains(x)) {
+                        var t = s.clone();
+                        t.multiplier = t.multiplier.multiply(this.multiplier);
+                        retval = _.add(retval, t);
+                    } 
+                });
+            }
+            else retval = this.clone();
+            
+            return retval;
         },
         hasFunc: function() {
             if(this.group === FN || this.group === EX) return true;
@@ -1877,7 +1911,7 @@ var nerdamer = (function(imports) {
                 var newSymbol = new Symbol(1);
                 for(var x in this.symbols) 
                     if(this.symbols[x].power > 0)
-                        newSymbol = _.multiply(newSymbol, x);
+                        newSymbol = _.multiply(newSymbol, this.symbols[x].clone());
                 return newSymbol;
             }
             return this.clone();
@@ -2257,12 +2291,6 @@ var nerdamer = (function(imports) {
                     //out of range inside of the output or stack. We have to make sure the token even exists 
                     //before entering.
                     if(token !== '' && token !== undefined) { 
-                        //factorials etc...
-//                        if(operator && !operator.left_assoc && operator.is_postfix) { 
-//                            token = _[operator.fn](token); //call the relevant function
-//                            operator = operators[expression_string.charAt(++curpos)]; //move to the next operator
-//                        }
-                        
                         //this could be function parameters or a vector
                         if(!(token instanceof Array)) { 
                             //TODO: possible redundant check. Needs investigation
