@@ -4,11 +4,15 @@
  * Email : martin.r.donk@gmail.com
  * Source : https://github.com/jiggzson/nerdamer
  */
+/*
+ * TODO
+ * simplify ratio of sqrt
+ */
 
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.6.5',
+    var version = '0.6.6',
         _ = new Parser(), //nerdamer's parser
         //import bigInt
         bigInt = imports.bigInt,
@@ -159,7 +163,7 @@ var nerdamer = (function(imports) {
         },
         /**
          * Checks to see if a number or Symbol is a fraction
-         * @type {Number|Symbol} num
+         * @param {Number|Symbol} num
          * @returns {boolean}
          */
         isFraction = Utils.isFraction = function(num) {
@@ -248,9 +252,8 @@ var nerdamer = (function(imports) {
         
         /**
          * the Parser uses this to check if it's allowed to convert the obj to type Symbol
-         * @obj {Object} obj
+         * @param {Object} obj
          * @returns {boolean}
-         * @description
          */
         customType = Utils.customType = function(obj) {
             return obj !== undefined && obj.custom;
@@ -706,6 +709,9 @@ var nerdamer = (function(imports) {
                     b = f;
                 }
                 return f;
+            },
+            mod: function(x, y) {
+                return x % y;
             }
         };
         
@@ -2513,7 +2519,8 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         function sqrt(symbol) { 
-            if(Settings.PARSE2NUMBER && symbol.isConstant()) return new Symbol(Math.sqrt(symbol.multiplier.toDecimal()));
+            if(Settings.PARSE2NUMBER && symbol.isConstant() && !symbol.multiplier.lessThan(0)) 
+                return new Symbol(Math.sqrt(symbol.multiplier.toDecimal()));
             
             var img, retval, 
                 isConstant = symbol.isConstant();
@@ -4964,6 +4971,7 @@ var nerdamer = (function(imports) {
      */
     libExports.flush = function() {
         this.clear('all');
+        return this;
     };
     
     /**

@@ -5,15 +5,10 @@
 * License : MIT
 * Source : https://github.com/jiggzson/nerdamer
 */
-/*
- * TODO
- * mod fraction
- * make mprime use Frac class
- */
 
-require('./Calculus.js');
 if((typeof module) !== 'undefined') {
     nerdamer = require('./nerdamer.core.js');
+    require('./Calculus.js');
 }
 
 (function() {
