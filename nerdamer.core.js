@@ -1492,8 +1492,13 @@ var nerdamer = (function(imports) {
             return this;
         },
         each: function(fn) {
-            for(var x in this.symbols) {
-                fn.call(this, this.symbols[x], x);
+            if(!this.symbols) {
+                fn.call(this, this, this.value);
+            }
+            else {
+                for(var x in this.symbols) {
+                    fn.call(this, this.symbols[x], x);
+                }
             }
         },
         /**
@@ -2944,19 +2949,20 @@ var nerdamer = (function(imports) {
             }
             symbol = _.parse(symbol);
             
-            if(isInt(p) && pn > 0 && symbol.isComposite()) {
+            if(isInt(p) && pn > 0 && symbol.isComposite()) { 
                 //leave original untouched
                 symbol = symbol.toLinear().toUnitMultiplier();
-
                 var result = symbol.clone();
+                
                 for(var i=0; i<pn-1; i++) {
                     var t = new Symbol(0); 
                     for(var s in symbol.symbols) {
                         var x = symbol.symbols[s];
                         for(var s2 in result.symbols) {
-                            var y = result.symbols[s2],
-                                r = _.multiply(x.clone(), y.clone());
-                            if(r.group === CB) r = expand(r);
+                            var y = result.symbols[s2];
+                            var r = _.expand(_.multiply(x.clone(), y.clone())),
+                                rp = Number(r.power);
+                            if(r.group === CB && rp !== 1 || r.group === PL && rp !== 1) r = expand(r);
                             t = _.add(t, r);
                         }
                     }
@@ -3431,7 +3437,7 @@ var nerdamer = (function(imports) {
                 }
                 
 
-                if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P)) && !(g1 === PL && g2 === CB)) { 
+                if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P || g2 === FN)) && !(g1 === PL && g2 === CB)) { 
                     var p1 = a.power,
                         p2 = b.power,
                         isSymbolP1 = isSymbol(p1),

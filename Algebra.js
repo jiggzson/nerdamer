@@ -2320,8 +2320,7 @@ if((typeof module) !== 'undefined') {
                 quot = _.divide(quot, den.clone());
                 rem = _.divide(rem, den);
             }
-                
-            
+
             //put back the functions
             if(parse_funcs) {
                 quot = _.parse(quot.text(), subs);

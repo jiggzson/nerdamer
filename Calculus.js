@@ -373,7 +373,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 console.log('retval: '+retval);
                 return retval;
             };
-            var pow_integrate = function(symbol) {
+            var poly_integrate = function(symbol) {
                 var retval = symbol.clone();
                 retval.power = retval.power.add(new Frac(1));
                 retval.multiplier = retval.multiplier.divide(retval.power);
@@ -399,7 +399,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         
                     }
                     else {
-                        return _.divide(pow_integrate(symbol), __.diff(bx.clone(), dx)); //easy enough
+                        return _.divide(poly_integrate(symbol), __.diff(bx.clone(), dx)); //easy enough
                     }
                 }
                 //if a is in the form b*x or x
@@ -467,7 +467,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         retval = _.symfunction('log', [new Symbol(dx)]);
                     //all other x's
                     else {
-                        return pow_integrate(symbol);
+                        return poly_integrate(symbol);
                     }
                 }
                 //x+x^2
@@ -481,20 +481,72 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 else if(g === CB && has_dx) { 
                     //try u substitution
                     //get symbols and pull the derivative. If u works then quotient should be a constant
-                    //in this case it shouldn't contain dx
-                    var symbols = symbol.collectSymbols();
-                    var l = symbol.length;
-                    for(var i=0; i<l; i++) {
-                        var s = symbols[i].clone(); //let's look a the current symbol
-                        var r = new Symbol(1);//the remaining symbols
-                        for(var j=0; j<l; j++) {
-                            if(i !== j) //multiply the remainder to r so we can check if in for u du
-                                r = _.multiply(r, symbols[j].clone());
+                    //in this case it shouldn't contain dx. This is mostly in the case of cos(x)*sin(x)
+                    var symbols = symbol.collectSymbols().sort(function(a, b) {
+                        if(a.group === b.group)  {
+                            if(Number(a.power) === Number(b.power))
+                                if(a < b) return 1; //I want sin first
+                                else return -1;
+                            return b.power - a.power; //descending power
                         }
-                        var q = _.divide(r, __.diff(s.clone(), dx));
-                        if(!q.contains(dx, true)) { 
-                            q.multiplier = q.multiplier.multiply(symbol.multiplier);
-                            return _.multiply(pow_integrate(s.clone()), q);
+                        return b.group - a.group; //descending groups
+                    });
+
+                    var l = symbol.length;
+                    var fname1 = symbols[0].fname, 
+                        fname2 = symbols[1].fname;
+                    if(l === 2 && ((fname1 === 'cos' && fname2 === 'sin' || fname1 ==='sin' && fname2 === 'cos') && arg1 === arg2)) {
+                        //check to see if we have two trig functions
+                        var p1_even = core.Utils.even(symbols[0].power),
+                            p2_even = core.Utils.even(symbols[1].power),
+                            arg1 = symbols[0].args[0].toString(), arg2 = symbols[1].args[0].toString();
+                        //for example cos(x)^3*sin(x)^2 => du = cos(x)
+                        var result = new Symbol(0);
+                        if(!p1_even || !p2_even) { 
+                            var u, r, trans;
+                            //since cos(x) is odd it carries du. If sin was odd then it would be the other way around
+                            //know that p1 satifies the odd portion in this case. If p2 did than it would contain r
+                            if(!p1_even) {
+                                //u = sin(x)
+                                u = symbols[1]; r = symbols[0]; 
+                            }
+                            else {
+                                u = symbols[0]; r = symbols[1];
+                            }
+                            //get the sign of du. In this case r carries du as stated before and D(cos(x),x) = -sin(x)
+                            var sign = u.fname === 'cos' ? -1 : 1;
+                            var n = r.power, 
+                                k = (n - 1)/2, //remove the du
+                                //make the transformation cos(x)^2 = 1 - sin(x)^2
+                                trans = _.parse('(1-'+u.fname+core.Utils.inBrackets(arg1)+'^2)^'+k), 
+                                sym = _.expand(_.multiply(new Symbol(sign), _.multiply(u.clone(), trans)));
+                            //
+                            sym.each(function(x) {
+                                result = _.add(result, poly_integrate(x.clone()));
+                            });
+                            return result;
+                        }
+                        else {
+                            //performs double angle transformation
+                            var double_angle = function(symbol) {
+                                var m = symbol.multiplier, 
+                                    p = symbol.power,
+                                    k = p/2, e;
+                                if(symbol.fname === 'cos')
+                                    e = '(('+m+')*(1/2)+('+m+')*(cos(2*('+symbol.args[0]+'))/2))^'+k;
+                                else
+                                    e = '(('+m+')*(1/2)-('+m+')*(cos(2*('+symbol.args[0]+'))/2))^'+k;
+                                
+                                return _.parse(e);
+                            };
+                            //they're both even so transform both using double angle identities
+                            var a = double_angle(symbols[0]),
+                                b = double_angle(symbols[1]),
+                                sym = _.expand(_.multiply(a, b));
+                            sym.each(function(x) {
+                                result = _.add(result, __.integrate(x, dx));
+                            });
+                            return result;
                         }
                     }
                     
@@ -502,7 +554,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         var integrated;
                         var cnst = symbol.clone().stripVar(dx);
                         var integratable = Symbol.unwrapSQRT(_.divide(symbol.clone(), cnst.clone()), true);
-                        console.log(integratable.toString())
                         if(integratable.isComposite()) { 
                             integrated = integrate_poly_fn(integratable);
                             return _.multiply(integrated, cnst);
@@ -535,8 +586,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     }
                     else {
                         return integrate_poly_fn(symbol);
-                    }
-                        
+                    }  
                 }
                 //has to be all linear
                 //trig functions 
@@ -601,36 +651,23 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         }
                     }
                     else {
-                        if(symbol.fname === 'cos' || symbol.fname === 'sin') {
-                            var p = symbol.power.toDecimal();
-                            retval = new Symbol(0);
-                            if(core.Utils.even(p)) {
-                                var double_ang;
-                                var m = symbol.multiplier;
-                                //CONVERT TO DOUBLE ANGLE
-                                if(symbol.fname === 'cos') 
-                                    double_ang = _.parse('('+m+')*(1/2)+('+m+')*(cos(2*('+symbol.args[0]+'))/2)');
-                                else
-                                    double_ang = _.parse('('+m+')*(1/2)-('+m+')*(cos(2*('+symbol.args[0]+'))/2)');
-                                var n = p/2;
-                                var s;
-                                if(n > 1) {
-                                    s = new Symbol(1);
-                                    for(var i=0; i<n; i++) {
-                                        //transform the symbol
-                                        s = _.multiply(s, double_ang.clone());
-                                    }
-                                    s = _.expand(s);
-                                }
-                                else s = double_ang;
-                                
-                                s.each(function(x) {
-                                    retval = _.add(retval, __.integrate(x, dx));
-                                });
-                            }
-                        }
+                        //http://www.sosmath.com/calculus/integration/powerproduct/powerproduct.html
+                        //integrate odd and even power so of cos and sin
+                        if(symbol.fname === 'sin' || symbol.fname === 'cos') {
+                            var p = symbol.power.toDecimal(),
+                                arg = symbol.args[0],
+                                a = arg.stripVar(dx), // a from cos(a*x)
+                                rd = symbol.clone(), //cos^(n-1)
+                                rd2 = symbol.clone(), //cos^(n-2)
+                                q = new Symbol((p-1)/p), //
+                                na = _.multiply(a.clone(), new Symbol(p)).invert(); //1/(n*a)
+                            rd.power = rd.power.subtract(new Frac(1));
+                            rd2.power = rd2.power.subtract(new Frac(2));
+
+                            var t = _.symfunction(symbol.fname === 'cos' ? 'sin' : 'cos', [arg.clone()]);
+                            return _.add(_.multiply(_.multiply(na, rd), t), _.multiply(q, __.integrate(_.parse(rd2), dx)));
+                        } 
                     }
-                        
                 }
                 else if(g === EX && symbol.contains(dx, true) && symbol.power.isLinear()) {
                     //we cover all variables raised to the x here including e
