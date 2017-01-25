@@ -584,6 +584,8 @@ if((typeof module) !== 'undefined') {
      * @returns {Factors}
      */
     Factors.prototype.add = function(s) {
+        if(s.equals(0)) return this; //nothing to add
+        
         if(s.group === CB) {
             var factors = this;
             s.each(function(x){
@@ -1743,6 +1745,15 @@ if((typeof module) !== 'undefined') {
                     } 
                     
                     var vars = variables(symbol);
+                    //minor optimization. Seems to cut factor time by half in some cases.
+                    if(vars.length > 1) {
+                        var all_S = true, all_unit = true;
+                        symbol.each(function(x) {
+                            if(x.group !== S) all_S = false;
+                            if(!x.multiplier.equals(1)) all_unit = false;
+                        });
+                        if(all_S && all_unit) return symbol;
+                    }
                     symbol = __.Factor.coeffFactor(symbol, factors);
                     symbol = __.Factor.powerFactor(symbol, factors);
                     if(vars.length === 1) {
@@ -1948,6 +1959,7 @@ if((typeof module) !== 'undefined') {
                 }
                 return symbol;
             },
+            //factoring for multivariate
             mfactor: function(symbol, factors) {
                 symbol = __.Factor.mSqfrFactor(symbol, factors);
                 var vars = variables(symbol),

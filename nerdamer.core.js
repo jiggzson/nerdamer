@@ -386,10 +386,12 @@ var nerdamer = (function(imports) {
                 if(group === CP || group === CB || prevgroup === CP || prevgroup === CB) {
                     for(var x in obj.symbols) variables(obj.symbols[x], poly, vars);
                 }
-                else if(group === S) { 
-                    vars.add(obj.value);
+                else if(group === S || prevgroup === S) { 
+                    //very crude needs fixing. TODO
+                    if(!(obj.value === 'e' || obj.value === 'pi'))
+                        vars.add(obj.value);
                 }
-                else if(group === PL) {
+                else if(group === PL || prevgroup === PL) {
                     variables(firstObject(obj.symbols), poly, vars);
                 }
                 else if(group === EX) { 
@@ -568,21 +570,29 @@ var nerdamer = (function(imports) {
             csc: function(x) { return 1/Math.sin(x); },
             sec: function(x) { return 1/Math.cos(x); },
             cot: function(x) { return 1/Math.tan(x); },
-            //https://gist.github.com/kcrt/6210661
+            //https://github.com/AndreasMadsen/mathfn/blob/master/functions/erf.js
             erf: function(x){
-                // erf(x) = 2/sqrt(pi) * integrate(from=0, to=x, e^-(t^2) ) dt
-                // with using Taylor expansion,
-                // = 2/sqrt(pi) * sigma(n=0 to +inf, ((-1)^n * x^(2n+1))/(n! * (2n+1)))
-                // calculationg n=0 to 50 bellow (note that inside sigma equals x when n = 0, and 50 may be enough)
-                var m = 1.00,
-                    s = 1.00,
-                    sum = x * 1.0;
-                for(var i = 1; i < 50; i++){
-                    m *= i;
-                    s *= -1;
-                    sum += (s * Math.pow(x, 2.0 * i + 1.0)) / (m * (2.0 * i + 1.0));
-                }
-                return 2 * sum / Math.sqrt(3.14159265358979);
+                var ERF_A = [
+                    0.254829592,
+                    -0.284496736,
+                    1.421413741,
+                    -1.453152027,
+                    1.061405429
+                  ];
+                  var ERF_P = 0.3275911;
+
+                  function erf(x) {
+                    var sign = 1;
+                    if (x < 0) sign = -1;
+
+                    x = Math.abs(x);
+
+                    var t = 1.0/(1.0 + ERF_P*x);
+                    var y = 1.0 - (((((ERF_A[4]*t + ERF_A[3])*t) + ERF_A[2])*t + ERF_A[1])*t + ERF_A[0])*t*Math.exp(-x*x);
+
+                    return sign * y;
+                  }
+                  return erf(x);
             },
             //http://stackoverflow.com/questions/15454183/how-to-make-a-function-that-computes-the-factorial-for-numbers-with-decimals
             gamma: function(z) {
@@ -1024,7 +1034,7 @@ var nerdamer = (function(imports) {
         },
         
         toString: function() {
-            if(isArray(this.symbol)) return '['+this.symbol.toString()+']'
+            if(isArray(this.symbol)) return '['+this.symbol.toString()+']';
             return this.symbol.toString();
         },
         
@@ -1324,7 +1334,7 @@ var nerdamer = (function(imports) {
             else if(this.group === CB && this.isLinear()) {
                 retval = new Symbol(1);
                 this.each(function(s) {
-                    if(!s.contains(x)) 
+                    if(!s.contains(x, true)) 
                         retval = _.multiply(retval, s.clone());
                 });
                 retval.multiplier = retval.multiplier.multiply(this.multiplier);
@@ -1383,8 +1393,28 @@ var nerdamer = (function(imports) {
         isInteger: function() {
             return this.isConstant() && this.multiplier.isInteger();
         },
-        isLinear: function() {
-            return this.power.equals(1);
+        isLinear: function(wrt) {
+            if(wrt) {
+                if(this.isConstant())
+                    return true;
+                if(this.group === S) {
+                    if(this.value === wrt)return this.power.equals(1);
+                    else return true;
+                }
+                
+                if(this.isComposite() && this.power.equals(1)) {
+                    for(var x in this.symbols) {
+                        if(!this.symbols[x].isLinear(wrt))
+                            return false;
+                    }
+                    return true;
+                }
+                
+                if(this.group === CB && this.symbols[wrt])
+                    return this.symbols[wrt].isLinear(wrt);
+                return false;  
+            }
+            else return this.power.equals(1);
         },
         multiplyPower: function(p2) {
             //leave out 1
@@ -2048,6 +2078,7 @@ var nerdamer = (function(imports) {
                 'floor'     : [ ,1],
                 'ceil'      : [ ,1],
                 'fact'      : [factorial, 1],
+                'factorial' : [factorial, 1],
                 'round'     : [ , 1],
                 'mod'       : [mod, 2],
                 'pfactor'   : [pfactor , 1],
@@ -3599,6 +3630,7 @@ var nerdamer = (function(imports) {
             if(aIsSymbol && bIsSymbol) {
                 var result;
                 if(a.isConstant() && b.isConstant()) {
+                    if(b.equals(0)) err('Division by zero!');
                     result = a.clone();
                     result.multiplier = result.multiplier.divide(b.multiplier);
                 }
@@ -5031,6 +5063,18 @@ var nerdamer = (function(imports) {
      * @returns {boolean} validates if the profided string is a valid variable name
      */
     libExports.validateName = validateName;
+    
+    /**
+     * @param {String} varname variable name
+     * @returns {boolean} validates if the profided string is a valid variable name
+     */
+    libExports.validVarName = function(varname) {
+        try {
+            validateName(varname);
+            return RESERVED.indexOf(varname) === -1;
+        }
+        catch(e){ return false; }
+    };
     
     /**
      * 
