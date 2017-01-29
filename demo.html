@@ -105,12 +105,12 @@
                     </div>
                 </div>
                 <div class="text-right">
-                    <a href="javascript:void(0)" id="input-switch"><small>Use text input</small></a>
+                    <a href="javascript:void(0)" id="input-switch"><small>Use visual editor</small></a>
                 </div>
                 
                 <div id="nerdamer-demo">
-                    <div id="demo-input" class="demo-input"></div>
-                    <input id="text-input" class="demo-input" style="display: none;" type="text" placeholder="Text editor. Enter expression here"/>
+                    <div id="demo-input" class="demo-input" style="display: none;"></div>
+                    <input id="text-input" class="demo-input" type="text" placeholder="Text editor. Enter expression here"/>
                 </div>
                 <button class="btn btn-primary" id="process-btn">ENTER</button>
                 <div class="pull-right">
@@ -212,21 +212,22 @@
     <!--<script src="./plugins/c3/c3.min.js"></script>-->
     <script src="./plugins/function-plot/function-plot.min.js"></script>
     <script>
-        var USE_GUPPY = true;
+        var USE_GUPPY = false;
         $(function() {
+            var textInput = $('#text-input');
+            //link the enter button    
+            textInput.keypress(function(e) { console.log(9)
+                if(e.keyCode === 13) {
+                    $('#process-btn').click();
+                }
+            });
+            
             $('#input-switch').click(function() {
                 USE_GUPPY = !USE_GUPPY; //hit the switch
                 var defaultText = 'Use text input',
                     altText = 'Use visual editor',
-                    guppyInput = $('#demo-input'),
-                    textInput = $('#text-input'),
                     guppyLink = $('#guppy-link');
-                //link the enter button    
-                textInput.keypress(function(e) {
-                    if(e.keyCode === 13) {
-                        $('#process-btn').click();
-                    }
-                });
+            
                 
                 if(USE_GUPPY) guppyLink.show();
                 else guppyLink.hide();
