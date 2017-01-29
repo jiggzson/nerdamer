@@ -901,7 +901,10 @@ var nerdamer = (function(imports) {
             return '['+c.join(',')+']';
         }
         else {
-            return obj.toString();
+            try {
+                return obj.toString();
+            }
+            catch(e) { return ''; }
         }
     }
     
@@ -1034,8 +1037,11 @@ var nerdamer = (function(imports) {
         },
         
         toString: function() {
-            if(isArray(this.symbol)) return '['+this.symbol.toString()+']';
-            return this.symbol.toString();
+            try {
+                if(isArray(this.symbol)) return '['+this.symbol.toString()+']';
+                return this.symbol.toString();
+            }
+            catch(e) { return ''; }
         },
         
         toDecimal: function() {
@@ -2092,8 +2098,12 @@ var nerdamer = (function(imports) {
                 'invert'    : [invert, 1],
                 'transpose' : [transpose, 1],
                 'dot'       : [dot, 2],
+                'cross'     : [cross, 2],
                 'vecget'    : [vecget, 2],
-                'vecset'    : [vecset, 3]
+                'vecset'    : [vecset, 3],
+                'matget'    : [matget, 3],
+                'matset'    : [matset, 4],
+                'imatrix'   : [imatrix, 1]
             };
         
         var brackets = {}, //the storage container for the brackets
@@ -2520,6 +2530,17 @@ var nerdamer = (function(imports) {
             if(symbol.multiplier.lessThan(0)) symbol.multiplier.negate();
             if(isNumericSymbol(symbol) || even(symbol.power)) {
                 return symbol;
+            }
+            if(symbol.isComposite()) {
+                var ms = [];
+                symbol.each(function(x) {
+                    ms.push(x.multiplier);
+                });
+                var gcd = Math2.QGCD.apply(null, ms);
+                if(gcd.lessThan(0)) {
+                    symbol.multiplier = symbol.multiplier.multiply(new Frac(-1));
+                    symbol.distributeMultiplier();
+                }
             }
             return _.symfunction(ABS, [symbol]);
         }
@@ -2999,12 +3020,14 @@ var nerdamer = (function(imports) {
                     }
                     result = t;
                 }
-
+                
                 //put back the multiplier
                 if(!m.equals(1)) {
                     for(var s in result.symbols) {
                         var x = result.symbols[s];
                         x.multiplier = x.multiplier.multiply(m);
+                        if(x.isComposite())
+                            x.distributeMultiplier();
                         symbol.symbols[s] = x;
                     }
                 }
@@ -3091,6 +3114,10 @@ var nerdamer = (function(imports) {
             return symbol;
         }
         
+        function imatrix(n) {
+            return Matrix.identity(n);
+        }
+        
         function vecget(vector, index) {
             return vector.elements[index];
         }
@@ -3098,6 +3125,15 @@ var nerdamer = (function(imports) {
         function vecset(vector, index, value) {
             vector.elements[index] = value;
             return vector;
+        }
+        
+        function matget(matrix, i, j) {
+            return matrix.elements[i][j];
+        }
+        
+        function matset(matrix, i, j, value) {
+            matrix.elements[i][j] = value;
+            return matrix;
         }
         
         //link this back to the parser
@@ -3123,6 +3159,11 @@ var nerdamer = (function(imports) {
         function dot(vec1, vec2) {
             if(isVector(vec1) && isVector(vec2)) return vec1.dot(vec2);
             err('function dot expects 2 vectors');
+        }
+        
+        function cross(vec1, vec2) {
+            if(isVector(vec1) && isVector(vec2)) return vec1.cross(vec2);
+            err('function cross expects 2 vectors');
         }
         
         function transpose(mat) {
@@ -3930,6 +3971,21 @@ var nerdamer = (function(imports) {
                 }
                 return this.brackets(LaTeXArray.join(', '), 'square');
             }
+            
+            if(isMatrix(symbol)) {
+                var TeX = '\\begin{pmatrix}\n';
+                for(var i=0; i<symbol.elements.length; i++) {
+                    var rowTeX = [],
+                        e = symbol.elements[i];
+                    for(var j=0; j<e.length; j++) {
+                        rowTeX.push(this.latex(e));
+                    }
+                    TeX += rowTeX.join(' & ')+'\\\\\n';
+                }
+                TeX += '\\end{pmatrix}';
+                return TeX;
+            }
+            
             symbol = symbol.clone();
             var decimal = option === 'decimal',
                 power = symbol.power,
@@ -4243,6 +4299,12 @@ var nerdamer = (function(imports) {
         return a;
     };
     
+    Vector.fromArray = function(a) {
+        var v = new Vector();
+        v.elements = a;
+        return v;
+    };
+    
     //Ported from Sylvester.js
     Vector.prototype = {
         custom: true,
@@ -4403,9 +4465,9 @@ var nerdamer = (function(imports) {
             var A = this.elements;
             return block('SAFE', function() {
                 return new Vector([
-                    _subtract(_.multiply(A[1], B[2]), _.multiply(A[2], B[1])),
-                    _subtract(_.multiply(A[2], B[0]), _.multiply(A[0], B[2])),
-                    _subtract(_.multiply(A[0], B[1]), _.multiply(A[1], B[0]))
+                    _.subtract(_.multiply(A[1], B[2]), _.multiply(A[2], B[1])),
+                    _.subtract(_.multiply(A[2], B[0]), _.multiply(A[0], B[2])),
+                    _.subtract(_.multiply(A[0], B[1]), _.multiply(A[1], B[0]))
                 ]);
             }, undefined, this);  
         },
@@ -4721,7 +4783,7 @@ var nerdamer = (function(imports) {
                     return x !== undefined ? x.toString() : '';
                 }).join(',')+']');
             }
-            return s.join(','+newline);
+            return 'matrix'+inBrackets(s.join(','));
         },
         text: function() {
             return 'matrix('+this.toString('')+')';

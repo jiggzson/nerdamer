@@ -355,28 +355,19 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 return [u, dv];
             };
             function integration_by_parts(symbol) {
-                console.log('============================================================================')
-                console.log('INTEGRATION BY PARTS: '+(symbol || 'null').toString())
                 var udv, u, dv, du, v, vdu, uv, retval, integral_vdu;
                 
                 //first LIATE
                 udv = get_udv(symbol);
                 u = udv[0]; 
                 dv = udv[1];
-                
-                console.log('u: '+u);
-                console.log('dv: '+dv);
+
                 du = Symbol.unwrapSQRT(__.diff(u.clone(), dx));
-                console.log('du: '+du);
                 v = __.integrate(dv.clone(), dx, depth);
-                console.log('v: '+v);
                 vdu = _.multiply(v.clone(), du);
-                console.log('vdu: '+vdu);
                 uv = _.multiply(u, v);
                 integral_vdu = __.integrate(vdu.clone(), dx, depth, depth);
-                console.log('ivdu: '+integral_vdu);
                 retval = _.subtract(uv, integral_vdu);
-                console.log('retval: '+retval);
                 return retval;
             };
             function poly_integrate(symbol) { 
@@ -401,7 +392,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 try { //set up a try catch box to see if we can get out some factors
                     if(p.equals(-1)) {
                         var factors = core.Algebra.Factor.factor(symbol.clone().toLinear());
-                        console.log(factors.toString())
                         if(factors.group === CB) {
                             var factor_array = [],
                                 cnst = new Symbol(1);
@@ -479,9 +469,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         }
                     }
                     else {
-                        console.log('bx: '+bx);
-                        console.log('a: '+a);
-                        console.log('b: '+b);
                         stop();
                     }                        
                 }
@@ -866,9 +853,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
                 if(retval) return retval;
             }
-            catch(e){ /* no integral found */; 
-                console.log(e.stack);
-            }
+            catch(e){ /* no integral found */; }
             return _.symfunction('integrate', [symbol, dt]);
         }
     };
@@ -876,12 +861,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     nerdamer.register([
         {
             name: 'diff',
-            visible: true,
-            numargs: [1,3],
-            build: function(){ return __.diff; }
-        },
-        {
-            name: 'differentiate',
             visible: true,
             numargs: [1,3],
             build: function(){ return __.diff; }
@@ -900,14 +879,3 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
     ]);
 })();
-//TODO
-//integrate(x^n*e^(a*x),x)
-var x = nerdamer('integrate(x^3*log(x), x)');
-
-//var x = nerdamer('integrate(10*q/(4*x^2+24*x+20), x)');
-//var x = nerdamer('integrate(8*x^3/(6*x^2+3*a^2), x)');
-
-console.log(x.toString());
-
-//fix factor(a*x+b*x+x^2)
-//fix factor(a^2+x^2)

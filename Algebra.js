@@ -1635,6 +1635,12 @@ if((typeof module) !== 'undefined') {
                 return zeror;
             } 
          },
+        roots: function(symbol) {
+            var roots = __.proots(symbol).map(function(x) {
+                return _.parse(x);
+            });
+            return core.Vector.fromArray(roots);
+        },
         froot: function(f, guess, dx) { 
             var newtonraph = function(xn) {
                 var mesh = 1e-12,
@@ -1729,6 +1735,7 @@ if((typeof module) !== 'undefined') {
                 return m;
             },
             factor: function(symbol, factors) {
+                var original = symbol.clone();
                 if(isInt(symbol.power)) {
                     factors = factors || new Factors();
                     var map = {};
@@ -1744,7 +1751,8 @@ if((typeof module) !== 'undefined') {
                         symbol.toLinear();
                     } 
                     
-                    var vars = variables(symbol);
+                    var vars = variables(symbol),
+                        isMultivariate = false;
                     //minor optimization. Seems to cut factor time by half in some cases.
                     if(vars.length > 1) {
                         var all_S = true, all_unit = true;
@@ -1762,10 +1770,13 @@ if((typeof module) !== 'undefined') {
                     }
                     else {
                         symbol = __.Factor.mfactor(symbol, factors);
+                        isMultivariate = true;
                     }
                     symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
                     factors.add(symbol);
-                    return factors.toSymbol();
+                    
+                    var retval = factors.toSymbol();
+                    return retval;
                 }
                 return symbol;    
             },
@@ -2362,10 +2373,10 @@ if((typeof module) !== 'undefined') {
             build: function() { return __.gcd; }
         },
         {
-            name: 'proots',
+            name: 'roots',
             visible: true,
             numargs: -1,
-            build: function() { return __.proots; }
+            build: function() { return __.roots; }
         },
         {
             name: 'divide',
