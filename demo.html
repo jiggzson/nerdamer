@@ -9,72 +9,38 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Nerdamer | Symbolic math expression evaluator for javascript</title>
+    <title>Nerdamer | Demo</title>
 
     <!-- Bootstrap Core CSS -->
-    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link href="./css/style.css" rel="stylesheet">
-
-    <!-- Page CSS -->
-    <link href="./css/demo.css" rel="stylesheet">
-    <link href="./css/jquery.eqInput.css" rel="stylesheet">
-
-    <!-- Mathquill css -->
-    <link href="./js/mathquill/mathquill.css" rel="stylesheet">
-
-	<!-- Graph css -->
-    <link href="./css/c3.min.css" rel="stylesheet">
-
+    <link href="css/site.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/demo.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="./img/favicon.png">
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
-    <script type="text/x-mathjax-config">
-        MathJax.Hub.Config({
-            tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
-            "HTML-CSS": {
-                linebreaks: { automatic: true, width: "container" }
-            },
-            menuSettings: {
-                zoom: "Click",
-                mpContext: true,
-                mpMouse: true
-            },
-        });
-    </script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script>
-        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-        ga('create', 'UA-58729441-1', 'auto');
-        ga('send', 'pageview');
-
-    </script>
-    <style>
-        #forkongithub a{background:#ABABAB;color:#fff;text-decoration:none;font-family:arial,sans-serif;
-        text-align:center;font-weight:bold;padding:5px 40px;font-size:1rem;line-height:2rem;
-        position:relative;transition:0.5s;}#forkongithub a:hover{background:#56CE65;color:#fff;}
-        #forkongithub a::before,#forkongithub a::after{content:"";width:100%;display:block;position:absolute;
-        top:1px;left:0;height:1px;background:#fff;}#forkongithub a::after{bottom:1px;top:auto;}
-        @media screen and (min-width:800px){#forkongithub{position:fixed;display:block;top:-15px;
-        right:0;width:200px;overflow:hidden;height:200px;z-index:9999;}
-        #forkongithub a{width:200px;position:absolute;top:60px;right:-60px;
-        transform:rotate(45deg);-webkit-transform:rotate(45deg);-ms-transform:rotate(45deg);
-        -moz-transform:rotate(45deg);-o-transform:rotate(45deg);box-shadow:4px 4px 10px #222;}}
-    </style>
+    <link rel="stylesheet" href="./plugins/highlightjs/styles/vs.css"> 
+    <script src="./plugins/highlightjs/highlight.pack.js"></script> 
+    <link rel="stylesheet" href="./plugins/guppy/build/guppy.min.css">
+    <link rel="stylesheet" href="./plugins/font-awesome/css/font-awesome.min.css">
+    <!-- katex -->
+    <script src="./plugins/katex/katex.min.js"></script> 
+    <link rel="stylesheet" href="./plugins/katex/katex.min.css">
+    <!-- c3 -->
+    <!--<link rel="stylesheet" href="./plugins/c3/c3.min.css">-->
+    
 </head>
 
 <body>
 
     <!-- Navigation -->
-    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
         <div class="container">
             <!-- Brand and toggle get grouped for better mobile display -->
             <div class="navbar-header">
@@ -84,27 +50,22 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="#">
-                    <img src="./images/logo_sm.png" alt="nerdamer-logo"/>
-                </a>
+                <a class="navbar-brand" href="./"><img src="./img/logo.png" alt="Nerdamer"/></a>
             </div>
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav">
                     <li>
-                        <a href="./" >Home</a>
-                    </li>
-<!--                    <li>
-                        <a href="./download">Downloads</a>
-                    </li>-->
-                    <li class="active">
-                        <a href="./demo.html">Demo</a>
+                        <a href="./">Home</a>
                     </li>
                     <li>
                         <a href="./documentation.html">Documentation</a>
                     </li>
+                    <li class="active">
+                        <a  href="./demo.html">Demo</a>
+                    </li>
                     <li>
-                        <a href="./tests.html">Tests</a>
+                        <a href="./quickstart.html">Quick Start</a>
                     </li>
                 </ul>
             </div>
@@ -115,116 +76,187 @@
 
     <!-- Page Content -->
     <div class="container">
-        <div class="rounded-15 white padded">
-            <span id="forkongithub"><a href="https://github.com/jiggzson/nerdamer">Fork me on GitHub</a></span>
-            <div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header gray-header">
-                            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                            <h4 class="modal-title" id="myModalLabel">Instructions</h4>
-                        </div>
-                        <div class="modal-body">
-                            <div class="instructions top-layer">
-                                <hr>
-                                To enter an expression just type it in the box below with the format:<span class="description"> expression;variable=value</span>
-                                e.g. <span class="example">cos(x)+1,x=PI</span><br/>
-
-                                To enter a known value type in: <span class="description">number_of_expression: variable=value, variable2=value</span>.
-                                <span class="example">e.g. %1, x=5, y=6 </span>. Constant $\pi$ = PI and e = E<br/><br/>
-
-                                <p>
-                                    To set a variable type in <span class="description">variable:value</span>
-                                    <span class="example">e.g. x:8</span>
-                                </p>
-
-                                To declare a function type in: <span class="description">function_name( variables_separated_by_commas ):=function_expression</span>
-                                <span class="example">e.g. f(x):=x^2-5/cos(x)</span>. To access the last declared expression use <span class="description">%</span> or
-                                use %[digit] to access a previously entered expression.<br/><br/>
-                                Math is rendered using <a href="mathjax.com">Mathjax</a>.<br/>
-                                Equations are calculated using <a href="https://github.com/jiggzson/nerdamer" class="anchor-green">nerdamer.js</a><br/>
-                                Equation input is done with <a href="https://github.com/jiggzson/eqInput">EqInput</a><br/>
-                                Graphs are done by <a href="http://c3js.org/">C3</a>
-                            </div>
+        <hr>
+        <div class="row">
+            <div class="col-sm-9">
+                <h1>Demo</h1>
+                <h5 class="text-muted">Using nerdamer version: <strong><span id="version"></span></strong></h5>
+                <div class="alert alert-danger demo-alert">
+                    <!--<button type="button" class="close" data-dismiss="alert">&times;</button>-->
+                    Make sure to enter multiplication explicitly. e.g. <strong>use 3*x not 3x or 2*(x+1) not 2(x+1);</strong>
+                    <p>
+                        <a class="collapse-a" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                          Click show/hide instructions and supported functions
+                        </a>
+                    </p>
+                    <div class="collapse" id="collapseExample">
+                        <div class="card card-block">
+                            <h5>Supported functions</h5>
+                            <div id="supported-functions"></div>
+                            <h5>Instructions</h5>
+                            <p>
+                                To enter an expression just type it in the box below with the format: expression;variable=value e.g. cos(x)+1,x=PI
+                                To enter a known value type in: number_of_expression: variable=value, variable2=value. e.g. %1, x=5, y=6 . Constant  π = PI and e = E
+                            </p>
+                            <p>
+                                Check the evaluate box to evaluate functions. Check the expand button to expand the expression.
+                            </p>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="input-container">
-                <div class="top-bar">
-                    <span class="version"></span>
-                    <a href="#" class="instructions-anchor" data-toggle="modal" data-target=".bs-example-modal-lg">Click here for instructions and supported functions </a>
+                <div class="text-right">
+                    <a href="javascript:void(0)" id="input-switch"><small>Use text input</small></a>
                 </div>
-
-
-                <div class="nerdamer-interface-container">
-                    <div class="nerdamer-interface-input full-width-input" id="expr-input" data-placeholder="Enter Expression"></div>
-                    <span>
-                        <label for="numer">NUMER:</label> <input type="checkbox" name="numer" class="nerdamer-modifier" id="numer" checked/>
-                    </span>
-                    <span>
-                        <label for="expand">EXPAND:</label> <input type="checkbox" name="expand" class="nerdamer-modifier" id="expand" checked/>
-                    </span>
-                    <button class="btn btn-inverse nerdamer-interface-button" id="clear-all"> CLEAR ALL </button>
-                    <button class="btn btn-inverse nerdamer-interface-button" id="expr-submit"> ENTER </button>
+                
+                <div id="nerdamer-demo">
+                    <div id="demo-input" class="demo-input"></div>
+                    <input id="text-input" class="demo-input" style="display: none;" type="text" placeholder="Text editor. Enter expression here"/>
                 </div>
-
-				<!-- Display graph -->
-				<div id="graph"></div>
-                Start:
-                <input type="text" size="4" id="graph_start" value="1">
-                End:
-                <input type="text" size="4" id="graph_end" value="10">
-                Step:
-                <input type="text" size="4" id="graph_step" value="1">
-                Type:
-                <select id="graph_type">
-                    <option value="spline">Spline</option>
-                    <option value="line">Line</option>
-                    <option value="scatter">Scatter</option>
-                </select>
+                <button class="btn btn-primary" id="process-btn">ENTER</button>
+                <div class="pull-right">
+                    <div class="checkbox">
+                        <label>
+                          <input type="checkbox" id="expression-evaluate">
+                          <span class="cr"><i class="cr-icon glyphicon glyphicon-ok"></i></span>
+                          <span class="checkbox-label">EVALUATE</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="pull-right">
+                    <div class="checkbox">
+                        <label>
+                          <input type="checkbox" id="expression-expand" checked>
+                          <span class="cr"><i class="cr-icon glyphicon glyphicon-ok"></i></span>
+                          <span class="checkbox-label">EXPAND</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="pull-right">
+                    <div class="checkbox">
+                        <label>
+                          <input type="checkbox" id="to-decimal">
+                          <span class="cr"><i class="cr-icon glyphicon glyphicon-ok"></i></span>
+                          <span class="checkbox-label">DECIMAL</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="demo-panel">
+<!--                    <div class="expression">
+                        <div class="expression-delete expression-btn">
+                            <a href="javascript:void(0)" title="Remove expression"><i class="fa fa-close"></i></a>
+                        </div>
+                        <div class="expression-graph expression-btn">
+                            <a href="javascript:void(0)" title="Graph expression" data-expression="cos(x)"><i class="fa fa-bar-chart"></i></a>
+                        </div>
+                        <div class="expression-reload expression-btn">
+                            <a href="javascript:void(0)" title="Load expression to editor" data-expression="cos(x)"><i class="fa fa-refresh"></i></a>
+                        </div>
+                        <div class="expression-body">cos(x)</div>
+                    </div>-->
+                </div>
+                
+                <!-- Modal -->
+                <div class="modal fade" id="alertModal" tabindex="-1" role="dialog"  aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body"></div>
+                        </div>
+                    </div>
+                </div>
+ 
+                <!-- Footer -->
+                <footer>
+                    <div class="row">
+                        <div class="col-lg-12 text-center">
+                            <p>Copyright &copy; Nerdamer.com <span class="date"></span></p>
+                        </div>
+                    </div>
+                    <!-- /.row -->
+                </footer>
             </div>
-
-            <div id="expr-panel"></div>
+            <div class="col-sm-3">
+                <ul class="side-bar">
+                    <li><a href="./extending_core.html">Extending the core</a></li>
+                    <li><a href="./digging_deeper.html">Digging deeper</a></li>
+                    <li><a href="./examples.html">Examples</a></li>
+                </ul>   
+                <h3>Demo Credits</h3>
+                <ul class="credits">
+                    <li><a href="http://daniel3735928559.github.io/guppy/" id="guppy-link">Visual editing by Guppy.js</a></li>
+                    <li><a href="http://maurizzzio.github.io/function-plot/">Plotting with Function-plot.js</a></li>
+                </ul>
+            </div>
         </div>
     </div>
-    <footer>
-        <div class="container">
-            Copyright &copy; 2015 | Nerdamer.com
-        </div>
-    </footer>
     <!-- /.container -->
 
-    <!-- jQuery Version 1.11.0 -->
-    <script src="./js/jquery-1.11.0.js"></script>
+    <!-- jQuery -->
+    <script src="js/jquery.js"></script>
 
     <!-- Bootstrap Core JavaScript -->
-    <script src="./js/bootstrap.min.js"></script>
-
-
-    <!-- Nerdamer libraries -->
+    <script src="js/bootstrap.min.js"></script>
+    <script>
+        $('.date').html(new Date().getFullYear());
+    </script>
     <script src="./js/nerdamer.core.js"></script>
-    <script src="./js/Calculus.js"></script>
     <script src="./js/Algebra.js"></script>
-    <script src="./js/LinAlg.js"></script>
-    <script src="./js/Special.js"></script>
-
-	<!-- Graphing library -->
-	<script src="./js/d3.min.js"></script>
-	<script src="./js/c3.min.js"></script>
-
-    <!-- Behave library -->
-    <script src="./js/jquery.eqInput.js"></script>
-    <script src="./js/demo.js"></script>
-    <script type="text/javascript">
+    <script src="./js/Calculus.js"></script>
+    <script src="./js/Solve.js"></script>
+    <script src="./plugins/guppy/build/guppy.min.js"></script>
+    <script src="./plugins/d3/d3.min.js"></script>
+    <!--<script src="./plugins/c3/c3.min.js"></script>-->
+    <script src="./plugins/function-plot/function-plot.min.js"></script>
+    <script>
+        var USE_GUPPY = true;
         $(function() {
-            $('.mathquill-editable').focus();
-            $('.instructions').prepend(function(){
-                return '<div class="supported"><strong>Supported functions:</strong> <span>'+
-                    nerdamer.supported().join(', </span><span>')+'</span></div>';
+            $('#input-switch').click(function() {
+                USE_GUPPY = !USE_GUPPY; //hit the switch
+                var defaultText = 'Use text input',
+                    altText = 'Use visual editor',
+                    guppyInput = $('#demo-input'),
+                    textInput = $('#text-input'),
+                    guppyLink = $('#guppy-link');
+                //link the enter button    
+                textInput.keypress(function(e) {
+                    if(e.keyCode === 13) {
+                        $('#process-btn').click();
+                    }
+                });
+                
+                if(USE_GUPPY) guppyLink.show();
+                else guppyLink.hide();
+                
+                $(this).text(USE_GUPPY ? defaultText : altText);
+                if(USE_GUPPY) {
+                    textInput.hide();
+                    guppyInput.show();
+                }
+                else {
+                    guppyInput.hide();
+                    textInput.show();
+                }
             });
-            $('#expr-input').eqInput();
         });
+    </script>
+    <script src="./js/demo.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script>
+        //display the version of nerdamer being used
+        $('#version').html(nerdamer.version());
+        //load the list of supported functions
+        var supported = nerdamer.supported(),
+            l = supported.length,
+            supportlist = $('#supported-functions');
+        for(var i=0; i<supported.length; i++) {
+            var name = supported[i];
+            supportlist.append($('<a href="./functions/'+name+'.html">'+name+'</a>'));
+        }
+        
     </script>
 </body>
 

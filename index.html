@@ -9,15 +9,15 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Nerdamer | Symbolic math expression evaluator for javascript | </title>
-    <!-- this was pushed -->
+    <title>Nerdamer | Symbolic Math for Javascript</title>
+
     <!-- Bootstrap Core CSS -->
-    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom CSS -->
-    <!--<link href="./css/styles.css" rel="stylesheet">-->
-    <link href="./css/style.css" rel="stylesheet">
-
+    <link href="css/site.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="./img/favicon.png">
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -32,23 +32,12 @@
 
         ga('create', 'UA-58729441-1', 'auto');
         ga('send', 'pageview');
-
     </script>
-    <style>
-        #forkongithub a{background:#ABABAB;color:#fff;text-decoration:none;font-family:arial,sans-serif;
-        text-align:center;font-weight:bold;padding:5px 40px;font-size:1rem;line-height:2rem;
-        position:relative;transition:0.5s;}#forkongithub a:hover{background:#56CE65;color:#fff;}
-        #forkongithub a::before,#forkongithub a::after{content:"";width:100%;display:block;position:absolute;
-        top:1px;left:0;height:1px;background:#fff;}#forkongithub a::after{bottom:1px;top:auto;}
-        @media screen and (min-width:800px){#forkongithub{position:fixed;display:block;top:-15px;
-        right:0;width:200px;overflow:hidden;height:200px;z-index:9999;}
-        #forkongithub a{width:200px;position:absolute;top:60px;right:-60px;
-        transform:rotate(45deg);-webkit-transform:rotate(45deg);-ms-transform:rotate(45deg);
-        -moz-transform:rotate(45deg);-o-transform:rotate(45deg);box-shadow:4px 4px 10px #222;}}
-    </style>
+
 </head>
 
 <body>
+
     <!-- Navigation -->
     <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
         <div class="container">
@@ -60,27 +49,19 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="./">
-                    <img src="./images/logo_sm.png" alt="nerdamer-logo"/>
-                </a>
+                <a class="navbar-brand" href="#"><!--<img src="./img/logo.png" alt="Nerdamer"/>--></a>
             </div>
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav">
-                    <li class="active">
-                        <a href="./" >Home</a>
-                    </li>
-<!--                    <li>
-                        <a href="./download.html">Downloads</a>
-                    </li>-->
-                    <li>
-                        <a href="./demo.html">Demo</a>
-                    </li>
                     <li>
                         <a href="./documentation.html">Documentation</a>
                     </li>
                     <li>
-                        <a href="./tests.html">Tests</a>
+                        <a href="./examples.html">Examples</a>
+                    </li>
+                    <li>
+                        <a href="./demo.html">Demo</a>
                     </li>
                 </ul>
             </div>
@@ -89,68 +70,118 @@
         <!-- /.container -->
     </nav>
 
+    <header class="index-header">
+        <div class="container center-trans-container">
+            <div class="row center-trans-row" >
+                <div class="col-lg-12 center-trans-wrapper">
+                    <div class="center-trans">
+                        <img src="./img/logo_large.png" alt="" class="logo-large"/>
+                        <h1>| <span class="bright">Symbolic</span> Math for <span class="bright">Javascript</span> |</h1>
+                        <h2 class="hidden-xs hidden-sm">No server side program needed</h2>
+                        <h2 class="hidden-xs hidden-sm">Flexible and easily extended</h2>
+                        <div class="row">
+                            <div class="btn-wrapper">
+                                <div class="col-lg-6">
+                                    <a href="./demo.html" class="btn btn-lg intro-btn hidden-sm hidden-xs hidden-md">Test it out</a>
+                                </div>
+                                <div class="col-lg-6">
+                                    <a href="https://github.com/jiggzson/nerdamer" class="btn btn-lg intro-btn">Fork it on Github</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
     <!-- Page Content -->
     <div class="container">
-        <div class="rounded-15 white padded">
-            <div id="message">
-                <span id="forkongithub"><a href="https://github.com/jiggzson/nerdamer">Fork me on GitHub</a></span>
-                <h2>What is Nerdamer?</h2>
-                    <p>
-                        Nerdamer is a small and light-weight symbolic math expression evaluator written in javaScript. The parsing is done
-                        purely in javascript and uses no server-side program whatsoever. It can export to a pure javascript function,
-                        ideal for filtering user input.
-                    </p><br/>
 
-                    <p>
-                        Nerdamer is released as open source so you can modify it as needed. If you find the parser useful or if you're having any 
-                        problems you can also contact me at 
-                        <a href='&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#109;&#97;&#114;&#116;&#105;&#110;&#46;&#114;&#46;&#100;&#111;&#110;&#107;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;'>
-                            &#109;&#97;&#114;&#116;&#105;&#110;&#46;&#114;&#46;&#100;&#111;&#110;&#107;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
-                        </a>.
-                        If I have the time I'll be more than happy to help. I greatly appreciate feedback as this helps me decide in which direction 
-                        to take this library and what features to improve or add. 
-                    </p>
-                    <hr>
-                    <h2>Getting Started</h2>
-                    <p>
-                        To get started, get yourself a copy of Nerdamer.
-                    </p>
-                    <div class="btn-group" role="group">
+        <hr>
+
+        <div class="row">
+            <div class="col-sm-8">
+                <div class="btn-group" role="group">
                         <a href="https://github.com/jiggzson/nerdamer/zipball/master" class="btn btn-default">Download <strong>ZIP File</strong></a>
                         <a href="https://github.com/jiggzson/nerdamer/tarball/master" class="btn btn-default">Download <strong>TAR Ball</strong></a>
                         <a href="https://github.com/jiggzson/nerdamer" class="btn btn-default">View On <strong>GitHub</strong></a>
                     </div>
-                </div>
-                <div>
-            </div>
-            <hr>
-            <div id="disqus_thread"></div>
-            <script type="text/javascript">
-                /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
-                var disqus_shortname = 'nerdamer'; // required: replace example with your forum shortname
+                <h2>What Is Nerdamer?</h2>
+                <p>
+                    Nerdamer is a small and light-weight symbolic math expression evaluator written in javaScript. The parsing is done purely in 
+                    javascript and uses no server-side program whatsoever. It can export to a pure javascript function, ideal for filtering user input.
+                </p>
+                <p>
+                    Nerdamer is modular so you only need to load the parts you need. Because of this and it's small footprint it can easily be embedded into your 
+                    applications giving them instant CAS capabilities.
+                </p>
+                <p>
+                    If you're having any 
+                        problems you can contact me at 
+                        <a href='&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#109;&#97;&#114;&#116;&#105;&#110;&#46;&#114;&#46;&#100;&#111;&#110;&#107;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;'>
+                            &#109;&#97;&#114;&#116;&#105;&#110;&#46;&#114;&#46;&#100;&#111;&#110;&#107;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+                        </a>.
 
-                /* * * DON'T EDIT BELOW THIS LINE * * */
-                (function() {
-                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-                })();
-            </script>
-            <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+                </p>
+                <p>
+                    <a class="btn btn-default btn-lg" href="./documentation.html">Documentation &raquo;</a>
+                </p>
+                <hr>
+                <h2>Projects using nerdamer</h2>
+                <ul class="credits">
+                    <li><a href="http://www.mathespass.at/klasse4/gleichungssysteme_rechner.php">Gleichungssysteme Rechner</a></li>
+                    <li><a href="http://www.gamaso.com/">GaMaSo</a></li>
+                    <li><a href="http://mathe-coach-janmp.herokuapp.com/sign-in">Mathe-Coach</a></li>
+                </ul>
+                <h2>Comments</h2>
+                <div id="disqus_thread"></div>
+                <script type="text/javascript">
+                    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+                    var disqus_shortname = 'nerdamer'; // required: replace example with your forum shortname
+
+                    /* * * DON'T EDIT BELOW THIS LINE * * */
+                    (function() {
+                        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                    })();
+                </script>
+                <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+            </div>
+            <div class="col-sm-4">
+                <h2>Project Credits</h2>
+                <ul class="credits">
+                    <li><a href="http://www.dafont.com/ancient-geek.font">Ancient Geek (Logo font)</a></li>
+                    <li><a href="http://www.akiti.ca/PolyRootRe.html">David Binner (Jenkins Traub javascript port)</a></li>
+                    <li><a href="https://github.com/peterolson/BigInteger.js/tree/master">Peter Olson (BigInteger.js)</a></li>
+                </ul>
+            </div>
         </div>
-    </div> 
-    <footer>
-        <div class="container">
-            Copyright &copy; 2015 | Nerdamer.com
-        </div>
-    </footer>
+        <!-- /.row -->
+
+        <!-- Footer -->
+        <footer>
+            <div class="row">
+                <div class="col-lg-12 text-center">
+                    <p>Copyright &copy; Nerdamer.com <span class="date"></span></p>
+                </div>
+            </div>
+            <!-- /.row -->
+        </footer>
+
+    </div>
     <!-- /.container -->
 
-    <!-- jQuery Version 1.11.0 -->
-    <script src="./js/jquery-1.11.0.js"></script>
+    <!-- jQuery -->
+    <script src="js/jquery.js"></script>
 
     <!-- Bootstrap Core JavaScript -->
-    <script src="./js/bootstrap.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script>
+        $('.date').html(new Date().getFullYear());
+    </script>
 
 </body>
 

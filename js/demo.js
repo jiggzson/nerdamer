@@ -2,7 +2,7 @@
  * Author   : Martin Donk
  * Website  : http://www.nerdamer.com
  * Email    : martin.r.donk@gmail.com
- * version  : 2.0
+ * version  : 3.0
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,468 +21,295 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
+ * 
+ * Graphing Utility: http://maurizzzio.github.io/function-plot/
+ * 
+ * Special thanks:
+ *  Brosnan Yuen for his contributions to graphing
+ *  Guppy for graphical input
  */
-
 (function(){
-    //remove any expressions which may currently be loaded
-    nerdamer.clear('all');
-    
-    //set the version
-    $('.version').html("Using version "+nerdamer.version());
-
-    var $input = $('#expr-input'),
-        $submit = $('#expr-submit'),
-        $panel = $('#expr-panel'),
-        $clear = $('#clear-all'),
-        isDiv = $input.prop('tagName') === 'DIV',
-        getFn = isDiv ? 'text' : 'val',
-        setFn = isDiv ? 'html' : 'val',
-        history = [],
-        modifiers = [],
-        lastRecalled = 0,
-        //Create chart variables
-        $start = $('#graph_start'),
-        $end = $('#graph_end'),
-        $step = $('#graph_step'),
-        $type = $('#graph_type'),
-        data_columns = [ ['x']],
-        chart_step = 1,
-        chart_start = 1,
-        chart_end = 10,
-        chart = {},
-        new_chart = function() {
-            chart = c3.generate({
-			bindto: '#graph',
-			data: {
-				x: 'x',
-				columns: data_columns,
-				type: $type.val()
-			},
-			zoom: {
-				enabled: true
-			}
-		  });
-        };
-
-    new_chart();
-
-    var get_function_num = function(text) {
-        if (text == 'x')
-        {
-            return -1;
-        }
-        return parseInt(text.substring(1,text.length),10);
-    };
-
-    //Loop through and generate data for each function
-    var gen_chart_data = function(name,expression) {
-        var graph_data = [name];
-        var start_domain = Number(chart_start);
-        var step_domain  = Number(chart_step);
-        var end_domain = Number(chart_end);
-        var expressions_length = nerdamer.expressions().length;
-        for (var i = start_domain; i <= end_domain ; i += step_domain)
-        {
-            var out = 0;
-            try
-            {
-                out = nerdamer(expression,{x:i}).evaluate().valueOf();
-            }
-            catch(err)
-            {
-                console.log(err.message);
-            }
-            graph_data.push(out);
-
-        }
-
-        while (nerdamer.expressions().length > expressions_length)
-        {
-            nerdamer.clear(expressions_length+1);
-        }
-
-
-        return graph_data;
-    };
-
-    //Update all functions
-    var update_graph = function() {
-        //Generate domain
-        var graph_domain = d3.range(chart_start, (chart_end+chart_step) , chart_step);
-        graph_domain.unshift('x');
-
-        data_columns.forEach(function(val, i,arr)
-        {
-            var array_name = val[0];
-            if (i == 0)
-            {
-                arr[i] = graph_domain;
-            }
-            else
-            {
-                arr[i] = gen_chart_data(array_name,nerdamer.expressions()[ get_function_num(array_name) ]  );
-            }
-        });
-
-        //Load chart
-        new_chart();
-	};
-
-    //Add new data to graph
-	var add_data_to_graph = function(data) {
-        //Update
-        update_graph();
-        var function_number = get_function_num(data[0]);
-        data_columns
-        var insert_index = data_columns.reduce(function(iMax,x,i,a) {
-            return ((get_function_num(x[0]) > get_function_num(a[iMax][0]) ) && (get_function_num(x[0]) < function_number )) ? i : iMax;
-        }, 0);
-
-        data_columns.splice(insert_index+1, 0, data);
-
-        //Load chart
-        new_chart();
-        console.log(data_columns);
-	};
-
-    //Delete data from graph
-    var delete_data_graph = function(name) {
-        var delete_index = get_function_num(name);
-        var changed = false;
-        data_columns.forEach(function(val, i,arr)
-        {
-            var current_name = val[0];
-            if (current_name == name)
-            {
-                changed = true;
-            }
-
-            if (get_function_num(current_name) >= delete_index)
-            {
-                var num = get_function_num(current_name);
-                --num;
-                arr[i][0] = '%'+( num.toString() );
-            }
-        });
-
-        if (changed) {
-            data_columns.splice(delete_index, 1);
-        }
-        //Update
-        update_graph();
-
-	};
-
-
-
-    //format the text from mathquill into something that nerdamer can understand
-    var standardize = function(text) {
-        return text.replace(/\*\*/g, '^')
-                .replace(/\*/g, '')
-                .replace(/cdot /g, '*')
-                .replace(/([a-z0-9_])(\({2})(.*?,.*?)(\){2})/gi, function(){
-                    return arguments[1]+'('+arguments[3]+')';
-                });
-    };
-
-    //this renders to the user by appending it to the output panel
-    function render(result, eqNumber, $panel){
-        var div = $('<div class="panel-row"></div>'),
-        span;
-        
-        //keep in mind that the eqNumber may be equal to zero, in which case the next check returns false.    
-        if(eqNumber) {
-            //set the equation number for easy removal from the DOM later
-            div.data('eqNumber', eqNumber);
-            div.append('<span class="bold">%'+eqNumber+' </span>: '); 
-            span = $('<span>$'+result+'$<span>');
-            //span.mathquill('redraw').appendTo(div).mathquill();
-            span.appendTo(div);
-            //Graph button
-            div.append('  <a href="javascript:void(0)" class="add_graph">add graph</a>');
-        }
-        else {
-            div.append('<span class="info">'+result+'<span>');
-        }
-        
-        div.append(' <a href="javascript:void(0)" class="delete">delete</a>');
-
-
-        $panel.append(div);
-        //if(span) span.mathquill('redraw');
-        
-        //Typeset the math with Mathjax
-        MathJax.Hub.Queue(["Typeset",MathJax.Hub,div[0]]);
-    }
-    
-    var getInput = function() {
-        return $input[getFn]().split(' ').join('');
-    };
-    
-
-    //split the string into two pieces. The first being the declaration and the rest being the parameters
-    var separate = function(s) {
-        var l = s.length,
-            openBrackets = 0;
-        for(var i=0; i<l; i++) {
-            var ch = s.charAt(i);
-            if(ch === '(' || ch === '[') openBrackets++; //record and open brackets
-            if(ch === ')' || ch === ']') openBrackets--; //close the bracket
-            if(ch === ',' && !openBrackets) return [s.substr(0, i), s.substr(i+1, l)];
-        }
-        return [s, ''];
-    };
-
-    //read the declared knowns into an object
-    var getKnowns = function(knownsString) { 
-        var knownsArray = knownsString.split(',');
-        var knowns = {};
-        for(var i=0; i<knownsArray.length; i++) {
-            var known = knownsArray[i].split('=');
-            //if a known was declare then return one
-            if(known[0]) knowns[known[0]] = known[1];
-        }
-        return knowns;
-    };
-
-    //the declaration may be a request to reuse a previously declare expression
-    //this is made known by starting with %
-    var evaluate = function(str) { 
-        var declarationParts = separate(str),
-            declaration = declarationParts[0],
-            knownsString = declarationParts[1],
-            firstChar = declaration.charAt(0),
-            expression = str;
-
-            //is it a function declaration?
-            var matches = /(.+)\((.+)\):=(.+)/g.exec(declaration);
-
-        if(matches) {
-            //if there are matches then it's a function declaration so let's treat it as such
-            var fnName = matches[1],
-            //extract the variables declarations by first removing the brackets and then splitting 
-            //the string by the commas
-            variables = matches[2].split(','),
-            //the functions body
-            fnBody = matches[3];
-            
-            
-            //validate the function name
-            try { 
-                nerdamer.validateName(fnName);
-                //set the functions
-                nerdamer.setFunction(fnName, variables, fnBody);
-                return 'Info: function '+fnName+' was successfully set using '+declaration;
-            }
-            catch(e) {;}    
-            return 'Error: Could not set '+fnName+'. Invalid function name.';
-        }
-        else {
-            try{
-                var cps = declaration.split(':');
-                if(cps.length > 1) {
-                    var v = cps.shift();
-                    var val = cps.shift().split(',').shift();
-                    nerdamer.setVar(v, val);
-                    return 'Info: variable '+v+' '+(val === 'delete' ? 'was deleted' : 'was set to '+val);
-                }
-            }
-            catch(e){;}
-            
-            //the expression must be the declaration
-            expression = declaration;
-        }
-
-        //add the expression 
-        try {
-            //read out one or more variable declarations
-            expression = expression.replace(/%\d*/g, function() {
-                var eqNumber = arguments[0].substr(1, arguments[0].length);
-                try {
-                    result = nerdamer.getEquation(eqNumber)[getFn]();
-                } 
-                catch(e) {
-                    result = 0;
-                }
-                var retval = '('+result+')';
-                return retval;
+    $(function() {
+        var chartNumber = 0;
+        //the panel where the expressions get displayed
+        var $panel = $('#demo-panel');
+        //the id of input of the expression/equation
+        var inputId = "demo-input";
+        //the id of the button to trigger processing
+        var buttonId = "process-btn";
+        //bind the button for processing
+        $('#'+buttonId).click(process);
+        //text input
+        var textInput = $('#text-input');
+        //make preparations for Guppy
+        Guppy.get_symbols(["builtins","plugins/guppy/sym/symbols.json","plugins/guppy/sym/extra_symbols.json"]);
+        var guppy = new Guppy(inputId, {
+                empty_content: "\\color{gray}{\\text{Visual editor. Enter your expression here}}",
+                done_callback: process
             });
+        //define how the user is being notified.
+        function notify(msg) {
+            var modal = $('#alertModal');
+            modal.find('.modal-body').html(msg);
+            modal.modal('show');
+        }
+        //the graphing method. This method builds on Brosnan Yuen's idea and work.
+        //the biggest change is no longer graphing everything to one graph but it's own graph
+        function graph(expression, element) {
+            try {
+                var defaults = {
+                    start:  -10,
+                    end:    10,
+                    step:   1
+                };
+                var label = function(text) {
+                    return $('<label/>', {text: text});
+                };
+                var evaluated = nerdamer(expression),
+                    vars = evaluated.variables();
+                //we are only able go graph functions of 1 variable
+                if(vars.length > 1)
+                    throw new Error('Cannot graph function containing more than 1 variable');
+                //call the evaluate function and create a function for a speed boost
+                var f = evaluated.buildFunction();
+                //generate the id for the graph
+                var id = 'chart'+chartNumber++;
+                //add a wrapper
+                var wrapper = $('<div/>', {class: 'graph-wrapper'});
+                //generate the container for the graph
+                var container = $('<div/>', {'id': id, class: 'graph'}); 
+                //put it all together
+                wrapper.append($('<a/>', {class: 'remove-graph pull-right', text:'remove', href: 'javascript:void(0)'}));
+                wrapper.append(container);
+                wrapper.insertBefore(element);
+                //create the plot
+                functionPlot({
+                    title: expression,
+                    target: '#'+id,
+                    width: $('#demo-panel').width(),
+                    height: 300,
+                    grid: true,
+                    data: [{
+                        // force the use of builtIn math
+                        graphType: 'polyline',
+                        fn: function (scope) {
+                          // scope.x = Number
+                          var x = scope.x;
+                          return f(x);
+                        }
+                      }]
+                });
+            }
+            catch(e) {
+                notify('Cannot graph expression</br>'+e.toString());
+            }   
+            
+        }
+        //function to fetch the text from the input
+        function getText() {
+            if(USE_GUPPY)
+                return Guppy.instances[inputId].get_content('text');
+            else return textInput.val();
+        }
+        //function to fetch LaTeX
+        function getLaTeX() {
+            return Guppy.instances[inputId].get_content('latex');
+        }
+        //check to see if the evaluate box is checked
+        function evaluateIsChecked() {
+            return $('#expression-evaluate').is(':checked');
+        }
+        //check to see if the expand box is checked
+        function expandIsChecked() {
+            return $('#expression-expand').is(':checked');
+        }
+        //check to see if the expand box is checked
+        function toDecimal() {
+            return $('#to-decimal').is(':checked');
+        }
+        //Get the expression from the user input. The expression will come in the form expression, x=a, y=b, ...
+        //the problem becomes that the user might input some_function(param1, param2) , x=a, y=b
+        //doing a split by the comma would yield the undesired result. This method walks the string and looks for an open bracket
+        //and then a close bracket. If none is found we're golden and it returns the string. If one is found then it looks 
+        //for a close bracket. Any comma after that has to be the variable declarations
+        function extractExpression(str) {
+            var l = str.length,
+                openBrackets = 0;
+            for(var i=0; i<l; i++) {
+                var ch = str.charAt(i);
+                if(ch === '(' || ch === '[') openBrackets++; //record and open brackets
+                if(ch === ')' || ch === ']') openBrackets--; //close the bracket
+                if(ch === ',' && !openBrackets) return [str.substr(0, i), str.substr(i+1, l)];
+            }
+            return [str, ''];
+        };
+        //this method dictates the formatting of the expression for the panel
+        function PanelExpression(o) {
+            this.valueMap = o;
+        }
+        //CLASSES
+        PanelExpression.prototype = {
+            template: 
+                    '<div class="expression">'+
+                        '<div class="expression-delete expression-btn">'+
+                            '<a href="javascript:void(0)" title="Remove expression"><i class="fa fa-close"></i></a>'+
+                        '</div>'+
+                        '<div class="expression-graph expression-btn">'+
+                            '<a href="javascript:void(0)" title="Graph expression" data-expression="{{expression}}"><i class="fa fa-line-chart"></i></a>'+
+                        '</div>'+
+                        '<div class="expression-reload expression-btn">'+
+                            '<a href="javascript:void(0)" title="Load expression to editor" data-expression="{{expression}}"><i class="fa fa-refresh"></i></a>'+
+                        '</div>'+
+                        '<div class="expression-body">{{LaTeX}}</div>'+
+                    '</div>',
+            format: function(valueMap) {
+                valueMap = valueMap || this.valueMap;
+                var t = this.template;
+                for(var x in valueMap) 
+                    t = t.replace(new RegExp('{{'+x+'}}', 'g'), valueMap[x]);
+                return t;
+            },
+            toHTML: function() {
+                return $(this.format());
+            },
+            toString: function() {
+                return this.format();
+            }
+        };
+        //set the value for the input
+        function setInputValue(value) {
+            clear();
+            if(USE_GUPPY) {
+                guppy.insert_string(value);
+                guppy.activate();
+            }
+            else {
+                textInput.val(value);
+            }    
+        }
 
-            var result = nerdamer(expression, getKnowns(knownsString), modifiers),
-            type = result.isNumber() && !result.isInfinity() ? 'text' : 'latex';
-            modifiers = [];
-            return nerdamer.getEquation()[type]();
+        //This function is used to add the expression to the panel for display
+        function addToPanel(LaTeX, expression) {
+            $panel.append(new PanelExpression({
+                LaTeX: katex.renderToString(LaTeX),
+                expression: expression
+            }).toHTML());
         }
-        catch(e) {
-            console.log(e.stack)
-            return e;
+        //perform preparations before parsing. Extract variables and declarations
+        function prepareExpression(str) {
+            //the string will come in the form x+x, x=y, y=z
+            var extracted = extractExpression(str),
+                expression = extracted[0],
+                scope = {};
+            extracted[1].split(',').map(function(x) {
+                var parts = x.split('='),
+                   varname = parts[0],
+                   value = parts[1];
+                if(nerdamer.validVarName(varname) && typeof value !== 'undefined')
+                    scope[varname] = parts[1];
+            });
+            return [expression, scope];
         }
-    };
-    
-    var recordHistory = function(input) {
-        history.push($input[getFn]());
-        lastRecalled = 0;
-    };
-    
-    var setInputData = function(data) {
-        //clear the input
-        $input[setFn](data);
-    };
-    
-    var clearInput = function() {
-        $input[setFn]('');
-    };
-    
-    var browseHistory = function(direction) {
-        var what,
-        count = history.length;
-        if( direction === 'up' ) {
-            what = ( lastRecalled === 0 ) ? count-1 : lastRecalled -1;
+        //Clears the input
+        function clear() {
+            if(USE_GUPPY) {
+                guppy.set_content('<m><e/></m>');
+                guppy.render(true);
+            }
+            else {
+                $('#text-input').val('');
+            }    
+//            guppy.end();
+//            var n = getText().length+1;
+//            while(n--)
+//                guppy.backspace();
+//            guppy.home();
         }
-        else {
-            what = ( lastRecalled === count-1 ) ? 0 : lastRecalled +1;
+        //callback for handling of entered expression
+        function process() {
+            var expressionAndScope = prepareExpression(getText()),
+                expression = expressionAndScope[0],
+                scope = expressionAndScope[1],
+                //alternative regex: ^([a-z_][a-z\d\_]*)\(([a-z_,])\):=([\+\-\*\/a-z\d*_,\^!\(\)]+)
+                functionRegex = /^([a-z_][a-z\d\_]*)\(([a-z_,\s]*)\):=(.+)$/gi, //does not validate the expression
+                functionDeclaration = functionRegex.exec(expression),
+                LaTeX;
+            
+            //it might be a function declaration. If it is the scope object gets ignored
+            if(functionDeclaration) {
+                //Remember: The match comes back as [str, fnName, params, fnBody]
+                //the function name should be the first group of the match
+                var fnName = functionDeclaration[1],
+                    //the parameters are the second group according to this regex but comes with commas 
+                    //hence the splitting by ,
+                    params = functionDeclaration[2].split(','),
+                    //the third group is just the body and now we have all three parts nerdamer needs to create the function
+                    fnBody = functionDeclaration[3];
+                //we never checked if this is in proper format for nerdamer so we'll just try and if nerdamer complains we'll let the person know
+                try {
+                    nerdamer.setFunction(fnName, params, fnBody);
+                    LaTeX = nerdamer(fnName).toTeX()+ //parse the function name with nerdamer so we can get back some nice LaTeX
+                            '('+ //do the same for the parameters
+                                params.map(function(x) {
+                                    return nerdamer(x).toTeX();
+                                }).join(',')+
+                            '):='+
+                            nerdamer(fnBody).toTeX();
+
+                    if(Object.keys(scope).length > 0) 
+                        notify('A scope object was provided but is ignored for function declaration.');
+                    
+                    //add the LaTeX to the panel
+                    addToPanel(LaTeX, expression);   
+                    clear();
+                                
+                }
+                catch(e) {
+                    notify('Error: Could not set function.</br>'+e.toString());
+                }
+            }
+            else {
+                try {
+                    //wrap the expression in expand if expand is checked
+                    var evaluated = nerdamer(expandIsChecked() ? 'expand('+expression+')' : expression, scope),
+                        //check if the user wants decimals
+                        decimal = toDecimal() ? 'decimal' : undefined; 
+                    //call evaluate if the evaluate box is checked
+                    if(evaluateIsChecked()) {
+                        evaluated = evaluated.evaluate();
+                    }
+                    LaTeX = evaluated.toTeX(decimal);
+                    //add the LaTeX to the panel
+                    addToPanel(LaTeX, expression);   
+                    clear();
+                }
+                catch(e){
+                    notify('Something went wrong. Nerdamer could not parse expression!</br>'+e.toString());
+                }  
+            }
         }
-        lastRecalled = what;
-        
-        //set the value of the input
-        var data = history[lastRecalled];
-        setInputData(data);
-    };
-    
-    /*** Event binding ***/
-    $submit.click(function() {
-        $('.nerdamer-modifier').each(function() {
-            var $this = $(this);
-            if($this.is(":checked")) modifiers.push($this.attr('name'));
+        //EVENTS
+        //bind event for reload button click. This will reload the expression into
+        //the editor. The expression is stored in the data-expression property
+        $('#demo-panel').on('click', '.expression-reload a', function(e) {
+            setInputValue($(this).data('expression'));
         });
-        var numEquations = nerdamer.numEquations(),
-        input = getInput(),
-        result = evaluate(input),
-        num = 0,
-        newNumEquations = nerdamer.numEquations();
-        
-        //record the history
-        recordHistory(input);
-        
-        //if they don't equal each other then an equation was added
-        if(numEquations !== newNumEquations) num = newNumEquations;
-        //render the result
-        render(result, num, $panel);
-        
-        //clear the input
-        clearInput();
-    });
-    
-    //bind the keys
-    $input.keydown(function (e){
-        switch( e.keyCode ) {
-            case 13:
-                e.preventDefault();
-                $submit.click();
-                break;
-            case 38:
-                browseHistory('up');
-                break;
-            case 40: 
-                browseHistory('down');
-                break;
-        }
-    });
-    
-    $clear.click(function() {
-        nerdamer.clear('all');
-        //Override graph
-        data_columns = [ ['x']];
-        new_chart();
-        //remove all panel-rows from the DOM
-        $('.panel-row').remove();
-    });
-
-    $panel.on('click', '.delete', function(e) {
-        e.preventDefault();
-        var $parent = $(this).parent();
-        
-        $('.panel-row').each(function( index, element ) {
-            if ($(this).data('eqNumber') > $parent.data('eqNumber'))
-            {
-                $(this).data('eqNumber', index);
-                $(this).find('.bold').text("%"+index+" ");
-            }
+        //bind the event for graphing the expression
+        $('#demo-panel').on('click', '.expression-graph a', function(e) {
+            var $this = $(this),
+                expression = $this.data('expression'),
+                insertBefore = $this.parents().eq(1);;
+            //load this information to the graph data object and show the modal 
+            graph(expression, insertBefore);
         });
-
-
-        nerdamer.clear($parent.data('eqNumber'));
-
-        //remove the equation
-        delete_data_graph('%'+($parent.data('eqNumber') -1));
-
-        
-        //remove the div from the DOM
-        $parent.remove();
+        //bind the delete event
+        //bind the event for graphing the expression
+        $('#demo-panel').on('click', '.expression-delete a', function(e) {
+            $(this).parents().eq(1).remove();
+        });
+        //bind the event for removing graph
+        $('#demo-panel').on('click', '.remove-graph', function(e) { 
+            $(this).parents().eq(0).remove();
+        });
     });
-
-
-
-
-	//Callback for graphing
-	$panel.on('click', '.add_graph', function(e) {
-        e.preventDefault();
-        var $parent = $(this).parent();
-
-		var expression = nerdamer.expressions()[$parent.data('eqNumber') -1];
-
-        add_data_to_graph(gen_chart_data('%'+($parent.data('eqNumber') -1), expression ));
-    });
-
-
-    //Start textbox changed
-    $start.on('input',function() {
-
-        if (jQuery.isNumeric($start.val()) && jQuery.isNumeric($end.val()) )
-        {
-            var num_graph_start = parseFloat($start.val(),10);
-            var num_graph_end = parseFloat($end.val(),10);
-            if (num_graph_start < num_graph_end)
-            {
-
-                chart_start = num_graph_start;
-                update_graph();
-            }
-        }
-    });
-
-
-    //End textbox changed
-    $end.on('input',function() {
-
-        if (jQuery.isNumeric($start.val()) && jQuery.isNumeric($end.val()) )
-        {
-            var num_graph_start = parseFloat($start.val(),10);
-            var num_graph_end = parseFloat($end.val(),10);
-            if (num_graph_start < num_graph_end)
-            {
-                chart_end = num_graph_end;
-                update_graph();
-            }
-        }
-    });
-
-    $step.on('input',function() {
-
-        if (jQuery.isNumeric($step.val()))
-        {
-            var num_graph_step = parseFloat($step.val(),10);
-            if (num_graph_step > 0)
-            {
-                chart_step = num_graph_step;
-                update_graph();
-            }
-        }
-    });
-
-
-    $type.on('change', function() {
-        chart.transform($type.val());
-    })
-
 })();

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Nerdamer | Extending The Core</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="css/site.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="./img/favicon.png">
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <link rel="stylesheet" href="./plugins/highlightjs/styles/vs.css"> 
+    <script src="./plugins/highlightjs/highlight.pack.js"></script> 
+    
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="./"><img src="./img/logo.png" alt="Nerdamer"/></a>
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="./">Home</a>
+                    </li>
+                    <li>
+                        <a href="./documentation.html">Documentation</a>
+                    </li>
+                    <li>
+                        <a href="./demo.html">Demo</a>
+                    </li>
+                    <li>
+                        <a href="./quickstart.html">Quick Start</a>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+    <!-- Page Content -->
+    <div class="container">
+
+        <hr>
+
+        <div class="row">
+            <div class="col-sm-9">
+                <h1>Extending the core</h1>
+                <!--<h3>Subtitle</h3>-->
+                <p>
+                    Nerdamer makes it easy to extend the core and add your own custom functions. To extend the core we'll walk through a simple example.
+                    Let's imagine we want to add a custom function called <strong>kinetic</strong>. We would have two options. One would be to define
+                    it using nerdamer.setFunction.
+                </p>
+                <pre><code>nerdamer.setFunction('kinetic', ['m', 'v'], '(1/2)*m*v^2');</code></pre>
+                <p>If we than call the function with two new parameters say a, b then we see that it works as expected</p>
+                <pre><code>var x = nerdamer('kinetic(a, b)');
+console.log(x.toString());
+//(1/2)*a*b^2</code></pre>
+                <p>
+                    This approach work fine for one-liners but fails when it comes to more complex multi-step functions. For the sake of simplicity we'll stick to the one-line example 
+                    but we'll rewrite it utilizing the core functions.
+                </p>
+<pre><code>(function() {
+    var core = nerdamer.getCore(), //grab the core
+        _ = core.PARSER; //make a shortcut for the PARSER
+    function kinetic(m, v) {
+        var v_squared = _.pow(v.clone(), new core.Frac(2));
+        var mv_squared = _.multiply(m.clone(), v_squared);
+        return _.multiply(new Frac(1/2), mv_squared);
+    }
+})();</code></pre>
+                <p>
+                    There are three important things to keep in mind. (1) Multiplication, division, addition, subtraction, and power, are done using the _.multiply,
+                    _.divide, _.add, _.subtract, and _.pow methods (granted that _ has been created as a shortcut for core.PARSER). (2) Those method require their
+                    inputs to be Symbols. (3) When using a sum or product of a symbol in subsequent calculations always call clone on the symbol for safety. Nerdamer reuses
+                    symbols as much as possible so you would not want to accidentally add or multiply the same symbol twice or more. To wrap it all up just register the 
+                    the function.
+                </p>
+<pre><code>(function() {
+    var core = nerdamer.getCore(),
+        _ = core.PARSER,
+        Symbol = core.Symbol;
+    function kinetic(m, v) {
+        var v_squared = _.pow(v.clone(), new Symbol(2));
+        var mv_squared = _.multiply(m.clone(), v_squared);
+        return _.multiply(new Symbol(1/2), mv_squared);
+    }
+    
+    nerdamer.register({
+        name: 'kinetic',
+        visible: true,
+        numargs: 2,
+        build: function() { return kinetic; }
+    });
+})();</code></pre>
+                <p>
+                    The function can be called just as before. The two main benefits of using the second option are speed and the fact that you can have
+                    more complex calculations. That's not to say that it can't be done some other way.
+                </p>
+            </div>
+            <div class="col-sm-3">
+                <ul class="side-bar">
+                    <li class="active"><a href="./extending_core.html">Extending the core</a></li>
+                    <li><a href="./digging_deeper.html">Digging deeper</a></li>
+                    <li><a href="./examples.html">Examples</a></li>
+                </ul>     
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <div class="row">
+                <div class="col-lg-12 text-center">
+                    <p>Copyright &copy; Nerdamer.com <span class="date"></span></p>
+                </div>
+            </div>
+            <!-- /.row -->
+        </footer>
+
+    </div>
+    <!-- /.container -->
+
+    <!-- jQuery -->
+    <script src="js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.min.js"></script>
+    <script>
+        $('.date').html(new Date().getFullYear());
+    </script>
+    <script>hljs.initHighlightingOnLoad();</script>
+</body>
+
+</html>

@@ -1,170 +1,125 @@
-.main-input {
-    width: 60%;
+.demo-input {
+    width: 100%;
+    padding: 20px;
     border: 1px solid #CCC;
-    padding: 5px;
-}
-
-.delete {
-    margin-left: 10px;
-}
-
-.instructions {
-    font-size: 0.9em !important;
-}
-
-h3 {
-    margin: 5px;
-}
-
-.full-width-input { 
-    width: 100%;
-    padding: 1em; 
-    box-sizing: border-box; /* Opera/IE 8+ */ 
-    -webkit-box-sizing: border-box; /* Safari, Chrome et al */ 
-    -moz-box-sizing: border-box; /* Firefox */ 
-}
-
-.nerdamer-interface-container {
-    border: 10px solid #CCC;
-    border-radius: 10px;
-    margin: 0 auto;
-    padding: 15px;
-    background: #EFEFEF;
-}
-@media(max-width:500px){
-  .nerdamer-interface-container {
-    padding-bottom: 50px;
-  }
-  
-  .nerdamer-interface-container label {
-
-  }
-}
-
-@media(max-width: 320px) {
-    .nerdamer-interface-container {
-        padding-bottom: 100px;
-    }
-}
-.nerdamer-interface-input {
-    border: 1px solid #ABABAB;
     margin-bottom: 10px;
-    width: 100%;
-    resize: vertical;
-    font-size: 1.2em;
-    color: #434445;
-    outline: 0;
+}
+.collapse-a, .collapse-a:active, .collapse-a:hover, collapse-a:visited {
+    color: #800 !important;
+    text-decoration: underline;
 }
 
-
-.nerdamer-interface-button {
-    margin-left: 15px;
+#supported-functions a {
+    display: inline-block;
+    margin-right: 5px;
+    color: #a8465d;
+    font-weight: 600;
+}
+#demo-panel {
+    width: 100%;
+    margin-top: 20px;
+}
+.expression {
+    margin-top: 4px;
+    border: 1px solid #EFEFEF;
+    border-bottom-color: #CCC;
+}
+.expression > div {
+    padding: 10px;
+}
+.expression-body {
+    margin-right: 90px;
+}
+.expression-btn {
     float: right;
-    margin-bottom: 15px;
-}
-
-button::-moz-focus-inner {
-  border: 0;
-}
-
-.demo-container {
-    text-align: center;
-    border-radius: 6px;
-}
-
-.demo-container input {
-    width: 60%;
-    margin-right: 10px;
-    text-align: center;
-}
-
-.demo-container button{
-    vertical-align: top;
-}
-
-.instructions-container {
-    background: #646D7E;
-    padding: 15px;
-    color: #FFF;
-}
-
-#expr-panel {
-    margin-top: 1em;
-    text-align: left;
-}
-
-.version {
-    text-transform: uppercase;
-    float: left;
-    font-size: 11px;
-    padding-top: 4px;
-    font-weight: bold;
-}
-
-.top-bar {
-    text-align: right;
-    padding-bottom: 4px;
-    padding-right: 4px;
-}
-
-.btn-inverse { 
-  color: #ffffff; 
-  background-color: #1E1C21; 
-  border-color: #000000; 
-} 
- 
-.btn-inverse:hover, 
-.btn-inverse:focus, 
-.btn-inverse:active, 
-.btn-inverse.active, 
-.open .dropdown-toggle.btn-inverse { 
-    color: #ffffff; 
-    background-color: #000000; 
-    border-color: #000000; 
-} 
- 
-.btn-inverse:active, 
-.btn-inverse.active, 
-.open .dropdown-toggle.btn-inverse { 
-  background-image: none; 
-} 
- 
-.btn-inverse.disabled, 
-.btn-inverse[disabled], 
-fieldset[disabled] .btn-inverse, 
-.btn-inverse.disabled:hover, 
-.btn-inverse[disabled]:hover, 
-fieldset[disabled] .btn-inverse:hover, 
-.btn-inverse.disabled:focus, 
-.btn-inverse[disabled]:focus, 
-fieldset[disabled] .btn-inverse:focus, 
-.btn-inverse.disabled:active, 
-.btn-inverse[disabled]:active, 
-fieldset[disabled] .btn-inverse:active, 
-.btn-inverse.disabled.active, 
-.btn-inverse[disabled].active, 
-fieldset[disabled] .btn-inverse.active { 
-  background-color: #1E1C21; 
-  border-color: #000000; 
-} 
- 
-.btn-inverse .badge { 
-    color: #1E1C21; 
-    background-color: #ffffff; 
-}
-
-.panel-row {
-    border-top: 1px solid #CCC;
-    display: block;
-    padding: 1.25em 0;
-}
-
-.gray-header {
+    width: 30px;
     background: #EFEFEF;
-    border-radius: 5px;
+}
+.expression-btn a, expression-btn a:active, expression-btn a:hover, expression-btn a:visited {
+    color: #696969;
+}
+.demo-alert h5 {
+    background: #a8465d;
+    padding: 2px;
+    text-align: center;
+}
+.modal-header, .modal-body, .modal-footer {
+    background: #384452;
+    color: #FFF;
+    border: 0;
+ }
+ .modal-body {
+     background: #1e2329;
+     padding: 30px;
+ }
+ .modal-header .close span{
+     color: #FFF;
+ }
+ .modal-header {
+     padding: 5px;
+     padding-right: 15px;
+ }
+/*http://bootsnipp.com/snippets/featured/animated-radios-amp-checkboxes-nojs*/
+.checkbox label:after, 
+.radio label:after {
+    content: '';
+    display: table;
+    clear: both;
 }
 
-#expr-input {
-    width: 100%;
-    resize: vertical;
+.checkbox .cr,
+.radio .cr {
+    position: relative;
+    display: inline-block;
+    border: 1px solid #a9a9a9;
+    border-radius: .25em;
+    width: 1.3em;
+    height: 1.3em;
+    float: left;
+    margin-right: .5em;
+}
+
+.radio .cr {
+    border-radius: 50%;
+}
+
+.checkbox .cr .cr-icon,
+.radio .cr .cr-icon {
+    position: absolute;
+    font-size: .8em;
+    line-height: 0;
+    top: 50%;
+    left: 20%;
+}
+
+.radio .cr .cr-icon {
+    margin-left: 0.04em;
+}
+
+.checkbox label input[type="checkbox"],
+.radio label input[type="radio"] {
+    display: none;
+}
+
+.checkbox label input[type="checkbox"] + .cr > .cr-icon,
+.radio label input[type="radio"] + .cr > .cr-icon {
+    transform: scale(3) rotateZ(-20deg);
+    opacity: 0;
+    transition: all .3s ease-in;
+}
+
+.checkbox label input[type="checkbox"]:checked + .cr > .cr-icon,
+.radio label input[type="radio"]:checked + .cr > .cr-icon {
+    transform: scale(1) rotateZ(0deg);
+    opacity: 1;
+}
+.checkbox-label {
+    font-size: 0.7em;
+}
+/*GRAPH*/
+.graph svg text{
+    font-size: 10px;
+}
+.graph svg text.title {
+    font-size: 20px;
 }
