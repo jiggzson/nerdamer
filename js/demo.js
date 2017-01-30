@@ -284,6 +284,7 @@
                     clear();
                 }
                 catch(e){
+                    console.log(e.stack)
                     notify('Something went wrong. Nerdamer could not parse expression!</br>'+e.toString());
                 }  
             }

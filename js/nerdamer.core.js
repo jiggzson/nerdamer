@@ -4096,7 +4096,12 @@ var nerdamer = (function(imports) {
                     fname = symbol.fname;
                 //collect the arguments
                 for(var i=0; i<symbol.args.length; i++) {
-                    input.push(this.latex(symbol.args[i], option));
+                    var arg = symbol.args[i], item;
+                    if(typeof arg === 'string')
+                        item = arg;
+                    else
+                        item = this.latex(arg, option);
+                    input.push(item);
                 }
 
                 if(fname === SQRT) {
@@ -6417,3 +6422,5 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
+
+require('./Calculus');
