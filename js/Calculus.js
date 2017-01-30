@@ -297,7 +297,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 return trig_fns.indexOf(x) !== -1;
             };
             
-            if(depth > 2) throw new Error('Maximum depth reached. Exiting!');
+            if(depth > 5) throw new Error('Maximum depth reached. Exiting!');
             
             var get_udv = function(symbol) { 
                 var parts = [[/*L*/], [/*I*/], [/*A*/], [/*T*/], [/*E*/]];
@@ -884,6 +884,3 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
     ]);
 })();
-
-var x = nerdamer('integrate(-sin(x)*log(x)+cos(x)/x,x)');
-console.log(x.toTeX());
