@@ -4108,6 +4108,9 @@ var nerdamer = (function(imports) {
                 else if(fname === PARENTHESIS) { 
                     v[index] = this.brackets(input.join(','), 'parens');
                 }
+                else if(fname === 'integrate') {
+                    v[index] = '\\int'+this.braces(input[0])+this.braces('d'+input[1]);
+                }
                 else if(fname === FACTORIAL) {
                     var arg = symbol.args[0];
                     if(arg.power.equals(1) && (arg.isComposite() || arg.isCombination())) {
