@@ -160,6 +160,9 @@
                         '<div class="expression-reload expression-btn">'+
                             '<a href="javascript:void(0)" title="Load expression to editor" data-expression="{{expression}}"><i class="fa fa-refresh"></i></a>'+
                         '</div>'+
+                        '<div class="expression-reload-output expression-btn">'+
+                            '<a href="javascript:void(0)" title="Load output to editor" data-output="{{output}}"><i class="fa fa-arrow-up"></i></a>'+
+                        '</div>'+
                         '<div class="expression-body">{{LaTeX}}</div>'+
                     '</div>',
             format: function(valueMap) {
@@ -189,10 +192,12 @@
         }
 
         //This function is used to add the expression to the panel for display
-        function addToPanel(LaTeX, expression) {
+        function addToPanel(LaTeX, expression, output) {
+            output = output || expression;
             $panel.append(new PanelExpression({
                 LaTeX: katex.renderToString(LaTeX),
-                expression: expression
+                expression: expression,
+                output: output
             }).toHTML());
         }
         //perform preparations before parsing. Extract variables and declarations
@@ -273,18 +278,20 @@
                     //wrap the expression in expand if expand is checked
                     var evaluated = nerdamer(expandIsChecked() ? 'expand('+expression+')' : expression, scope),
                         //check if the user wants decimals
-                        decimal = toDecimal() ? 'decimal' : undefined; 
+                        decimal = toDecimal() ? 'decimal' : undefined,
+                        //the output is for the reload button
+                        output = evaluated.toString(); 
                     //call evaluate if the evaluate box is checked
                     if(evaluateIsChecked()) {
                         evaluated = evaluated.evaluate();
                     }
                     LaTeX = evaluated.toTeX(decimal);
                     //add the LaTeX to the panel
-                    addToPanel(LaTeX, expression);   
+                    addToPanel(LaTeX, expression, output);   
                     clear();
                 }
                 catch(e){
-                    console.log(e.stack)
+                    console.log(e.stack);
                     notify('Something went wrong. Nerdamer could not parse expression!</br>'+e.toString());
                 }  
             }
@@ -294,6 +301,10 @@
         //the editor. The expression is stored in the data-expression property
         $('#demo-panel').on('click', '.expression-reload a', function(e) {
             setInputValue($(this).data('expression'));
+        });
+        //the editor. The expression is stored in the data-expression property
+        $('#demo-panel').on('click', '.expression-reload-output a', function(e) {
+            setInputValue($(this).data('output'));
         });
         //bind the event for graphing the expression
         $('#demo-panel').on('click', '.expression-graph a', function(e) {
