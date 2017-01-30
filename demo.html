@@ -218,7 +218,7 @@
         $(function() {
             var textInput = $('#text-input');
             //link the enter button    
-            textInput.keypress(function(e) { console.log(9)
+            textInput.keypress(function(e) { 
                 if(e.keyCode === 13) {
                     $('#process-btn').click();
                 }
@@ -228,11 +228,7 @@
                 USE_GUPPY = !USE_GUPPY; //hit the switch
                 var defaultText = 'Use text input',
                     altText = 'Use visual editor',
-                    guppyLink = $('#guppy-link');
-            
-                
-                if(USE_GUPPY) guppyLink.show();
-                else guppyLink.hide();
+                    guppyInput = $('#demo-input');
                 
                 $(this).text(USE_GUPPY ? defaultText : altText);
                 if(USE_GUPPY) {
