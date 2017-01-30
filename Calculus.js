@@ -884,6 +884,3 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
     ]);
 })();
-
-var x = nerdamer('integrate(tan(x)^3*sec(x)^3,x)');
-console.log(x.toString());
