@@ -612,8 +612,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     }
                     //this is a mouthful. There has to be a bette way
                     else if(l === 2 && symbols[0].fname === 'sec' && symbols[1].fname === 'tan' && symbols[0].args[0].equals(symbols[1].args[0])) {
-                        var a = symbols[0].args[0].clone().stripVar(dx);
-                        return _.parse(format('({0})*(1/({1}*cos({2})))', symbol.multiplier, a, symbols[1].args[0]));
+                        if(symbols[0].isLinear() && symbols[1].isLinear()) {
+                            var a = symbols[0].args[0].clone().stripVar(dx);
+                            return _.parse(format('({0})*(1/({1}*cos({2})))', symbol.multiplier, a, symbols[1].args[0]));
+                        } 
+                        else {
+                            stop();
+                        }
                     }
                     else if(l === 2 && symbols[1].group === S) {
                         //check for x^2/sqrt(1-x^2). Should be trig sub but this will do for now
@@ -879,3 +884,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
     ]);
 })();
+
+var x = nerdamer('integrate(tan(x)^3*sec(x)^3,x)');
+console.log(x.toString());
