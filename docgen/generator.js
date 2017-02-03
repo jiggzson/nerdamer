@@ -13,10 +13,17 @@ let example_template = fs.readFileSync(example_file).toString();
 
  for(var file in fdocs) {
     let page = fdocs[file];
-    let file_name = file.replace(/__/g, '.');
+    let file_name_parts = file.split('__');
+    let file_name;
+    if(page.type === 'internal' && file_name_parts.length > 1) 
+        file_name = file_name_parts[1]; //use the part after the double dash for simplicity
+    else 
+        file_name = file.replace(/__/g, '.');
+    
     let html_file = file_name+'.html';
     let file_path = target_dir+html_file;
     let output = data_template.replace(/%name%/g, file_name);
+    
     
     
     for(let tag in page) {

@@ -79,14 +79,14 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>Algebra.gcd</h1>
+                    <h1>atanh</h1>
                     <hr>
-                    <h3>Greatest Common Divisor</h3>
+                    <h3>inverse hyperbolic tangent</h3>
                     <p>
-                        Gets the GCD of 2 polynomials
+                        Returns the inverse of tanh.
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("gcd(x)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("atan(x)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -104,10 +104,10 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('gcd(x^2+2*x+1, x^2+6*x+5)');
-console.log(x.toString())
-var y = nerdamer('gcd(b*z+a*z+b^2+a*b, a+b)');
-console.log(y.toString());</code></pre>
+                    <pre><code class="javascript">var r = nerdamer('atanh(0)');
+console.log(r.text());
+var t = nerdamer('atanh(-1)').evaluate()
+console.log(t.text());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -117,7 +117,7 @@ console.log(y.toString());</code></pre>
                 <ul class="side-bar">
                     <li><a href="../extending_core.html">Extending the Core</a></li>
                     <li><a href="../digging_deeper.html">Digging Deeper</a></li>
-                    <!--<li><a href="../more_examples.html">More Examples</a></li>-->
+                    <li><a href="../examples.html">Examples</a></li>
                 </ul>     
             </div>
         </div>
@@ -159,10 +159,10 @@ console.log(y.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('gcd(x^2+2*x+1, x^2+6*x+5)');
-oprint(x.toString())
-var y = nerdamer('gcd(b*z+a*z+b^2+a*b, a+b)');
-oprint(y.toString());
+                var r = nerdamer('atanh(0)');
+oprint(r.text());
+var t = nerdamer('atanh(-1)').evaluate()
+oprint(t.text());
             }
             catch(e) {
                 oprint(e.toString());

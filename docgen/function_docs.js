@@ -287,10 +287,10 @@ FUNCTIONS = {
         examples: [
             "nerdamer.setFunction('f', ['x', 'y'], 'x^2+y');",
             "var x = nerdamer('f(4, 7)').toString();",
-            "console.log(x);",
+            "console.log(x.toString());",
             "nerdamer.setFunction('g', ['z', 'x', 'y'], '2*x+3*y+4*z');",
             "x = nerdamer('g(3, 1, 2)');",
-            "console.log(x);"
+            "console.log(x.toString());"
         ],
         returns: 'nerdamer'
     },
@@ -408,7 +408,7 @@ FUNCTIONS = {
         returns: 'bool'
     },
     Expression__text: {
-        type: 'nerdamer',
+        type: 'Expression',
         usage: 'nerdamer.text(x)',
         full_name: 'text',
         description: 'Gets the list of reserved names. This is a list of names already in use by nerdamer excluding variable names. This is not a static list.',
@@ -420,10 +420,118 @@ FUNCTIONS = {
         },
         examples: [
             "var x = nerdamer('1/12+1/2*cos(x)-0.5');",
-            "console.log(x.text('decimals');",
-            "console.log(x.text('fractions'););"
+            "console.log(x.text('decimals'));",
+            "console.log(x.text('fractions'));"
         ],
         returns: 'String'
+    },
+    Expression__toTeX: {
+        type: 'Expression',
+        usage: 'nerdamer.toTeX',
+        full_name: 'toTeX',
+        description: 'Gets expression as LaTeX',
+        parameters: {
+            none: {
+                type: '',
+                description: "This function takes no arguments."
+            }
+        },
+        examples: [
+            "var x = nerdamer('(x+1)*cos(x+1)');",
+            "console.log(x.toTeX());",
+            "x = nerdamer('1/2*x+2*b/5*x^2');",
+            "console.log(x.toTeX());"
+        ],
+        returns: 'String'
+    },
+    Expression__evaluate: {
+        type: 'Expression',
+        usage: 'nerdamer(expression).evaluate()',
+        full_name: 'evaluate',
+        description: 'Forces evaluation of the expression.',
+        parameters: {
+            none: {
+                type: '',
+                description: 'This function takes no arguments'
+            }
+        },
+        examples: [
+            "var x = nerdamer('sin(9+5)');",
+            "//the expression is simpliefied but the functions aren't called",
+            "console.log(x.toString());",
+            "//force function calls with evaluate",
+            "console.log(x.evaluate().toString());"
+        ],
+        returns: 'Expression'
+    },
+    Expression__sub: {
+        type: 'Expression',
+        usage: 'nerdamer(expression).sub(value, for_value)',
+        full_name: 'substitute',
+        description: 'Substitutes a given value for another given value',
+        parameters: {
+            value: {
+                type: 'String',
+                description: "The value being substituted."
+            },
+            for_value: {
+                type: 'String',
+                description: "The value to substitute for."
+            }
+        },
+        examples: [
+            "var x = nerdamer('3*(x+1)^3+8*(x+1)^2+u').sub('x+1', 'u');",
+            "console.log(x.toString());",
+            "x = nerdamer('cos(x)*tan(x)').sub('tan(x)', 'sin(x)/cos(x)').evaluate()",
+            "console.log(x.toString());",
+            "//one more",
+            "x = nerdamer('(x+1)*cos(x+1)').sub('x+1', 'u');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    Expression__buildFunction: {
+        type: 'Expression',
+        usage: 'nerdamer(expression).buildFunction(args_array)',
+        full_name: 'buildFunction',
+        description: 'Generates a JavaScript function given the expression. This is perfect for plotting and filtering user input. Plotting for the demo is accomplished \n\
+                     using this. The order of the parameters is in alphabetical order by default but an argument array can be provided with the desired order.',
+        parameters: {
+            args_array: {
+                type: 'String[]',
+                description: "The argument array with the order in which they are preferred."
+            }
+        },
+        examples: [
+            "var e = nerdamer('x^2+y');",
+            "var f = e.buildFunction();",
+            "console.log(f(2, 3));",
+            "//change the variable order by passing in an array with the order",
+            "var g = e.buildFunction(['y', 'x']);",
+            "console.log(g(2, 3));"
+        ],
+        returns: 'Function'
+    },
+    Expression__variables: {
+        type: 'Expression',
+        usage: 'nerdamer(expression).variables()',
+        full_name: 'variables',
+        description: 'Get a list of the variables contained within the expression',
+        parameters: {
+            none: {
+                type: '',
+                description: "This function takes no arguments."
+            }
+        },
+        examples: [
+            "var e = nerdamer('x^2+y-a*e');",
+            "var variables = e.variables();",
+            "console.log(variables);",
+            "e = nerdamer('a*b*c^r+1');",
+            "variables = e.variables();",
+            "console.log(variables);"
+        ],
+        returns: 'String[]'
     },
     cosh: {
         type: 'internal',
@@ -438,9 +546,9 @@ FUNCTIONS = {
             }
         },
         examples: [
-            "var r = nerdamer('cosh(0)');", 
+            "var r = nerdamer('cosh(0)').evaluate();", 
             "console.log(r.toString());",
-            "var t = nerdamer('cosh(x)')", 
+            "var t = nerdamer('cosh(x)').evaluate()", 
             "console.log(t.toString());",
             "var u = nerdamer('cos(E)').evaluate()", 
             "console.log(u.toString());"
@@ -671,9 +779,9 @@ FUNCTIONS = {
         },
         examples: [
             "var r = nerdamer('asinh(0)');", 
-            "console.log(r.toString();",
-            "var t = nerdamer('asinh(1)');", 
-            "console.log(t.toString();"
+            "console.log(r.toString());",
+            "var t = nerdamer('asinh(1)').evaluate();", 
+            "console.log(t.toString());"
         ],
         returns: 'Number | Expression'
     },
@@ -709,9 +817,10 @@ FUNCTIONS = {
         },
         examples: [
             "var r = nerdamer('acosh(0)');", 
-            "console.log(r);",
-            "var t = nerdamer('acosh(-1)')", 
-            "console.log(t);"
+            "console.log(r.text());",
+            "//TODO imaginary numbers for acosh",
+            "var t = nerdamer('acosh(-1)').evaluate()", 
+            "console.log(t.text());"
         ],
         returns: 'Number | Expression'
     },
@@ -731,6 +840,44 @@ FUNCTIONS = {
             "console.log(r.toString());",
             "var t = nerdamer('acos(-1)')", 
             "console.log(t.toString());"
+        ],
+        returns: 'Number | Expression'
+    },
+    atanh: {
+        type: 'internal',
+        usage: 'atan(x)',
+        full_name: 'inverse hyperbolic tangent',
+        description: 'Returns the inverse of tanh.',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('atanh(0)');", 
+            "console.log(r.text());",
+            "var t = nerdamer('atanh(-1)').evaluate()", 
+            "console.log(t.text());"
+        ],
+        returns: 'Number | Expression'
+    },
+    atan: {
+        type: 'internal',
+        usage: 'atan(x)',
+        full_name: 'arctangent',
+        description: 'Returns the inverse of tan.',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('atan(0)');", 
+            "console.log(r.text());",
+            "var t = nerdamer('atan(-1)').evaluate()", 
+            "console.log(t.text());"
         ],
         returns: 'Number | Expression'
     },
@@ -828,7 +975,7 @@ FUNCTIONS = {
         usage: 'factorial(x)',
         full_name: 'factorial',
         aliases: ['fact'],
-        description: 'Returns the factorial of a number. Maps directly to Math.ceil(x) if numeric.',
+        description: 'Calculates the factorial of a number. Maps directly to Math.ceil(x) if numeric.',
         parameters: {
             x: {
                 type: 'expression',
@@ -848,7 +995,7 @@ FUNCTIONS = {
         usage: 'factorial(x)',
         full_name: 'factorial',
         aliases: ['factorial'],
-        description: 'Returns the factorial of a number. Maps directly to Math.ceil(x) if numeric.',
+        description: 'Calculates the factorial of a number. Maps directly to Math.ceil(x) if numeric.',
         parameters: {
             x: {
                 type: 'expression',
@@ -861,6 +1008,63 @@ FUNCTIONS = {
             "x = nerdamer('fact(9.1)').evaluate();",
             "console.log(x.text());",
             "x = nerdamer('(4/5)!*3!-1').evaluate();;",
+            "console.log(x.text());"
+        ],
+        returns: 'Number | Expression'
+    },
+    Ci: {
+        type: 'internal',
+        usage: 'Ci(number)',
+        full_name: 'CosineIntegral',
+        description: 'Calculates the cosine integral of a number.',
+        parameters: {
+            number: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('Ci(5)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer('Ci(0)').evaluate();",
+            "console.log(x.text());"
+        ],
+        returns: 'Number | Expression'
+    },
+    Si: {
+        type: 'internal',
+        usage: 'Si(number)',
+        full_name: 'SineIntegral',
+        description: 'Calculates the sine integral of a number.',
+        parameters: {
+            number: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('Si(5)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer('Si(0)').evaluate();",
+            "console.log(x.text());"
+        ],
+        returns: 'Number | Expression'
+    },
+    fib: {
+        type: 'internal',
+        usage: 'fib(number)',
+        full_name: 'fibonacci',
+        description: 'Calculates the fibonacci value given a number.',
+        parameters: {
+            number: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('fib(5)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer('fib(0)').evaluate();",
             "console.log(x.text());"
         ],
         returns: 'Number | Expression'
@@ -888,7 +1092,7 @@ FUNCTIONS = {
         type: 'internal',
         usage: 'mod(x)',
         full_name: 'mod',
-        description: 'Returns the modulo of two numbers.',
+        description: 'Calculates the modulo of two numbers.',
         parameters: {
             x: {
                 type: 'expression',
@@ -907,7 +1111,7 @@ FUNCTIONS = {
         type: 'internal',
         usage: 'sqrt(x)',
         full_name: 'square root',
-        description: 'Returns the square root of a number',
+        description: 'Calculates the square root of a number',
         parameters: {
             x: {
                 type: 'expression',
@@ -929,8 +1133,8 @@ FUNCTIONS = {
     log: {
         type: 'internal',
         usage: 'log(x)',
-        full_name: 'logarithm',
-        description: 'Returns the log of a number base e.',
+        full_name: 'natural logarithm',
+        description: 'Calculates the log of a number base e.',
         parameters: {
             x: {
                 type: 'expression',
@@ -942,6 +1146,25 @@ FUNCTIONS = {
             "console.log(x.toString());",
             "var y = nerdamer('log(2*e^2)');",
             "console.log(y.toString());"
+        ],
+        returns: 'Number | Expression'
+    },
+    log10: {
+        type: 'internal',
+        usage: 'log10(x)',
+        full_name: 'logarithm',
+        description: 'Calculates the log of a number base 10. Is a direct extension of Math.log10.',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('log10(100)').evaluate();",
+            "console.log(x.toString());",
+            "x = nerdamer('log10(100000)').evaluate();",
+            "console.log(x.toString());"
         ],
         returns: 'Number | Expression'
     },
@@ -1305,7 +1528,7 @@ FUNCTIONS = {
     Calculus__sum: {
         type: 'internal',
         usage: 'sum(expression, index, lower, upper)',
-        full_name: 'Greatest Common Divisor',
+        full_name: 'summation',
         description: 'Gets the GCD of 2 polynomials',
         parameters: {
             expression: {
@@ -1336,7 +1559,7 @@ FUNCTIONS = {
     Calculus__diff: {
         type: 'internal',
         usage: 'diff(expression, x, n)',
-        full_name: 'Differentiate',
+        full_name: 'differentiate',
         description: 'Gets the derivative.',
         parameters: {
             expression: {
@@ -1363,8 +1586,10 @@ FUNCTIONS = {
     Calculus__integrate: {
         type: 'internal',
         usage: 'integrate(expression, x)',
-        full_name: 'Differentiate',
-        description: 'Attempts to compute integral of the expression.',
+        full_name: 'integrate',
+        description: 'Attempts to compute integral of the expression. The depth of integration can be set using the "integration_depth" flag but be careful as this\n\
+                     can seriously degrade performance. See example below. The hasIntegral method can be used to check if the symbol was completely integrated.\n\
+                     This method will return true if the method was not completely integrated. The default depth is 4.',
         parameters: {
             expression: {
                 type: 'expression',
@@ -1372,16 +1597,27 @@ FUNCTIONS = {
             },
             x: {
                 type: 'expression',
-                description: "The variable with respect to integrate"
+                description: "The variable with respect to which integrate"
             }
         },
         examples: [
             "var x = nerdamer('integrate(10*q/(4*x^2+24*x+20), x)');",
             "console.log(x.toString());",
             "var y = nerdamer('integrate(sec(x)^2, x)'); //second derivative",
-            "console.log(y.toString());"
+            "console.log(y.toString());",
+            "var x  = nerdamer('integrate(cos(x)*x^6, x)');",
+            "console.log(x.toString());",
+            "//as you can see the expression still contains an integral",
+            "//we can use the hasIntegral method to check",
+            "console.log(x.hasIntegral());",
+            "//all nerdamer needed was a little more room. Let's give it some",
+            "nerdamer.set('integration_depth', 7);",
+            "x = nerdamer('integrate(cos(x)*x^6, x)');",
+            "console.log(x.toString());",
+            "//no integral. See...",
+            "console.log(x.hasIntegral());"
         ],
-        returns: 'Number | Expression'
+        returns: 'bool'
     },
 };
 module.exports = FUNCTIONS;

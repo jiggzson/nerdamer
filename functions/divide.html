@@ -79,30 +79,24 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>nerdamer.setVar</h1>
+                    <h1>divide</h1>
                     <hr>
-                    <h3>setVar</h3>
+                    <h3>divide</h3>
                     <p>
-                        Sets a known value in nerdamer. This differs from setConstant as the value can be overridden trough the scope. See example.
+                        Divides 2 polynomials.
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer.setVar(variable_name, value)</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("divide(x)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
                         <table class="table table-responsive table-condensed">
                             <tr>
     <td>
-        <span class="parameter-type">String </span>
-        <span class="parameter-name">name </span>
+        <span class="parameter-type">expression </span>
+        <span class="parameter-name">x </span>
     </td>
-    <td><span class="parameter-description">The known value to be set</span></td>
-</tr><tr>
-    <td>
-        <span class="parameter-type">Number|expression string </span>
-        <span class="parameter-name">value </span>
-    </td>
-    <td><span class="parameter-description">The value for the expression to be set to.</span></td>
+    <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
 </tr>
                         </table>
                     </div>
@@ -110,19 +104,10 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">nerdamer.setVar('x', '11');
-var x = nerdamer('x*x');
-console.log(x.toString());
-//nerdamer will use 13 instead of 11
-x = nerdamer('x*x', {x: 13});
-console.log(x.toString());
-//the value will be 121 again since the known value isn't being overridden
-x = nerdamer('x*x');
-console.log(x.toString());
-nerdamer.setVar('x', 'delete');
-//since there no longer is a known value it will just be evaluated symbolically
-x = nerdamer('x*x');
-console.log(x.toString());</code></pre>
+                    <pre><code class="javascript">var x = nerdamer('divide(x^2+2*x+1, x+1)');
+console.log(x.toString())
+var y = nerdamer('divide(-b*z-a*z+b^3+a*b^2+a*b+a^2, b+a)');
+console.log(y.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -174,19 +159,10 @@ console.log(x.toString());</code></pre>
     <script>
         $(function() {
             try {
-                nerdamer.setVar('x', '11');
-var x = nerdamer('x*x');
-oprint(x.toString());
-//nerdamer will use 13 instead of 11
-x = nerdamer('x*x', {x: 13});
-oprint(x.toString());
-//the value will be 121 again since the known value isn't being overridden
-x = nerdamer('x*x');
-oprint(x.toString());
-nerdamer.setVar('x', 'delete');
-//since there no longer is a known value it will just be evaluated symbolically
-x = nerdamer('x*x');
-oprint(x.toString());
+                var x = nerdamer('divide(x^2+2*x+1, x+1)');
+oprint(x.toString())
+var y = nerdamer('divide(-b*z-a*z+b^3+a*b^2+a*b+a^2, b+a)');
+oprint(y.toString());
             }
             catch(e) {
                 oprint(e.toString());

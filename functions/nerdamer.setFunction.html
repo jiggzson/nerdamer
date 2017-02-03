@@ -118,10 +118,10 @@
                 <div>
                     <pre><code class="javascript">nerdamer.setFunction('f', ['x', 'y'], 'x^2+y');
 var x = nerdamer('f(4, 7)').toString();
-console.log(x);
+console.log(x.toString());
 nerdamer.setFunction('g', ['z', 'x', 'y'], '2*x+3*y+4*z');
 x = nerdamer('g(3, 1, 2)');
-console.log(x);</code></pre>
+console.log(x.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -131,7 +131,7 @@ console.log(x);</code></pre>
                 <ul class="side-bar">
                     <li><a href="../extending_core.html">Extending the Core</a></li>
                     <li><a href="../digging_deeper.html">Digging Deeper</a></li>
-                    <!--<li><a href="../more_examples.html">More Examples</a></li>-->
+                    <li><a href="../examples.html">Examples</a></li>
                 </ul>     
             </div>
         </div>
@@ -175,10 +175,10 @@ console.log(x);</code></pre>
             try {
                 nerdamer.setFunction('f', ['x', 'y'], 'x^2+y');
 var x = nerdamer('f(4, 7)').toString();
-oprint(x);
+oprint(x.toString());
 nerdamer.setFunction('g', ['z', 'x', 'y'], '2*x+3*y+4*z');
 x = nerdamer('g(3, 1, 2)');
-oprint(x);
+oprint(x.toString());
             }
             catch(e) {
                 oprint(e.toString());

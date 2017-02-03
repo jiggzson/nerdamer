@@ -99,12 +99,10 @@ body {
     min-height: 100px;
     font-size: 0.8em;
 }
-#output > div:before {
-    
-}
 #output > div {
     margin-bottom: 5px;
     font-family: "Lucida Console", "Lucida Sans Typewriter", monaco, "Bitstream Vera Sans Mono", monospace;
+    word-wrap: break-word;
 }
 .parameter-type {
     color: #C23B22;

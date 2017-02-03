@@ -79,14 +79,14 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>Algebra.divide</h1>
+                    <h1>diff</h1>
                     <hr>
-                    <h3>divide</h3>
+                    <h3>differentiate</h3>
                     <p>
-                        Divides 2 polynomials.
+                        Gets the derivative.
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("divide(x)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("diff(expression, x, n)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -94,9 +94,21 @@
                             <tr>
     <td>
         <span class="parameter-type">expression </span>
-        <span class="parameter-name">x </span>
+        <span class="parameter-name">expression </span>
     </td>
     <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
+</tr><tr>
+    <td>
+        <span class="parameter-type">expression </span>
+        <span class="parameter-name">x </span>
+    </td>
+    <td><span class="parameter-description">The variable with respect to differentiate</span></td>
+</tr><tr>
+    <td>
+        <span class="parameter-type">expression </span>
+        <span class="parameter-name">n </span>
+    </td>
+    <td><span class="parameter-description">(Optional) The nth derivative.</span></td>
 </tr>
                         </table>
                     </div>
@@ -104,9 +116,9 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('divide(x^2+2*x+1, x+1)');
-console.log(x.toString())
-var y = nerdamer('divide(-b*z-a*z+b^3+a*b^2+a*b+a^2, b+a)');
+                    <pre><code class="javascript">var x = nerdamer('diff(cos(x)*sin(x), x)');
+console.log(x.toString());
+var y = nerdamer('diff(x^3+a*x^3+x^2, x, 2)'); //second derivative
 console.log(y.toString());</code></pre>
                 </div>
                 OUTPUT:
@@ -117,7 +129,7 @@ console.log(y.toString());</code></pre>
                 <ul class="side-bar">
                     <li><a href="../extending_core.html">Extending the Core</a></li>
                     <li><a href="../digging_deeper.html">Digging Deeper</a></li>
-                    <!--<li><a href="../more_examples.html">More Examples</a></li>-->
+                    <li><a href="../examples.html">Examples</a></li>
                 </ul>     
             </div>
         </div>
@@ -159,9 +171,9 @@ console.log(y.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('divide(x^2+2*x+1, x+1)');
-oprint(x.toString())
-var y = nerdamer('divide(-b*z-a*z+b^3+a*b^2+a*b+a^2, b+a)');
+                var x = nerdamer('diff(cos(x)*sin(x), x)');
+oprint(x.toString());
+var y = nerdamer('diff(x^3+a*x^3+x^2, x, 2)'); //second derivative
 oprint(y.toString());
             }
             catch(e) {

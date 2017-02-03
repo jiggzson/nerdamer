@@ -79,14 +79,14 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>Algebra.roots</h1>
+                    <h1>factor</h1>
                     <hr>
-                    <h3>polynomial roots</h3>
+                    <h3>factor</h3>
                     <p>
-                        Finds the roots of a univariate polynomial.
+                        Factor an expression. Multivariate factoring in currently under development.
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("roots(x)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("factor(x)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -96,7 +96,7 @@
         <span class="parameter-type">expression </span>
         <span class="parameter-name">x </span>
     </td>
-    <td><span class="parameter-description">a matrix from which the element is being retrieved.</span></td>
+    <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
 </tr>
                         </table>
                     </div>
@@ -104,9 +104,9 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('roots(x^2-3*x-10)');
+                    <pre><code class="javascript">var x = nerdamer('factor(x^2-3*x-10)');
 console.log(x.toString())
-var y = nerdamer('roots(x^2+1)');
+var y = nerdamer('factor(-b*z-a*z+b^3+a*b^2+a*b+a^2)');
 console.log(y.toString());</code></pre>
                 </div>
                 OUTPUT:
@@ -117,7 +117,7 @@ console.log(y.toString());</code></pre>
                 <ul class="side-bar">
                     <li><a href="../extending_core.html">Extending the Core</a></li>
                     <li><a href="../digging_deeper.html">Digging Deeper</a></li>
-                    <!--<li><a href="../more_examples.html">More Examples</a></li>-->
+                    <li><a href="../examples.html">Examples</a></li>
                 </ul>     
             </div>
         </div>
@@ -159,9 +159,9 @@ console.log(y.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('roots(x^2-3*x-10)');
+                var x = nerdamer('factor(x^2-3*x-10)');
 oprint(x.toString())
-var y = nerdamer('roots(x^2+1)');
+var y = nerdamer('factor(-b*z-a*z+b^3+a*b^2+a*b+a^2)');
 oprint(y.toString());
             }
             catch(e) {

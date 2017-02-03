@@ -105,9 +105,9 @@
                 EXAMPLES:
                 <div>
                     <pre><code class="javascript">var r = nerdamer('asinh(0)');
-console.log(r.toString();
-var t = nerdamer('asinh(1)');
-console.log(t.toString();</code></pre>
+console.log(r.toString());
+var t = nerdamer('asinh(1)').evaluate();
+console.log(t.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -117,7 +117,7 @@ console.log(t.toString();</code></pre>
                 <ul class="side-bar">
                     <li><a href="../extending_core.html">Extending the Core</a></li>
                     <li><a href="../digging_deeper.html">Digging Deeper</a></li>
-                    <!--<li><a href="../more_examples.html">More Examples</a></li>-->
+                    <li><a href="../examples.html">Examples</a></li>
                 </ul>     
             </div>
         </div>
@@ -160,9 +160,9 @@ console.log(t.toString();</code></pre>
         $(function() {
             try {
                 var r = nerdamer('asinh(0)');
-oprint(r.toString();
-var t = nerdamer('asinh(1)');
-oprint(t.toString();
+oprint(r.toString());
+var t = nerdamer('asinh(1)').evaluate();
+oprint(t.toString());
             }
             catch(e) {
                 oprint(e.toString());

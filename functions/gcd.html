@@ -79,14 +79,14 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>Calculus.sum</h1>
+                    <h1>gcd</h1>
                     <hr>
                     <h3>Greatest Common Divisor</h3>
                     <p>
                         Gets the GCD of 2 polynomials
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("sum(expression, index, lower, upper)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("gcd(x)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -94,27 +94,9 @@
                             <tr>
     <td>
         <span class="parameter-type">expression </span>
-        <span class="parameter-name">expression </span>
+        <span class="parameter-name">x </span>
     </td>
     <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
-</tr><tr>
-    <td>
-        <span class="parameter-type">expression </span>
-        <span class="parameter-name">index </span>
-    </td>
-    <td><span class="parameter-description">The index of summation</span></td>
-</tr><tr>
-    <td>
-        <span class="parameter-type">expression </span>
-        <span class="parameter-name">lower </span>
-    </td>
-    <td><span class="parameter-description">Starting index</span></td>
-</tr><tr>
-    <td>
-        <span class="parameter-type">expression </span>
-        <span class="parameter-name">upper </span>
-    </td>
-    <td><span class="parameter-description">Ending index</span></td>
 </tr>
                         </table>
                     </div>
@@ -122,9 +104,9 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('sum(x+1, x, 1, 5)');
+                    <pre><code class="javascript">var x = nerdamer('gcd(x^2+2*x+1, x^2+6*x+5)');
 console.log(x.toString())
-var y = nerdamer('sum(x+y, x, 1, 20)');
+var y = nerdamer('gcd(b*z+a*z+b^2+a*b, a+b)');
 console.log(y.toString());</code></pre>
                 </div>
                 OUTPUT:
@@ -135,7 +117,7 @@ console.log(y.toString());</code></pre>
                 <ul class="side-bar">
                     <li><a href="../extending_core.html">Extending the Core</a></li>
                     <li><a href="../digging_deeper.html">Digging Deeper</a></li>
-                    <!--<li><a href="../more_examples.html">More Examples</a></li>-->
+                    <li><a href="../examples.html">Examples</a></li>
                 </ul>     
             </div>
         </div>
@@ -177,9 +159,9 @@ console.log(y.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('sum(x+1, x, 1, 5)');
+                var x = nerdamer('gcd(x^2+2*x+1, x^2+6*x+5)');
 oprint(x.toString())
-var y = nerdamer('sum(x+y, x, 1, 20)');
+var y = nerdamer('gcd(b*z+a*z+b^2+a*b, a+b)');
 oprint(y.toString());
             }
             catch(e) {

@@ -79,24 +79,24 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>Algebra.factor</h1>
+                    <h1>Expression.variables</h1>
                     <hr>
-                    <h3>factor</h3>
+                    <h3>variables</h3>
                     <p>
-                        Factor an expression. Multivariate factoring in currently under development.
+                        Get a list of the variables contained within the expression
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("factor(x)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer(expression).variables()</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
                         <table class="table table-responsive table-condensed">
                             <tr>
     <td>
-        <span class="parameter-type">expression </span>
-        <span class="parameter-name">x </span>
+        <span class="parameter-type"> </span>
+        <span class="parameter-name">none </span>
     </td>
-    <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
+    <td><span class="parameter-description">This function takes no arguments.</span></td>
 </tr>
                         </table>
                     </div>
@@ -104,10 +104,12 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('factor(x^2-3*x-10)');
-console.log(x.toString())
-var y = nerdamer('factor(-b*z-a*z+b^3+a*b^2+a*b+a^2)');
-console.log(y.toString());</code></pre>
+                    <pre><code class="javascript">var e = nerdamer('x^2+y-a*e');
+var variables = e.variables();
+console.log(variables);
+e = nerdamer('a*b*c^r+1');
+variables = e.variables();
+console.log(variables);</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -117,7 +119,7 @@ console.log(y.toString());</code></pre>
                 <ul class="side-bar">
                     <li><a href="../extending_core.html">Extending the Core</a></li>
                     <li><a href="../digging_deeper.html">Digging Deeper</a></li>
-                    <!--<li><a href="../more_examples.html">More Examples</a></li>-->
+                    <li><a href="../examples.html">Examples</a></li>
                 </ul>     
             </div>
         </div>
@@ -159,10 +161,12 @@ console.log(y.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('factor(x^2-3*x-10)');
-oprint(x.toString())
-var y = nerdamer('factor(-b*z-a*z+b^3+a*b^2+a*b+a^2)');
-oprint(y.toString());
+                var e = nerdamer('x^2+y-a*e');
+var variables = e.variables();
+oprint(variables);
+e = nerdamer('a*b*c^r+1');
+variables = e.variables();
+oprint(variables);
             }
             catch(e) {
                 oprint(e.toString());

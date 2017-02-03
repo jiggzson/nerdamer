@@ -105,9 +105,9 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var r = nerdamer('cosh(0)');
+                    <pre><code class="javascript">var r = nerdamer('cosh(0)').evaluate();
 console.log(r.toString());
-var t = nerdamer('cosh(x)')
+var t = nerdamer('cosh(x)').evaluate()
 console.log(t.toString());
 var u = nerdamer('cos(E)').evaluate()
 console.log(u.toString());</code></pre>
@@ -120,7 +120,7 @@ console.log(u.toString());</code></pre>
                 <ul class="side-bar">
                     <li><a href="../extending_core.html">Extending the Core</a></li>
                     <li><a href="../digging_deeper.html">Digging Deeper</a></li>
-                    <!--<li><a href="../more_examples.html">More Examples</a></li>-->
+                    <li><a href="../examples.html">Examples</a></li>
                 </ul>     
             </div>
         </div>
@@ -162,9 +162,9 @@ console.log(u.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var r = nerdamer('cosh(0)');
+                var r = nerdamer('cosh(0)').evaluate();
 oprint(r.toString());
-var t = nerdamer('cosh(x)')
+var t = nerdamer('cosh(x)').evaluate()
 oprint(t.toString());
 var u = nerdamer('cos(E)').evaluate()
 oprint(u.toString());

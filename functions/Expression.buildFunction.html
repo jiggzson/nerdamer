@@ -79,30 +79,25 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>nerdamer.setVar</h1>
+                    <h1>Expression.buildFunction</h1>
                     <hr>
-                    <h3>setVar</h3>
+                    <h3>buildFunction</h3>
                     <p>
-                        Sets a known value in nerdamer. This differs from setConstant as the value can be overridden trough the scope. See example.
+                        Generates a JavaScript function given the expression. This is perfect for plotting and filtering user input. Plotting for the demo is accomplished 
+                     using this. The order of the parameters is in alphabetical order by default but an argument array can be provided with the desired order.
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer.setVar(variable_name, value)</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer(expression).buildFunction(args_array)</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
                         <table class="table table-responsive table-condensed">
                             <tr>
     <td>
-        <span class="parameter-type">String </span>
-        <span class="parameter-name">name </span>
+        <span class="parameter-type">String[] </span>
+        <span class="parameter-name">args_array </span>
     </td>
-    <td><span class="parameter-description">The known value to be set</span></td>
-</tr><tr>
-    <td>
-        <span class="parameter-type">Number|expression string </span>
-        <span class="parameter-name">value </span>
-    </td>
-    <td><span class="parameter-description">The value for the expression to be set to.</span></td>
+    <td><span class="parameter-description">The argument array with the order in which they are preferred.</span></td>
 </tr>
                         </table>
                     </div>
@@ -110,19 +105,12 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">nerdamer.setVar('x', '11');
-var x = nerdamer('x*x');
-console.log(x.toString());
-//nerdamer will use 13 instead of 11
-x = nerdamer('x*x', {x: 13});
-console.log(x.toString());
-//the value will be 121 again since the known value isn't being overridden
-x = nerdamer('x*x');
-console.log(x.toString());
-nerdamer.setVar('x', 'delete');
-//since there no longer is a known value it will just be evaluated symbolically
-x = nerdamer('x*x');
-console.log(x.toString());</code></pre>
+                    <pre><code class="javascript">var e = nerdamer('x^2+y');
+var f = e.buildFunction();
+console.log(f(2, 3));
+//change the variable order by passing in an array with the order
+var g = e.buildFunction(['y', 'x']);
+console.log(g(2, 3));</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -174,19 +162,12 @@ console.log(x.toString());</code></pre>
     <script>
         $(function() {
             try {
-                nerdamer.setVar('x', '11');
-var x = nerdamer('x*x');
-oprint(x.toString());
-//nerdamer will use 13 instead of 11
-x = nerdamer('x*x', {x: 13});
-oprint(x.toString());
-//the value will be 121 again since the known value isn't being overridden
-x = nerdamer('x*x');
-oprint(x.toString());
-nerdamer.setVar('x', 'delete');
-//since there no longer is a known value it will just be evaluated symbolically
-x = nerdamer('x*x');
-oprint(x.toString());
+                var e = nerdamer('x^2+y');
+var f = e.buildFunction();
+oprint(f(2, 3));
+//change the variable order by passing in an array with the order
+var g = e.buildFunction(['y', 'x']);
+oprint(g(2, 3));
             }
             catch(e) {
                 oprint(e.toString());

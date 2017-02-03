@@ -1735,10 +1735,9 @@ if((typeof module) !== 'undefined') {
                 return m;
             },
             factor: function(symbol, factors) {
-                var original = symbol.clone();
                 if(isInt(symbol.power)) {
                     factors = factors || new Factors();
-                    var map = {};
+                    var map = {}, original;
                     symbol = _.parse(core.Utils.subFunctions(symbol, map));
                     if(keys(map).length > 0) { //it might have functions
                         factors.preAdd = function(factor) {
@@ -1752,9 +1751,14 @@ if((typeof module) !== 'undefined') {
                     } 
                     
                     var vars = variables(symbol),
-                        isMultivariate = false;
+                        multiVar = vars.length > 1;
+                    //Since multivariate is experiental I want to compare numeric outputs to make
+                    //sure we're returning the correct value
+                    if(multiVar) 
+                        original = symbol.clone();
+
                     //minor optimization. Seems to cut factor time by half in some cases.
-                    if(vars.length > 1) {
+                    if(multiVar) {
                         var all_S = true, all_unit = true;
                         symbol.each(function(x) {
                             if(x.group !== S) all_S = false;
@@ -1770,12 +1774,16 @@ if((typeof module) !== 'undefined') {
                     }
                     else {
                         symbol = __.Factor.mfactor(symbol, factors);
-                        isMultivariate = true;
                     }
                     symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
                     factors.add(symbol);
                     
                     var retval = factors.toSymbol();
+
+                    //compare the inval and outval and they must be the same or else we failed
+                    if(multiVar && !core.Utils.compare(original, retval, vars)) {
+                        return original;                   }
+                    
                     return retval;
                 }
                 return symbol;    
