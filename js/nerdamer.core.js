@@ -1433,6 +1433,7 @@ var nerdamer = (function(imports) {
                 var retval;
                 if(g1 === g2 & g1 === S && symbol.isLinear() && this.value === symbol.value) {
                     //e.g. x^2+1, x=u : x is linear so it matches all x's
+                    retval = retval || this.clone();
                     retval.value = for_symbol.value;
                 }
                 else if(symbol.isLinear() && text(this, 'hash') === text(symbol, 'hash')) {
@@ -1459,6 +1460,12 @@ var nerdamer = (function(imports) {
                         retval.args[i] = this.args[i].sub(symbol, for_symbol);
                     }
                     retval.updateHash();
+                }
+                if(this.group === EX) {
+                    retval = retval || this.clone();
+                    retval.power = retval.power.sub(symbol, for_symbol);
+                    //it easer to just reparse the whole thing
+                    retval = _.parse(retval);
                 }
                 if(!retval) return this.clone();
                 return retval;
@@ -6527,6 +6534,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
-var x = nerdamer('atan(9)').evaluate();
-console.log(x.toString());
