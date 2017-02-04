@@ -51,7 +51,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     core.Settings.integration_depth = 4;
     
     var __ = core.Calculus = {
-        version: '1.2.0',
+        version: '1.3.1',
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
             index = index.value;

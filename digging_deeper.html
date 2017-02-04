@@ -115,6 +115,20 @@
                     If we are to add a symbol x then the lookup goes something like: Look for x in symbol. If x is found and it's not of group S then it's of group PL and 
                     see if this power already exists. If it does, add them otherwise create a new entry within x.
                 </p>
+                <p>
+                    One major benefit of this representation vs and array based representation comes when evaluating polynomials with large powers. 
+                    Given the polynomial x^5 for instance JavaScript would represent it as 
+                </p>
+                <pre>x: [,,,,,1] </pre>
+                <p>
+                    with the zero 
+                    index being the constants. You can quickly see how a polynomial in the form of
+                </p>
+                <pre>x^1000*x^1000*x^1000*x^1000*x^1000*x^1000*x^1000*x^1000*x^1000</pre> 
+                <p>
+                    can quickly take a browser to its knees vs the group method. The group method has some major inefficiencies mainly when dealing with cases such as 
+                    polynomial long division, GCD computations, etc. In this case nerdamer switches to the array based representation.
+                </p>
             </div>
             <div class="col-sm-3">
                 <ul class="side-bar">
