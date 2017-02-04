@@ -194,8 +194,20 @@
         //This function is used to add the expression to the panel for display
         function addToPanel(LaTeX, expression, output) {
             output = output || expression;
+            var TeX = katex.renderToString(LaTeX);
+            var h = /.+class="strut" style="height:([0-9\.]+)em.+/.exec(TeX)[1];
+            var adjustment = ''; 
+            if(h > 1.25 && h <= 1.6)
+                adjustment = '\\Large '
+            else if(h > 1.4 && h <= 2)
+                adjustment = '\\LARGE ';
+            else if(h > 1.4 && h <= 1.7)
+                adjustment = '\\huge ';
+            else if(h > 1.7)
+                adjustment = '\\Huge ';
+            console.log(h)
             $panel.append(new PanelExpression({
-                LaTeX: katex.renderToString(LaTeX),
+                LaTeX: katex.renderToString(adjustment+LaTeX),
                 expression: expression,
                 output: output
             }).toHTML());
@@ -323,5 +335,6 @@
         $('#demo-panel').on('click', '.remove-graph', function(e) { 
             $(this).parents().eq(0).remove();
         });
+        katex.render('-\\frac{2\\left(-\\frac{e^{a \\cdot x}}{a^{2}}+\\frac{e^{a \\cdot x} \\cdot x}{a}\\right)}{a}+\\frac{e^{a \\cdot x} \\cdot x^{2}}{a}', document.getElementById('example1'))
     });
 })();
