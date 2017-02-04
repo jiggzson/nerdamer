@@ -274,7 +274,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(10*q/(4*x^2+24*x+20), x)',
-                expected: '(5/8)*log((1+x)*(5+x)^(-1))*q'
+                expected: '10*((-1/16)*log(5+x)+(1/16)*log(1+x))*q'
             },
             // TODO jiggzson: This test is produces result (a+x)^(-1)*a+log(a+x)
             //{
@@ -294,8 +294,8 @@ describe('calculus', function () {
                 expected: '3*a*tan(x)'
             },
             {
-                given: 'integrate(a/(x^2+b*x+a*x+a*b),x)',
-                expected: '(-b+a)^(-1)*a*log((a+x)^(-1)*(b+x))'
+                given: 'integrate(a/(x^2+b*x+a*x+a*b),x)', //uglier for but still correct
+                expected: '(((-a^(-1)*b+1)^(-1)*a^(-2)*b+a^(-1))*log(b+x)-(-a^(-1)*b+1)^(-1)*a^(-1)*log(a+x))*a'
             },
             {
                 given: 'integrate(log(a*x+b),x)',
@@ -360,6 +360,22 @@ describe('calculus', function () {
             {
                 given: 'integrate(3*a*csc(a*x)^4, x)',
                 expected: '3*((-1/3)*a^(-1)*cot(a*x)*csc(a*x)^2+(-2/3)*a^(-1)*cot(a*x))*a'
+            },
+            {
+                given: 'integrate(1/8*a*2/(x^3+13*x^2+47*x+35),x)',
+                expected: '(1/4)*((-1/8)*log(5+x)+(1/12)*log(7+x)+(1/24)*log(1+x))*a'
+            },
+            {
+                given: 'integrate(a*2/(x^2+x),x)',
+                expected: '2*(-log(1+x)+log(x))*a'
+            },
+            {
+                given: 'integrate((x+7)/(x+1)^3,x)',
+                expected: '(-1/2)*(1+x)^(-1)+(-1/2)*(1+x)^(-2)*(7+x)'
+            },
+            {
+                given: 'integrate((3*x+2)/(x^2+x),x)',
+                expected: '2*log(x)+log(1+x)'
             }
         ];
 

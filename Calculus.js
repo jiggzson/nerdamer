@@ -44,7 +44,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
         return false;
     };
-    
     core.Expression.prototype.hasIntegral = function() {
         return this.symbol.hasIntegral();
     };
@@ -52,7 +51,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     core.Settings.integration_depth = 4;
     
     var __ = core.Calculus = {
-        version: '1.2.0',
+        version: '1.3.1',
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
             index = index.value;
@@ -304,8 +303,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             };
         },
         integrate: function(symbol, dt, depth) {
-            var untouched = symbol.clone();
-            
             depth = depth || 0;
             depth++; 
             var stop = function(msg) {
@@ -396,6 +393,61 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 retval = _.subtract(uv, integral_vdu);
                 return retval;
             };
+            function part_frac(num, den) { 
+                //we need both in expanded form and linear
+                if(num.group !== CB && !num.isLinear() || den.group !== CB && !den.isLinear())
+                    stop();
+                //make sure that den > num
+                var q = core.Algebra.div(num, den),
+                    M = new core.Matrix(), //prepare the two matrices
+                    c = new core.Matrix(),
+                    num_array = num.toArray(dx),
+                    m = new Symbol(1); //the constants
+                num = q[1]; //point to the remainder not the whole
+                //get the factors of the denominator
+                var factors = core.Algebra.Factor.factor(den); 
+                var factor_array = [];
+                //we first have to unwrap the factor and get them in ordered form. We use an array for this
+                factors.each(function(factor) {
+                    if(factor.group === FN && !factor.fname)  //it might be wrapped in parenthesis
+                        factor = factor.args[0];
+                    if(!factor.isLinear()) 
+                        factor = _.expand(factor);
+                    if(factor.isConstant())
+                        m = _.multiply(m, factor); //add it to the constants
+                    else
+                        factor_array.push(factor);
+                });
+                //the next step is to expand the factors excluding the current factor
+                //e.g. if the factors were (x+7)*(x+1)*(x+5) we want them as:
+                //x^2+6*x+5 because of: (x+1)*(x+5)
+                //x^2+12*x+35 because of: (x+7)*(x+5)
+                //x^2+8*x+7 because of: (x+7)*(x+1)
+                var l = factor_array.length;
+                
+                for(var i=0; i<l; i++) {
+                    var t = new Symbol(1);
+                    for(var j=0; j<l; j++) {
+                        if(i !== j) 
+                            t = _.multiply(t, factor_array[j].clone());
+                    }
+                    t = _.expand(t).toArray(dx);//this is one of the rows
+                    var e = num_array[i];
+                    c.elements[i] = e ?  [e] : [Symbol(0)]; //fill the holes in the coeffs
+                    M.elements[i] = t; //add the row to the matrix
+                }
+                //solve for A, B, C, etc. We transpose to have the powers in the columns
+                var L = M.transpose().invert().multiply(c);
+                //we can now integrate each one of them but remember we divided earlier so integrate the whole if it's not zero
+                var result = q[0].equals(0) ? q[0] : __.integrate(q[0], dx, depth);
+                for(var i=0; i<l; i++) {
+                    var integral = __.integrate(factor_array[i].invert(), dx, depth),
+                        cf = _.expand(L.elements[i][0]);
+                    var mm = _.divide(cf, m.clone());
+                    result = _.add(result, _.multiply(integral, mm));
+                }
+                return result;
+            };
             function poly_integrate(symbol) { 
                 var retval = symbol.clone();
                 retval.power = retval.power.add(new Frac(1));
@@ -417,36 +469,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 } 
                 try { //set up a try catch box to see if we can get out some factors
                     if(p.equals(-1)) { 
-                        var m = symbol.multiplier.clone();
-                        var tsymbol = symbol.clone().toUnitMultiplier();
-                        var factors = core.Algebra.Factor.factor(tsymbol.toLinear()); 
-                        if(factors.group === CB) {
-                            var factor_array = [],
-                                cnst = new Symbol(m);
-                            factors.each(function(x) {
-                                var factor = x.args[0];
-                                if(!factor.isConstant()) {
-                                    if(!factor.isLinear(dx)) stop(); //don't want any non-linear factors
-                                    factor_array.push(factor); //everything's good so add the factor
-                                }
-                                else cnst = _.multiply(cnst, factor);
-                            });
-                            
-                            //see if we have more than one usable factor
-                            if(factor_array.length === 2) {
-                                var A = factor_array[0].stripVar(dx),
-                                    B = factor_array[1].stripVar(dx),
-                                    arg = _.divide(factor_array[0].clone(), factor_array[1].clone());
-                                return  _.divide(_.multiply(_.subtract(B, A).invert(), _.symfunction('log', [arg])), cnst);
-                            }
-                        }
-                        //don't give up just yet
-                        else if(factors.power > 1 && factors.group === CP && 
-                                factors.symbols[dx].group === S && factors.symbols[dx].isLinear()) { 
-                            var n = _.subtract(_.parse(factors.power), new Symbol(1)),
-                                sym = factors.clone().toLinear(); 
-                            return _.parse(format('-({2})({0})*({1})^(-({0}))', n, sym, m));
-                        }
+                        if(bx.group === S && bx.isLinear()) 
+                            return _.symfunction('log', [fn]);
+                        else
+                            return part_frac(new Symbol(symbol.multiplier), symbol.toLinear());
                     }
                 }
                 catch(e){; }
@@ -563,6 +589,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         retval = __.integrate(cfsymbol, dx, depth);
                     }
                     else {
+                        //check if we can get away with partial fractions
+                        var num = symbol.getNum(),
+                            den = symbol.getDenom();
+                        if(den.isComposite() && den.power.equals(-1) && num.isComposite()) {
+                            return _.multiply(part_frac(num, den.invert()), coeff);
+                        }
                         //we collect the symbols and sort them descending group, descending power, descending alpabethically
                         var symbols = cfsymbol.collectSymbols().sort(function(a, b) {
                             if(a.group === b.group)  {
@@ -619,6 +651,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         same_args = arg1.equals(arg2); 
                                     //we can check that fn1 === cos and fn2 === sin. The order is guaranteed because we sorted it as such earlier
                                     if((fn1 === 'cos' && fn2 === 'sin' || fn1 === 'sin' && fn2 === 'cos') && same_args) { 
+                                        if(sym1.power.greaterThan(sym2.power))
+                                            stop();//we don't know how to handle, sin(x)^n/cos(x)^m where m > n,  yet
                                         //if it's in the form sin(x)^n*cos(x)^n then we can just return tan(x)^n which we know how to integrate
                                         if(fn1 === 'sin' && sym1.power.add(sym2.power).equals(0)) {
                                             sym1.fname = 'tan';
@@ -680,7 +714,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         }
 
                                     }
-                                    else if(fn1 === 'sec' && fn2 === 'tan' && same_args) {
+                                    else if(fn1 === 'tan' && fn2 === 'sec' && same_args) { 
+                                        stop();
+                                    }
+                                    else if(fn1 === 'sec' && fn2 === 'tan' && same_args) { 
                                         //transform tan = sqrt(sec(x)^2-1)
                                         if(sym1.isLinear() && sym2.isLinear()) {
                                             var a = arg2.stripVar(dx);
@@ -784,18 +821,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         retval = integration_by_parts(cfsymbol);
                     }
                     retval = _.multiply(retval, coeff);
-                }
-                //x+1
-                else if(g === CP && has_dx) {
-                    if(symbol.isLinear()) {
-                        retval = new Symbol(0);
-                        symbol.each(function(x) {
-                            retval = _.add(retval, __.integrate(x, dx, depth));
-                        });
-                    }
-                    else {
-                        return integrate_poly_fn(symbol);
-                    }  
                 }
                 //has to be all linear
                 //trig functions 
