@@ -540,11 +540,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     }
                 }
                 //x+x^2
-                else if(g === PL && has_dx) { 
-                    retval = new Symbol(0);
-                    symbol.each(function(x) {
-                        retval = _.add(retval, __.integrate(x, dx, depth));
-                    });
+                else if(g === CP || g === PL && has_dx) { 
+                    if(symbol.isLinear()) {
+                        retval = new Symbol(0);
+                        symbol.each(function(x) {
+                            retval = _.add(retval, __.integrate(x, dx, depth));
+                        });
+                    }
+                    else {
+                        return integrate_poly_fn(symbol);
+                    }    
                 }
                 //a*x
                 else if(g === CB && has_dx && symbol.isLinear()) { 
@@ -709,7 +714,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 }
                                 else if(sym2.group === S && sym2.contains(dx)) { 
                                     //take care of x/(a+x) & x/(a+x)^2
-                                    if(sym1.group === CP) {
+                                    if(sym1.group === CP && sym2.isLinear()) {
                                         var p = Math.abs(Number(sym1.power));
                                         if(p === 1 || p === 2) { 
                                             var tsymbol = sym1.clone().toLinear().toUnitMultiplier(),
@@ -1001,3 +1006,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
     ]);
 })();
+//integrate(sin(x)^2/cos(x)^5, x)
+var x = nerdamer('integrate(1/(x^2+x),x)');
+console.log(x.toString())
