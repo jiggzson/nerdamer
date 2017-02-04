@@ -181,5 +181,194 @@ describe('calculus', function () {
         }
     });
 
+    it('should integrate properly', function () {
+        // given
+        var testCases = [
+            {
+                given: 'integrate(sin(x), x)',
+                expected: '-cos(x)'
+            },
+            {
+                given: 'integrate(cos(x), x)',
+                expected: 'sin(x)'
+            },
+            {
+                given: 'integrate(2*x^2+x, x)',
+                expected: '(1/2)*x^2+(2/3)*x^3'
+            },
+            {
+                given: 'integrate(log(x), x)',
+                expected: '-x+log(x)*x'
+            },
+            {
+                given: 'integrate(sqrt(x), x)',
+                expected: '(2/3)*x^(3/2)'
+            },
+            {
+                given: 'integrate(asin(a*x), x)',
+                expected: 'a^(-1)*sqrt(-(a*x)^2+1)+asin(a*x)*x'
+            },
+            {
+                given: 'integrate(a/x, x)',
+                expected: 'a*log(x)'
+            },
+            {
+                given: 'integrate(x*e^x, x)',
+                expected: '-e^x+e^x*x'
+            },
+            {
+                given: 'integrate(x^3*log(x), x)',
+                expected: '(-1/16)*x^4+(1/4)*log(x)*x^4'
+            },
+            {
+                given: 'integrate(x^2*sin(x), x)',
+                expected: '-cos(x)*x^2+2*cos(x)+2*sin(x)*x'
+            },
+            {
+                given: 'integrate(sin(x)*log(cos(x)), x)',
+                expected: '-cos(x)*log(cos(x))+cos(x)'
+            },
+            {
+                given: 'integrate(x*asin(x), x)',
+                expected: '(-1/4)*asin(x)+(1/2)*asin(x)*x^2+(1/4)*sqrt(-x^2+1)*x'
+            },
+            {
+                given: 'integrate(q/((2-3*x^2)^(1/2)), x)',
+                expected: 'asin(sqrt(2)^(-1)*sqrt(3)*x)*q*sqrt(3)^(-1)'
+            },
+            {
+                given: 'integrate(1/(a^2+x^2), x)',
+                expected: 'a^(-1)*atan(a^(-1)*x)'
+            },
+            {
+                given: 'integrate(11/(a+5*r*x)^2,x)',
+                expected: '(-11/5)*(5*r*x+a)^(-1)*r^(-1)'
+            },
+            {
+                given: 'integrate(cos(x)*sin(x), x)',
+                expected: '(-1/2)*cos(x)^2'
+            },
+            {
+                given: 'integrate(x*cos(x)*sin(x), x)',
+                expected: '(-1/2)*cos(x)^2*x+(1/4)*cos(x)*sin(x)+(1/4)*x'
+            },
+            {
+                given: 'integrate(t/(a*x+b), x)',
+                expected: 'a^(-1)*log(a*x+b)*t'
+            },
+            {
+                given: 'integrate(x*(x+a)^3, x)',
+                expected: '((1/4)*x^4+(3/2)*a^2*x^2+a*x^3+a^3*x)*x+(-1/2)*a^2*x^3+(-1/2)*a^3*x^2+(-1/20)*x^5+(-1/4)*a*x^4'
+            },
+            {
+                given: 'integrate(4*x/(x^2+a^2), x)',
+                expected: '2*log(a^2+x^2)'
+            },
+            {
+                given: 'integrate(1/(x^2+3*a^2), x)',
+                expected: 'a^(-1)*atan(a^(-1)*sqrt(3)^(-1)*x)*sqrt(3)^(-1)'
+            },
+            {
+                given: 'integrate(8*x^3/(6*x^2+3*a^2), x)',
+                expected: '8*((-1/24)*a^2*log(3*a^2+x^2)+(1/12)*x^2)'
+            },
+            {
+                given: 'integrate(10*q/(4*x^2+24*x+20), x)',
+                expected: '(5/8)*log((1+x)*(5+x)^(-1))*q'
+            },
+            // TODO jiggzson: This test is produces result (a+x)^(-1)*a+log(a+x)
+            //{
+            //    given: 'integrate(x/(x+a)^2, x)',
+            //    expected: '-(a+x)^(-1)*x+log(a+x)'
+            //},
+            {
+                given: 'integrate(sqrt(x-a), x)',
+                expected: '(2/3)*(-a+x)^(3/2)'
+            },
+            {
+                given: 'integrate(x^n*log(x), x)',
+                expected: '(1+n)^(-1)*log(x)*x^(1+n)-(1+n)^(-2)*x^(1+n)'
+            },
+            {
+                given: 'integrate(3*a*sec(x)^2, x)',
+                expected: '3*a*tan(x)'
+            },
+            {
+                given: 'integrate(a/(x^2+b*x+a*x+a*b),x)',
+                expected: '(-b+a)^(-1)*a*log((a+x)^(-1)*(b+x))'
+            },
+            {
+                given: 'integrate(log(a*x+b),x)',
+                expected: '((a*x+b)*log(a*x+b)-a*x-b)*a^(-1)'
+            },
+            {
+                given: 'integrate(x*log(x),x)',
+                expected: '(-1/4)*x^2+(1/2)*log(x)*x^2'
+            },
+            {
+                given: 'integrate(log(a*x)/x,x)',
+                expected: '(1/2)*log(a*x)^2'
+            },
+            {
+                given: 'integrate(log(x)^2,x)',
+                expected: '-2*log(x)*x+2*x+log(x)^2*x'
+            },
+            {
+                given: 'integrate(t*log(x)^3,x)',
+                expected: '(-3*log(x)^2+6*log(x)+log(x)^3-6)*t*x'
+            },
+            {
+                given: 'integrate(x*log(x)^2,x)',
+                expected: '(-1/2)*log(x)*x^2+(1/2)*log(x)^2*x^2+(1/4)*x^2'
+            },
+            {
+                given: 'integrate(x^2*log(x)^2,x)',
+                expected: '(-2/9)*log(x)*x^3+(1/3)*log(x)^2*x^3+(2/27)*x^3'
+            },
+            {
+                given: 'integrate(x^2*e^(a*x),x)',
+                expected: '-2*(-a^(-2)*e^(a*x)+a^(-1)*e^(a*x)*x)*a^(-1)+a^(-1)*e^(a*x)*x^2'
+            },
+            {
+                given: 'integrate(8*e^(a*x^2),x)',
+                expected: '4*erf(sqrt(-a)*x)*sqrt(-a)^(-1)*sqrt(pi)'
+            },
+            {
+                given: 'integrate(5*x*e^(-8*a*x^2),x)',
+                expected: '(-5/16)*a^(-1)*e^(-8*a*x^2)*log(e)^(-1)'
+            },
+            {
+                given: 'integrate(x^2*sin(x),x)',
+                expected: '-cos(x)*x^2+2*cos(x)+2*sin(x)*x'
+            },
+            {
+                given: 'integrate(8*tan(b*x)^2,x)',
+                expected: '8*(-x+b^(-1)*tan(b*x))'
+            },
+            {
+                given: 'integrate(sec(a*x)^3,x)',
+                expected: '(1/2)*a^(-1)*log(sec(a*x)+tan(a*x))+(1/2)*a^(-1)*sec(a*x)*tan(a*x)'
+            },
+            {
+                given: 'integrate(sec(a*x)*tan(a*x),x)',
+                expected: 'a^(-1)*sec(a*x)'
+            },
+            {
+                given: 'integrate(3*a*cot(a*x)^4, x)',
+                expected: '3*((-1/3)*a^(-1)*cot(a*x)^3+a^(-1)*cot(a*x)+x)*a'
+            },
+            {
+                given: 'integrate(3*a*csc(a*x)^4, x)',
+                expected: '3*((-1/3)*a^(-1)*cot(a*x)*csc(a*x)^2+(-2/3)*a^(-1)*cot(a*x))*a'
+            }
+        ];
 
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given);
+
+            // then
+            expect(parsed.toString()).toEqual(testCases[i].expected);
+        }
+    });
 });
