@@ -382,9 +382,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 
                 return [u, dv];
             };
-            function integration_by_parts(symbol) {
+            function integration_by_parts(symbol) { 
                 var udv, u, dv, du, v, vdu, uv, retval, integral_vdu;
-                
                 //first LIATE
                 udv = get_udv(symbol);
                 u = udv[0]; 
@@ -392,8 +391,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 du = Symbol.unwrapSQRT(__.diff(u.clone(), dx));
                 v = __.integrate(dv.clone(), dx, depth);
                 vdu = _.multiply(v.clone(), du);
-                uv = _.multiply(u, v);
-                integral_vdu = __.integrate(vdu.clone(), dx, depth);
+                uv = _.multiply(u, v); 
+                integral_vdu = __.integrate(vdu.clone(), dx, depth); 
                 retval = _.subtract(uv, integral_vdu);
                 return retval;
             };
@@ -417,11 +416,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     });
                 } 
                 try { //set up a try catch box to see if we can get out some factors
-                    if(p.equals(-1)) {
-                        var factors = core.Algebra.Factor.factor(symbol.clone().toLinear());
+                    if(p.equals(-1)) { 
+                        var m = symbol.multiplier.clone();
+                        var tsymbol = symbol.clone().toUnitMultiplier();
+                        var factors = core.Algebra.Factor.factor(tsymbol.toLinear()); 
                         if(factors.group === CB) {
                             var factor_array = [],
-                                cnst = new Symbol(1);
+                                cnst = new Symbol(m);
                             factors.each(function(x) {
                                 var factor = x.args[0];
                                 if(!factor.isConstant()) {
@@ -430,15 +431,21 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 }
                                 else cnst = _.multiply(cnst, factor);
                             });
+                            
                             //see if we have more than one usable factor
                             if(factor_array.length === 2) {
                                 var A = factor_array[0].stripVar(dx),
                                     B = factor_array[1].stripVar(dx),
                                     arg = _.divide(factor_array[0].clone(), factor_array[1].clone());
-                                A.multiplier = A.multiplier.multiply(factor_array[1].symbols[dx].multiplier);
-                                B.multiplier = B.multiplier.multiply(factor_array[0].symbols[dx].multiplier);
                                 return  _.divide(_.multiply(_.subtract(B, A).invert(), _.symfunction('log', [arg])), cnst);
                             }
+                        }
+                        //don't give up just yet
+                        else if(factors.power > 1 && factors.group === CP && 
+                                factors.symbols[dx].group === S && factors.symbols[dx].isLinear()) { 
+                            var n = _.subtract(_.parse(factors.power), new Symbol(1)),
+                                sym = factors.clone().toLinear(); 
+                            return _.parse(format('-({2})({0})*({1})^(-({0}))', n, sym, m));
                         }
                     }
                 }
@@ -446,7 +453,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 
                 b = bx.stripVar(dx); //strip out the dx so a*x becomes a. (a-x)
                 if(bx.isLinear() && symbol.group !== EX) { 
-                    if(p.equals(-1) && !b.equals(0)) { 
+                    if(p.equals(-1) && !b.equals(0) && bx.group !== PL) { 
                         var result = _.divide(_.symfunction('log', [fn.clone()]), b);
                         result.multiplier = result.multiplier.multiply(symbol.multiplier);
                         return result;
@@ -607,6 +614,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         same_args = arg1.equals(arg2); 
                                     //we can check that fn1 === cos and fn2 === sin. The order is guaranteed because we sorted it as such earlier
                                     if((fn1 === 'cos' && fn2 === 'sin' || fn1 === 'sin' && fn2 === 'cos') && same_args) { 
+                                        //if it's in the form sin(x)^n*cos(x)^n then we can just return tan(x)^n which we know how to integrate
+                                        if(fn1 === 'sin' && sym1.power.add(sym2.power).equals(0)) {
+                                            sym1.fname = 'tan';
+                                            sym1.updateHash();
+                                            return _.multiply(__.integrate(sym1, dx, depth), coeff);
+                                        }
                                         var p1_even = core.Utils.even(sym1.power),
                                             p2_even = core.Utils.even(sym2.power);
                                         retval = new Symbol(0);
@@ -669,13 +682,53 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             return _.multiply(_.symfunction('sec', [arg1.clone()]), _.divide(coeff, a));
                                         }
                                     }
+                                    else if((fn1 === 'cos' && fn2 === 'sec' || fn1 === 'sec' && fn2 === 'cos') && same_args) {
+                                        var t = [sym1, sym2];
+                                        if(fn1 === 'cos') t.reverse();
+                                        t[0].fname = 'cos';
+                                        t[0].invert().updateHash();
+                                        return __.integrate(_.multiply(_.multiply(t[0], t[1]), coeff), dx, depth);
+                                    }
+                                    else if((fn1 === 'sin' && fn2 === 'csc' || fn1 === 'csc' && fn2 === 'sin') && same_args) {
+                                        var t = [sym1, sym2];
+                                        if(fn1 === 'sin') t.reverse();
+                                        t[0].fname = 'sin';
+                                        t[0].invert().updateHash();
+                                        return __.integrate(_.multiply(_.multiply(t[0], t[1]), coeff), dx, depth);
+                                    }
                                 }
                                 //eliminate cos(x)/x
                                 else if(sym1.fname === 'cos' && sym2.power.equals(-1)) {
                                     var retval = _.parse('Ci('+symbols[0].args[0]+')');
                                     return _.multiply(retval, coeff);
                                 }
-                                else if(sym2.group === S && sym2.contains(dx)) {
+                                //eliminate sin(x)/x
+                                else if(sym1.fname === 'sin' && sym2.power.equals(-1)) {
+                                    var retval = _.parse('Si('+symbols[0].args[0]+')');
+                                    return _.multiply(retval, coeff);
+                                }
+                                else if(sym2.group === S && sym2.contains(dx)) { 
+                                    //take care of x/(a+x) & x/(a+x)^2
+                                    if(sym1.group === CP) {
+                                        var p = Math.abs(Number(sym1.power));
+                                        if(p === 1 || p === 2) { 
+                                            var tsymbol = sym1.clone().toLinear().toUnitMultiplier(),
+                                                a = tsymbol.stripVar(dx),
+                                                bx = _.subtract(tsymbol.clone(), a.clone()); 
+                                            if(bx.isLinear()) {
+                                                if(p === 1) {
+                                                    return _.multiply(_.add(__.integrate(_.divide(a.negate(), tsymbol) 
+                                                        ,dx, depth), new Symbol(dx)), coeff);
+                                                }
+                                                else if(p === 2) {
+                                                    //it's a substitution so let's make it
+                                                    var q = _.divide(a.clone(), tsymbol.clone());
+                                                    return _.multiply(_.add(_.symfunction('log', [tsymbol.clone()]), q), coeff);
+                                                }
+                                            }
+                                        }
+                                            
+                                    }
                                     //check for x^2/sqrt(1-x^2). Should be trig sub but this will do for now
                                     var d = __.integrate(sym1, dx, depth), //integrate and see if it's asin
                                         p = Number(sym2.power);
@@ -721,6 +774,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 return _.multiply(_.multiply(integrated, cnst), coeff);
                             }
                         }
+
                         //if all else fails we just do integration by parts
                         retval = integration_by_parts(cfsymbol);
                     }
@@ -817,8 +871,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         //http://www.sosmath.com/calculus/integration/powerproduct/powerproduct.html
                         //integrate odd and even power of cos and sin
                         if(fname === 'sin' || fname === 'cos' && arg_is_linear) { 
-                            var p = symbol.power.toDecimal(),
-                                arg = symbol.args[0],
+                            var p = symbol.power.toDecimal();
+                            //check to see if it's negative and then just transform it to sec or csc
+                            if(p < 0) {
+                                symbol.fname = fname === 'sin' ? 'csc' : 'sec';
+                                symbol.invert().updateHash();
+                                return __.integrate(symbol, dx, depth);
+                            }
+                            var arg = symbol.args[0],
                                 a = arg.stripVar(dx), // a from cos(a*x)
                                 rd = symbol.clone(), //cos^(n-1)
                                 rd2 = symbol.clone(), //cos^(n-2)
@@ -892,7 +952,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     retval = _.divide(symbol.clone(), a);
                                 }
                             }
-                            else {
+                            else { 
                                 var a = _.symfunction('log', [_.parse(symbol.value)]);
                                 retval = _.divide(symbol.clone(), a);
                             }
