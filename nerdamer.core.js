@@ -1411,6 +1411,50 @@ var nerdamer = (function(imports) {
             
             return retval;
         },
+        //returns symbol in array form with x as base e.g. a*x^2+b*x+c = [c, b, a]. 
+        toArray: function(v, arr) {
+            arr = arr || {
+                arr: [],
+                add: function(x, idx) {
+                    var e = this.arr[idx];
+                    this.arr[idx] = e ? _.add(e, x) : x;
+                }
+            };
+            var g = this.group;
+            
+            if(g === S && this.contains(v)) 
+                arr.add(new Symbol(this.multiplier), this.power);
+            else if(g === CB){
+                var a = this.stripVar(v),
+                    x = _.divide(this.clone()),
+                    p = x.isConstant() ? 0 : x.power;
+                arr.add(a, p);
+            }
+            else if(g === PL && this.value === v) {
+                this.each(function(x, p) {
+                    arr.add(x.stripVar(v), p);
+                });
+            }
+            else if(g === CP) {
+                //the logic: they'll be broken into symbols so e.g. (x^2+x)+1 or (a*x^2+b*x+c)
+                //each case is handled above
+                this.each(function(x) {
+                    x.toArray(v, arr);
+                });
+            }
+            else if(this.contains(v)){
+                throw new Error('Cannot convert to array! Exiting');
+            }
+            else {
+                arr.add(this.clone(), 0); //it's just a constant wrt to v
+            }
+            //fill the holes
+            arr = arr.arr; //keep only the array since we don't need the object anymore
+            for(var i=0; i<arr.length; i++) 
+                if(!arr[i])
+                    arr[i] = new Symbol(0);
+            return arr;
+        },
         //checks to see if a symbol contans a function
         hasFunc: function() {
             if(this.group === FN || this.group === EX) return true;
@@ -3783,7 +3827,7 @@ var nerdamer = (function(imports) {
             if(aIsSymbol && bIsSymbol) {
                 var result;
                 if(a.isConstant() && b.isConstant()) {
-                    if(b.equals(0)) err('Division by zero!');
+                    if(b.equals(0)) err('Division by zero not allowed!');
                     result = a.clone();
                     result.multiplier = result.multiplier.divide(b.multiplier);
                 }
