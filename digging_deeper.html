@@ -124,10 +124,37 @@
                     with the zero 
                     index being the constants. You can quickly see how a polynomial in the form of
                 </p>
-                <pre>x^1000*x^1000*x^1000*x^1000*x^1000*x^1000*x^1000*x^1000*x^1000</pre> 
+                <pre>x^10000000000*x^10000000000</pre> 
                 <p>
                     can quickly take a browser to its knees vs the group method. The group method has some major inefficiencies mainly when dealing with cases such as 
-                    polynomial long division, GCD computations, etc. In this case nerdamer switches to the array based representation.
+                    polynomial long division, GCD computations, etc. In this case nerdamer switches to the array based representation. At this point we have bigger
+                    concerns, mainly integer overflow.
+                </p>
+                <h3>Symbol representation</h3>
+                <p>
+                    Symbols are also represented in a simplified uniform matter. At the very least a symbol contains a multiplier, a value, a power, and a group. This is what the number 1 looks like:
+                </p>
+                <pre>
+{ 
+    group: 1,
+    value: '#',
+    multiplier: 
+    { [Number: 1]
+        num: { [Number: 1] value: 1, sign: false, isSmall: true },
+        den: { [Number: 1] value: 1, sign: false, isSmall: true } 
+    },
+    power: 
+    { [Number: 1]
+       num: { [Number: 1] value: 1, sign: false, isSmall: true },
+       den: { [Number: 1] value: 1, sign: false, isSmall: true } 
+    } 
+}
+                </pre>
+                <p>
+                    The power and multiplier are integer ratios of the bigNumber class. All numbers have a value of '#'. Other symbols carry their variable minus the power and multiplier as their value
+                    which is why x^2 can be group with x^3, etc. All symbols have a multiplier of class Frac. All symbols with the exception of group EX have a power of the class Frac as well. 
+                    EX have a symbol as their power. If udring an operation the symbol's power results in a number, nerdamer will automatically convert
+                    the group out of the EX group and the power back to class Frac. The goal is always keep the simplest and most compatible form.
                 </p>
             </div>
             <div class="col-sm-3">
