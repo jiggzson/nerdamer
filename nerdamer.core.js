@@ -1262,20 +1262,6 @@ var nerdamer = (function(imports) {
         isNegative: function() {
             return this.toDecimal() < 0;
         }
-        /*cache: (function() {
-            var c = {}, n = 100;
-            for (var i=0; i<n; i++) {
-                for(var j=0; j<n; j++) {
-                    //skip 1
-                    if(1 !== j) {
-                        var dec = i/j;
-                        if(typeof dec !== 'undefined') c[dec] = [i, j];
-                    }
-                }
-            }
-            
-            return c;
-        })() */
     };
     
     
@@ -1873,7 +1859,7 @@ var nerdamer = (function(imports) {
             if(!isSymbol(symbol)) err('Object '+symbol+' is not of type Symbol!');
             if(this.symbols) { 
                 var group = this.group;
-                if(group > FN) {
+                if(group > FN) { 
                     var key = symbol.keyForGroup(group); 
                     var existing = this.symbols[key]; //check if there's already a symbol there
                     if(action === 'add') {
@@ -2425,7 +2411,7 @@ var nerdamer = (function(imports) {
                         return group1+d+group2;
                     })
                     //allow omission of multiplication sign between brackets
-                    .replace( /\)\(/g, ')*(' );
+                    .replace( /\)\(/g, ')*(' ) || '0';
 
             var subs = substitutions || {},
                 stack = [], //the operator stack
@@ -3408,7 +3394,7 @@ var nerdamer = (function(imports) {
                     ap = a.power.toString(),
                     bp = b.power.toString();
                 //always keep the greater group on the left. 
-                if(g1 < g2 || (g1 === g2 && ap > bp)) return this.add(b, a);
+                if(g1 < g2 || (g1 === g2 && ap > bp && bp > 0)) return this.add(b, a);
                 
                 /*note to self: Please don't forget about this dilemma ever again. In this model PL and CB goes crazy
                  * because it doesn't know which one to prioritize. */
@@ -3422,10 +3408,16 @@ var nerdamer = (function(imports) {
                 var powEQ = ap === bp,
                     v1 = a.value,
                     v2 = b.value,
+                    aIsComposite = a.isComposite(),
+                    bIsComposite = b.isComposite(),
                     h1, h2, result;
 
-                if(a.isComposite()) h1 = text(a, 'hash');
-                if(b.isComposite()) h2 = text(b, 'hash');
+                if(aIsComposite) h1 = text(a, 'hash');
+                if(bIsComposite) h2 = text(b, 'hash');
+                
+                if(g1 === CP && g2 === CP && b.isLinear() && !a.isLinear()) {
+                    return this.add(a, b);
+                }   
 
                 //PL & PL should compare hashes and not values e.g. compare x+x^2 with x+x^3 and not x with x
                 if(g1 === PL && g2 === PL) { 
@@ -3463,8 +3455,7 @@ var nerdamer = (function(imports) {
                     //update the hash
                     result.value = g1 === PL ? h1 : v1;
                 }
-                else if(a.isComposite() && a.isLinear()) { 
-
+                else if(aIsComposite && a.isLinear()) { 
                     var canIterate = g1 === g2,
                         bothPL = g1 === PL && g2 === PL; 
 
