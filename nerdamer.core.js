@@ -3535,14 +3535,23 @@ var nerdamer = (function(imports) {
                                 b.elements[i] = _.add(a.elements[i], b.elements[i]);
                             });
                         }
-                        else if(isVector(a) && isMatrix(b)) {
+                        else if(isVector(a) && isMatrix(b)) { 
                             //try to convert a to a matrix
-                            a = new Matrix(a.elements);
-                            b = a.add(b);
+                            return _.add(b, a);
                         }
                         else if(isMatrix(a) && isVector(b)) {
-                            b = new Matrix(b.elements);
-                            b = a.add(b);
+                            if(b.elements.length === a.rows()) {
+                                var M = new Matrix(), l = a.cols();
+                                b.each(function(e, i) {
+                                    var row = [];
+                                    for(var j=0; j<l; j++) { 
+                                        row.push(_.add(a.elements[i-1][j].clone(), e.clone()));
+                                    }
+                                    M.elements.push(row);
+                                });
+                                return M;
+                            }
+                            else err('Dimensions must match!');
                         }
                     }
                 }
@@ -3578,14 +3587,26 @@ var nerdamer = (function(imports) {
                     if(a.dimensions() === b.dimensions()) b = a.subtract(b);
                     else _.error('Unable to subtract vectors. Dimensions do not match.');
                 }
-                else if(isMatrix(a) && isMatrix(b)) {
-                    var rows = a.rows();
-                    if(rows === b.rows() && a.cols() === b.cols()) {
-                        b.eachElement(function(x, i, j) {
-                            return _.subtract(x, a.elements[i][j]);
+                else if(isMatrix(a) && isVector(b)) {
+                    if(b.elements.length === a.rows()) {
+                        var M = new Matrix(), l = a.cols();
+                        b.each(function(e, i) {
+                            var row = [];
+                            for(var j=0; j<l; j++) { 
+                                row.push(_.subtract(a.elements[i-1][j].clone(), e.clone()));
+                            }
+                            M.elements.push(row);
                         });
+                        return M;
                     }
-                    else _.error('Matrix dimensions do not match!');
+                    else err('Dimensions must match!');
+                }
+                else if(isVector(a) && isMatrix(b)) {
+                    var M = b.clone().negate();
+                    return _.add(M, a);
+                }
+                else if(isMatrix(a) && isMatrix(b)) {
+                    b = a.subtract(b);
                 }
                 return b;
             }
@@ -3791,12 +3812,21 @@ var nerdamer = (function(imports) {
                         }
                         else if(isVector(a) && isMatrix(b)) {
                             //try to convert a to a matrix
-                            a = new Matrix(a.elements);
-                            b = a.multiply(b);
+                            return this.multiply(b, a);
                         }
-                        else if(isMatrix(a) && isVector(b)) {
-                            b = new Matrix(b.elements);
-                            b = a.multiply(b);
+                        else if(isMatrix(a) && isVector(b)) { 
+                            if(b.elements.length === a.rows()) {
+                                var M = new Matrix(), l = a.cols();
+                                b.each(function(e, i) {
+                                    var row = [];
+                                    for(var j=0; j<l; j++) { 
+                                        row.push(_.multiply(a.elements[i-1][j].clone(), e.clone()));
+                                    }
+                                    M.elements.push(row);
+                                });
+                                return M;
+                            }
+                            else err('Dimensions must match!');
                         }
                     }
                 }
@@ -4716,8 +4746,9 @@ var nerdamer = (function(imports) {
     Matrix.prototype = {
         //needs be true to let the parser know not to try to cast it to a symbol
         custom: true, 
-        set: function(row, column, value) {
-            if(!this.elements[row]) this.elements[row] = [];
+        set: function(row, column, value) { 
+            if(!this.elements[row]) 
+                this.elements[row] = [];
             this.elements[row][column] = isSymbol(value) ? value : new Symbol(value);
         },
         cols: function() {
@@ -4745,15 +4776,6 @@ var nerdamer = (function(imports) {
             for(i=0; i<nr; i++) {
                 for(j=0; j<nc; j++) {
                     this.elements[i][j] = fn.call(this, this.elements[i][j], i, j);
-                }
-            }
-        },
-        each: function(fn) {
-            var nr = this.rows(),
-                nc = this.cols(), i, j;
-            for(i=0; i<nr; i++) {
-                for(j=0; j<nc; j++) {
-                    fn(this.elements[i][j], i, j);
                 }
             }
         },
@@ -4897,10 +4919,24 @@ var nerdamer = (function(imports) {
           // this.columns should equal matrix.rows
           return (this.elements[0].length === l);
         },
+        sameSize: function(matrix) {
+            return this.rows() === matrix.rows() && this.cols() === matrix.cols();
+        },
         multiply: function(matrix) {    
             return block('SAFE', function(){
                 var M = matrix.elements || matrix;
-                if (!this.canMultiplyFromLeft(M)) { return null; }
+                if (!this.canMultiplyFromLeft(M)) { 
+                    if(this.sameSize(matrix)) {
+                        var MM = new Matrix();
+                        var rows = this.rows();
+                        for(var i=0; i<rows; i++) {
+                            var e = _.multiply(new Vector(this.elements[i]), new Vector(matrix.elements[i]));
+                            MM.elements[i] = e.elements;
+                        }
+                        return MM;
+                    }
+                    return null; 
+                }
                 var ni = this.elements.length, ki = ni, i, nj, kj = M[0].length, j;
                 var cols = this.elements[0].length, elements = [], sum, nc, c;
                 do { 
@@ -4920,6 +4956,30 @@ var nerdamer = (function(imports) {
                 } while (--ni);
                 return Matrix.fromArray(elements);
             }, undefined, this);
+        },
+        add: function(matrix) {
+            var M = new Matrix();
+            if(this.sameSize(matrix)) {
+                this.eachElement(function(e, i, j) {
+                    M.set(i, j, _.add(e.clone(), matrix.elements[i][j]));
+                });
+            }
+            return M;
+        },
+        subtract: function(matrix) {
+            var M = new Matrix();
+            if(this.sameSize(matrix)) {
+                this.eachElement(function(e, i, j) {
+                    M.set(i, j, _.subtract(e.clone(), matrix.elements[i][j]));
+                });
+            }
+            return M;
+        },
+        negate: function() {
+            this.each(function(e) {
+               return e.negate(); 
+            });
+            return this;
         },
         toVector: function() {
             if(this.rows () === 1 || this.cols() === 1) {
@@ -4958,6 +5018,9 @@ var nerdamer = (function(imports) {
             });
         }
     };
+    
+    //aliases
+    Matrix.prototype.each = Matrix.prototype.eachElement;
     
     /* END CLASSES */
 
