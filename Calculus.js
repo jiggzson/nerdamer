@@ -626,6 +626,42 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         });
                         
                         var l = symbols.length;
+                        var has_tan = false,
+                            has_sin_or_cos = false,
+                            expandable = true,
+                            all_fn = true; //check if their all functions
+                        //check if there is sin or cos and tan
+                        for(var i=0; i<l; i++) { 
+                            var sym = symbols[i];
+                            var g = sym.group, p = symbol.power;
+                            if(!(p > 0 && g === S || g === PL || g === CP) ) expandable = false;
+                            var fname = sym.fname; 
+                            if(!fname) all_fn = false;
+                            if(fname === TAN) has_tan = true;
+                            else if(fname === COS || fname === SIN) has_sin_or_cos = true;
+                        }
+                        //we'll substitute out tan
+                        if(has_tan && has_sin_or_cos) { 
+                            var new_symbol = new Symbol(1);
+                            for(var i=0; i<l; i++) {
+                                var sym = symbols[i], r;
+                                if(sym.group === EX)
+                                    stop(); //don't know what to do
+                                if(sym.fname === TAN) {
+                                    var x = _.symfunction(SIN, [sym.args[0].clone()]),
+                                        y = _.symfunction(COS, [sym.args[0].clone()]);
+                                    x.power = x.power.multiply(sym.power);
+                                    y.power = y.power.multiply(sym.power);
+                                    r = _.divide(x, y);
+                                    r.multiplier = r.multiplier.multiply(sym.multiplier);
+                                }
+                                else r = sym;
+                                new_symbol = _.multiply(new_symbol, r);
+                            }
+                            var intg = __.integrate(new_symbol, dx, --depth);
+                            return _.multiply(intg, coeff);
+                        }
+                        
                         //we go down the list of integrals that we know mainly those that are a product of two functions
                         if(l === 2) { 
                             //we can be done quickly with u substitution, but in order to do that we have to
@@ -826,6 +862,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 }  
                             }
                         }
+                        else if(l > 2) {
+                            if(all_fn) stop();
+                            if(expandable) 
+                                return _.multiply(__.integrate(_.expand(symbol), dx, --depth), coeff);
+                        }
                         else if(!symbol.isMonomial()) { 
                             //deal with cases such as cos(x)*sin(x)*x
                             var integrated,
@@ -836,7 +877,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 return _.multiply(_.multiply(integrated, cnst), coeff);
                             }
                         }
-
                         //if all else fails we just do integration by parts
                         retval = integration_by_parts(cfsymbol);
                     }
