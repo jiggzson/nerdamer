@@ -156,6 +156,104 @@
                     EX have a symbol as their power. If udring an operation the symbol's power results in a number, nerdamer will automatically convert
                     the group out of the EX group and the power back to class Frac. The goal is always keep the simplest and most compatible form.
                 </p>
+                <h3>Parsing</h3>
+                <p>
+                    To perform the actual parsing of the string, nerdamer uses the <a href="https://en.wikipedia.org/wiki/Shunting-yard_algorithm">shunting-yard algorithm</a>. While parsing
+                    several classes are utilized to accommodate functions, vectors, matrices, and special operators. It's also important to note that the nodes get collapsed as soon as possible.
+                    Additionally operators return 1 of the existing symbols. This was an early design decision which initially helped speed things up a bit but that may have since changed. The most 
+                    important thing to remember is that when using symbols in subsequent calculations the clone method should be used to get a clean copy. For example:
+                </p>
+                <pre>
+<code>
+//You can interact with the parser directly by getting the core
+//with nerdamer loaded either in a web page or node.js
+var core = nerdamer.getCore();
+//the parser can be accessed in the core through PARSER. 
+//Make a shortcut using underscore
+var _ = core.PARSER;
+//the parser requires objects of class Symbol
+var Symbol = core.Symbol;
+//create a symbol
+var x1 = new Symbol('x');
+//one more
+var x2 = new Symbol('x');
+//add them using the parser
+var result = _.add(x1, x2);
+//in this case x1 was recycled
+console.log(result === x1); //true
+</code></pre>
+                <p>
+                    This only becomes a concern when directly interacting with Symbols. When parsing strings a fresh Symbol is created each time.
+                </p>
+                <h3>Function handling</h3>
+                <p>
+                    I've covered how to set custom functions in <a href="">Extending the core</a> but that doesn't cover how nerdamer deals with functions.
+                    While parsing nerdamer first looks at the PARSER.functions object. This object let's the parser know which functions are available. The entry should 
+                    contain 2 items. The first being the symbolic handler if any (not all functions have this) and the second is how may arguments to expect. If left blank
+                    the parser will first search for that function in the built-in Math object and if it comes up empty it will search in the Math2 object, and object created
+                    especially for adding custom functions. The Math2 object should only contain numeric functions since this is the function which will get exported when 
+                    the buildFunction method is called. Let's look at an example.
+                </p>
+<pre><code>
+//You can interact with the parser directly by getting the core
+//with nerdamer loaded either in a web page or node.js
+var core = nerdamer.getCore();
+//the parser can be accessed in the core through PARSER. 
+//Make a shortcut using underscore
+var _ = core.PARSER;
+//when parsing the function first looks into the built-in Math object
+//and then into the Math2 object
+//add a custom function
+core.Math2.custom = function(a, b) {
+    return 2*a+b;
+};
+//let nerdamer know that it's ok to access this function
+//we do that using an array. The first parameter is the special handler
+//which we'll leave blank for now. This will only give it numeric capabilities
+_.functions.custom = [,2];
+//we can now use the function
+var x = nerdamer('custom(1, 8)').evaluate();
+console.log(x.toString()); //10
+//It can't handle symbolics as illustrated next
+var y = nerdamer('custom(a, b)').evaluate();
+console.log(y.toString()); //custom(a, b)                 
+</code></pre>
+                <p>
+                    To enable symbolic capabilities we use the above example but provide the definition with a symbol handler.
+                </p>
+<pre><code>
+//You can interact with the parser directly by getting the core
+//with nerdamer loaded either in a web page or node.js
+var core = nerdamer.getCore();
+//the parser can be accessed in the core through PARSER. 
+//Make a shortcut using underscore
+var _ = core.PARSER;
+//when parsing the function first looks into the built-in Math object
+//and then into the Math2 object
+//add a custom function
+core.Math2.custom = function(a, b) {
+    return 2*a+b;
+};
+//symbolic handler
+function symbolicHandler(a, b) {
+    //for simplicity we'll work stricly with the Symbol class
+    var A = _.multiply(new core.Symbol(2), a);
+    return _.add(A, b);
+};
+//let nerdamer know that it's ok to access this function
+//we do that using an array. The first parameter is the special handler
+//which we'll leave blank for now. This will only give it numeric capabilities
+_.functions.custom = [symbolicHandler,2];
+//we can now use the function
+var x = nerdamer('custom(1, 8)').evaluate();
+console.log(x.toString()); //10
+//It can't handle symbolics as illustrated next
+var y = nerdamer('custom(a, b)').evaluate();
+console.log(y.toString()); //2*a+b           
+</code></pre>
+                <p>
+                    More coming soon...
+                </p>
             </div>
             <div class="col-sm-3">
                 <ul class="side-bar">

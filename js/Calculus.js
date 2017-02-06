@@ -158,7 +158,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     // Table of known derivatives
                     switch(symbol.fname) {
                         case LOG:
-                            cp = symbol.clone();
+                            cp = symbol.clone(); 
                             symbol = symbol.args[0].clone();//get the arguments
                             symbol.power = symbol.power.negate();
                             symbol.multiplier = cp.multiplier.divide(symbol.multiplier); 
@@ -577,8 +577,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     return _.multiply(_.parse(symbol.multiplier), _.parse(dx));
                 else if(g === S && has_dx) {
                     //1/x
-                    if(symbol.power.equals(-1)) 
+                    if(symbol.power.equals(-1)) {
                         retval = _.symfunction(LOG, [new Symbol(dx)]);
+                        retval.multiplier = retval.multiplier.multiply(symbol.multiplier);
+                    }
                     //all other x's
                     else {
                         return poly_integrate(symbol);
@@ -825,8 +827,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 }
                                             }
                                         }
-                                            
                                     }
+
                                     //check for x^2/sqrt(1-x^2). Should be trig sub but this will do for now
                                     var d = __.integrate(sym1, dx, depth), //integrate and see if it's asin
                                         p = Number(sym2.power);
@@ -860,9 +862,20 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         }
                                     }   
                                 }  
+                                
+                                if(num.isComposite()) { 
+                                    var result = new Symbol(0);
+                                    var exp_num = _.expand(num); 
+                                    exp_num.each(function(x) {
+                                        var intgr = __.integrate(_.multiply(x, den.clone()), dx, depth);
+                                        result =  _.add(result, intgr);
+                                    });
+                                    return _.multiply(result, coeff);
+                                }
                             }
+                            
                         }
-                        else if(l > 2) {
+                        else if(l > 2) { 
                             if(all_fn) stop();
                             if(expandable) 
                                 return _.multiply(__.integrate(_.expand(symbol), dx, --depth), coeff);
@@ -940,7 +953,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 case LOG:
                                     if(!symbol.args[0].isLinear(dx)) stop(); //non-linear arguments need special attention. TODO
                                     var a = symbol.args[0].clone(),
-                                        m = _.parse(retval.multiplier.toString());
+                                        m = _.parse(retval.multiplier.toString()); 
                                     retval.toUnitMultiplier();
                                     retval = _.multiply(_.subtract(_.multiply(a, retval), a.clone()), m);
                                     break;
@@ -982,6 +995,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             rd2.power = rd2.power.subtract(new Frac(2));
 
                             var t = _.symfunction(fname === COS ? SIN : COS, [arg.clone()]);
+                            if(fname === SIN) t.negate();
                             return _.add(_.multiply(_.multiply(na, rd), t), _.multiply(q, __.integrate(_.parse(rd2), dx, depth)));
                         } 
                         else if(fname === LOG && arg_is_linear) {
