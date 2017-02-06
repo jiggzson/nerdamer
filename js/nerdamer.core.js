@@ -6632,32 +6632,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
-//You can interact with the parser directly by getting the core
-//with nerdamer loaded either in a web page or node.js
-var core = nerdamer.getCore();
-//the parser can be accessed in the core through PARSER. 
-//Make a shortcut using underscore
-var _ = core.PARSER;
-//when parsing the function first looks into the built-in Math object
-//and then into the Math2 object
-//add a custom function
-core.Math2.custom = function(a, b) {
-    return 2*a+b;
-};
-//symbolic handler
-function symbolicHandler(a, b) {
-    //for simplicity we'll work stricly with the Symbol class
-    var A = _.multiply(new core.Symbol(2), a);
-    return _.add(A, b);
-};
-//let nerdamer know that it's ok to access this function
-//we do that using an array. The first parameter is the special handler
-//which we'll leave blank for now. This will only give it numeric capabilities
-_.functions.custom = [symbolicHandler,2];
-//we can now use the function
-var x = nerdamer('custom(1, 8)').evaluate();
-console.log(x.toString()); //10
-//It can't handle symbolics as illustrated next
-var y = nerdamer('custom(a, b)').evaluate();
-console.log(y.toString()); //custom(a, b)

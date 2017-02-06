@@ -205,15 +205,15 @@ var _ = core.PARSER;
 //and then into the Math2 object
 //add a custom function
 core.Math2.custom = function(a, b) {
-    return 2*a+b;
+    return (2*a+b)/a;
 };
 //let nerdamer know that it's ok to access this function
 //we do that using an array. The first parameter is the special handler
 //which we'll leave blank for now. This will only give it numeric capabilities
 _.functions.custom = [,2];
 //we can now use the function
-var x = nerdamer('custom(1, 8)').evaluate();
-console.log(x.toString()); //10
+var x = nerdamer('custom(2, 6)').evaluate();
+console.log(x.toString()); //5
 //It can't handle symbolics as illustrated next
 var y = nerdamer('custom(a, b)').evaluate();
 console.log(y.toString()); //custom(a, b)                 
@@ -222,38 +222,107 @@ console.log(y.toString()); //custom(a, b)
                     To enable symbolic capabilities we use the above example but provide the definition with a symbol handler.
                 </p>
 <pre><code>
-//You can interact with the parser directly by getting the core
-//with nerdamer loaded either in a web page or node.js
 var core = nerdamer.getCore();
-//the parser can be accessed in the core through PARSER. 
-//Make a shortcut using underscore
 var _ = core.PARSER;
-//when parsing the function first looks into the built-in Math object
-//and then into the Math2 object
-//add a custom function
 core.Math2.custom = function(a, b) {
-    return 2*a+b;
+    return (2*a+b)/a;
 };
 //symbolic handler
 function symbolicHandler(a, b) {
     //for simplicity we'll work stricly with the Symbol class
-    var A = _.multiply(new core.Symbol(2), a);
-    return _.add(A, b);
+    //Remember earlier we spoke of calling clone? In this case the A !== a
+    //but it's good practice to call clone on values that are going to be reused
+    //If a was to become 2*a then we'd also be dividing by 2*a and not a
+    var A = _.multiply(new core.Symbol(2), a.clone());
+    var B =_.add(A, b);
+    return _.divide(B, a);
 };
 //let nerdamer know that it's ok to access this function
 //we do that using an array. The first parameter is the special handler
 //which we'll leave blank for now. This will only give it numeric capabilities
 _.functions.custom = [symbolicHandler,2];
 //we can now use the function
-var x = nerdamer('custom(1, 8)').evaluate();
-console.log(x.toString()); //10
+var x = nerdamer('custom(2, 6)').evaluate();
+console.log(x.toString()); //5
 //It can't handle symbolics as illustrated next
 var y = nerdamer('custom(a, b)').evaluate();
-console.log(y.toString()); //2*a+b           
+console.log(y.toString()); //(2*a+b)*a^(-1)          
 </code></pre>
                 <p>
-                    More coming soon...
+                    Now in the above example we divide by a which can be zero. Let's imagine for a second, and this is a completely contrived example chosen for simplicity, that
+                    division by zero resulted in a imaginary number. We can add a special handler for this in the symbolic handler.
                 </p>
+<pre><code>
+var core = nerdamer.getCore();
+var _ = core.PARSER;
+core.Math2.custom = function(a, b) {
+    return (2*a+b)/a;
+};
+//symbolic handler
+function symbolicHandler(a, b) {
+    //we do a check and return a special value for a === 0
+    if(a.equals(0)) {
+        //the value for imaginary numbers is stored in core.Settings.IMAGINARY
+        //this should be used in case the user decides to use something different
+        //like j for example
+        return new core.Symbol(core.Settings.IMAGINARY);
+    }
+    //for simplicity we'll work stricly with the Symbol class
+    //Remember earlier we spoke of calling clone? In this case the A !== a
+    //but it's good practice to call clone on values that are going to be reused
+    //If a was to become 2*a then we'd also be dividing by 2*a and not a
+    var A = _.multiply(new core.Symbol(2), a.clone());
+    var B =_.add(A, b);
+    return _.divide(B, a);
+};
+//let nerdamer know that it's ok to access this function
+//we do that using an array. The first parameter is the special handler
+//which we'll leave blank for now. This will only give it numeric capabilities
+_.functions.custom = [symbolicHandler,2];
+//we can now use the function
+var x = nerdamer('custom(0, 2)').evaluate();
+console.log(x.toString()); //i
+var y = nerdamer('custom(9, 3)').evaluate();
+console.log(y.toString());//7/3
+var z = nerdamer('custom(x, y)');
+console.log(z.toString());//(2*x+y)*x^(-1)             
+</code></pre>
+                <p>
+                    It might be apparent to you by now that you have no commitment to any of the built-in functions and you are completly at liberty to override any or 
+                    all of them. If you have another library who's version of cos you like, you can just override it using the above example and nerdamer will gladly use 
+                    that one instead. This gives you the option of using nerdamer as a purely symbolic layer.
+                </p>
+                <h3>Custom operators</h3>
+                <p>
+                    You can set custom operators to a degree. Below is an example of how to accomplish this.
+                </p>
+<pre><code>
+var core = nerdamer.getCore();
+var _ = core.PARSER;
+//see core source code for full explanation or parameters. In this case just know
+//The first param is the operator character so the parser can recognize it
+//The second is the name of the parser function that it maps to
+//The third is the order in which to parse first. e.g. an order of 5 will get parsed before 4.
+//The fourth is if it's left associative. 
+//The fifth is if it's a prefix operator
+//And the last is if it's a postfix operator
+var Operator = core.Operator;
+//create a blank operator so the operator knows it's an operator 
+//because the parser only sees one character at a time. We don't define anything in this
+//case since it's a dummy operator to let nerdamer know that it should be treated as one.
+_.operators['<'] = new Operator('<');
+//create the operator you want and we'll name it bitleft. It's up to you. Just make
+//sure you call it the same as the function defined below. 
+_.operators['<<'] = new Operator('<<', 'bitleft', 1, true, false);
+//define the function
+_.bitleft = function(a, b) {
+    return a << b;
+}; 
+//we can now use it.
+var x = nerdamer('5<<2');
+console.log(x.toString()); //20               
+</code></pre>
+                <p>More coming soon ...</p>
             </div>
             <div class="col-sm-3">
                 <ul class="side-bar">
