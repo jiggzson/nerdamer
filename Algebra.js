@@ -1734,7 +1734,11 @@ if((typeof module) !== 'undefined') {
                 return m;
             },
             factor: function(symbol, factors) {
-                if(isInt(symbol.power)) {
+                if(symbol.group === S) 
+                    return symbol; //absolutely nothing to do
+                var p = symbol.power.clone();
+                if(isInt(p)) { 
+                    symbol.toLinear();
                     factors = factors || new Factors();
                     var map = {}, original;
                     symbol = _.parse(core.Utils.subFunctions(symbol, map));
@@ -1763,7 +1767,8 @@ if((typeof module) !== 'undefined') {
                             if(x.group !== S) all_S = false;
                             if(!x.multiplier.equals(1)) all_unit = false;
                         });
-                        if(all_S && all_unit) return symbol;
+                        if(all_S && all_unit) 
+                            return _.pow(symbol, _.parse(p));
                     }
                     symbol = __.Factor.coeffFactor(symbol, factors);
                     symbol = __.Factor.powerFactor(symbol, factors);
@@ -1780,10 +1785,11 @@ if((typeof module) !== 'undefined') {
                     var retval = factors.toSymbol();
 
                     //compare the inval and outval and they must be the same or else we failed
-                    if(multiVar && !core.Utils.compare(original, retval, vars)) {
-                        return original;                   }
+                    if(multiVar && !core.Utils.compare(original, retval, vars)) { 
+                        return original;                   
+                    }
                     
-                    return retval;
+                    return _.pow(retval, _.parse(p));
                 }
                 return symbol;    
             },
@@ -2005,8 +2011,8 @@ if((typeof module) !== 'undefined') {
                     var new_factor = _.expand(_.divide(sorted[x], r)); 
                     var divided = __.div(symbol.clone(), new_factor); 
                     if(divided[0].equals(0)) { //cant factor anymore
-                        factors.add(divided[1]);
-                        return factors;
+                        //factors.add(divided[1]);
+                        return divided[1];
                     }
 
                     if(divided[1].equals(0)) { //we found at least one factor
@@ -2017,7 +2023,7 @@ if((typeof module) !== 'undefined') {
                         var r = d[0];
                         if(r.isConstant()) { 
                             factors.add(r);
-                            return factors;
+                            return r;
                         }
 
                         return __.Factor.mfactor(r, factors);
@@ -2114,7 +2120,13 @@ if((typeof module) !== 'undefined') {
                 });
                 return [symbol1, new Symbol(0)];
             }
-            
+            //special case. May need revisiting
+            if(symbol1.group === S && symbol2.group === CP) {
+                var s = symbol2.symbols[symbol1.value];
+                if(s && symbol2.isLinear() && s.isLinear() && symbol1.isLinear()) {
+                    return [new Symbol(1), _.subtract(symbol1.clone(), symbol2.clone())];
+                }
+            }
             var symbol1_has_func = symbol1.hasFunc(),
                 symbol2_has_func = symbol2.hasFunc(),
                 parse_funcs = false;
