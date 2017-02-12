@@ -2527,8 +2527,8 @@ var nerdamer = (function(imports) {
 
             for(curpos=0; curpos<len; curpos++) { 
                 var cur_char = expression_string.charAt(curpos);
-                var operator = operators[cur_char], //a possible operator
-                    bracket = brackets[cur_char]; //a possible bracket
+                var operator = cur_char in operators ? operators[cur_char] : undefined, //a possible operator
+                    bracket = cur_char in brackets ? brackets[cur_char] : undefined; //a possible bracket
                 //if the character is a bracket or an operator but not a scientific number
                 if(operator || bracket) { 
                     //if an operator is found then we assume that the preceeding is a variable.
@@ -2538,10 +2538,10 @@ var nerdamer = (function(imports) {
                 
                     // support for compound operators
                     var next_char = expression_string.charAt(curpos + 1);
-                    var also_operator = operators[next_char];
+                    var also_operator = next_char in operators ? operators[next_char] : undefined;
                     if(also_operator) {
                         var combined = cur_char+next_char;
-                        var compound_operator = operators[combined];
+                        var compound_operator = combined in operators ? operators[combined] : undefined;
                         if(compound_operator) { 
                             operator = compound_operator;
                             curpos++;

@@ -9,10 +9,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     nerdamer = require('./nerdamer.core.js');
     require('./Algebra.js');
 }
-/*
- * TODO
- * ASIN, Ci, Si
- */
 
 (function() {
     "use strict";
@@ -62,6 +58,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }
         }
         return false;
+    };
+    //removes parentheses
+    Symbol.unwrapPARENS = function(symbol) {
+        if(symbol.group === FN && !symbol.fname) {
+            var r = symbol.args[0];
+            r.power = r.power.multiply(symbol.power);
+            r.multiplier = r.multiplier.multiply(symbol.multiplier);
+            return r;
+        }
+        return symbol;
     };
     core.Expression.prototype.hasIntegral = function() {
         return this.symbol.hasIntegral();
@@ -429,7 +435,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             partial_fraction: function(input, dx, depth) { 
                 var num, den; 
                 var m = new Symbol(input.multiplier);
-
+                
                 //make prepartions
                 //check if it's a symbol. If so get num and denom
                 if(isSymbol(input)) { 
@@ -447,7 +453,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     var fn = den.clone().toLinear(),
                         a = fn.stripVar(dx),
                         bx = _.subtract(fn.clone(), a);
-                    if(bx.group === S && bx.isLinear()) {
+                    if(bx.group === S && bx.isLinear()) { 
                         //we make the u substitution
                         return __.integration.poly_integrate(input);
                     }
@@ -463,21 +469,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     num_array = q[1].toArray(dx), //point to the remainder not the numerator
                 num = q[1]; //point to the remainder not the whole
                 //get the factors of the denominator
-//                console.log(q.toString(), den.toString(), num.toString())
-                var factors = core.Algebra.Factor.factor(den); 
+                var factors = Symbol.unwrapPARENS(core.Algebra.Factor.factor(den)); 
 
-                if(num.group === CP && !(factors.length > 1))
-                    __.integration.stop();// dunno what to do since I can't solve for A, B, C, etc...
                 var factor_array = []; 
                 //we first have to unwrap the factor and get them in ordered form. We use an array for this
                 //the first part of q can just be integrated using standard integration so we do so
                 var result = q[0].equals(0) ? q[0] : __.integrate(q[0], dx, depth);
                 if(factors.group !== CP) { 
                     factors.each(function(factor) { 
-                        if(factor.group === FN && !factor.fname)  //it might be wrapped in parenthesis
-                            factor = factor.args[0];
-                        if(!factor.isLinear()) 
-                            factor = _.expand(factor); 
+                        //unwrap parentheses
+                        factor = Symbol.unwrapPARENS(factor);
                         if(factor.isConstant())
                             m = _.multiply(m, factor); //add it to the constants
                         else
@@ -496,22 +497,33 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         //I have no idea why integration by parts doesn't work for p === 2
                         var fn = factors.clone().toLinear(),
                             decomp = __.integration.decompose_arg(fn, dx),
-                            x = decomp[2],
+                            x = decomp[1],
                             a = decomp[0],
                             b = decomp[3];
                         if(!x.isLinear())
                             //we stop because u du takes care of quadratics
                             __.integration.stop();
-                        if(factors.power.equals(2)) {
-                            result = _.add(result, _.add(_.symfunction(LOG, [fn.clone()]), _.divide(b, fn)));
-                            result = _.divide(result, _.pow(a, new Symbol(2)));
+                        if(factors.power.greaterThan(0)) { 
+                            if(q[1].isConstant()) {
+                                result = __.integration.poly_integrate(_.divide(q[1], factors));
+                            }
+                            else {
+                                //since we know x is linear we can just let u = x+a and u-a = x = r
+                                //TODO: On a serious note what is u du doing in partial fractions. This has got to be redone
+                                //rewrite the expression to become (1/a)*[ (ax+b)/(ax+b) - b/(ax+b)] which we can do 
+                                //since x is linear from above
+                                result = _.add(
+                                    __.integrate(_.divide(fn.clone(), factors.clone()), dx, depth),
+                                    __.integrate(_.divide(b.negate(), factors.clone()), dx, depth)
+                                );
+                            }
+                            result = _.divide(result, a);
                         }
                         else { 
                             result = __.integration.by_parts(_.divide(q[1], factors.clone()), dx, core.Settings.integration_depth);
                         }
-//                        var d = _.divide(q[1], factors.clone());
-//                        result = _.add(result, __.integrate(d, dx, depth));
                     }  
+
                     return result;
                 }
 
@@ -549,11 +561,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 for(var i=0; i<l; i++) { 
                     var integral = __.integrate(_.divide(q[1].clone(), factor_array[i]), dx, depth),
                         cf = _.expand(L.elements[i][0]); 
-                console.log(integral.toString(), cf.toString())
                     var mm = _.divide(cf, m.clone()); 
                     result = _.add(result, _.multiply(integral, mm));
                 }
-console.log(result.toString())
+
                 return result;
             },
             by_parts: function(symbol, dx, depth) { 
@@ -614,22 +625,6 @@ console.log(result.toString())
                 };
                 var udv, u, dv, du, v, vdu, uv, retval, integral_vdu, m;
                 //first LIATE
-//                console.log('===========================')
-//                udv = get_udv(symbol);
-//                u = udv[0]; console.log('u: '+u)
-//                dv = udv[1]; console.log('dv: '+dv)
-//                du = Symbol.unwrapSQRT(_.expand(__.diff(u.clone(), dx)), true); console.log('du: '+du)
-//                v = __.integrate(dv.clone(), dx, depth); 
-//                vdu = _.multiply(v.clone(), du); console.log('vdu: '+vdu);
-//                uv = _.multiply(u, v); 
-//                m = vdu.multiplier.clone();
-//                vdu.toUnitMultiplier();
-//                integral_vdu = __.integrate(vdu.clone(), dx, depth); console.log('uv: '+uv+'     integral_vdu: '+integral_vdu+'    vdu: '+vdu);
-//                integral_vdu.multiplier = integral_vdu.multiplier.multiply(m);
-//                retval = _.subtract(uv, integral_vdu);
-//                console.log('returning: '+retval)
-//                return retval;
-
                 udv = get_udv(symbol);
                 u = udv[0]; 
                 dv = udv[1]; 
@@ -734,13 +729,8 @@ console.log(result.toString())
                         b = decomp[3],
                         ax = decomp[2],
                         a = decomp[0],
-                        x = decomp[1];
-////                        a = fn.stripVar(dx), //get a by removing bx
-//                        bx = _.subtract(fn.clone(), a.clone()), //get bx by subtracting a
-//                        b = bx.stripVar(dx),
-//                        x = _.divide(bx.clone(), b.clone()); //and finally b
-//                console.log(decomp.toString)
-                    if(p === -1) { 
+                        x = decomp[1]; 
+                    if(p === -1 && x.group !== PL) { 
                         //we can now check for atan
                         if(x.group === S && x.power.equals(2)) { //then we have atan
                             //abs is redundants since the sign appears in both denom and num.
@@ -764,7 +754,7 @@ console.log(result.toString())
                         else if(x.group === S && x.isLinear()) {
                             retval = _.divide(__.integration.poly_integrate(symbol), a);
                         }
-                        else {
+                        else { 
                             //let's try partial fractions
                             retval = __.integration.partial_fraction(symbol, dx, depth);
                         }
@@ -797,11 +787,12 @@ console.log(result.toString())
                             __.integration.stop();
                         }
                     }
-                    else {
-                        if(x.isLinear())
+                    else { 
+                        if(x.isLinear() && x.group !== PL)
                             retval = _.divide(__.integration.poly_integrate(symbol), a);
-                        else
+                        else { 
                             retval = __.integration.partial_fraction(symbol, dx, depth);
+                        }
                     }
                     retval.multiplier = retval.multiplier.multiply(m);
                 }
@@ -1145,12 +1136,10 @@ console.log(result.toString())
                                     //handle cases x^(2*n)/sqrt(1-x^2)
                                     if(sym1.power.equals(-1/2)) { 
                                         var decomp = __.integration.decompose_arg(sym1.clone().toLinear(), dx);
-//                                        console.log(decomp.toString())
                                         var a = decomp[0].negate(),
                                             x = decomp[1],
                                             b = decomp[3],
                                             p = Number(sym2.power);
-//                                        console.log(a.toString(), b.toString(), x.toString());   
                                         if(isInt(p) && core.Utils.even(p) && x.power.equals(2)) {
                                             //if the substitution 
                                             var c = _.divide(_.multiply(_.pow(b.clone(), new Symbol(2)), 
@@ -1165,14 +1154,15 @@ console.log(result.toString())
                                         }   
                                     }
                                     else if(sym1.power.equals(-1) && sym2.isLinear()) { 
-                                        var fn = sym1.clone().toLinear(),
-                                            decomp = __.integration.decompose_arg(fn.clone(), dx),
-                                            a = decomp[0],
-                                            b = decomp[3],
-                                            x = decomp[2];
-                                        if(!x.isLinear())
-                                            __.integration.stop();
-                                        retval = _.divide(_.subtract(fn.clone(), _.multiply(_.symfunction(LOG, [fn]), b)), _.pow(a, new Symbol(2)));
+                                        retval = __.integration.partial_fraction(symbol, dx, depth);
+//                                        var fn = sym1.clone().toLinear(),
+//                                            decomp = __.integration.decompose_arg(fn.clone(), dx),
+//                                            a = decomp[0],
+//                                            b = decomp[3],
+//                                            x = decomp[2];
+//                                        if(!x.isLinear())
+//                                            __.integration.stop();
+//                                        retval = _.divide(_.subtract(fn.clone(), _.multiply(_.symfunction(LOG, [fn]), b)), _.pow(a, new Symbol(2)));
                                         
                                     }
                                     else if(!sym1.power.lessThan(0) && isInt(sym1.power)) { 
@@ -1180,18 +1170,24 @@ console.log(result.toString())
                                         var expanded = _.expand(sym1);
                                         retval = new Symbol(0);
                                         expanded.each(function(x) {
-                                            retval = _.add(retval, __.integrate(_.multiply(sym2.clone(), x), dx, depth));
+                                            if(x.group === PL) {
+                                                x.each(function(y) {
+                                                    retval = _.add(retval, __.integrate(_.multiply(sym2.clone(), y), dx, depth));
+                                                });
+                                            }
+                                            else 
+                                                retval = _.add(retval, __.integrate(_.multiply(sym2.clone(), x), dx, depth));
                                         });
                                     }
                                     else if(sym1.power.lessThan(-2)) {
                                         retval = __.integration.by_parts(symbol, dx, depth);
                                     }
-                                    else {
+                                    else { 
                                         retval = __.integration.partial_fraction(symbol, dx, depth);
                                     }
                                         
                                 }
-                                else if(sym1.isComposite() && sym2.isComposite()) {
+                                else if(sym1.isComposite() && sym2.isComposite()) { 
                                     //sum of integrals
                                     retval = new Symbol(0);
                                     var p1 = Number(sym1.power),
@@ -1200,23 +1196,13 @@ console.log(result.toString())
                                         //swap
                                         var t = sym1; sym1 = sym2; sym2 = t;
                                     }
-                                    if(p1 > 0 && p2 < 0) {
-                                        //reduce it first
-                                        var d = core.Algebra.div(_.expand(sym1.clone()), sym2.clone().toLinear());
-                                        d[0].each(function(x) {
-                                            retval = _.add(retval, __.integrate(x, dx, depth));
-                                        });
-                                        sym1 = d[1];
-                                    }
-                                    console.log(sym1.toString(), sym2.toString())
+                                    
                                     sym1.each(function(x) {
                                        retval = _.add(retval, __.integrate(_.multiply(x, sym2.clone()), dx, depth));
                                     });
-                                    console.log(sym1.toString(), sym2.toString())
                                 }
                                 else
                                     retval = __.integration.by_parts(symbol, dx, depth);
-//                                    __.integration.stop();
                             }
                         }
                         else if(l === 3 && symbols[2].group === S) {
@@ -1230,7 +1216,6 @@ console.log(result.toString())
                 if(retval)
                     return retval;
             }
-//            catch(e){/*no integral found*/;}  
             catch(e){/*no integral found*/ }  
             //no symbol found so we return the integral again
             return _.symfunction('integrate', [original_symbol, dt]);
@@ -1258,11 +1243,3 @@ console.log(result.toString())
         }
     ]);
 })();
-
-//var x = nerdamer('integrate(cos(x)^4*sin(x)^4,x)');
-var x = nerdamer('integrate((x^3+1)/(x^2+2*x+1), x)');
-console.log(x.toString())
-//integrate(cos(x^2+1),x)
-
-                
-//            function integration_by_parts
