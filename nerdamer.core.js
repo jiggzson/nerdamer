@@ -1412,8 +1412,8 @@ var nerdamer = (function(imports) {
                 arr.add(new Symbol(this.multiplier), this.power);
             else if(g === CB){
                 var a = this.stripVar(v),
-                    x = _.divide(this.clone()),
-                    p = x.isConstant() ? 0 : x.power;
+                    x = _.divide(this.clone(), a.clone());
+                var p = x.isConstant() ? 0 : x.power;
                 arr.add(a, p);
             }
             else if(g === PL && this.value === v) {
@@ -1455,21 +1455,26 @@ var nerdamer = (function(imports) {
         sub: function(symbol, for_symbol) {
             var g1 = this.group,
                 g2 = symbol.group;       
-            if(g1 === g2 && this.equals(symbol)) {
+            if(g1 === g2 && this.equals(symbol)) { 
                 //the simplest subsitution we can make
                 return for_symbol.clone();
             }
             else {
                 var retval;
-                if(g1 === g2 & g1 === S && symbol.isLinear() && this.value === symbol.value) {
+                if(g1 === g2 & g1 === S && symbol.isLinear() && this.value === symbol.value) { 
                     //e.g. x^2+1, x=u : x is linear so it matches all x's
-                    retval = retval || this.clone();
-                    retval.value = for_symbol.value;
-                }
-                else if(symbol.isLinear() && text(this, 'hash') === text(symbol, 'hash')) {
                     retval = for_symbol.clone();
-                    retval = _.pow(retval, _.parse(this.power));
-                    retval.multiplier = retval.multiplier.multiply(this.multiplier);
+                    retval.multiplier = this.multiplier.clone();
+                    retval.power = this.power.clone();
+                    retval = _.parse(retval);
+                }
+                else if(text(this, 'hash') === text(symbol, 'hash')) { 
+                    var p = _.divide(_.parse(this.power), _.parse(symbol.power));
+                    if(isInt(p)) {
+                        retval = for_symbol.clone();
+                        retval = _.pow(retval, _.parse(p));
+                        retval.multiplier = retval.multiplier.multiply(this.multiplier);
+                    } 
                 }
                 //loop through all the symbols
                 else if(this.symbols) {
@@ -1691,7 +1696,7 @@ var nerdamer = (function(imports) {
          */
         contains: function(variable, all) { 
             var g = this.group; 
-            if(this.symbols) {
+            if(this.symbols && g !== EX) {
                 for(var x in this.symbols) { if(this.symbols[x].contains(variable, all)) return true; }
             }
             else if(g === FN || this.previousGroup === FN) {
@@ -1861,7 +1866,7 @@ var nerdamer = (function(imports) {
                 var group = this.group;
                 if(group > FN) { 
                     var key = symbol.keyForGroup(group); 
-                    var existing = this.symbols[key]; //check if there's already a symbol there
+                    var existing = key in this.symbols ? this.symbols[key] : false; //check if there's already a symbol there
                     if(action === 'add') {
                         var hash = key;
                         if(existing) { 
@@ -2038,7 +2043,8 @@ var nerdamer = (function(imports) {
                     else collected.push( fn ? fn(symbol, opt) : symbol );
                 }
             }
-                
+            if(sort_fn === null) sort_fn = undefined; //WTF Firefox? Seriously?
+            
             return collected.sort(sort_fn);//sort hopefully gives us some sort of consistency
         },
         /**
@@ -2073,22 +2079,27 @@ var nerdamer = (function(imports) {
                 pg = this.previousGroup;
             return g === CB || pg === CB;
         },
+        lessThan: function(n) {
+            return this.multiplier.lessThan(n);
+        },
         /**
          * Get's the denominator of the symbol if the symbol is of class CB (multiplication)
          * with other classes the symbol is either the denominator or not. 
          * Take x^-1+x^-2. If the symbol was to be mixed such as x+x^-2 then the symbol doesn't have have an exclusive
          * denominator and has to be found by looking at the actual symbols themselves.
          */
-        getDenom: function() {
+        getDenom: function() { 
+            if(this.power.lessThan(0)) return this.clone();
             if(this.group === CB) 
                 var retval = new Symbol(1);
                 for(var x in this.symbols) 
                     if(this.symbols[x].power < 0) 
                         retval = _.multiply(retval, this.symbols[x].clone());
                 return retval;
-            return new Symbol(1);
+            return new Symbol(this.multiplier.den);
         },
         getNum: function() {
+            if(this.power.lessThan(0)) return new Symbol(this.multiplier.num);
             if(this.group === CB) {
                 var newSymbol = new Symbol(1);
                 for(var x in this.symbols) 
@@ -2360,7 +2371,7 @@ var nerdamer = (function(imports) {
                             if(symbol.group === N) return symbol.multiplier.toDecimal();
                             else err('Symbol must be of group N.');
                         });
-                        var f = Math[fn_name] ? Math[fn_name] : Math2[fn_name];
+                        var f = fn_name in Math ? Math[fn_name] : Math2[fn_name];
                         retval = new Symbol(f.apply(undefined, args));
                     }
                     catch(e){ 
