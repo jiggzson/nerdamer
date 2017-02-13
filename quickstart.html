@@ -213,15 +213,15 @@ or alternatively
 The difference however is that the first option directly substitutes the variables while the second first evaluates
 the variable and then makes the substitutions. This library utilizes native javascript functions as much as possible.
 As a result it inherits whatever rounding errors they possess. Take this example for instance.
-
+<strike>
 <pre><code>
     var result = nerdamer('sqrt(x)*sqrt(x)-2', {x:2});
     console.log(result.text());
     //4.440892098500626e-16
 </code></pre>
 Yup, it's not zero. To minimize this error it would be better to first simplify the expression and then make your 
-substitutions. The above example would then be
-
+    substitutions. The above example would then be</strike>
+This is no longer the case.
 <pre><code>
     var result = nerdamer('sqrt(x)*sqrt(x)-2').evaluate({x:2});
     console.log(result.text());
