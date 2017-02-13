@@ -1664,13 +1664,20 @@ var nerdamer = (function(imports) {
             this.setPower(new Frac(1));
             return this;
         },
-        each: function(fn) {
+        each: function(fn, deep) {
             if(!this.symbols) {
                 fn.call(this, this, this.value);
             }
             else {
                 for(var x in this.symbols) {
-                    fn.call(this, this.symbols[x], x);
+                    var sym = this.symbols[x];
+                    if(sym.group === PL && deep) {
+                        for(var y in sym.symbols) {
+                            fn.call(x, sym.symbols[y], y);
+                        }
+                    }
+                    else
+                        fn.call(this, sym, x);
                 }
             }
         },

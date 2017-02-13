@@ -1175,8 +1175,30 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         retval = __.integration.by_parts(symbol, dx, depth);
                                     }
                                     else if(sym1.power.lessThan(0) && sym2.power.greaterThan(1)) {
-                                        __.integration.stop();
+                                        var decomp = __.integration.decompose_arg(sym1.clone().toLinear(), dx),
+                                            a = decomp[0].negate(),
+                                            x = decomp[1],
+                                            b = decomp[3],
+                                            fn = sym1.clone().toLinear();
+                                        if(x.group !== PL && x.isLinear()) {
+                                            var p = Number(sym2.power),
+                                                du = '_u_',
+                                                u = new Symbol(du),
+                                                //pull the integral with the subsitution
+                                                U = _.expand(_.divide(_.pow(_.subtract(u.clone(), b.clone()), new Symbol(p)), u.clone())),
+                                                scope = {};
+
+                                            //generate a scope for resubbing the symbol
+                                            scope[du] = fn;
+                                            var U2 = _.parse(U, scope);
+                                            retval = __.integrate(U2, dx);
+                                        }
+                                        else 
+                                            retval = __.integration.partial_fraction(symbol, dx, depth);
                                     }
+//                                    else if(sym1.power.lessThan(0) && sym2.power.greaterThan(1)) {
+//                                        __.integration.stop();
+//                                    }
                                     else { 
                                         retval = __.integration.partial_fraction(symbol, dx, depth);
                                     }
@@ -1196,13 +1218,33 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                        retval = _.add(retval, __.integrate(_.multiply(x, sym2.clone()), dx, depth));
                                     });
                                 }
+                                else if(g1 === CP) {
+                                    sym1 = _.expand(sym1);
+                                    retval = new Symbol(0);
+                                    sym1.each(function(x) {
+                                        retval = _.add(retval, __.integrate(_.multiply(x, sym2.clone()), dx, depth));
+                                    }, true);
+                                }
                                 else
                                     retval = __.integration.by_parts(symbol, dx, depth);
                             }
                         }
-                        else if(l === 3 && symbols[2].group === S) {
-                            //try integration by parts 
-                            retval = __.integration.by_parts(symbol, dx, depth);
+                        else if(l === 3 && (symbols[2].group === S && symbols[2].power.lessThan(2) || symbols[0].group === CP)) {
+                            var first = symbols[0];
+                            if(first.group === CP) { //TODO {support higher powers of x in the future}
+                                if(first.power.greaterThan(1))
+                                    first = _.expand(first);
+                                var r = _.multiply(symbols[1], symbols[2]);
+                                retval = new Symbol(0);
+                                first.each(function(x) {
+                                    var t = _.multiply(x, r.clone());
+                                    var intg = __.integrate(t, dx, depth);
+                                    retval = _.add(retval, intg);
+                                }, true);
+                            }
+                            else 
+                                //try integration by parts 
+                                retval = __.integration.by_parts(symbol, dx, depth);
                         }
                     }
                     retval = _.multiply(retval, coeff);
