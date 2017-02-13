@@ -1155,14 +1155,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     }
                                     else if(sym1.power.equals(-1) && sym2.isLinear()) { 
                                         retval = __.integration.partial_fraction(symbol, dx, depth);
-//                                        var fn = sym1.clone().toLinear(),
-//                                            decomp = __.integration.decompose_arg(fn.clone(), dx),
-//                                            a = decomp[0],
-//                                            b = decomp[3],
-//                                            x = decomp[2];
-//                                        if(!x.isLinear())
-//                                            __.integration.stop();
-//                                        retval = _.divide(_.subtract(fn.clone(), _.multiply(_.symfunction(LOG, [fn]), b)), _.pow(a, new Symbol(2)));
                                         
                                     }
                                     else if(!sym1.power.lessThan(0) && isInt(sym1.power)) { 
@@ -1181,6 +1173,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     }
                                     else if(sym1.power.lessThan(-2)) {
                                         retval = __.integration.by_parts(symbol, dx, depth);
+                                    }
+                                    else if(sym1.power.lessThan(0) && sym2.power.greaterThan(1)) {
+                                        __.integration.stop();
                                     }
                                     else { 
                                         retval = __.integration.partial_fraction(symbol, dx, depth);
