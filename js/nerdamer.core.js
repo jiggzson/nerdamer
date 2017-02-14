@@ -1703,16 +1703,25 @@ var nerdamer = (function(imports) {
          */
         contains: function(variable, all) { 
             var g = this.group; 
-            if(this.symbols && g !== EX) {
-                for(var x in this.symbols) { if(this.symbols[x].contains(variable, all)) return true; }
+            if(this.value === variable)
+                return true;
+            if(this.symbols) {
+                for(var x in this.symbols) { 
+                    if(this.symbols[x].contains(variable, all)) return true; 
+                }
             }
-            else if(g === FN || this.previousGroup === FN) {
-                for(var i=0; i<this.args.length; i++) { if(this.args[i].contains(variable, all)) return true; }
+            if(g === FN || this.previousGroup === FN) {
+                for(var i=0; i<this.args.length; i++) { 
+                    if(this.args[i].contains(variable, all)) return true; 
+                }
             }
-            else if(g === EX) { 
+            
+            if(g === EX) { 
                 //exit only if it does
                 if(all && this.power.contains(variable, all)) { return true; }
-                return this.value === variable;
+                if(this.value === variable)
+                    return true;
+                
             }
             
             return this.value === variable;
