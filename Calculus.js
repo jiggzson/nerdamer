@@ -683,7 +683,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         //don't know what to do with it e.g. x^x
                         if(symbol.power.contains(dx))
                             __.integration.stop();
-                        else {
+                        else { 
                             //since at this point it's the base only then we do standard single poly integration
                             //e.g. x^y
                             retval = __.integration.poly_integrate(symbol, dx, depth);
@@ -719,82 +719,92 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     });
                 }
                 else if(g === CP) { 
-                    var p = Number(symbol.power),
-                        m = symbol.multiplier.clone();//temporarily remove the multiplier
-                    symbol.toUnitMultiplier();
-                    var //below we consider the form ax+b
-                        fn = symbol.clone().toLinear(), //get just the pure function without the power
-                        decomp = __.integration.decompose_arg(fn, dx),
-                        //I have no idea why I used bx+a and not ax+b. TODO change this to something that makes sense
-                        b = decomp[3],
-                        ax = decomp[2],
-                        a = decomp[0],
-                        x = decomp[1]; 
-                    if(p === -1 && x.group !== PL) { 
-                        //we can now check for atan
-                        if(x.group === S && x.power.equals(2)) { //then we have atan
-                            //abs is redundants since the sign appears in both denom and num.
-                            var unwrapAbs = function(s) {
-                                var result = new Symbol(1);
-                                s.each(function(x) {
-                                    result = _.multiply(result, x.fname === 'abs' ? x.args[0] : x);
-                                });
-                                return result;
-                            };
-                            var A = a.clone(),
-                                B = b.clone();
-                            A = _.pow(A, new Symbol(1/2));
-                            B = _.pow(B, new Symbol(1/2));
-                            //unwrap abs
-                            
-                            var d = _.multiply(unwrapAbs(B), unwrapAbs(A)),
-                                f = _.symfunction(ATAN, [_.divide(_.multiply(a, x.toLinear()), d.clone())]);
-                            retval = _.divide(f, d);
-                        }
-                        else if(x.group === S && x.isLinear()) {
-                            retval = _.divide(__.integration.poly_integrate(symbol), a);
-                        }
-                        else { 
-                            //let's try partial fractions
-                            retval = __.integration.partial_fraction(symbol, dx, depth);
-                        }
+                    if(symbol.power.greaterThan(1))
+                        symbol = _.expand(symbol);
+                    if(symbol.power.equals(1)) {
+                        retval = new Symbol(0)
+                        symbol.each(function(x) {
+                            retval = _.add(retval, __.integrate(x, dx, depth));
+                        }, true);
                     }
-                    else if(p === -1/2) {
-                        //detect asin and atan
-                        if(x.group === S && x.power.equals(2)) {
-                            if(ax.multiplier.lessThan(0) && !b.multiplier.lessThan(0)) {
-                                a.negate();
-                                //it's asin
-                                if(b.isConstant() && a.isConstant()) {
-                                    var d = _.symfunction(SQRT, [a.clone()]),
-                                        d2 = _.symfunction(SQRT, [_.multiply(a.clone(), b)]);
-                                    retval = _.divide(_.symfunction(ASIN, [_.divide(ax.toLinear(), d2)]), d);
+                    else {
+                        var p = Number(symbol.power),
+                            m = symbol.multiplier.clone();//temporarily remove the multiplier
+                        symbol.toUnitMultiplier();
+                        var //below we consider the form ax+b
+                            fn = symbol.clone().toLinear(), //get just the pure function without the power
+                            decomp = __.integration.decompose_arg(fn, dx),
+                            //I have no idea why I used bx+a and not ax+b. TODO change this to something that makes sense
+                            b = decomp[3],
+                            ax = decomp[2],
+                            a = decomp[0],
+                            x = decomp[1]; 
+                        if(p === -1 && x.group !== PL) { 
+                            //we can now check for atan
+                            if(x.group === S && x.power.equals(2)) { //then we have atan
+                                //abs is redundants since the sign appears in both denom and num.
+                                var unwrapAbs = function(s) {
+                                    var result = new Symbol(1);
+                                    s.each(function(x) {
+                                        result = _.multiply(result, x.fname === 'abs' ? x.args[0] : x);
+                                    });
+                                    return result;
+                                };
+                                var A = a.clone(),
+                                    B = b.clone();
+                                A = _.pow(A, new Symbol(1/2));
+                                B = _.pow(B, new Symbol(1/2));
+                                //unwrap abs
+
+                                var d = _.multiply(unwrapAbs(B), unwrapAbs(A)),
+                                    f = _.symfunction(ATAN, [_.divide(_.multiply(a, x.toLinear()), d.clone())]);
+                                retval = _.divide(f, d);
+                            }
+                            else if(x.group === S && x.isLinear()) {
+                                retval = _.divide(__.integration.poly_integrate(symbol), a);
+                            }
+                            else { 
+                                //let's try partial fractions
+                                retval = __.integration.partial_fraction(symbol, dx, depth);
+                            }
+                        }
+                        else if(p === -1/2) {
+                            //detect asin and atan
+                            if(x.group === S && x.power.equals(2)) {
+                                if(ax.multiplier.lessThan(0) && !b.multiplier.lessThan(0)) {
+                                    a.negate();
+                                    //it's asin
+                                    if(b.isConstant() && a.isConstant()) {
+                                        var d = _.symfunction(SQRT, [a.clone()]),
+                                            d2 = _.symfunction(SQRT, [_.multiply(a.clone(), b)]);
+                                        retval = _.divide(_.symfunction(ASIN, [_.divide(ax.toLinear(), d2)]), d);
+                                    }
+                                    //I'm not sure about this one. I'm trusting Wolfram Alpha here
+                                    else {
+                                        var sqrt_a = _.symfunction(SQRT, [a]),
+                                            sqrt_ax = _.multiply(sqrt_a.clone(), x.clone().toLinear());
+                                        retval = _.divide(_.symfunction(ATAN, [_.divide(sqrt_ax, _.symfunction(SQRT, [fn.clone()]))]), sqrt_a);
+                                    }
                                 }
-                                //I'm not sure about this one. I'm trusting Wolfram Alpha here
                                 else {
-                                    var sqrt_a = _.symfunction(SQRT, [a]),
-                                        sqrt_ax = _.multiply(sqrt_a.clone(), x.clone().toLinear());
-                                    retval = _.divide(_.symfunction(ATAN, [_.divide(sqrt_ax, _.symfunction(SQRT, [fn.clone()]))]), sqrt_a);
+                                    /*WHAT HAPPENS HERE???? e.g. integrate(3/sqrt(-a+b*x^2),x) or integrate(3/sqrt(a+b*x^2),x)*/
+                                    __.integration.stop();
                                 }
                             }
                             else {
-                                /*WHAT HAPPENS HERE???? e.g. integrate(3/sqrt(-a+b*x^2),x) or integrate(3/sqrt(a+b*x^2),x)*/
+                                //This would be a case like 1/(sqrt(1-x^3) or 1/(1-(x+1)^2)
                                 __.integration.stop();
                             }
                         }
-                        else {
-                            //This would be a case like 1/(sqrt(1-x^3) or 1/(1-(x+1)^2)
-                            __.integration.stop();
-                        }
-                    }
-                    else { 
-                        if(x.isLinear() && x.group !== PL)
-                            retval = _.divide(__.integration.poly_integrate(symbol), a);
                         else { 
-                            retval = __.integration.partial_fraction(symbol, dx, depth);
+                            if(x.isLinear() && x.group !== PL)
+                                retval = _.divide(__.integration.poly_integrate(symbol), a);
+                            else { 
+                                retval = __.integration.partial_fraction(symbol, dx, depth);
+                            }
                         }
+                        retval.multiplier = retval.multiplier.multiply(m);
                     }
-                    retval.multiplier = retval.multiplier.multiply(m);
                 }
                 else if(g === FN) {
                     var arg = symbol.args[0],
