@@ -12,7 +12,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.6.6',
+    var version = '0.6.7',
         _ = new Parser(), //nerdamer's parser
         //import bigInt
         bigInt = imports.bigInt,
@@ -691,8 +691,23 @@ var nerdamer = (function(imports) {
                 }
                 return Math.pow(b, e);
             },
+            factor: function(n) {
+                var ifactors = Math2.ifactor(n);
+                var factors = new Symbol();
+                factors.symbols = {};
+                factors.group = CB;
+                for(var x in ifactors) {
+                    var factor = new Symbol(1);
+                    factor.group = P; //cheat a little
+                    factor.value = x;
+                    factor.power = new Symbol(ifactors[x]);
+                    factors.symbols[x] = factor;
+                }
+                factors.updateHash();
+                return factors;
+            },
             //uses trial division to get factors
-            ifactor: function(n, factors) {
+            ifactor: function(n, factors) { 
                 factors = factors || {};
                 var r = Math.floor(Math.sqrt(n));
                 var lcprime = PRIMES[PRIMES.length-1];
