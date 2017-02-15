@@ -1736,6 +1736,11 @@ if((typeof module) !== 'undefined') {
             factor: function(symbol, factors) {
                 if(symbol.group === S) 
                     return symbol; //absolutely nothing to do
+                
+                if(symbol.isConstant()) {
+                    return core.Math2.factor(symbol);
+                }
+                
                 var p = symbol.power.clone();
                 if(isInt(p)) { 
                     symbol.toLinear();
