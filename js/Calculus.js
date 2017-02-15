@@ -1116,7 +1116,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     else if(sym1.fname === SIN && sym2.power.equals(-1))
                                         retval = _.symfunction('Si', [sym1.args[0]]);
                                     else {
-                                        retval = __.integration.by_parts(symbol, dx, depth);
+                                        //since group S is guaranteed convergence we need not worry about tracking depth of integration
+                                        retval = __.integration.by_parts(symbol, dx);
                                     }
                                 }
                                 else if(g1 === EX && g2 === S) {
@@ -1206,9 +1207,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         else 
                                             retval = __.integration.partial_fraction(symbol, dx, depth);
                                     }
-//                                    else if(sym1.power.lessThan(0) && sym2.power.greaterThan(1)) {
-//                                        __.integration.stop();
-//                                    }
                                     else { 
                                         retval = __.integration.partial_fraction(symbol, dx, depth);
                                     }
@@ -1217,16 +1215,25 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 else if(sym1.isComposite() && sym2.isComposite()) { 
                                     //sum of integrals
                                     retval = new Symbol(0);
-                                    var p1 = Number(sym1.power),
-                                        p2 = Number(sym2.power);
-                                    if(p1 < 0 && p2 > 0) {
-                                        //swap
-                                        var t = sym1; sym1 = sym2; sym2 = t;
+                                    if(sym1.power.greaterThan(0) && sym2.power.greaterThan(0)) {
+                                        //combine and pull the integral of each
+                                        var sym = _.expand(symbol);
+                                        sym.each(function(x) {
+                                            retval = _.add(retval, __.integrate(x, dx, depth));
+                                        }, true);
                                     }
-                                    
-                                    sym1.each(function(x) {
-                                       retval = _.add(retval, __.integrate(_.multiply(x, sym2.clone()), dx, depth));
-                                    });
+                                    else {
+                                        var p1 = Number(sym1.power),
+                                            p2 = Number(sym2.power);
+                                        if(p1 < 0 && p2 > 0) {
+                                            //swap
+                                            var t = sym1; sym1 = sym2; sym2 = t;
+                                        }
+
+                                        sym1.each(function(x) {
+                                           retval = _.add(retval, __.integrate(_.multiply(x, sym2.clone()), dx, depth));
+                                        });
+                                    }
                                 }
                                 else if(g1 === CP) {
                                     sym1 = _.expand(sym1);

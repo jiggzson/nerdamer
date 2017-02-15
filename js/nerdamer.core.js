@@ -2412,7 +2412,7 @@ var nerdamer = (function(imports) {
          * @param {Object} substitutions
          * @returns {Symbol}
          */
-        this.parse = function(expression_string, substitutions) {  
+        this.parse = function(expression_string, substitutions, tree) {  
             /*
              * Since variables cannot start with a number, the assumption is made that when this occurs the
              * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
@@ -2451,6 +2451,8 @@ var nerdamer = (function(imports) {
                 EOT = false, //was the end of the string reached?
                 func_on_stack = false,
                 curpos = 0, //the current position on the string
+        
+                ostack = [],
                                 
                 evaluate = function(operator) { 
                     if(!operator) {
@@ -2464,10 +2466,16 @@ var nerdamer = (function(imports) {
                         insert(symbol2);
                     }
                     else if(operator === LEFT_PAREN) { 
-                        if(EOT) err('Unmatched open parenthesis!');
-                        stack.push(operator);
-                        insert(symbol1);
-                        insert(symbol2);
+                        /*if(tree)
+                            ostack.push(operator)
+                        
+                         {*/
+                        if(!tree) {
+                            if(EOT) err('Unmatched open parenthesis!');
+                            stack.push(operator);
+                            insert(symbol1);
+                            insert(symbol2);
+                        }
                     }
                     else {
                         var ofn = operator.fn, result;
@@ -2485,8 +2493,19 @@ var nerdamer = (function(imports) {
                             //otherwise we need to place symbol1 back on the stack for reconsideration
                             if(symbol1) insert(symbol1);
                         }
-                        else {
-                            result = _[ofn].call(_, symbol1, symbol2);
+                        else { 
+                            if(tree) {
+                                
+                                if(symbol1) 
+                                    ostack.push(symbol1.toString());
+                                if(symbol2) 
+                                    ostack.push(symbol2.toString());
+                                ostack.push(operator.val);
+                                
+                                result = '';
+                            }
+                            else
+                                result = _[ofn].call(_, symbol1, symbol2);
                         }
 
                         insert(result);
@@ -2565,12 +2584,20 @@ var nerdamer = (function(imports) {
                     }
                     
                     if(bracket === LEFT_PAREN && token || isSquareBracket) { 
-                        //make sure you insert the variables
-                        if(isSquareBracket && token) insert(token);
-                        
-                        var f = isSquareBracket ? VECTOR : token;
-                        stack.push(new Func(f), LEFT_PAREN);
+                        if(tree) {
+                            // ostack.push(bracket);
+                            if(token)
+                                ostack.push(token);
+                        }
+                        else {
+                            //make sure you insert the variables
+                            if(isSquareBracket && token) insert(token);
 
+                            var f = isSquareBracket ? VECTOR : token;
+                            stack.push(new Func(f), LEFT_PAREN);
+
+                        }
+                            
                         pos = curpos+1;
                         last_opr_pos = curpos; 
                         continue;
@@ -2632,20 +2659,25 @@ var nerdamer = (function(imports) {
                         }
                         //we found a closing bracket
                         else if(cur_char === RIGHT_PAREN || cur_char === RIGHT_SQUARE_BRACKET) { 
-                            last_opr_pos = null;
-                            var found_matching = false;
-                            while(!found_matching) {
-                                var popped = stack.pop();
-                                if(popped === undefined) err('Unmatched close bracket or parenthesis!');
-                                
-                                if(popped === LEFT_PAREN) {
-                                    found_matching = true;
-                                }
-                                else evaluate(popped);
-                                //TODO: fix bracket parity checking.
-                                if(popped === LEFT_PAREN && cur_char === RIGHT_SQUARE_BRACKET) { 
-                                    var lsi = last_item_on(stack);
-                                    if(!lsi || lsi.name !== VECTOR) err('Unmatched parenthesis!');
+                            /*if(tree)
+                                ostack.push(cur_char);
+                            else {*/
+                            if(!tree) {
+                                last_opr_pos = null;
+                                var found_matching = false;
+                                while(!found_matching) {
+                                    var popped = stack.pop();
+                                    if(popped === undefined) err('Unmatched close bracket or parenthesis!');
+
+                                    if(popped === LEFT_PAREN) {
+                                        found_matching = true;
+                                    }
+                                    else evaluate(popped);
+                                    //TODO: fix bracket parity checking.
+                                    if(popped === LEFT_PAREN && cur_char === RIGHT_SQUARE_BRACKET) { 
+                                        var lsi = last_item_on(stack);
+                                        if(!lsi || lsi.name !== VECTOR) err('Unmatched parenthesis!');
+                                    }
                                 }
                             }
                             
@@ -2676,7 +2708,8 @@ var nerdamer = (function(imports) {
             while(stack.length > 0) { 
                 evaluate();
             }
-
+            if(tree)
+                return ostack;
             return output[0];
         };
 
@@ -4182,7 +4215,7 @@ var nerdamer = (function(imports) {
                     var rowTeX = [],
                         e = symbol.elements[i];
                     for(var j=0; j<e.length; j++) {
-                        rowTeX.push(this.latex(e));
+                        rowTeX.push(this.latex(e[j]));
                     }
                     TeX += rowTeX.join(' & ')+'\\\\\n';
                 }
@@ -5213,6 +5246,10 @@ var nerdamer = (function(imports) {
         if(fn) libExports.setFunction(fn, args, e);
         
         return new Expression(e);
+    };
+    
+    libExports.rpn = function(expression) {
+        return _.parse(expression, null, true);
     };
     
     /**
