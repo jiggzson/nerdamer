@@ -2481,6 +2481,8 @@ var nerdamer = (function(imports) {
                         insert(symbol2);
                     }
                     else if(operator === LEFT_PAREN) { 
+                        if(tree)
+                            ostack.push(operator)
                         /*if(tree)
                             ostack.push(operator)
                         
@@ -2510,7 +2512,6 @@ var nerdamer = (function(imports) {
                         }
                         else { 
                             if(tree) {
-                                
                                 if(symbol1) 
                                     ostack.push(symbol1.toString());
                                 if(symbol2) 
@@ -2600,7 +2601,7 @@ var nerdamer = (function(imports) {
                     
                     if(bracket === LEFT_PAREN && token || isSquareBracket) { 
                         if(tree) {
-                            // ostack.push(bracket);
+                            //ostack.push(bracket);
                             if(token)
                                 ostack.push(token);
                         }
@@ -2674,6 +2675,14 @@ var nerdamer = (function(imports) {
                         }
                         //we found a closing bracket
                         else if(cur_char === RIGHT_PAREN || cur_char === RIGHT_SQUARE_BRACKET) { 
+                            if(tree) {
+                                ostack.push(cur_char);
+//                                ostack.push(token);
+//                                continue;
+                                console.log(ostack);
+                                console.log(output.toString());
+                                console.log(stack.toString());
+                            }
                             /*if(tree)
                                 ostack.push(cur_char);
                             else {*/
@@ -5271,7 +5280,15 @@ var nerdamer = (function(imports) {
      * 
      * @returns {String} returns the version of nerdamer
      */
-    libExports.version = function() {
+    libExports.version = function(add_on) {
+        if(add_on) {
+            try {
+                return C[add_on].version;
+            }
+            catch(e) {
+                return "No module named "+add_on+" found!";
+            }
+        }
         return version;
     };
     

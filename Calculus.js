@@ -87,7 +87,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     core.Settings.integration_depth = 4;
     
     var __ = core.Calculus = {
-        version: '1.3.1',
+        version: '1.3.2',
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
             index = index.value;
@@ -827,7 +827,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     }
                     else {
                         if(!a.contains(dx, true) && symbol.isLinear()) { //perform a deep search for safety
-                            //first handle the special cases 
+                            //first handle the special cases console.log(9)
                             if(fname === ABS) {
                                 //REVISIT **TODO**
                                 var x = _.divide(arg.clone(), a.clone());
@@ -845,6 +845,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     __.integration.stop();
                             }
                             else {
+                                var ag = symbol.args[0].group;
+                                if(!(ag === CP || ag === S || ag === CB))
+                                    __.integration.stop();
                                 /**TODO**/ //ASIN, ACOS, ATAN
                                 switch(fname) {
                                     case COS:
@@ -964,12 +967,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         }).map(function(x) {
                             return Symbol.unwrapSQRT(x, true);
                         });
-
                         //generate an image for 
                         var l = symbols.length;
                         if(l === 2) { 
                             //try u substitution
-                            retval = __.integration.u_substitution(symbols, dx);
+                            try {
+                                retval = __.integration.u_substitution(symbols, dx);
+                            }
+                            catch(e){/* failed :`(*/;}   
                             if(!retval) {
                                 //no success with u substitution so let's try known combinations
                                 //are they two functions
@@ -1270,7 +1275,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 if(retval)
                     return retval;
             }
-            catch(e){/*no integral found*/ }  
+            catch(e){/*no integral found*/ console.log(e.stack)}  
             //no symbol found so we return the integral again
             return _.symfunction('integrate', [original_symbol, dt]);
         }

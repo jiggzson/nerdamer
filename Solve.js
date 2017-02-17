@@ -25,7 +25,10 @@ if((typeof module) !== 'undefined') {
         isSymbol = core.Utils.isSymbol,
         variables = core.Utils.variables,
         isArray = core.Utils.isArray;
-        
+    //version solve
+    core.Solve = {
+        version: '1.1.0'
+    };
     var toLHS = function(eqn) {
         var es = eqn.split('=');
         if(es[1] === undefined) es[1] = '0';
@@ -93,6 +96,12 @@ if((typeof module) !== 'undefined') {
         for(var i=0; i<3; i++) 
             xs[i] = _.parse(xs[i], { a: a_o.clone(), b: b_o.clone(), c: c_o.clone(), d: d_o.clone(), C: C.clone()});
         return xs;
+    };
+    
+    var quartic = function(e, d, c, b, a) { 
+        var z = _.divide(b.clone(), _.multiply(new Symbol(4), a.clone())).negate(),
+            r = e.clone(),
+            y = [d, c, b, a];
     };
     
     var solve = function(eqns, solve_for) { 
@@ -190,33 +199,26 @@ if((typeof module) !== 'undefined') {
             //place them in an array and call the quad or cubic function to get the results
             if(!eq.hasFunc() && eq.isComposite()) { 
                 try {
-                    //remove extra powers
-                    
-                    //the terms of the polynomial
                     var coeffs = [];
-                    var add = function(c, p) {
-                        p = Number(p);
-                        if(!isInt(p)) throw new Error('Stopping');
-                        var xterm = _.parse(solve_for+'^'+p); //create a term of equal power to divide out
-                        coeffs[p] = _.divide(c, xterm);
-                    };
-
-                    for(var x in eq.symbols) {
-                        var sym = eq.symbols[x];
-                        if(sym.group === PL && sym.value === solve_for) {
-                            sym.each(function(y, p) {
-                                add(y, p);
-                            });
+                    //we loop through the symbols and stick them in their respective 
+                    //containers e.g. y*x^2 goes to index 2
+                    eq.each(function(term) {
+                        if(term.contains(solve_for)) {
+                            //we want only the coefficient which in this case will be everything but the variable
+                            //e.g. a*b*x -> a*b if the variable to solve for is x
+                            var coeff = term.stripVar(solve_for),
+                                x = _.divide(term.clone(), coeff.clone()),
+                                p = x.power.toDecimal();
                         }
                         else {
-                            var t, p;
-                            if(sym.symbols) {
-                                var t = sym.symbols[solve_for];
-                                add(sym, t ? t.power : 0);
-                            }
-                            else add(sym, sym.value === solve_for ? sym.power : 0);
+                            coeff = term;
+                            p = 0;
                         }
-                    }
+                        var e = coeffs[p];
+                        //if it exists just add it to it
+                        coeffs[p] = e ? _.add(e, coeff) : coeff;
+                    }, true);
+
                     var l = coeffs.length,
                         deg = l-1; //the degree of the polynomial
                     //fill the holes
@@ -238,6 +240,9 @@ if((typeof module) !== 'undefined') {
                         case 3:
                             add_to_result(cubic.apply(undefined, coeffs));
                             break;
+                        /*case 4:
+                            add_to_result(quartic.apply(undefined, coeffs));
+                            break;*/
                     }
                 }
                 catch(e) { /*something went wrong. EXITING*/;} 
