@@ -472,93 +472,117 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
         if(stack.length === 0 && typeof this === 'function')
             this.apply(undefined, arguments);
     };
-    //ADD
-    var add = _.add,
-        step_add = function(a, b) { 
-        var result;
-        logger.call(stepper.pre_add, a, b);
-        var wrapper_result = wrapper(function(a, b){
-            result = add.call(_, a, b);
-            return result;
-        }, a, b);
-        logger.call(stepper.post_add, result, a, b);
-        return wrapper_result;
-    };
-    _.add = step_add;
-    //SUBTRACT
-    var subtract = _.subtract,
-        step_subtract = function(a, b) { 
-        var result;
-        logger.call(stepper.pre_subtract, a, b);
-        var wrapper_result = wrapper(function(a, b){
-            result = subtract.call(_, a, b);
-            return result;
-        }, a, b);
-        logger.call(stepper.post_subtract, result, a, b);
-        return wrapper_result;
-    };
-    _.subtract = step_subtract;
-    //DIVIDE
-    var divide = _.divide,
-        step_divide = function(a, b) { 
-        var result;
-        logger.call(stepper.pre_divide, a, b);
-        var wrapper_result = wrapper(function(a, b){
-            result = divide.call(_, a, b);
-            return result;
-        }, a, b);
-        logger.call(stepper.post_divide, result, a, b);
-        return wrapper_result;
-    };
-    _.divide = step_divide;
-    //MULTIPLY
-    var multiply = _.multiply,
-        step_multiply = function(a, b) { 
-        var result;
-        logger.call(stepper.pre_multiply, a, b);
-        var wrapper_result = wrapper(function(a, b){
-            result = multiply.call(_, a, b);
-            return result;
-        }, a, b);
-        logger.call(stepper.post_multiply, result, a, b);
-        return wrapper_result;
-    };
-    _.multiply = step_multiply;
-    //POW
-    var pow = _.pow,
-        step_pow = function(a, b) { 
-        var result;
-        logger.call(stepper.pre_pow, a, b);
-        var wrapper_result = wrapper(function(a, b){
-            result = pow.call(_, a, b);
-            return result;
-        }, a, b);
-        logger.call(stepper.post_pow, result, a, b);
-        return wrapper_result;
-    };
-    _.pow = step_pow;
-    //CALLFUNCTION
-    //function calls are not recursive and can have more than one call on the stack
-    //because of this we don't use the wrapper
-    var fcall = _.callfunction,
-        step_fcall = function(fname, args) {
-        if(stepper.pre_function_call && typeof stepper.pre_function_call === 'function')
-            stepper.pre_function_call.call(undefined, fname, args);
-        var f = fcall.call(_, fname, args);
-        if(stepper.post_function_call && typeof stepper.post_function_call === 'function')
-            stepper.post_function_call.call(undefined, f, fname, args);
-        return f;
-    };
-    _.callfunction = step_fcall;
     
-    return function(o, override) {
+    //the semi-globals
+    var add, subtract, divide, multiply, pow, fcall;
+    
+    var load = function() {
+        //ADD
+        add = _.add,
+            step_add = function(a, b) { 
+            var result;
+            logger.call(stepper.pre_add, a, b);
+            var wrapper_result = wrapper(function(a, b){
+                result = add.call(_, a, b);
+                return result;
+            }, a, b);
+            logger.call(stepper.post_add, result, a, b);
+            return wrapper_result;
+        };
+        _.add = step_add;
+        //SUBTRACT
+        subtract = _.subtract,
+            step_subtract = function(a, b) { 
+            var result;
+            logger.call(stepper.pre_subtract, a, b);
+            var wrapper_result = wrapper(function(a, b){
+                result = subtract.call(_, a, b);
+                return result;
+            }, a, b);
+            logger.call(stepper.post_subtract, result, a, b);
+            return wrapper_result;
+        };
+        _.subtract = step_subtract;
+        //DIVIDE
+        divide = _.divide,
+            step_divide = function(a, b) { 
+            var result;
+            logger.call(stepper.pre_divide, a, b);
+            var wrapper_result = wrapper(function(a, b){
+                result = divide.call(_, a, b);
+                return result;
+            }, a, b);
+            logger.call(stepper.post_divide, result, a, b);
+            return wrapper_result;
+        };
+        _.divide = step_divide;
+        //MULTIPLY
+        multiply = _.multiply,
+            step_multiply = function(a, b) { 
+            var result;
+            logger.call(stepper.pre_multiply, a, b);
+            var wrapper_result = wrapper(function(a, b){
+                result = multiply.call(_, a, b);
+                return result;
+            }, a, b);
+            logger.call(stepper.post_multiply, result, a, b);
+            return wrapper_result;
+        };
+        _.multiply = step_multiply;
+        //POW
+        pow = _.pow,
+            step_pow = function(a, b) { 
+            var result;
+            logger.call(stepper.pre_pow, a, b);
+            var wrapper_result = wrapper(function(a, b){
+                result = pow.call(_, a, b);
+                return result;
+            }, a, b);
+            logger.call(stepper.post_pow, result, a, b);
+            return wrapper_result;
+        };
+        _.pow = step_pow;
+        //CALLFUNCTION
+        //function calls are not recursive and can have more than one call on the stack
+        //because of this we don't use the wrapper
+        fcall = _.callfunction,
+            step_fcall = function(fname, args) {
+            if(stepper.pre_function_call && typeof stepper.pre_function_call === 'function')
+                stepper.pre_function_call.call(undefined, fname, args);
+            var f = fcall.call(_, fname, args);
+            if(stepper.post_function_call && typeof stepper.post_function_call === 'function')
+                stepper.post_function_call.call(undefined, f, fname, args);
+            return f;
+        };
+        _.callfunction = step_fcall;
+    };
+    
+    load(); //fire away
+    
+    var xport = function(o, override) {
         for(var x in o) {
             if(!stepper[x] || stepper[x] && override)
                 stepper[x] = o[x];
         }
     };
     
-})();  
+    xport.unload = function() {
+        _.add = add;
+        _.subtract = subtract;
+        _.multiply = multiply;
+        _.divide = divide;
+        _.pow = pow;
+        _.callfunction = fcall;
+    };
+    
+    xport.load = load;
+    
+    xport.clear = function() {
+        stepper = {};
+    }
+    
+    return xport;
+})();
 </code></pre>
 
 You can then define your step methods
@@ -629,6 +653,12 @@ If you would want to override the existing pre_add example for instance you can 
     }
 }, true);
 </code></pre>
+To unload the stepper call the unload method
+<pre><code>stepper.unload();</code></pre>
+To reload the stepper call the load method
+<pre><code>stepper.load();</code></pre>
+To clear the stepper call the clear method
+<pre><code>stepper.clear();</code></pre>
 
         </div>
 
