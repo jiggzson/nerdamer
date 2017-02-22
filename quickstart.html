@@ -483,7 +483,7 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
             var result;
             logger.call(stepper.pre_add, a, b);
             var wrapper_result = wrapper(function(a, b){
-                result = add.call(_, a, b);
+                result = add.call(_, a.clone(), b.clone());
                 return result;
             }, a, b);
             logger.call(stepper.post_add, result, a, b);
@@ -496,7 +496,7 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
             var result;
             logger.call(stepper.pre_subtract, a, b);
             var wrapper_result = wrapper(function(a, b){
-                result = subtract.call(_, a, b);
+                result = subtract.call(_, a.clone(), b.clone());
                 return result;
             }, a, b);
             logger.call(stepper.post_subtract, result, a, b);
@@ -509,7 +509,7 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
             var result;
             logger.call(stepper.pre_divide, a, b);
             var wrapper_result = wrapper(function(a, b){
-                result = divide.call(_, a, b);
+                result = divide.call(_, a.clone(), b.clone());
                 return result;
             }, a, b);
             logger.call(stepper.post_divide, result, a, b);
@@ -522,7 +522,7 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
             var result;
             logger.call(stepper.pre_multiply, a, b);
             var wrapper_result = wrapper(function(a, b){
-                result = multiply.call(_, a, b);
+                result = multiply.call(_, a.clone(), b.clone());
                 return result;
             }, a, b);
             logger.call(stepper.post_multiply, result, a, b);
@@ -535,7 +535,7 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
             var result;
             logger.call(stepper.pre_pow, a, b);
             var wrapper_result = wrapper(function(a, b){
-                result = pow.call(_, a, b);
+                result = pow.call(_, a.clone(), b.clone());
                 return result;
             }, a, b);
             logger.call(stepper.post_pow, result, a, b);
@@ -575,11 +575,11 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
         _.callfunction = fcall;
     };
     
-    xport.load = load;
-    
     xport.clear = function() {
         stepper = {};
-    }
+    };
+    
+    xport.load = load;
     
     return xport;
 })();
@@ -632,16 +632,16 @@ Dividing 9 by 3
 The result of dividing 9 by 3 was 3
 
 Raising 2 to the power of 3
-The result of raising 2 to the powe rof 3 was 8
+The result of raising 2 to the power of 3 was 8
 
 Multiplying 3 by 8
 The result of multiplying 3 by 8 was 24
 
 Subtracting 24 from 3
-The result of subtracting 21 from -3 was 21
+The result of subtracting 24 from 3 was 21
 
 Adding 21 to 1
-The result of adding 22 to 1 was 22
+The result of adding 21 to 1 was 22
 
 Finally the end result was 22
 */
