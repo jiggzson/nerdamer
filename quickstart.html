@@ -444,6 +444,191 @@ console.log(sol);
 </code></pre>  
 
 If no solutions could be found then the array will be empty
+<h3>Logging Steps</h3>
+One of the frequently asked questions is how to log the steps of the parsing. To aid in this I've created a helper. The code can be found below or you can find it at this Github
+<a href="https://gist.github.com/jiggzson/30ebef4a7bf97d2412964ff1b11938b5">gist</a>. This helper creates a function called stepper which can be passed an object containing pre and post
+functions. For instance to log addition the pre_add and post_add functions get passed to the stepper. The operations which can be logged are called add, subtract, multiply, divide, pow, and call_function.
+To override an existing entry pass the object along with true to the stepper function. See examples below
+<br/><br/>
+Below is the stepper method assuming nerdamer is already loaded in your page or node environment.
+<pre><code>var stepper = (function() {
+    var core = nerdamer.getCore(),
+        _ = core.PARSER,
+        //the container for the function steps
+        stepper = {},
+        //nerdamer makes recursive calls when adding, subtracting, etc. Making
+        //sure the stack is clear ensures that we're at the first call
+        stack = [];
+    //a function to add calls to the stack
+    var wrapper = function(f, a, b) {
+        stack.push('lock');
+        var r = f(a, b);
+        stack.pop();
+        return r;
+    };
+    //This logging function makes sure that there aren't any items on the stack
+    //before logging
+    var logger = function() { 
+        if(stack.length === 0 && typeof this === 'function')
+            this.apply(undefined, arguments);
+    };
+    //ADD
+    var add = _.add,
+        step_add = function(a, b) { 
+        var result;
+        logger.call(stepper.pre_add, a, b);
+        var wrapper_result = wrapper(function(a, b){
+            result = add.call(_, a, b);
+            return result;
+        }, a, b);
+        logger.call(stepper.post_add, result, a, b);
+        return wrapper_result;
+    };
+    _.add = step_add;
+    //SUBTRACT
+    var subtract = _.subtract,
+        step_subtract = function(a, b) { 
+        var result;
+        logger.call(stepper.pre_subtract, a, b);
+        var wrapper_result = wrapper(function(a, b){
+            result = subtract.call(_, a, b);
+            return result;
+        }, a, b);
+        logger.call(stepper.post_subtract, result, a, b);
+        return wrapper_result;
+    };
+    _.subtract = step_subtract;
+    //DIVIDE
+    var divide = _.divide,
+        step_divide = function(a, b) { 
+        var result;
+        logger.call(stepper.pre_divide, a, b);
+        var wrapper_result = wrapper(function(a, b){
+            result = divide.call(_, a, b);
+            return result;
+        }, a, b);
+        logger.call(stepper.post_divide, result, a, b);
+        return wrapper_result;
+    };
+    _.divide = step_divide;
+    //MULTIPLY
+    var multiply = _.multiply,
+        step_multiply = function(a, b) { 
+        var result;
+        logger.call(stepper.pre_multiply, a, b);
+        var wrapper_result = wrapper(function(a, b){
+            result = multiply.call(_, a, b);
+            return result;
+        }, a, b);
+        logger.call(stepper.post_multiply, result, a, b);
+        return wrapper_result;
+    };
+    _.multiply = step_multiply;
+    //POW
+    var pow = _.pow,
+        step_pow = function(a, b) { 
+        var result;
+        logger.call(stepper.pre_pow, a, b);
+        var wrapper_result = wrapper(function(a, b){
+            result = pow.call(_, a, b);
+            return result;
+        }, a, b);
+        logger.call(stepper.post_pow, result, a, b);
+        return wrapper_result;
+    };
+    _.pow = step_pow;
+    //CALLFUNCTION
+    //function calls are not recursive and can have more than one call on the stack
+    //because of this we don't use the wrapper
+    var fcall = _.callfunction,
+        step_fcall = function(fname, args) {
+        if(stepper.pre_function_call && typeof stepper.pre_function_call === 'function')
+            stepper.pre_function_call.call(undefined, fname, args);
+        var f = fcall.call(_, fname, args);
+        if(stepper.post_function_call && typeof stepper.post_function_call === 'function')
+            stepper.post_function_call.call(undefined, f, fname, args);
+        return f;
+    };
+    _.callfunction = step_fcall;
+    
+    return function(o, override) {
+        for(var x in o) {
+            if(!stepper[x] || stepper[x] && override)
+                stepper[x] = o[x];
+        }
+    };
+    
+})();  
+</code></pre>
+
+You can then define your step methods
+<pre><code>stepper({
+    pre_add: function(a, b) {
+        console.log('Adding '+a+' to '+b);
+    },
+    pre_subtract: function(a, b) {
+        console.log('Subtracting '+a+' from '+b);
+    },
+    pre_multiply: function(a, b) {
+        console.log('Multiplying '+a+' by '+b);
+    },
+    pre_divide: function(a, b) {
+        console.log('Dividing '+a+' by '+b);
+    },
+    pre_pow: function(a, b) {
+        console.log('Raising '+a+' to the power of '+b);
+    },
+    pre_function_call: function(fname, args) {
+        console.log('The function '+fname+' was called with arguments '+args);
+    },
+    post_function_call: function(f) {
+        console.log('Afterwards this resulted in '+f+'\n');
+    },
+    post_add: function(result, a, b) {
+        console.log('The result of adding '+a+' to '+b+' was '+result+'\n');
+    },
+    post_subtract: function(result, a, b) {
+        console.log('The result of subtracting '+a+' from '+b+' was '+result+'\n');
+    },
+    post_multiply: function(result, a, b) {
+        console.log('The result of multiplying '+a+' by '+b+' was '+result+'\n');
+    },
+    post_divide: function(result, a, b) {
+        console.log('The result of dividing '+a+' by '+b+' was '+result+'\n');
+    },
+    post_pow: function(result, a, b) {
+        console.log('The result of raising '+a+' to the powe rof '+b+' was '+result+'\n');
+    }
+});
+var x = nerdamer('9/3*2^3-3+1');
+console.log('Finally the end result was '+x.toString());
+
+/* OUTPUT: 
+Dividing 9 by 3
+The result of dividing 9 by 3 was 3
+
+Raising 2 to the power of 3
+The result of raising 2 to the powe rof 3 was 8
+
+Multiplying 3 by 8
+The result of multiplying 3 by 8 was 24
+
+Subtracting 24 from 3
+The result of subtracting 21 from -3 was 21
+
+Adding 21 to 1
+The result of adding 22 to 1 was 22
+
+Finally the end result was 22
+*/
+</code></pre>
+If you would want to override the existing pre_add example for instance you can do so in the following manner
+<pre><code>stepper({
+    pre_add: function() {
+        console.log('Overridden');
+    }
+}, true);
+</code></pre>
 
         </div>
 
