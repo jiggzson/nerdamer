@@ -227,6 +227,43 @@ describe('Algebra', function () {
         }
     });
 
+    /** #3: "(a-b)^2 - (b-a)^2" not simplifying. */
+    it('should simplify to 0', function () {
+      // given
+      var formula = '(a-b)^2-(b-a)^2';
+
+      // when
+      var result = nerdamer(formula, null, ['numer', 'expand']).toString();
+
+      // then
+      expect(result).toBe('0');
+    });
+
+    /** #40: Expected more simple solution for factoring. */
+    it('should use simple factor result', function () {
+      // given
+      var formula = 'factor(x^2+x+1/4)';
+
+      // when
+      var result = nerdamer(formula).toString();
+
+      // then
+      expect(result).toBe('(1+2*x)^2*(1/4)');
+    });
+
+     // 
+    /** #43: Formula not expanded. */
+    it('should expand formula', function () {
+      // given
+      var formula = 'expand((x+5)(x-3)-x^2)';
+
+      // when
+      var result = nerdamer(formula).toString();
+
+      // then
+      expect(result).toBe('-15+2*x');
+    });
+
     // TODO jiggzson: Currently the last test case fails...
     // with xit (instead of it), a test can be disabled temporarily
     xit('should factor correctly', function () {
