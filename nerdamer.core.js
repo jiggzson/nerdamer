@@ -3483,7 +3483,7 @@ var nerdamer = (function(imports) {
                 /*note to self: Please don't forget about this dilemma ever again. In this model PL and CB goes crazy
                  * because it doesn't know which one to prioritize. */
                 //correction to PL dilemma
-                if(g1 === CB && g2 === PL && a.value === b.value) {
+                if(g1 === CB && g2 === PL && a.value === b.value) { 
                     //swap
                     var t = a; a = b; b = t;
                     g1 = a.group; g2 = b.group; ap = a.power.toString(); bp = b.power.toString();
@@ -3499,7 +3499,7 @@ var nerdamer = (function(imports) {
                 if(aIsComposite) h1 = text(a, 'hash');
                 if(bIsComposite) h2 = text(b, 'hash');
                 
-                if(g1 === CP && g2 === CP && b.isLinear() && !a.isLinear()) {
+                if(g1 === CP && g2 === CP && b.isLinear() && !a.isLinear() && h1 !== h2) {
                     return this.add(a, b);
                 }   
 
