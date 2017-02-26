@@ -162,4 +162,67 @@ describe('TeX features', function () {
             expect(decimalTex).toEqual(testCases[i].decimalTeX);
         }
     });
+
+    /** #36: Weird results with sqrt */
+    it('should render square roots properly', function () {
+      // given
+      var formula = '2*sqrt(x)';
+
+      // when
+      var teX = nerdamer(formula).toTeX();
+
+      // then
+      expect(teX).toEqual('2 \\cdot \\sqrt{x}');
+    });
+
+    /** #39: Terms multiplied in brackets not rendered correctly */
+    it('should render parentheses', function () {
+      // given
+      var formula = '(x+1)*(x+2)';
+
+      // when
+      var teX = nerdamer(formula).toTeX();
+
+      // then
+      expect(teX).toEqual('\\left(x+1\\right) \\cdot \\left(x+2\\right)');
+    });
+
+    /** #41: Latex output should use descending order */
+    it('should use descending order of polynomials', function () {
+      // given
+      var formula = 'x^2+x+1';
+
+      // when
+      var teX = nerdamer(formula).toTeX();
+
+      // then
+      expect(teX).toEqual('x^{2}+x+1');
+    });
+
+    it('should support Greek letters', function () {
+      // given
+      var testCases = [
+        {
+          given: 'alpha + beta',
+          expected: '\\alpha+\\beta'
+        },
+        {
+          given: '5 * 3 / psi',
+          expected: '\\frac{15}{\\psi}'
+        },
+        {
+          given: 'Xi ^ tau - 8*nu',
+          expected: '\\Xi^{\\tau}-8 \\cdot \\nu'
+        }
+      ];
+
+      for (var i = 0; i < testCases.length; ++i) {
+        // when
+        var teX = nerdamer(testCases[i].given).toTeX();
+
+        // then
+        expect(teX).toEqual(testCases[i].expected);
+      }
+    });
+    
 });
