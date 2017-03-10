@@ -12,7 +12,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.0',
+    var version = '0.7.1',
         _ = new Parser(), //nerdamer's parser
         //import bigInt
         bigInt = imports.bigInt,
@@ -1292,7 +1292,7 @@ var nerdamer = (function(imports) {
             //you probably have bigger concerns
             return this.num/this.den;
         },
-        qcompare: function(n) {
+        qcompare: function(n) { 
             return [this.num.multiply(n.den), n.num.multiply(this.den)];
         },
         equals: function(n) {
@@ -1349,7 +1349,7 @@ var nerdamer = (function(imports) {
             return Frac.quick(bigInt.gcd(f.num, this.num), bigInt.lcm(f.den, this.den));
         },
         toString: function() {
-            return !this.den.equals(1) ? this.num+'/'+this.den : String(this.num);
+            return !this.den.equals(1) ? this.num.toString()+'/'+this.den.toString() : this.num.toString();
         },
         valueOf: function() {
             return this.num/this.den;
@@ -2364,6 +2364,26 @@ var nerdamer = (function(imports) {
     Bracket.prototype.toString = function() {
         return this.val;
     };
+    
+    function Prefix(operator) {
+        this.operation = operator.operation;
+        this.val = operator.val;
+        this.is_prefix_operator = true;
+    }
+    
+    Prefix.prototype.toString = function() {
+        return '`'+this.val;
+    };
+    
+    function Postfix(operator) {
+        this.operation = operator.operation;
+        this.val = operator.val;
+        this.is_postfix_operator = true;
+    }
+    
+    Postfix.prototype.toString = function() {
+        return this.val;
+    };
 
     //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
@@ -2390,17 +2410,17 @@ var nerdamer = (function(imports) {
                 '*' : new Operator('*', 'multiply', 4, true, false),
                 '/' : new Operator('/', 'divide', 4, true, false),
                 '+' : new Operator('+', 'add', 3, true, true, false, function(e) {
-                    return e; //nothing to do at all since (+ e) = e
+                    return e;
                 }),
-                '-' : new Operator('-', 'subtract', 3, true, true, false, function(e){ 
-                    return e.negate(); //negate and return since (- e) = -e
+                '-' : new Operator('-', 'subtract', 3, true, true, false, function(e) {
+                    return e.negate();
                 }),
                 '=' : new Operator('=', 'equals', 2, false, false),
-                '==' : new Operator('=', 'eq', 1, false, false),
-                '<' : new Operator('=', 'lt', 1, false, false),
-                '<=' : new Operator('=', 'lte', 1, false, false),
-                '>' : new Operator('=', 'gt', 1, false, false),
-                '>=' : new Operator('=', 'gte', 1, false, false),
+                '==' : new Operator('==', 'eq', 1, false, false),
+                '<' : new Operator('<', 'lt', 1, false, false),
+                '<=' : new Operator('<=', 'lte', 1, false, false),
+                '>' : new Operator('>', 'gt', 1, false, false),
+                '>=' : new Operator('>=', 'gte', 1, false, false),
                 ',' : new Operator(',', 'comma', 0, true, false)
             },
             //list of supported brackets
@@ -2596,87 +2616,51 @@ var nerdamer = (function(imports) {
             return retval;
         };
         
-        this.parseTree = function(tree, start_from) {
-            start_from = start_from || 0;
-            var q = [];
-            var prefixes = [];
-            var l = tree.length;
+        /*
+         * This method parses the tree
+         * @param {String[]} rpn
+         * @returns {Symbol}
+         */
+        this.parseTree = function(rpn) {
+            var q = []; // The container for parsed values
+            var l = rpn.length;
+            // begin parsing
             for(var i=0; i<l; i++) {
-                var e = tree[i],
-                    v = e.value;
-                //make the substitution for constants
-                if(v in constants) 
-                    e = new Symbol(constants[v]);
-                //make the substitution for vars
-                if(v in VARS) 
-                    e = VARS[v].clone();
-                //substitute known values and placeholders
-                if(Settings.PARSE2NUMBER && v in subs) 
-                    e = new Symbol(subs[v]);
-
+                var e = rpn[i];
+                if(e.is_prefix_operator) { 
+                    q.push(e.operation(q.pop()));
+                    continue;
+                }
                 if(e.is_operator) {
-                    if(e.is_postfix) {
-                        var ll = q.length-1;
-                        q[ll] = e.operation(q[ll]);
-                        continue;
-                    }
-//                    var next = tree[i+1],
-//                        last = q.length-1;
-//                    //go through all the upcoming prefix operators and preform their operation
-//                    while(next && next.is_prefix_operator) {
-//                        q[last] = next.operation(q[last]);
-//                        i++; //move forward
-//                        next = tree[i+1];
-//                    }
-                    var a = q.pop(),
-                        b = q.pop();
-//                console.log(a ? a.toString(): undefined, 'a')
-//                console.log(b ? b.toString(): undefined, 'b')
-//                console.log(e.toString())
-//                console.log('====================================')
-                    if(a === undefined) {
-                        prefixes.push(e);
-                        continue;
-                    }
-                    /* 
-                     * If we're dealing with prefixes then b will be undefined. If the prefix belongs to this symbol then the next 
-                     * token will be a symbol. When this happens then we can collaple the entire prefix stack to this symbol.
-                     * A blank token indicates a change of scope so we can recursively call the tree and treat the bracket
-                     * node as a new symbol e.g. in a--(-a+b) we treat a as new symbol. This greatly simplifies parsing
-                     */
-                    if(b === undefined) {
-                        //check the next operator. This will be and operator if we're still dealing with a prefix
-                        var next = tree[i+1];
-                        if(next === '') {
-                            prefixes.push(e);
-                            b = _.parseTree(tree, ++i+1);
-                        }
-                        else if(next.is_operator) {
-                            prefixes.push(e);
-                            continue;
-                        }
-                        else
-                            b = new Symbol(0);
-                    }
-                    q.push(this[e.fn](b, a));
+                    var b = q.pop(),
+                        a = q.pop();
+                    q.push(this[e.fn](a, b));
                 }
-                else if(e.is_function) { //if the token is a function 
-                    var f = _.callfunction(e.value, q.pop()),
-                        sign = e.sign();
-                    if(sign < 0) //transfer the sign
-                        f.negate();
-                    q.push(f);
+                else if(e in functions) {
+                    q.push(_.callfunction(e, q.pop()));
                 }
-                else
-                    q.push(new Symbol(e));
+                else { 
+                    // Blank denotes a beginning of a scope with a prefix operator so all we have to do is 
+                    // convert it to a zero
+                    if(e === '') {
+                        q.push(new Symbol(0));
+                    }
+                    else {
+                        // make substitutions
+                        //constants take higher priority
+                        if(e in constants)
+                            e = new Symbol(constants[e]);
+                        //next subs
+                        else if(e in subs)
+                            e = subs[e].clone();
+                        else if(e in VARS)
+                            e = VARS[e].clone();
+                        q.push(e);
+                    }
+                }
             }
             
-            var retval = q[0] || new Symbol(0);
-            //handle all the prefixes still on the prefixes stack
-            while(prefixes.length)
-                retval = prefixes.pop().operation(retval);
-            
-            return retval;
+            return q[0] || new Symbol(0);
         };
         
         /**
@@ -2691,6 +2675,15 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         this.parse = function(expression_string, substitutions, tree) { 
+            //prepare the substitutions
+            if(substitutions) {
+                for(var x in substitutions)
+                    substitutions[x] = _.parse(substitutions[x]);
+                subs = substitutions;
+            }
+            else
+                subs = {};
+                
             /*
              * Since variables cannot start with a number, the assumption is made that when this occurs the
              * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
@@ -2714,223 +2707,232 @@ var nerdamer = (function(imports) {
                     if(before.match(/[a-z]/i)) d = '';
                     return group1+d+group2;
                 })
+                .replace(/([a-z0-9]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
+                    var g1 = a || c,
+                        g2 = b || d;
+                    if(g1 in functions) //create a passthrough for functions
+                        return g1+g2;
+                    return g1+'*'+g2;
+                })
                 //allow omission of multiplication sign between brackets
                 .replace( /\)\(/g, ')*(' ) || '0';
+        
             var l = e.length, //the length of the string
                 output = [], //the output array. This is what's returned
                 stack = [], //the operator stack
                 last_pos = 0, //the location of last operator encountered
-                open_brackets = [0, 0]; //a counter for the open brackets
-            /*We define the operator as anything that performs any form of operation. A bracket as any object that defines
-            * a scope and a token as anything in between two operators. This enables us to have variables of more than one letter.
-            * This function is a modified version of the Shunting-Yard algorithm to enable variable names, and compound operators.
-            * operators are defined in the operator object. We walk the string and check every character. If an operator is encountered
-            * then we mark it's location. We find the next operator and get the token between. 
-            */
-            var token, operator;
+                prefixes = [],
+                open_brackets = [0, 0], //a counter for the open brackets
+                new_scope = true; //signal if we're in a new scope or not
+            // This method gets and inserts the token on output as the name implies
+            var get_and_insert_token = function(to_pos) {
+                if(to_pos !== last_pos) {
+                    token = new Symbol(e.substring(last_pos, to_pos));
+                    output.push(token);
+                    //once we find out first token we are no longer in a new scope so flip
+                    //the flag
+                    new_scope = false; 
+                }
+            };  
             
-//            var resolve_prefixes = function(token) {
-//                //handle all the prefixes
-//                while(prefix_stack.length) {
-//                    token = prefix_stack.pop().operation(token);
-//                }
-//                return token;
-//            };
-            
-            var get_token = function(last_pos, i) {
-                var token = e.substring(last_pos, i);
-//                if(token !== '') {
-//                    token = resolve_prefixes(new Symbol(token));
-//                }
-                return token;
+            var verify_prefix_operator = function(operator) {
+                if(!operator.is_prefix)
+                    err(operator+' is not a valid prefix operator');
             };
             
+            var add_prefix = function(prefix) { 
+                var e = prefixes.pop(), new_prefix;
+                if(!e) {
+                    prefixes.push(prefix);
+                    return;
+                }
+                //transfer the pre_bracket flag
+                if(e.pre_bracket || prefix.pre_bracket) { 
+                    prefixes.push(e);
+                    prefixes.push(prefix);
+                    return;
+                }
+                
+                if(prefix.val === e.val) 
+                     new_prefix = new Prefix(operators['+']);
+                else
+                    new_prefix = new Prefix(operators['-']);
+
+                prefixes.push(new_prefix);
+            };
             /*
-             * This method is used to identify prefixes at the beginning of a scope given a starting position.
+             * We define the operator as anything that performs any form of operation. A bracket as any object that defines
+             * a scope and a token as anything in between two operators. This enables us to have variables of more than one letter.
+             * This function is a modified version of the Shunting-Yard algorithm to enable variable names, and compound operators.
+             * operators are defined in the operator object. We walk the string and check every character. If an operator is encountered
+             * then we mark it's location. We find the next operator and get the token between. 
              */
-//            var chomp_prefixes = function(from) {
-//                //remove all initial prefixes
-//                var starting_ch = e.charAt(from);
-//                while(starting_ch in operators) {
-//                    var prefix = operators[starting_ch];
-//                    if(!prefix.is_prefix)
-//                        err(starting_ch+' is not a valid prefix operator');
-//                    else 
-//                        prefix_stack.push(prefix);
-//                    starting_ch = e.charAt(++from);
-//                    last_pos = from;
-//                }
-//                return from;
-//            };
-            var start = 0;
-            
+            var token, operator, start = 0, i=0;
+            // start the generation of the tree
             for(var i=start; i<l; i++) {
                 //the character
                 var ch = e.charAt(i); 
-                if(ch in operators) {
-                    token = get_token(last_pos, i);//the token is from the last operator to this point
-                    //the operator may be a compound operator so we keep walking the string until
-                    //we find a character which is no longer an operator
-                    var ostart = i; //mark the beginning of the operator
-                    while(true) {
-                        var next_pos = i+1;
-                        //move i forward since we'll no longer be looking at the last position & grab the next char
-                        var nextch = e.charAt(next_pos),
-                            str_end = next_pos;
-                        if(!(nextch in operators)) {
-                            do {
-                                var ostring = e.substring(ostart, str_end); 
-                                operator = operators[ostring]; //grab the operator
-                                /* In order to support compound operators we keep looking ahead to find all operators that match
-                                 * when a non-operator is found we take that to be the end of the operator Take for example the case of x*--y. 
-                                 * The operator wiill be *-- but there is no such operator defined. We therefore want the * and the -- 
-                                 * separated so we assume the end to be a prefix. We keep removing a prefix until we find a 
-                                 * valid operator. If the operator removed from the end is not a valid operator we complain.
-                                 * This reduction has to result in a operator since that's how we managed to define the starting operator *--
-                                 * in the first place.
-                                 */
-                                if(!operator) {
-                                    var prstr = ostring.charAt(ostring.length-1),
-                                        o = operators[prstr]; //get the last character
-                                    if(!o || !o.is_prefix)
-                                        if(o.is_postfix)
-                                            stack.push(o);
-                                        else 
-                                            err(prstr+' is not a valid prefix operator');
-                                    else {
-                                        stack.push(o);
-//                                        prefix_stack.push(o);
-                                    }
-                                    str_end--;//clip the last operator off
-                                } 
-                            }
-                            while(!operator)
-                            break; //stop since it's not an operator
-                        }   
-                        i++; //move forward one
+                if(ch in operators) { 
+                    var sl = stack.length,
+                        pl = prefixes.length;
+                    if(sl && !stack[sl-1].left_assoc && pl && !prefixes[pl-1].pre_bracket) { 
+                        var pf = prefixes.pop();
+                        stack.push(pf);
                     }
-                    //mark the position of the last operator
-                    last_pos = i+1; //skip the current operator
-
-                    /* Add the token to output. Keep in mind that the token might be blank. This is 
-                     * important since there would be no way to differentiate between a prefix operator 
-                     * and a malformed expression. For instance (a-(-a+x)) and a-a+x- are identical in RPN 
-                     * if blanks were not allowed since both would yield a a - x + -  
-                     * The blank does offer a nice way of differentiating between zero and the start of a bracket
+                    // We previously defined the token to be the anything between two operators and since we an operator
+                    //we can grab the token
+                    get_and_insert_token(i); 
+                    //mark the current position
+                    var c = i; 
+                    /*
+                     * In order to support compound operators we assume that the following might be operator as well. We keep walking the string
+                     * until we encounter a character which is no longer an operator. We define that entire sub-string an operator
                      */
-                    if(token === '')
-                        token = '`';
-                    output.push(token);
+                    while(e.charAt(i+1) in operators)
+                        i++;
+                    
+                    var end_operator = i+1;
+                    //the probable operator will be the difference between c and i;
+                    var pr_operator = e.substring(c, end_operator); 
+                    /* 
+                     * We now have to see if this operator is actually an operator or a combination of an operator and prefix operators 
+                     * e.g. 3*-+-8 or x^-3. To determine this we knock off an operator one at a time until we find the matching operator.
+                     * For instance if we have an operator -= and we get -=-- we knock of a minus from the back until we reach -= which will 
+                     * register as a defined operator since we defined it as such
+                     */
+                    while(!(pr_operator in operators)) { 
+                        var l2 = pr_operator.length,
+                            end = l2-1,
+                            prefix = operators[pr_operator.charAt(end)];
+                        verify_prefix_operator(prefix);
+                        //add the prefix to the stack
+                        add_prefix(new Prefix(prefix));
+                        pr_operator = pr_operator.substring(0, end);
+                    }
 
-                    //we check if the current operator has a higher precedence if so we can safely move it to output
-                    while(true) {
+                    // we now have the operator
+                    operator = operators[pr_operator];
+                    
+                    var pl = prefixes.length;
+                    //handle the last prefix e.g. 8--8. Just make it 8+8 and call it a day.
+                    if(pl && operator.is_prefix && !prefixes[pl-1].pre_bracket) { 
+                        add_prefix(new Prefix(operator));
+                        operator = operators[prefixes.pop().val];
+                    }
+                    // we mark where we find the last operator so we know where the next token begins
+                    last_pos = end_operator; 
+                    while(true) { 
                         var sl = stack.length,
                             los = stack[sl-1];
                         if(sl === 0 || !(operator.left_assoc && operator.precedence <= los.precedence 
                             || !operator.left_assoc && operator.precedence < los.precedence))
                             break; //nothing to do
+                        if(prefixes.length && !prefixes[0].pre_bracket)
+                            output.push(prefixes.pop());
                         output.push(stack.pop());
-//                        while(prefix_stack.length)
-//                            output.push(prefix_stack.pop());
                     }
-                    //add the operator to the stack
-                    stack.push(operator);
+
+                    // If we're in a new scope then we're dealing with a prefix operator
+                    if(new_scope) { 
+                        verify_prefix_operator(operator);
+                        /*
+                         * There is literally no way to differentiate between a malformed expression and a properly formed one if there is no gap left 
+                         * at the beginning of the scope. This is best illustrated. Take the expression 3+7- in RPN it becomes 3,7,+,-
+                         * Take the expression -3+7 in RPN this become 3,7,+,- as well. The difference is that we tag the minus as
+                         * a prefix in the properly formed expression. Problem solved! But wait. Imagine we have no gaps at the beginning
+                         * of the scope let's say -(3+7). With no gaps this again becomes 3,7,+,- with no way to differentiate
+                         * between -3+7 and -(3+7) unless the second one is written as 3,7,+, ,- where the gap denotes the end of the scope
+                         */ 
+                        output.push('');
+                    }
                     
+                    stack.push(operator);
                 }
                 else if(ch in brackets) {
-                    var bracket = brackets[ch];
-                    if(bracket.open) {
-                        open_brackets[bracket.bracket_id]++; //open a new brackets
-                        /*
-                         * We might have be dealing with a function. If this is the case then there will be a token between
-                         * the last operator position and the current bracket. It's it's not then this will be just an empty string
-                         * e.g. f(x): last_pos = 0, i=1;
-                         */
-                        var f = bracket.fn ? bracket.fn() : e.substring(last_pos, i);
-                        if(f !== '') {
-                            f = new Symbol(f);
+                    var bracket = brackets[ch]; 
+                    if(bracket.open) { 
+                        //mark a bracket as being opened
+                        open_brackets[bracket.bracket_id]++;
+                        //check if we're dealing with a function
+                        if(last_pos !== i) {
+                            var f = new Symbol(e.substring(last_pos, i));
+                            // assume it's a function. Since a string is just an object, why not use it
                             f.is_function = true;
-                            if(f in functions) 
-                                stack.push(f);
-//                                stack.push(resolve_prefixes(f));
-                            else
-                                err(f+' is not a supported function');
-                        }  
-                        //if we found an open bracket all we do is put it on the stack
-                        stack.push(bracket);
-                        //get all the prefix operators which occur at the beginning
-//                        i = chomp_prefixes(i+1);
-//                        i++;
-                        last_pos = i+1; //mark the bracket as the last known position of an operator
-                        //if we happen to have run into a bracket then we just reset and repeat
-//                        if(e.charAt(i) in brackets) {
-//                            i--; 
-//                            continue;
-//                        }
-                    }
-                    else { 
-                        
-                        open_brackets[bracket.bracket_id]--;//close the bracket
-                        token = get_token(last_pos, i); 
-                        if(token)
-                            output.push(token);
-
-                        while(true) { 
-                            //we look for an open brackets that matches this
-                            var popped = stack.pop(); 
-                            try {
-                                if(popped.bracket_id === bracket.bracket_id) 
-                                    break; //we found a match and we're done
-                                else
-                                    output.push(popped);
-                            }
-                            catch(e) {
-                                err('Unmatched close bracket!');
-                            }  
+                            stack.push(f);
                         }
- 
-                        // Check to make sure that we didn't just leave a function
-                        var prev = stack[stack.length-1];
-                        if(prev && prev.is_function)
-                            output.push(stack.pop());
-                        last_pos = i+1;//skip the bracket
+                        if(prefixes.length)
+                            //bind the prefix to the bracket
+                            prefixes[prefixes.length-1].pre_bracket = true;
+                        // We're in a new scope so signal so
+                        new_scope = true;
+                        stack.push(bracket);
+                        //get all the prefixes at the beginning of the scope
+                        last_pos = i+1; //move past the bracket
+                    }
+                    else {
+                        //close the open bracket
+                        open_brackets[bracket.bracket_id]--;
+                        // We proceed to pop the entire stack to output this this signals the end of a scope. The first thing is to get the 
+                        // the prefixes and then the token at the end of this scope.
+                        // get the token
+                        get_and_insert_token(i);
+                        // And then keep popping the stack until we reach a bracket
+                        while(true) {
+                            var entry = stack.pop();
+                            if(prefixes.length && !prefixes[prefixes.length-1].pre_bracket)
+                                output.push(prefixes.pop());
+                            if(entry === undefined)
+                                err("Unmatched open bracket for bracket '"+bracket+"'!");
+                            //we found the matching bracket so our search is over
+                            if(entry.bracket_id === bracket.bracket_id)
+                                break; // We discard the closing bracket
+                            else 
+                                output.push(entry);
+                        }
                         
-                    }  
+                        var sl = stack.length;
+                        //move the function to output
+                        if(sl && stack[sl-1].is_function)
+                            output.push(stack.pop());
+                        
+                        last_pos = i+1; //move past the bracket
+                        
+                        if(prefixes.length && prefixes[prefixes.length-1].pre_bracket)
+                            output.push(prefixes.pop());
+                    }
                 }
             }
-            var last_token = get_token(last_pos, i);
-//            if(last_token) 
-            if(last_token === '')
-                last_token = "'";
-            output.push(last_token);
-            //check brackets and make sure they're all closed
-            for(var i=0; i<open_brackets.length; i++) {
-                var o = open_brackets[i]; 
-                if(o > 0)
-                    err('Unmatched open bracket!');
-            }
-            //dump the rest of the stack to output
-            while(stack.length > 0)
+            
+            //get the last token at the end of the string
+            get_and_insert_token(l);
+            //pop any remaining prefixes
+            if(prefixes.length)
+                output.push(prefixes.pop());
+            //collapse the stack to output
+            while(stack.length)
                 output.push(stack.pop());
+            
+            //check parity
+            for(var i=0; i<open_brackets.length; i++) 
+                if(open_brackets[i] > 0) {
+                    var brkt;
+                    for(bracket in brackets)
+                        if(brackets[bracket].bracket_id === i && !brackets[bracket].open)
+                            brkt = brackets[bracket];
+                    err('Unmatched close bracket for bracket '+brkt+'!');
+                }
+                   
             if(tree)
                 return output;
             
-            var parsed = this.parseTree(output);
-
-            //make the substitutions
-            if(substitutions) {
-                for(var x in substitutions) {
-                    parsed = parsed.substitute(x, substitutions[x]);
-                }
-            }
-
-            return parsed;
+            return this.parseTree(output);
         };
 
-        //FUNCTIONS
-        //although parens is not a "real" function it is important in some cases when the 
-        //symbol must carry parenthesis. Once set you don't have to worry about it anymore
-        //as the parser will get rid of it at the first opportunity
+        /////////// ********** FUNCTIONS ********** ///////////
+        /* Although parens is not a "real" function it is important in some cases when the 
+         * symbol must carry parenthesis. Once set you don't have to worry about it anymore
+         * as the parser will get rid of it at the first opportunity
+         */
         function parens(symbol) {
             if(Settings.PARSE2NUMBER) {
                 return symbol;
@@ -4231,7 +4233,6 @@ var nerdamer = (function(imports) {
         this.pow = function(a, b) { 
             var aIsSymbol = isSymbol(a),
                 bIsSymbol = isSymbol(b);
-            
             if(aIsSymbol && bIsSymbol) {
                 if(a.equals(0) && b.equals(0)) err('0^0 is undefined!');
                 
@@ -4254,7 +4255,7 @@ var nerdamer = (function(imports) {
                     result.multiplyPower(b);
                 }
 
-                if(aIsConstant && bIsConstant && Settings.PARSE2NUMBER) {
+                if(aIsConstant && bIsConstant && Settings.PARSE2NUMBER) { 
                     var base = a.multiplier.toDecimal(), e = b.multiplier.toDecimal();
 
                     var sign = new Symbol(1);
@@ -4275,42 +4276,50 @@ var nerdamer = (function(imports) {
                     result.multiplier = result.multiplier.multiply(multiplier);
                 }
                 else {
-                    //b is a symbol
-                    var sign = Math.sign(m.num),
-                        neg_num = a.group === N && sign < 0,
-                        num = testSQRT(new Symbol(neg_num ? m.num : Math.abs(m.num)).setPower(b.clone())),
-                        den = testSQRT(new Symbol(m.den).setPower(b.clone()).invert());  
-                    //eliminate imaginary if possible
-                    if(a.imaginary) { 
-                        //assume i = sqrt(-1) -> (-1)^(1/2)
-                        var nr = b.multiplier.multiply(Frac.quick(1, 2)),
-                            //the denominator denotes the power so raise to it. It will turn positive it round
-                            tn = Math.pow(-1, nr.num);
-                        result = even(nr.den) ? new Symbol(-1).setPower(nr, true) : new Symbol(tn);
-                    } 
-                    //ensure that the sign is carried by the symbol and not the multiplier
-                    //this enables us to check down the line if the multiplier can indeed be transferred
-                    if(sign < 0 && !neg_num) result.negate();
+                    var sign = a.sign();
+                    if(b.isConstant() && even(b.multiplier.den) && sign < 0) { 
+                        var aa = abs(a);
+                        result = _.pow(_.symfunction(PARENTHESIS, [new Symbol(-1)]), b.clone()); 
+                        var r = _.divide(_.pow(new Symbol(aa.multiplier.num), b.clone()), _.pow(new Symbol(aa.multiplier.den), b.clone()));
+                        result = _.multiply(result, r);
+                    }
+                    else {
+                        //b is a symbol
+                        var neg_num = a.group === N && sign < 0,
+                            num = testSQRT(new Symbol(neg_num ? m.num : Math.abs(m.num)).setPower(b.clone())),
+                            den = testSQRT(new Symbol(m.den).setPower(b.clone()).invert());  
+                        //eliminate imaginary if possible
+                        if(a.imaginary) { 
+                            //assume i = sqrt(-1) -> (-1)^(1/2)
+                            var nr = b.multiplier.multiply(Frac.quick(1, 2)),
+                                //the denominator denotes the power so raise to it. It will turn positive it round
+                                tn = Math.pow(-1, nr.num);
+                            result = even(nr.den) ? new Symbol(-1).setPower(nr, true) : new Symbol(tn);
+                        } 
+                        //ensure that the sign is carried by the symbol and not the multiplier
+                        //this enables us to check down the line if the multiplier can indeed be transferred
+                        if(sign < 0 && !neg_num) result.negate();
 
-                    result = _.multiply(result, testPow(_.multiply(num, den)));
+                        result = _.multiply(result, testPow(_.multiply(num, den)));
 
-                    //retain the absolute value
-                    if(bIsConstant && a.group !== EX) { 
-                        var evenr = even(b.multiplier.den),
-                            evenp = even(a.power),
-                            n = result.power.toDecimal(),
-                            evennp = even(n);
-                        if(evenr && evenp && !evennp) {
-                            if(n === 1 ) result = _.symfunction(ABS, [result]);
-                            else if(!isInt(n)) {
-                                var p = result.power;
-                                result = _.symfunction(ABS, [result.toLinear()]).setPower(p);
+                        //retain the absolute value
+                        if(bIsConstant && a.group !== EX) { 
+                            var evenr = even(b.multiplier.den),
+                                evenp = even(a.power),
+                                n = result.power.toDecimal(),
+                                evennp = even(n);
+                            if(evenr && evenp && !evennp) {
+                                if(n === 1 ) result = _.symfunction(ABS, [result]);
+                                else if(!isInt(n)) {
+                                    var p = result.power;
+                                    result = _.symfunction(ABS, [result.toLinear()]).setPower(p);
+                                }
+                                else {
+                                    result = _.multiply(_.symfunction(ABS, [result.clone().toLinear()]), 
+                                        result.clone().setPower(new Frac(n-1)));
+                                }
                             }
-                            else {
-                                result = _.multiply(_.symfunction(ABS, [result.clone().toLinear()]), 
-                                    result.clone().setPower(new Frac(n-1)));
-                            }
-                        }
+                        }   
                     }   
                 }
 
@@ -6990,6 +6999,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
-//var x = nerdamer('8+((2--b)+a---(---q+x))');
-
