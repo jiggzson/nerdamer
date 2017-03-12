@@ -61,6 +61,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
         return symbol;
     };
+    //removes parentheses
+    Symbol.unwrapPARENS = function(symbol) {
+        if(symbol.group === FN && !symbol.fname) {
+            var r = symbol.args[0];
+            r.power = r.power.multiply(symbol.power);
+            r.multiplier = r.multiplier.multiply(symbol.multiplier);
+            return r;
+        }
+        return symbol;
+    };
     core.Expression.prototype.hasIntegral = function() {
         return this.symbol.hasIntegral();
     };
@@ -79,7 +89,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     core.Settings.integration_depth = 4;
     
     var __ = core.Calculus = {
+
         version: '1.3.3',
+
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
             index = index.value;
@@ -819,7 +831,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     }
                     else {
                         if(!a.contains(dx, true) && symbol.isLinear()) { //perform a deep search for safety
+
                             //first handle the special cases 
+
                             if(fname === ABS) {
                                 //REVISIT **TODO**
                                 var x = _.divide(arg.clone(), a.clone());
@@ -1267,7 +1281,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 if(retval)
                     return retval;
             }
+
             catch(e){/*no integral found*/}  
+
             //no symbol found so we return the integral again
             return _.symfunction('integrate', [original_symbol, dt]);
         }

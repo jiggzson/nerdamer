@@ -27,6 +27,7 @@ if((typeof module) !== 'undefined') {
         isArray = core.Utils.isArray;
     //version solve
     core.Solve = {
+
         version: '1.1.1'
     };
     // The search radius for the roots
@@ -67,6 +68,7 @@ if((typeof module) !== 'undefined') {
         return new Equation(a, b);
     };
     // A utility function to parse an expression to left hand side when working with strings
+
     var toLHS = function(eqn) {
         var es = eqn.split('=');
         if(es[1] === undefined) es[1] = '0';
@@ -142,18 +144,22 @@ if((typeof module) !== 'undefined') {
             xs[i] = _.parse(xs[i], { a: a_o.clone(), b: b_o.clone(), c: c_o.clone(), d: d_o.clone(), C: C.clone()});
         return xs;
     };
+
     /* in progress */
+
     var quartic = function(e, d, c, b, a) { 
         var z = _.divide(b.clone(), _.multiply(new Symbol(4), a.clone())).negate(),
             r = e.clone(),
             y = [d, c, b, a];
     };
+
     /*
      * 
      * @param {String[]|String|Equation} eqns
      * @param {type} solve_for
      * @returns {Array}
      */
+
     var solve = function(eqns, solve_for) { 
         solve_for = solve_for || 'x'; //assumes x by default
         //If it's an array then solve it as a system of equations

@@ -13,6 +13,7 @@ var nerdamer = (function(imports) {
     "use strict";
 
     var version = '0.7.2',
+
         _ = new Parser(), //nerdamer's parser
         //import bigInt
         bigInt = imports.bigInt,
@@ -2608,7 +2609,7 @@ var nerdamer = (function(imports) {
                 if(num_args < min_args) err(format(error_msg, 'minimum', min_args, num_args));
                 if(num_args > max_args) err(format(error_msg, 'maximum', max_args, num_args));
             }
-            
+
             /*
              * The following are very important to the how nerdamer constructs functions!
              * Assumption 1 - if fn is undefined then handling of the function is purely numeric. This
@@ -2662,6 +2663,7 @@ var nerdamer = (function(imports) {
                     // convert it to a zero
                     if(e === '') {
                         q.push(new Symbol(0));
+
                     }
                     else {
                         // make substitutions
@@ -2692,6 +2694,7 @@ var nerdamer = (function(imports) {
          * @param {Object} substitutions
          * @returns {Symbol}
          */
+
         this.parse = function(expression_string, substitutions, tree) { 
             //prepare the substitutions
             if(substitutions) {
@@ -2707,7 +2710,7 @@ var nerdamer = (function(imports) {
                 subs.e = new Symbol(Math.E);
                 subs.pi = new Symbol(Math.PI);
             }
-                
+
             /*
              * Since variables cannot start with a number, the assumption is made that when this occurs the
              * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
@@ -2744,6 +2747,7 @@ var nerdamer = (function(imports) {
             var l = e.length, //the length of the string
                 output = [], //the output array. This is what's returned
                 stack = [], //the operator stack
+
                 last_pos = 0, //the location of last operator encountered
                 open_brackets = [0, 0], //a counter for the open brackets
                 prefix_cache = [],
@@ -2815,6 +2819,7 @@ var nerdamer = (function(imports) {
                      */
                     while(e.charAt(i+1) in operators)
                         i++;
+
                     
                     var end_operator = i+1;
                     //the probable operator will be the difference between c and i;
@@ -2846,6 +2851,7 @@ var nerdamer = (function(imports) {
                                 if(!o|| o && !o.is_postfix)
                                     err(e.message);
                             }
+
                             //at this point we know that we have only postfix operators but they are parsed left to right
                             var rem = '';
                             do {
@@ -2972,6 +2978,7 @@ var nerdamer = (function(imports) {
             while(stack.length)
                 output.push(stack.pop());
             
+
             //check parity
             for(var i=0; i<open_brackets.length; i++) 
                 if(open_brackets[i] > 0) {
@@ -2986,6 +2993,7 @@ var nerdamer = (function(imports) {
                 return output;
             
             return this.parseTree(output);
+
         };
 
         /////////// ********** FUNCTIONS ********** ///////////
@@ -3770,7 +3778,7 @@ var nerdamer = (function(imports) {
                 /*note to self: Please don't forget about this dilemma ever again. In this model PL and CB goes crazy
                  * because it doesn't know which one to prioritize. */
                 //correction to PL dilemma
-                if(g1 === CB && g2 === PL && a.value === b.value) {
+                if(g1 === CB && g2 === PL && a.value === b.value) { 
                     //swap
                     var t = a; a = b; b = t;
                     g1 = a.group; g2 = b.group; ap = a.power.toString(); bp = b.power.toString();

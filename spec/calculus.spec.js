@@ -230,11 +230,11 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(x*asin(x), x)',
-                expected: '(-1/4)*asin(x)+(1/2)*asin(x)*x^2+(1/4)*sqrt(-x^2+1)*x'
+                expected: '(-1/4)*asin(x)+(1/2)*asin(x)*x^2+(1/4)*cos(asin(x))*sin(asin(x))'
             },
             {
                 given: 'integrate(q/((2-3*x^2)^(1/2)), x)',
-                expected: 'asin(sqrt(2)^(-1)*sqrt(3)*x)*q*sqrt(3)^(-1)'
+                expected: 'asin(3*sqrt(6)^(-1)*x)*q*sqrt(3)^(-1)'
             },
             {
                 given: 'integrate(1/(a^2+x^2), x)',
@@ -258,7 +258,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(x*(x+a)^3, x)',
-                expected: '((1/4)*x^4+(3/2)*a^2*x^2+a*x^3+a^3*x)*x+(-1/2)*a^2*x^3+(-1/2)*a^3*x^2+(-1/20)*x^5+(-1/4)*a*x^4'
+                expected: '(1/2)*a^3*x^2+(1/5)*x^5+(3/4)*a*x^4+a^2*x^3'
             },
             {
                 given: 'integrate(4*x/(x^2+a^2), x)',
@@ -270,7 +270,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(8*x^3/(6*x^2+3*a^2), x)',
-                expected: '8*((-1/24)*a^2*log(3*a^2+x^2)+(1/12)*x^2)'
+                expected: '8*((-1/24)*a^2*log(2*x^2+a^2)+(1/12)*x^2)'
             },
             {
                 given: 'integrate(10*q/(4*x^2+24*x+20), x)',
@@ -299,7 +299,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(log(a*x+b),x)',
-                expected: '((a*x+b)*log(a*x+b)-a*x-b)*a^(-1)'
+                expected: '-x+a^(-1)*b*log(a*x+b)+log(a*x+b)*x'
             },
             {
                 given: 'integrate(x*log(x),x)',
@@ -315,7 +315,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(t*log(x)^3,x)',
-                expected: '(-3*log(x)^2+6*log(x)+log(x)^3-6)*t*x'
+                expected: '(-3*log(x)^2*x-6*x+6*log(x)*x+log(x)^3*x)*t'
             },
             {
                 given: 'integrate(x*log(x)^2,x)',
@@ -335,7 +335,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(5*x*e^(-8*a*x^2),x)',
-                expected: '(-5/16)*a^(-1)*e^(-8*a*x^2)*log(e)^(-1)'
+                expected: '(-5/16)*a^(-1)*e^(-8*a*x^2)'
             },
             {
                 given: 'integrate(x^2*sin(x),x)',
@@ -371,7 +371,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate((x+7)/(x+1)^3,x)',
-                expected: '(-1/2)*(1+x)^(-1)+(-1/2)*(1+x)^(-2)*(7+x)'
+                expected: '(-1/2)*(1+x)^(-1)+(-7/2)*(1+x)^(-2)+(-1/2)*(1+x)^(-2)*x'
             },
             {
                 given: 'integrate((3*x+2)/(x^2+x),x)',

@@ -804,6 +804,209 @@ describe('Nerdamer core', function () {
         }
     });
 
+    /** Based on commit cf8c0f8. */
+    it('should not cause infinite recursion', function () {
+      // given
+      var formula = '1/(1+x)+(1+x)';
+
+      // when
+      var parsed = nerdamer(formula);
+      var result = parsed.evaluate().toString();
+
+      // then
+      expect(result).toBe('(1+x)^(-1)+1+x');
+    });
+
+    it('should support ceil and floor', function () {
+      // given
+      var testCases = [
+          {
+              given: 'floor(204)',
+              expected: '204'
+          },
+          {
+              given: 'floor(10.893)',
+              expected: '10'
+          },
+          {
+              given: 'floor(-10.3)',
+              expected: '-11'
+          },
+          {
+              given: 'ceil(204)',
+              expected: '204'
+          },
+          {
+              given: 'ceil(10.893)',
+              expected: '11'
+          },
+          {
+              given: 'ceil(-10.9)',
+              expected: '-10'
+          }
+      ];
+
+      for (var i = 0; i < testCases.length; ++i) {
+        // when
+        var parsed = nerdamer(testCases[i].given);
+        var value = parsed.evaluate().text('decimals');
+
+        // then
+        expect(value).toEqual(testCases[i].expected);
+      }
+    });
+
+    /** #35 #76: Support multiple minus signs and brackets */
+    // TODO jiggzson: test can be run once #76 is fixed
+    xit('should support prefix operator with parantheses', function () {
+      // given
+      var testCases = [
+        {
+           given: '(a+x)--(x+a)',
+           expected: '2*a+2*x'
+        },
+        {
+           given: '(3)---(3)',
+           expected: '0'
+        },
+        {
+           given: '-(1)--(1-1--1)',
+           expected: '0'
+        },
+        {
+           given: '-(-(1))-(--1)',
+           expected: '0'
+        }
+      ];
+
+      for (var i = 0; i < testCases.length; ++i) {
+        // when
+        var parsed = nerdamer(testCases[i].given);
+        var value = parsed.evaluate().text('decimals');
+
+        // then
+        expect(value).toEqual(testCases[i].expected);
+      }
+    });
+
+    /** #44: a+b - (a+b) not evaluated as 0 */
+    it('should perform subtraction of terms', function () {
+      // given
+      var formula = 'a+b - (a+b)';
+
+      // when
+      var result = nerdamer(formula).toString();
+
+      // then
+      expect(result).toBe('0');
+    });
+
+    /** #46: (x^(1/2)*x^(1/3))-x^(5/6) should be 0 */
+    it('should result in 0', function () {
+      // given
+      var formula = '(x^(1/2)*x^(1/3))-x^(5/6)';
+
+      // when
+      var result = nerdamer(formula).toString();
+
+      // then
+      expect(result).toBe('0');
+    });
+
+    /** #47: (a^2)/(a*b) should be a/b */
+    it('should simplify correctly', function () {
+      // given
+      var formula = '(a^2)/(a*b)';
+
+      // when
+      var result = nerdamer(formula).toString();
+
+      // then
+      // TODO jiggzson: Result is correct but a/b would be simpler
+      expect(result).toBe('a*b^(-1)');
+    });
+
+    /** #56: x/sqrt(x) = x^(3/2) */
+    it('should calculate x/sqrt(x) correctly', function () {
+      // given
+      var formula = 'x/sqrt(x)';
+
+      // when
+      var result = nerdamer(formula).toString();
+
+      // then
+      expect(result).toBe('x^(1/2)');
+    });
+
+    /** #60: sin(x) looks like sin(abs(x)) */
+    it('should respect the sign of argument for sin(x)', function () {
+      // given
+      var halfSqrt2 = '0.7071067811865475'; // sqrt(2)/2
+      var halfSqrt3 = '0.8660254037844385'; // sqrt(3)/2
+      var testCases = [
+        {
+          given: '-pi',
+          expected: '0'
+        },
+        {
+          given: '-3/4*pi',
+          expected: '-' + halfSqrt2
+        },
+        {
+          given: '-2/3*pi',
+          expected: '-' + halfSqrt3
+        },
+        {
+          given: '-1/2*pi',
+          expected: '-1'
+        },
+        {
+          given: '-1/6*pi',
+          expected: '-0.5'
+        },
+        {
+          given: '0',
+          expected: '0'
+        },
+        {
+          given: '1/4*pi',
+          expected: halfSqrt2
+        },
+        {
+          given: '1/2*pi',
+          expected: '1'
+        },
+        {
+          given: '3/4*pi',
+          expected: halfSqrt2
+        },
+        {
+          given: 'pi',
+          expected: '0'
+        },
+        {
+          given: '3/2*pi',
+          expected: '-1'
+        },
+        {
+          given: '2*pi',
+          expected: '0'
+        },
+        {
+          given: '2.25 * pi',
+          expected: halfSqrt2
+        }
+      ];
+
+      for (var i = 0; i < testCases.length; ++i) {
+        // when
+        var result = nerdamer('sin(' + testCases[i].given + ')').evaluate().text('decimals');
+
+        // then
+        expect(result).toEqual(testCases[i].expected, testCases[i].given);
+      }
+    });
+
     describe('Further arithmetic test cases', function () {
         it('Batch 1', function () {
             // given
