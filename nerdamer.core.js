@@ -1736,6 +1736,19 @@ var nerdamer = (function(imports) {
             }
             else return this.power.equals(1);
         },
+        containsFunction: function(names) {
+            if(typeof names === 'string')
+                names = [names];
+            if(this.group === FN && names.indexOf(this.fname) !== -1) 
+                return true;
+            if(this.symbols) {
+                for(var x in this.symbols) {
+                    if(this.symbols[x].hasIntegral(names))
+                        return true;
+                }
+            }
+            return false;
+        },
         multiplyPower: function(p2) {
             //leave out 1
             if(this.group === N && this.multiplier.equals(1)) return this;
@@ -2370,6 +2383,11 @@ var nerdamer = (function(imports) {
         this.val = operator.val;
         this.is_prefix_operator = true;
     }
+//    function Prefix(operator) {
+//        for(var x in operator)
+//            this[x] = operator[x];
+//        this.is_prefix_operator = true;
+//    }
     
     Prefix.prototype.toString = function() {
         return '`'+this.val;
@@ -2637,7 +2655,7 @@ var nerdamer = (function(imports) {
                     q.push(this[e.fn](a, b));
                 }
                 else if(e in functions) {
-                    q.push(_.callfunction(e, q.pop()));
+                    q.push(_.callfunction(e.value, q.pop()));
                 }
                 else { 
                     // Blank denotes a beginning of a scope with a prefix operator so all we have to do is 
@@ -2683,6 +2701,12 @@ var nerdamer = (function(imports) {
             }
             else
                 subs = {};
+            
+            //link e and pi
+            if(Settings.PARSE2NUMBER) {
+                subs.e = new Symbol(Math.E);
+                subs.pi = new Symbol(Math.PI);
+            }
                 
             /*
              * Since variables cannot start with a number, the assumption is made that when this occurs the
@@ -2716,18 +2740,17 @@ var nerdamer = (function(imports) {
                 })
                 //allow omission of multiplication sign between brackets
                 .replace( /\)\(/g, ')*(' ) || '0';
-        
             var l = e.length, //the length of the string
                 output = [], //the output array. This is what's returned
                 stack = [], //the operator stack
                 last_pos = 0, //the location of last operator encountered
-                prefixes = [],
                 open_brackets = [0, 0], //a counter for the open brackets
+                prefix_cache = [],
                 new_scope = true; //signal if we're in a new scope or not
             // This method gets and inserts the token on output as the name implies
             var get_and_insert_token = function(to_pos) {
-                if(to_pos !== last_pos) {
-                    token = new Symbol(e.substring(last_pos, to_pos));
+                if(to_pos !== last_pos) { 
+                    token = new Symbol(e.substring(last_pos, to_pos)); 
                     output.push(token);
                     //once we find out first token we are no longer in a new scope so flip
                     //the flag
@@ -2740,26 +2763,53 @@ var nerdamer = (function(imports) {
                     err(operator+' is not a valid prefix operator');
             };
             
-            var add_prefix = function(prefix) { 
-                var e = prefixes.pop(), new_prefix;
-                if(!e) {
-                    prefixes.push(prefix);
-                    return;
-                }
-                //transfer the pre_bracket flag
-                if(e.pre_bracket || prefix.pre_bracket) { 
-                    prefixes.push(e);
-                    prefixes.push(prefix);
-                    return;
-                }
-                
-                if(prefix.val === e.val) 
-                     new_prefix = new Prefix(operators['+']);
-                else
-                    new_prefix = new Prefix(operators['-']);
-
-                prefixes.push(new_prefix);
+            var resolve_prefix = function(prefix1, prefix2) {
+                if(!prefix2)
+                    return prefix1;
+                if(prefix1.val === prefix2.val)
+                    return new Prefix(operators['+']);
+                return new Prefix(operators['-']);
             };
+            
+            var insert_prefix = function(prefix) {
+                var sl = stack.length;
+                if(sl && stack[sl-1].is_prefix_operator) 
+                    stack.push(resolve_prefix(prefix, stack.pop()));
+                stack.push(prefix);   
+            };
+            
+            var collapse_prefix_cache = function(to_output) {
+                if(prefix_cache.length) {
+                    var prefix = prefix_cache.pop();
+                    while(prefix_cache.length)
+                        prefix = resolve_prefix(prefix, prefix_cache.pop());
+                    if(to_output)
+                        output.push(prefix);
+                    else
+                        stack.push(prefix);
+                }
+            };
+            
+//            var add_prefix = function(prefix) { 
+//                var e = prefixes.pop(), new_prefix;
+//                if(!e) {
+//                    prefixes.push(prefix);
+//                    return;
+//                }
+//                //transfer the pre_bracket flag
+//                if(e.pre_bracket || prefix.pre_bracket) { 
+//                    prefixes.push(e);
+//                    prefixes.push(prefix);
+//                    return;
+//                }
+//                
+//                if(prefix.val === e.val) 
+//                     new_prefix = new Prefix(operators['+']);
+//                else
+//                    new_prefix = new Prefix(operators['-']);
+//
+//                prefixes.push(new_prefix);
+//            };
             /*
              * We define the operator as anything that performs any form of operation. A bracket as any object that defines
              * a scope and a token as anything in between two operators. This enables us to have variables of more than one letter.
@@ -2773,12 +2823,6 @@ var nerdamer = (function(imports) {
                 //the character
                 var ch = e.charAt(i); 
                 if(ch in operators) { 
-                    var sl = stack.length,
-                        pl = prefixes.length;
-                    if(sl && !stack[sl-1].left_assoc && pl && !prefixes[pl-1].pre_bracket) { 
-                        var pf = prefixes.pop();
-                        stack.push(pf);
-                    }
                     // We previously defined the token to be the anything between two operators and since we an operator
                     //we can grab the token
                     get_and_insert_token(i); 
@@ -2805,36 +2849,33 @@ var nerdamer = (function(imports) {
                             end = l2-1,
                             prefix = operators[pr_operator.charAt(end)];
                         verify_prefix_operator(prefix);
+                        prefix_cache.push(new Prefix(prefix));
                         //add the prefix to the stack
-                        add_prefix(new Prefix(prefix));
+//                        add_prefix(new Prefix(prefix));
                         pr_operator = pr_operator.substring(0, end);
                     }
 
                     // we now have the operator
                     operator = operators[pr_operator];
                     
-                    var pl = prefixes.length;
-                    //handle the last prefix e.g. 8--8. Just make it 8+8 and call it a day.
-                    if(pl && operator.is_prefix && !prefixes[pl-1].pre_bracket) { 
-                        add_prefix(new Prefix(operator));
-                        operator = operators[prefixes.pop().val];
-                    }
                     // we mark where we find the last operator so we know where the next token begins
                     last_pos = end_operator; 
                     while(true) { 
                         var sl = stack.length,
                             los = stack[sl-1];
+                        //skip prefix 
+                        while(los !== undefined && los.is_prefix_operator)  {
+                            los = stack[--sl-1];
+                        }
+                            
                         if(sl === 0 || !(operator.left_assoc && operator.precedence <= los.precedence 
                             || !operator.left_assoc && operator.precedence < los.precedence))
                             break; //nothing to do
-                        if(prefixes.length && !prefixes[0].pre_bracket)
-                            output.push(prefixes.pop());
                         output.push(stack.pop());
                     }
 
                     // If we're in a new scope then we're dealing with a prefix operator
                     if(new_scope) { 
-                        verify_prefix_operator(operator);
                         /*
                          * There is literally no way to differentiate between a malformed expression and a properly formed one if there is no gap left 
                          * at the beginning of the scope. This is best illustrated. Take the expression 3+7- in RPN it becomes 3,7,+,-
@@ -2843,10 +2884,25 @@ var nerdamer = (function(imports) {
                          * of the scope let's say -(3+7). With no gaps this again becomes 3,7,+,- with no way to differentiate
                          * between -3+7 and -(3+7) unless the second one is written as 3,7,+, ,- where the gap denotes the end of the scope
                          */ 
-                        output.push('');
+                        verify_prefix_operator(operator);
+                        var prefix = new Prefix(operator); 
+                        //collapse the prefix cache
+                        while(prefix_cache.length)
+                            prefix = resolve_prefix(prefix, prefix_cache.pop());
+                        insert_prefix(prefix);
                     }
-                    
-                    stack.push(operator);
+                    else { 
+                        //if there's already a prefix on the stack then bring it down
+                        var sl = stack.length;
+                        if(sl && stack[sl-1].is_prefix_operator && operator.left_assoc) 
+                            //it's safe to move the prefix to output since it's at the beginning of a scope
+                            output.push(stack.pop());
+
+                        stack.push(operator);
+                        //resolve the prefixes
+                        collapse_prefix_cache();
+                    }
+                        
                 }
                 else if(ch in brackets) {
                     var bracket = brackets[ch]; 
@@ -2860,9 +2916,7 @@ var nerdamer = (function(imports) {
                             f.is_function = true;
                             stack.push(f);
                         }
-                        if(prefixes.length)
-                            //bind the prefix to the bracket
-                            prefixes[prefixes.length-1].pre_bracket = true;
+                            
                         // We're in a new scope so signal so
                         new_scope = true;
                         stack.push(bracket);
@@ -2879,8 +2933,6 @@ var nerdamer = (function(imports) {
                         // And then keep popping the stack until we reach a bracket
                         while(true) {
                             var entry = stack.pop();
-                            if(prefixes.length && !prefixes[prefixes.length-1].pre_bracket)
-                                output.push(prefixes.pop());
                             if(entry === undefined)
                                 err("Unmatched open bracket for bracket '"+bracket+"'!");
                             //we found the matching bracket so our search is over
@@ -2897,17 +2949,17 @@ var nerdamer = (function(imports) {
                         
                         last_pos = i+1; //move past the bracket
                         
-                        if(prefixes.length && prefixes[prefixes.length-1].pre_bracket)
-                            output.push(prefixes.pop());
+                        // bring down any prefixes
+                        var sl = stack.length;
+                        if(sl && stack[sl-1].is_prefix_operator) {
+                            output.push(stack.pop());
+                        }
                     }
                 }
             }
             
             //get the last token at the end of the string
             get_and_insert_token(l);
-            //pop any remaining prefixes
-            if(prefixes.length)
-                output.push(prefixes.pop());
             //collapse the stack to output
             while(stack.length)
                 output.push(stack.pop());

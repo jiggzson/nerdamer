@@ -25,7 +25,21 @@ if((typeof module) !== 'undefined') {
         isSymbol = core.Utils.isSymbol,
         variables = core.Utils.variables,
         isArray = core.Utils.isArray;
-        
+    //version solve
+    core.Solve = {
+        version: '1.1.0'
+    };
+    // The search radius for the roots
+    core.Settings.solve_radius = 500;
+    // The maximum number to fish for on each side of the zero
+    core.Settings.roots_per_side = 5;
+    // Covert the number to multiples of pi if possible
+    core.Settings.make_pi_conversions = true;
+    
+    core.Symbol.prototype.hasTrig = function() {
+        return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
+    };
+    
     var toLHS = function(eqn) {
         var es = eqn.split('=');
         if(es[1] === undefined) es[1] = '0';
@@ -95,86 +109,121 @@ if((typeof module) !== 'undefined') {
         return xs;
     };
     
+    var quartic = function(e, d, c, b, a) { 
+        var z = _.divide(b.clone(), _.multiply(new Symbol(4), a.clone())).negate(),
+            r = e.clone(),
+            y = [d, c, b, a];
+    };
+    
     var solve = function(eqns, solve_for) { 
         solve_for = solve_for || 'x'; //assumes x by default
         
         if(isArray(eqns)) return sys_solve.apply(undefined, arguments);
         var solutions = [],
-            add_to_result = function(r) {
+            existing = {},
+            add_to_result = function(r, has_trig) {
+                if(r === undefined || isNaN(r))
+                    return;
                 if(isArray(r)) solutions = solutions.concat(r);
                 else {
                     if(r.valueOf() !== 'null') {
                         if(!isSymbol(r)) r = _.parse(r);
-                        solutions.push(r);
+                        //try to convert the number to pi
+                        if(core.Settings.make_pi_conversions && has_trig) {
+                            var temp = _.divide(r.clone(), new Symbol(Math.PI)),
+                                m = temp.multiplier,
+                                a = Math.abs(m.num),
+                                b = Math.abs(m.den);
+
+                            if(a < 10 && b < 10)
+                                r = _.multiply(temp, new Symbol('pi'));
+                        }
+                        var r_str = r.toString();
+                        if(!existing[r_str])
+                            solutions.push(r);
+                        //mark the answer
+                        existing[r_str] = true;
                     }
                 }
             };
             
-        var attempt_Newton = function(symbol) {
-            //first we compile a machine function to gain a boost in speed
+        var get_points = function(symbol) {
             var f = build(symbol);
-
-            //we're going to use trial and error to generate two points for Newton's method
-            //these to point should have opposite signs. 
-            //we start at 0 just because and check the sign
-            var starting_point, guess = 0;
-
+            var start = Math.round(f(0)),
+                last = f(start),
+                last_sign = last/Math.abs(last),
+                points = [],
+                rside = core.Settings.roots_per_side, // the max number of roots on right side
+                lside = rside*2+1; // the max number of roots on left side
+            // check around the starting point
+            points.push(Math.floor(start/2));
+            // Possible issue #1. If the step size exceeds the zeros then they'll be missed. Consider the case
+            // where the function dips to negative and then back the positive with a step size of 0.1. The function
+            // will miss the zeros because it will jump right over it. Think of a case where this can happen.
+            for(var i=start; i<core.Settings.solve_radius; i++){
+                var val = f(i),
+                    sign = val/Math.abs(val);
+                if(isNaN(val) || !isFinite(val) || points.length > rside)
+                    break;
+                //compare the signs. The have to be different if they cross a zero
+                if(sign !== last_sign)
+                    points.push((i-1)/2); //take note of the possible zero location
+                last_sign = sign;
+            }
+            
+            //check the other side
+            for(var i=start-1; i>-core.Settings.solve_radius; i--){
+                var val = f(i),
+                    sign = val/Math.abs(val);
+                if(isNaN(val) || !isFinite(val) || points.length > lside)
+                    break;
+                //compare the signs. The have to be different if they cross a zero
+                if(sign !== last_sign)
+                    points.push((i-1)/2); //take note of the possible zero location
+                last_sign = sign;
+            }
+            return points;
+        };
+        
+        var newton = function(point, f, fp) {
+            var maxiter = 200,
+                iter = 0;
+            //first try the point itself. If it's zero viola. We're done
+            var x0 = point, x;
             do {
-                starting_point =  f(guess); //we want a real starting point
-                guess++;
-                if(guess > 100) break;//safety
+                iter++;
+                if(iter > maxiter)
+                    return; //naximum iterations reached
+                
+                x = x0 - f(x0)/fp(x0);
+                var e = Math.abs(x - x0);
+                x0 = x;
             }
-            while(!isFinite(starting_point))
+            while(e > Number.EPSILON)
 
-            if(starting_point === 0) add_to_result(new Symbol(starting_point));//we're done
-            else {
-                var df = build(_C.diff(symbol.clone())), ls;
+            return x;
+        };
 
-                //get two points so we can get the slope of the function
-                for(var i=0; i<10; i++) {
-                    var c = df(i);
-                    if(!isNaN(ls) && !isNaN(c)) break;
-                    ls = c;
-                }
-
-                var direction = 1, 
-                    slope = ls-c;
-
-                //we want to make sure that we search for a number in the opposite direction
-                if(same_sign(slope, starting_point)) {
-                    direction = -1;
-                }
-
-                var search_for_solution_at = function(start) { 
-                    var end = 0, point;
-                    //we want a number with an opposite sign
-                    for(var i=start; i<start+100; i++) {
-                        var next_point = f(i)*direction,
-                            r = Math.abs(0 - next_point);//get the distance to zero
-
-                        if(r > 1) next_point *= r;//increase the search radius
-
-                        if(next_point === 0 || !same_sign(next_point, end)) {
-                            point = next_point === start ? next_point : (start+end)/2; 
-                            break;
-                        }
-
-                        end = next_point; 
-                    }
-
-                    if(point !== undefined) add_to_result(_.parse(core.Algebra.froot(symbol, point)));
-                };
-
-                search_for_solution_at(starting_point); //check 1 side  
-                search_for_solution_at(-starting_point);//check the other
+        var attempt_Newton = function(symbol) { 
+            var has_trig = symbol.hasTrig();
+            // we get all the points where a possible zero might exist
+            var points = get_points(symbol),
+                l = points.length;
+            //compile the function and the derivative of the function
+            var f = build(symbol.clone()),
+                fp = build(_C.diff(symbol.clone()));
+            for(var i=0; i<l; i++) {
+                var point = points[i];
+                add_to_result(newton(point, f, fp), has_trig);
             }
+            solutions.sort();
         };
 
         var eq = toLHS(eqns),
             vars = core.Utils.variables(eq),//get a list of all the variables
             numvars = vars.length;//how many variables are we dealing with
         //if we're dealing with a single variable then we first check if it's a 
-        //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.
+        //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.     
         if(numvars === 1) { 
             if(eq.isPoly(true)) { 
                 if(vars[0] === solve_for) _A.proots(eq).map(add_to_result);
@@ -190,33 +239,26 @@ if((typeof module) !== 'undefined') {
             //place them in an array and call the quad or cubic function to get the results
             if(!eq.hasFunc() && eq.isComposite()) { 
                 try {
-                    //remove extra powers
-                    
-                    //the terms of the polynomial
                     var coeffs = [];
-                    var add = function(c, p) {
-                        p = Number(p);
-                        if(!isInt(p)) throw new Error('Stopping');
-                        var xterm = _.parse(solve_for+'^'+p); //create a term of equal power to divide out
-                        coeffs[p] = _.divide(c, xterm);
-                    };
-
-                    for(var x in eq.symbols) {
-                        var sym = eq.symbols[x];
-                        if(sym.group === PL && sym.value === solve_for) {
-                            sym.each(function(y, p) {
-                                add(y, p);
-                            });
+                    //we loop through the symbols and stick them in their respective 
+                    //containers e.g. y*x^2 goes to index 2
+                    eq.each(function(term) {
+                        if(term.contains(solve_for)) {
+                            //we want only the coefficient which in this case will be everything but the variable
+                            //e.g. a*b*x -> a*b if the variable to solve for is x
+                            var coeff = term.stripVar(solve_for),
+                                x = _.divide(term.clone(), coeff.clone()),
+                                p = x.power.toDecimal();
                         }
                         else {
-                            var t, p;
-                            if(sym.symbols) {
-                                var t = sym.symbols[solve_for];
-                                add(sym, t ? t.power : 0);
-                            }
-                            else add(sym, sym.value === solve_for ? sym.power : 0);
+                            coeff = term;
+                            p = 0;
                         }
-                    }
+                        var e = coeffs[p];
+                        //if it exists just add it to it
+                        coeffs[p] = e ? _.add(e, coeff) : coeff;
+                    }, true);
+
                     var l = coeffs.length,
                         deg = l-1; //the degree of the polynomial
                     //fill the holes
@@ -238,6 +280,9 @@ if((typeof module) !== 'undefined') {
                         case 3:
                             add_to_result(cubic.apply(undefined, coeffs));
                             break;
+                        /*case 4:
+                            add_to_result(quartic.apply(undefined, coeffs));
+                            break;*/
                     }
                 }
                 catch(e) { /*something went wrong. EXITING*/;} 

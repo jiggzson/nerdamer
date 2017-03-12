@@ -49,15 +49,17 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         
     //Preparations
     Symbol.prototype.hasIntegral = function() {
-        if(this.group === FN && this.fname === 'integrate') 
-            return true;
-        if(this.symbols) {
-            for(var x in this.symbols) {
-                if(this.symbols[x].hasIntegral())
-                    return true;
-            }
+        return this.containsFunction('integral');
+    };
+    //removes parentheses
+    Symbol.unwrapPARENS = function(symbol) {
+        if(symbol.group === FN && !symbol.fname) {
+            var r = symbol.args[0];
+            r.power = r.power.multiply(symbol.power);
+            r.multiplier = r.multiplier.multiply(symbol.multiplier);
+            return r;
         }
-        return false;
+        return symbol;
     };
     core.Expression.prototype.hasIntegral = function() {
         return this.symbol.hasIntegral();
@@ -77,7 +79,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     core.Settings.integration_depth = 4;
     
     var __ = core.Calculus = {
-        version: '1.3.1',
+        version: '1.3.2',
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
             index = index.value;
@@ -425,7 +427,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             partial_fraction: function(input, dx, depth) { 
                 var num, den; 
                 var m = new Symbol(input.multiplier);
-
+                
                 //make prepartions
                 //check if it's a symbol. If so get num and denom
                 if(isSymbol(input)) { 
@@ -443,7 +445,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     var fn = den.clone().toLinear(),
                         a = fn.stripVar(dx),
                         bx = _.subtract(fn.clone(), a);
-                    if(bx.group === S && bx.isLinear()) {
+                    if(bx.group === S && bx.isLinear()) { 
                         //we make the u substitution
                         return __.integration.poly_integrate(input);
                     }
@@ -459,20 +461,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     num_array = q[1].toArray(dx), //point to the remainder not the numerator
                 num = q[1]; //point to the remainder not the whole
                 //get the factors of the denominator
-                var factors = core.Algebra.Factor.factor(den); 
+                var factors = Symbol.unwrapPARENS(core.Algebra.Factor.factor(den)); 
 
-                if(num.group === CP && !(factors.length > 1))
-                    __.integration.stop();// dunno what to do since I can't solve for A, B, C, etc...
                 var factor_array = []; 
                 //we first have to unwrap the factor and get them in ordered form. We use an array for this
                 //the first part of q can just be integrated using standard integration so we do so
                 var result = q[0].equals(0) ? q[0] : __.integrate(q[0], dx, depth);
                 if(factors.group !== CP) { 
                     factors.each(function(factor) { 
-                        if(factor.group === FN && !factor.fname)  //it might be wrapped in parenthesis
-                            factor = factor.args[0];
-                        if(!factor.isLinear()) 
-                            factor = _.expand(factor); 
+                        //unwrap parentheses
+                        factor = Symbol.unwrapPARENS(factor);
                         if(factor.isConstant())
                             m = _.multiply(m, factor); //add it to the constants
                         else
@@ -491,20 +489,33 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         //I have no idea why integration by parts doesn't work for p === 2
                         var fn = factors.clone().toLinear(),
                             decomp = __.integration.decompose_arg(fn, dx),
-                            x = decomp[2],
+                            x = decomp[1],
                             a = decomp[0],
                             b = decomp[3];
                         if(!x.isLinear())
                             //we stop because u du takes care of quadratics
                             __.integration.stop();
-                        if(factors.power.equals(2)) {
-                            result = _.add(result, _.add(_.symfunction(LOG, [fn.clone()]), _.divide(b, fn)));
-                            result = _.divide(result, _.pow(a, new Symbol(2)));
+                        if(factors.power.greaterThan(0)) { 
+                            if(q[1].isConstant()) {
+                                result = __.integration.poly_integrate(_.divide(q[1], factors));
+                            }
+                            else {
+                                //since we know x is linear we can just let u = x+a and u-a = x = r
+                                //TODO: On a serious note what is u du doing in partial fractions. This has got to be redone
+                                //rewrite the expression to become (1/a)*[ (ax+b)/(ax+b) - b/(ax+b)] which we can do 
+                                //since x is linear from above
+                                result = _.add(
+                                    __.integrate(_.divide(fn.clone(), factors.clone()), dx, depth),
+                                    __.integrate(_.divide(b.negate(), factors.clone()), dx, depth)
+                                );
+                            }
+                            result = _.divide(result, a);
                         }
                         else { 
                             result = __.integration.by_parts(_.divide(q[1], factors.clone()), dx, core.Settings.integration_depth);
                         }
                     }  
+
                     return result;
                 }
 
@@ -606,22 +617,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 };
                 var udv, u, dv, du, v, vdu, uv, retval, integral_vdu, m;
                 //first LIATE
-                /*console.log('===========================')
-                udv = get_udv(symbol);
-                u = udv[0]; console.log('u: '+u)
-                dv = udv[1]; console.log('dv: '+dv)
-                du = Symbol.unwrapSQRT(_.expand(__.diff(u.clone(), dx)), true); console.log('du: '+du)
-                v = __.integrate(dv.clone(), dx, depth); 
-                vdu = _.multiply(v.clone(), du); console.log('vdu: '+vdu);
-                uv = _.multiply(u, v); 
-                m = vdu.multiplier.clone();
-                vdu.toUnitMultiplier();
-                integral_vdu = __.integrate(vdu.clone(), dx, depth); console.log('uv: '+uv+'     integral_vdu: '+integral_vdu+'    vdu: '+vdu);
-                integral_vdu.multiplier = integral_vdu.multiplier.multiply(m);
-                retval = _.subtract(uv, integral_vdu);
-                console.log('returning: '+retval)
-                return retval;*/
-
                 udv = get_udv(symbol);
                 u = udv[0]; 
                 dv = udv[1]; 
@@ -680,7 +675,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         //don't know what to do with it e.g. x^x
                         if(symbol.power.contains(dx))
                             __.integration.stop();
-                        else {
+                        else { 
                             //since at this point it's the base only then we do standard single poly integration
                             //e.g. x^y
                             retval = __.integration.poly_integrate(symbol, dx, depth);
@@ -716,82 +711,92 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     });
                 }
                 else if(g === CP) { 
-                    var p = Number(symbol.power),
-                        m = symbol.multiplier.clone();//temporarily remove the multiplier
-                    symbol.toUnitMultiplier();
-                    var //below we consider the form ax+b
-                        fn = symbol.clone().toLinear(), //get just the pure function without the power
-                        decomp = __.integration.decompose_arg(fn, dx),
-                        //I have no idea why I used bx+a and not ax+b. TODO change this to something that makes sense
-                        b = decomp[3],
-                        ax = decomp[2],
-                        a = decomp[0],
-                        x = decomp[1];
-
-                    if(p === -1) { 
-                        //we can now check for atan
-                        if(x.group === S && x.power.equals(2)) { //then we have atan
-                            //abs is redundants since the sign appears in both denom and num.
-                            var unwrapAbs = function(s) {
-                                var result = new Symbol(1);
-                                s.each(function(x) {
-                                    result = _.multiply(result, x.fname === 'abs' ? x.args[0] : x);
-                                });
-                                return result;
-                            };
-                            var A = a.clone(),
-                                B = b.clone();
-                            A = _.pow(A, new Symbol(1/2));
-                            B = _.pow(B, new Symbol(1/2));
-                            //unwrap abs
-                            
-                            var d = _.multiply(unwrapAbs(B), unwrapAbs(A)),
-                                f = _.symfunction(ATAN, [_.divide(_.multiply(a, x.toLinear()), d.clone())]);
-                            retval = _.divide(f, d);
-                        }
-                        else if(x.group === S && x.isLinear()) {
-                            retval = _.divide(__.integration.poly_integrate(symbol), a);
-                        }
-                        else {
-                            //let's try partial fractions
-                            retval = __.integration.partial_fraction(symbol, dx, depth);
-                        }
+                    if(symbol.power.greaterThan(1))
+                        symbol = _.expand(symbol);
+                    if(symbol.power.equals(1)) {
+                        retval = new Symbol(0)
+                        symbol.each(function(x) {
+                            retval = _.add(retval, __.integrate(x, dx, depth));
+                        }, true);
                     }
-                    else if(p === -1/2) {
-                        //detect asin and atan
-                        if(x.group === S && x.power.equals(2)) {
-                            if(ax.multiplier.lessThan(0) && !b.multiplier.lessThan(0)) {
-                                a.negate();
-                                //it's asin
-                                if(b.isConstant() && a.isConstant()) {
-                                    var d = _.symfunction(SQRT, [a.clone()]),
-                                        d2 = _.symfunction(SQRT, [_.multiply(a.clone(), b)]);
-                                    retval = _.divide(_.symfunction(ASIN, [_.divide(ax.toLinear(), d2)]), d);
+                    else {
+                        var p = Number(symbol.power),
+                            m = symbol.multiplier.clone();//temporarily remove the multiplier
+                        symbol.toUnitMultiplier();
+                        var //below we consider the form ax+b
+                            fn = symbol.clone().toLinear(), //get just the pure function without the power
+                            decomp = __.integration.decompose_arg(fn, dx),
+                            //I have no idea why I used bx+a and not ax+b. TODO change this to something that makes sense
+                            b = decomp[3],
+                            ax = decomp[2],
+                            a = decomp[0],
+                            x = decomp[1]; 
+                        if(p === -1 && x.group !== PL) { 
+                            //we can now check for atan
+                            if(x.group === S && x.power.equals(2)) { //then we have atan
+                                //abs is redundants since the sign appears in both denom and num.
+                                var unwrapAbs = function(s) {
+                                    var result = new Symbol(1);
+                                    s.each(function(x) {
+                                        result = _.multiply(result, x.fname === 'abs' ? x.args[0] : x);
+                                    });
+                                    return result;
+                                };
+                                var A = a.clone(),
+                                    B = b.clone();
+                                A = _.pow(A, new Symbol(1/2));
+                                B = _.pow(B, new Symbol(1/2));
+                                //unwrap abs
+
+                                var d = _.multiply(unwrapAbs(B), unwrapAbs(A)),
+                                    f = _.symfunction(ATAN, [_.divide(_.multiply(a, x.toLinear()), d.clone())]);
+                                retval = _.divide(f, d);
+                            }
+                            else if(x.group === S && x.isLinear()) {
+                                retval = _.divide(__.integration.poly_integrate(symbol), a);
+                            }
+                            else { 
+                                //let's try partial fractions
+                                retval = __.integration.partial_fraction(symbol, dx, depth);
+                            }
+                        }
+                        else if(p === -1/2) {
+                            //detect asin and atan
+                            if(x.group === S && x.power.equals(2)) {
+                                if(ax.multiplier.lessThan(0) && !b.multiplier.lessThan(0)) {
+                                    a.negate();
+                                    //it's asin
+                                    if(b.isConstant() && a.isConstant()) {
+                                        var d = _.symfunction(SQRT, [a.clone()]),
+                                            d2 = _.symfunction(SQRT, [_.multiply(a.clone(), b)]);
+                                        retval = _.divide(_.symfunction(ASIN, [_.divide(ax.toLinear(), d2)]), d);
+                                    }
+                                    //I'm not sure about this one. I'm trusting Wolfram Alpha here
+                                    else {
+                                        var sqrt_a = _.symfunction(SQRT, [a]),
+                                            sqrt_ax = _.multiply(sqrt_a.clone(), x.clone().toLinear());
+                                        retval = _.divide(_.symfunction(ATAN, [_.divide(sqrt_ax, _.symfunction(SQRT, [fn.clone()]))]), sqrt_a);
+                                    }
                                 }
-                                //I'm not sure about this one. I'm trusting Wolfram Alpha here
                                 else {
-                                    var sqrt_a = _.symfunction(SQRT, [a]),
-                                        sqrt_ax = _.multiply(sqrt_a.clone(), x.clone().toLinear());
-                                    retval = _.divide(_.symfunction(ATAN, [_.divide(sqrt_ax, _.symfunction(SQRT, [fn.clone()]))]), sqrt_a);
+                                    /*WHAT HAPPENS HERE???? e.g. integrate(3/sqrt(-a+b*x^2),x) or integrate(3/sqrt(a+b*x^2),x)*/
+                                    __.integration.stop();
                                 }
                             }
                             else {
-                                /*WHAT HAPPENS HERE???? e.g. integrate(3/sqrt(-a+b*x^2),x) or integrate(3/sqrt(a+b*x^2),x)*/
+                                //This would be a case like 1/(sqrt(1-x^3) or 1/(1-(x+1)^2)
                                 __.integration.stop();
                             }
                         }
-                        else {
-                            //This would be a case like 1/(sqrt(1-x^3) or 1/(1-(x+1)^2)
-                            __.integration.stop();
+                        else { 
+                            if(x.isLinear() && x.group !== PL)
+                                retval = _.divide(__.integration.poly_integrate(symbol), a);
+                            else { 
+                                retval = __.integration.partial_fraction(symbol, dx, depth);
+                            }
                         }
+                        retval.multiplier = retval.multiplier.multiply(m);
                     }
-                    else {
-                        if(x.isLinear())
-                            retval = _.divide(__.integration.poly_integrate(symbol), a);
-                        else
-                            retval = __.integration.partial_fraction(symbol, dx, depth);
-                    }
-                    retval.multiplier = retval.multiplier.multiply(m);
                 }
                 else if(g === FN) {
                     var arg = symbol.args[0],
@@ -814,7 +819,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     }
                     else {
                         if(!a.contains(dx, true) && symbol.isLinear()) { //perform a deep search for safety
-                            //first handle the special cases 
+                            //first handle the special cases console.log(9)
                             if(fname === ABS) {
                                 //REVISIT **TODO**
                                 var x = _.divide(arg.clone(), a.clone());
@@ -832,6 +837,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     __.integration.stop();
                             }
                             else {
+                                var ag = symbol.args[0].group;
+                                if(!(ag === CP || ag === S || ag === CB))
+                                    __.integration.stop();
                                 /**TODO**/ //ASIN, ACOS, ATAN
                                 switch(fname) {
                                     case COS:
@@ -951,12 +959,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         }).map(function(x) {
                             return Symbol.unwrapSQRT(x, true);
                         });
-
                         //generate an image for 
                         var l = symbols.length;
                         if(l === 2) { 
                             //try u substitution
-                            retval = __.integration.u_substitution(symbols, dx);
+                            try {
+                                retval = __.integration.u_substitution(symbols, dx);
+                            }
+                            catch(e){/* failed :`(*/;}   
                             if(!retval) {
                                 //no success with u substitution so let's try known combinations
                                 //are they two functions
@@ -1103,7 +1113,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     else if(sym1.fname === SIN && sym2.power.equals(-1))
                                         retval = _.symfunction('Si', [sym1.args[0]]);
                                     else {
-                                        retval = __.integration.by_parts(symbol, dx, depth);
+                                        //since group S is guaranteed convergence we need not worry about tracking depth of integration
+                                        retval = __.integration.by_parts(symbol, dx);
                                     }
                                 }
                                 else if(g1 === EX && g2 === S) {
@@ -1136,7 +1147,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         var a = decomp[0].negate(),
                                             x = decomp[1],
                                             b = decomp[3],
-                                            p = Number(sym2.power); 
+                                            p = Number(sym2.power);
                                         if(isInt(p) && core.Utils.even(p) && x.power.equals(2)) {
                                             //if the substitution 
                                             var c = _.divide(_.multiply(_.pow(b.clone(), new Symbol(2)), 
@@ -1151,14 +1162,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         }   
                                     }
                                     else if(sym1.power.equals(-1) && sym2.isLinear()) { 
-                                        var fn = sym1.clone().toLinear(),
-                                            decomp = __.integration.decompose_arg(fn.clone(), dx),
-                                            a = decomp[0],
-                                            b = decomp[3],
-                                            x = decomp[2];
-                                        if(!x.isLinear())
-                                            __.integration.stop();
-                                        retval = _.divide(_.subtract(fn.clone(), _.multiply(_.symfunction(LOG, [fn]), b)), _.pow(a, new Symbol(2)));
+                                        retval = __.integration.partial_fraction(symbol, dx, depth);
                                         
                                     }
                                     else if(!sym1.power.lessThan(0) && isInt(sym1.power)) { 
@@ -1166,47 +1170,95 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         var expanded = _.expand(sym1);
                                         retval = new Symbol(0);
                                         expanded.each(function(x) {
-                                            retval = _.add(retval, __.integrate(_.multiply(sym2.clone(), x), dx, depth));
+                                            if(x.group === PL) {
+                                                x.each(function(y) {
+                                                    retval = _.add(retval, __.integrate(_.multiply(sym2.clone(), y), dx, depth));
+                                                });
+                                            }
+                                            else 
+                                                retval = _.add(retval, __.integrate(_.multiply(sym2.clone(), x), dx, depth));
                                         });
                                     }
                                     else if(sym1.power.lessThan(-2)) {
                                         retval = __.integration.by_parts(symbol, dx, depth);
                                     }
-                                    else {
+                                    else if(sym1.power.lessThan(0) && sym2.power.greaterThan(1)) {
+                                        var decomp = __.integration.decompose_arg(sym1.clone().toLinear(), dx),
+                                            a = decomp[0].negate(),
+                                            x = decomp[1],
+                                            b = decomp[3],
+                                            fn = sym1.clone().toLinear();
+                                        if(x.group !== PL && x.isLinear()) {
+                                            var p = Number(sym2.power),
+                                                du = '_u_',
+                                                u = new Symbol(du),
+                                                //pull the integral with the subsitution
+                                                U = _.expand(_.divide(_.pow(_.subtract(u.clone(), b.clone()), new Symbol(p)), u.clone())),
+                                                scope = {};
+
+                                            //generate a scope for resubbing the symbol
+                                            scope[du] = fn;
+                                            var U2 = _.parse(U, scope);
+                                            retval = __.integrate(U2, dx);
+                                        }
+                                        else 
+                                            retval = __.integration.partial_fraction(symbol, dx, depth);
+                                    }
+                                    else { 
                                         retval = __.integration.partial_fraction(symbol, dx, depth);
                                     }
                                         
                                 }
-                                else if(sym1.isComposite() && sym2.isComposite()) {
+                                else if(sym1.isComposite() && sym2.isComposite()) { 
                                     //sum of integrals
                                     retval = new Symbol(0);
-                                    var p1 = Number(sym1.power),
-                                        p2 = Number(sym2.power);
-                                    if(p1 < 0 && p2 > 0) {
-                                        //swap
-                                        var t = sym1; sym1 = sym2; sym2 = t;
-                                    }
-                                    if(p1 > 0 && p2 < 0) {
-                                        //reduce it first
-                                        var d = core.Algebra.div(_.expand(sym1.clone()), sym2.clone().toLinear());
-                                        d[0].each(function(x) {
+                                    if(sym1.power.greaterThan(0) && sym2.power.greaterThan(0)) {
+                                        //combine and pull the integral of each
+                                        var sym = _.expand(symbol);
+                                        sym.each(function(x) {
                                             retval = _.add(retval, __.integrate(x, dx, depth));
-                                        });
-                                        sym1 = d[1];
+                                        }, true);
                                     }
+                                    else {
+                                        var p1 = Number(sym1.power),
+                                            p2 = Number(sym2.power);
+                                        if(p1 < 0 && p2 > 0) {
+                                            //swap
+                                            var t = sym1; sym1 = sym2; sym2 = t;
+                                        }
 
+                                        sym1.each(function(x) {
+                                           retval = _.add(retval, __.integrate(_.multiply(x, sym2.clone()), dx, depth));
+                                        });
+                                    }
+                                }
+                                else if(g1 === CP) {
+                                    sym1 = _.expand(sym1);
+                                    retval = new Symbol(0);
                                     sym1.each(function(x) {
-                                       retval = _.add(retval, __.integrate(_.multiply(x, sym2.clone()), dx, depth));
-                                    });
-
+                                        retval = _.add(retval, __.integrate(_.multiply(x, sym2.clone()), dx, depth));
+                                    }, true);
                                 }
                                 else
                                     retval = __.integration.by_parts(symbol, dx, depth);
                             }
                         }
-                        else if(l === 3 && symbols[2].group === S) {
-                            //try integration by parts 
-                            retval = __.integration.by_parts(symbol, dx, depth);
+                        else if(l === 3 && (symbols[2].group === S && symbols[2].power.lessThan(2) || symbols[0].group === CP)) {
+                            var first = symbols[0];
+                            if(first.group === CP) { //TODO {support higher powers of x in the future}
+                                if(first.power.greaterThan(1))
+                                    first = _.expand(first);
+                                var r = _.multiply(symbols[1], symbols[2]);
+                                retval = new Symbol(0);
+                                first.each(function(x) {
+                                    var t = _.multiply(x, r.clone());
+                                    var intg = __.integrate(t, dx, depth);
+                                    retval = _.add(retval, intg);
+                                }, true);
+                            }
+                            else 
+                                //try integration by parts 
+                                retval = __.integration.by_parts(symbol, dx, depth);
                         }
                     }
                     retval = _.multiply(retval, coeff);
@@ -1214,8 +1266,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 //if an integral was found then we return it
                 if(retval)
                     return retval;
-            } 
-            catch(e){/*no integral found*/ }  
+            }
+            catch(e){/*no integral found*/ console.log(e.stack)}  
             //no symbol found so we return the integral again
             return _.symfunction('integrate', [original_symbol, dt]);
         }
