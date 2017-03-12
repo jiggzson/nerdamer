@@ -12,7 +12,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.1',
+    var version = '0.7.2',
         _ = new Parser(), //nerdamer's parser
         //import bigInt
         bigInt = imports.bigInt,
@@ -619,29 +619,21 @@ var nerdamer = (function(imports) {
             csc: function(x) { return 1/Math.sin(x); },
             sec: function(x) { return 1/Math.cos(x); },
             cot: function(x) { return 1/Math.tan(x); },
-            //https://github.com/AndreasMadsen/mathfn/blob/master/functions/erf.js
-            erf: function(x){
-                var ERF_A = [
-                    0.254829592,
-                    -0.284496736,
-                    1.421413741,
-                    -1.453152027,
-                    1.061405429
-                  ];
-                  var ERF_P = 0.3275911;
-
-                  function erf(x) {
-                    var sign = 1;
-                    if (x < 0) sign = -1;
-
-                    x = Math.abs(x);
-
-                    var t = 1.0/(1.0 + ERF_P*x);
-                    var y = 1.0 - (((((ERF_A[4]*t + ERF_A[3])*t) + ERF_A[2])*t + ERF_A[1])*t + ERF_A[0])*t*Math.exp(-x*x);
-
-                    return sign * y;
-                  }
-                  return erf(x);
+            // https://gist.github.com/jiggzson/df0e9ae8b3b06ff3d8dc2aa062853bd8
+            erf: function(x) {
+                var t = 1/(1+0.5*Math.abs(x));
+                var result = 1-t*Math.exp( -x*x -  1.26551223 +
+                        t * ( 1.00002368 +
+                        t * ( 0.37409196 +
+                        t * ( 0.09678418 +
+                        t * (-0.18628806 +
+                        t * ( 0.27886807 +
+                        t * (-1.13520398 +
+                        t * ( 1.48851587 +
+                        t * (-0.82215223 +
+                        t * ( 0.17087277)))))))))
+                    );
+                return x >= 0 ? result : -result;
             },
             bigPow: function(n, p) {
                 n = Frac.simple(n);
@@ -679,10 +671,18 @@ var nerdamer = (function(imports) {
                 }
             },
             //factorial
-            fact: function(x) {
+            bigfactorial: function(x) {
                 var retval = new Frac(1);
                 for (var i = 2; i <= x; i++) 
                     retval = retval.multiply(new Frac(i));
+                return retval;
+            },
+            //the factorial function but using the big library instead
+            factorial: function(x) {
+                if(x < 0)
+                    throw new Error('factorial not defined for negative numbers');
+                var retval=1;
+                for (var i = 2; i <= x; i++) retval = retval * i;
                 return retval;
             },
             //double factorial
@@ -2419,7 +2419,7 @@ var nerdamer = (function(imports) {
         //list all the supported operators
         var operators = this.operators = {
                 '^' : new Operator('^', 'pow', 6, false, false),
-                '!!' : new Operator('!', 'dfactorial', 5, false, false, true, function(e) {
+                '!!' : new Operator('!!', 'dfactorial', 5, false, false, true, function(e) {
                     return _.symfunction(DOUBLEFACTORIAL, [e]); //wrap it in a factorial function
                 }),
                 '!' : new Operator('!', 'factorial', 5, false, false, true, function(e) {
@@ -2500,7 +2500,7 @@ var nerdamer = (function(imports) {
                 'matget'     : [ matget, 3],
                 'matset'     : [ matset, 4],
                 'imatrix'    : [ imatrix, 1],
-                'if'         : [ IF, 3]
+                'IF'         : [ IF, 3]
             };
 
         this.error = err;
@@ -2645,7 +2645,7 @@ var nerdamer = (function(imports) {
             // begin parsing
             for(var i=0; i<l; i++) {
                 var e = rpn[i];
-                if(e.is_prefix_operator) { 
+                if(e.is_prefix_operator || e.is_postfix) { 
                     q.push(e.operation(q.pop()));
                     continue;
                 }
@@ -2654,7 +2654,7 @@ var nerdamer = (function(imports) {
                         a = q.pop();
                     q.push(this[e.fn](a, b));
                 }
-                else if(e in functions) {
+                else if(e.value in functions) { 
                     q.push(_.callfunction(e.value, q.pop()));
                 }
                 else { 
@@ -2740,6 +2740,7 @@ var nerdamer = (function(imports) {
                 })
                 //allow omission of multiplication sign between brackets
                 .replace( /\)\(/g, ')*(' ) || '0';
+
             var l = e.length, //the length of the string
                 output = [], //the output array. This is what's returned
                 stack = [], //the operator stack
@@ -2790,26 +2791,6 @@ var nerdamer = (function(imports) {
                 }
             };
             
-//            var add_prefix = function(prefix) { 
-//                var e = prefixes.pop(), new_prefix;
-//                if(!e) {
-//                    prefixes.push(prefix);
-//                    return;
-//                }
-//                //transfer the pre_bracket flag
-//                if(e.pre_bracket || prefix.pre_bracket) { 
-//                    prefixes.push(e);
-//                    prefixes.push(prefix);
-//                    return;
-//                }
-//                
-//                if(prefix.val === e.val) 
-//                     new_prefix = new Prefix(operators['+']);
-//                else
-//                    new_prefix = new Prefix(operators['-']);
-//
-//                prefixes.push(new_prefix);
-//            };
             /*
              * We define the operator as anything that performs any form of operation. A bracket as any object that defines
              * a scope and a token as anything in between two operators. This enables us to have variables of more than one letter.
@@ -2848,13 +2829,46 @@ var nerdamer = (function(imports) {
                         var l2 = pr_operator.length,
                             end = l2-1,
                             prefix = operators[pr_operator.charAt(end)];
-                        verify_prefix_operator(prefix);
-                        prefix_cache.push(new Prefix(prefix));
-                        //add the prefix to the stack
-//                        add_prefix(new Prefix(prefix));
                         pr_operator = pr_operator.substring(0, end);
+                        //make sure it's not a postfix operator that we're dealing with
+                        try {
+                            //verify that it's not a prefix operator
+                            verify_prefix_operator(prefix);
+                            //add the prefix to the stack
+                            prefix_cache.push(new Prefix(prefix));  
+                        }
+                        catch(e) {
+                            //check if we're dealing with postfix operators. 
+                            //Rule: compound postfix operators must be a composition of postfix operators
+                            var prl = pr_operator.length, o;
+                            for(var j=0; j<prl; j++) {
+                                o = operators[pr_operator.charAt(j)];
+                                if(!o|| o && !o.is_postfix)
+                                    err(e.message);
+                            }
+                            //at this point we know that we have only postfix operators but they are parsed left to right
+                            var rem = '';
+                            do {
+                                if(pr_operator === '')
+                                    break; //we're done since the entire operator has been consumed
+                                if(pr_operator in operators) {
+                                    output.push(operators[pr_operator]);
+                                    pr_operator = rem;
+                                    rem = '';
+                                }
+                                else {
+                                    var end = pr_operator.length-1;
+                                    rem += pr_operator.charAt(end);
+                                    pr_operator = pr_operator.substring(0, end);
+                                } 
+                            }
+                            while(true)
+                            //the actual operator is now the one we assumed to be a prefix earlier. I need to really
+                            //pick better variable names :-/
+                            pr_operator = prefix.val;
+                            break;
+                        }
                     }
-
                     // we now have the operator
                     operator = operators[pr_operator];
                     
@@ -2948,12 +2962,6 @@ var nerdamer = (function(imports) {
                             output.push(stack.pop());
                         
                         last_pos = i+1; //move past the bracket
-                        
-                        // bring down any prefixes
-                        var sl = stack.length;
-                        if(sl && stack[sl-1].is_prefix_operator) {
-                            output.push(stack.pop());
-                        }
                     }
                 }
             }
@@ -3019,7 +3027,7 @@ var nerdamer = (function(imports) {
             var retval;
             if(Settings.PARSE2NUMBER && symbol.isConstant()) {
                 if(isInt(symbol)) 
-                    retval = Math2.fact(symbol);
+                    retval = Math2.bigfactorial(symbol);
                 else
                     retval = Math2.gamma(symbol.multiplier.toDecimal()+1);
                 
@@ -3048,7 +3056,7 @@ var nerdamer = (function(imports) {
          * @param {Symbol} b
          * @returns {Symbol}
          */
-        function IF(condition, a, b) {
+        function IF(condition, a, b) { 
             if(typeof condition !== 'boolean')
                 if(isNumericSymbol(condition))
                     condition = !!Number(condition);
@@ -5559,19 +5567,6 @@ var nerdamer = (function(imports) {
         var variable, fn, args;
         //convert any expression passed in to a string
         if(expression instanceof Expression) expression = expression.toString();
-        
-//        var parts = expression.split('=');
-//        //have the expression point to the second part instead
-//        if(parts.length > 1) {
-//            //Check if parts[0] is a function
-//            if (/\w+\((.*)\)/.test(parts[0].replace(/\s/g, ''))) {
-//                fn = /\w+(?=\()/.exec(parts[0])[0];
-//                args = /\((.*)(?=\))/.exec(parts[0])[1].replace(/\s/g, '').split(',');
-//            } else {
-//                variable = parts[0];
-//            }
-//            expression = parts[1];
-//        }
         
         var multi_options = isArray(option),
             expand = 'expand',
