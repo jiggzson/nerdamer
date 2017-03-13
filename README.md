@@ -378,6 +378,16 @@ var sol = nerdamer.solveEquations(['x+y=1', '2*x=6', '4*z+y=6']);
 console.log(sol);
 //[ [ 'x', 3 ], [ 'y', -2 ], [ 'z', 2 ] ]
 ```
+In version 0.7.2 and up the solver can additionally be used in the following way
+```javascript
+//first parse the equation
+var x = nerdamer('x^2+2=y-7*a');
+//You can make substitutions to the equation
+x = x.evaluate({a: 'x^2-3'});
+console.log(x.toString()); //2+x^2=-7*x^2+21+y
+var solutions = x.solveFor('x');
+console.log(solutions.toString()); //(1/16)*sqrt(32*y+608),(-1/16)*sqrt(32*y+608)
+```
 
 If no solutions could be found then the array will be empty
 
