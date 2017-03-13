@@ -354,8 +354,10 @@ benchmark(function() {
 }, parsing);
 //benchmark how long it took for generation of LaTeX
 benchmark(function() {
-    for(var i=0; i<l; i++) 
+    for(var i=0; i<l; i++) {
+        console.log(parsed[i].toString(), parsed[i])
         TeX.push(parsed[i].toTeX());
+    }
 }, LaTeX);
 //benchmark how long it took for generation of LaTeX
 benchmark(function() {

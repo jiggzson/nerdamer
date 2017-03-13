@@ -407,6 +407,27 @@ FUNCTIONS = {
         ],
         returns: 'bool'
     },
+    nerdamer__solveFor: {
+        type: 'nerdamer',
+        usage: 'nerdamer(equation).solveFor(variable)',
+        full_name: 'solveFor',
+        description: 'This method requires that the Solve, Calculus, and Algebra add-ons are loaded. It will attempt to solve an equation. If solutions no solutions are found then\n\
+                      an empty array is returned. It can solve for multivariate polynomials up to the third degree. After which it can solve numerically for polynomials up to the\n\
+                      the 100th degree. If it\'s a univariate equation it will attempt to solve it using numerical methods.',
+        parameters: {
+            variable: {
+                type: 'String',
+                description: "The variable to solve for."
+            }
+        },
+        examples: [
+            "var eq = nerdamer('a*x^2+b*x=y').evaluate({y: 'x-7'});",
+            "console.log(eq.toString());",
+            "var solutions = eq.solveFor('x').toString();",
+            "console.log(solutions);"
+        ],
+        returns: 'Symbol[]'
+    },
     Expression__text: {
         type: 'Expression',
         usage: 'nerdamer.text(x)',
@@ -1607,15 +1628,8 @@ FUNCTIONS = {
             "console.log(y.toString());",
             "var x  = nerdamer('integrate(cos(x)*x^6, x)');",
             "console.log(x.toString());",
-            "//as you can see the expression still contains an integral",
-            "//we can use the hasIntegral method to check",
+            "//we can use the hasIntegral method to check if it was fully integrated",
             "console.log(x.hasIntegral());",
-            "//all nerdamer needed was a little more room. Let's give it some",
-            "nerdamer.set('integration_depth', 7);",
-            "x = nerdamer('integrate(cos(x)*x^6, x)');",
-            "console.log(x.toString());",
-            "//no integral. See...",
-            "console.log(x.hasIntegral());"
         ],
         returns: 'bool'
     },

@@ -49,15 +49,17 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         
     //Preparations
     Symbol.prototype.hasIntegral = function() {
-        if(this.group === FN && this.fname === 'integrate') 
-            return true;
-        if(this.symbols) {
-            for(var x in this.symbols) {
-                if(this.symbols[x].hasIntegral())
-                    return true;
-            }
+        return this.containsFunction('integral');
+    };
+    //removes parentheses
+    Symbol.unwrapPARENS = function(symbol) {
+        if(symbol.group === FN && !symbol.fname) {
+            var r = symbol.args[0];
+            r.power = r.power.multiply(symbol.power);
+            r.multiplier = r.multiplier.multiply(symbol.multiplier);
+            return r;
         }
-        return false;
+        return symbol;
     };
     //removes parentheses
     Symbol.unwrapPARENS = function(symbol) {
@@ -87,7 +89,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     core.Settings.integration_depth = 4;
     
     var __ = core.Calculus = {
-        version: '1.3.2',
+
+        version: '1.3.3',
+
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
             index = index.value;
@@ -103,6 +107,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     for(var i=start; i<=end; i++) {
                         retval += f.call(undefined, i);
                     }
+                    retval = new Symbol(retval);
                 }
                 else {
                     var f = fn.text(),
@@ -827,7 +832,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     }
                     else {
                         if(!a.contains(dx, true) && symbol.isLinear()) { //perform a deep search for safety
-                            //first handle the special cases console.log(9)
+
+                            //first handle the special cases 
+
                             if(fname === ABS) {
                                 //REVISIT **TODO**
                                 var x = _.divide(arg.clone(), a.clone());
@@ -1275,7 +1282,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 if(retval)
                     return retval;
             }
-            catch(e){/*no integral found*/ console.log(e.stack)}  
+
+            catch(e){/*no integral found*/}  
+
             //no symbol found so we return the integral again
             return _.symfunction('integrate', [original_symbol, dt]);
         }
