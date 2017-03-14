@@ -61,6 +61,15 @@ if((typeof module) !== 'undefined') {
         },
         toLHS: function() {
             return _.subtract(this.LHS.clone(), this.RHS.clone());
+        },
+        clone: function() {
+            return new Equation(this.LHS.clone(), this.RHS.clone());
+        },
+        sub: function(x, y) {
+            var clone = this.clone();
+            clone.LHS = clone.LHS.sub(x.clone(), y.clone());
+            clone.RHS = clone.RHS.sub(x.clone(), y.clone());
+            return clone;
         }
     };
     //overwrite the equals function
