@@ -636,7 +636,7 @@ var nerdamer = (function(imports) {
                     );
                 return x >= 0 ? result : -result;
             },
-            bigPow: function(n, p) {
+            bigpow: function(n, p) {
                 n = Frac.simple(n);
                 var r = n.clone();
                 for(var i=0; i<p-1; i++) {
@@ -1045,21 +1045,6 @@ var nerdamer = (function(imports) {
             if(this.c.indexOf(value) === -1 && condition_true) this.c.push(value);
         };
     }
-    
-    /**
-     * Wraps a function name in this object
-     * @param {String} fn_name
-     * @returns {Func}
-     */
-    function Func(fn_name) {
-        this.name = fn_name;
-    }
-    
-    Func.prototype.toString = function() {
-        return this.name;
-    };
-    
-    Func.prototype.is_function = true;
     
     /** 
      * This is what nerdamer returns. It's sort of a wrapper around the symbol class and 
@@ -1573,117 +1558,67 @@ var nerdamer = (function(imports) {
             }
             return false;
         },
-        substitute: function(a, b) { 
+        sub: function(a, b) { 
             a = !isSymbol(a) ? _.parse(a) : a.clone();
             b = !isSymbol(b) ? _.parse(b) : b.clone();
-            var retval;
+            if(a.group === N || a.group === P)
+                err('Cannot substitute a number. Must be a variable');
+            var same_pow = false,
+                retval;
             /* 
              * In order to make the substitution the bases have to first match take
              * (x+1)^x -> (x+1)=y || x^2 -> x=y^6
              * In both cases the first condition is that the bases match so we begin there
+             * Either both are PL or both are not PL but we cannot have PL and a non-PL group match
              */
-            if(this.value === a.value) {
+            if(this.value === a.value && (this.group !== PL && a.group !== PL || this.group === PL && a.group === PL)) { 
                 //we cleared the first hurdle but a subsitution may not be possible just yet
-                if(a.isLinear()) {
+                if(a.isLinear()) { 
+                    retval = b; 
+                }
+                else if(a.power.equals(this.power)) {
                     retval = b;
+                    same_pow = true;
                 }
             }
             //the next thing is to handle CB
             else if(this.group === CB || this.previousGroup === CB) {
                 retval = new Symbol(1);
                 this.each(function(x) { 
-                    retval = _.multiply(retval, x.substitute(a, b));
+                    retval = _.multiply(retval, x.sub(a, b));
                 });
             }
             else if(this.isComposite()) {
                 retval = new Symbol(0);
                 this.each(function(x) { 
-                    retval = _.add(retval, x.substitute(a, b));
+                    retval = _.add(retval, x.sub(a, b));
                 });
             }
             else if(this.group === EX) {
-                // the parsed value could be a function so parse and substitute
-                retval = _.parse(this.value).substitute(a, b);
+                // the parsed value could be a function so parse and sub
+                retval = _.parse(this.value).sub(a, b);
             }
             else if(this.group === FN) { 
                 var nargs = [];
                 for(var i=0; i<this.args.length; i++)
-                    nargs.push(this.args[i].substitute(a, b));
+                    nargs.push(this.args[i].sub(a, b));
                 retval = _.symfunction(this.fname, nargs);
             }
             //if we did manage a substitution
             if(retval) {
-                //substitute the power
-                var p = this.group === EX ? this.power.substitute(a, b) : _.parse(this.power);
-                //now raise the symbol to that power
-                retval = _.pow(retval, p); 
+                if(!same_pow) {
+                    //substitute the power
+                    var p = this.group === EX ? this.power.sub(a, b) : _.parse(this.power);
+                    //now raise the symbol to that power
+                    retval = _.pow(retval, p); 
+                }
+
                 //transfer the multiplier
                 retval.multiplier = retval.multiplier.multiply(this.multiplier);
                 //done
                 return retval;
             }
             //if all else fails
-            return this.clone();
-        },
-        //this method substitutes one symbol for another
-        sub: function(symbol, for_symbol) {
-            var g1 = this.group,
-                g2 = symbol.group;       
-            if(g1 === g2 && this.equals(symbol)) { 
-                //the simplest subsitution we can make
-                return for_symbol.clone();
-            }
-            else {
-                var retval;
-                if(g1 === g2 & g1 === S && symbol.isLinear() && this.value === symbol.value) { 
-                    //e.g. x^2+1, x=u : x is linear so it matches all x's
-                    retval = for_symbol.clone();
-                    retval.multiplier = this.multiplier.clone();
-                    retval.power = this.power.clone();
-                    retval = _.parse(retval);
-                }
-                else if(text(this, 'hash') === text(symbol, 'hash')) { 
-                    var p = _.divide(_.parse(this.power), _.parse(symbol.power));
-                    if(isInt(p)) {
-                        retval = for_symbol.clone();
-                        retval = _.pow(retval, _.parse(p));
-                        retval.multiplier = retval.multiplier.multiply(this.multiplier);
-                    } 
-                }
-                //loop through all the symbols
-                else if(this.symbols) {
-                    retval = this.clone();
-                    var f = this.isComposite() ? 'attach' : 'combine';
-                    retval.symbols = {};
-                    this.each(function(x) {
-                        var sub = x.sub(symbol, for_symbol);
-                        retval[f](sub);
-                    });
-                    retval.updateHash();
-                }
-                //check the arguments of the function
-                else if(g1 === FN) {
-                    retval = this.clone();
-                    retval.args = [];
-                    for(var i=0; i<this.args.length; i++) {
-                        retval.args[i] = this.args[i].sub(symbol, for_symbol);
-                    }
-                    retval.updateHash();
-                }
-                if(this.group === EX) { 
-                    retval = retval || this.clone();
-                    retval.power = retval.power.sub(symbol, for_symbol);
-                    if(this.value === symbol.value) { 
-                        this.value = for_symbol.value;
-                        this.updateHash();
-                    }
-                    //it easer to just reparse the whole thing
-                    retval = _.parse(retval);
-                }
-                if(!retval) return this.clone();
-                return retval;
-            }
-            
             return this.clone();
         },
         isMonomial: function() {
@@ -2384,24 +2319,9 @@ var nerdamer = (function(imports) {
         this.val = operator.val;
         this.is_prefix_operator = true;
     }
-//    function Prefix(operator) {
-//        for(var x in operator)
-//            this[x] = operator[x];
-//        this.is_prefix_operator = true;
-//    }
     
     Prefix.prototype.toString = function() {
         return '`'+this.val;
-    };
-    
-    function Postfix(operator) {
-        this.operation = operator.operation;
-        this.val = operator.val;
-        this.is_postfix_operator = true;
-    }
-    
-    Postfix.prototype.toString = function() {
-        return this.val;
     };
 
     //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
@@ -2568,8 +2488,8 @@ var nerdamer = (function(imports) {
             //call the proper function and return the result;
             var f = new Symbol(fn_name);
             f.group = FN;
-            if(typeof params === 'object') params = [].slice.call(params);//ensure an array
-            
+            if(typeof params === 'object')
+                params = [].slice.call(params);//ensure an array
             f.args = params;
             f.fname = fn_name === PARENTHESIS ? '' : fn_name;
             f.updateHash();
@@ -2620,7 +2540,6 @@ var nerdamer = (function(imports) {
              */
             if(!fn) { 
                 //Remember assumption 1. No function defined so it MUST be numeric in nature
-                //findFunction throws an error if no function was found.
                 fn = findFunction(fn_name); 
                 if(Settings.PARSE2NUMBER)
                     retval = bigConvert(fn.apply(fn, args));
@@ -2694,7 +2613,6 @@ var nerdamer = (function(imports) {
          * @param {Object} substitutions
          * @returns {Symbol}
          */
-
         this.parse = function(expression_string, substitutions, tree) { 
             //prepare the substitutions
             if(substitutions) {
@@ -2747,7 +2665,6 @@ var nerdamer = (function(imports) {
             var l = e.length, //the length of the string
                 output = [], //the output array. This is what's returned
                 stack = [], //the operator stack
-
                 last_pos = 0, //the location of last operator encountered
                 open_brackets = [0, 0], //a counter for the open brackets
                 prefix_cache = [],
@@ -2820,7 +2737,6 @@ var nerdamer = (function(imports) {
                     while(e.charAt(i+1) in operators)
                         i++;
 
-                    
                     var end_operator = i+1;
                     //the probable operator will be the difference between c and i;
                     var pr_operator = e.substring(c, end_operator); 
@@ -2935,8 +2851,7 @@ var nerdamer = (function(imports) {
                             // assume it's a function. Since a string is just an object, why not use it
                             f.is_function = true;
                             stack.push(f);
-                        }
-                            
+                        }   
                         // We're in a new scope so signal so
                         new_scope = true;
                         stack.push(bracket);
@@ -2977,7 +2892,6 @@ var nerdamer = (function(imports) {
             //collapse the stack to output
             while(stack.length)
                 output.push(stack.pop());
-            
 
             //check parity
             for(var i=0; i<open_brackets.length; i++) 

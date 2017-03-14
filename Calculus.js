@@ -107,6 +107,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     for(var i=start; i<=end; i++) {
                         retval += f.call(undefined, i);
                     }
+                    retval = new Symbol(retval);
                 }
                 else {
                     var f = fn.text(),
