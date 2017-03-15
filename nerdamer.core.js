@@ -5775,6 +5775,26 @@ var nerdamer = (function(imports) {
         if(disallowed.indexOf(setting) !== -1) err('Cannot modify setting: '+setting);
         Settings[setting] = value;
     };
+    //Map internal functions to external ones
+    var linker = function(fname) {
+        return function() {
+            var args = [].slice.call(arguments);
+            for(var i=0; i<args.length; i++)
+                args[i] = _.parse(args[i]);
+            return new Expression(block('PARSE2NUMBER', function() {
+                return _.callfunction(fname, args);
+            }));
+        };
+        
+//        for(var i=0; i<args.length; i++)
+//            args[i] = _.parse(args[i]);
+//        return new Expression(block('PARSE2NUMBER', function() {
+//            return _.callfunction(fname, args);
+//        }));
+    };
+    //perform the mapping
+    for(var x in _.functions) 
+        libExports[x] = linker(x);
 
     return libExports; //Done
 })({

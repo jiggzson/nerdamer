@@ -381,11 +381,11 @@ console.log(sol);
 In version 0.7.2 and up the solver can additionally be used in the following way
 ```javascript
 //first parse the equation
-var x = nerdamer('x^2+2=y-7*a');
+var eq = nerdamer('x^2+2=y-7*a');
 //You can make substitutions to the equation
-x = x.evaluate({a: 'x^2-3'});
-console.log(x.toString()); //2+x^2=-7*x^2+21+y
-var solutions = x.solveFor('x');
+eq = eq.evaluate({a: 'x^2-3'});
+console.log(eq.toString()); //2+x^2=-7*x^2+21+y
+var solutions = eq.solveFor('x');
 console.log(solutions.toString()); //(1/16)*sqrt(32*y+608),(-1/16)*sqrt(32*y+608)
 ```
 
