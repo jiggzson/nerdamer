@@ -4,15 +4,11 @@
  * Email : martin.r.donk@gmail.com
  * Source : https://github.com/jiggzson/nerdamer
  */
-/*
- * TODO
- * simplify ratio of sqrt
- */
 
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.2',
+    var version = '0.7.3',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -208,6 +204,14 @@ var nerdamer = (function(imports) {
          */
         isSymbol = Utils.isSymbol = function(obj) {
             return (obj instanceof Symbol);
+        },
+        
+        /**
+         * Checks to see if the object provided is an Expression
+         * @param {Object} obj
+         */
+        isExpression = Utils.isExpression = function(obj) {
+            return (obj instanceof Expression);
         },
         
         /**
@@ -1153,21 +1157,43 @@ var nerdamer = (function(imports) {
             }
             catch(e) { return ''; }
         },
-        
+        //forces the symbol to be returned as a decimal
         toDecimal: function() {
             return this.symbol.toDecimal();
         },
-        
+        //checks to see if the expression is a fraction
         isFraction: function() {
             return isFraction(this.symbol);
         },
-        
+        //checks to see if the symbol is a multivariate polynomial
         isPolynomial: function() {
             return this.symbol.isPoly();
         }, 
-        
+        //performs a substitution
         sub: function(symbol, for_symbol) {
             return new Expression(this.symbol.sub(_.parse(symbol), _.parse(for_symbol)));
+        },
+        operation: function(otype, symbol) {
+            if(isExpression(symbol))
+                symbol = symbol.symbol;
+            else if(!isSymbol(symbol))
+                symbol = _.parse(symbol);
+            return new Expression(_[otype](this.symbol, symbol));
+        },
+        add: function(symbol) {
+            return this.operation('add', symbol);
+        },
+        subtract: function(symbol) {
+            return this.operation('subtract', symbol);
+        },
+        multiply: function(symbol) {
+            return this.operation('multiply', symbol);
+        },
+        divide: function(symbol) {
+            return this.operation('divide', symbol);
+        },
+        pow: function(symbol) {
+            return this.operation('pow', symbol);
         }
     };
     //Aliases
@@ -1564,6 +1590,8 @@ var nerdamer = (function(imports) {
             if(a.group === N || a.group === P)
                 err('Cannot substitute a number. Must be a variable');
             var same_pow = false,
+                a_is_unit_multiplier = a.multiplier.equals(1),
+                m = this.multiplier.clone(),
                 retval;
             /* 
              * In order to make the substitution the bases have to first match take
@@ -1573,12 +1601,16 @@ var nerdamer = (function(imports) {
              */
             if(this.value === a.value && (this.group !== PL && a.group !== PL || this.group === PL && a.group === PL)) { 
                 //we cleared the first hurdle but a subsitution may not be possible just yet
-                if(a.isLinear()) { 
-                    retval = b; 
-                }
-                else if(a.power.equals(this.power)) {
-                    retval = b;
-                    same_pow = true;
+                if(a_is_unit_multiplier || a.multiplier.equals(this.multiplier)) {
+                    if(a.isLinear()) { 
+                        retval = b; 
+                    }
+                    else if(a.power.equals(this.power)) {
+                        retval = b;
+                        same_pow = true;
+                    }
+                    if(a.multiplier.equals(this.multiplier))
+                        m = new Frac(1);
                 }
             }
             //the next thing is to handle CB
@@ -1614,7 +1646,7 @@ var nerdamer = (function(imports) {
                 }
 
                 //transfer the multiplier
-                retval.multiplier = retval.multiplier.multiply(this.multiplier);
+                retval.multiplier = retval.multiplier.multiply(m);
                 //done
                 return retval;
             }
@@ -5775,6 +5807,29 @@ var nerdamer = (function(imports) {
         if(disallowed.indexOf(setting) !== -1) err('Cannot modify setting: '+setting);
         Settings[setting] = value;
     };
+    /**
+     * This functions makes internal functions available externally
+     * @param {bool} override Override the functions when calling api if it exists 
+     */
+    libExports.api = function(override) {
+        //Map internal functions to external ones
+        var linker = function(fname) {
+            return function() {
+                var args = [].slice.call(arguments);
+                for(var i=0; i<args.length; i++)
+                    args[i] = _.parse(args[i]);
+                return new Expression(block('PARSE2NUMBER', function() {
+                    return _.callfunction(fname, args);
+                }));
+            };
+        };
+        //perform the mapping
+        for(var x in _.functions) 
+            if(!(x in libExports) || override)
+                libExports[x] = linker(x);
+    };
+        
+    libExports.api();
 
     return libExports; //Done
 })({
