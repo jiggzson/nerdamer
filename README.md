@@ -338,6 +338,35 @@ The order in which the variables appear require a little bit of knowledge of how
 sake of simplicity we'll just assume that there is no particular order   
 
 ----------------------------------------------------------------------------------------------------------------------
+Functions, Operations, and Chaining
+===============
+You can access the built-in functions directly given its name. For example
+```javascript
+var ans = nerdamer.tan('pi/4');
+console.log(ans.toString()); // 1
+```
+Or this if the Calculus add-on is loaded
+```javascript
+var ans = nerdamer.diff('log(x)/x', 'x');
+console.log(ans.toString()); // -log(x)*x^(-2)+x^(-2)
+```
+Or expand your expression
+```javascript
+var ans = nerdamer.expand('(x+1)^3');
+console.log(ans.toString()); // 1+3*x+3*x^2+x^3
+```
+You can see the list of built-in functions [here](http://nerdamer.com/documentation.html)
+
+Additionally the expressions can be chained
+
+```javascript
+var ans = nerdamer('a+b').multiply(2).pow(3);
+console.log(ans.toString()); // 8*(a+b)^3
+```
+
+The supported operations are add, subtract, multiply, divide, pow
+
+----------------------------------------------------------------------------------------------------------------------
 Using the solver
 ===============
 To solve equations first load Solve.js. Just remember that Solve also required Algebra.js and Calculus.js to be loaded. You can then solve equations using nerdamer. Important: State the variable for which you are trying to solve.
@@ -381,11 +410,11 @@ console.log(sol);
 In version 0.7.2 and up the solver can additionally be used in the following way
 ```javascript
 //first parse the equation
-var eq = nerdamer('x^2+2=y-7*a');
+var x = nerdamer('x^2+2=y-7*a');
 //You can make substitutions to the equation
-eq = eq.evaluate({a: 'x^2-3'});
-console.log(eq.toString()); //2+x^2=-7*x^2+21+y
-var solutions = eq.solveFor('x');
+x = x.evaluate({a: 'x^2-3'});
+console.log(x.toString()); //2+x^2=-7*x^2+21+y
+var solutions = x.solveFor('x');
 console.log(solutions.toString()); //(1/16)*sqrt(32*y+608),(-1/16)*sqrt(32*y+608)
 ```
 
