@@ -27,8 +27,10 @@ if((typeof module) !== 'undefined') {
         isArray = core.Utils.isArray;
     //version solve
     core.Solve = {
-
-        version: '1.1.1'
+        version: '1.1.1',
+        solve: function(eq, variable) {
+            return new core.Vector(solve(eq, variable.toString()));
+        }
     };
     // The search radius for the roots
     core.Settings.solve_radius = 500;
@@ -61,6 +63,15 @@ if((typeof module) !== 'undefined') {
         },
         toLHS: function() {
             return _.subtract(this.LHS.clone(), this.RHS.clone());
+        },
+        clone: function() {
+            return new Equation(this.LHS.clone(), this.RHS.clone());
+        },
+        sub: function(x, y) {
+            var clone = this.clone();
+            clone.LHS = clone.LHS.sub(x.clone(), y.clone());
+            clone.RHS = clone.RHS.sub(x.clone(), y.clone());
+            return clone;
         }
     };
     //overwrite the equals function
@@ -169,7 +180,7 @@ if((typeof module) !== 'undefined') {
             existing = {}, //mark existing solutions as not to have duplicates
             add_to_result = function(r, has_trig) {
                 var r_is_symbol = isSymbol(r);
-                if(r === undefined)
+                if(r === undefined || typeof r === 'number' && isNaN(r))
                     return;
                 if(isArray(r)) 
                     solutions = solutions.concat(r);
@@ -343,7 +354,7 @@ if((typeof module) !== 'undefined') {
     };
     
     core.Expression.prototype.solveFor = function(x) {
-        return solve(this.symbol.toLHS(), x);
+        return solve(core.Utils.isSymbol(this.symbol) ? this.symbol : this.symbol.toLHS(), x);
     };
     
     nerdamer.register([
@@ -352,6 +363,12 @@ if((typeof module) !== 'undefined') {
             parent: 'nerdamer',
             visible: true,
             build: function(){ return solve; }
+        },
+        {
+            name: 'solve',
+            parent: 'Solve',
+            visible: true,
+            build: function(){ return core.Solve.solve; }
         }
     ]);
 })();

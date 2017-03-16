@@ -351,7 +351,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         return q;
                     return null;
                 }
-                function do_fn_sub(fname, arg) {
+                function do_fn_sub(fname, arg) { 
                     var subbed = __.integrate(_.symfunction(fname, [new Symbol(u)]), u);
                     subbed = subbed.sub(new Symbol(u), arg);
                     subbed.updateHash();
@@ -395,8 +395,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 else if(g1 === EX && g2 !== EX) {
                     var p = a.power;
                     Q = try_combo(b, p.clone());
-                    var integrated = __.integrate(a.sub(p, new Symbol(u)), u);
-                    return _.multiply(integrated.sub(new Symbol(u), p), Q);
+                    var integrated = __.integrate(a.sub(p.clone(), new Symbol(u)), u),
+                        retval = _.multiply(integrated.sub(new Symbol(u), p), Q);
+                    return retval;
                 }
                 else if(g2 === EX && g1 !== EX) {
                     var p = b.power;
@@ -1310,4 +1311,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             build: function() { return __.integrate; }
         }
     ]);
+    //link registered functions externally
+    nerdamer.api();
 })();

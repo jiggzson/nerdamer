@@ -2423,4 +2423,5 @@ if((typeof module) !== 'undefined') {
             build: function() { return __.div; }
         }
     ]);
+    nerdamer.api();
 })();
