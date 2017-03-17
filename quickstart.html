@@ -401,7 +401,33 @@ To get a list of variables call the variables method.
     console.log(variables);
     //[ 'bubble_gum', 'x', 'y' ]
 
-</code></pre>            
+</code></pre>    
+<hr>
+<h3>Functions, Operations, and Chaining</h3>
+You can access the built-in functions directly given its name. For example
+<pre><code> 
+var ans = nerdamer.tan('pi/4');
+console.log(ans.toString()); // 1
+</code></pre>  
+Or this if the Calculus add-on is loaded
+<pre><code> 
+var ans = nerdamer.diff('log(x)/x', 'x');
+console.log(ans.toString()); // -log(x)*x^(-2)+x^(-2)
+</code></pre>  
+Or expand your expression
+<pre><code> 
+var ans = nerdamer.expand('(x+1)^3');
+console.log(ans.toString()); // 1+3*x+3*x^2+x^3
+</code></pre>  
+You can see the list of built-in functions here
+
+Additionally the expressions can be chained
+<pre><code> 
+var ans = nerdamer('a+b').multiply(2).pow(3);
+console.log(ans.toString()); // 8*(a+b)^3
+The supported operations are add, subtract, multiply, divide, pow
+</code></pre>  
+
 <hr>
 <h3>Solving equations</h3>
 To solve equations first load Solve.js. Just remember that Solve also required Algebra.js and Calculus.js to be loaded. 
