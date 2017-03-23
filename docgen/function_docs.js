@@ -4,7 +4,8 @@ FUNCTIONS = {
         type: 'nerdamer',
         usage: 'nerdamer(expression, subs, option, location)',
         full_name: 'nerdamer',
-        description: 'Sets a constant value which nerdamer will automatically substitute when parsing expression/equation',
+        description: 'This is the main object used to parse expression or equations. This object gets extended when additional modules are loaded. Remember that this just another variable '+
+                     'which can be stored to shorter variable for convenience.',
         parameters: {
             expression: {
                 type: 'String',
