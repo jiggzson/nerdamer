@@ -61,20 +61,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
         return symbol;
     };
-    //removes parentheses
-    Symbol.unwrapPARENS = function(symbol) {
-        if(symbol.group === FN && !symbol.fname) {
-            var r = symbol.args[0];
-            r.power = r.power.multiply(symbol.power);
-            r.multiplier = r.multiplier.multiply(symbol.multiplier);
-            return r;
-        }
-        return symbol;
-    };
+    
     core.Expression.prototype.hasIntegral = function() {
         return this.symbol.hasIntegral();
     };
-    
+
     //A function to check if a function name is an inverse trig function
     core.Utils.in_inverse_trig = function(x) {
         var inv_trig_fns = [ASIN, ACOS, ATAN,   ACSC, ASEC, ACOT];
@@ -128,9 +119,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         },
         diff: function(symbol, wrt, nth) { 
             var d = isSymbol(wrt) ? wrt.text() : wrt; 
-            
+            //the nth derivative
             nth = isSymbol(nth) ? nth.multiplier : nth || 1;
-
+            
             if(d === undefined) d = core.Utils.variables(symbol)[0];
             
             //unwrap sqrt
@@ -250,11 +241,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             symbol = Symbol(1);
                             break;
                         case 'cosh':
-                            //cos -> -sin
+                            //cosh -> -sinh
                             symbol.fname = 'sinh';
                             break;
                         case 'sinh': 
-                            //sin -> cos
+                            //sinh -> cosh
                             symbol.fname = 'cosh';
                             break;
                         case 'tanh':

@@ -827,7 +827,7 @@ var nerdamer = (function(imports) {
                     sum = 0;
                 for(var i=1; i<n; i++) {
                     var n2 = 2*i; //cache 2n
-                    sum += (Math.pow(-1, i)*Math.pow(x, n2))/(n2*Math2.fact(n2));
+                    sum += (Math.pow(-1, i)*Math.pow(x, n2))/(n2*Math2.factorial(n2));
                 }
                 return Math.log(x) + g + sum;
             },
@@ -837,9 +837,61 @@ var nerdamer = (function(imports) {
                     sum = 0;
                 for(var i=0; i<n; i++) {
                     var n2 = 2*i;
-                    sum += (Math.pow(-1, i)*Math.pow(x, n2+1))/((n2+1)*Math2.fact(n2+1));
+                    sum += (Math.pow(-1, i)*Math.pow(x, n2+1))/((n2+1)*Math2.factial(n2+1));
                 }
                 return sum;
+            },
+            /*
+            * Heaviside step function - Moved from Special.js (originally contributed by Brosnan Yuen)
+            * Specification : http://mathworld.wolfram.com/HeavisideStepFunction.html
+            * if x > 0 then 1
+            * if x == 0 then 1/2
+            * if x < 0 then 0
+            */
+            step: function(x) {
+                if(x > 0)
+                    return 1;
+                if(x < 0)
+                    return 0;
+                return 0.5;
+            },
+            /*
+            * Rectangle function - Moved from Special.js (originally contributed by Brosnan Yuen)
+            * Specification : http://mathworld.wolfram.com/RectangleFunction.html
+            * if |x| > 1/2 then 0
+            * if |x| == 1/2 then 1/2
+            * if |x| < 1/2 then 1
+            */
+            rect: function(x) {
+                var x = Math.abs(x);
+                if(x === 0.5)
+                    return x;
+                if(x > 0.5)
+                    return 0;
+                return 1;
+            },
+            /*
+            * Sinc function - Moved from Special.js (originally contributed by Brosnan Yuen)
+            * Specification : http://mathworld.wolfram.com/SincFunction.html
+            * if x == 0 then 1
+            * otherwise sin(x)/x
+            */
+            sinc: function(x) {
+                if(x === 0)
+                    return 1;
+                return Math.sin(x)/x;
+            },
+            /*
+            * Triangle function - Moved from Special.js (originally contributed by Brosnan Yuen)
+            * Specification : http://mathworld.wolfram.com/TriangleFunction.html
+            * if |x| >= 1 then 0
+            * if |x| < then 1-|x|
+            */
+            tri: function(x) {
+                x = Math.abs(x);
+                if(x >= 1)
+                    return 0;
+                return 1-x;
             }
         };
         
@@ -851,7 +903,7 @@ var nerdamer = (function(imports) {
 
         //polyfills
         //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/
-        Math.sign = Math.sign || function(x) {
+        Math.sign = Math.sign || function(x) { 
             x = +x; // convert to a number
             if (x === 0 || isNaN(x)) {
                 return x;
@@ -912,7 +964,7 @@ var nerdamer = (function(imports) {
      */
     function text(obj, option, useGroup) { 
         var asHash = option === 'hash',
-            asDecimal = option === 'decimals',
+            asDecimal = option === 'decimals' || option === 'decimal',
             opt = asHash ? undefined : option;
         //if the object is a symbol
         if(isSymbol(obj)) { 
@@ -1081,6 +1133,8 @@ var nerdamer = (function(imports) {
          */
         text: function(opt) { 
             opt = opt || 'decimals';
+            if(this.symbol.text_)
+                return this.symbol.text_(opt);
             return text(this.symbol, opt);
         },
         /**
@@ -1088,6 +1142,8 @@ var nerdamer = (function(imports) {
          * @returns {String}
          */
         latex: function(option) {
+            if(this.symbol.latex_)
+                return this.symbol.latex_(option);
             return LaTeX.latex(this.symbol, option);
         },
         valueOf: function() { 
@@ -1114,8 +1170,6 @@ var nerdamer = (function(imports) {
             
             var subs = arguments[idx] || {};
             
-            
-
             return new Expression(block('PARSE2NUMBER', function() {
                 return _.parse(expression, subs);
             }, true));
@@ -1194,6 +1248,9 @@ var nerdamer = (function(imports) {
         },
         pow: function(symbol) {
             return this.operation('pow', symbol);
+        },
+        expand: function() {
+            return new Expression(_.expand(this.symbol));
         }
     };
     //Aliases
@@ -1350,7 +1407,7 @@ var nerdamer = (function(imports) {
         isOne: function() {
             return this.num.equals(1) && this.den.equals(1);
         },
-        sign: function() {
+        sign: function() { 
             return this.num.isNegative() ? -1 : 1;
         },
         abs: function() { 
@@ -1846,7 +1903,8 @@ var nerdamer = (function(imports) {
          * @returns {String|Number}
          */
         valueOf: function() {
-            if(this.group === N) { return this.multiplier; }
+            if(this.group === N) 
+                return this.multiplier.valueOf(); 
             else if(this.power === 0){ return 1; }
             else if(this.multiplier === 0) { return 0; }
             else { return text(this, 'decimals'); }
@@ -2225,15 +2283,15 @@ var nerdamer = (function(imports) {
          * Returns the latex representation of the symbol
          * @returns {String}
          */
-        latex: function() {
-            return LaTeX.latex(this);
+        latex: function(option) {
+            return LaTeX.latex(this, option);
         },
         /**
          * Returns the text representation of a symbol
          * @returns {String}
          */
-        text: function() {
-            return text(this);
+        text: function(option) {
+            return text(this, option);
         },
         /**
          * Checks if the function evaluates to 1. e.g. x^0 or 1 :)
@@ -2429,8 +2487,13 @@ var nerdamer = (function(imports) {
                 'floor'      : [ , 1],
                 'ceil'       : [ , 1],
                 'Si'         : [ , 1],
+                'step'       : [ , 1],
+                'rect'       : [ , 1],
+                'sinc'       : [ , 1],
+                'tri'        : [ , 1],
+                'sign'       : [ , 1],
                 'Ci'         : [ , 1],
-                'fib'        : [ ,1],
+                'fib'        : [ , 1],
                 'fact'       : [factorial, 1],
                 'factorial'  : [factorial, 1],
                 'dfactorial' : [ , 1],
@@ -2452,7 +2515,7 @@ var nerdamer = (function(imports) {
                 'vecset'     : [ vecset, 3],
                 'matget'     : [ matget, 3],
                 'matset'     : [ matset, 4],
-                'imatrix'    : [ imatrix, 1],
+                'imatrix'    : [ imatrix, 1], 
                 'IF'         : [ IF, 3]
             };
 
@@ -2468,6 +2531,13 @@ var nerdamer = (function(imports) {
                     return fmodule[fname];
             }
             err('The function '+fname+' is undefined!');
+        };
+        
+        var allNumbers = function(args) {
+            for(var i=0; i<args.length; i++)
+                if(args[i].group !== N)
+                    return false;
+            return true;
         };
         
         /**
@@ -2573,7 +2643,7 @@ var nerdamer = (function(imports) {
             if(!fn) { 
                 //Remember assumption 1. No function defined so it MUST be numeric in nature
                 fn = findFunction(fn_name); 
-                if(Settings.PARSE2NUMBER)
+                if(Settings.PARSE2NUMBER && allNumbers(args)) 
                     retval = bigConvert(fn.apply(fn, args));
                 else
                     retval = _.symfunction(fn_name, args);
