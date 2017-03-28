@@ -258,33 +258,33 @@ describe('Nerdamer core', function () {
        var testCases = [
            {
                given: '(1+x^2)!',
-               expected: 'fact(1+x^2)',
+               expected: 'factorial(1+x^2)',
                expectedValue: '245.1516183677083'
            },
            {
                given: '10!',
-               expected: 'fact(10)',
+               expected: 'factorial(10)',
                expectedValue: '3628800'
            },
            {
                given: 'x!',
-               expected: 'fact(x)',
+               expected: 'factorial(x)',
                expectedValue: '2.197620278392476'
            },
            {
                given: 'x!*x!',
-               expected: 'fact(x)^2',
+               expected: 'factorial(x)^2',
                expectedValue: '4.829534888001823'
            },
            {
                given: '3*(1+x!*x!)',
-               expected: '3*(1+fact(x)^2)',
+               expected: '3*(1+factorial(x)^2)',
                expectedValue: '17.488604664005468'
            },
            {
                given: '3*(1+x!*x!)!',
-               expected: '3*fact(1+fact(x)^2)',
-               expectedValue: '1573.2041488172601'
+               expected: '3*factorial(1+factorial(x)^2)',
+               expectedValue: '1573.20414881726'
            }
        ];
 
@@ -857,8 +857,7 @@ describe('Nerdamer core', function () {
     });
 
     /** #35 #76: Support multiple minus signs and brackets */
-    // TODO jiggzson: test can be run once #76 is fixed
-    xit('should support prefix operator with parantheses', function () {
+    it('should support prefix operator with parantheses', function () {
       // given
       var testCases = [
         {
