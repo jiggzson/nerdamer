@@ -1232,7 +1232,7 @@ var nerdamer = (function(imports) {
                 symbol = symbol.symbol;
             else if(!isSymbol(symbol))
                 symbol = _.parse(symbol);
-            return new Expression(_[otype](this.symbol, symbol));
+            return new Expression(_[otype](this.symbol.clone(), symbol.clone()));
         },
         add: function(symbol) {
             return this.operation('add', symbol);
@@ -2684,9 +2684,9 @@ var nerdamer = (function(imports) {
                     // convert it to a zero
                     if(e === '') {
                         q.push(new Symbol(0));
-
                     }
                     else {
+                        var unsubbed = e;
                         // make substitutions
                         //constants take higher priority
                         if(e in constants)
@@ -2696,6 +2696,7 @@ var nerdamer = (function(imports) {
                             e = subs[e].clone();
                         else if(e in VARS)
                             e = VARS[e].clone();
+                        e.unsubbed = unsubbed;
                         q.push(e);
                     }
                 }
