@@ -857,8 +857,7 @@ describe('Nerdamer core', function () {
     });
 
     /** #35 #76: Support multiple minus signs and brackets */
-    // TODO jiggzson: test can be run once #76 is fixed
-    xit('should support prefix operator with parantheses', function () {
+    it('should support prefix operator with parantheses', function () {
       // given
       var testCases = [
         {
