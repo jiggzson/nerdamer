@@ -158,8 +158,8 @@ describe('TeX features', function () {
             var decimalTex = nerdamer(testCases[i].given).toTeX('decimal');
 
             // then
-            expect(teX).toEqual(testCases[i].TeX);
-            expect(decimalTex).toEqual(testCases[i].decimalTeX);
+            expect(teX).toEqual(testCases[i].TeX, 'for formula ' + testCases[i].given);
+            expect(decimalTex).toEqual(testCases[i].decimalTeX, 'for formula ' + testCases[i].given);
         }
     });
 
