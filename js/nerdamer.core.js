@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.3',
+    var version = '0.7.4',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -827,7 +827,7 @@ var nerdamer = (function(imports) {
                     sum = 0;
                 for(var i=1; i<n; i++) {
                     var n2 = 2*i; //cache 2n
-                    sum += (Math.pow(-1, i)*Math.pow(x, n2))/(n2*Math2.fact(n2));
+                    sum += (Math.pow(-1, i)*Math.pow(x, n2))/(n2*Math2.factorial(n2));
                 }
                 return Math.log(x) + g + sum;
             },
@@ -837,7 +837,7 @@ var nerdamer = (function(imports) {
                     sum = 0;
                 for(var i=0; i<n; i++) {
                     var n2 = 2*i;
-                    sum += (Math.pow(-1, i)*Math.pow(x, n2+1))/((n2+1)*Math2.fact(n2+1));
+                    sum += (Math.pow(-1, i)*Math.pow(x, n2+1))/((n2+1)*Math2.factial(n2+1));
                 }
                 return sum;
             },
@@ -964,7 +964,7 @@ var nerdamer = (function(imports) {
      */
     function text(obj, option, useGroup) { 
         var asHash = option === 'hash',
-            asDecimal = option === 'decimals',
+            asDecimal = option === 'decimals' || option === 'decimal',
             opt = asHash ? undefined : option;
         //if the object is a symbol
         if(isSymbol(obj)) { 
@@ -1133,6 +1133,8 @@ var nerdamer = (function(imports) {
          */
         text: function(opt) { 
             opt = opt || 'decimals';
+            if(this.symbol.text_)
+                return this.symbol.text_(opt);
             return text(this.symbol, opt);
         },
         /**
@@ -1140,6 +1142,8 @@ var nerdamer = (function(imports) {
          * @returns {String}
          */
         latex: function(option) {
+            if(this.symbol.latex_)
+                return this.symbol.latex_(option);
             return LaTeX.latex(this.symbol, option);
         },
         valueOf: function() { 
@@ -1166,8 +1170,6 @@ var nerdamer = (function(imports) {
             
             var subs = arguments[idx] || {};
             
-            
-
             return new Expression(block('PARSE2NUMBER', function() {
                 return _.parse(expression, subs);
             }, true));
@@ -1230,7 +1232,7 @@ var nerdamer = (function(imports) {
                 symbol = symbol.symbol;
             else if(!isSymbol(symbol))
                 symbol = _.parse(symbol);
-            return new Expression(_[otype](this.symbol, symbol));
+            return new Expression(_[otype](this.symbol.clone(), symbol.clone()));
         },
         add: function(symbol) {
             return this.operation('add', symbol);
@@ -1246,6 +1248,9 @@ var nerdamer = (function(imports) {
         },
         pow: function(symbol) {
             return this.operation('pow', symbol);
+        },
+        expand: function() {
+            return new Expression(_.expand(this.symbol));
         }
     };
     //Aliases
@@ -2278,15 +2283,15 @@ var nerdamer = (function(imports) {
          * Returns the latex representation of the symbol
          * @returns {String}
          */
-        latex: function() {
-            return LaTeX.latex(this);
+        latex: function(option) {
+            return LaTeX.latex(this, option);
         },
         /**
          * Returns the text representation of a symbol
          * @returns {String}
          */
-        text: function() {
-            return text(this);
+        text: function(option) {
+            return text(this, option);
         },
         /**
          * Checks if the function evaluates to 1. e.g. x^0 or 1 :)
@@ -2431,6 +2436,10 @@ var nerdamer = (function(imports) {
                 '!' : new Operator('!', 'factorial', 5, false, false, true, function(e) {
                     return _.symfunction(FACTORIAL, [e]); //wrap it in a factorial function
                 }),
+                //begin crazy fix ... :( TODO!!! revisit
+                '!+' : new Operator('!+', 'factadd', 3, true, true, false),
+                '!-' : new Operator('!-', 'factsub', 3, true, true, false),
+                //done with crazy fix
                 '*' : new Operator('*', 'multiply', 4, true, false),
                 '/' : new Operator('/', 'divide', 4, true, false),
                 '+' : new Operator('+', 'add', 3, true, true, false, function(e) {
@@ -2656,7 +2665,7 @@ var nerdamer = (function(imports) {
          * @param {String[]} rpn
          * @returns {Symbol}
          */
-        this.parseTree = function(rpn) {
+        this.parseTree = function(rpn) { 
             var q = []; // The container for parsed values
             var l = rpn.length;
             // begin parsing
@@ -2679,9 +2688,9 @@ var nerdamer = (function(imports) {
                     // convert it to a zero
                     if(e === '') {
                         q.push(new Symbol(0));
-
                     }
                     else {
+                        var unsubbed = e;
                         // make substitutions
                         //constants take higher priority
                         if(e in constants)
@@ -2691,6 +2700,7 @@ var nerdamer = (function(imports) {
                             e = subs[e].clone();
                         else if(e in VARS)
                             e = VARS[e].clone();
+                        e.unsubbed = unsubbed;
                         q.push(e);
                     }
                 }
@@ -2853,7 +2863,7 @@ var nerdamer = (function(imports) {
                             //verify that it's not a prefix operator
                             verify_prefix_operator(prefix);
                             //add the prefix to the stack
-                            prefix_cache.push(new Prefix(prefix));  
+                            prefix_cache.push(new Prefix(prefix)); 
                         }
                         catch(e) {
                             //check if we're dealing with postfix operators. 
@@ -4480,10 +4490,16 @@ var nerdamer = (function(imports) {
         this.factorial = function(a) {
             return this.symfunction(FACTORIAL, [a]);
         };
-        
         //wraps the double factorial
         this.dfactorial = function(a) {
             return this.symfunction(DOUBLEFACTORIAL, [a]);
+        };
+        //wacky fix for factorial with prefixes
+        this.factadd = function(a, b) {
+            return _.add(this.symfunction(FACTORIAL, [a]), b);
+        };
+        this.factsub = function(a, b) {
+            return _.subtract(this.symfunction(FACTORIAL, [a]), b);
         };
     };
     

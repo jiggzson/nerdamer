@@ -29,7 +29,7 @@ if((typeof module) !== 'undefined') {
     core.Solve = {
         version: '1.1.1',
         solve: function(eq, variable) {
-            return new core.Vector(solve(eq, variable.toString()));
+            return new core.Vector(solve(eq.toString(), variable ? variable.toString() : variable));
         }
     };
     // The search radius for the roots
@@ -58,8 +58,8 @@ if((typeof module) !== 'undefined') {
         toString: function() {
             return this.LHS.toString()+'='+this.RHS.toString();
         },
-        text: function() {
-            return this.toString();
+        text_: function(option) { 
+            return this.LHS.text(option)+'='+this.RHS.text(option);
         },
         toLHS: function() {
             return _.subtract(this.LHS.clone(), this.RHS.clone());
@@ -72,6 +72,9 @@ if((typeof module) !== 'undefined') {
             clone.LHS = clone.LHS.sub(x.clone(), y.clone());
             clone.RHS = clone.RHS.sub(x.clone(), y.clone());
             return clone;
+        },
+        latex_: function(option) { 
+            return [this.LHS.latex(option), this.RHS.latex(option)].join('=');
         }
     };
     //overwrite the equals function
@@ -347,14 +350,28 @@ if((typeof module) !== 'undefined') {
                 catch(e) { /*something went wrong. EXITING*/; } 
             }
         }
-        
-        
-        
+
         return solutions;
     };
     
     core.Expression.prototype.solveFor = function(x) {
         return solve(core.Utils.isSymbol(this.symbol) ? this.symbol : this.symbol.toLHS(), x);
+    };
+    
+    core.Expression.prototype.expand = function() {
+        if(this.symbol instanceof Equation) {
+            var clone = this.symbol.clone();
+            clone.RHS = _.expand(clone.RHS);
+            clone.LHS = _.expand(clone.LHS);
+            return new core.Expression(clone);
+        }
+        return new core.Expression(_.expand(this.symbol));
+    };
+    
+    core.Expression.prototype.variables = function() {
+        if(this.symbol instanceof Equation)
+            return core.Utils.arrayUnique(variables(this.symbol.LHS).concat(variables(this.symbol.RHS)));
+        return variables(this.symbol);
     };
     
     nerdamer.register([
@@ -371,4 +388,5 @@ if((typeof module) !== 'undefined') {
             build: function(){ return core.Solve.solve; }
         }
     ]);
+    nerdamer.api();
 })();
