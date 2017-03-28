@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.3',
+    var version = '0.7.4',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -2436,6 +2436,10 @@ var nerdamer = (function(imports) {
                 '!' : new Operator('!', 'factorial', 5, false, false, true, function(e) {
                     return _.symfunction(FACTORIAL, [e]); //wrap it in a factorial function
                 }),
+                //begin crazy fix ... :( TODO!!! revisit
+                '!+' : new Operator('!+', 'factadd', 3, true, true, false),
+                '!-' : new Operator('!-', 'factsub', 3, true, true, false),
+                //done with crazy fix
                 '*' : new Operator('*', 'multiply', 4, true, false),
                 '/' : new Operator('/', 'divide', 4, true, false),
                 '+' : new Operator('+', 'add', 3, true, true, false, function(e) {
@@ -2661,7 +2665,7 @@ var nerdamer = (function(imports) {
          * @param {String[]} rpn
          * @returns {Symbol}
          */
-        this.parseTree = function(rpn) {
+        this.parseTree = function(rpn) { 
             var q = []; // The container for parsed values
             var l = rpn.length;
             // begin parsing
@@ -2859,7 +2863,7 @@ var nerdamer = (function(imports) {
                             //verify that it's not a prefix operator
                             verify_prefix_operator(prefix);
                             //add the prefix to the stack
-                            prefix_cache.push(new Prefix(prefix));  
+                            prefix_cache.push(new Prefix(prefix)); 
                         }
                         catch(e) {
                             //check if we're dealing with postfix operators. 
@@ -4486,10 +4490,16 @@ var nerdamer = (function(imports) {
         this.factorial = function(a) {
             return this.symfunction(FACTORIAL, [a]);
         };
-        
         //wraps the double factorial
         this.dfactorial = function(a) {
             return this.symfunction(DOUBLEFACTORIAL, [a]);
+        };
+        //wacky fix for factorial with prefixes
+        this.factadd = function(a, b) {
+            return _.add(this.symfunction(FACTORIAL, [a]), b);
+        };
+        this.factsub = function(a, b) {
+            return _.subtract(this.symfunction(FACTORIAL, [a]), b);
         };
     };
     
