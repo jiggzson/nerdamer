@@ -284,7 +284,7 @@ describe('Nerdamer core', function () {
            {
                given: '3*(1+x!*x!)!',
                expected: '3*factorial(1+factorial(x)^2)',
-               expectedValue: '1573.2041488172601'
+               expectedValue: '1573.20414881726'
            }
        ];
 
