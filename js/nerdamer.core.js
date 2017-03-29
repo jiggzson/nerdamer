@@ -4748,12 +4748,12 @@ var nerdamer = (function(imports) {
                 else if(fname === 'integrate') {
                     v[index] = '\\int'+this.braces(input[0])+this.braces('d'+input[1]);
                 }
-                else if(fname === FACTORIAL) {
+                else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL) {
                     var arg = symbol.args[0];
                     if(arg.power.equals(1) && (arg.isComposite() || arg.isCombination())) {
                         input[0] = this.brackets(input[0]);
                     }
-                    v[index] = input[0]+'!';
+                    v[index] = input[0]+(fname === FACTORIAL ? '!' : '!!');
                 }
                 else { 
                     var name = '\\mathrm'+this.braces(fname);
