@@ -2438,7 +2438,9 @@ var nerdamer = (function(imports) {
                 }),
                 //begin crazy fix ... :( TODO!!! revisit
                 '!+' : new Operator('!+', 'factadd', 3, true, true, false),
+                '!!+' : new Operator('!!+', 'dfactadd', 3, true, true, false),
                 '!-' : new Operator('!-', 'factsub', 3, true, true, false),
+                '!!-' : new Operator('!!-', 'dfactsub', 3, true, true, false),
                 //done with crazy fix
                 '*' : new Operator('*', 'multiply', 4, true, false),
                 '/' : new Operator('/', 'divide', 4, true, false),
@@ -4498,8 +4500,14 @@ var nerdamer = (function(imports) {
         this.factadd = function(a, b) {
             return _.add(this.symfunction(FACTORIAL, [a]), b);
         };
+        this.dfactadd = function(a, b) {
+            return _.add(this.symfunction(DOUBLEFACTORIAL, [a]), b);
+        };
         this.factsub = function(a, b) {
             return _.subtract(this.symfunction(FACTORIAL, [a]), b);
+        };
+        this.dfactsub = function(a, b) {
+            return _.subtract(this.symfunction(DOUBLEFACTORIAL, [a]), b);
         };
     };
     
