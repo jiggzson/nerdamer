@@ -5523,14 +5523,14 @@ var nerdamer = (function(imports) {
             };
 
             //the multiplier
-            if(group === N) c.push(symbol.multiplier.toDecimal());
+            if(group === N) 
+                c.push(symbol.multiplier.toDecimal());
             else if(symbol.multiplier.equals(-1)) prefix = '-';
             else if(!symbol.multiplier.equals(1)) c.push(symbol.multiplier.toDecimal());
             //the value
             var value;
             
-
-            if(group === S) value = symbol.value;
+            if(group === S || group === P) value = symbol.value;
             else if(group === FN) { 
                 value = ftext_function(symbol.fname);
             }
