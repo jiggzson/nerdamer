@@ -636,6 +636,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 retval = _.subtract(uv, integral_vdu);
                 return retval;
             },
+            /*
+             * dependents: [Solve, integrate]
+             */
             decompose_arg: function(arg, dx) { 
                 var ax, a, x, b;
                 if(arg.group === CP) {
