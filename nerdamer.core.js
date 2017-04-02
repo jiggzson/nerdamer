@@ -1632,11 +1632,13 @@ var nerdamer = (function(imports) {
             return arr;
         },
         //checks to see if a symbol contans a function
-        hasFunc: function() {
-            if(this.group === FN || this.group === EX) return true;
+        hasFunc: function(v) {
+            var fn_group = this.group === FN || this.group === EX;
+            if( fn_group && !v || fn_group && this.contains(v) )
+                return true;
             if(this.symbols) {
                 for(var x in this.symbols) {
-                    if(this.symbols[x].hasFunc()) return true;
+                    if(this.symbols[x].hasFunc(v)) return true;
                 }
             }
             return false;
@@ -5201,6 +5203,11 @@ var nerdamer = (function(imports) {
     Matrix.prototype = {
         //needs be true to let the parser know not to try to cast it to a symbol
         custom: true, 
+        get: function(row, column) {
+            if(!this.elements[row])
+                return undefined;
+            return this.elements[row][column];
+        },
         set: function(row, column, value) { 
             if(!this.elements[row]) 
                 this.elements[row] = [];

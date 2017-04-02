@@ -16,14 +16,15 @@ if((typeof module) !== 'undefined') {
         _ = core.PARSER,
         _A = core.Algebra,
         _C = core.Calculus,
-        PL = core.groups.PL,
+        explode = _C.integration.decompose_arg,
+        remove = core.Utils.remove,
         format = core.Utils.format,
         build = core.Utils.build,
-        isInt = core.Utils.isInt,
-        same_sign = core.Utils.sameSign,
         Symbol = core.Symbol,
         isSymbol = core.Utils.isSymbol,
         variables = core.Utils.variables,
+        S = core.groups.S,
+        CB = core.groups.CB,
         isArray = core.Utils.isArray;
     //version solve
     core.Solve = {
@@ -90,38 +91,92 @@ if((typeof module) !== 'undefined') {
         return _.subtract(e1, e2);
     };
     // Solves a system of equations
-    var sys_solve = function(eqns) {
+    var sys_solve = function(eqns, var_array) {
+        //check if a var_array was specified
         nerdamer.clearVars();
         //parse all the equations to LHS. Remember that they come in as strings
         for(var i=0; i<eqns.length; i++) 
             eqns[i] = toLHS(eqns[i]);
-        //check to make sure that all the equations are linear
-        if(!_A.allLinear(eqns)) core.err('System must contain all linear equations!');
-        var vars = variables(eqns[0]), 
+        
+        var l = eqns.length,
             m = new core.Matrix(),
             c = new core.Matrix(),
-            l = eqns.length; 
-        //get all variables
-        for(var i=1; i<l; i++) 
-            vars = vars.concat(variables(eqns[i])); 
-        //remove duplicates
-        vars = core.Utils.arrayUnique(vars).sort();
-        // populate the matrix
-        for(var i=0; i<l; i++) {
-            var e = eqns[i]; //store the expression
-            for(var j=0; j<l; j++) {     
-                var variable = e.symbols[vars[j]];
-                m.set(i, j, variable ? variable.multiplier : 0);
+            expand_result = false,
+            vars;
+        
+        if(typeof var_array === 'undefined') {
+            //check to make sure that all the equations are linear
+            if(!_A.allLinear(eqns)) 
+                core.err('System must contain all linear equations!');
+            vars = variables(eqns[0]);
+
+            //get all variables
+            for(var i=1; i<l; i++) 
+                vars = vars.concat(variables(eqns[i])); 
+            //remove duplicates
+            vars = core.Utils.arrayUnique(vars).sort();
+            // populate the matrix
+            for(var i=0; i<l; i++) {
+                var e = eqns[i]; //store the expression
+                for(var j=0; j<l; j++) {     
+                    var variable = e.symbols[vars[j]];
+                    m.set(i, j, variable ? variable.multiplier : 0);
+                }
+                var num = e.symbols['#']; 
+                c.set(i, 0, new Symbol(num ? -num.multiplier : 0));
             }
-            var num = e.symbols['#']; 
-            c.set(i, 0, new Symbol(num ? -num.multiplier : 0));
         }
+        else {
+            /**
+             * The idea is that we loop through each equation and then expand it. Afterwards we loop
+             * through each term and see if and check to see if it matches one of the variables.
+             * When a match is found we mark it. No other match should be found for that term. If it
+             * is we stop since it's not linear.
+             */               
+            vars = var_array;
+            expand_result = true;
+            for(i=0; i<l; i++) {
+                //prefill
+                c.set(i, 0, new Symbol(0));
+                var e = _.expand(eqns[i]).collectSymbols(); //expand and store
+                //go trough each of the variables
+                for(var j=0; j<var_array.length; j++) {
+                    m.set(i, j, new Symbol(0));
+                    var v = var_array[j];
+                    //go through the terms and sort the variables
+                    for(var k=0; k<e.length; k++) {
+                        var term = e[k],
+                            check = false;
+                        for(var z=0; z<var_array.length; z++) {
+                            //check to see if terms contain multiple variables
+                            if(term.contains(var_array[z])) {
+                                if(check)
+                                    core.err('Multiple variables found for term '+term);
+                                check = true;
+                            }   
+                        }
+                        //we made sure that every term contains one variable so it's safe to assume that if the
+                        //variable is found then the remainder is the coefficient.
+                        if(term.contains(v)) {
+                            var tparts = explode(remove(e, k), v);
+                            m.set(i, j, _.add(m.get(i, j), tparts[0]));
+                        }
+                    }
+                }
+                //all the remaining terms go to the c matrix
+                for(k=0; k<e.length; k++) {
+                    c.set(i, 0, _.add(c.get(i, 0), e[k]));
+                }
+            }
+            //consider case (a+b)*I+u
+        }
+            
         // Use M^-1*c to solve system
         m = m.invert();
         var result = m.multiply(c);
         var solutions = [];
         result.each(function(e, idx) { 
-            solutions.push([vars[idx], e.valueOf()]); 
+            solutions.push([vars[idx], (expand_result ? _.expand(e) : e).valueOf()]); 
         });
         //done
         return solutions;
@@ -138,47 +193,54 @@ if((typeof module) !== 'undefined') {
     var cubic = function(d_o, c_o, b_o, a_o) { 
         //convert everything to text
         var a = a_o.text(), b = b_o.text(), c = c_o.text(), d = d_o.text(); 
-        var d0s = '{1}^2-3*{0}*{2}',
+        var d0s = '({1})^2-3*({0})*({2})',
             d0 = _.parse(format(d0s, a, b, c)),
-            Q = _.parse(format('sqrt((2*{1}^3-9*{0}*{1}*{2}+27*{0}^2*{3})^2-4*({1}^2-3*{0}*{2})^3)', a, b, c, d)),
-            C = _.parse(format('((1/2)*({4}+2*{1}^3-9*{0}*{1}*{2}+27*{0}^2*{3}))^(1/3)', a, b, c, d, Q));
+            Q = _.parse(format('((2*({1})^3-9*({0})*({1})*({2})+27*({0})^2*({3}))^2-4*(({1})^2-3*({0})*({2}))^3)^(1/2)', a, b, c, d)),
+            C = _.parse(format('((1/2)*(({4})+2*({1})^3-9*({0})*({1})*({2})+27*({0})^2*({3})))^(1/3)', a, b, c, d, Q));
         //check if C equals 0
-        var Ct = core.Utils.block('PARSE2NUMBER', function() {
-            return _.parse(C, {a: new Symbol(1), b: new Symbol(1), c: new Symbol(1),d: new Symbol(1)});
+        var scope = {};
+        //populate the scope object
+        variables(C).map(function(x) {
+            scope[x] = 1;
         });
+        
+        var Ct = core.Utils.block('PARSE2NUMBER', function() {
+            return _.parse(C, scope);
+        });
+        
         if(Number(d0) === 0 && Number(Ct) === 0) //negate Q such that C != 0
-            C = _.parse(format('((1/2)*(-{4}+2*{1}^3-9*{0}*{1}*{2}+27*{0}^2*{3}))^(1/3)', a, b, c, d, Q));
+            C = _.parse(format('((1/2)*(-({4})+2*({1})^3-9*({0})*({1})*({2})+27*({0})^2*({3})))^(1/3)', a, b, c, d, Q));
+
         var xs = [
-            '-(b/(3*a))+C/(3*a)+((b^2-3*a*c))/(3*a*C)',
+            '-(b/(3*a))-C/(3*a)-(((b^2-3*a*c))/(3*a*C))',
             '-(b/(3*a))+(C*(1+i*sqrt(3)))/(6*a)+((1-i*sqrt(3))*(b^2-3*a*c))/6*a*C'.replace(/i/g, core.Settings.IMAGINARY),
             '-(b/(3*a))+(C*(1-i*sqrt(3)))/(6*a)+((1+i*sqrt(3))*(b^2-3*a*c))/(6*a*C)'.replace(/i/g, core.Settings.IMAGINARY)
         ];
 
-        for(var i=0; i<3; i++) 
-            xs[i] = _.parse(xs[i], { a: a_o.clone(), b: b_o.clone(), c: c_o.clone(), d: d_o.clone(), C: C.clone()});
-        return xs;
+        return xs.map(function(e, i) { 
+            return _.parse(e, { a: a_o.clone(), b: b_o.clone(), c: c_o.clone(), d: d_o.clone(), C: C.clone()});
+        });
     };
 
     /* in progress */
-
     var quartic = function(e, d, c, b, a) { 
         var z = _.divide(b.clone(), _.multiply(new Symbol(4), a.clone())).negate(),
             r = e.clone(),
             y = [d, c, b, a];
     };
-
+    
     /*
      * 
      * @param {String[]|String|Equation} eqns
      * @param {type} solve_for
      * @returns {Array}
      */
-
     var solve = function(eqns, solve_for) { 
         solve_for = solve_for || 'x'; //assumes x by default
         //If it's an array then solve it as a system of equations
-        if(isArray(eqns)) 
+        if(isArray(eqns)) {
             return sys_solve.apply(undefined, arguments);
+        }
         var solutions = [],
             existing = {}, //mark existing solutions as not to have duplicates
             add_to_result = function(r, has_trig) {
@@ -286,9 +348,72 @@ if((typeof module) !== 'undefined') {
             numvars = vars.length;//how many variables are we dealing with
         //if we're dealing with a single variable then we first check if it's a 
         //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.     
+        //Don't waste time
+        if(eq.group === S || eq.group === CB && eq.contains(solve_for))
+            return [new Symbol(0)];
+        //force to polynomial. We go through each and then we look at what it would 
+        //take for its power to be an integer
+        //if the power is a fractional we divide by the fractional power
+        var fractionals = {},
+            cfact;
+        var correct_denom = function(symbol) {
+            if(symbol.symbols) {
+                for(var x in symbol.symbols) { 
+                    var sym = symbol.symbols[x];
+                    var parts = explode(sym, solve_for);
+                    var is_sqrt = parts[1].fname === core.Settings.SQRT;
+                    var v = Symbol.unwrapSQRT(parts[1]);
+                    var p = v.power.clone();
+                    if(!isSymbol(p)) {
+                        if(p.den.gt(1)) {
+                            if(is_sqrt) {
+                                symbol = _.subtract(symbol, sym.clone());
+                                symbol = _.add(symbol, _.multiply(parts[0], v));
+                                return correct_denom(symbol);
+                            }
+                            var c = fractionals[p.den];
+                            fractionals[p.den] = c ? c++ : 1;
+                        }
+                        else if(p.sign() === -1){
+                            var factor = _.parse(solve_for+'^'+Math.abs(p));
+                            symbol.each(function(y, index) {
+                               if(y.contains(solve_for)) {
+                                   symbol.symbols[index] = _.multiply(y, factor.clone());
+                               } 
+                            });
+                            fractionals = {};
+                            return correct_denom(_.parse(symbol));
+                        }
+                    }
+                }
+            }
+            return symbol;
+        };
+        //first remove any denominators
+        eq = correct_denom(eq);  
+        //correct fractionals. I can only handle one type right now
+        var fkeys = core.Utils.keys(fractionals);
+        if(fkeys.length === 1) {
+            //make a note of the factor
+            cfact = fkeys[0];
+            eq.each(function(x, index) {
+                if(x.contains(solve_for)) {
+                    var parts = explode(x, solve_for);
+                    var v = parts[1];
+                    var p = v.power;
+                    if(p.den.gt(1)) { 
+                        v.power = p.multiply(new core.Frac(cfact));
+                        eq.symbols[index] = _.multiply(v, parts[0]);
+                    }
+                } 
+            });
+            eq = _.parse(eq);
+        }
+
         if(numvars === 1) { 
             if(eq.isPoly(true)) { 
-                if(vars[0] === solve_for) _A.proots(eq).map(add_to_result);
+                if(vars[0] === solve_for) 
+                    _A.proots(eq).map(add_to_result);
             }
             else {
                 //since it's not a polynomial then we'll try to look for a solution using Newton's method
@@ -299,7 +424,7 @@ if((typeof module) !== 'undefined') {
         else {
             //The idea here is to go through the equation and collect the coefficients
             //place them in an array and call the quad or cubic function to get the results
-            if(!eq.hasFunc() && eq.isComposite()) { 
+            if(!eq.hasFunc(solve_for) && eq.isComposite()) { 
                 try {
                     var coeffs = [];
                     //we loop through the symbols and stick them in their respective 
@@ -350,7 +475,13 @@ if((typeof module) !== 'undefined') {
                 catch(e) { /*something went wrong. EXITING*/; } 
             }
         }
-
+        
+        if(cfact) {
+            solutions = solutions.map(function(x) {
+                return _.pow(x, new Symbol(cfact));
+            });
+        }
+        
         return solutions;
     };
     
@@ -374,6 +505,10 @@ if((typeof module) !== 'undefined') {
         return variables(this.symbol);
     };
     
+    var setEq = function(a, b) {
+        return _.equals(a, b);
+    };
+    
     nerdamer.register([
         {
             name: 'solveEquations',
@@ -386,6 +521,12 @@ if((typeof module) !== 'undefined') {
             parent: 'Solve',
             visible: true,
             build: function(){ return core.Solve.solve; }
+        },
+        {
+            name: 'setEquation',
+            parent: 'Solve',
+            visible: true,
+            build: function(){ return setEq; }
         }
     ]);
     nerdamer.api();
