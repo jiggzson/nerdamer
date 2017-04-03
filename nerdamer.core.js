@@ -568,6 +568,35 @@ var nerdamer = (function(imports) {
             return [].slice.call(obj);
         },
         
+        getCoeffs = Utils.getCoeffs = function(symbol, wrt) {
+            var coeffs = [];
+            //we loop through the symbols and stick them in their respective 
+            //containers e.g. y*x^2 goes to index 2
+            symbol.each(function(term) {
+                if(term.contains(wrt)) {
+                    //we want only the coefficient which in this case will be everything but the variable
+                    //e.g. a*b*x -> a*b if the variable to solve for is x
+                    var coeff = term.stripVar(wrt),
+                        x = _.divide(term.clone(), coeff.clone()),
+                        p = x.power.toDecimal();
+                }
+                else {
+                    coeff = term;
+                    p = 0;
+                }
+                var e = coeffs[p];
+                //if it exists just add it to it
+                coeffs[p] = e ? _.add(e, coeff) : coeff;
+                
+            }, true);
+            
+            for(var i=0; i<coeffs.length; i++)
+                if(!coeffs[i])
+                    coeffs[i] = new Symbol(0);
+            //fill the holes
+            return coeffs;
+        },
+        
         /**
          * Using a regex to get between brackets can be a bit tricky. This functions makes it more abstract 
          * to fetch between brackets within a string from any given index. If the starting index is a bracket 
@@ -1251,6 +1280,15 @@ var nerdamer = (function(imports) {
         },
         expand: function() {
             return new Expression(_.expand(this.symbol));
+        },
+        each: function(callback) {
+            if(this.symbol.each)
+                this.symbol.each(callback);
+            else if(isArray(this.symbol))
+                for(var i=0; i<this.symbol.length; i++)
+                    callback.call(this.symbol[i], i);
+            else
+                callback.call(this.symbol);
         }
     };
     //Aliases
@@ -3137,14 +3175,14 @@ var nerdamer = (function(imports) {
                     img = Symbol.imaginary();
                     symbol.multiplier = symbol.multiplier.abs();
                 }
-                
+
                 var q = symbol.multiplier.toDecimal(),
                     qa = Math.abs(q),
                     t = Math.sqrt(qa);
 
                 var m;
                 //it's a perfect square so take the square
-                if(isInt(t)) {
+                if(isInt(t)) { 
                     m = new Symbol(t);
                 }
                 else if(isInt(q)) { 
@@ -3728,7 +3766,7 @@ var nerdamer = (function(imports) {
                 var sign = symbol.power.sign();
                 //don't devide the power directly. Notice the use of toString. This makes it possible
                 //to use a bigNumber library in the future
-                return sqrt(symbol.toLinear()).setPower(new Frac(sign));
+                return sqrt(symbol.group === P ? new Symbol(symbol.value) : symbol.toLinear()).setPower(new Frac(sign));
             }
             return symbol;
         }
@@ -4368,19 +4406,23 @@ var nerdamer = (function(imports) {
                     //multiplying is justified since after mulltiplyPower if it was of group P it will now be of group N
                     result.multiplier = result.multiplier.multiply(multiplier);
                 }
-                else {
+                else { 
                     var sign = a.sign();
-                    if(b.isConstant() && even(b.multiplier.den) && sign < 0) { 
-                        var aa = abs(a);
+                    if(b.isConstant() && a.isConstant() && even(b.multiplier.den) && sign < 0 ) { 
+                        var aa = a.clone();
+                        aa.multiplier.negate();
                         result = _.pow(_.symfunction(PARENTHESIS, [new Symbol(-1)]), b.clone()); 
-                        var r = _.divide(_.pow(new Symbol(aa.multiplier.num), b.clone()), _.pow(new Symbol(aa.multiplier.den), b.clone()));
+                        var _a = _.pow(new Symbol(aa.multiplier.num), b.clone());
+                        var _b = _.pow(new Symbol(aa.multiplier.den), b.clone());
+                        var r = _.divide(_a, _b);
                         result = _.multiply(result, r);
                     }
-                    else {
+                    else { 
                         //b is a symbol
                         var neg_num = a.group === N && sign < 0,
                             num = testSQRT(new Symbol(neg_num ? m.num : Math.abs(m.num)).setPower(b.clone())),
                             den = testSQRT(new Symbol(m.den).setPower(b.clone()).invert());  
+                    
                         //eliminate imaginary if possible
                         if(a.imaginary) { 
                             //assume i = sqrt(-1) -> (-1)^(1/2)
@@ -4392,9 +4434,7 @@ var nerdamer = (function(imports) {
                         //ensure that the sign is carried by the symbol and not the multiplier
                         //this enables us to check down the line if the multiplier can indeed be transferred
                         if(sign < 0 && !neg_num) result.negate();
-
-                        result = _.multiply(result, testPow(_.multiply(num, den)));
-
+                        
                         //retain the absolute value
                         if(bIsConstant && a.group !== EX) { 
                             var evenr = even(b.multiplier.den),
@@ -4417,6 +4457,9 @@ var nerdamer = (function(imports) {
                 }
 
                 result = testSQRT(result);
+                //don't multiply until we've tested the remaining symbol
+                if(num && den)
+                    result = _.multiply(result, testPow(_.multiply(num, den)));
 
                 //reduce square root
                 if(result.fname === SQRT) { 
