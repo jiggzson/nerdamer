@@ -409,11 +409,25 @@ if((typeof module) !== 'undefined') {
             });
             eq = _.parse(eq);
         }
-
+        //polynomial single variable
         if(numvars === 1) { 
             if(eq.isPoly(true)) { 
-                if(vars[0] === solve_for) 
-                    _A.proots(eq).map(add_to_result);
+                var coeffs = core.Utils.getCoeffs(eq, solve_for),
+                    deg = coeffs.length - 1;
+                if(vars[0] === solve_for) {
+                    //we can solve algebraically for degrees 1, 2, 3. The remainder we switch to Jenkins-
+                    if(deg === 1) 
+                        add_to_result(_.divide(coeffs[0], coeffs[1].negate()));
+                    else if(deg === 2) {
+                        add_to_result(_.expand(quad.apply(undefined, coeffs)));
+                        coeffs.push('-');
+                        add_to_result(_.expand(quad.apply(undefined, coeffs)));
+                    }
+                    else if(deg === 3)
+                        add_to_result(cubic.apply(undefined, coeffs));
+                    else
+                        _A.proots(eq).map(add_to_result);
+                }
             }
             else {
                 //since it's not a polynomial then we'll try to look for a solution using Newton's method
@@ -426,32 +440,9 @@ if((typeof module) !== 'undefined') {
             //place them in an array and call the quad or cubic function to get the results
             if(!eq.hasFunc(solve_for) && eq.isComposite()) { 
                 try {
-                    var coeffs = [];
-                    //we loop through the symbols and stick them in their respective 
-                    //containers e.g. y*x^2 goes to index 2
-                    eq.each(function(term) {
-                        if(term.contains(solve_for)) {
-                            //we want only the coefficient which in this case will be everything but the variable
-                            //e.g. a*b*x -> a*b if the variable to solve for is x
-                            var coeff = term.stripVar(solve_for),
-                                x = _.divide(term.clone(), coeff.clone()),
-                                p = x.power.toDecimal();
-                        }
-                        else {
-                            coeff = term;
-                            p = 0;
-                        }
-                        var e = coeffs[p];
-                        //if it exists just add it to it
-                        coeffs[p] = e ? _.add(e, coeff) : coeff;
-                    }, true);
-
+                    var coeffs = core.Utils.getCoeffs(eq, solve_for);
                     var l = coeffs.length,
                         deg = l-1; //the degree of the polynomial
-                    //fill the holes
-                    for(var i=0; i<l; i++)
-                        if(coeffs[i] === undefined)
-                            coeffs[i] = new Symbol(0);
                     //handle the problem based on the degree
                     switch(deg) {
                         case 1:
