@@ -28,7 +28,7 @@ if((typeof module) !== 'undefined') {
         isArray = core.Utils.isArray;
     //version solve
     core.Solve = {
-        version: '1.1.1',
+        version: '1.2.1',
         solve: function(eq, variable) {
             return new core.Vector(solve(eq.toString(), variable ? variable.toString() : variable));
         }
@@ -224,9 +224,45 @@ if((typeof module) !== 'undefined') {
 
     /* in progress */
     var quartic = function(e, d, c, b, a) { 
-        var z = _.divide(b.clone(), _.multiply(new Symbol(4), a.clone())).negate(),
-            r = e.clone(),
-            y = [d, c, b, a];
+        var scope = {};
+        core.Utils.arrayUnique(variables(a).concat(variables(b))
+                .concat(variables(c)).concat(variables(d)).concat(variables(e)))
+                .map(function(x) {
+                    scope[x] = 1;
+                });
+        a = a.toString(); b = b.toString(); c = c.toString(); d = d.toString(); e = e.toString();
+        var p, q, D, D0, D1, Q, x1, x2, x3, x4;   
+        /*var D = core.Utils.block('PARSE2NUMBER', function() {
+            return _.parse(format("256*({0})^3*({4})^3-192*({0})^2*({1})*({3})*({4})^2-128*({0})^2*({2})^2*({4})^2+144*({0})^2*({2})*({3})^2*({4})"+
+                "-27*({0})^2*({3})^4+144*({0})*({1})^2*({2})*({4})^2-6*({0})*({1})^2*({3})^2*({4})-80*({0})*({1})*({2})^2*({3})*({4})+18*({0})*({1})*({2})*({3})^3"+
+                "+16*({0})*({2})^4*({4})-4*({0})*({2})^3*({3})^2-27*({1})^4*({4})^2+18*({1})^3*({2})*({3})*({4})-4*({1})^3*({3})^3-4*({1})^2*({2})^3*({4})+({1})^2*({2})^2*({3})^2", 
+                a, b, c, d, e), scope);
+        });*/
+
+        p = _.parse(format("(8*({0})*({2})-3*({1})^2)/(8*({0})^2)", a, b, c)).toString(); //a, b, c
+        q = _.parse(format("(({1})^3-4*({0})*({1})*({2})+8*({0})^2*({3}))/(8*({0})^3)", a, b, c, d)).toString();//a, b, c, d, e
+        D0 = _.parse(format("12*({0})*({4})-3*({1})*({3})+({2})^2", a, b, c, d, e)).toString(); //a, b, c, d, e
+        D1 = _.parse(format("2*({2})^3-9*({1})*({2})*({3})+27*({1})^2*({4})+27*({0})*({3})^2-72*({0})*({2})*({4})", a, b, c, d, e)).toString(); //a, b, c, d, e
+        Q = _.parse(format("((({1})+(({1})^2-4*({0})^3)^(1/2))/2)^(1/3)", D0, D1)).toString(); //D0, D1
+        S = _.parse(format("(1/2)*(-(2/3)*({1})+(1/(3*({0}))*(({2})+(({3})/({2})))))^(1/2)", a, p, Q, D0)).toString(); //a, p, Q, D0
+        x1 = _.parse(format("-(({1})/(4*({0})))-({4})+(1/2)*sqrt(-4*({4})^2-2*({2})+(({3})/({4})))", a, b, p, q, S)); //a, b, p, q, S
+        x2 = _.parse(format("-(({1})/(4*({0})))-({4})-(1/2)*sqrt(-4*({4})^2-2*({2})+(({3})/({4})))", a, b, p, q, S)); //a, b, p, q, S
+        x3 = _.parse(format("-(({1})/(4*({0})))+({4})+(1/2)*sqrt(-4*({4})^2-2*({2})-(({3})/({4})))", a, b, p, q, S)); //a, b, p, q, S
+        x4 = _.parse(format("-(({1})/(4*({0})))+({4})-(1/2)*sqrt(-4*({4})^2-2*({2})-(({3})/({4})))", a, b, p, q, S)); //a, b, p, q, S
+        return [x1, x2, x3, x4];
+    };
+    
+    var polysolve = function(EQ, solve_for) {
+        solve_for = solve_for.toString();
+        var eq = core.Utils.isSymbol(EQ) ? EQ : toLHS(EQ);
+        var factors = _A.Factor.factor(eq);
+        var solutions = [];
+        factors.each(function(x) {
+            var sols = solve(x.arg ? x.args[0] : x, solve_for).map(function(a) {
+                solutions.push(a)
+            });
+        });
+        return new core.Vector(solutions);
     };
     
     /*
@@ -235,14 +271,14 @@ if((typeof module) !== 'undefined') {
      * @param {type} solve_for
      * @returns {Array}
      */
-    var solve = function(eqns, solve_for) { 
+    var solve = function(eqns, solve_for, solutions) { 
         solve_for = solve_for || 'x'; //assumes x by default
         //If it's an array then solve it as a system of equations
         if(isArray(eqns)) {
             return sys_solve.apply(undefined, arguments);
         }
-        var solutions = [],
-            existing = {}, //mark existing solutions as not to have duplicates
+        solutions = solutions || [];
+        var existing = {}, //mark existing solutions as not to have duplicates
             add_to_result = function(r, has_trig) {
                 var r_is_symbol = isSymbol(r);
                 if(r === undefined || typeof r === 'number' && isNaN(r))
@@ -512,6 +548,12 @@ if((typeof module) !== 'undefined') {
             parent: 'Solve',
             visible: true,
             build: function(){ return core.Solve.solve; }
+        },
+        {
+            name: 'polysolve',
+            parent: 'Solve',
+            visible: true,
+            build: function(){ return polysolve; }
         },
         {
             name: 'setEquation',
