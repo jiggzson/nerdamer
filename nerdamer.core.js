@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.4',
+    var version = '0.7.5',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -3141,6 +3141,9 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         function sqrt(symbol) { 
+            if(symbol.fname === '' && symbol.power.equals(1))
+                symbol = symbol.args[0];
+            
             if(Settings.PARSE2NUMBER && symbol.isConstant() && !symbol.multiplier.lessThan(0)) 
                 return new Symbol(Math.sqrt(symbol.multiplier.toDecimal()));
             
@@ -4383,6 +4386,17 @@ var nerdamer = (function(imports) {
                     result = s; 
                 }
                 else {
+                    var sign = m.sign();
+                    //handle cases such as (-a^3)^(1/4)
+                    if(evenFraction(b) && sign < 0) {
+                        //swaperoo
+                        //first put the sign back on the symbol
+                        result.negate();
+                        //wrap it in brackets
+                        result = _.symfunction(PARENTHESIS, [result]);
+                        //move the sign back the exterior and let nerdamer handle the rest
+                        result.negate();
+                    }
                     result.multiplyPower(b);
                 }
 
@@ -4480,7 +4494,6 @@ var nerdamer = (function(imports) {
                         m2 = result.power.multiplier; 
                     result = new Symbol(even(m2) ? m1 : m1.negate());
                 }
-
                 return result;
             }
             else {
