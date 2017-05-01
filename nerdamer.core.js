@@ -3826,6 +3826,10 @@ var nerdamer = (function(imports) {
                 bIsSymbol = isSymbol(b);
             //we're dealing with two symbols
             if(aIsSymbol && bIsSymbol) { 
+                if(a.isComposite() && a.isLinear() && b.isComposite() && b.isLinear()) {
+                    a.distributeMultiplier();
+                    b.distributeMultiplier();
+                }
                 //no need to waste time on zeroes
                 if(a.multiplier.equals(0)) return b;
                 if(b.multiplier.equals(0)) return a;
@@ -3838,6 +3842,7 @@ var nerdamer = (function(imports) {
                     g2 = b.group,
                     ap = a.power.toString(),
                     bp = b.power.toString();
+                
                 //always keep the greater group on the left. 
                 if(g1 < g2 || (g1 === g2 && ap > bp && bp > 0)) return this.add(b, a);
                 
