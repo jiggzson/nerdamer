@@ -3177,16 +3177,30 @@ var nerdamer = (function(imports) {
                             f = LaTeX.brackets(this.toTeX(e.args), 'abs');
                         else if(fname === PARENTHESIS) 
                             f = LaTeX.brackets(this.toTeX(e.args), 'parens');
+                        else if (fname === 'log10')
+                            f = '\\log_{10}\\left( ' + this.toTeX(e.args) + '\\right)';
                         else if(fname === 'integrate') {
                             var dx = getDx(e.args);
-                            f = '\\int'+LaTeX.braces(this.toTeX(e.args))+' d'+this.toTeX(dx);
+                            f = '\\int '+LaTeX.braces(this.toTeX(e.args))+'\\, d'+this.toTeX(dx);
                         }
                         else if(fname === 'diff') {
                             var dx = getDx(e.args),
                                 tex = this.toTeX(e.args);
-                            if(e.args.length > 1)
-                                tex = LaTeX.brackets(tex, 'parens');
-                            f = '\\frac'+LaTeX.braces('d'+LaTeX.braces(tex))+LaTeX.braces('d'+this.toTeX(dx));
+                            f = '\\frac{d}{d '+dx+'}\\left( '+LaTeX.braces(tex)+' \\right)';
+                        }
+                        else if (fname === 'sum') {
+                            // Split e.args into 4 parts based on locations of , symbols.
+                            var argSplit = [[], [], [], []], j = 0, i;
+                            for (i = 0; i < e.args.length; i++){
+                                if (e.args[i] === ','){
+                                    j++;
+                                    continue;
+                                } 
+                                argSplit[j].push(e.args[i]);
+                            }
+                            // Then build TeX string.
+                            f = '\\sum_'+LaTeX.braces(this.toTeX(argSplit[1])+' = '+this.toTeX(argSplit[2]));
+                            f += '^'+LaTeX.braces(this.toTeX(argSplit[3])) + LaTeX.braces(this.toTeX(argSplit[0]));
                         }
                         else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL) 
                             f = this.toTeX(e.args) + (fname === FACTORIAL ? '!' : '!!');
@@ -7343,7 +7357,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
-
-var x = nerdamer.convertToLaTeX('x*x');
-console.log(x.toString())

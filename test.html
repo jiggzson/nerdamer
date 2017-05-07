@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Testing</title>
+	
+	<script type="text/x-mathjax-config">
+	    MathJax.Hub.Config({
+	      tex2jax: {
+    	        inlineMath: [['$','$'], ['\\(','\\)']],
+    	        processEscapes: true
+            },
+            asciimath2jax: {
+                delimiters: [['`','`']]
+            }
+
+	    });
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+	<script
+	  src="https://code.jquery.com/jquery-3.2.1.min.js"
+	  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+	  crossorigin="anonymous"></script>
+
+	<script src="nerdamer.core.js"></script>
+	<script src="Algebra.js"></script>
+	<script src="Calculus.js"></script>
+	<script src="Solve.js"></script>
+
+	<style>
+		body {text-align:center;}
+	</style>
+
+	<script>
+		var runCalc = function(){
+			var inp = $("#inp").val();
+			try {
+				var os = "$$";
+				os += nerdamer.convertToLaTeX(inp);
+				os += "=";
+				os += nerdamer(inp).toTeX();
+				os += "$$";
+				$("#out").html(os);
+
+				MathJax.Hub.Queue(["Typeset",MathJax.Hub,"out"]);
+
+			} catch (err){
+				console.log(err);
+				$("#out").html(`<p style='color:red'>Seems to be an error</p>`);
+			}
+			
+
+		};
+
+		$(function(){
+			$("#inp").on('keyup', function(event) {
+		        if (event.keyCode == 13) {
+		            runCalc();
+		        } 
+		    });
+		});
+	</script>
+
+</head>
+<body>
+	
+	<p>
+		<input type="text" id="inp"> <button type="button" id="btn">Test</button>
+	</p>
+	<p id="out">
+		
+	</p>
+
+</body>
+</html>
