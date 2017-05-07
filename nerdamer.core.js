@@ -3163,6 +3163,10 @@ var nerdamer = (function(imports) {
             
             for(var i=0, l=obj.length; i<l; i++) {
                 var e = obj[i];
+                //convert * to cdot
+                if(e === '*')
+                    e = '\\cdot';
+                
                 if(isSymbol(e)) {
                     if(e.group === FN) {
                         var fname = e.fname, f;
@@ -7339,3 +7343,7 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
+
+
+var x = nerdamer.convertToLaTeX('x*x');
+console.log(x.toString())
