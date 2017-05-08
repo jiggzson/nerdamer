@@ -2697,7 +2697,7 @@ var nerdamer = (function(imports) {
             }
             else { 
                 //Remember assumption 2. The function is defined so it MUST handle all aspects including numeric values
-                retval = fn.apply(fn, args);
+                retval = fn.apply(fn_settings[2], args);
             }
 
             return retval;
