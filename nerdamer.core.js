@@ -3412,7 +3412,7 @@ var nerdamer = (function(imports) {
                     var factors = Math2.ifactor(m);
                     for(var factor in factors) {
                         var p = factors[factor];
-                        retval = _.multiply(retval, _.symfunction('parens', [new Symbol(factor).setPower(p)]))
+                        retval = _.multiply(retval, _.symfunction('parens', [new Symbol(factor).setPower(new Frac(p))]))
                     }
                 }
                 else {
@@ -4944,7 +4944,7 @@ var nerdamer = (function(imports) {
             var group = symbol.group,
                 previousGroup = symbol.previousGroup,
                 v = ['', ''],
-                index =  inverted ? 1 : 0;;
+                index =  inverted ? 1 : 0;
             /*if(group === N) //do nothing since we want to return top & bottom blank; */
             if(group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) { 
                 var value = symbol.value;
@@ -4986,7 +4986,7 @@ var nerdamer = (function(imports) {
                     v[index] = input[0]+(fname === FACTORIAL ? '!' : '!!');
                 }
                 else { 
-                    var name = '\\mathrm'+this.braces(fname);
+                    var name = fname!=='' ? '\\mathrm'+this.braces(fname) : '';
                     v[index] = name+this.brackets(input.join(','), 'parens');
                 }  
             }
