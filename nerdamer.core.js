@@ -4848,6 +4848,15 @@ var nerdamer = (function(imports) {
                 return TeX;
             }
 
+            if (isVector(symbol)) {
+                var TeX = '\\left[';
+                for (var i = 0; i < symbol.elements.length; i++){
+                    TeX += this.latex(symbol.elements[i]) + ' ' + (i!==symbol.elements.length-1 ? ',\\,' : '');
+                }
+                TeX += '\\right]';
+                return TeX;
+            }
+
             symbol = symbol.clone();
             var decimal = option === 'decimal',
                 power = symbol.power,
