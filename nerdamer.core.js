@@ -2697,7 +2697,7 @@ var nerdamer = (function(imports) {
             }
             else { 
                 //Remember assumption 2. The function is defined so it MUST handle all aspects including numeric values
-                retval = fn.apply(fn, args);
+                retval = fn.apply(fn_settings[2], args);
             }
 
             return retval;
@@ -3412,7 +3412,7 @@ var nerdamer = (function(imports) {
                     var factors = Math2.ifactor(m);
                     for(var factor in factors) {
                         var p = factors[factor];
-                        retval = _.multiply(retval, _.symfunction('parens', [new Symbol(factor).setPower(p)]))
+                        retval = _.multiply(retval, _.symfunction('parens', [new Symbol(factor).setPower(new Frac(p))]))
                     }
                 }
                 else {
@@ -4848,6 +4848,15 @@ var nerdamer = (function(imports) {
                 return TeX;
             }
 
+            if (isVector(symbol)) {
+                var TeX = '\\left[';
+                for (var i = 0; i < symbol.elements.length; i++){
+                    TeX += this.latex(symbol.elements[i]) + ' ' + (i!==symbol.elements.length-1 ? ',\\,' : '');
+                }
+                TeX += '\\right]';
+                return TeX;
+            }
+
             symbol = symbol.clone();
             var decimal = option === 'decimal',
                 power = symbol.power,
@@ -4944,7 +4953,7 @@ var nerdamer = (function(imports) {
             var group = symbol.group,
                 previousGroup = symbol.previousGroup,
                 v = ['', ''],
-                index =  inverted ? 1 : 0;;
+                index =  inverted ? 1 : 0;
             /*if(group === N) //do nothing since we want to return top & bottom blank; */
             if(group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) { 
                 var value = symbol.value;
@@ -4986,7 +4995,7 @@ var nerdamer = (function(imports) {
                     v[index] = input[0]+(fname === FACTORIAL ? '!' : '!!');
                 }
                 else { 
-                    var name = '\\mathrm'+this.braces(fname);
+                    var name = fname!=='' ? '\\mathrm'+this.braces(fname) : '';
                     v[index] = name+this.brackets(input.join(','), 'parens');
                 }  
             }
