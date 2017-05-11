@@ -4685,7 +4685,11 @@ var nerdamer = (function(imports) {
         
         //gets called when the parser finds the , operator. 
         this.comma = function(a, b) { 
-            if(a instanceof Array) a.push(b);
+            var aIsArray = (a instanceof Array),
+                bIsArray = (b instanceof Array),
+                aHasSubArray = (aIsArray && a[0] instanceof Array);
+
+            if ( (aIsArray && aHasSubArray) || (aIsArray && !bIsArray) ) a.push(b);
             else a = [a,b];
             return a;
         };
