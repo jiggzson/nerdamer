@@ -1,0 +1,120 @@
+/*
+ * Start Bootstrap - Business Frontpage (http://startbootstrap.com/)
+ * Copyright 2013-2016 Start Bootstrap
+ * Licensed under MIT (https://github.com/BlackrockDigital/startbootstrap/blob/gh-pages/LICENSE)
+ */
+
+body {
+    padding-top: 50px; /* Required padding for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
+}
+
+/* Header Image Background - Change the URL below to your image path (example: ../images/background.jpg) */
+
+.index-header {
+    height: 500px;
+    background: url('../img/header-bg.jpg') center center no-repeat scroll;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    background-size: cover;
+    -o-background-size: cover;
+}
+
+.center-trans-container, .center-trans-wrapper, .center-trans-row {
+    height: 100%; 
+}
+
+.center-trans {
+    width: 100%; 
+    /*background-color: rgba(0, 0, 0, 0.60);*/
+    border-radius: 15px 15px 0 0;
+    /*border-bottom: 4px solid #121E31;*/
+    color: #FFF;
+    text-align: center;
+    padding-top: 20px;
+    height: 400px;
+}
+.logo-large {
+    margin-bottom: 20px;
+}
+.center-trans h1 {
+    font-size: 3em;
+    font-family: 'Montserrat', sans-serif !important;
+}
+
+.center-trans h2, .center-trans h1 {
+    font-weight: 100;
+}
+
+.center-trans-wrapper {
+    padding-top: 50px;
+}
+
+.btn-wrapper {
+    margin-top: 50px;
+}
+
+.intro-btn {
+    border: 1px solid #1385C2;
+    color: #1385C2;
+}
+
+.bright {
+    color: #7cb1cd;
+}
+.credits, .functions, .side-bar {
+    list-style: none;
+}
+.not-suppored {
+    color: #B4B4B4;
+}
+.not-suppored:hover {
+    color: #D2D2D2;
+}
+.side-bar {
+    text-transform: uppercase;
+}
+.side-bar a {
+    padding: 3px;
+    padding-left: 15px;
+    /*background: #1B3450;*/
+    background: #779ECB;
+    display: block;
+    margin-top: 3px;
+    color: #FFF;
+    border-radius: 2px;
+}
+
+.footer {
+    margin-top: 30px;
+}
+
+/* documentation */
+.function-doc {
+    min-height: 600px;
+}
+#output {
+    background: #121E31;
+    color: #fff;
+    padding: 10px;
+    min-height: 100px;
+    font-size: 0.8em;
+}
+#output > div {
+    margin-bottom: 5px;
+    font-family: "Lucida Console", "Lucida Sans Typewriter", monaco, "Bitstream Vera Sans Mono", monospace;
+    word-wrap: break-word;
+}
+.parameter-type {
+    color: #C23B22;
+    font-weight: 800;
+}
+.parameter-name {
+    font-weight: 800;
+    margin-right: 20px;
+}
+.function-doc-main {
+    margin-bottom: 30px;
+}
+.usage-example {
+    color: #4486F4;
+}
