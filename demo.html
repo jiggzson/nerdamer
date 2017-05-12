@@ -29,6 +29,15 @@
     <script src="./plugins/highlightjs/highlight.pack.js"></script> 
     <link rel="stylesheet" href="plugins/guppy/build/guppy.min.css">
     <link rel="stylesheet" href="./plugins/font-awesome/css/font-awesome.min.css">
+    <!--codemirror -->
+    <link rel="stylesheet" href="./plugins/codemirror/codemirror.css">
+    
+    <script src="./plugins/codemirror/codemirror.js"></script> 
+    <script src="./plugins/codemirror/javascript/javascript.js"></script> 
+    <script src="./plugins/codemirror/addon/closebrackets.js"></script> 
+    <script src="./plugins/codemirror/addon/matchbrackets.js"></script> 
+    <script src="./plugins/codemirror/addon/active-line.js"></script> 
+    <link rel="stylesheet" href="./plugins/codemirror/theme/neat.css">
     <!-- katex -->
     <script src="./plugins/katex/katex.min.js"></script> 
     <link rel="stylesheet" href="./plugins/katex/katex.min.css">
@@ -123,7 +132,8 @@
                 
                 <div id="nerdamer-demo">
                     <div id="demo-input" class="demo-input" style="display: none;"></div>
-                    <input id="text-input" class="demo-input" type="text" placeholder="Text editor. Enter expression here"/>
+                    <!--<input id="text-input" class="demo-input" type="text" placeholder="Text editor. Enter expression here"/>-->
+                    <textarea id="codemirror"></textarea>
                 </div>
                 <button class="btn btn-primary" id="process-btn">ENTER</button>
                 <div class="pull-right">
@@ -180,6 +190,7 @@
                 <ul class="credits">
                     <li><a href="http://daniel3735928559.github.io/guppy/" id="guppy-link">Visual editing by Guppy.js</a></li>
                     <li><a href="http://maurizzzio.github.io/function-plot/">Plotting with Function-plot.js</a></li>
+                    <li><a href="http://codemirror.net/">Text input with CodeMirror</a></li>
                 </ul>
             </div>
         </div>
@@ -246,6 +257,18 @@
             supportlist.append($('<a href="./functions/'+name+'.html">'+name+'</a>'));
         }
         
+    </script>
+    <script type="text/javascript">
+        var editor = CodeMirror.fromTextArea(document.getElementById("codemirror"), {
+            matchBrackets: true,
+            autoCloseBrackets: true,
+            theme: 'neat'
+          });
+          
+          editor.setSize(undefined, 75);
+
+    $('.CodeMirror').addClass('demo-input').attr('id', 'text-input');
+    
     </script>
 </body>
 

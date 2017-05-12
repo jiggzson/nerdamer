@@ -24,6 +24,7 @@ if((typeof module) !== 'undefined') {
         isSymbol = core.Utils.isSymbol,
         variables = core.Utils.variables,
         S = core.groups.S,
+        PL = core.groups.PL,
         CB = core.groups.CB,
         isArray = core.Utils.isArray;
     //version solve
@@ -42,6 +43,17 @@ if((typeof module) !== 'undefined') {
     
     core.Symbol.prototype.hasTrig = function() {
         return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
+    };
+    
+    core.Symbol.prototype.hasNegativeTerms = function() {
+        if(this.isComposite()) { console.log(9)
+            for(var x in this.symbols) {
+                var sym = this.symbols[x];
+                if(sym.group === PL && sym.hasNegativeTerms() || this.symbols[x].power.lessThan(0))
+                    return true;
+            }
+        }
+        return false;
     };
     
     /* nerdamer version 0.7.x and up allows us to make better use of operator overloading
@@ -259,7 +271,7 @@ if((typeof module) !== 'undefined') {
         var solutions = [];
         factors.each(function(x) {
             var sols = solve(x.arg ? x.args[0] : x, solve_for).map(function(a) {
-                solutions.push(a)
+                solutions.push(a);
             });
         });
         return new core.Vector(solutions);
@@ -392,7 +404,7 @@ if((typeof module) !== 'undefined') {
         //if the power is a fractional we divide by the fractional power
         var fractionals = {},
             cfact;
-        var correct_denom = function(symbol) {
+        var correct_denom = function(symbol) { 
             if(symbol.symbols) {
                 for(var x in symbol.symbols) { 
                     var sym = symbol.symbols[x];
@@ -425,6 +437,7 @@ if((typeof module) !== 'undefined') {
             }
             return symbol;
         };
+
         //first remove any denominators
         eq = correct_denom(eq);  
         //correct fractionals. I can only handle one type right now

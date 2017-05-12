@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.5',
+    var version = '0.7.7',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -2433,11 +2433,12 @@ var nerdamer = (function(imports) {
         return this.val;
     };
     
-    function Bracket(val, bracket_id, is_open, fn) {
+    function Bracket(val, bracket_id, is_open, fn, typ) {
         this.val = val;
         this.bracket_id = bracket_id;
         this.open = !!is_open;
         this.fn = fn;
+        this.type = typ;
     }
     
     Bracket.prototype.toString = function() {
@@ -2500,12 +2501,12 @@ var nerdamer = (function(imports) {
             },
             //list of supported brackets
             brackets = {
-                '(': new Bracket('(', 0, true),
-                ')': new Bracket(')', 0, false),
+                '(': new Bracket('(', 0, true, null, 'round'),
+                ')': new Bracket(')', 0, false, null, 'round'),
                 '[': new Bracket('[', 1, true, function() {
                     return 'vector';
-                }),
-                ']': new Bracket(']', 1, false)
+                }, 'square'),
+                ']': new Bracket(']', 1, false, null, 'square')
             },
             // Supported functions.
             // Format: function_name: [mapped_function, number_of_parameters]
@@ -2658,7 +2659,7 @@ var nerdamer = (function(imports) {
             if(!fn_settings) 
                 err('Nerdamer currently does not support the function '+fn_name);
             
-            var num_allowed_args = fn_settings[1], //get the number of allowed arguments
+            var num_allowed_args = fn_settings[1] || allowed_args, //get the number of allowed arguments
                 fn = fn_settings[0], //get the mapped function
                 retval;
             //We want to be able to call apply on the arguments or create a symfunction. Both require
@@ -2696,7 +2697,7 @@ var nerdamer = (function(imports) {
             }
             else { 
                 //Remember assumption 2. The function is defined so it MUST handle all aspects including numeric values
-                retval = fn.apply(fn, args);
+                retval = fn.apply(fn_settings[2], args);
             }
 
             return retval;
@@ -3058,6 +3059,172 @@ var nerdamer = (function(imports) {
             return this.parseTree(output);
 
         };
+        
+        /**
+         * Reads a string into an array of Symbols and operators
+         * @param {Symbol} symbol
+         * @returns {Array}
+         */
+        this.toObject = function(expression_string) {
+            var output = [[]], //the first one is the parent
+                e = expression_string.split(' ').join(''), //remove spaces
+                func_stack = [],
+                lp = 0,
+                target = output[0],
+                token;
+            var push = function(token) {
+                if(token !== '')
+                    target.push(new Symbol(token));
+            };
+            //start the conversion
+            for(var i=0, l=e.length; i<l; i++) {
+                var ch = e.charAt(i);
+                if(ch in operators) {
+                    token = e.substring(lp, i);
+                    push(token);
+                    target.push(ch);
+                    lp = i+1;
+                }
+                else if(ch in brackets) { 
+                    var bracket = brackets[ch];
+                    if(bracket.open) {
+                        //we may be dealing with a function so make 
+                        func_stack.push(e.substring(lp, i));
+                        target = []; //start a new scope
+                        output.push(target); //add it to the chain
+                        lp = i+1;    
+                    }
+                    else {
+                        //we have a close bracket
+                        token = e.substring(lp, i); //grab the token
+                        push(token);
+                        var o = output.pop(), //close the scope
+                            f = func_stack.pop(), //grab the matching function
+                            r;
+                        //is it a function?
+                        if(f in functions) 
+                            r = _.symfunction(f, o); 
+                        else if(f === '') {
+                            r = o;
+                            r.type = bracket.type;
+                        }
+                        else 
+                            r = f;
+                        //point to the correct target
+                        target = output[output.length-1];
+                        target.push(r);
+                        lp = i+1; 
+                    }
+                }
+            }
+            
+            push(e.substring(lp, i)); //insert the last token
+
+            return output[0];
+        };
+        
+        var getDx = function(arr) {
+            var dx = [], e;
+            for(var i=0, l=arr.length; i<l; i++) {
+                e = arr.pop();
+                if(e === ',')
+                    return dx;
+                dx.push(e);
+            }
+        };
+        
+        var rem_brackets = function(str) {
+            return str.replace(/^\\left\((.+)\\right\)$/g, function(str, a) {
+                if(a) return a;
+                return str;
+            });
+        };
+        
+        this.toTeX = function(expression_or_obj) { 
+            var obj = typeof expression_or_obj === 'string' ? this.toObject(expression_or_obj) : expression_or_obj,
+                TeX = [];
+            
+            if(isArray(obj)) { 
+                var nobj = [], a, b, c;
+                //first handle ^
+                for(var i=0; i<obj.length; i++) {
+                    a = obj[i];
+                    
+                    if(obj[i+1] === '^') {
+                        b = obj[i+2];
+                        nobj.push(LaTeX.braces(this.toTeX([a]))+'^'+LaTeX.braces(this.toTeX([b])));
+                        i+=2;
+                    }
+                    else
+                        nobj.push(a);
+                }
+                obj = nobj;
+            }
+            
+            for(var i=0, l=obj.length; i<l; i++) {
+                var e = obj[i];
+                //convert * to cdot
+                if(e === '*')
+                    e = '\\cdot';
+                
+                if(isSymbol(e)) {
+                    if(e.group === FN) {
+                        var fname = e.fname, f;
+
+                        if(fname === SQRT) 
+                            f = '\\sqrt'+LaTeX.braces(this.toTeX(e.args));
+                        else if(fname === ABS) 
+                            f = LaTeX.brackets(this.toTeX(e.args), 'abs');
+                        else if(fname === PARENTHESIS) 
+                            f = LaTeX.brackets(this.toTeX(e.args), 'parens');
+                        else if (fname === 'log10')
+                            f = '\\log_{10}\\left( ' + this.toTeX(e.args) + '\\right)';
+                        else if(fname === 'integrate') {
+                            var dx = getDx(e.args);
+                            f = '\\int '+LaTeX.braces(this.toTeX(e.args))+'\\, d'+this.toTeX(dx);
+                        }
+                        else if(fname === 'diff') {
+                            var dx = getDx(e.args),
+                                tex = this.toTeX(e.args);
+                            f = '\\frac{d}{d '+dx+'}\\left( '+LaTeX.braces(tex)+' \\right)';
+                        }
+                        else if (fname === 'sum') {
+                            // Split e.args into 4 parts based on locations of , symbols.
+                            var argSplit = [[], [], [], []], j = 0, i;
+                            for (i = 0; i < e.args.length; i++){
+                                if (e.args[i] === ','){
+                                    j++;
+                                    continue;
+                                } 
+                                argSplit[j].push(e.args[i]);
+                            }
+                            // Then build TeX string.
+                            f = '\\sum_'+LaTeX.braces(this.toTeX(argSplit[1])+' = '+this.toTeX(argSplit[2]));
+                            f += '^'+LaTeX.braces(this.toTeX(argSplit[3])) + LaTeX.braces(this.toTeX(argSplit[0]));
+                        }
+                        else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL) 
+                            f = this.toTeX(e.args) + (fname === FACTORIAL ? '!' : '!!');
+                        else  {
+                            f = '\\mathrm'+LaTeX.braces(fname) + LaTeX.brackets(this.toTeX(e.args), 'parens');
+                        }
+                            
+                        TeX.push(f);
+                    } 
+                    else
+                        TeX.push(LaTeX.latex(e));
+                }
+                else if(isArray(e)) { 
+                    TeX.push(LaTeX.brackets(this.toTeX(e)));
+                }
+                else {
+                    if(e === '/') 
+                        TeX.push(LaTeX.frac(rem_brackets(TeX.pop()), rem_brackets(this.toTeX([obj[++i]]))));
+                    else
+                        TeX.push(e);
+                }
+            }
+            return TeX.join(' ');
+        };
 
         /////////// ********** FUNCTIONS ********** ///////////
         /* Although parens is not a "real" function it is important in some cases when the 
@@ -3245,7 +3412,7 @@ var nerdamer = (function(imports) {
                     var factors = Math2.ifactor(m);
                     for(var factor in factors) {
                         var p = factors[factor];
-                        retval = _.multiply(retval, _.symfunction('parens', [new Symbol(factor).setPower(p)]))
+                        retval = _.multiply(retval, _.symfunction('parens', [new Symbol(factor).setPower(new Frac(p))]))
                     }
                 }
                 else {
@@ -3826,6 +3993,10 @@ var nerdamer = (function(imports) {
                 bIsSymbol = isSymbol(b);
             //we're dealing with two symbols
             if(aIsSymbol && bIsSymbol) { 
+                if(a.isComposite() && a.isLinear() && b.isComposite() && b.isLinear()) {
+                    a.distributeMultiplier();
+                    b.distributeMultiplier();
+                }
                 //no need to waste time on zeroes
                 if(a.multiplier.equals(0)) return b;
                 if(b.multiplier.equals(0)) return a;
@@ -3838,6 +4009,7 @@ var nerdamer = (function(imports) {
                     g2 = b.group,
                     ap = a.power.toString(),
                     bp = b.power.toString();
+                
                 //always keep the greater group on the left. 
                 if(g1 < g2 || (g1 === g2 && ap > bp && bp > 0)) return this.add(b, a);
                 
@@ -4513,7 +4685,11 @@ var nerdamer = (function(imports) {
         
         //gets called when the parser finds the , operator. 
         this.comma = function(a, b) { 
-            if(a instanceof Array) a.push(b);
+            var aIsArray = (a instanceof Array),
+                bIsArray = (b instanceof Array),
+                aHasSubArray = (aIsArray && a[0] instanceof Array);
+
+            if ( (aIsArray && aHasSubArray) || (aIsArray && !bIsArray) ) a.push(b);
             else a = [a,b];
             return a;
         };
@@ -4675,7 +4851,16 @@ var nerdamer = (function(imports) {
                 TeX += '\\end{pmatrix}';
                 return TeX;
             }
-            
+
+            if (isVector(symbol)) {
+                var TeX = '\\left[';
+                for (var i = 0; i < symbol.elements.length; i++){
+                    TeX += this.latex(symbol.elements[i]) + ' ' + (i!==symbol.elements.length-1 ? ',\\,' : '');
+                }
+                TeX += '\\right]';
+                return TeX;
+            }
+
             symbol = symbol.clone();
             var decimal = option === 'decimal',
                 power = symbol.power,
@@ -4772,7 +4957,7 @@ var nerdamer = (function(imports) {
             var group = symbol.group,
                 previousGroup = symbol.previousGroup,
                 v = ['', ''],
-                index =  inverted ? 1 : 0;;
+                index =  inverted ? 1 : 0;
             /*if(group === N) //do nothing since we want to return top & bottom blank; */
             if(group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) { 
                 var value = symbol.value;
@@ -4814,7 +4999,7 @@ var nerdamer = (function(imports) {
                     v[index] = input[0]+(fname === FACTORIAL ? '!' : '!!');
                 }
                 else { 
-                    var name = '\\mathrm'+this.braces(fname);
+                    var name = fname!=='' ? '\\mathrm'+this.braces(fname) : '';
                     v[index] = name+this.brackets(input.join(','), 'parens');
                 }  
             }
@@ -5697,8 +5882,13 @@ var nerdamer = (function(imports) {
         return _.parse(expression, null, true);
     };
     
+    libExports.convertToLaTeX = function(e) {
+        return _.toTeX(e);
+    };
+    
     /**
-     * 
+     * Get the version of nerdamer or a loaded add-on
+     * @param {String} add_on - The add-on being checked
      * @returns {String} returns the version of nerdamer
      */
     libExports.version = function(add_on) {
@@ -5979,6 +6169,11 @@ var nerdamer = (function(imports) {
         for(var x in _.functions) 
             if(!(x in libExports) || override)
                 libExports[x] = linker(x);
+    };
+    
+    libExports.convert = function(e) {
+        var raw = _.parse(e, null, true);
+        return raw;
     };
         
     libExports.api();

@@ -295,6 +295,25 @@ FUNCTIONS = {
         ],
         returns: 'nerdamer'
     },
+    nerdamer__convertToLaTeX: {
+        type: 'nerdamer',
+        usage: 'nerdamer.convertToLaTeX(expression)',
+        full_name: 'convertToLaTeX',
+        description: 'Converts and expression to LaTeX without evaluating expression.',
+        parameters: {
+            expression: {
+                type: 'String',
+                description: "The expression being converted"
+            }
+        },
+        examples: [
+            "var x = nerdamer.convertToLaTeX('x^2/y-x');",
+            "console.log(x.toString());",
+            "x = nerdamer.convertToLaTeX('integrate(x+x,x)+cos(y+y)')",
+            "console.log(x.toString())"
+        ],
+        returns: 'String'
+    },
     nerdamer__version: {
         type: 'nerdamer',
         usage: 'nerdamer.version',

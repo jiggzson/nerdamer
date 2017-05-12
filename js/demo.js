@@ -37,10 +37,18 @@
         var inputId = "demo-input";
         //the id of the button to trigger processing
         var buttonId = "process-btn";
+        //caches the process button
+        var processBtn = $('#'+buttonId)
         //bind the button for processing
-        $('#'+buttonId).click(process);
+        processBtn.click(process);
         //text input
         var textInput = $('#text-input');
+        //bind the editor enter button
+        editor.setOption("extraKeys", {
+            Enter: function(cm) {
+                processBtn.click();
+            }
+        });
         //make preparations for Guppy
         Guppy.get_symbols(["builtins","plugins/guppy/sym/symbols.json","plugins/guppy/sym/extra_symbols.json"]);
         var guppy = new Guppy(inputId, {
@@ -109,7 +117,8 @@
         function getText() {
             if(USE_GUPPY)
                 return Guppy.instances[inputId].get_content('text');
-            else return textInput.val();
+            //else return textInput.val();
+            else return editor.getValue();
         }
         //function to fetch LaTeX
         function getLaTeX() {
@@ -227,13 +236,9 @@
                 guppy.render(true);
             }
             else {
-                $('#text-input').val('');
+                //$('#text-input').val('');
+                editor.setValue('')
             }    
-//            guppy.end();
-//            var n = getText().length+1;
-//            while(n--)
-//                guppy.backspace();
-//            guppy.home();
         }
         //callback for handling of entered expression
         function process() {
