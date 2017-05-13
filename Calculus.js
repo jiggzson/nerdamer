@@ -1282,6 +1282,29 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
             //no symbol found so we return the integral again
             return _.symfunction('integrate', [original_symbol, dt]);
+        },
+        /*  Definite integral, built off of the integrate function. 
+            Try to integrate symbolically, then evaluate symbolically.
+            If this fails, integrate numerically.
+        */
+        defint: function(expr, dx, lb, ub) {
+            var int = nerdamer('integrate('+expr+','+dx+')'),
+                sym = int.symbol;
+            // If Nerdamer can't integrate algebraically...
+            if (sym.toString().indexOf("integrate") > -1) {
+                // Eventually, would like to add a numerical integration here.
+                // In the meantime, return symfunction.
+                return _.symfunction('defint', [expr, dx, lb, ub]);
+            } else { // If we can integrate algebraically, return evaluated integral
+                var scope = {};
+                scope[dx] = ub;
+                var ub = _.parse(sym, scope).toString();
+                scope[dx] = lb;
+                var lb = _.parse(sym, scope).toString();
+                var dif = nerdamer('('+ub+')-('+lb+')');
+                return dif.symbol;
+            }
+            
         }
     };
     
@@ -1303,6 +1326,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             visible: true,
             numargs: 2,
             build: function() { return __.integrate; }
+        },
+        {
+            name: 'defint',
+            visible: true,
+            numargs: 4,
+            build: function() { return __.defint; }
         }
     ]);
     //link registered functions externally
