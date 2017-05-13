@@ -3160,6 +3160,7 @@ var nerdamer = (function(imports) {
                 }
                 obj = nobj;
             }
+
             
             for(var i=0, l=obj.length; i<l; i++) {
                 var e = obj[i];
@@ -3179,6 +3180,23 @@ var nerdamer = (function(imports) {
                             f = LaTeX.brackets(this.toTeX(e.args), 'parens');
                         else if (fname === 'log10')
                             f = '\\log_{10}\\left( ' + this.toTeX(e.args) + '\\right)';
+                        // else if (fname === 'matrix') {
+                        //     var tex = '',
+                        //         rows = e.args.filter(function(x){return x !== ",";});
+                        //     var row, j, k;
+                        //     for (j = 0; j < rows.length; j++){
+                        //         row = rows[j].filter(function(x){return x!==','});
+                        //         console.log(row);
+                        //         // for (k = 0; k < row.length; k++){
+                        //         //     // console.log(row[k]);
+                        //         //     tex += row[k];
+                        //         //     if (k !== row.length - 1) tex += "&";
+                        //         // }
+                                
+                        //         if (j !== rows.length - 1) tex += "\\\\";
+                        //     }
+                        //     f = "\\begin{pmatrix}" + tex + "\\end{pmatrix}";
+                        // }
                         else if(fname === 'integrate') {
                             var dx = getDx(e.args);
                             f = '\\int '+LaTeX.braces(this.toTeX(e.args))+'\\, d'+this.toTeX(dx);
