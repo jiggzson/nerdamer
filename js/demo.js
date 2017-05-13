@@ -218,7 +218,7 @@
         //perform preparations before parsing. Extract variables and declarations
         function prepareExpression(str) {
             //the string will come in the form x+x, x=y, y=z
-            var extracted = extractExpression(str),
+            var extracted = extractExpression(str.split(' ').join('')),
                 expression = extracted[0],
                 scope = {};
             extracted[1].split(',').map(function(x) {
