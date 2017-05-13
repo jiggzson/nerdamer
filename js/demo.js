@@ -196,7 +196,8 @@
                 guppy.activate();
             }
             else {
-                textInput.val(value);
+                //textInput.val(value);
+                editor.setValue(value);
             }    
         }
 
