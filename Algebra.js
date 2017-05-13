@@ -2081,7 +2081,8 @@ if((typeof module) !== 'undefined') {
                    return _.parse(b); 
                 });
             if(a.isConstant() && b.isConstant()) { 
-                return core.Math2.QGCD(new Frac(+a), new Frac(+b));
+                // return core.Math2.QGCD(new Frac(+a), new Frac(+b));
+                return new Symbol(core.Math2.QGCD(new Frac(+a), new Frac(+b)));
             }
             if(a.length < b.length) { //swap'm
                 var t = a; a = b; b = t;
