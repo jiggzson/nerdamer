@@ -81,7 +81,7 @@ var nerdamer = (function(imports) {
         VARS = {},
         
         //the container used to store all the reserved functions
-        RESERVED = [],
+        RESERVED = ['__u__'],
 
 
         WARNINGS = '',
@@ -5867,6 +5867,9 @@ var nerdamer = (function(imports) {
     C.VARS = VARS;
     C.err = err;
     C.bigInt = bigInt;
+    //TODO: fix 
+    if(!_.error)
+        _.error = err;
     /* END BUILD CORE */
 
     
