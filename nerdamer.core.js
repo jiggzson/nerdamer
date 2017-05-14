@@ -2039,8 +2039,9 @@ var nerdamer = (function(imports) {
          * This method distributes the multiplier over the entire symbol
          * @returns {Symbol}
          */
-        distributeMultiplier: function() { 
-            if(this.symbols && this.power.absEquals(1) && this.group !== CB && !this.multiplier.equals(1)) {
+        distributeMultiplier: function(all) { 
+            var is_one = all ? this.power.absEquals(1) : this.power.equals(1);
+            if(this.symbols && is_one && this.group !== CB && !this.multiplier.equals(1)) {
                 for(var x in this.symbols) {
                     var s = this.symbols[x];
                     s.multiplier = s.multiplier.multiply(this.multiplier);
@@ -3807,7 +3808,7 @@ var nerdamer = (function(imports) {
                             var x = result.symbols[s];
                             x.multiplier = x.multiplier.multiply(m);
                             if(x.isComposite())
-                                x.distributeMultiplier();
+                                x.distributeMultiplier(true);
                             symbol.symbols[s] = x;
                         }
                     }

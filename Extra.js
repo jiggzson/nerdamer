@@ -18,18 +18,25 @@ if((typeof module) !== 'undefined') {
         S = core.groups.S,
         EX = core.groups.EX;
     
+    
+    
     var __ = core.Extra = {
         version: '1.0.0',
         //http://integral-table.com/downloads/LaplaceTable.pdf
         LaPlace: {
             //Using: intgral_0_oo f(t)*e^(-s*t) dt
             transform: function(symbol, t, s) {
-                var u = '__u__';
-                var sym = symbol.sub(t, u);
-                //TODO: I have to find a way to put in into more familar form
-                retval = core.Calculus.integrate(_.parse('e^(-'+s+'*'+u+')*'+sym), u).sub(u, 0);
-                retval = _.expand(_.multiply(retval, new Symbol(-1)));
-                return retval.sub(u, t);
+                //This has to run in a block where PARSE2NUMBER = false
+                return core.Utils.block('PARSE2NUMBER', function() {
+                    var retval;
+                    var u = 't';
+                    var sym = symbol.sub(t, u);
+                    retval = core.Calculus.integrate(_.parse('e^(-'+s+'*'+u+')*'+sym), u).sub(u, 0);
+                    retval = _.expand(_.multiply(retval, new Symbol(-1)));
+                    retval = retval.sub(u, t);
+
+                    return retval;
+                }, false);
             }
         },
         Statistics: {
@@ -206,4 +213,9 @@ if((typeof module) !== 'undefined') {
         },
     ]);
     
+    //link registered functions externally
+    nerdamer.api();
 }());
+
+var x = nerdamer.laplace('t^2', 't', 's');
+console.log(x.toString())
