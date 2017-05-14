@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.7',
+    var version = '0.7.8',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -81,7 +81,7 @@ var nerdamer = (function(imports) {
         VARS = {},
         
         //the container used to store all the reserved functions
-        RESERVED = [],
+        RESERVED = ['__u__'],
 
 
         WARNINGS = '',
@@ -1289,6 +1289,30 @@ var nerdamer = (function(imports) {
                     callback.call(this.symbol[i], i);
             else
                 callback.call(this.symbol);
+        },
+        eq: function(value) {
+            value = _.parse(value);
+            if(this.symbol.isConstant() && value.isConstant())
+                return this.symbol.equals(_.parse(value));
+            return false;
+        },
+        lt: function(value) {
+            value = _.parse(value);
+            if(this.symbol.isConstant() && value.isConstant())
+                return this.symbol.lessThan(_.parse(value));
+            return false;
+        },
+        gt: function(value) {
+            value = _.parse(value);
+            if(this.symbol.isConstant() && value.isConstant())
+                return this.symbol.greaterThan(_.parse(value));
+            return false;
+        },
+        gte: function(value) {
+            return this.greaterThan(value) || this.equals(value);
+        },
+        lte: function(value) {
+            return this.lessThan(value) || this.equals(value);
         }
     };
     //Aliases
@@ -2015,8 +2039,8 @@ var nerdamer = (function(imports) {
          * This method distributes the multiplier over the entire symbol
          * @returns {Symbol}
          */
-        distributeMultiplier: function() {
-            if(this.symbols && this.power.equals(1) && this.group !== CB && !this.multiplier.equals(1)) {
+        distributeMultiplier: function() { 
+            if(this.symbols && this.power.absEquals(1) && this.group !== CB && !this.multiplier.equals(1)) {
                 for(var x in this.symbols) {
                     var s = this.symbols[x];
                     s.multiplier = s.multiplier.multiply(this.multiplier);
@@ -2353,6 +2377,9 @@ var nerdamer = (function(imports) {
         },
         lessThan: function(n) {
             return this.multiplier.lessThan(n);
+        },
+        greaterThan: function(n) {
+            return this.multiplier.greaterThan(n);
         },
         /**
          * Get's the denominator of the symbol if the symbol is of class CB (multiplication)
@@ -5840,6 +5867,9 @@ var nerdamer = (function(imports) {
     C.VARS = VARS;
     C.err = err;
     C.bigInt = bigInt;
+    //TODO: fix 
+    if(!_.error)
+        _.error = err;
     /* END BUILD CORE */
 
     

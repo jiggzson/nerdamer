@@ -338,7 +338,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             u_substitution: function(symbols, dx) { 
                 function try_combo(a, b, f) {
                     var q = f ? f(a, b) : _.divide(a.clone(), __.diff(b, dx));
-                    if(!q.contains(dx)) 
+                    if(!q.contains(dx, true)) 
                         return q;
                     return null;
                 }
@@ -620,7 +620,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
                     return [u, dv];
                 };
-                var udv, u, dv, du, v, vdu, uv, retval, integral_vdu, m;
+                var udv, u, dv, du, v, vdu, uv, retval, integral_vdu, m, q;
                 //first LIATE
                 udv = get_udv(symbol);
                 u = udv[0]; 
@@ -631,6 +631,18 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 uv = _.multiply(u, v); 
                 m = vdu.multiplier.clone();
                 vdu.toUnitMultiplier();
+                //check if vdu is equal to the original symbol times some constant
+                q = _.divide(vdu.clone(),__.integration.original.clone());
+                if(!q.contains(dx, true)) {
+                    console.log(q.toString(), vdu.toString(), __.integration.original.toString())
+                    //we've come full circle and have it in the form
+                    //int f(x) dx = uv - int q*f(x) dx
+                    //(q+1) int f(x) dx = uv
+                    //therefore: int f(x) dx = uv/(q+1) 
+                    //TODO: Why in the world do I have to square q????  
+                    q = _.pow(q, new Symbol(2));             
+                    return _.divide(uv, _.add(q, new Symbol(1)));
+                }
                 integral_vdu = __.integrate(vdu.clone(), dx, depth); 
                 integral_vdu.multiplier = integral_vdu.multiplier.multiply(m);
                 retval = _.subtract(uv, integral_vdu);
@@ -655,6 +667,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }
         },
         integrate: function(original_symbol, dt, depth) { 
+            //make a note of the original symbol. Set only if undefined
+            if(typeof depth === 'undefined' && typeof __.integration.original === 'undefined') 
+                __.integration.original = original_symbol.clone();
+            
             depth = depth || 0;
             var dx = isSymbol(dt) ? dt.toString() : dt,
                 //we don't want the symbol in sqrt form. x^(1/2) is prefererred
@@ -663,7 +679,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 retval;
 
             try { 
-                //We stop integration after x amount of recursive depth
+                //We stop integration after x amount of recursive calls
                 if(++depth > core.Settings.integration_depth) 
                     __.integration.stop('Maximum depth reached. Exiting!');
                 
@@ -946,7 +962,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 else if(g === PL) {
                     retval = __.integration.partial_fraction(symbol, dx, depth);
                 }
-                else if(g === CB) {
+                else if(g === CB) { 
                     //separate the coefficient since all we care about are symbols containing dx
                     var coeff = symbol.stripVar(dx); 
                     //now get only those that apply
@@ -956,7 +972,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     if(cfsymbol.group !== CB) { 
                         retval = __.integrate(cfsymbol, dx, depth);
                     }
-                    else {
+                    else { 
                         //we collect the symbols and sort them descending group, descending power, descending alpabethically
                         var symbols = cfsymbol.collectSymbols().sort(function(a, b) {
                             if(a.group === b.group)  {
@@ -977,7 +993,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 retval = __.integration.u_substitution(symbols, dx);
                             }
                             catch(e){/* failed :`(*/;}   
-                            if(!retval) {
+                            if(!retval) { 
                                 //no success with u substitution so let's try known combinations
                                 //are they two functions
                                 var g1 = symbols[0].group,
