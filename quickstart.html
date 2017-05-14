@@ -500,6 +500,7 @@ To override an existing entry pass the object along with true to the stepper fun
 <br/><br/>
 Below is the stepper method assuming nerdamer is already loaded in your page or node environment.
 <pre><code>var stepper = (function() {
+    "use strict";
     var core = nerdamer.getCore(),
         _ = core.PARSER,
         //the container for the function steps
@@ -526,8 +527,8 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
     
     var load = function() {
         //ADD
-        add = _.add,
-            step_add = function(a, b) { 
+        add = _.add;
+        var step_add = function(a, b) { 
             var result;
             logger.call(stepper.pre_add, a, b);
             var wrapper_result = wrapper(function(a, b){
@@ -539,8 +540,8 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
         };
         _.add = step_add;
         //SUBTRACT
-        subtract = _.subtract,
-            step_subtract = function(a, b) { 
+        subtract = _.subtract;
+        var step_subtract = function(a, b) { 
             var result;
             logger.call(stepper.pre_subtract, a, b);
             var wrapper_result = wrapper(function(a, b){
@@ -552,8 +553,8 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
         };
         _.subtract = step_subtract;
         //DIVIDE
-        divide = _.divide,
-            step_divide = function(a, b) { 
+        divide = _.divide;
+        var step_divide = function(a, b) { 
             var result;
             logger.call(stepper.pre_divide, a, b);
             var wrapper_result = wrapper(function(a, b){
@@ -565,8 +566,8 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
         };
         _.divide = step_divide;
         //MULTIPLY
-        multiply = _.multiply,
-            step_multiply = function(a, b) { 
+        multiply = _.multiply;
+        var step_multiply = function(a, b) { 
             var result;
             logger.call(stepper.pre_multiply, a, b);
             var wrapper_result = wrapper(function(a, b){
@@ -578,8 +579,8 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
         };
         _.multiply = step_multiply;
         //POW
-        pow = _.pow,
-            step_pow = function(a, b) { 
+        pow = _.pow;
+        var step_pow = function(a, b) { 
             var result;
             logger.call(stepper.pre_pow, a, b);
             var wrapper_result = wrapper(function(a, b){
@@ -593,8 +594,8 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
         //CALLFUNCTION
         //function calls are not recursive and can have more than one call on the stack
         //because of this we don't use the wrapper
-        fcall = _.callfunction,
-            step_fcall = function(fname, args) {
+        fcall = _.callfunction;
+        var step_fcall = function(fname, args) {
             if(stepper.pre_function_call && typeof stepper.pre_function_call === 'function')
                 stepper.pre_function_call.call(undefined, fname, args);
             var f = fcall.call(_, fname, args);
