@@ -77,7 +77,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         return trig_fns.indexOf(x) !== -1;
     };
     
-    core.Settings.integration_depth = 4;
+    core.Settings.integration_depth = 6;
     
     var __ = core.Calculus = {
 
@@ -624,25 +624,40 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 //first LIATE
                 udv = get_udv(symbol);
                 u = udv[0]; 
+                console.log('u: '+u)
                 dv = udv[1]; 
+                console.log('dv: '+dv)
                 du = Symbol.unwrapSQRT(_.expand(__.diff(u.clone(), dx)), true); 
                 v = __.integrate(dv.clone(), dx, depth || 0); 
+                console.log('v: '+v)
                 vdu = _.multiply(v.clone(), du); 
+                console.log('vdu: '+vdu)
                 uv = _.multiply(u, v); 
                 m = vdu.multiplier.clone();
                 vdu.toUnitMultiplier();
                 //check if vdu is equal to the original symbol times some constant
-                q = _.divide(vdu.clone(),__.integration.original.clone());
-                if(!q.contains(dx, true)) {
-                    //we've come full circle and have it in the form
-                    //int f(x) dx = uv - int q*f(x) dx
-                    //(q+1) int f(x) dx = uv
-                    //therefore: int f(x) dx = uv/(q+1) 
-                    //TODO: Why in the world do I have to square q????  
-                    q = _.pow(q, new Symbol(2));             
-                    return _.divide(uv, _.add(q, new Symbol(1)));
+                if(core.Utils.in_trig(u.fname) && dv.isE()) {
+                    if(typeof __.integration.original === 'undefined')
+                        __.integration.original = symbol.clone();
+                    else {
+                        q = _.divide(vdu.clone(),__.integration.original.clone());
+        //                console.log('q: '+q.toString())
+                        if(!q.contains(dx, true)) {
+                            //we've come full circle and have it in the form
+                            //int f(x) dx = uv - int q*f(x) dx
+                            //(q+1) int f(x) dx = uv
+                            //therefore: int f(x) dx = uv/(q+1) 
+                            //TODO: Why in the world do I have to square q????  
+//                            q = _.pow(q, new Symbol(2));   
+                            console.log(q.toString())
+                            return _.divide(uv, _.add(q, new Symbol(1)));
+                        }
+                    }
                 }
+                        
                 integral_vdu = __.integrate(vdu.clone(), dx, depth || 0); 
+                console.log('original: '+__.integration.original)
+                console.log('integral vdu: '+integral_vdu+' from symbol: '+symbol)
                 integral_vdu.multiplier = integral_vdu.multiplier.multiply(m);
                 retval = _.subtract(uv, integral_vdu);
                 return retval;
@@ -668,8 +683,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         integrate: function(original_symbol, dt, depth) { 
             return core.Utils.block('PARSE2NUMBER', function() {
                 //make a note of the original symbol. Set only if undefined
-                if(typeof depth === 'undefined') 
-                    __.integration.original = original_symbol.clone();
+//                if(typeof depth === 'undefined') 
+//                    __.integration.original = original_symbol.clone();
 
                 depth = depth || 0;
                 var dx = isSymbol(dt) ? dt.toString() : dt,
@@ -1269,7 +1284,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         retval = __.integration.by_parts(symbol, dx, depth);
                                 }
                             }
-                            else if(l === 3 && (symbols[2].group === S && symbols[2].power.lessThan(2) || symbols[0].group === CP)) {
+                            else if(l === 3 && (symbols[2].group === S && symbols[2].power.lessThan(2) || symbols[0].group === CP)) { 
                                 var first = symbols[0];
                                 if(first.group === CP) { //TODO {support higher powers of x in the future}
                                     if(first.power.greaterThan(1))
@@ -1326,5 +1341,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     nerdamer.api();
 })();
 
-//var x = nerdamer('integrate(x^2*sin(x), x)');
-//console.log(x.toString())
+//var x = nerdamer('integrate(e^(-s*t)*sin(a*t), t)');
+var x = nerdamer('integrate(e^(t)*sin(t), t)');
+console.log(x.toString())

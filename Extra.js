@@ -15,6 +15,7 @@ if((typeof module) !== 'undefined') {
     var core = nerdamer.getCore(),
         _ = core.PARSER,
         Symbol = core.Symbol,
+        format = core.Utils.format,
         S = core.groups.S,
         EX = core.groups.EX;
     
@@ -26,17 +27,30 @@ if((typeof module) !== 'undefined') {
         LaPlace: {
             //Using: intgral_0_oo f(t)*e^(-s*t) dt
             transform: function(symbol, t, s) {
+                var integration_depth = core.Settings.integration_depth; //cache the depth
+                //Laplace transforms dig in deep and need to make way more stack call than other integration
+                core.Settings.integration_depth = 20;
                 //This has to run in a block where PARSE2NUMBER = false
-                return core.Utils.block('PARSE2NUMBER', function() {
+                var result = core.Utils.block('PARSE2NUMBER', function() {
+                    //special cases
+                    symbol = Symbol.unwrapSQRT(symbol, true);
                     var retval;
-                    var u = 't';
-                    var sym = symbol.sub(t, u);
-                    retval = core.Calculus.integrate(_.parse('e^(-'+s+'*'+u+')*'+sym), u).sub(u, 0);
-                    retval = _.expand(_.multiply(retval, new Symbol(-1)));
-                    retval = retval.sub(u, t);
-
+                    if(symbol.group === S && symbol.power.equals(1/2)) {
+                        return _.parse(format('sqrt(pi)/(2*({0})^(3/2))', s));
+                    }
+                    else {
+                        var u = 't';
+                        var sym = symbol.sub(t, u);
+                        retval = core.Calculus.integrate(_.parse('e^(-'+s+'*'+u+')*'+sym), u).sub(u, 0);
+                        retval = _.expand(_.multiply(retval, new Symbol(-1)));
+                        retval = retval.sub(u, t);
+                    }
+                        
                     return retval;
                 }, false);
+                //put back the integration depth as you found it
+                core.Settings.integration_depth = integration_depth;
+                return result;
             }
         },
         Statistics: {
@@ -217,5 +231,5 @@ if((typeof module) !== 'undefined') {
     nerdamer.api();
 }());
 
-var x = nerdamer.laplace('t^2', 't', 's');
+var x = nerdamer.laplace('t*sin(a*t)', 't', 's');
 console.log(x.toString())
