@@ -871,6 +871,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     case COT:
                                         retval = _.parse(format('log(sin({0}))', arg));
                                         break;
+                                    case 'exp':
+                                        //just do e^x
+                                        retval = __.integrate(_.parse(format('e^({0})', arg)), dx, depth);
+                                        break;
                                     case 'erf':
                                         var arg = symbol.args[0].clone(),
                                             aa = arg.stripVar(dx);
