@@ -1478,7 +1478,7 @@ FUNCTIONS = {
         parameters: {
             x: {
                 type: 'expression',
-                description: "a matrix from which the element is being retrieved."
+                description: "The expression for which the roots are to be found."
             }
         },
         examples: [
@@ -1570,7 +1570,7 @@ FUNCTIONS = {
         type: 'internal',
         usage: 'sum(expression, index, lower, upper)',
         full_name: 'summation',
-        description: 'Gets the GCD of 2 polynomials',
+        description: 'Sums an expression from lower to upper limit. Works both numerically and algebraically.',
         parameters: {
             expression: {
                 type: 'expression',

@@ -71,7 +71,7 @@ if((typeof module) !== 'undefined') {
         toString: function() {
             return this.LHS.toString()+'='+this.RHS.toString();
         },
-        text_: function(option) { 
+        text: function(option) { 
             return this.LHS.text(option)+'='+this.RHS.text(option);
         },
         toLHS: function() {
@@ -86,7 +86,7 @@ if((typeof module) !== 'undefined') {
             clone.RHS = clone.RHS.sub(x.clone(), y.clone());
             return clone;
         },
-        latex_: function(option) { 
+        latex: function(option) { 
             return [this.LHS.latex(option), this.RHS.latex(option)].join('=');
         }
     };

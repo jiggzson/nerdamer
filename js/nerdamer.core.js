@@ -81,7 +81,7 @@ var nerdamer = (function(imports) {
         VARS = {},
         
         //the container used to store all the reserved functions
-        RESERVED = ['__u__'],
+        RESERVED = [],
 
 
         WARNINGS = '',
@@ -1289,30 +1289,6 @@ var nerdamer = (function(imports) {
                     callback.call(this.symbol[i], i);
             else
                 callback.call(this.symbol);
-        },
-        eq: function(value) {
-            value = _.parse(value);
-            if(this.symbol.isConstant() && value.isConstant())
-                return this.symbol.equals(_.parse(value));
-            return false;
-        },
-        lt: function(value) {
-            value = _.parse(value);
-            if(this.symbol.isConstant() && value.isConstant())
-                return this.symbol.lessThan(_.parse(value));
-            return false;
-        },
-        gt: function(value) {
-            value = _.parse(value);
-            if(this.symbol.isConstant() && value.isConstant())
-                return this.symbol.greaterThan(_.parse(value));
-            return false;
-        },
-        gte: function(value) {
-            return this.greaterThan(value) || this.equals(value);
-        },
-        lte: function(value) {
-            return this.lessThan(value) || this.equals(value);
         }
     };
     //Aliases
@@ -2377,9 +2353,6 @@ var nerdamer = (function(imports) {
         },
         lessThan: function(n) {
             return this.multiplier.lessThan(n);
-        },
-        greaterThan: function(n) {
-            return this.multiplier.greaterThan(n);
         },
         /**
          * Get's the denominator of the symbol if the symbol is of class CB (multiplication)
@@ -5773,9 +5746,18 @@ var nerdamer = (function(imports) {
             var ftext_complex = function(group) {
                 var d = group === CB ? '*' : '+',
                     cc = [];
-                for(var x in symbol.symbols) cc.push(ftext(symbol.symbols[x], xports)[0]);
+                
+                for(var x in symbol.symbols) {
+                    var sym = symbol.symbols[x],
+                        ft = ftext(sym, xports)[0];
+                    //wrap it in brackets if it's group PL or CP
+                    if(sym.isComposite())
+                        ft = inBrackets(ft);
+                    cc.push(ft);
+                }
                 var retval = cc.join(d);
-                return retval && !symbol.multiplier.equals(1)? inBrackets(retval) : retval;
+                retval = retval && !symbol.multiplier.equals(1) ? inBrackets(retval) : retval;
+                return retval;
             },
 
             ftext_function = function(bn) { 
@@ -5800,8 +5782,10 @@ var nerdamer = (function(imports) {
             //the multiplier
             if(group === N) 
                 c.push(symbol.multiplier.toDecimal());
-            else if(symbol.multiplier.equals(-1)) prefix = '-';
-            else if(!symbol.multiplier.equals(1)) c.push(symbol.multiplier.toDecimal());
+            else if(symbol.multiplier.equals(-1)) 
+                prefix = '-';
+            else if(!symbol.multiplier.equals(1)) 
+                c.push(symbol.multiplier.toDecimal());
             //the value
             var value;
             
@@ -5867,9 +5851,6 @@ var nerdamer = (function(imports) {
     C.VARS = VARS;
     C.err = err;
     C.bigInt = bigInt;
-    //TODO: fix 
-    if(!_.error)
-        _.error = err;
     /* END BUILD CORE */
 
     
