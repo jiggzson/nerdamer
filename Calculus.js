@@ -471,7 +471,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 var factor_array = []; 
                 //we first have to unwrap the factor and get them in ordered form. We use an array for this
                 //the first part of q can just be integrated using standard integration so we do so
-                var result = q[0].equals(0) ? q[0] : __.integrate(q[0], dx, depth);
+                var result = q[0].equals(0) ? q[0] : __.integrate(q[0], dx, depth || 0);
                 if(factors.group !== CP) { 
                     factors.each(function(factor) { 
                         //unwrap parentheses
@@ -487,7 +487,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         //apply the sum rule
                         q[1].each(function(x) {
                             var s = _.divide(x.clone(), factors.clone());//put it back in the form num/den
-                            result = _.add(result, __.integrate(s, dx, depth));
+                            result = _.add(result, __.integrate(s, dx, depth || 0));
                         });
                     }
                     else { 
@@ -510,8 +510,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 //rewrite the expression to become (1/a)*[ (ax+b)/(ax+b) - b/(ax+b)] which we can do 
                                 //since x is linear from above
                                 result = _.add(
-                                    __.integrate(_.divide(fn.clone(), factors.clone()), dx, depth),
-                                    __.integrate(_.divide(b.negate(), factors.clone()), dx, depth)
+                                    __.integrate(_.divide(fn.clone(), factors.clone()), dx, depth || 0),
+                                    __.integrate(_.divide(b.negate(), factors.clone()), dx, depth || 0)
                                 );
                             }
                             result = _.divide(result, a);
@@ -531,7 +531,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     //put it back in the proper form. Remember that this is the remainder so it still has a 
                     //denominator
                     var s = _.divide(q[1], factor_array[0]); 
-                    var intg = __.integrate(s, dx, depth); //compute the integral of the remainder
+                    var intg = __.integrate(s, dx, depth || 0); //compute the integral of the remainder
                     intg = _.divide(intg, m); //put back the multiplier
                     result = _.add(result, intg);
                     return result;
@@ -556,7 +556,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 var L = M.transpose().invert().multiply(c); 
                 //we can now integrate each one of them but remember we divided earlier so integrate the whole if it's not zero
                 for(var i=0; i<l; i++) { 
-                    var integral = __.integrate(_.divide(q[1].clone(), factor_array[i]), dx, depth),
+                    var integral = __.integrate(_.divide(q[1].clone(), factor_array[i]), dx, depth || 0),
                         cf = _.expand(L.elements[i][0]); 
                     var mm = _.divide(cf, m.clone()); 
                     result = _.add(result, _.multiply(integral, mm));
@@ -628,7 +628,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 u = udv[0]; 
                 dv = udv[1]; 
                 du = Symbol.unwrapSQRT(_.expand(__.diff(u.clone(), dx)), true); 
-                v = __.integrate(dv.clone(), dx, depth); 
+                v = __.integrate(dv.clone(), dx, depth || 0); 
                 vdu = _.multiply(v.clone(), du); 
                 vdu_s = vdu.toString();
                 //currently only supports e^x*(some trig)

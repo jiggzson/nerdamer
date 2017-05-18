@@ -2737,7 +2737,7 @@ var nerdamer = (function(imports) {
          * Build a regex based on the operators currently loaded. These operators are to be ignored when 
          * substituting spaces for multiplication
          */
-        this.operator_fiter_regex = (function() {
+        this.operator_filter_regex = (function() {
             //we only want the operators which are singular since those are the ones
             //that nerdamer uses anyway
             var ostr = '^\\'+Object.keys(operators).filter(function(x) {
@@ -2830,38 +2830,42 @@ var nerdamer = (function(imports) {
              * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
              * a side-by-side close and open parenthesis
              */
-            var e = String(expression_string)
-                //add support for spaces between variables
-                .replace(this.operator_fiter_regex, function(match, a, b) {
-                    return a+'*'+b;
-                })
-                .split(' ').join('')//strip empty spaces
-                //replace scientific numbers
-                .replace(/\d+\.*\d*e\+?\-?\d+/gi, function(x) {
-                    return scientificToDecimal(x);
-                })
-                //allow omission of multiplication after coefficients
-                .replace(/([\+\-\/\*]*[0-9]+)([a-z_]+[\+\-\/\*]*)/gi, function() {
-                    var str = arguments[4],
-                        group1 = arguments[1],
-                        group2 = arguments[2],
-                        start = arguments[3],
-                        first = str.charAt(start),
-                        before = '',
-                        d = '*';
-                    if(!first.match(/[\+\-\/\*]/)) before = str.charAt(start-1);
-                    if(before.match(/[a-z]/i)) d = '';
-                    return group1+d+group2;
-                })
-                .replace(/([a-z0-9]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
-                    var g1 = a || c,
-                        g2 = b || d;
-                    if(g1 in functions) //create a passthrough for functions
-                        return g1+g2;
-                    return g1+'*'+g2;
-                })
-                //allow omission of multiplication sign between brackets
-                .replace( /\)\(/g, ')*(' ) || '0';
+            var e = String(expression_string), match;
+            //add support for spaces between variables
+            while(true) {
+                match = this.operator_filter_regex.exec(e);
+                if(!match)
+                    break;
+                e = e.replace(match[0], match[1]+'*'+match[2]);
+            }
+
+            e = e.split(' ').join('')//strip empty spaces
+            //replace scientific numbers
+            .replace(/\d+\.*\d*e\+?\-?\d+/gi, function(x) {
+                return scientificToDecimal(x);
+            })
+            //allow omission of multiplication after coefficients
+            .replace(/([\+\-\/\*]*[0-9]+)([a-z_]+[\+\-\/\*]*)/gi, function() {
+                var str = arguments[4],
+                    group1 = arguments[1],
+                    group2 = arguments[2],
+                    start = arguments[3],
+                    first = str.charAt(start),
+                    before = '',
+                    d = '*';
+                if(!first.match(/[\+\-\/\*]/)) before = str.charAt(start-1);
+                if(before.match(/[a-z]/i)) d = '';
+                return group1+d+group2;
+            })
+            .replace(/([a-z0-9]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
+                var g1 = a || c,
+                    g2 = b || d;
+                if(g1 in functions) //create a passthrough for functions
+                    return g1+g2;
+                return g1+'*'+g2;
+            })
+            //allow omission of multiplication sign between brackets
+            .replace( /\)\(/g, ')*(' ) || '0';
 
             var l = e.length, //the length of the string
                 output = [], //the output array. This is what's returned

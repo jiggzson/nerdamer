@@ -317,6 +317,10 @@ describe('calculus', function () {
                 given: 'integrate(t*log(x)^3,x)',
                 expected: '(-3*log(x)^2*x-6*x+6*log(x)*x+log(x)^3*x)*t'
             },
+//            {
+//                given: 'integrate(e^x*sin(x),x)',
+//                expected: '(1/2)*(-cos(x)*e^x+e^x*sin(x))'
+//            },
             {
                 given: 'integrate(e^x*sin(x),x)',
                 expected: '(1/2)*(-cos(x)*e^x+e^x*sin(x))'
