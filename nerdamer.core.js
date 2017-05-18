@@ -5845,7 +5845,6 @@ var nerdamer = (function(imports) {
             return [c.join('*'), xports.join('').replace(/\n+\s+/g, ' ')];
         };
         if(arg_array) { 
-            if(args.length !== arg_array.length) err('Argument array contains wrong number of arguments');
             for(var i=0; i<args.length; i++) {
                 var arg = args[i];
                 if(arg_array.indexOf(arg) === -1) err(arg+' not found in argument array');
