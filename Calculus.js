@@ -1347,6 +1347,3 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     //link registered functions externally
     nerdamer.api();
 })();
-
-//var x = nerdamer('integrate(e^(x)*sin(x),x)');
-//console.log(x.toString())
