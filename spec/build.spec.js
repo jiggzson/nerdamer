@@ -68,7 +68,7 @@ describe('build', function () {
             {
                 given: 'sec(x)+tan(z)^2+ceil(y)',
                 params: ['z', 'x', 'y'],
-                one_expected: 4.444717164847536,
+                one_expected: 4.444717164847537,
                 two_expected: 2.910896226522566
             },
             {
@@ -86,14 +86,14 @@ describe('build', function () {
             {
                 given: '((x+y)^2+(y+2)+(z+3))^(x+y)',
                 params: ['x', 'z', 'y'],
-                one_expected: 362284798.5739881,
+                one_expected: 362284798.5739877,
                 two_expected: 9072.850179772464
             },
             {
                 given: 'asin(0.2)+atan(0.1)+acosh(y)',
                 params: ['y'],
-                one_expected: 1.673885717524073,
-                two_expected: 1.673885717524073
+                one_expected: 1.6738857175240727,
+                two_expected: 1.6738857175240727
             },
             {
                 given: '(sin(z)*cos(y))^(tan(2)+1)',

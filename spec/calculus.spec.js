@@ -318,6 +318,18 @@ describe('calculus', function () {
                 expected: '(-3*log(x)^2*x-6*x+6*log(x)*x+log(x)^3*x)*t'
             },
             {
+                given: 'integrate(e^x*sin(x),x)',
+                expected: '(1/2)*(-cos(x)*e^x+e^x*sin(x))'
+            },
+            {
+                given: 'integrate(e^(2*x)*sin(x),x)',
+                expected: '(4/5)*((-1/4)*cos(x)*e^(2*x)+(1/2)*e^(2*x)*sin(x))'
+            },
+            {
+                given: 'integrate(e^(2*x)*sin(x)*x,x)',
+                expected: '(-3/25)*e^(2*x)*sin(x)+(4/25)*cos(x)*e^(2*x)+(4/5)*((-1/4)*cos(x)*e^(2*x)+(1/2)*e^(2*x)*sin(x))*x'
+            },
+            {
                 given: 'integrate(x*log(x)^2,x)',
                 expected: '(-1/2)*log(x)*x^2+(1/2)*log(x)^2*x^2+(1/4)*x^2'
             },
