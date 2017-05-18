@@ -565,6 +565,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 return result;
             },
             by_parts: function(symbol, dx, depth) { 
+                this.previous = this.previous || [];
+                
                 var get_udv = function(symbol) { 
                     var parts = [[/*L*/], [/*I*/], [/*A*/], [/*T*/], [/*E*/]];
                     //first we sort them 
@@ -620,46 +622,48 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
                     return [u, dv];
                 };
-                var udv, u, dv, du, v, vdu, uv, retval, integral_vdu, m, q;
+                var udv, u, dv, du, v, vdu, uv, retval, integral_vdu, m, q, vdu_s;
                 //first LIATE
                 udv = get_udv(symbol);
                 u = udv[0]; 
-                console.log('u: '+u)
                 dv = udv[1]; 
-                console.log('dv: '+dv)
                 du = Symbol.unwrapSQRT(_.expand(__.diff(u.clone(), dx)), true); 
                 v = __.integrate(dv.clone(), dx, depth || 0); 
-                console.log('v: '+v)
                 vdu = _.multiply(v.clone(), du); 
-                console.log('vdu: '+vdu)
+                vdu_s = vdu.toString();
+
+                if(this.previous.indexOf(vdu_s) !== -1) {
+                    //We're going to exploit the fact that vdu can never be constant
+                    //to work out way out of this cycle. We'll return the length of
+                    //the this.previous array until we're back at level one
+                    this.is_cyclic = true;
+                    //return the integral. 
+                    return new Symbol(1);
+                }
+                else
+                    this.previous.push(vdu_s);
+
                 uv = _.multiply(u, v); 
+                //clear the multiplier so we're dealing with a bare integral
                 m = vdu.multiplier.clone();
                 vdu.toUnitMultiplier();
-                //check if vdu is equal to the original symbol times some constant
-                if(core.Utils.in_trig(u.fname) && dv.isE()) {
-                    if(typeof __.integration.original === 'undefined')
-                        __.integration.original = symbol.clone();
-                    else {
-                        q = _.divide(vdu.clone(),__.integration.original.clone());
-        //                console.log('q: '+q.toString())
-                        if(!q.contains(dx, true)) {
-                            //we've come full circle and have it in the form
-                            //int f(x) dx = uv - int q*f(x) dx
-                            //(q+1) int f(x) dx = uv
-                            //therefore: int f(x) dx = uv/(q+1) 
-                            //TODO: Why in the world do I have to square q????  
-//                            q = _.pow(q, new Symbol(2));   
-                            console.log(q.toString())
-                            return _.divide(uv, _.add(q, new Symbol(1)));
-                        }
-                    }
-                }
-                        
                 integral_vdu = __.integrate(vdu.clone(), dx, depth || 0); 
-                console.log('original: '+__.integration.original)
-                console.log('integral vdu: '+integral_vdu+' from symbol: '+symbol)
                 integral_vdu.multiplier = integral_vdu.multiplier.multiply(m);
                 retval = _.subtract(uv, integral_vdu);
+                //we know that there cannot be constants so they're a holdover from a cyclic integral
+                if(this.is_cyclic) { 
+                    //start popping the previous stack so we know how deep in we are
+                    this.previous.pop();
+                    if(this.previous.length === 0) {
+                        var rem = new Symbol(0);
+                        retval.each(function(x) {
+                            if(x.isConstant())
+                                rem = _.add(rem, x.clone());
+                        });
+                        //get the actual uv
+                        retval = _.divide(_.subtract(retval, rem.clone()), _.subtract(new Symbol(1), rem));
+                    }
+                }
                 return retval;
             },
             /*
@@ -683,8 +687,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         integrate: function(original_symbol, dt, depth) { 
             return core.Utils.block('PARSE2NUMBER', function() {
                 //make a note of the original symbol. Set only if undefined
-//                if(typeof depth === 'undefined') 
-//                    __.integration.original = original_symbol.clone();
 
                 depth = depth || 0;
                 var dx = isSymbol(dt) ? dt.toString() : dt,
@@ -1340,7 +1342,3 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     //link registered functions externally
     nerdamer.api();
 })();
-
-//var x = nerdamer('integrate(e^(-s*t)*sin(a*t), t)');
-var x = nerdamer('integrate(e^(t)*sin(t), t)');
-console.log(x.toString())

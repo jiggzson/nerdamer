@@ -224,12 +224,9 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: -1,
             build: function() { return __.Statistics.standardDeviation; }
-        },
+        }
     ]);
     
     //link registered functions externally
     nerdamer.api();
 }());
-
-var x = nerdamer.laplace('t*sin(a*t)', 't', 's');
-console.log(x.toString())
