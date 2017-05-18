@@ -564,75 +564,75 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
                 return result;
             },
+            get_udv: function(symbol) { 
+                var parts = [[/*L*/], [/*I*/], [/*A*/], [/*T*/], [/*E*/]];
+                //first we sort them 
+                var setSymbol = function(x) { 
+                    var g = x.group; 
+                    if(g === FN) {
+                        var fname = x.fname;
+                        if(core.Utils.in_trig(fname))
+                            parts[3].push(x);
+                        else if(core.Utils.in_inverse_trig(fname))
+                            parts[1].push(x);
+                        else if(fname === LOG)
+                            parts[0].push(x);
+                        else {
+                            stop();
+                        }
+                    }
+                    else if(g === S || x.isComposite() && x.isLinear() || g === CB && x.isLinear()) {
+                        parts[2].push(x);
+                    }
+                    else if(g === EX || x.isComposite() && !x.isLinear())
+                        parts[4].push(x);
+                    else
+                        stop();
+                };
+                if(symbol.group === CB) 
+                    symbol.each(function(x) {
+                        setSymbol(Symbol.unwrapSQRT(x, true));
+                    });
+                else
+                    setSymbol(symbol);
+                var u, dv = new Symbol(1);
+                //compile u and dv
+                for(var i=0; i<5; i++) { 
+                    var part = parts[i], t,
+                        l = part.length;
+                    if(l > 0) {
+                        if(l > 1) {
+                            t = new Symbol(1);
+                            for(var j=0; j<l; j++) 
+                                t = _.multiply(t, part[j].clone());
+                        }
+                        else
+                            t = part[0].clone();
+
+                        if(!u) {
+                            u = t;//the first u encountered gets chosen
+                            u.multiplier = u.multiplier.multiply(symbol.multiplier); //the first one gets the mutliplier
+                        } 
+                        else dv = _.multiply(dv, t); //everything else belongs to dv
+                    }  
+                }
+
+                return [u, dv];
+            },
+
             by_parts: function(symbol, dx, depth) { 
                 this.previous = this.previous || [];
-                
-                var get_udv = function(symbol) { 
-                    var parts = [[/*L*/], [/*I*/], [/*A*/], [/*T*/], [/*E*/]];
-                    //first we sort them 
-                    var setSymbol = function(x) { 
-                        var g = x.group; 
-                        if(g === FN) {
-                            var fname = x.fname;
-                            if(core.Utils.in_trig(fname))
-                                parts[3].push(x);
-                            else if(core.Utils.in_inverse_trig(fname))
-                                parts[1].push(x);
-                            else if(fname === LOG)
-                                parts[0].push(x);
-                            else {
-                                stop();
-                            }
-                        }
-                        else if(g === S || x.isComposite() && x.isLinear() || g === CB && x.isLinear()) {
-                            parts[2].push(x);
-                        }
-                        else if(g === EX || x.isComposite() && !x.isLinear())
-                            parts[4].push(x);
-                        else
-                            stop();
-                    };
-                    if(symbol.group === CB) 
-                        symbol.each(function(x) {
-                            setSymbol(Symbol.unwrapSQRT(x, true));
-                        });
-                    else
-                        setSymbol(symbol);
-                    var u, dv = new Symbol(1);
-                    //compile u and dv
-                    for(var i=0; i<5; i++) { 
-                        var part = parts[i], t,
-                            l = part.length;
-                        if(l > 0) {
-                            if(l > 1) {
-                                t = new Symbol(1);
-                                for(var j=0; j<l; j++) 
-                                    t = _.multiply(t, part[j].clone());
-                            }
-                            else
-                                t = part[0].clone();
-
-                            if(!u) {
-                                u = t;//the first u encountered gets chosen
-                                u.multiplier = u.multiplier.multiply(symbol.multiplier); //the first one gets the mutliplier
-                            } 
-                            else dv = _.multiply(dv, t); //everything else belongs to dv
-                        }  
-                    }
-
-                    return [u, dv];
-                };
                 var udv, u, dv, du, v, vdu, uv, retval, integral_vdu, m, q, vdu_s;
                 //first LIATE
-                udv = get_udv(symbol);
+                udv = __.integration.get_udv(symbol);
                 u = udv[0]; 
                 dv = udv[1]; 
                 du = Symbol.unwrapSQRT(_.expand(__.diff(u.clone(), dx)), true); 
                 v = __.integrate(dv.clone(), dx, depth || 0); 
                 vdu = _.multiply(v.clone(), du); 
                 vdu_s = vdu.toString();
-
-                if(this.previous.indexOf(vdu_s) !== -1) {
+                //currently only supports e^x*(some trig)
+                if(this.previous.indexOf(vdu_s) !== -1 && core.Utils.in_trig(u.fname) && dv.isE()) {
                     //We're going to exploit the fact that vdu can never be constant
                     //to work out way out of this cycle. We'll return the length of
                     //the this.previous array until we're back at level one
@@ -647,9 +647,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 //clear the multiplier so we're dealing with a bare integral
                 m = vdu.multiplier.clone();
                 vdu.toUnitMultiplier();
+                
                 integral_vdu = __.integrate(vdu.clone(), dx, depth || 0); 
                 integral_vdu.multiplier = integral_vdu.multiplier.multiply(m);
                 retval = _.subtract(uv, integral_vdu);
+
                 //we know that there cannot be constants so they're a holdover from a cyclic integral
                 if(this.is_cyclic) { 
                     //start popping the previous stack so we know how deep in we are
@@ -664,6 +666,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         retval = _.divide(_.subtract(retval, rem.clone()), _.subtract(new Symbol(1), rem));
                     }
                 }
+                
                 return retval;
             },
             /*
@@ -1003,7 +1006,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 return Symbol.unwrapSQRT(x, true);
                             });
                             //generate an image for 
-                            var l = symbols.length;
+                            var l = symbols.length; 
                             if(l === 2) { 
                                 //try u substitution
                                 try {
@@ -1299,9 +1302,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         retval = _.add(retval, intg);
                                     }, true);
                                 }
-                                else 
-                                    //try integration by parts 
+                                else { 
+                                    //try integration by parts although technically it will never work
                                     retval = __.integration.by_parts(symbol, dx, depth);
+                                }
+                                    
                             }
                         }
                         retval = _.multiply(retval, coeff);
@@ -1342,3 +1347,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     //link registered functions externally
     nerdamer.api();
 })();
+
+//var x = nerdamer('integrate(e^(x)*sin(x),x)');
+//console.log(x.toString())

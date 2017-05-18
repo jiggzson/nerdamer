@@ -42,7 +42,9 @@ var nerdamer = (function(imports) {
             //the modules used to link numeric function holders
             FUNCTION_MODULES: [Math],
             //Allow certain characters
-            ALLOW_CHARS: ['π']
+            ALLOW_CHARS: ['π'],
+            //Allow changing of power operator
+            POWER_OPERATOR: '^'
         },
 
         //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
@@ -1089,7 +1091,7 @@ var nerdamer = (function(imports) {
             
             if(power < 0) power = inBrackets(power);
             if(multiplier) c = c + '*';
-            if(power) power = '^' + power;
+            if(power) power = Settings.POWER_OPERATOR + power;
 
             //this needs serious rethinking. Must fix
             if(group === EX && value.charAt(0) === '-') value = inBrackets(value);
@@ -2298,7 +2300,7 @@ var nerdamer = (function(imports) {
                 if(group === CB) key = text(this, 'hash');
                 else if(group === CP) { 
                     if(this.power.equals(1)) key = this.value;
-                    else key = inBrackets(text(this, 'hash'))+'^'+this.power.toDecimal();
+                    else key = inBrackets(text(this, 'hash'))+Settings.POWER_OPERATOR+this.power.toDecimal();
                 }
                 else if(group === PL) key = this.power.toString();
                 else key = this.value;
@@ -2499,6 +2501,7 @@ var nerdamer = (function(imports) {
         //list all the supported operators
         var operators = this.operators = {
                 '^' : new Operator('^', 'pow', 6, false, false),
+                '**' : new Operator('**', 'pow', 6, false, false),
                 '!!' : new Operator('!!', 'dfactorial', 5, false, false, true, function(e) {
                     return _.symfunction(DOUBLEFACTORIAL, [e]); //wrap it in a factorial function
                 }),
@@ -5774,9 +5777,18 @@ var nerdamer = (function(imports) {
             var ftext_complex = function(group) {
                 var d = group === CB ? '*' : '+',
                     cc = [];
-                for(var x in symbol.symbols) cc.push(ftext(symbol.symbols[x], xports)[0]);
+                
+                for(var x in symbol.symbols) {
+                    var sym = symbol.symbols[x],
+                        ft = ftext(sym, xports)[0];
+                    //wrap it in brackets if it's group PL or CP
+                    if(sym.isComposite())
+                        ft = inBrackets(ft);
+                    cc.push(ft);
+                }
                 var retval = cc.join(d);
-                return retval && !symbol.multiplier.equals(1)? inBrackets(retval) : retval;
+                retval = retval && !symbol.multiplier.equals(1) ? inBrackets(retval) : retval;
+                return retval;
             },
 
             ftext_function = function(bn) { 
@@ -5801,8 +5813,10 @@ var nerdamer = (function(imports) {
             //the multiplier
             if(group === N) 
                 c.push(symbol.multiplier.toDecimal());
-            else if(symbol.multiplier.equals(-1)) prefix = '-';
-            else if(!symbol.multiplier.equals(1)) c.push(symbol.multiplier.toDecimal());
+            else if(symbol.multiplier.equals(-1)) 
+                prefix = '-';
+            else if(!symbol.multiplier.equals(1)) 
+                c.push(symbol.multiplier.toDecimal());
             //the value
             var value;
             

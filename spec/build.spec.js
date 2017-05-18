@@ -106,6 +106,12 @@ describe('build', function () {
                 params: ['x'],
                 one_expected: 0.1168736998021759,
                 two_expected: 0.1168736998021759
+            },
+            {
+                given: '4*(s^2+t^2)*s',
+                params: ['s', 't'],
+                one_expected: 128.52,
+                two_expected: 128.52
             }
         ];
 
