@@ -12,6 +12,7 @@
     "lib": "./"
   },
   "main": "nerdamer.core.js",
+  "typings": "index.d.ts",
   "keywords": [
     "math",
     "matrix",
