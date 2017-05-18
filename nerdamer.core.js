@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.7',
+    var version = '0.7.8',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -42,7 +42,9 @@ var nerdamer = (function(imports) {
             //the modules used to link numeric function holders
             FUNCTION_MODULES: [Math],
             //Allow certain characters
-            ALLOW_CHARS: ['π']
+            ALLOW_CHARS: ['π'],
+            //Allow changing of power operator
+            POWER_OPERATOR: '^'
         },
 
         //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
@@ -81,7 +83,7 @@ var nerdamer = (function(imports) {
         VARS = {},
         
         //the container used to store all the reserved functions
-        RESERVED = [],
+        RESERVED = ['__u__'],
 
 
         WARNINGS = '',
@@ -1089,7 +1091,7 @@ var nerdamer = (function(imports) {
             
             if(power < 0) power = inBrackets(power);
             if(multiplier) c = c + '*';
-            if(power) power = '^' + power;
+            if(power) power = Settings.POWER_OPERATOR + power;
 
             //this needs serious rethinking. Must fix
             if(group === EX && value.charAt(0) === '-') value = inBrackets(value);
@@ -1289,6 +1291,30 @@ var nerdamer = (function(imports) {
                     callback.call(this.symbol[i], i);
             else
                 callback.call(this.symbol);
+        },
+        eq: function(value) {
+            value = _.parse(value);
+            if(this.symbol.isConstant() && value.isConstant())
+                return this.symbol.equals(_.parse(value));
+            return false;
+        },
+        lt: function(value) {
+            value = _.parse(value);
+            if(this.symbol.isConstant() && value.isConstant())
+                return this.symbol.lessThan(_.parse(value));
+            return false;
+        },
+        gt: function(value) {
+            value = _.parse(value);
+            if(this.symbol.isConstant() && value.isConstant())
+                return this.symbol.greaterThan(_.parse(value));
+            return false;
+        },
+        gte: function(value) {
+            return this.greaterThan(value) || this.equals(value);
+        },
+        lte: function(value) {
+            return this.lessThan(value) || this.equals(value);
         }
     };
     //Aliases
@@ -2015,8 +2041,9 @@ var nerdamer = (function(imports) {
          * This method distributes the multiplier over the entire symbol
          * @returns {Symbol}
          */
-        distributeMultiplier: function() {
-            if(this.symbols && this.power.equals(1) && this.group !== CB && !this.multiplier.equals(1)) {
+        distributeMultiplier: function(all) { 
+            var is_one = all ? this.power.absEquals(1) : this.power.equals(1);
+            if(this.symbols && is_one && this.group !== CB && !this.multiplier.equals(1)) {
                 for(var x in this.symbols) {
                     var s = this.symbols[x];
                     s.multiplier = s.multiplier.multiply(this.multiplier);
@@ -2273,7 +2300,7 @@ var nerdamer = (function(imports) {
                 if(group === CB) key = text(this, 'hash');
                 else if(group === CP) { 
                     if(this.power.equals(1)) key = this.value;
-                    else key = inBrackets(text(this, 'hash'))+'^'+this.power.toDecimal();
+                    else key = inBrackets(text(this, 'hash'))+Settings.POWER_OPERATOR+this.power.toDecimal();
                 }
                 else if(group === PL) key = this.power.toString();
                 else key = this.value;
@@ -2353,6 +2380,9 @@ var nerdamer = (function(imports) {
         },
         lessThan: function(n) {
             return this.multiplier.lessThan(n);
+        },
+        greaterThan: function(n) {
+            return this.multiplier.greaterThan(n);
         },
         /**
          * Get's the denominator of the symbol if the symbol is of class CB (multiplication)
@@ -2471,6 +2501,7 @@ var nerdamer = (function(imports) {
         //list all the supported operators
         var operators = this.operators = {
                 '^' : new Operator('^', 'pow', 6, false, false),
+                '**' : new Operator('**', 'pow', 6, false, false),
                 '!!' : new Operator('!!', 'dfactorial', 5, false, false, true, function(e) {
                     return _.symfunction(DOUBLEFACTORIAL, [e]); //wrap it in a factorial function
                 }),
@@ -3780,7 +3811,7 @@ var nerdamer = (function(imports) {
                             var x = result.symbols[s];
                             x.multiplier = x.multiplier.multiply(m);
                             if(x.isComposite())
-                                x.distributeMultiplier();
+                                x.distributeMultiplier(true);
                             symbol.symbols[s] = x;
                         }
                     }
@@ -5851,6 +5882,9 @@ var nerdamer = (function(imports) {
     C.VARS = VARS;
     C.err = err;
     C.bigInt = bigInt;
+    //TODO: fix 
+    if(!_.error)
+        _.error = err;
     /* END BUILD CORE */
 
     
