@@ -48,6 +48,7 @@ if((typeof module) !== 'undefined') {
                     return core.Utils.block('PARSE2NUMBER', function() {
                         return _.parse(retval);
                     }, true);   
+                    //return retval;
                     
                 }, false);
                 //put back the integration depth as you found it
@@ -232,6 +233,3 @@ if((typeof module) !== 'undefined') {
     //link registered functions externally
     nerdamer.api();
 }());
-
-var x = nerdamer('laplace(sin(a*t), t, s)');
-console.log(x.toString())

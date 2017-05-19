@@ -622,12 +622,15 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
             by_parts: function(symbol, dx, depth, o) { 
                 o.previous = o.previous || [];
-                var udv, u, dv, du, v, vdu, uv, retval, integral_vdu, m, q, vdu_s;
+                var udv, u, dv, du, v, vdu, uv, retval, integral_vdu, m, c, vdu_s;
                 //first LIATE
                 udv = __.integration.get_udv(symbol);
                 u = udv[0]; 
                 dv = udv[1]; 
                 du = Symbol.unwrapSQRT(_.expand(__.diff(u.clone(), dx)), true); 
+                c = du.clone().stripVar(dx);
+                //strip any coefficients
+                du = _.divide(du, c.clone());
                 v = __.integrate(dv.clone(), dx, depth || 0); 
                 vdu = _.multiply(v.clone(), du); 
                 vdu_s = vdu.toString();
@@ -647,8 +650,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 //clear the multiplier so we're dealing with a bare integral
                 m = vdu.multiplier.clone();
                 vdu.toUnitMultiplier();
-                
-                integral_vdu = __.integrate(vdu.clone(), dx, depth, o); 
+                integral_vdu = _.multiply(__.integrate(vdu.clone(), dx, depth, o), c); 
                 integral_vdu.multiplier = integral_vdu.multiplier.multiply(m);
                 retval = _.subtract(uv, integral_vdu);
 
@@ -657,9 +659,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     //start popping the previous stack so we know how deep in we are
                     o.previous.pop();
                     if(o.previous.length === 0) {
+                        retval = _.expand(retval);
                         var rem = new Symbol(0);
                         retval.each(function(x) {
-                            if(x.isConstant())
+                            if(!x.contains(dx))
                                 rem = _.add(rem, x.clone());
                         });
                         //get the actual uv
