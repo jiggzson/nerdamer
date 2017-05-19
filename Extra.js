@@ -36,7 +36,7 @@ if((typeof module) !== 'undefined') {
                     symbol = Symbol.unwrapSQRT(symbol, true);
                     var retval;
                     if(symbol.group === S && symbol.power.equals(1/2)) {
-                        return _.parse(format('sqrt(pi)/(2*({0})^(3/2))', s));
+                        return _.parse(format('({0})*sqrt(pi)/(2*({1})^(3/2))', symbol.multiplier, s));
                     }
                     else {
                         var u = 't';
@@ -45,8 +45,10 @@ if((typeof module) !== 'undefined') {
                         retval = _.expand(_.multiply(retval, new Symbol(-1)));
                         retval = retval.sub(u, t);
                     }
-                        
-                    return retval;
+                    return core.Utils.block('PARSE2NUMBER', function() {
+                        return _.parse(retval);
+                    }, true);   
+                    
                 }, false);
                 //put back the integration depth as you found it
                 core.Settings.integration_depth = integration_depth;
@@ -230,3 +232,6 @@ if((typeof module) !== 'undefined') {
     //link registered functions externally
     nerdamer.api();
 }());
+
+var x = nerdamer('laplace(sin(a*t), t, s)');
+console.log(x.toString())
