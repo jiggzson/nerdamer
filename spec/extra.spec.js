@@ -4,7 +4,7 @@ var nerdamer = require('../nerdamer.core.js');
 require('../Extra');
 
 describe('calculus', function () {
-
+    
     it('should transform Laplace correctly', function () {
         // given
         var testCases = [
@@ -17,6 +17,18 @@ describe('calculus', function () {
                 expected: 'a*s^(-2)'
             },
             {
+                given: 'laplace(cos(a*t), t, s)',
+                expected: '(a^2+s^2)^(-1)*s'
+            },
+            {
+                given: 'laplace(cos(x), t, s)',
+                expected: 'cos(x)*s^(-1)'
+            },
+            {
+                given: 'laplace(sinh(a*t), t, s)',
+                expected: '(-a^2+s^2)^(-1)*a'
+            },
+            {
                 given: 'laplace(a*t^2, t, s)',
                 expected: '2*a*s^(-3)'
             },
@@ -24,14 +36,17 @@ describe('calculus', function () {
                 given: 'laplace(2*sqrt(t), t, s)',
                 expected: 's^(-3/2)*sqrt(pi)'
             },
-            //TODO: Place all of the below in more familiar form. Is related to expand
             {
-                given: 'laplace(e^(a*t), t, s)',
-                expected: '-(-s+a)^(-1)'
+                given: 'laplace(x*e^(a*t), t, s)',
+                expected: '(-a+s)^(-1)*x'
+            },
+            {
+                given: 'laplace(x*(sin(a*t)-a*t*cos(a*t)), t, s)',
+                expected: '((a^2+s^2)^(-1)*a-((1+a^2*s^(-2))^(-2)*s^(-2)-(1+a^2*s^(-2))^(-2)*a^2*s^(-4))*a)*x'
             },
             {
                 given: 'laplace(sin(a*t), t, s)',
-                expected: '(1+a^2*s^(-2))^(-1)*a*s^(-2)'
+                expected: '(a^2+s^2)^(-1)*a'
             },
             {
                 given: 'laplace(t*sin(a*t), t, s)',
@@ -44,7 +59,7 @@ describe('calculus', function () {
             {
                 given: 'laplace(t^2*e^(a*t), t, s)',
                 expected: '-2*(-s+a)^(-3)'
-            },
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

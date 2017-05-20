@@ -1623,7 +1623,7 @@ var nerdamer = (function(imports) {
             var retval;
             if((this.group === PL || this.group === S) && this.value === x) 
                 retval = new Symbol(this.multiplier);
-            else if(this.group === CB && this.isLinear()) {
+            else if(this.group === CB && this.isLinear()) { 
                 retval = new Symbol(1);
                 this.each(function(s) { 
                     if(!s.contains(x, true)) 
@@ -1643,6 +1643,12 @@ var nerdamer = (function(imports) {
                         retval = _.add(retval, t);
                     } 
                 });
+                //BIG TODO!!! It doesn't make much sense
+                if(retval.equals(0))
+                    retval = new Symbol(this.multiplier);
+            }
+            else if(this.group === EX && this.power.contains(x, true)) {
+                retval = new Symbol(this.multiplier);
             }
             else if(this.group === FN && this.contains(x)) {
                 retval = new Symbol(this.multiplier);
@@ -2584,6 +2590,7 @@ var nerdamer = (function(imports) {
                 'sqrt'       : [ sqrt, 1],
                 'log'        : [ log , 1],
                 'expand'     : [ expand , 1],
+                'clean'   : [ clean , 1],
                 'abs'        : [ abs , 1],
                 'invert'     : [ invert, 1],
                 'transpose'  : [ transpose, 1],
@@ -3788,6 +3795,66 @@ var nerdamer = (function(imports) {
             return retval;
         };
         
+        function clean(symbol) {
+            // handle functions with numeric values
+            // handle denominator within denominator
+            // handle trig simplifications
+            var g = symbol.group, retval;
+            //Now let's get to work
+            if(g === CP) {
+                var num = symbol.getNum(),
+                    den = symbol.getDenom() || new Symbol(1),
+                    p = Number(symbol.power),
+                    factor = new Symbol(1);
+                if(Math.abs(p) === 1) {
+                    den.each(function(x) {
+                        if(x.group === CB) {
+                            factor = _.multiply(factor, clean(x.getDenom()));
+                        }
+                        else if(x.power.lessThan(0)) {
+                            factor = _.multiply(factor, clean(x.clone().toUnitMultiplier()));
+                        }
+                    });
+
+                    var new_den = new Symbol(0);
+                    //now divide out the factor and add to new den
+                    den.each(function(x) {
+                        new_den = _.add(_.divide(x, factor.clone()), new_den);
+                    });
+                    
+                    factor.invert(); //invert so it can be added to the top
+                    var new_num;
+                    if(num.isComposite()) { 
+                        new_num = new Symbol(0);
+                        num.each(function(x){
+                            new_num = _.add(_.multiply(clean(x), factor.clone()), new_num);
+                        });
+                    }
+                    else
+                        new_num = _.multiply(factor, num);
+                    
+                    retval = _.divide(new_num, new_den);
+                }
+            }
+            else if(g === CB) { 
+                retval = new Symbol(1);
+                symbol.each(function(x) { 
+                    retval = _.multiply(retval, _.clean(x));
+                });
+            }
+            else if(g === FN) {
+                if(symbol.args.length === 1 && symbol.args[0].isConstant())
+                    retval = block('PARSE2NUMBER', function() {
+                        return _.parse(symbol);
+                    }, true);
+            }
+            
+            if(!retval)
+                retval = symbol;
+            
+            return retval;
+        }
+        
         /**
          * Expands a symbol
          * @param symbol
@@ -3947,6 +4014,7 @@ var nerdamer = (function(imports) {
         
         //link this back to the parser
         this.expand = expand;
+        this.clean = clean;
         
         //the constructor for vectors
         function vector() {
@@ -4403,7 +4471,13 @@ var nerdamer = (function(imports) {
                             result.distributeExponent();
                             result.combine(b);
                         }
-                        else if(!b.isOne()) result = Symbol.shell(CB).combine([result, b]);
+                        else if(!b.isOne()) {
+                            var bm = b.multiplier.clone();
+                            b.toUnitMultiplier();
+                            result = Symbol.shell(CB).combine([result, b]);
+                            //transfer the multiplier to the outside
+                            result.multiplier = result.multiplier.multiply(bm);
+                        }
                     }     
                     else { 
                         result = b.clone().toUnitMultiplier();
