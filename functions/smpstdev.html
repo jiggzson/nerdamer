@@ -91,24 +91,24 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>abs</h1>
+                    <h1>smpstdev</h1>
                     <hr>
-                    <h3 class="text-capitalize">absolute value</h3>
+                    <h3 class="text-capitalize">Sample standard deviation</h3>
                     <p>
-                        Returns the absolute value of a number/expression
+                        Calculates the sample standard deviation of a set of numbers. Return symbolic function of median cannot be calculated.
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("abs(x)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("smpstdev(... args)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
                         <table class="table table-responsive table-condensed">
                             <tr>
     <td>
-        <span class="parameter-type">expression </span>
-        <span class="parameter-name">x </span>
+        <span class="parameter-type">expression | expression[] </span>
+        <span class="parameter-name">args </span>
     </td>
-    <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
+    <td><span class="parameter-description">A variable number of arguments</span></td>
 </tr>
                         </table>
                     </div>
@@ -116,10 +116,14 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('abs(-x)');
+                    <pre><code class="javascript">var x = nerdamer('smpstdev(4,2,5,4)').evaluate();
+console.log(x.text());
+x = nerdamer('smpstdev([4,2,5])');
 console.log(x.toString());
-var y = nerdamer('abs(-2-x)');
-console.log(y.toString());</code></pre>
+x = nerdamer.smpstdev('x', 'r+1', '21', 'tan(x)', 'r+1');
+console.log(x.toString());
+x = nerdamer.smpstdev('11', '12', '13', '14').evaluate();
+console.log(x.text());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -171,10 +175,14 @@ console.log(y.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('abs(-x)');
+                var x = nerdamer('smpstdev(4,2,5,4)').evaluate();
+oprint(x.text());
+x = nerdamer('smpstdev([4,2,5])');
 oprint(x.toString());
-var y = nerdamer('abs(-2-x)');
-oprint(y.toString());
+x = nerdamer.smpstdev('x', 'r+1', '21', 'tan(x)', 'r+1');
+oprint(x.toString());
+x = nerdamer.smpstdev('11', '12', '13', '14').evaluate();
+oprint(x.text());
             }
             catch(e) {
                 oprint(e.toString());

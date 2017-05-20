@@ -941,13 +941,13 @@ FUNCTIONS = {
     },
     min: {
         type: 'internal',
-        usage: 'min(x, y, z)',
+        usage: 'min(... args)',
         full_name: 'minimum',
-        description: 'Returns the min of a set of numbers. Maps directly to Math.min(x, y, z) if numeric.',
+        description: 'Returns the min of a set of numbers. Maps directly to Math.min(... args) if numeric.',
         parameters: {
-            x: {
+            args: {
                 type: 'expression',
-                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+                description: "A variable number of arguments"
             }
         },
         examples: [
@@ -960,13 +960,13 @@ FUNCTIONS = {
     },
     max: {
         type: 'internal',
-        usage: 'max(x, y, z)',
+        usage: 'max(... args)',
         full_name: 'maximum',
-        description: 'Returns the maximum of a set of numbers. Maps directly to Math.max(x, y, z) if numeric.',
+        description: 'Returns the maximum of a set of numbers. Maps directly to Math.max(... args) if numeric.',
         parameters: {
-            x: {
+            args: {
                 type: 'expression',
-                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+                description: "A variable number of arguments"
             }
         },
         examples: [
@@ -1652,6 +1652,226 @@ FUNCTIONS = {
             "console.log(x.hasIntegral());",
         ],
         returns: 'bool'
+    },
+    //EXTRA
+    Extra__laplace: {
+        type: 'internal',
+        usage: 'laplace(expression, t, s)',
+        full_name: 'Laplace',
+        description: 'Attempts to calculate the Laplace transform of an expression. Currently computes transforms of most common expressions.',
+        parameters: {
+            expression: {
+                type: 'expression',
+                description: "The expression to be transformed"
+            },
+            t: {
+                type: 'variable',
+                description: "The time variable"
+            },
+            s: {
+                type: 'variable',
+                description: 'The transformation variable'
+            }
+        },
+        examples: [
+            "var x = nerdamer('laplace(t^6, t, s)').evaluate();",
+            "console.log(x.toString());",
+            "x = nerdamer.laplace('cos(w*t)', 't', 'x');",
+            "console.log(x.toString())",
+            "x = nerdamer.laplace('cos(w*t)*t', 't', 'x');",
+            "console.log(x.toString())",
+        ],
+        returns: 'expression'
+    },
+    Extra__mean: {
+        type: 'internal',
+        usage: 'mean(... args)',
+        full_name: 'mean',
+        description: 'Calculates the mean of a set of numbers',
+        parameters: {
+            args: {
+                type: 'expression | expression[]',
+                description: "A variable number of arguments"
+            }
+        },
+        examples: [
+            "var x = nerdamer('mean(4,2,5)');",
+            "console.log(x.toString());",
+            "x = nerdamer('mean([4,2,5])');",
+            "console.log(x.toString());",
+            "x = nerdamer.mean('x', 'r+1', '21', 'tan(x)');",
+            "console.log(x.toString());",
+            "x = nerdamer.mean('11', '12', '13', '14');",
+            "console.log(x.toString());"
+        ],
+        returns: 'expression'
+    },
+    Extra__mode: {
+        type: 'internal',
+        usage: 'mode(... args)',
+        full_name: 'mode',
+        description: 'Calculates the mode of a set of numbers. Returns a symbolic function if mode cannot be calculated.',
+        parameters: {
+            args: {
+                type: 'expression | expression[]',
+                description: "A variable number of arguments"
+            }
+        },
+        examples: [
+            "var x = nerdamer('mode(4,2,5,4)').evaluate();",
+            "console.log(x.toString());",
+            "x = nerdamer('mode([4,2,5,4])').evaluate();",
+            "console.log(x.toString());",
+            "x = nerdamer.mode('x', 'r+1', '21', 'tan(x)', 'r+1');",
+            "console.log(x.toString());",
+            "x = nerdamer.mode('11', '12', '13', '14').evaluate();",
+            "console.log(x.toString());"
+        ],
+        returns: 'expression'
+    },
+    Extra__median: {
+        type: 'internal',
+        usage: 'median(... args)',
+        full_name: 'median',
+        description: 'Calculates the median of a set of numbers. Return symbolic function of median cannot be calculated.',
+        parameters: {
+            args: {
+                type: 'expression | expression[]',
+                description: "A variable number of arguments"
+            }
+        },
+        examples: [
+            "var x = nerdamer('median(4,2,5,4)').evaluate();",
+            "console.log(x.toString());",
+            "x = nerdamer('median([4,2,5,4])').evaluate();",
+            "console.log(x.toString());",
+            "x = nerdamer.median('x', 'r+1', '21', 'tan(x)', 'r+1');",
+            "console.log(x.toString());",
+            "x = nerdamer.median('11', '12', '13', '14').evaluate();",
+            "console.log(x.toString());"
+        ],
+        returns: 'expression'
+    },
+    Extra__stdev: {
+        type: 'internal',
+        usage: 'stdev(... args)',
+        full_name: 'Standard deviation',
+        description: 'Calculates the population standard deviation of a set of numbers. Return symbolic function of median cannot be calculated.',
+        parameters: {
+            args: {
+                type: 'expression | expression[]',
+                description: "A variable number of arguments"
+            }
+        },
+        examples: [
+            "var x = nerdamer('stdev(4,2,5,4)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer('stdev([4,2,5])');",
+            "console.log(x.toString());",
+            "x = nerdamer.stdev('x', 'r+1', '21', 'tan(x)', 'r+1');",
+            "console.log(x.toString());",
+            "x = nerdamer.stdev('11', '12', '13', '14').evaluate();",
+            "console.log(x.text());"
+        ],
+        returns: 'expression'
+    },
+    Extra__smpstdev: {
+        type: 'internal',
+        usage: 'smpstdev(... args)',
+        full_name: 'Sample standard deviation',
+        description: 'Calculates the sample standard deviation of a set of numbers. Return symbolic function of median cannot be calculated.',
+        parameters: {
+            args: {
+                type: 'expression | expression[]',
+                description: "A variable number of arguments"
+            }
+        },
+        examples: [
+            "var x = nerdamer('smpstdev(4,2,5,4)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer('smpstdev([4,2,5])');",
+            "console.log(x.toString());",
+            "x = nerdamer.smpstdev('x', 'r+1', '21', 'tan(x)', 'r+1');",
+            "console.log(x.toString());",
+            "x = nerdamer.smpstdev('11', '12', '13', '14').evaluate();",
+            "console.log(x.text());"
+        ],
+        returns: 'expression'
+    },
+    Extra__variance: {
+        type: 'internal',
+        usage: 'variance(... args)',
+        full_name: 'Variance',
+        description: 'Calculates the population variance of a set of numbers. Return symbolic function of median cannot be calculated.',
+        parameters: {
+            args: {
+                type: 'expression | expression[]',
+                description: "A variable number of arguments"
+            }
+        },
+        examples: [
+            "var x = nerdamer('variance(4,2,5,4)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer('variance([4,2,5])');",
+            "console.log(x.toString());",
+            "x = nerdamer.variance('x', 'r+1', '21', 'tan(x)', 'r+1');",
+            "console.log(x.toString());",
+            "x = nerdamer.variance('11', '12', '13', '14').evaluate();",
+            "console.log(x.text());"
+        ],
+        returns: 'expression'
+    },
+    Extra__smpvar: {
+        type: 'internal',
+        usage: 'smpvar(... args)',
+        full_name: 'Sample variance',
+        description: 'Calculates the sample variance of a set of numbers. Return symbolic function of median cannot be calculated.',
+        parameters: {
+            args: {
+                type: 'expression | expression[]',
+                description: "A variable number of arguments"
+            }
+        },
+        examples: [
+            "var x = nerdamer('smpvar(4,2,5,4)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer('smpvar([4,2,5])');",
+            "console.log(x.toString());",
+            "x = nerdamer.smpvar('x', 'r+1', '21', 'tan(x)', 'r+1');",
+            "console.log(x.toString());",
+            "x = nerdamer.smpvar('11', '12', '13', '14').evaluate();",
+            "console.log(x.text());"
+        ],
+        returns: 'expression'
+    },
+    Extra__zscore: {
+        type: 'internal',
+        usage: 'zscore(x, mean, stdev)',
+        full_name: 'Z-score',
+        description: 'Calculates the z-score for a value.',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "The value for which to find the z-score."
+            },
+            mean: {
+                type: 'expression',
+                description: "The mean of the set of numbers."
+            },
+            stdev: {
+                type: 'expression',
+                description: "The standard deviation of the set of numbers."
+            }
+        },
+        examples: [
+            "var x = nerdamer('smpvar(4,2,5,4)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer.smpvar('x', 'r+1', '21', 'tan(x)', 'r+1');",
+            "console.log(x.toString());",
+            "x = nerdamer.smpvar('11', '12', '13', '14').evaluate();",
+            "console.log(x.text());"
+        ],
+        returns: 'expression'
     },
 };
 module.exports = FUNCTIONS;

@@ -653,7 +653,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 integral_vdu = _.multiply(__.integrate(vdu.clone(), dx, depth, o), c); 
                 integral_vdu.multiplier = integral_vdu.multiplier.multiply(m);
                 retval = _.subtract(uv, integral_vdu);
-
                 //we know that there cannot be constants so they're a holdover from a cyclic integral
                 if(o.is_cyclic) { 
                     //start popping the previous stack so we know how deep in we are
@@ -690,6 +689,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 return [a, x, ax, b];
             }
         },
+        //TODO: nerdamer.integrate('-e^(-a*t)*sin(t)', 't') -> gives incorrect output
         integrate: function(original_symbol, dt, depth, opt) { 
             //configurations options for integral. This is needed for tracking extra options
             //e.g. cyclic integrals or additional settings

@@ -29,6 +29,7 @@
     <script src="../js/nerdamer.core.js"></script> 
     <script src="../js/Algebra.js"></script> 
     <script src="../js/Calculus.js"></script> 
+    <script src="../js/Extra.js"></script> 
     <script src="../js/Solve.js"></script> 
     <script>
         (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -92,12 +93,12 @@
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
                     <h1>max</h1>
                     <hr>
-                    <h3>maximum</h3>
+                    <h3 class="text-capitalize">maximum</h3>
                     <p>
-                        Returns the maximum of a set of numbers. Maps directly to Math.max(x, y, z) if numeric.
+                        Returns the maximum of a set of numbers. Maps directly to Math.max(... args) if numeric.
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("max(x, y, z)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("max(... args)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -105,9 +106,9 @@
                             <tr>
     <td>
         <span class="parameter-type">expression </span>
-        <span class="parameter-name">x </span>
+        <span class="parameter-name">args </span>
     </td>
-    <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
+    <td><span class="parameter-description">A variable number of arguments</span></td>
 </tr>
                         </table>
                     </div>

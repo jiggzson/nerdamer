@@ -16,44 +16,98 @@ if((typeof module) !== 'undefined') {
         _ = core.PARSER,
         Symbol = core.Symbol,
         format = core.Utils.format,
+        isVector = core.Utils.isVector,
         S = core.groups.S,
-        EX = core.groups.EX;
-    
-    
-    
+        EX = core.groups.EX,
+        CB = core.groups.CB,
+        FN = core.groups.FN;
+    core.Settings.Laplace_integration_depth = 40;
     var __ = core.Extra = {
         version: '1.0.0',
         //http://integral-table.com/downloads/LaplaceTable.pdf
         LaPlace: {
             //Using: intgral_0_oo f(t)*e^(-s*t) dt
             transform: function(symbol, t, s) {
-                var integration_depth = core.Settings.integration_depth; //cache the depth
-                //Laplace transforms dig in deep and need to make way more stack call than other integration
-                core.Settings.integration_depth = 20;
-                //This has to run in a block where PARSE2NUMBER = false
-                var result = core.Utils.block('PARSE2NUMBER', function() {
-                    //special cases
-                    symbol = Symbol.unwrapSQRT(symbol, true);
-                    var retval;
-                    if(symbol.group === S && symbol.power.equals(1/2)) {
-                        return _.parse(format('({0})*sqrt(pi)/(2*({1})^(3/2))', symbol.multiplier, s));
+                t = t.toString();
+                //First try a lookup for a speed boost
+                symbol = Symbol.unwrapSQRT(symbol, true);
+                var retval, 
+                    coeff = symbol.stripVar(t),
+                    g = symbol.group;
+
+                symbol = _.divide(symbol, coeff.clone());
+
+                if(symbol.isConstant() || !symbol.contains(t, true)) { 
+                    retval = _.parse(format('({0})/({1})', symbol, s));
+                }
+                else if(g === S && core.Utils.isInt(symbol.power)) {
+                    var n = String(symbol.power);
+                    retval = _.parse(format('factorial({0})/({1})^({0}+1)', n, s));
+                } 
+                else if(symbol.group === S && symbol.power.equals(1/2)) {
+                    retval = _.parse(format('sqrt(pi)/(2*({0})^(3/2))', s));
+                }
+                else if(symbol.isComposite()) {
+                    retval = new Symbol(0);
+                    symbol.each(function(x) {
+                        retval = _.add(retval, __.LaPlace.transform(x, t, s));
+                    }, true);
+                }
+                else if(symbol.isE() && (symbol.power.group === S || symbol.power.group === CB)) {
+                    var a = symbol.power.stripVar(t);
+                    retval = _.parse(format('1/(({1})-({0}))', a, s));
+                }
+                else { 
+                    var fns = ['sin', 'cos', 'sinh', 'cosh'];
+                    //support for symbols in fns with arguments in the form a*t or n*t where a = symbolic and n = Number
+                    if(symbol.group === FN && fns.indexOf(symbol.fname) !== -1 && (symbol.args[0].group === S || symbol.args[0].group === CB)) {
+                        var a = symbol.args[0].stripVar(t);
+
+                        switch(symbol.fname) {
+                            case 'sin':
+                                retval = _.parse(format('({0})/(({1})^2+({0})^2)', a, s));
+                                break;
+                            case 'cos':
+                                retval = _.parse(format('({1})/(({1})^2+({0})^2)', a, s));
+                                break;
+                            case 'sinh':
+                                retval = _.parse(format('({0})/(({1})^2-({0})^2)', a, s));
+                                break;
+                            case 'cosh':
+                                retval = _.parse(format('({1})/(({1})^2-({0})^2)', a, s));
+                                break;
+                        }
+
                     }
-                    else {
-                        var u = 't';
-                        var sym = symbol.sub(t, u);
-                        retval = core.Calculus.integrate(_.parse('e^(-'+s+'*'+u+')*'+sym), u).sub(u, 0);
-                        retval = _.expand(_.multiply(retval, new Symbol(-1)));
-                        retval = retval.sub(u, t);
+                    else { 
+                        //Try to integrate for a solution
+                        //we need at least the Laplace integration depth
+                        var depth_is_lower = core.Settings.integration_depth < core.Settings.Laplace_integration_depth;
+
+                        if(depth_is_lower) {
+                            var integration_depth = core.Settings.integration_depth; //save the depth
+                            core.Settings.integration_depth = 40; //transforms need a little more room
+                        }
+
+                        core.Utils.block('PARSE2NUMBER', function() {
+                            var u = 't';
+                            var sym = symbol.sub(t, u);
+                            retval = core.Calculus.integrate(_.parse('e^(-'+s+'*'+u+')*'+sym), u).sub(u, 0);
+                            retval = _.expand(_.multiply(retval, new Symbol(-1)));
+                            retval = retval.sub(u, t);
+                        }, false);
+
+                        retval = core.Utils.block('PARSE2NUMBER', function() {
+                            return _.parse(retval);
+                        }, true);
+
+                        if(depth_is_lower)//put the integration depth as it was
+                            core.Settings.integration_depth = integration_depth; 
                     }
-                    return core.Utils.block('PARSE2NUMBER', function() {
-                        return _.parse(retval);
-                    }, true);   
-                    //return retval;
-                    
-                }, false);
-                //put back the integration depth as you found it
-                core.Settings.integration_depth = integration_depth;
-                return result;
+
+                }
+
+                return _.multiply(retval, coeff);
             }
         },
         Statistics: {
@@ -92,12 +146,18 @@ if((typeof module) !== 'undefined') {
                     
                 return sum;
             },
-            mean: function() {
+            mean: function() { 
                 var args = [].slice.call(arguments);
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.mean.apply(this, args[0].elements);
                 return  _.divide(__.Statistics.sum(args), __.Statistics.count(args));
             },
             median: function() {
                 var args = [].slice.call(arguments), retval; 
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.median.apply(this, args[0].elements);
                 try {
                     var sorted = __.Statistics.sort(args);
                     var l = args.length;
@@ -116,6 +176,9 @@ if((typeof module) !== 'undefined') {
             mode: function() {
                 var args = [].slice.call(arguments),
                     retval;
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.mode.apply(this, args[0].elements);
                 
                 var map = __.Statistics.frequencyMap(args),
                     max = [],
@@ -152,29 +215,39 @@ if((typeof module) !== 'undefined') {
                 return _.multiply(k, sum);
             },
             variance: function() {
-                var args = [].slice.call(arguments),
-                    k = _.divide(new Symbol(1), __.Statistics.count(args));
+                var args = [].slice.call(arguments);
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.variance.apply(this, args[0].elements);
+                var  k = _.divide(new Symbol(1), __.Statistics.count(args));
                 return __.Statistics.gVariance(k, args);
             },
             sampleVariance: function() {
-                var args = [].slice.call(arguments),
-                    k = _.divide(new Symbol(1), _.subtract(__.Statistics.count(args), new Symbol(1)));
+                var args = [].slice.call(arguments);
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.sampleVariance.apply(this, args[0].elements);
+                
+                var k = _.divide(new Symbol(1), _.subtract(__.Statistics.count(args), new Symbol(1)));
                 return __.Statistics.gVariance(k, args);
             },
             standardDeviation: function() {
                 var args = [].slice.call(arguments);
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.standardDeviation.apply(this, args[0].elements);
                 return _.pow(__.Statistics.variance.apply(__.Statistics, args), new Symbol(1/2));
             },
             sampleStandardDeviation: function() {
                 var args = [].slice.call(arguments);
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.sampleStandardDeviation.apply(this, args[0].elements);
                 return _.pow(__.Statistics.sampleVariance.apply(__.Statistics, args), new Symbol(1/2));
             },
             zScore: function(x, mean, stdev) {
                 return _.divide(_.subtract(x, mean), stdev);
             }
-        },
-        functions: {
-            
         }
     };
     
@@ -227,6 +300,12 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: -1,
             build: function() { return __.Statistics.standardDeviation; }
+        },
+        {
+            name: 'zscore',
+            visible: true,
+            numargs: 3,
+            build: function() { return __.Statistics.zScore; }
         }
     ]);
     

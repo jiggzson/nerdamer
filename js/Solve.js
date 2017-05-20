@@ -46,7 +46,7 @@ if((typeof module) !== 'undefined') {
     };
     
     core.Symbol.prototype.hasNegativeTerms = function() {
-        if(this.isComposite()) { console.log(9)
+        if(this.isComposite()) { 
             for(var x in this.symbols) {
                 var sym = this.symbols[x];
                 if(sym.group === PL && sym.hasNegativeTerms() || this.symbols[x].power.lessThan(0))
