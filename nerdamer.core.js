@@ -2144,7 +2144,6 @@ var nerdamer = (function(imports) {
                 new Symbol(this.group === P ? m*Math.pow(this.value, this.power) : m).clone(this);
             }
             else if(group === P && this.group === N) { 
-                if(this.multiplier.den.toString() !== '1') err('Attempting conversion of group N with non-unit denominator!');
                 this.value = imaginary ? this.multiplier.num.toString() : Math.abs(this.multiplier.num.toString());
                 this.toUnitMultiplier(!imaginary);
                 this.group = P;
@@ -2541,7 +2540,9 @@ var nerdamer = (function(imports) {
                 '(': new Bracket('(', 0, true, null, 'round'),
                 ')': new Bracket(')', 0, false, null, 'round'),
                 '[': new Bracket('[', 1, true, function() {
-                    return 'vector';
+                    var f = new Symbol('vector');
+                    f.is_function = true;
+                    return f;
                 }, 'square'),
                 ']': new Bracket(']', 1, false, null, 'square')
             },
@@ -2794,8 +2795,9 @@ var nerdamer = (function(imports) {
                         //next subs
                         else if(e in subs)
                             e = subs[e].clone();
-                        else if(e in VARS)
+                        else if(e in VARS) {
                             e = VARS[e].clone();
+                        }
                         e.unsubbed = unsubbed;
                         q.push(e);
                     }
@@ -3064,6 +3066,8 @@ var nerdamer = (function(imports) {
                             f.is_function = true;
                             stack.push(f);
                         }   
+                        if(bracket.fn)
+                            stack.push(bracket.fn());
                         // We're in a new scope so signal so
                         new_scope = true;
                         stack.push(bracket);

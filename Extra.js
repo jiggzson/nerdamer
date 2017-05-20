@@ -16,6 +16,7 @@ if((typeof module) !== 'undefined') {
         _ = core.PARSER,
         Symbol = core.Symbol,
         format = core.Utils.format,
+        isVector = core.Utils.isVector,
         S = core.groups.S,
         EX = core.groups.EX,
         CB = core.groups.CB,
@@ -145,12 +146,18 @@ if((typeof module) !== 'undefined') {
                     
                 return sum;
             },
-            mean: function() {
+            mean: function() { 
                 var args = [].slice.call(arguments);
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.mean.apply(this, args[0].elements);
                 return  _.divide(__.Statistics.sum(args), __.Statistics.count(args));
             },
             median: function() {
                 var args = [].slice.call(arguments), retval; 
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.median.apply(this, args[0].elements);
                 try {
                     var sorted = __.Statistics.sort(args);
                     var l = args.length;
@@ -169,6 +176,9 @@ if((typeof module) !== 'undefined') {
             mode: function() {
                 var args = [].slice.call(arguments),
                     retval;
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.mode.apply(this, args[0].elements);
                 
                 var map = __.Statistics.frequencyMap(args),
                     max = [],
@@ -205,21 +215,34 @@ if((typeof module) !== 'undefined') {
                 return _.multiply(k, sum);
             },
             variance: function() {
-                var args = [].slice.call(arguments),
-                    k = _.divide(new Symbol(1), __.Statistics.count(args));
+                var args = [].slice.call(arguments);
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.variance.apply(this, args[0].elements);
+                var  k = _.divide(new Symbol(1), __.Statistics.count(args));
                 return __.Statistics.gVariance(k, args);
             },
             sampleVariance: function() {
-                var args = [].slice.call(arguments),
-                    k = _.divide(new Symbol(1), _.subtract(__.Statistics.count(args), new Symbol(1)));
+                var args = [].slice.call(arguments);
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.sampleVariance.apply(this, args[0].elements);
+                
+                var k = _.divide(new Symbol(1), _.subtract(__.Statistics.count(args), new Symbol(1)));
                 return __.Statistics.gVariance(k, args);
             },
             standardDeviation: function() {
                 var args = [].slice.call(arguments);
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.standardDeviation.apply(this, args[0].elements);
                 return _.pow(__.Statistics.variance.apply(__.Statistics, args), new Symbol(1/2));
             },
             sampleStandardDeviation: function() {
                 var args = [].slice.call(arguments);
+                //handle arrays
+                if(isVector(args[0]))
+                    return __.Statistics.sampleStandardDeviation.apply(this, args[0].elements);
                 return _.pow(__.Statistics.sampleVariance.apply(__.Statistics, args), new Symbol(1/2));
             },
             zScore: function(x, mean, stdev) {
@@ -277,6 +300,12 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: -1,
             build: function() { return __.Statistics.standardDeviation; }
+        },
+        {
+            name: 'zscore',
+            visible: true,
+            numargs: 3,
+            build: function() { return __.Statistics.zScore; }
         }
     ]);
     
