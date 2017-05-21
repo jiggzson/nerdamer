@@ -135,6 +135,10 @@ describe('calculus', function () {
             {
                 given: 'diff(x*y,x)',
                 expected: 'y'
+            },
+            {
+                given: 'diff([sin(x), x^2, x],x)',
+                expected: '[cos(x),2*x,1]'
             }
         ];
 
@@ -392,6 +396,26 @@ describe('calculus', function () {
             {
                 given: 'integrate((3*x+2)/(x^2+x),x)',
                 expected: '2*log(x)+log(1+x)'
+            },
+            {
+                given: 'integrate([sin(x), x^2, x],x)',
+                expected: '[-cos(x),(1/3)*x^3,(1/2)*x^2]'
+            },
+            {
+                given: 'integrate(sinh(x),x)',
+                expected: 'cosh(x)'
+            },
+            {
+                given: 'integrate(cosh(x),x)',
+                expected: 'sinh(x)'
+            },
+            {
+                given: 'integrate(tanh(x),x)',
+                expected: 'log(cosh(x))'
+            },
+            {
+                given: 'integrate(sinh(x)*x,x)',
+                expected: '-sinh(x)+cosh(x)*x'
             }
         ];
 
