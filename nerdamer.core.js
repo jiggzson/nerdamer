@@ -873,7 +873,9 @@ var nerdamer = (function(imports) {
                 return sum;
             },
             //ExponentialIntegral
-            Ei: function(x) {
+            Ei: function(x) { 
+                if(x.equals(0))
+                    return -Infinity;
                 var n =30,
                     g = 0.5772156649015328606, //roughly Euler–Mascheroni
                     sum = 0;
@@ -918,7 +920,7 @@ var nerdamer = (function(imports) {
             * otherwise sin(x)/x
             */
             sinc: function(x) {
-                if(x === 0)
+                if(x.equals(0))
                     return 1;
                 return Math.sin(x)/x;
             },
@@ -3566,6 +3568,12 @@ var nerdamer = (function(imports) {
          * @returns {Symbol} 
          */
         function bigConvert(n) { 
+            if(!isFinite(n)){
+                var sign = Math.sign(n);
+                var r = new Symbol(String(Math.abs(n)));
+                r.multiplier = r.multiplier.multiply(new Frac(sign));
+                return r;
+            }
             if(isSymbol(n))
                 return n;
             if(typeof n === 'number')
