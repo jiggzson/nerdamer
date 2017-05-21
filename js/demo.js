@@ -159,7 +159,7 @@
         //CLASSES
         PanelExpression.prototype = {
             template: 
-                    '<div class="expression">'+
+                    '<div class="expression" data-variable={{variable}}>'+
                         '<div class="expression-delete expression-btn">'+
                             '<a href="javascript:void(0)" title="Remove expression"><i class="fa fa-close"></i></a>'+
                         '</div>'+
@@ -202,7 +202,7 @@
         }
 
         //This function is used to add the expression to the panel for display
-        function addToPanel(LaTeX, expression, output) {
+        function addToPanel(LaTeX, expression, output, variable) {
             output = output || expression;
             var TeX = katex.renderToString(LaTeX);
             var h = /.+class="strut" style="height:([0-9\.]+)em.+/.exec(TeX)[1];
@@ -212,7 +212,8 @@
             $panel.append(new PanelExpression({
                 LaTeX: katex.renderToString(adjustment+LaTeX),
                 expression: expression,
-                output: output
+                output: output,
+                variable: variable
             }).toHTML());
         }
         //perform preparations before parsing. Extract variables and declarations
@@ -252,7 +253,7 @@
                 LaTeX;
             
             //it might be a function declaration. If it is the scope object gets ignored
-            if(functionDeclaration) {
+            if(functionDeclaration) { 
                 //Remember: The match comes back as [str, fnName, params, fnBody]
                 //the function name should be the first group of the match
                 var fnName = functionDeclaration[1],
@@ -284,24 +285,42 @@
                 }
             }
             else {
-                try {
-                    //wrap the expression in expand if expand is checked
-                    var evaluated = nerdamer(expandIsChecked() ? 'expand('+expression+')' : expression, scope),
-                        //check if the user wants decimals
-                        decimal = toDecimal() ? 'decimal' : undefined,
-                        //the output is for the reload button
-                        output = evaluated.toString(); 
-                    //call evaluate if the evaluate box is checked
-                    if(evaluateIsChecked()) {
-                        evaluated = evaluated.evaluate();
+                var variableDeclaration = /^([a-z_][a-z\d\_]*):(.+)$/gi.exec(expression);
+                if(variableDeclaration) {
+                    try {
+                        var varName = variableDeclaration[1],
+                            varValue = variableDeclaration[2];
+                        //set the value
+                        nerdamer.setVar(varName, varValue);
+                        //generate the LaTeX
+                        LaTeX = varName+'='+nerdamer(varValue).toTeX();
+                        addToPanel(LaTeX, expression, undefined, varName);   
+                        clear();
                     }
-                    LaTeX = evaluated.toTeX(decimal);
-                    //add the LaTeX to the panel
-                    addToPanel(LaTeX, expression, output);   
-                    clear();
+                    catch(e){
+                        notify('Something went wrong. Nerdamer could not parse expression!</br>'+e.toString());
+                    } 
                 }
-                catch(e){
-                    notify('Something went wrong. Nerdamer could not parse expression!</br>'+e.toString());
+                else {
+                    try {
+                        //wrap the expression in expand if expand is checked
+                        var evaluated = nerdamer(expandIsChecked() ? 'expand('+expression+')' : expression, scope),
+                            //check if the user wants decimals
+                            decimal = toDecimal() ? 'decimal' : undefined,
+                            //the output is for the reload button
+                            output = evaluated.toString(); 
+                        //call evaluate if the evaluate box is checked
+                        if(evaluateIsChecked()) {
+                            evaluated = evaluated.evaluate();
+                        }
+                        LaTeX = evaluated.toTeX(decimal);
+                        //add the LaTeX to the panel
+                        addToPanel(LaTeX, expression, output);   
+                        clear();
+                    }
+                    catch(e){
+                        notify('Something went wrong. Nerdamer could not parse expression!</br>'+e.toString());
+                    } 
                 }  
             }
         }
@@ -326,6 +345,9 @@
         //bind the delete event
         //bind the event for graphing the expression
         $('#demo-panel').on('click', '.expression-delete a', function(e) {
+            var variable = $(this).parents().eq(1).data('variable');
+            if(variable) 
+                nerdamer.setVar(variable, 'delete');
             $(this).parents().eq(1).remove();
         });
         //bind the event for removing graph
