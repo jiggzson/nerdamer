@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.8',
+    var version = '0.7.9',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -868,9 +868,21 @@ var nerdamer = (function(imports) {
                     sum = 0;
                 for(var i=0; i<n; i++) {
                     var n2 = 2*i;
-                    sum += (Math.pow(-1, i)*Math.pow(x, n2+1))/((n2+1)*Math2.factial(n2+1));
+                    sum += (Math.pow(-1, i)*Math.pow(x, n2+1))/((n2+1)*Math2.factorial(n2+1));
                 }
                 return sum;
+            },
+            //ExponentialIntegral
+            Ei: function(x) { 
+                if(x.equals(0))
+                    return -Infinity;
+                var n =30,
+                    g = 0.5772156649015328606, //roughly Euler–Mascheroni
+                    sum = 0;
+                for(var i=1; i<n; i++) {
+                    sum += Math.pow(x, i)/(i*Math2.factorial(i));
+                }
+                return g+Math.abs(Math.log(x))+sum;
             },
             /*
             * Heaviside step function - Moved from Special.js (originally contributed by Brosnan Yuen)
@@ -908,7 +920,7 @@ var nerdamer = (function(imports) {
             * otherwise sin(x)/x
             */
             sinc: function(x) {
-                if(x === 0)
+                if(x.equals(0))
                     return 1;
                 return Math.sin(x)/x;
             },
@@ -1761,8 +1773,12 @@ var nerdamer = (function(imports) {
             }
             else if(this.group === FN) { 
                 var nargs = [];
-                for(var i=0; i<this.args.length; i++)
-                    nargs.push(this.args[i].sub(a, b));
+                for(var i=0; i<this.args.length; i++) {
+                    var arg = this.args[i];
+                    if(!isSymbol(arg))
+                        arg = _.parse(arg);
+                    nargs.push(arg.sub(a, b));
+                }
                 retval = _.symfunction(this.fname, nargs);
             }
             //if we did manage a substitution
@@ -2578,6 +2594,7 @@ var nerdamer = (function(imports) {
                 'tri'        : [ , 1],
                 'sign'       : [ , 1],
                 'Ci'         : [ , 1],
+                'Ei'         : [ , 1],
                 'fib'        : [ , 1],
                 'fact'       : [factorial, 1],
                 'factorial'  : [factorial, 1],
@@ -3551,6 +3568,12 @@ var nerdamer = (function(imports) {
          * @returns {Symbol} 
          */
         function bigConvert(n) { 
+            if(!isFinite(n)){
+                var sign = Math.sign(n);
+                var r = new Symbol(String(Math.abs(n)));
+                r.multiplier = r.multiplier.multiply(new Frac(sign));
+                return r;
+            }
             if(isSymbol(n))
                 return n;
             if(typeof n === 'number')

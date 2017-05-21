@@ -92,7 +92,10 @@ if((typeof module) !== 'undefined') {
                         core.Utils.block('PARSE2NUMBER', function() {
                             var u = 't';
                             var sym = symbol.sub(t, u);
-                            retval = core.Calculus.integrate(_.parse('e^(-'+s+'*'+u+')*'+sym), u).sub(u, 0);
+                            retval = core.Calculus.integrate(_.parse('e^(-'+s+'*'+u+')*'+sym), u);
+                            if(retval.hasIntegral())
+                                _.error('Unable to compute transform');
+                            retval = retval.sub(u, 0);
                             retval = _.expand(_.multiply(retval, new Symbol(-1)));
                             retval = retval.sub(u, t);
                         }, false);

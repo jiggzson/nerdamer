@@ -98,7 +98,7 @@
                         Gets the derivative.
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("diff(expression, x, n)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("diff(expression_or_vector, x, n)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -106,7 +106,7 @@
                             <tr>
     <td>
         <span class="parameter-type">expression </span>
-        <span class="parameter-name">expression </span>
+        <span class="parameter-name">expression_or_vector </span>
     </td>
     <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
 </tr><tr>
@@ -130,6 +130,8 @@
                 <div>
                     <pre><code class="javascript">var x = nerdamer('diff(cos(x)*sin(x), x)');
 console.log(x.toString());
+var y = nerdamer('diff([x^2, cos(x), 1], x, 2)'); //second derivative
+console.log(y.toString());
 var y = nerdamer('diff(x^3+a*x^3+x^2, x, 2)'); //second derivative
 console.log(y.toString());</code></pre>
                 </div>
@@ -185,6 +187,8 @@ console.log(y.toString());</code></pre>
             try {
                 var x = nerdamer('diff(cos(x)*sin(x), x)');
 oprint(x.toString());
+var y = nerdamer('diff([x^2, cos(x), 1], x, 2)'); //second derivative
+oprint(y.toString());
 var y = nerdamer('diff(x^3+a*x^3+x^2, x, 2)'); //second derivative
 oprint(y.toString());
             }

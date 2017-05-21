@@ -45,11 +45,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         ATAN = 'atan',
         ASEC = 'asec', 
         ACSC = 'acsc', 
-        ACOT = 'acot';
+        ACOT = 'acot',
+        SINH = 'sinh',   
+        COSH = 'cosh',
+        TANH = 'tanh';
         
     //Preparations
     Symbol.prototype.hasIntegral = function() {
-        return this.containsFunction('integral');
+        return this.containsFunction('integrate');
     };
     //removes parentheses
     Symbol.unwrapPARENS = function(symbol) {
@@ -77,11 +80,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         return trig_fns.indexOf(x) !== -1;
     };
     
+    core.Utils.in_htrig = function(x) {
+        var trig_fns = ['sinh', 'cosh', 'tanh'];
+        return trig_fns.indexOf(x) !== -1;
+    };
+    
     core.Settings.integration_depth = 6;
     
     var __ = core.Calculus = {
 
-        version: '1.3.3',
+        version: '1.3.4',
 
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
@@ -117,7 +125,38 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
             return retval;
         },
+        product: function(fn, index, start, end) {
+            if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
+            index = index.value;
+            var retval;
+            if(core.Utils.isNumericSymbol(start) && core.Utils.isNumericSymbol(end)) {
+                start = start.multiplier;
+                end = end.multiplier;
+
+                var f = fn.text(),
+                    subs = {},
+                    retval = new core.Symbol(1);
+
+                for(var i=start; i<=end; i++) {
+                    subs[index] = new Symbol(i); 
+                    retval = _.multiply(retval, _.parse(f, subs));
+                }
+            }
+            else {
+                retval = _.symfunction('product', arguments);
+            }
+
+            return retval;
+        },
         diff: function(symbol, wrt, nth) { 
+            if(core.Utils.isVector(symbol)) {
+                var vector = new core.Vector([]);
+                symbol.each(function(x) {
+                    vector.elements.push(__.diff(x, wrt));
+                });
+                return vector;
+            }
+
             var d = isSymbol(wrt) ? wrt.text() : wrt; 
             //the nth derivative
             nth = isSymbol(nth) ? nth.multiplier : nth || 1;
@@ -571,14 +610,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     var g = x.group; 
                     if(g === FN) {
                         var fname = x.fname;
-                        if(core.Utils.in_trig(fname))
+                        if(core.Utils.in_trig(fname) || core.Utils.in_htrig(fname))
                             parts[3].push(x);
                         else if(core.Utils.in_inverse_trig(fname))
                             parts[1].push(x);
                         else if(fname === LOG)
                             parts[0].push(x);
                         else {
-                            stop();
+                            __.integration.stop();
                         }
                     }
                     else if(g === S || x.isComposite() && x.isLinear() || g === CB && x.isLinear()) {
@@ -635,7 +674,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 vdu = _.multiply(v.clone(), du); 
                 vdu_s = vdu.toString();
                 //currently only supports e^x*(some trig)
-                if(o.previous.indexOf(vdu_s) !== -1 && core.Utils.in_trig(u.fname) && dv.isE()) {
+                if(o.previous.indexOf(vdu_s) !== -1 && (core.Utils.in_trig(u.fname)) && dv.isE()) {
                     //We're going to exploit the fact that vdu can never be constant
                     //to work out way out of this cycle. We'll return the length of
                     //the this.previous array until we're back at level one
@@ -691,13 +730,28 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         },
         //TODO: nerdamer.integrate('-e^(-a*t)*sin(t)', 't') -> gives incorrect output
         integrate: function(original_symbol, dt, depth, opt) { 
+            //assume integration wrt independent variable if expression only has one variable
+            if(!dt) {
+                var vars = core.Utils.variables(original_symbol);
+                if(vars.length === 1)
+                    dt = vars[0];
+            }
+            //add support for integrating vectors
+            if(core.Utils.isVector(original_symbol)) {
+                var vector = new core.Vector([]);
+                original_symbol.each(function(x) {
+                    vector.elements.push(__.integrate(x, dt));
+                });
+                return vector;
+            }
+            if(!isNaN(dt))
+                _.error('variable expected but received '+dt);
             //configurations options for integral. This is needed for tracking extra options
             //e.g. cyclic integrals or additional settings
             opt = opt || {};
             return core.Utils.block('PARSE2NUMBER', function() {
                 //make a note of the original symbol. Set only if undefined
-
-                depth = depth;
+                depth = depth || 0;
                 var dx = isSymbol(dt) ? dt.toString() : dt,
                     //we don't want the symbol in sqrt form. x^(1/2) is prefererred
                     symbol = Symbol.unwrapSQRT(original_symbol.clone(), true), 
@@ -912,6 +966,15 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             break;
                                         case COT:
                                             retval = _.parse(format('log(sin({0}))', arg));
+                                            break;
+                                        case SINH:
+                                            retval = _.symfunction(COSH, [arg]);
+                                            break;
+                                        case COSH:
+                                            retval = _.symfunction(SINH, [arg]);
+                                            break;
+                                        case TANH:
+                                            retval = _.parse(format('log(cosh({0}))', arg));
                                             break;
                                         case 'erf':
                                             var arg = symbol.args[0].clone(),
@@ -1170,7 +1233,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         }
                                     }
                                     else if(g1 === EX && g2 === S) {
-                                        retval = __.integration.by_parts(symbol, dx, depth, opt);
+                                        if(sym1.isE() && (sym1.power.group === S || sym1.power.group === CB) && sym2.power.equals(-1)) {
+                                            retval = _.symfunction('Ei', [sym1.power.clone()]);
+                                        }
+                                        else
+                                            retval = __.integration.by_parts(symbol, dx, depth, opt);
                                     }
                                     else if(g1 === PL && g2 === S) {
                                         //first try to reduce the top
@@ -1291,8 +1358,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             retval = _.add(retval, __.integrate(_.multiply(x, sym2.clone()), dx, depth));
                                         }, true);
                                     }
-                                    else
+                                    else {
                                         retval = __.integration.by_parts(symbol, dx, depth, opt);
+                                    }
+                                        
                                 }
                             }
                             else if(l === 3 && (symbols[2].group === S && symbols[2].power.lessThan(2) || symbols[0].group === CP)) { 
@@ -1344,9 +1413,15 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             build: function(){ return __.sum; }
         },
         {
+            name: 'product',
+            visible: true,
+            numargs: 4,
+            build: function(){ return __.product; }
+        },
+        {
             name: 'integrate',
             visible: true,
-            numargs: 2,
+            numargs: [1, 2],
             build: function() { return __.integrate; }
         }
     ]);

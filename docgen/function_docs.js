@@ -1011,12 +1011,96 @@ FUNCTIONS = {
         ],
         returns: 'Number | Expression'
     },
+    step: {
+        type: 'internal',
+        usage: 'step(x)',
+        full_name: 'heaviside step function',
+        description: 'The Heaviside step function as defined <a href="https://en.wikipedia.org/wiki/Heaviside_step_function">here</a>',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('step(5/2)').evaluate();",
+            "console.log(x.toString());",
+            "var x = nerdamer('step(-2)').evaluate();",
+            "console.log(x.toString());",
+            "var x = nerdamer('step(0)').evaluate();",
+            "console.log(x.toString());"
+        ],
+        returns: 'Number | Expression'
+    },
+    rect: {
+        type: 'internal',
+        usage: 'rect(x)',
+        full_name: 'rectangular function',
+        description: 'The rectangular function as defined  <a href="https://en.wikipedia.org/wiki/Rectangular_function">here</a>',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('rect(5/2)').evaluate();",
+            "console.log(x.toString());",
+            "var x = nerdamer('rect(-2)').evaluate();",
+            "console.log(x.toString());",
+            "var x = nerdamer('rect(0)').evaluate();",
+            "console.log(x.toString());"
+        ],
+        returns: 'Number | Expression'
+    },
+    sinc: {
+        type: 'internal',
+        usage: 'sinc(x)',
+        full_name: 'sinc function',
+        description: 'The cardinal sine function as defined  <a href="https://en.wikipedia.org/wiki/Sinc_function">here</a>',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sinc(5/2)').evaluate();",
+            "console.log(x.text());",
+            "var x = nerdamer('sinc(-2)').evaluate();",
+            "console.log(x.text());",
+            "var x = nerdamer('sinc(0)').evaluate();",
+            "console.log(x.text());"
+        ],
+        returns: 'Number | Expression'
+    },
+    tri: {
+        type: 'internal',
+        usage: 'tri(x)',
+        full_name: 'triangular function',
+        description: 'The triangular function as defined  <a href="https://en.wikipedia.org/wiki/Triangular_function">here</a>',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('tri(5/2)').evaluate();",
+            "console.log(x.toString());",
+            "var x = nerdamer('tri(-2)').evaluate();",
+            "console.log(x.toString());",
+            "var x = nerdamer('tri(0)').evaluate();",
+            "console.log(x.toString());"
+        ],
+        returns: 'Number | Expression'
+    },
     factorial: {
         type: 'internal',
         usage: 'factorial(x)',
         full_name: 'factorial',
         aliases: ['fact'],
-        description: 'Calculates the factorial of a number. Maps directly to Math.ceil(x) if numeric.',
+        description: 'Calculates the factorial of a number.',
         parameters: {
             x: {
                 type: 'expression',
@@ -1031,12 +1115,33 @@ FUNCTIONS = {
         ],
         returns: 'Number | Expression'
     },
+    dfactorial: {
+        type: 'internal',
+        usage: 'dfactorial(x)',
+        full_name: 'double factorial',
+        description: 'Calculates the double factorial of a number.',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('dfactorial(5)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer('dfactorial(9)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer('dfactorial(x+1)').evaluate();",
+            "console.log(x.text());"
+        ],
+        returns: 'Number | Expression'
+    },
     fact: {
         type: 'internal',
         usage: 'factorial(x)',
         full_name: 'factorial',
         aliases: ['factorial'],
-        description: 'Calculates the factorial of a number. Maps directly to Math.ceil(x) if numeric.',
+        description: 'Calculates the factorial of a number.',
         parameters: {
             x: {
                 type: 'expression',
@@ -1091,6 +1196,27 @@ FUNCTIONS = {
         ],
         returns: 'Number | Expression'
     },
+    Ei: {
+        type: 'internal',
+        usage: 'Ei(number)',
+        full_name: 'ExponentialIntegral',
+        description: 'Calculates the exponential integral of a number.',
+        parameters: {
+            number: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('Ei(5)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer('Ei(3)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer('Ei(0)').evaluate();",
+            "console.log(x.text());"
+        ],
+        returns: 'Number | Expression'
+    },
     fib: {
         type: 'internal',
         usage: 'fib(number)',
@@ -1103,7 +1229,7 @@ FUNCTIONS = {
             }
         },
         examples: [
-            "var x = nerdamer('fib(5)').evaluate();",
+            "var x = nerdamer('fib(15)').evaluate();",
             "console.log(x.text());",
             "x = nerdamer('fib(0)').evaluate();",
             "console.log(x.text());"
@@ -1470,6 +1596,52 @@ FUNCTIONS = {
         ],
         returns: 'Matrix'
     },
+    cross: {
+        type: 'internal',
+        usage: 'cross(v1, v2)',
+        full_name: 'cross product',
+        description: 'Calculates the cross product of two vectors',
+        parameters: {
+            v1: {
+                type: 'Vector',
+                description: "a vector"
+            },
+            v2: {
+                type: 'Vector',
+                description: "a vector"
+            }
+        },
+        examples: [
+            "var x = nerdamer('cross([1,2,3], [4,5,6])').evaluate();",
+            "console.log(x.toString());",
+            "x = nerdamer('cross([x+1,2,tan(x)], [4,x^2,1/x])').evaluate();",
+            "console.log(x.toString());"
+        ],
+        returns: 'Matrix'
+    },
+    dot: {
+        type: 'internal',
+        usage: 'dot(v1, v2)',
+        full_name: 'cross product',
+        description: 'Calculates the dot product of two vectors',
+        parameters: {
+            v1: {
+                type: 'Vector',
+                description: "a vector"
+            },
+            v2: {
+                type: 'Vector',
+                description: "a vector"
+            }
+        },
+        examples: [
+            "var x = nerdamer('dot([1,2,3], [4,5,6])').evaluate();",
+            "console.log(x.toString());",
+            "x = nerdamer('dot([x+1,2,tan(x)], [4,x^2,1/x])').evaluate();",
+            "console.log(x.toString());"
+        ],
+        returns: 'Matrix'
+    },
     Algebra__roots: {
         type: 'internal',
         usage: 'roots(x)',
@@ -1597,13 +1769,44 @@ FUNCTIONS = {
         ],
         returns: 'Number | Expression'
     },
+    Calculus__product: {
+        type: 'internal',
+        usage: 'product(expression, index, lower, upper)',
+        full_name: 'product',
+        description: 'Calculates the product of an expression from lower to upper limit. Works both numerically and algebraically.',
+        parameters: {
+            expression: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            },
+            index: {
+                type: 'expression',
+                description: "The index"
+            },
+            lower: {
+                type: 'expression',
+                description: "Starting index"
+            },
+            upper: {
+                type: 'expression',
+                description: "Ending index"
+            }
+        },
+        examples: [
+            "var x = nerdamer('product(x+1, x, 1, 20)');",
+            "console.log(x.toString())",
+            "var y = nerdamer('product(x+y, x, 1, 5)');",
+            "console.log(y.toString());"
+        ],
+        returns: 'Number | Expression'
+    },
     Calculus__diff: {
         type: 'internal',
-        usage: 'diff(expression, x, n)',
+        usage: 'diff(expression_or_vector, x, n)',
         full_name: 'differentiate',
         description: 'Gets the derivative.',
         parameters: {
-            expression: {
+            expression_or_vector: {
                 type: 'expression',
                 description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
             },
@@ -1619,6 +1822,8 @@ FUNCTIONS = {
         examples: [
             "var x = nerdamer('diff(cos(x)*sin(x), x)');",
             "console.log(x.toString());",
+            "var y = nerdamer('diff([x^2, cos(x), 1], x, 2)'); //second derivative",
+            "console.log(y.toString());",
             "var y = nerdamer('diff(x^3+a*x^3+x^2, x, 2)'); //second derivative",
             "console.log(y.toString());"
         ],
@@ -1626,13 +1831,13 @@ FUNCTIONS = {
     },
     Calculus__integrate: {
         type: 'internal',
-        usage: 'integrate(expression, x)',
+        usage: 'integrate(expression_or_vector, x)',
         full_name: 'integrate',
         description: 'Attempts to compute integral of the expression. The depth of integration can be set using the "integration_depth" flag but be careful as this\n\
                      can seriously degrade performance. See example below. The hasIntegral method can be used to check if the symbol was completely integrated.\n\
                      This method will return true if the method was not completely integrated. The default depth is 4.',
         parameters: {
-            expression: {
+            expression_or_vector: {
                 type: 'expression',
                 description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
             },
@@ -1646,10 +1851,12 @@ FUNCTIONS = {
             "console.log(x.toString());",
             "var y = nerdamer('integrate(sec(x)^2, x)'); //second derivative",
             "console.log(y.toString());",
+            "var y = nerdamer('integrate([sec(x)^2, x^2, 2], x)'); //second derivative",
+            "console.log(y.toString());",
             "var x  = nerdamer('integrate(cos(x)*x^6, x)');",
             "console.log(x.toString());",
             "//we can use the hasIntegral method to check if it was fully integrated",
-            "console.log(x.hasIntegral());",
+            "console.log(x.hasIntegral());"
         ],
         returns: 'bool'
     },

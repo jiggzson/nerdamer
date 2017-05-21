@@ -91,14 +91,14 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>fact</h1>
+                    <h1>dfactorial</h1>
                     <hr>
-                    <h3 class="text-capitalize">factorial</h3>
+                    <h3 class="text-capitalize">double factorial</h3>
                     <p>
-                        Calculates the factorial of a number.
+                        Calculates the double factorial of a number.
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("factorial(x)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("dfactorial(x)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -116,11 +116,11 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('fact(5)').evaluate();
+                    <pre><code class="javascript">var x = nerdamer('dfactorial(5)').evaluate();
 console.log(x.text());
-x = nerdamer('fact(9.1)').evaluate();
+x = nerdamer('dfactorial(9)').evaluate();
 console.log(x.text());
-x = nerdamer('(4/5)!*3!-1').evaluate();;
+x = nerdamer('dfactorial(x+1)').evaluate();
 console.log(x.text());</code></pre>
                 </div>
                 OUTPUT:
@@ -173,11 +173,11 @@ console.log(x.text());</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('fact(5)').evaluate();
+                var x = nerdamer('dfactorial(5)').evaluate();
 oprint(x.text());
-x = nerdamer('fact(9.1)').evaluate();
+x = nerdamer('dfactorial(9)').evaluate();
 oprint(x.text());
-x = nerdamer('(4/5)!*3!-1').evaluate();;
+x = nerdamer('dfactorial(x+1)').evaluate();
 oprint(x.text());
             }
             catch(e) {

@@ -100,7 +100,7 @@
                      This method will return true if the method was not completely integrated. The default depth is 4.
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("integrate(expression, x)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("integrate(expression_or_vector, x)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -108,7 +108,7 @@
                             <tr>
     <td>
         <span class="parameter-type">expression </span>
-        <span class="parameter-name">expression </span>
+        <span class="parameter-name">expression_or_vector </span>
     </td>
     <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
 </tr><tr>
@@ -127,6 +127,8 @@
                     <pre><code class="javascript">var x = nerdamer('integrate(10*q/(4*x^2+24*x+20), x)');
 console.log(x.toString());
 var y = nerdamer('integrate(sec(x)^2, x)'); //second derivative
+console.log(y.toString());
+var y = nerdamer('integrate([sec(x)^2, x^2, 2], x)'); //second derivative
 console.log(y.toString());
 var x  = nerdamer('integrate(cos(x)*x^6, x)');
 console.log(x.toString());
@@ -186,6 +188,8 @@ console.log(x.hasIntegral());</code></pre>
                 var x = nerdamer('integrate(10*q/(4*x^2+24*x+20), x)');
 oprint(x.toString());
 var y = nerdamer('integrate(sec(x)^2, x)'); //second derivative
+oprint(y.toString());
+var y = nerdamer('integrate([sec(x)^2, x^2, 2], x)'); //second derivative
 oprint(y.toString());
 var x  = nerdamer('integrate(cos(x)*x^6, x)');
 oprint(x.toString());

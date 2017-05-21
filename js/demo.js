@@ -264,7 +264,7 @@
                 //we never checked if this is in proper format for nerdamer so we'll just try and if nerdamer complains we'll let the person know
                 try {
                     nerdamer.setFunction(fnName, params, fnBody);
-                    LaTeX = nerdamer(fnName).toTeX()+ //parse the function name with nerdamer so we can get back some nice LaTeX
+                    LaTeX = fnName+ //parse the function name with nerdamer so we can get back some nice LaTeX
                             '('+ //do the same for the parameters
                                 params.map(function(x) {
                                     return nerdamer(x).toTeX();
@@ -273,14 +273,13 @@
                             nerdamer(fnBody).toTeX();
 
                     if(Object.keys(scope).length > 0) 
-                        notify('A scope object was provided but is ignored for function declaration.');
+                        notify('A variable object was provided but is ignored for function declaration.');
                     
                     //add the LaTeX to the panel
                     addToPanel(LaTeX, expression);   
                     clear();
-                                
                 }
-                catch(e) {
+                catch(e) { 
                     notify('Error: Could not set function.</br>'+e.toString());
                 }
             }
@@ -302,7 +301,6 @@
                     clear();
                 }
                 catch(e){
-                    console.log(e.stack);
                     notify('Something went wrong. Nerdamer could not parse expression!</br>'+e.toString());
                 }  
             }

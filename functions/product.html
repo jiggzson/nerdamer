@@ -91,14 +91,14 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>fact</h1>
+                    <h1>product</h1>
                     <hr>
-                    <h3 class="text-capitalize">factorial</h3>
+                    <h3 class="text-capitalize">product</h3>
                     <p>
-                        Calculates the factorial of a number.
+                        Calculates the product of an expression from lower to upper limit. Works both numerically and algebraically.
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("factorial(x)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("product(expression, index, lower, upper)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -106,9 +106,27 @@
                             <tr>
     <td>
         <span class="parameter-type">expression </span>
-        <span class="parameter-name">x </span>
+        <span class="parameter-name">expression </span>
     </td>
     <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
+</tr><tr>
+    <td>
+        <span class="parameter-type">expression </span>
+        <span class="parameter-name">index </span>
+    </td>
+    <td><span class="parameter-description">The index</span></td>
+</tr><tr>
+    <td>
+        <span class="parameter-type">expression </span>
+        <span class="parameter-name">lower </span>
+    </td>
+    <td><span class="parameter-description">Starting index</span></td>
+</tr><tr>
+    <td>
+        <span class="parameter-type">expression </span>
+        <span class="parameter-name">upper </span>
+    </td>
+    <td><span class="parameter-description">Ending index</span></td>
 </tr>
                         </table>
                     </div>
@@ -116,12 +134,10 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('fact(5)').evaluate();
-console.log(x.text());
-x = nerdamer('fact(9.1)').evaluate();
-console.log(x.text());
-x = nerdamer('(4/5)!*3!-1').evaluate();;
-console.log(x.text());</code></pre>
+                    <pre><code class="javascript">var x = nerdamer('product(x+1, x, 1, 20)');
+console.log(x.toString())
+var y = nerdamer('product(x+y, x, 1, 5)');
+console.log(y.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -173,12 +189,10 @@ console.log(x.text());</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('fact(5)').evaluate();
-oprint(x.text());
-x = nerdamer('fact(9.1)').evaluate();
-oprint(x.text());
-x = nerdamer('(4/5)!*3!-1').evaluate();;
-oprint(x.text());
+                var x = nerdamer('product(x+1, x, 1, 20)');
+oprint(x.toString())
+var y = nerdamer('product(x+y, x, 1, 5)');
+oprint(y.toString());
             }
             catch(e) {
                 oprint(e.toString());
