@@ -416,6 +416,18 @@ describe('calculus', function () {
             {
                 given: 'integrate(sinh(x)*x,x)',
                 expected: '-sinh(x)+cosh(x)*x'
+            },
+            {
+                given: 'integrate((x^6+x^2-7)/(x^2+11), x)',
+                expected: '(-11/3)*x^3+(1/5)*x^5+122*x-1349*atan(sqrt(11)^(-1)*x)*sqrt(11)^(-1)'
+            },
+            {
+                given: 'integrate(x^6/(x^2+11), x)',
+                expected: '(-11/3)*x^3+(1/5)*x^5+121*x-1331*atan(sqrt(11)^(-1)*x)*sqrt(11)^(-1)'
+            },
+            {
+                given: 'integrate(x^2/(x^2+11))',
+                expected: '-11*atan(sqrt(11)^(-1)*x)*sqrt(11)^(-1)+x'
             }
         ];
 

@@ -1282,7 +1282,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         }
                                         else if(sym1.power.equals(-1) && sym2.isLinear()) { 
                                             retval = __.integration.partial_fraction(symbol, dx, depth);
-
                                         }
                                         else if(!sym1.power.lessThan(0) && isInt(sym1.power)) { 
                                             //sum of integrals
@@ -1301,13 +1300,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         else if(sym1.power.lessThan(-2)) {
                                             retval = __.integration.by_parts(symbol, dx, depth, opt);
                                         }
-                                        else if(sym1.power.lessThan(0) && sym2.power.greaterThan(1)) {
+                                        else if(sym1.power.lessThan(0) && sym2.power.greaterThan(1)) { 
                                             var decomp = __.integration.decompose_arg(sym1.clone().toLinear(), dx),
                                                 a = decomp[0].negate(),
                                                 x = decomp[1],
                                                 b = decomp[3],
                                                 fn = sym1.clone().toLinear();
-                                            if(x.group !== PL && x.isLinear()) {
+                                                
+                                            if(x.group !== PL && x.isLinear()) { 
                                                 var p = Number(sym2.power),
                                                     du = '_u_',
                                                     u = new Symbol(du),
@@ -1319,6 +1319,21 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 scope[du] = fn;
                                                 var U2 = _.parse(U, scope);
                                                 retval = __.integrate(U2, dx, 0);
+                                            }
+                                            else if(sym2.power.greaterThan(x.power) || sym2.power.equals(x.power)) { 
+                                                //factor out coefficients
+                                                var factors = new core.Algebra.Classes.Factors();
+                                                sym1 = core.Algebra.Factor.coeffFactor(sym1.invert(), factors);
+                                                retval = new Symbol(0);
+                                                core.Algebra.divide(sym2, sym1).each(function(t) {
+                                                    retval = _.add(retval, __.integrate(t, dx, depth));
+                                                });
+                                                //put back the factors
+                                                factors.each(function(factor) {
+                                                    retval = _.divide(retval, factor);
+                                                });
+                                                
+                                                retval = _.expand(retval);
                                             }
                                             else 
                                                 retval = __.integration.partial_fraction(symbol, dx, depth);
@@ -1391,7 +1406,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         return retval;
                 }
 
-                catch(e){/*no integral found*/}  
+                catch(e){/*no integral found*/ }  
 
                 //no symbol found so we return the integral again
                 return _.symfunction('integrate', [original_symbol, dt]);
