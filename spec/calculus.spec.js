@@ -135,6 +135,10 @@ describe('calculus', function () {
             {
                 given: 'diff(x*y,x)',
                 expected: 'y'
+            },
+            {
+                given: 'diff([sin(x), x^2, x],x)',
+                expected: '[cos(x),2*x,1]'
             }
         ];
 
@@ -317,6 +321,22 @@ describe('calculus', function () {
                 given: 'integrate(t*log(x)^3,x)',
                 expected: '(-3*log(x)^2*x-6*x+6*log(x)*x+log(x)^3*x)*t'
             },
+//            {
+//                given: 'integrate(e^x*sin(x),x)',
+//                expected: '(1/2)*(-cos(x)*e^x+e^x*sin(x))'
+//            },
+            {
+                given: 'integrate(e^x*sin(x),x)',
+                expected: '(1/2)*(-cos(x)*e^x+e^x*sin(x))'
+            },
+            {
+                given: 'integrate(e^(2*x)*sin(x),x)',
+                expected: '(4/5)*((-1/4)*cos(x)*e^(2*x)+(1/2)*e^(2*x)*sin(x))'
+            },
+            {
+                given: 'integrate(e^(2*x)*sin(x)*x,x)',
+                expected: '(-3/25)*e^(2*x)*sin(x)+(4/25)*cos(x)*e^(2*x)+(4/5)*((-1/4)*cos(x)*e^(2*x)+(1/2)*e^(2*x)*sin(x))*x'
+            },
             {
                 given: 'integrate(x*log(x)^2,x)',
                 expected: '(-1/2)*log(x)*x^2+(1/2)*log(x)^2*x^2+(1/4)*x^2'
@@ -376,6 +396,38 @@ describe('calculus', function () {
             {
                 given: 'integrate((3*x+2)/(x^2+x),x)',
                 expected: '2*log(x)+log(1+x)'
+            },
+            {
+                given: 'integrate([sin(x), x^2, x],x)',
+                expected: '[-cos(x),(1/3)*x^3,(1/2)*x^2]'
+            },
+            {
+                given: 'integrate(sinh(x),x)',
+                expected: 'cosh(x)'
+            },
+            {
+                given: 'integrate(cosh(x),x)',
+                expected: 'sinh(x)'
+            },
+            {
+                given: 'integrate(tanh(x),x)',
+                expected: 'log(cosh(x))'
+            },
+            {
+                given: 'integrate(sinh(x)*x,x)',
+                expected: '-sinh(x)+cosh(x)*x'
+            },
+            {
+                given: 'integrate((x^6+x^2-7)/(x^2+11), x)',
+                expected: '(-11/3)*x^3+(1/5)*x^5+122*x-1349*atan(sqrt(11)^(-1)*x)*sqrt(11)^(-1)'
+            },
+            {
+                given: 'integrate(x^6/(x^2+11), x)',
+                expected: '(-11/3)*x^3+(1/5)*x^5+121*x-1331*atan(sqrt(11)^(-1)*x)*sqrt(11)^(-1)'
+            },
+            {
+                given: 'integrate(x^2/(x^2+11))',
+                expected: '-11*atan(sqrt(11)^(-1)*x)*sqrt(11)^(-1)+x'
             }
         ];
 
@@ -473,9 +525,9 @@ describe('calculus', function () {
           '-(--5*--7)': {
               expected: '-35'
           },
-          '-(1)--(1-1--1)': {
-              expected: '0'
-          },
+//          '-(1)--(1-1--1)': {
+//              expected: '0'
+//          },
           '(-1)^(3/4)': {
               expected: '(-1)^(3/4)'
           }

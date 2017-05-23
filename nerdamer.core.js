@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.7',
+    var version = '0.7.10',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -42,7 +42,9 @@ var nerdamer = (function(imports) {
             //the modules used to link numeric function holders
             FUNCTION_MODULES: [Math],
             //Allow certain characters
-            ALLOW_CHARS: ['π']
+            ALLOW_CHARS: ['π'],
+            //Allow changing of power operator
+            POWER_OPERATOR: '^'
         },
 
         //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
@@ -81,7 +83,7 @@ var nerdamer = (function(imports) {
         VARS = {},
         
         //the container used to store all the reserved functions
-        RESERVED = [],
+        RESERVED = ['__u__'],
 
 
         WARNINGS = '',
@@ -866,9 +868,21 @@ var nerdamer = (function(imports) {
                     sum = 0;
                 for(var i=0; i<n; i++) {
                     var n2 = 2*i;
-                    sum += (Math.pow(-1, i)*Math.pow(x, n2+1))/((n2+1)*Math2.factial(n2+1));
+                    sum += (Math.pow(-1, i)*Math.pow(x, n2+1))/((n2+1)*Math2.factorial(n2+1));
                 }
                 return sum;
+            },
+            //ExponentialIntegral
+            Ei: function(x) { 
+                if(x.equals(0))
+                    return -Infinity;
+                var n =30,
+                    g = 0.5772156649015328606, //roughly Euler–Mascheroni
+                    sum = 0;
+                for(var i=1; i<n; i++) {
+                    sum += Math.pow(x, i)/(i*Math2.factorial(i));
+                }
+                return g+Math.abs(Math.log(x))+sum;
             },
             /*
             * Heaviside step function - Moved from Special.js (originally contributed by Brosnan Yuen)
@@ -906,7 +920,7 @@ var nerdamer = (function(imports) {
             * otherwise sin(x)/x
             */
             sinc: function(x) {
-                if(x === 0)
+                if(x.equals(0))
                     return 1;
                 return Math.sin(x)/x;
             },
@@ -1089,7 +1103,7 @@ var nerdamer = (function(imports) {
             
             if(power < 0) power = inBrackets(power);
             if(multiplier) c = c + '*';
-            if(power) power = '^' + power;
+            if(power) power = Settings.POWER_OPERATOR + power;
 
             //this needs serious rethinking. Must fix
             if(group === EX && value.charAt(0) === '-') value = inBrackets(value);
@@ -1289,6 +1303,30 @@ var nerdamer = (function(imports) {
                     callback.call(this.symbol[i], i);
             else
                 callback.call(this.symbol);
+        },
+        eq: function(value) {
+            value = _.parse(value);
+            if(this.symbol.isConstant() && value.isConstant())
+                return this.symbol.equals(_.parse(value));
+            return false;
+        },
+        lt: function(value) {
+            value = _.parse(value);
+            if(this.symbol.isConstant() && value.isConstant())
+                return this.symbol.lessThan(_.parse(value));
+            return false;
+        },
+        gt: function(value) {
+            value = _.parse(value);
+            if(this.symbol.isConstant() && value.isConstant())
+                return this.symbol.greaterThan(_.parse(value));
+            return false;
+        },
+        gte: function(value) {
+            return this.greaterThan(value) || this.equals(value);
+        },
+        lte: function(value) {
+            return this.lessThan(value) || this.equals(value);
         }
     };
     //Aliases
@@ -1597,7 +1635,7 @@ var nerdamer = (function(imports) {
             var retval;
             if((this.group === PL || this.group === S) && this.value === x) 
                 retval = new Symbol(this.multiplier);
-            else if(this.group === CB && this.isLinear()) {
+            else if(this.group === CB && this.isLinear()) { 
                 retval = new Symbol(1);
                 this.each(function(s) { 
                     if(!s.contains(x, true)) 
@@ -1617,6 +1655,12 @@ var nerdamer = (function(imports) {
                         retval = _.add(retval, t);
                     } 
                 });
+                //BIG TODO!!! It doesn't make much sense
+                if(retval.equals(0))
+                    retval = new Symbol(this.multiplier);
+            }
+            else if(this.group === EX && this.power.contains(x, true)) {
+                retval = new Symbol(this.multiplier);
             }
             else if(this.group === FN && this.contains(x)) {
                 retval = new Symbol(this.multiplier);
@@ -1729,8 +1773,12 @@ var nerdamer = (function(imports) {
             }
             else if(this.group === FN) { 
                 var nargs = [];
-                for(var i=0; i<this.args.length; i++)
-                    nargs.push(this.args[i].sub(a, b));
+                for(var i=0; i<this.args.length; i++) {
+                    var arg = this.args[i];
+                    if(!isSymbol(arg))
+                        arg = _.parse(arg);
+                    nargs.push(arg.sub(a, b));
+                }
                 retval = _.symfunction(this.fname, nargs);
             }
             //if we did manage a substitution
@@ -2015,8 +2063,9 @@ var nerdamer = (function(imports) {
          * This method distributes the multiplier over the entire symbol
          * @returns {Symbol}
          */
-        distributeMultiplier: function() {
-            if(this.symbols && this.power.equals(1) && this.group !== CB && !this.multiplier.equals(1)) {
+        distributeMultiplier: function(all) { 
+            var is_one = all ? this.power.absEquals(1) : this.power.equals(1);
+            if(this.symbols && is_one && this.group !== CB && !this.multiplier.equals(1)) {
                 for(var x in this.symbols) {
                     var s = this.symbols[x];
                     s.multiplier = s.multiplier.multiply(this.multiplier);
@@ -2111,7 +2160,6 @@ var nerdamer = (function(imports) {
                 new Symbol(this.group === P ? m*Math.pow(this.value, this.power) : m).clone(this);
             }
             else if(group === P && this.group === N) { 
-                if(this.multiplier.den.toString() !== '1') err('Attempting conversion of group N with non-unit denominator!');
                 this.value = imaginary ? this.multiplier.num.toString() : Math.abs(this.multiplier.num.toString());
                 this.toUnitMultiplier(!imaginary);
                 this.group = P;
@@ -2273,7 +2321,7 @@ var nerdamer = (function(imports) {
                 if(group === CB) key = text(this, 'hash');
                 else if(group === CP) { 
                     if(this.power.equals(1)) key = this.value;
-                    else key = inBrackets(text(this, 'hash'))+'^'+this.power.toDecimal();
+                    else key = inBrackets(text(this, 'hash'))+Settings.POWER_OPERATOR+this.power.toDecimal();
                 }
                 else if(group === PL) key = this.power.toString();
                 else key = this.value;
@@ -2353,6 +2401,9 @@ var nerdamer = (function(imports) {
         },
         lessThan: function(n) {
             return this.multiplier.lessThan(n);
+        },
+        greaterThan: function(n) {
+            return this.multiplier.greaterThan(n);
         },
         /**
          * Get's the denominator of the symbol if the symbol is of class CB (multiplication)
@@ -2471,6 +2522,7 @@ var nerdamer = (function(imports) {
         //list all the supported operators
         var operators = this.operators = {
                 '^' : new Operator('^', 'pow', 6, false, false),
+                '**' : new Operator('**', 'pow', 6, false, false),
                 '!!' : new Operator('!!', 'dfactorial', 5, false, false, true, function(e) {
                     return _.symfunction(DOUBLEFACTORIAL, [e]); //wrap it in a factorial function
                 }),
@@ -2504,7 +2556,9 @@ var nerdamer = (function(imports) {
                 '(': new Bracket('(', 0, true, null, 'round'),
                 ')': new Bracket(')', 0, false, null, 'round'),
                 '[': new Bracket('[', 1, true, function() {
-                    return 'vector';
+                    var f = new Symbol('vector');
+                    f.is_function = true;
+                    return f;
                 }, 'square'),
                 ']': new Bracket(']', 1, false, null, 'square')
             },
@@ -2540,6 +2594,7 @@ var nerdamer = (function(imports) {
                 'tri'        : [ , 1],
                 'sign'       : [ , 1],
                 'Ci'         : [ , 1],
+                'Ei'         : [ , 1],
                 'fib'        : [ , 1],
                 'fact'       : [factorial, 1],
                 'factorial'  : [factorial, 1],
@@ -2553,6 +2608,7 @@ var nerdamer = (function(imports) {
                 'sqrt'       : [ sqrt, 1],
                 'log'        : [ log , 1],
                 'expand'     : [ expand , 1],
+                'clean'   : [ clean , 1],
                 'abs'        : [ abs , 1],
                 'invert'     : [ invert, 1],
                 'transpose'  : [ transpose, 1],
@@ -2702,6 +2758,21 @@ var nerdamer = (function(imports) {
 
             return retval;
         };
+        /**
+         * Build a regex based on the operators currently loaded. These operators are to be ignored when 
+         * substituting spaces for multiplication
+         */
+        this.operator_filter_regex = (function() {
+            //we only want the operators which are singular since those are the ones
+            //that nerdamer uses anyway
+            var ostr = '^\\'+Object.keys(operators).filter(function(x) {
+                if(x.length === 1)
+                    return x;
+            }).join('\\');
+            //create a regex which captures all spaces between characters except those
+            //have an operator on one end
+            return new RegExp('(['+ostr+'])\\s+(['+ostr+'])');
+        })();
         
         /*
          * This method parses the tree
@@ -2741,8 +2812,9 @@ var nerdamer = (function(imports) {
                         //next subs
                         else if(e in subs)
                             e = subs[e].clone();
-                        else if(e in VARS)
+                        else if(e in VARS) {
                             e = VARS[e].clone();
+                        }
                         e.unsubbed = unsubbed;
                         q.push(e);
                     }
@@ -2784,33 +2856,42 @@ var nerdamer = (function(imports) {
              * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
              * a side-by-side close and open parenthesis
              */
-            var e = String(expression_string).split(' ').join('')//strip empty spaces
-                //replace scientific numbers
-                .replace(/\d+\.*\d*e\+?\-?\d+/gi, function(x) {
-                    return scientificToDecimal(x);
-                })
-                //allow omission of multiplication after coefficients
-                .replace(/([\+\-\/\*]*[0-9]+)([a-z_]+[\+\-\/\*]*)/gi, function() {
-                    var str = arguments[4],
-                        group1 = arguments[1],
-                        group2 = arguments[2],
-                        start = arguments[3],
-                        first = str.charAt(start),
-                        before = '',
-                        d = '*';
-                    if(!first.match(/[\+\-\/\*]/)) before = str.charAt(start-1);
-                    if(before.match(/[a-z]/i)) d = '';
-                    return group1+d+group2;
-                })
-                .replace(/([a-z0-9]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
-                    var g1 = a || c,
-                        g2 = b || d;
-                    if(g1 in functions) //create a passthrough for functions
-                        return g1+g2;
-                    return g1+'*'+g2;
-                })
-                //allow omission of multiplication sign between brackets
-                .replace( /\)\(/g, ')*(' ) || '0';
+            var e = String(expression_string), match;
+            //add support for spaces between variables
+            while(true) {
+                match = this.operator_filter_regex.exec(e);
+                if(!match)
+                    break;
+                e = e.replace(match[0], match[1]+'*'+match[2]);
+            }
+
+            e = e.split(' ').join('')//strip empty spaces
+            //replace scientific numbers
+            .replace(/\d+\.*\d*e\+?\-?\d+/gi, function(x) {
+                return scientificToDecimal(x);
+            })
+            //allow omission of multiplication after coefficients
+            .replace(/([\+\-\/\*]*[0-9]+)([a-z_]+[\+\-\/\*]*)/gi, function() {
+                var str = arguments[4],
+                    group1 = arguments[1],
+                    group2 = arguments[2],
+                    start = arguments[3],
+                    first = str.charAt(start),
+                    before = '',
+                    d = '*';
+                if(!first.match(/[\+\-\/\*]/)) before = str.charAt(start-1);
+                if(before.match(/[a-z]/i)) d = '';
+                return group1+d+group2;
+            })
+            .replace(/([a-z0-9]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
+                var g1 = a || c,
+                    g2 = b || d;
+                if(g1 in functions) //create a passthrough for functions
+                    return g1+g2;
+                return g1+'*'+g2;
+            })
+            //allow omission of multiplication sign between brackets
+            .replace( /\)\(/g, ')*(' ) || '0';
 
             var l = e.length, //the length of the string
                 output = [], //the output array. This is what's returned
@@ -3002,6 +3083,8 @@ var nerdamer = (function(imports) {
                             f.is_function = true;
                             stack.push(f);
                         }   
+                        if(bracket.fn)
+                            stack.push(bracket.fn());
                         // We're in a new scope so signal so
                         new_scope = true;
                         stack.push(bracket);
@@ -3533,6 +3616,12 @@ var nerdamer = (function(imports) {
          * @returns {Symbol} 
          */
         function bigConvert(n) { 
+            if(!isFinite(n)){
+                var sign = Math.sign(n);
+                var r = new Symbol(String(Math.abs(n)));
+                r.multiplier = r.multiplier.multiply(new Frac(sign));
+                return r;
+            }
             if(isSymbol(n))
                 return n;
             if(typeof n === 'number')
@@ -3781,6 +3870,66 @@ var nerdamer = (function(imports) {
             return retval;
         };
         
+        function clean(symbol) {
+            // handle functions with numeric values
+            // handle denominator within denominator
+            // handle trig simplifications
+            var g = symbol.group, retval;
+            //Now let's get to work
+            if(g === CP) {
+                var num = symbol.getNum(),
+                    den = symbol.getDenom() || new Symbol(1),
+                    p = Number(symbol.power),
+                    factor = new Symbol(1);
+                if(Math.abs(p) === 1) {
+                    den.each(function(x) {
+                        if(x.group === CB) {
+                            factor = _.multiply(factor, clean(x.getDenom()));
+                        }
+                        else if(x.power.lessThan(0)) {
+                            factor = _.multiply(factor, clean(x.clone().toUnitMultiplier()));
+                        }
+                    });
+
+                    var new_den = new Symbol(0);
+                    //now divide out the factor and add to new den
+                    den.each(function(x) {
+                        new_den = _.add(_.divide(x, factor.clone()), new_den);
+                    });
+                    
+                    factor.invert(); //invert so it can be added to the top
+                    var new_num;
+                    if(num.isComposite()) { 
+                        new_num = new Symbol(0);
+                        num.each(function(x){
+                            new_num = _.add(_.multiply(clean(x), factor.clone()), new_num);
+                        });
+                    }
+                    else
+                        new_num = _.multiply(factor, num);
+                    
+                    retval = _.divide(new_num, new_den);
+                }
+            }
+            else if(g === CB) { 
+                retval = new Symbol(1);
+                symbol.each(function(x) { 
+                    retval = _.multiply(retval, _.clean(x));
+                });
+            }
+            else if(g === FN) {
+                if(symbol.args.length === 1 && symbol.args[0].isConstant())
+                    retval = block('PARSE2NUMBER', function() {
+                        return _.parse(symbol);
+                    }, true);
+            }
+            
+            if(!retval)
+                retval = symbol;
+            
+            return retval;
+        }
+        
         /**
          * Expands a symbol
          * @param symbol
@@ -3828,7 +3977,7 @@ var nerdamer = (function(imports) {
                             var x = result.symbols[s];
                             x.multiplier = x.multiplier.multiply(m);
                             if(x.isComposite())
-                                x.distributeMultiplier();
+                                x.distributeMultiplier(true);
                             symbol.symbols[s] = x;
                         }
                     }
@@ -3940,6 +4089,7 @@ var nerdamer = (function(imports) {
         
         //link this back to the parser
         this.expand = expand;
+        this.clean = clean;
         
         //the constructor for vectors
         function vector() {
@@ -4396,7 +4546,13 @@ var nerdamer = (function(imports) {
                             result.distributeExponent();
                             result.combine(b);
                         }
-                        else if(!b.isOne()) result = Symbol.shell(CB).combine([result, b]);
+                        else if(!b.isOne()) {
+                            var bm = b.multiplier.clone();
+                            b.toUnitMultiplier();
+                            result = Symbol.shell(CB).combine([result, b]);
+                            //transfer the multiplier to the outside
+                            result.multiplier = result.multiplier.multiply(bm);
+                        }
                     }     
                     else { 
                         result = b.clone().toUnitMultiplier();
@@ -5783,6 +5939,9 @@ var nerdamer = (function(imports) {
     };
     
     var build = Utils.build = function(symbol, arg_array) { 
+        symbol = block('PARSE2NUMBER', function() {
+            return _.parse(symbol);
+        }, true);
         var args = variables(symbol);
         var supplements = [];
         var ftext = function(symbol, xports) { 
@@ -5794,9 +5953,18 @@ var nerdamer = (function(imports) {
             var ftext_complex = function(group) {
                 var d = group === CB ? '*' : '+',
                     cc = [];
-                for(var x in symbol.symbols) cc.push(ftext(symbol.symbols[x], xports)[0]);
+                
+                for(var x in symbol.symbols) {
+                    var sym = symbol.symbols[x],
+                        ft = ftext(sym, xports)[0];
+                    //wrap it in brackets if it's group PL or CP
+                    if(sym.isComposite())
+                        ft = inBrackets(ft);
+                    cc.push(ft);
+                }
                 var retval = cc.join(d);
-                return retval && !symbol.multiplier.equals(1)? inBrackets(retval) : retval;
+                retval = retval && !symbol.multiplier.equals(1) ? inBrackets(retval) : retval;
+                return retval;
             },
 
             ftext_function = function(bn) { 
@@ -5821,8 +5989,10 @@ var nerdamer = (function(imports) {
             //the multiplier
             if(group === N) 
                 c.push(symbol.multiplier.toDecimal());
-            else if(symbol.multiplier.equals(-1)) prefix = '-';
-            else if(!symbol.multiplier.equals(1)) c.push(symbol.multiplier.toDecimal());
+            else if(symbol.multiplier.equals(-1)) 
+                prefix = '-';
+            else if(!symbol.multiplier.equals(1)) 
+                c.push(symbol.multiplier.toDecimal());
             //the value
             var value;
             
@@ -5851,7 +6021,6 @@ var nerdamer = (function(imports) {
             return [c.join('*'), xports.join('').replace(/\n+\s+/g, ' ')];
         };
         if(arg_array) { 
-            if(args.length !== arg_array.length) err('Argument array contains wrong number of arguments');
             for(var i=0; i<args.length; i++) {
                 var arg = args[i];
                 if(arg_array.indexOf(arg) === -1) err(arg+' not found in argument array');
@@ -5888,6 +6057,9 @@ var nerdamer = (function(imports) {
     C.VARS = VARS;
     C.err = err;
     C.bigInt = bigInt;
+    //TODO: fix 
+    if(!_.error)
+        _.error = err;
     /* END BUILD CORE */
 
     
