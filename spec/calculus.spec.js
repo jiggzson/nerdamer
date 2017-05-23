@@ -428,7 +428,19 @@ describe('calculus', function () {
             {
                 given: 'integrate(x^2/(x^2+11))',
                 expected: '-11*atan(sqrt(11)^(-1)*x)*sqrt(11)^(-1)+x'
-            }
+            },
+            {
+                given: 'integrate(tan(x)*csc(x), x)',
+                expected: 'integrate(tan(x)*csc(x), x)'
+            },
+            {
+                given: 'integrate(sinh(x)*e^x, x)',
+                expected: '(-1/2)*x+(1/4)*e^(2*x)'
+            },
+            {
+                given: 'integrate(sinh(x)*cos(x), x)',
+                expected: '(-1/4)*e^(-x)*sin(x)+(1/4)*cos(x)*e^(-x)+(1/4)*cos(x)*e^x+(1/4)*e^x*sin(x)'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
