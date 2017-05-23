@@ -251,7 +251,7 @@
         //display the version of nerdamer being used
         $('#version').html(nerdamer.version());
         //load the list of supported functions
-        var supported = nerdamer.supported(),
+        var supported = nerdamer.supported().sort(),
             l = supported.length,
             supportlist = $('#supported-functions');
         for(var i=0; i<supported.length; i++) {

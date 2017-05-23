@@ -125,7 +125,9 @@ console.log(t.toString());
 var u = nerdamer('cos(pi/4)')
 console.log(u.toString());
 var v = nerdamer('cos(pi/2)')
-console.log(v.toString());</code></pre>
+console.log(v.toString());
+v = nerdamer.cos('pi');
+console.log(v)</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -185,6 +187,8 @@ var u = nerdamer('cos(pi/4)')
 oprint(u.toString());
 var v = nerdamer('cos(pi/2)')
 oprint(v.toString());
+v = nerdamer.cos('pi');
+oprint(v)
             }
             catch(e) {
                 oprint(e.toString());

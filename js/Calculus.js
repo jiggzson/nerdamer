@@ -54,6 +54,33 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     Symbol.prototype.hasIntegral = function() {
         return this.containsFunction('integrate');
     };
+    //transforms a function
+    Symbol.prototype.fnTransform = function() {
+        var retval;
+        switch(this.fname) {
+            case SINH:
+                retval = _.parse(format('(e^({0})-e^(-({0})))/2', this.args[0]));
+                break;
+            case COSH:
+                retval = _.parse(format('(e^({0})+e^(-({0})))/2', this.args[0]));
+                break;
+            case TANH:
+                retval = _.parse(format('(e^({0})-e^(-({0})))/(e^({0})+e^(-({0})))', this.args[0]));
+                break;
+            case TAN:
+                retval = _.parse(format('sin({0})/cos({0})', this.args[0]));
+                break;
+            case CSC:
+                retval = _.parse(format('1/sin({0})', this.args[0]));
+                break;
+            case SEC:
+                retval = _.parse(format('1/cos({0})', this.args[0]));
+                break;
+            default:
+                retval = this;
+        }
+        return retval;
+    };
     //removes parentheses
     Symbol.unwrapPARENS = function(symbol) {
         if(symbol.group === FN && !symbol.fname) {
@@ -1090,14 +1117,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         sym1 = symbols[0],
                                         sym2 = symbols[1],
                                         fn1 = sym1.fname,
-                                        fn2 = sym2.fname;
+                                        fn2 = sym2.fname; 
                                     //reset the symbol minus the coeff
                                     symbol = _.multiply(sym1.clone(), sym2.clone());
                                     if(g1 === FN && g2 === FN) { 
                                         if(fn1 === LOG || fn2 === LOG) {
                                             retval = __.integration.by_parts(symbol.clone(), dx, depth, opt);
                                         }
-                                        else {
+                                        else { 
                                             symbols.sort(function(a, b) {
                                                 return b.fname > a.fname;
                                             });
@@ -1215,11 +1242,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                     sym2.invert().updateHash();
                                                     retval = __.integrate(_.multiply(sym1, sym2), dx, depth);
                                                 }
-                                                else
-                                                    __.integration.stop();
+                                                else {
+                                                    retval = __.integrate(_.expand(_.multiply(sym1.fnTransform(), sym2.fnTransform())), dx, depth);
+                                                }
                                             }
-                                            else
+                                            else {
                                                 __.integration.stop();
+                                            }
+                                                
                                         }
                                     }
                                     else if(g1 === FN && g2 === S) {
@@ -1282,7 +1312,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         }
                                         else if(sym1.power.equals(-1) && sym2.isLinear()) { 
                                             retval = __.integration.partial_fraction(symbol, dx, depth);
-
                                         }
                                         else if(!sym1.power.lessThan(0) && isInt(sym1.power)) { 
                                             //sum of integrals
@@ -1301,13 +1330,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         else if(sym1.power.lessThan(-2)) {
                                             retval = __.integration.by_parts(symbol, dx, depth, opt);
                                         }
-                                        else if(sym1.power.lessThan(0) && sym2.power.greaterThan(1)) {
+                                        else if(sym1.power.lessThan(0) && sym2.power.greaterThan(1)) { 
                                             var decomp = __.integration.decompose_arg(sym1.clone().toLinear(), dx),
                                                 a = decomp[0].negate(),
                                                 x = decomp[1],
                                                 b = decomp[3],
                                                 fn = sym1.clone().toLinear();
-                                            if(x.group !== PL && x.isLinear()) {
+                                                
+                                            if(x.group !== PL && x.isLinear()) { 
                                                 var p = Number(sym2.power),
                                                     du = '_u_',
                                                     u = new Symbol(du),
@@ -1319,6 +1349,21 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 scope[du] = fn;
                                                 var U2 = _.parse(U, scope);
                                                 retval = __.integrate(U2, dx, 0);
+                                            }
+                                            else if(sym2.power.greaterThan(x.power) || sym2.power.equals(x.power)) { 
+                                                //factor out coefficients
+                                                var factors = new core.Algebra.Classes.Factors();
+                                                sym1 = core.Algebra.Factor.coeffFactor(sym1.invert(), factors);
+                                                retval = new Symbol(0);
+                                                core.Algebra.divide(sym2, sym1).each(function(t) {
+                                                    retval = _.add(retval, __.integrate(t, dx, depth));
+                                                });
+                                                //put back the factors
+                                                factors.each(function(factor) {
+                                                    retval = _.divide(retval, factor);
+                                                });
+                                                
+                                                retval = _.expand(retval);
                                             }
                                             else 
                                                 retval = __.integration.partial_fraction(symbol, dx, depth);
@@ -1358,7 +1403,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             retval = _.add(retval, __.integrate(_.multiply(x, sym2.clone()), dx, depth));
                                         }, true);
                                     }
-                                    else {
+                                    else if(g1 === FN && g2 === EX && core.Utils.in_htrig(sym1.fname)) {
+                                        sym1 = sym1.fnTransform();
+                                        retval = __.integrate(_.expand(_.multiply(sym1, sym2)), dx, depth);
+                                    }
+                                    else { 
                                         retval = __.integration.by_parts(symbol, dx, depth, opt);
                                     }
                                         
@@ -1391,11 +1440,30 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         return retval;
                 }
 
-                catch(e){/*no integral found*/}  
+                catch(e){/*no integral found*/ }  
 
                 //no symbol found so we return the integral again
                 return _.symfunction('integrate', [original_symbol, dt]);
             }, false);
+        },
+        defint: function(symbol, from, to, dx) {
+            var vars = core.Utils.variables(symbol),
+                integral = __.integrate(symbol, dx),
+                retval;
+            if(!integral.hasIntegral()) {
+                var upper = {},
+                    lower = {};
+                upper[dx] = to;
+                lower[dx] = from;
+                retval = _.subtract(_.parse(integral, upper), _.parse(integral, lower));
+            }
+            else if(vars.length === 1 && from.isConstant() && to.isConstant()) {
+                var f = core.Utils.build(symbol);
+                retval = core.Math2.num_integrate(f, Number(from), Number(to));
+            }
+            else 
+                retval = _.symfunction('defint', [symbol, dx, from , to]);
+            return retval;
         }
     };
     
@@ -1423,6 +1491,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             visible: true,
             numargs: [1, 2],
             build: function() { return __.integrate; }
+        },
+        {
+            name: 'defint',
+            visible: true,
+            numargs: [3, 4],
+            build: function() { return __.defint; }
         }
     ]);
     //link registered functions externally

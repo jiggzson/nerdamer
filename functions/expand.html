@@ -119,7 +119,9 @@
                     <pre><code class="javascript">var x = nerdamer('expand((x^2+1)^2/4)');
 console.log(x.toString());
 var y = nerdamer('expand(x*(x+1))');
-console.log(y.toString());</code></pre>
+console.log(y.toString());
+x = nerdamer('(x+y)*(x-5)*x').expand();
+console.log(x.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -175,6 +177,8 @@ console.log(y.toString());</code></pre>
 oprint(x.toString());
 var y = nerdamer('expand(x*(x+1))');
 oprint(y.toString());
+x = nerdamer('(x+y)*(x-5)*x').expand();
+oprint(x.toString());
             }
             catch(e) {
                 oprint(e.toString());

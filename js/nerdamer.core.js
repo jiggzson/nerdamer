@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.9',
+    var version = '0.7.10',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -96,7 +96,7 @@ var nerdamer = (function(imports) {
         isReserved = Utils.isReserved = function(value) { 
             return RESERVED.indexOf(value) !== -1;
         },
-        
+
         /**
          * Use this when errors are suppressible
          * @param {String} msg
@@ -850,6 +850,32 @@ var nerdamer = (function(imports) {
             mod: function(x, y) {
                 return x % y;
             },
+            /**
+             * 
+             * @param {Function} f - the function being integrated
+             * @param {Number} l - lower bound
+             * @param {Number} u - upper bound
+             * @param {Number} dx - step width
+             * @returns {Number}
+             */
+            num_integrate: function(f, l, u, dx) {
+                dx = dx || 0.001; //default width of dx
+                var n, sum, x0, x1, a, la, chg;
+                n = (u-l)/dx;// number of trapezoids
+                sum = 0; //area
+                chg = 0; //track the change
+                a = 0;
+                for (var i=1; i<=n; i++) {
+                    //the x locations of the left and right side of each trapezpoid
+                    x0 = l + (i-1)*dx;
+                    x1 = l + i*dx;
+                    a = dx * (f(x0) + f(x1))/ 2; //the area
+                    sum += a;
+                } 
+                //avoid errors with numbers around -1e-14;
+                sum = round(sum, 13);
+                return sum;
+            },
             //https://en.wikipedia.org/wiki/Trigonometric_integral
             //CosineIntegral
             Ci: function(x) {
@@ -883,6 +909,37 @@ var nerdamer = (function(imports) {
                     sum += Math.pow(x, i)/(i*Math2.factorial(i));
                 }
                 return g+Math.abs(Math.log(x))+sum;
+            },
+            //Hyperbolic Sine Integral
+            //http://mathworld.wolfram.com/Shi.html
+            Shi: function(x) {
+                var n = 30,
+                    sum = 0,
+                    k, t;
+                for(var i=0; i<n; i++) {
+                    k = 2*i; 
+                    t = k+1;
+                    sum += Math.pow(x, t)/(t*t*Math2.factorial(k));
+                }
+                return sum;
+            },
+            Chi: function(x) {
+                var dx, g, f;
+                dx = 0.001;
+                g = 0.5772156649015328606;
+                f = function(t) {
+                    return (Math.cosh(t)-1)/t;
+                };
+                return Math.log(x)+g+Math2.num_integrate(f, 0.002, x, dx);
+            },
+            gamma_incomplete(n, x) {
+                var t = n-1,
+                    sum = 0,
+                    x = x || 0;
+                for(var i=0; i<t; i++) {
+                    sum += Math.pow(x, i)/Math2.factorial(i);
+                }
+                return Math2.factorial(t)*Math.exp(-x)*sum;
             },
             /*
             * Heaviside step function - Moved from Special.js (originally contributed by Brosnan Yuen)
@@ -937,7 +994,7 @@ var nerdamer = (function(imports) {
                 return 1-x;
             }
         };
-        
+
         //link the Math2 object to Settings.FUNCTION_MODULES
         Settings.FUNCTION_MODULES.push(Math2);
         
@@ -1158,6 +1215,7 @@ var nerdamer = (function(imports) {
     
     /**
      * Returns stored expression at index. For first index use 1 not 0.
+     * @param {bool} asType  
      * @param {Integer} expression_number 
      */
     Expression.getExpression = function(expression_number, asType) {
@@ -1172,6 +1230,7 @@ var nerdamer = (function(imports) {
     Expression.prototype = {
         /**
          * Returns the text representation of the expression
+         * @param {String} opt - option of formatting numbers
          * @returns {String}
          */
         text: function(opt) { 
@@ -1182,6 +1241,7 @@ var nerdamer = (function(imports) {
         },
         /**
          * Returns the latex representation of the expression
+         * @param {String} option - option for formatting numbers
          * @returns {String}
          */
         latex: function(option) {
@@ -2565,61 +2625,64 @@ var nerdamer = (function(imports) {
             // Supported functions.
             // Format: function_name: [mapped_function, number_of_parameters]
             functions = this.functions = {
-                'cos'        : [ cos, 1],
-                'sin'        : [ sin, 1],
-                'tan'        : [ tan, 1],
-                'sec'        : [ sec, 1],
-                'csc'        : [ csc, 1],
-                'cot'        : [ cot, 1],
-                'acos'       : [ , 1],
-                'asin'       : [ , 1],
-                'atan'       : [ , 1],
-                'sinh'       : [ , 1],
-                'cosh'       : [ , 1],
-                'tanh'       : [ , 1],
-                'asinh'      : [ , 1],
-                'acosh'      : [ , 1],
-                'atanh'      : [ , 1],
-                'log10'      : [ , 1],
-                'exp'        : [ , 1],
-                'min'        : [ ,-1],
-                'max'        : [ ,-1],
-                'erf'        : [ , 1],
-                'floor'      : [ , 1],
-                'ceil'       : [ , 1],
-                'Si'         : [ , 1],
-                'step'       : [ , 1],
-                'rect'       : [ , 1],
-                'sinc'       : [ , 1],
-                'tri'        : [ , 1],
-                'sign'       : [ , 1],
-                'Ci'         : [ , 1],
-                'Ei'         : [ , 1],
-                'fib'        : [ , 1],
-                'fact'       : [factorial, 1],
-                'factorial'  : [factorial, 1],
-                'dfactorial' : [ , 1],
-                'round'      : [ , 1],
-                'mod'        : [ mod, 2],
-                'pfactor'    : [ pfactor , 1],
-                'vector'     : [ vector, -1],
-                'matrix'     : [ matrix, -1],
-                'parens'     : [ parens, -1],
-                'sqrt'       : [ sqrt, 1],
-                'log'        : [ log , 1],
-                'expand'     : [ expand , 1],
-                'clean'   : [ clean , 1],
-                'abs'        : [ abs , 1],
-                'invert'     : [ invert, 1],
-                'transpose'  : [ transpose, 1],
-                'dot'        : [ dot, 2],
-                'cross'      : [ cross, 2],
-                'vecget'     : [ vecget, 2],
-                'vecset'     : [ vecset, 3],
-                'matget'     : [ matget, 3],
-                'matset'     : [ matset, 4],
-                'imatrix'    : [ imatrix, 1], 
-                'IF'         : [ IF, 3]
+                'cos'               : [ cos, 1],
+                'sin'               : [ sin, 1],
+                'tan'               : [ tan, 1],
+                'sec'               : [ sec, 1],
+                'csc'               : [ csc, 1],
+                'cot'               : [ cot, 1],
+                'acos'              : [ , 1],
+                'asin'              : [ , 1],
+                'atan'              : [ , 1],
+                'sinh'              : [ , 1],
+                'cosh'              : [ , 1],
+                'tanh'              : [ , 1],
+                'asinh'             : [ , 1],
+                'acosh'             : [ , 1],
+                'atanh'             : [ , 1],
+                'log10'             : [ , 1],
+                'exp'               : [ , 1],
+                'min'               : [ ,-1],
+                'max'               : [ ,-1],
+                'erf'               : [ , 1],
+                'floor'             : [ , 1],
+                'ceil'              : [ , 1],
+                'Si'                : [ , 1],
+                'step'              : [ , 1],
+                'rect'              : [ , 1],
+                'sinc'              : [ , 1],
+                'tri'               : [ , 1],
+                'sign'              : [ , 1],
+                'Ci'                : [ , 1],
+                'Ei'                : [ , 1],
+                'Shi'               : [ , 1],
+                'Chi'               : [ , 1],
+                'fib'               : [ , 1],
+                'fact'              : [factorial, 1],
+                'factorial'         : [factorial, 1],
+                'dfactorial'        : [ , 1],
+                'gamma_incomplete'  : [ , [1, 2]],
+                'round'             : [ , 1],
+                'mod'               : [ mod, 2],
+                'pfactor'           : [ pfactor , 1],
+                'vector'            : [ vector, -1],
+                'matrix'            : [ matrix, -1],
+                'parens'            : [ parens, -1],
+                'sqrt'              : [ sqrt, 1],
+                'log'               : [ log , 1],
+                'expand'            : [ expand , 1],
+                'clean'             : [ clean , 1],
+                'abs'               : [ abs , 1],
+                'invert'            : [ invert, 1],
+                'transpose'         : [ transpose, 1],
+                'dot'               : [ dot, 2],
+                'cross'             : [ cross, 2],
+                'vecget'            : [ vecget, 2],
+                'vecset'            : [ vecset, 3],
+                'matget'            : [ matget, 3],
+                'matset'            : [ matset, 4],
+                'imatrix'           : [ imatrix, 1], 
+                'IF'                : [ IF, 3]
             };
 
         this.error = err;
@@ -2883,7 +2946,7 @@ var nerdamer = (function(imports) {
                 if(before.match(/[a-z]/i)) d = '';
                 return group1+d+group2;
             })
-            .replace(/([a-z0-9]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
+            .replace(/([a-z0-9_]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
                 var g1 = a || c,
                     g2 = b || d;
                 if(g1 in functions) //create a passthrough for functions
@@ -3215,6 +3278,19 @@ var nerdamer = (function(imports) {
                 dx.push(e);
             }
         };
+
+        var chunkAtCommas = function(arr){
+            var j, k = 0, chunks = [[]];
+            for (var j = 0, l=arr.length; j<l; j++){
+                if (arr[j] === ',') {
+                    k++;
+                    chunks[k] = [];
+                } else {
+                    chunks[k].push(arr[j]);
+                }
+            }
+            return chunks;
+        }
         
         var rem_brackets = function(str) {
             return str.replace(/^\\left\((.+)\\right\)$/g, function(str, a) {
@@ -3243,6 +3319,7 @@ var nerdamer = (function(imports) {
                 }
                 obj = nobj;
             }
+
             
             for(var i=0, l=obj.length; i<l; i++) {
                 var e = obj[i];
@@ -3263,13 +3340,47 @@ var nerdamer = (function(imports) {
                         else if (fname === 'log10')
                             f = '\\log_{10}\\left( ' + this.toTeX(e.args) + '\\right)';
                         else if(fname === 'integrate') {
-                            var dx = getDx(e.args);
-                            f = '\\int '+LaTeX.braces(this.toTeX(e.args))+'\\, d'+this.toTeX(dx);
+                            /* Retrive [Expression, x] */
+                            var chunks = chunkAtCommas(e.args);
+                            /* Build TeX */
+                            var expr = LaTeX.braces(this.toTeX(chunks[0])),
+                                dx = this.toTeX(chunks[1]);
+                            f = '\\int ' + expr + '\\, d' + dx;
+                        }
+                        else if (fname === 'defint') {
+                            var chunks = chunkAtCommas(e.args),
+                                expr = LaTeX.braces(this.toTeX(chunks[0])),
+                                dx = this.toTeX(chunks[1]),
+                                lb = this.toTeX(chunks[2]),
+                                ub = this.toTeX(chunks[3]);
+                            f = '\\int\\limits_{'+lb+'}^{'+ub+'} '+expr+'\\, d'+dx;
+
                         }
                         else if(fname === 'diff') {
-                            var dx = getDx(e.args),
-                                tex = this.toTeX(e.args);
-                            f = '\\frac{d}{d '+dx+'}\\left( '+LaTeX.braces(tex)+' \\right)';
+                            var chunks = chunkAtCommas(e.args);
+                            var dx = '', expr = LaTeX.braces(this.toTeX(chunks[0]));
+                            /* Handle cases: one argument provided, we need to guess the variable, and assume n = 1 */
+                            if (chunks.length == 1){
+                                var vars = [];
+                                for (j = 0; j < chunks[0].length; j++){
+                                    if (chunks[0][j].group === 3) {
+                                        vars.push(chunks[0][j].value);
+                                    }
+                                }
+                                vars = vars.sort();
+                                dx = vars.length > 0 ? ('\\frac{d}{d ' + vars[0] + '}') : '\\frac{d}{d x}';
+                            }
+                            /* If two arguments, we have expression and variable, we assume n = 1 */ 
+                            else if (chunks.length == 2){
+                                dx = '\\frac{d}{d ' + chunks[1] + '}';
+                            }
+                            /* If we have more than 2 arguments, we assume we've got everything */
+                            else {
+                                dx = '\\frac{d^{' + chunks[2] + '}}{d ' + this.toTeX(chunks[1]) + '^{' + chunks[2] + '}}';
+                            }
+
+                            f = dx + '\\left(' + expr + '\\right)';
+
                         }
                         else if (fname === 'sum') {
                             // Split e.args into 4 parts based on locations of , symbols.
@@ -4444,39 +4555,47 @@ var nerdamer = (function(imports) {
                 }
                 
 
-                if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P || g2 === FN)) && !(g1 === PL && g2 === CB)) { 
+                if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P || g2 === FN)) && !(g1 === PL && g2 === CB)) {                     
                     var p1 = a.power,
                         p2 = b.power,
                         isSymbolP1 = isSymbol(p1),
                         isSymbolP2 = isSymbol(p2),
                         toEX = (isSymbolP1 || isSymbolP2);
-
-                    //add the powers
-                    result.power = toEX ? _.add(
-                        !(isSymbol(p1)) ? new Symbol(p1) : p1, 
-                        !(isSymbol(p2)) ? new Symbol(p2) : p2
-                    ): (g1 === N /*don't add powers for N*/? p1 : p1.add(p2));
-
-                    //eliminate zero power values and convert them to numbers
-                    if(result.power.equals(0)) result = result.convert(N);
-
-                    //properly convert to EX
-                    if(toEX) result.convert(EX);
-
-                    //take care of imaginaries
-                    if(a.imaginary && b.imaginary) { 
-                        var isEven = even(result.power % 2);
-                        if(isEven) {
-                            result = new Symbol(1);
-                            m.negate();
-                        }
+                    //TODO: this needs cleaning up
+                    if(g1 === PL && g2 !== PL && b.previousGroup !== PL && p1.equals(1)) {
+                        result = new Symbol(0);
+                        a.each(function(x) {
+                            result = _.add(result, _.multiply(x, b.clone()));
+                        }, true);
                     }
-                   
-                    //cleanup: this causes the LaTeX generator to get confused as to how to render the symbol
-                    if(result.group !== EX && result.previousGroup) result.previousGroup = undefined;
-                    //the sign for b is floating around. Remember we are assuming that the odd variable will carry
-                    //the sign but this isn't true if they're equals symbols
-                    result.multiplier = result.multiplier.multiply(b.multiplier);
+                    else {
+                        //add the powers
+                        result.power = toEX ? _.add(
+                            !(isSymbol(p1)) ? new Symbol(p1) : p1, 
+                            !(isSymbol(p2)) ? new Symbol(p2) : p2
+                        ): (g1 === N /*don't add powers for N*/? p1 : p1.add(p2));
+
+                        //eliminate zero power values and convert them to numbers
+                        if(result.power.equals(0)) result = result.convert(N);
+
+                        //properly convert to EX
+                        if(toEX) result.convert(EX);
+
+                        //take care of imaginaries
+                        if(a.imaginary && b.imaginary) { 
+                            var isEven = even(result.power % 2);
+                            if(isEven) {
+                                result = new Symbol(1);
+                                m.negate();
+                            }
+                        }
+
+                        //cleanup: this causes the LaTeX generator to get confused as to how to render the symbol
+                        if(result.group !== EX && result.previousGroup) result.previousGroup = undefined;
+                        //the sign for b is floating around. Remember we are assuming that the odd variable will carry
+                        //the sign but this isn't true if they're equals symbols
+                        result.multiplier = result.multiplier.multiply(b.multiplier);
+                    }
                 }
                 else if(g1 === CB && a.isLinear()){ 
                     if(g2 === CB) b.distributeExponent();
@@ -7542,3 +7661,7 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
+
+var x = nerdamer.gamma_incomplete(9);
+console.log(x.toString());
+console.log(x.evaluate().toString());

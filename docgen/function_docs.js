@@ -594,7 +594,7 @@ FUNCTIONS = {
             "var u = nerdamer('cos(E)').evaluate()", 
             "console.log(u.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     cos: {
         type: 'internal',
@@ -617,9 +617,11 @@ FUNCTIONS = {
             "var u = nerdamer('cos(pi/4)')", 
             "console.log(u.toString());",
             "var v = nerdamer('cos(pi/2)')",
-            "console.log(v.toString());"
+            "console.log(v.toString());",
+            "v = nerdamer.cos('pi');",
+            "console.log(v)"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     sinh: {
         type: 'internal',
@@ -643,7 +645,7 @@ FUNCTIONS = {
             "var v = nerdamer('sinh(E)').evaluate().evaluate().text()",
             "console.log(v.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     sin: {
         type: 'internal',
@@ -668,7 +670,7 @@ FUNCTIONS = {
             "var v = nerdamer('sin(pi)').toString()",
             "console.log(v);"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     tanh: {
         type: 'internal',
@@ -693,7 +695,7 @@ FUNCTIONS = {
         errors: [
             "Throws exception for multiples of pi/2"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     tan: {
         type: 'internal',
@@ -721,7 +723,7 @@ FUNCTIONS = {
         errors: [
             "Throws exception for multiples of pi/2"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     sec: {
         type: 'internal',
@@ -749,7 +751,7 @@ FUNCTIONS = {
         errors: [
             "Throws exception for multiples of pi/2"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     csc: {
         type: 'internal',
@@ -777,7 +779,7 @@ FUNCTIONS = {
         errors: [
             "Throws exception for multiples of pi"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     cot: {
         type: 'internal',
@@ -805,7 +807,7 @@ FUNCTIONS = {
         errors: [
             "Throws exception for multiples of pi"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     asinh: {
         type: 'internal',
@@ -824,7 +826,7 @@ FUNCTIONS = {
             "var t = nerdamer('asinh(1)').evaluate();", 
             "console.log(t.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     asin: {
         type: 'internal',
@@ -843,7 +845,7 @@ FUNCTIONS = {
             "var t = nerdamer('asin(sqrt(2)/2)')", 
             "console.log(t.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     acosh: {
         type: 'internal',
@@ -863,7 +865,7 @@ FUNCTIONS = {
             "var t = nerdamer('acosh(-1)').evaluate()", 
             "console.log(t.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     acos: {
         type: 'internal',
@@ -882,7 +884,7 @@ FUNCTIONS = {
             "var t = nerdamer('acos(-1)')", 
             "console.log(t.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     atanh: {
         type: 'internal',
@@ -901,7 +903,7 @@ FUNCTIONS = {
             "var t = nerdamer('atanh(-1)').evaluate()", 
             "console.log(t.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     atan: {
         type: 'internal',
@@ -920,7 +922,7 @@ FUNCTIONS = {
             "var t = nerdamer('atan(-1)').evaluate()", 
             "console.log(t.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     exp: {
         type: 'internal',
@@ -937,7 +939,7 @@ FUNCTIONS = {
             "var x = nerdamer('exp(1)').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     min: {
         type: 'internal',
@@ -956,7 +958,7 @@ FUNCTIONS = {
             "x = nerdamer('min(x*x, y, z)');",
             "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     max: {
         type: 'internal',
@@ -975,7 +977,7 @@ FUNCTIONS = {
             "x = nerdamer('max(x*x, y, z)');",
             "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     floor: {
         type: 'internal',
@@ -992,7 +994,7 @@ FUNCTIONS = {
             "var x = nerdamer('floor(5/2)').evaluate();",
             "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     ceil: {
         type: 'internal',
@@ -1009,7 +1011,7 @@ FUNCTIONS = {
             "var x = nerdamer('ceil(5/2)').evaluate();",
             "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     step: {
         type: 'internal',
@@ -1030,7 +1032,7 @@ FUNCTIONS = {
             "var x = nerdamer('step(0)').evaluate();",
             "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     rect: {
         type: 'internal',
@@ -1051,7 +1053,7 @@ FUNCTIONS = {
             "var x = nerdamer('rect(0)').evaluate();",
             "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     sinc: {
         type: 'internal',
@@ -1072,7 +1074,7 @@ FUNCTIONS = {
             "var x = nerdamer('sinc(0)').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     tri: {
         type: 'internal',
@@ -1093,7 +1095,7 @@ FUNCTIONS = {
             "var x = nerdamer('tri(0)').evaluate();",
             "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     factorial: {
         type: 'internal',
@@ -1113,7 +1115,7 @@ FUNCTIONS = {
             "x = nerdamer('factorial(9.1)').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     dfactorial: {
         type: 'internal',
@@ -1134,7 +1136,7 @@ FUNCTIONS = {
             "x = nerdamer('dfactorial(x+1)').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     fact: {
         type: 'internal',
@@ -1156,12 +1158,12 @@ FUNCTIONS = {
             "x = nerdamer('(4/5)!*3!-1').evaluate();;",
             "console.log(x.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     Ci: {
         type: 'internal',
         usage: 'Ci(number)',
-        full_name: 'CosineIntegral',
+        full_name: 'cosine integral',
         description: 'Calculates the cosine integral of a number.',
         parameters: {
             number: {
@@ -1175,12 +1177,31 @@ FUNCTIONS = {
             "x = nerdamer('Ci(0)').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
+    },
+    Chi: {
+        type: 'internal',
+        usage: 'Chi(number)',
+        full_name: 'hyperbolic cosine integral',
+        description: 'Calculates the hyperbolic cosine integral of a number.',
+        parameters: {
+            number: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('Chi(5)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer('Chi(0)').evaluate();",
+            "console.log(x.text());"
+        ],
+        returns: 'Expression'
     },
     Si: {
         type: 'internal',
         usage: 'Si(number)',
-        full_name: 'SineIntegral',
+        full_name: 'sine integral',
         description: 'Calculates the sine integral of a number.',
         parameters: {
             number: {
@@ -1194,12 +1215,31 @@ FUNCTIONS = {
             "x = nerdamer('Si(0)').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
+    },
+    Shi: {
+        type: 'internal',
+        usage: 'Shi(number)',
+        full_name: 'hyperbolic sine integral',
+        description: 'Calculates the hyperbolic sine integral of a number.',
+        parameters: {
+            number: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('Shi(5)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer('Shi(0)').evaluate();",
+            "console.log(x.text());"
+        ],
+        returns: 'Expression'
     },
     Ei: {
         type: 'internal',
         usage: 'Ei(number)',
-        full_name: 'ExponentialIntegral',
+        full_name: 'Exponential Integral',
         description: 'Calculates the exponential integral of a number.',
         parameters: {
             number: {
@@ -1215,7 +1255,30 @@ FUNCTIONS = {
             "x = nerdamer('Ei(0)').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
+    },
+    gamma_incomplete: {
+        type: 'internal',
+        usage: 'gamma_incomplete(n, x)',
+        full_name: 'Gamma incomplete function',
+        description: '',
+        parameters: {
+            n: {
+                type: 'expression',
+                description: ""
+            },
+            x: {
+                type: 'expression',
+                description: ""
+            }
+        },
+        examples: [
+            "var x = nerdamer('gamma_incomplete(5)').evaluate();",
+            "console.log(x.text());",
+            "x = nerdamer.gamma_incomplete(9);",
+            "console.log(x.text());"
+        ],
+        returns: 'Expression'
     },
     fib: {
         type: 'internal',
@@ -1234,7 +1297,7 @@ FUNCTIONS = {
             "x = nerdamer('fib(0)').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     round: {
         type: 'internal',
@@ -1253,7 +1316,7 @@ FUNCTIONS = {
             "x = nerdamer('round(1.4)').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     mod: {
         type: 'internal',
@@ -1272,7 +1335,7 @@ FUNCTIONS = {
             "x = nerdamer('mod(10/12, 1/2)');",
             "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     sqrt: {
         type: 'internal',
@@ -1295,7 +1358,7 @@ FUNCTIONS = {
             "x = nerdamer('sqrt(x^2/5)');",
             "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     log: {
         type: 'internal',
@@ -1314,7 +1377,7 @@ FUNCTIONS = {
             "var y = nerdamer('log(2*e^2)');",
             "console.log(y.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     log10: {
         type: 'internal',
@@ -1333,7 +1396,7 @@ FUNCTIONS = {
             "x = nerdamer('log10(100000)').evaluate();",
             "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     expand: {
         type: 'internal',
@@ -1350,9 +1413,11 @@ FUNCTIONS = {
             "var x = nerdamer('expand((x^2+1)^2/4)');",
             "console.log(x.toString());",
             "var y = nerdamer('expand(x*(x+1))');",
-            "console.log(y.toString());"
+            "console.log(y.toString());",
+            "x = nerdamer('(x+y)*(x-5)*x').expand();",
+            "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     abs: {
         type: 'internal',
@@ -1371,7 +1436,7 @@ FUNCTIONS = {
             "var y = nerdamer('abs(-2-x)');",
             "console.log(y.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     erf: {
         type: 'internal',
@@ -1390,7 +1455,7 @@ FUNCTIONS = {
             "var y = nerdamer('erf(1)').evaluate();",
             "console.log(y.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     pfactor: {
         type: 'internal',
@@ -1409,7 +1474,7 @@ FUNCTIONS = {
             "x = nerdamer('pfactor(113)');",
             "console.log(x.text());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     parens: {
         type: 'internal',
@@ -1425,9 +1490,9 @@ FUNCTIONS = {
         examples: [
             "var x = nerdamer('parens(9)*parens(7)');",
             "console.log(x.toString());",
-            "console.log(x.evaluate().toString();"
+            "console.log(x.evaluate().toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     vector: {
         type: 'internal',
@@ -1449,7 +1514,7 @@ FUNCTIONS = {
             "x = nerdamer('a*v1');",
             "console.log(x.toString())"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     matrix: {
         type: 'internal',
@@ -1471,7 +1536,26 @@ FUNCTIONS = {
             "var x = nerdamer('a*x*M');",
             "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
+    },
+    imatrix: {
+        type: 'internal',
+        usage: 'imatrix(n)',
+        full_name: 'Identity matrix',
+        description: 'Creates an identity matrix of dimensions n x n',
+        parameters: {
+            n: {
+                type: 'expression',
+                description: "Dimensions of identity matrix"
+            }
+        },
+        examples: [
+            "var x = nerdamer('imatrix(4)');",
+            "console.log(x.toString());",
+            "x = nerdamer.imatrix(3);",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
     },
     invert: {
         type: 'internal',
@@ -1489,7 +1573,7 @@ FUNCTIONS = {
             "var x = nerdamer('invert(M)');",
             "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     vecget: {
         type: 'internal',
@@ -1507,7 +1591,7 @@ FUNCTIONS = {
             "var x = nerdamer('vecget(v, 0)');",
             "console.log(x.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     vecset: {
         type: 'internal',
@@ -1551,7 +1635,7 @@ FUNCTIONS = {
             "console.log(nerdamer('matget(M, 0, 1)').toString());",
             "console.log(nerdamer('M').toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     matset: {
         type: 'internal',
@@ -1678,7 +1762,7 @@ FUNCTIONS = {
             "var y = nerdamer('factor(-b*z-a*z+b^3+a*b^2+a*b+a^2)');",
             "console.log(y.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     Algebra__divide: {
         type: 'internal',
@@ -1697,7 +1781,7 @@ FUNCTIONS = {
             "var y = nerdamer('divide(-b*z-a*z+b^3+a*b^2+a*b+a^2, b+a)');",
             "console.log(y.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     Algebra__div: {
         type: 'internal',
@@ -1717,7 +1801,7 @@ FUNCTIONS = {
             "var y = nerdamer('div(b*z+a*z+b^2+a*b, a+b)');",
             "console.log(y.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     Algebra__gcd: {
         type: 'internal',
@@ -1736,7 +1820,7 @@ FUNCTIONS = {
             "var y = nerdamer('gcd(b*z+a*z+b^2+a*b, a+b)');",
             "console.log(y.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     Calculus__sum: {
         type: 'internal',
@@ -1767,7 +1851,7 @@ FUNCTIONS = {
             "var y = nerdamer('sum(x+y, x, 1, 20)');",
             "console.log(y.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     Calculus__product: {
         type: 'internal',
@@ -1798,7 +1882,7 @@ FUNCTIONS = {
             "var y = nerdamer('product(x+y, x, 1, 5)');",
             "console.log(y.toString());"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     Calculus__diff: {
         type: 'internal',
@@ -1825,13 +1909,15 @@ FUNCTIONS = {
             "var y = nerdamer('diff([x^2, cos(x), 1], x, 2)'); //second derivative",
             "console.log(y.toString());",
             "var y = nerdamer('diff(x^3+a*x^3+x^2, x, 2)'); //second derivative",
-            "console.log(y.toString());"
+            "console.log(y.toString());",
+            "x = nerdamer.diff(nerdamer('x^2').add(1).multiply('tan(x)'), 'x')",
+            "console.log(x.toString())"
         ],
-        returns: 'Number | Expression'
+        returns: 'Expression'
     },
     Calculus__integrate: {
         type: 'internal',
-        usage: 'integrate(expression_or_vector, x)',
+        usage: 'integrate(expression_or_vector, dx)',
         full_name: 'integrate',
         description: 'Attempts to compute integral of the expression. The depth of integration can be set using the "integration_depth" flag but be careful as this\n\
                      can seriously degrade performance. See example below. The hasIntegral method can be used to check if the symbol was completely integrated.\n\
@@ -1841,24 +1927,57 @@ FUNCTIONS = {
                 type: 'expression',
                 description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
             },
-            x: {
+            dx: {
                 type: 'expression',
-                description: "The variable with respect to which integrate"
+                description: "The variable with respect to which integrate. Optional for univariate expressions."
             }
         },
         examples: [
             "var x = nerdamer('integrate(10*q/(4*x^2+24*x+20), x)');",
             "console.log(x.toString());",
-            "var y = nerdamer('integrate(sec(x)^2, x)'); //second derivative",
+            "var y = nerdamer('integrate(sec(x)^2, x)'); ",
             "console.log(y.toString());",
-            "var y = nerdamer('integrate([sec(x)^2, x^2, 2], x)'); //second derivative",
+            "var y = nerdamer('integrate([sec(x)^2, x^2, 2], x)');",
             "console.log(y.toString());",
             "var x  = nerdamer('integrate(cos(x)*x^6, x)');",
             "console.log(x.toString());",
             "//we can use the hasIntegral method to check if it was fully integrated",
-            "console.log(x.hasIntegral());"
+            "console.log(x.hasIntegral());",
+            "x = nerdamer.integrate('sinh(x)*e^x');",
+            "console.log(x.toString());"
         ],
-        returns: 'bool'
+        returns: 'Expression'
+    },
+    Calculus__defint: {
+        type: 'internal',
+        usage: 'defint(expression_or_vector, from, to, dx)',
+        full_name: 'definite integral',
+        description: 'Attempts to compute the definite integral of the expression.',
+        parameters: {
+            expression_or_vector: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            },
+            dx: {
+                type: 'expression',
+                description: "The variable with respect to which integrate. Optional with univariate expression."
+            },
+            from: {
+                type: 'expression',
+                description: "The lower limit of integration"
+            },
+            to: {
+                type: 'expression',
+                description: "The upper limit of integration"
+            }
+        },
+        examples: [
+            "var x = nerdamer('defint(e^(cos(x)), 1, 2)');",
+            "console.log(x.toString());",
+            "var y = nerdamer('defint(x^2+2*x+1, 0, 10)');",
+            "console.log(y.toString());"
+        ],
+        returns: 'Expression'
     },
     //EXTRA
     Extra__laplace: {
@@ -1886,9 +2005,9 @@ FUNCTIONS = {
             "x = nerdamer.laplace('cos(w*t)', 't', 'x');",
             "console.log(x.toString())",
             "x = nerdamer.laplace('cos(w*t)*t', 't', 'x');",
-            "console.log(x.toString())",
+            "console.log(x.toString())"
         ],
-        returns: 'expression'
+        returns: 'Expression'
     },
     Extra__mean: {
         type: 'internal',
@@ -1911,7 +2030,7 @@ FUNCTIONS = {
             "x = nerdamer.mean('11', '12', '13', '14');",
             "console.log(x.toString());"
         ],
-        returns: 'expression'
+        returns: 'Expression'
     },
     Extra__mode: {
         type: 'internal',
@@ -1934,7 +2053,7 @@ FUNCTIONS = {
             "x = nerdamer.mode('11', '12', '13', '14').evaluate();",
             "console.log(x.toString());"
         ],
-        returns: 'expression'
+        returns: 'Expression'
     },
     Extra__median: {
         type: 'internal',
@@ -1957,7 +2076,7 @@ FUNCTIONS = {
             "x = nerdamer.median('11', '12', '13', '14').evaluate();",
             "console.log(x.toString());"
         ],
-        returns: 'expression'
+        returns: 'Expression'
     },
     Extra__stdev: {
         type: 'internal',
@@ -1980,7 +2099,7 @@ FUNCTIONS = {
             "x = nerdamer.stdev('11', '12', '13', '14').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'expression'
+        returns: 'Expression'
     },
     Extra__smpstdev: {
         type: 'internal',
@@ -2003,7 +2122,7 @@ FUNCTIONS = {
             "x = nerdamer.smpstdev('11', '12', '13', '14').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'expression'
+        returns: 'Expression'
     },
     Extra__variance: {
         type: 'internal',
@@ -2026,7 +2145,7 @@ FUNCTIONS = {
             "x = nerdamer.variance('11', '12', '13', '14').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'expression'
+        returns: 'Expression'
     },
     Extra__smpvar: {
         type: 'internal',
@@ -2049,7 +2168,7 @@ FUNCTIONS = {
             "x = nerdamer.smpvar('11', '12', '13', '14').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'expression'
+        returns: 'Expression'
     },
     Extra__zscore: {
         type: 'internal',
@@ -2078,7 +2197,7 @@ FUNCTIONS = {
             "x = nerdamer.smpvar('11', '12', '13', '14').evaluate();",
             "console.log(x.text());"
         ],
-        returns: 'expression'
+        returns: 'Expression'
     },
 };
 module.exports = FUNCTIONS;
