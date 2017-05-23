@@ -1,13 +1,14 @@
 export as namespace nerdamer
 export = nerdamer
 declare function nerdamer(
-	expression: string,
+	expression: nerdamer.ExpressionParam,
 	subs?: { [name: string]: string },
 	option?: keyof nerdamer.Options | (keyof nerdamer.Options)[],
 	location?: nerdamer.int): nerdamer.Expression
 declare namespace nerdamer {
+	export type ExpressionParam = Expression | string
 	export interface Options {
-		numer, expand
+		numer: never, expand: never
 	}
 	type int = number
 	/**
@@ -20,7 +21,7 @@ declare namespace nerdamer {
 	 * @param name The variable to be set as the constant.
 	 * @param value The value for the expression to be set to.
 	 */
-	export function setConstant(name: string, value: number | string): void
+	export function setConstant(name: string, value: number | string): typeof nerdamer
 
 	/**
 	 * Sets a function which can then be called using nerdamer.
@@ -35,7 +36,7 @@ declare namespace nerdamer {
 	 * x = nerdamer('g(3, 1, 2)')
 	 * console.log(x.toString())
 	 */
-	export function setFunction(function_name: string, param_array: string[], function_body: string): void
+	export function setFunction(function_name: string, param_array: string[], function_body: string): typeof nerdamer
 
 	/**
 	 * Returns the nerdamer core object. This object contains all the core functions of nerdamer and houses the parser.
@@ -59,7 +60,7 @@ declare namespace nerdamer {
 	 nerdamer.flush() //clear all expressions
 	 console.log(nerdamer.expressions())
 	 */
-	export function flush(): void
+	export function flush(): typeof nerdamer
 
 	/**
 	 * Converts and expression to LaTeX without evaluating expression.
@@ -129,7 +130,7 @@ return _.multiply(sum, product)
     build: function(){ return core.Calculus.diff }
 })
 	 */
-	export function register(f: ModuleFunction | ModuleFunction[]): void
+	export function register(f: ModuleFunction | ModuleFunction[]): typeof nerdamer
 
 	/**
 	 * This method can be used to check that the variable meets variable name requirements for nerdamer. Variable names Must start with a letter or underscore and may contains any combination of numbers, letters, and underscores after that.
@@ -162,7 +163,7 @@ return _.multiply(sum, product)
 	/**
 	 * Clears all previously set variables.
 	 */
-	export function clearVars(): void
+	export function clearVars(): typeof nerdamer
 
 	/**
 	 * Gets all previously set variables.
@@ -180,8 +181,9 @@ return _.multiply(sum, product)
 	 * nerdamer.set('IMAGINARY', 'j')
 	 * nerdamer('sqrt(-1)') // == j
 	 */
-	export function set(setting: 'PARSE2NUMBER', value: boolean): void
-	export function set(setting: 'IMAGINARY', value: string | 'i'): void
+	export function set(setting: 'PARSE2NUMBER', value: boolean): typeof nerdamer
+	export function set(setting: 'IMAGINARY', value: string | 'i'): typeof nerdamer
+	export function set(setting: 'POWER_OPERATOR', value: '**' | '^'): typeof nerdamer
 
 	export interface Expression {
 		/**
@@ -243,14 +245,17 @@ return _.multiply(sum, product)
 	 * @param lower Starting index.
 	 * @param upper Ending index.
 	 */
-	export function sum(expression: string, index: string, lower: string, upper: string)
+	export function sum(expression: ExpressionParam,
+					    index: string,
+	  					lower: ExpressionParam, 
+	  					upper: ExpressionParam): Expression
 
 	/**
 	 *
 	 * @param expression Returns the appropriate value if possible otherwise it returns the function with the simplified expression.
 	 * @param variable The variable with respect to which to integrate.
 	 */
-	export function integrate(expression: string, variable: string): Expression
+	export function integrate(expression: ExpressionParam, variable: string): Expression
 
 	/**
 	 *
@@ -258,7 +263,7 @@ return _.multiply(sum, product)
 	 * @param variable The variable with respect to which to differentiate.
 	 * @param n Calculate the nth derivative.
 	 */
-	export function diff(expression: string, variable: string, n?: int): Expression
+	export function diff(expression: ExpressionParam, variable: string, n?: int): Expression
 
 	////////// ALGEBRA
 
@@ -266,23 +271,23 @@ return _.multiply(sum, product)
 	 * Divides 2 polynominals.
 	 * @param expression Returns the appropriate value if possible otherwise it returns the function with the simplified expression.
 	 */
-	export function divide(expression: string): Expression
+	export function divide(expression: ExpressionParam): Expression
 
 	/**
 	 * Factor an expression.
 	 * @param expression Returns the appropriate value if possible otherwise it returns the function with the simplified expression.
 	 */
-	export function factor(expression: string): Expression
+	export function factor(expression: ExpressionParam): Expression
 
 	/**
 	 * Gets the GCD of 2 polynomials.
 	 * @param expression Returns the appropriate value if possible otherwise it returns the function with the simplified expression.
 	 */
-	export function gcd(expression: string): Expression
+	export function gcd(expression: ExpressionParam): Expression
 
 	/**
 	 * Finds the roots of a univariate polynomial.
 	 * @param expression
 	 */
-	export function factor(expression: string): Expression
+	export function factor(expression: ExpressionParam): Expression
 }

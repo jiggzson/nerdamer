@@ -3278,6 +3278,19 @@ var nerdamer = (function(imports) {
                 dx.push(e);
             }
         };
+
+        var chunkAtCommas = function(arr){
+            var j, k = 0, chunks = [[]];
+            for (var j = 0, l=arr.length; j<l; j++){
+                if (arr[j] === ',') {
+                    k++;
+                    chunks[k] = [];
+                } else {
+                    chunks[k].push(arr[j]);
+                }
+            }
+            return chunks;
+        }
         
         var rem_brackets = function(str) {
             return str.replace(/^\\left\((.+)\\right\)$/g, function(str, a) {
@@ -3306,6 +3319,7 @@ var nerdamer = (function(imports) {
                 }
                 obj = nobj;
             }
+
             
             for(var i=0, l=obj.length; i<l; i++) {
                 var e = obj[i];
@@ -3326,13 +3340,47 @@ var nerdamer = (function(imports) {
                         else if (fname === 'log10')
                             f = '\\log_{10}\\left( ' + this.toTeX(e.args) + '\\right)';
                         else if(fname === 'integrate') {
-                            var dx = getDx(e.args);
-                            f = '\\int '+LaTeX.braces(this.toTeX(e.args))+'\\, d'+this.toTeX(dx);
+                            /* Retrive [Expression, x] */
+                            var chunks = chunkAtCommas(e.args);
+                            /* Build TeX */
+                            var expr = LaTeX.braces(this.toTeX(chunks[0])),
+                                dx = this.toTeX(chunks[1]);
+                            f = '\\int ' + expr + '\\, d' + dx;
+                        }
+                        else if (fname === 'defint') {
+                            var chunks = chunkAtCommas(e.args),
+                                expr = LaTeX.braces(this.toTeX(chunks[0])),
+                                dx = this.toTeX(chunks[1]),
+                                lb = this.toTeX(chunks[2]),
+                                ub = this.toTeX(chunks[3]);
+                            f = '\\int\\limits_{'+lb+'}^{'+ub+'} '+expr+'\\, d'+dx;
+
                         }
                         else if(fname === 'diff') {
-                            var dx = getDx(e.args),
-                                tex = this.toTeX(e.args);
-                            f = '\\frac{d}{d '+dx+'}\\left( '+LaTeX.braces(tex)+' \\right)';
+                            var chunks = chunkAtCommas(e.args);
+                            var dx = '', expr = LaTeX.braces(this.toTeX(chunks[0]));
+                            /* Handle cases: one argument provided, we need to guess the variable, and assume n = 1 */
+                            if (chunks.length == 1){
+                                var vars = [];
+                                for (j = 0; j < chunks[0].length; j++){
+                                    if (chunks[0][j].group === 3) {
+                                        vars.push(chunks[0][j].value);
+                                    }
+                                }
+                                vars = vars.sort();
+                                dx = vars.length > 0 ? ('\\frac{d}{d ' + vars[0] + '}') : '\\frac{d}{d x}';
+                            }
+                            /* If two arguments, we have expression and variable, we assume n = 1 */ 
+                            else if (chunks.length == 2){
+                                dx = '\\frac{d}{d ' + chunks[1] + '}';
+                            }
+                            /* If we have more than 2 arguments, we assume we've got everything */
+                            else {
+                                dx = '\\frac{d^{' + chunks[2] + '}}{d ' + this.toTeX(chunks[1]) + '^{' + chunks[2] + '}}';
+                            }
+
+                            f = dx + '\\left(' + expr + '\\right)';
+
                         }
                         else if (fname === 'sum') {
                             // Split e.args into 4 parts based on locations of , symbols.
