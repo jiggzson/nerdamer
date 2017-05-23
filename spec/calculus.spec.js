@@ -431,7 +431,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(tan(x)*csc(x), x)',
-                expected: 'integrate(tan(x)*csc(x), x)'
+                expected: 'log(sec(x)+tan(x))'
             },
             {
                 given: 'integrate(sinh(x)*e^x, x)',
