@@ -1411,6 +1411,25 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 //no symbol found so we return the integral again
                 return _.symfunction('integrate', [original_symbol, dt]);
             }, false);
+        },
+        defint: function(symbol, from, to, dx) {
+            var vars = core.Utils.variables(symbol),
+                integral = __.integrate(symbol, dx),
+                retval;
+            if(!integral.hasIntegral()) {
+                var upper = {},
+                    lower = {};
+                upper[dx] = to;
+                lower[dx] = from;
+                retval = _.subtract(_.parse(integral, upper), _.parse(integral, lower));
+            }
+            else if(vars.length === 1 && from.isConstant() && to.isConstant()) {
+                var f = core.Utils.build(symbol);
+                retval = core.Math2.num_integrate(f, Number(from), Number(2));
+            }
+            else 
+                retval = _.symfunction('defint', [symbol, dx, from , to]);
+            return retval;
         }
     };
     
@@ -1438,6 +1457,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             visible: true,
             numargs: [1, 2],
             build: function() { return __.integrate; }
+        },
+        {
+            name: 'defint',
+            visible: true,
+            numargs: [3, 4],
+            build: function() { return __.defint; }
         }
     ]);
     //link registered functions externally
