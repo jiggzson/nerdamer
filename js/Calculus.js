@@ -112,11 +112,80 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         return trig_fns.indexOf(x) !== -1;
     };
     
-    core.Settings.integration_depth = 6;
+    var all_functions = core.Utils.all_functions = function(arr) {
+        for(var i=0, l=arr.length; i<l; i++)
+            if(arr[i].group !== FN)
+                return false;
+        return true;
+    },
+    cosAsinBtransform = core.Utils.cosAsinBtranform = function(symbol1, symbol2) {
+        var a, b;
+        a = symbol1.args[0].clone();
+        b = symbol2.args[0].clone();
+        return _.parse(format('(sin(({0})+({1}))-sin(({0})-({1})))/2', a, b));
+    },
+    cosAsinAtransform = core.Utils.cosAsinAtranform = function(symbol1, symbol2) {
+        var a;
+        a = symbol1.args[0].clone();
+        return _.parse(format('(sin(2*({0})))/2', a));
+    },
+    sinAsinBtransform = core.Utils.cosAsinBtranform = function(symbol1, symbol2) { 
+        var a, b;
+        a = symbol1.args[0].clone();
+        b = symbol2.args[0].clone();
+        return _.parse(format('(cos(({0})+({1}))-cos(({0})-({1})))/2', a, b));
+    },
+    trigTransform = core.Utils.trigTransform = function(arr) { 
+        var map = {}, symbol, t,
+            retval = new Symbol(1);
+        for(var i=0, l=arr.length; i<l; i++) {
+            symbol = arr[i]; 
+            if(symbol.group === FN) {
+                var fname = symbol.fname;
+                if(fname === COS && map[SIN]) {
+                    if(map[SIN].args[0].toString() !== symbol.args[0].toString()) 
+                        t = cosAsinBtransform(symbol, map[SIN]);
+                    else
+                        t = cosAsinAtransform(symbol, map[SIN]);
+                    retval = _.multiply(retval, t);
+                }
+                else if(fname === SIN && map[COS]) {
+                    if(map[COS].args[0].toString() !== symbol.args[0].toString()) 
+                        t = cosAsinBtransform(symbol, map[COS]);
+                    else
+                        t = cosAsinAtransform(symbol, map[COS]);
+                    retval = _.multiply(retval, t);
+                }
+                else if(fname === SIN && map[SIN]) {
+                    if(map[SIN].args[0].toString() !== symbol.args[0].toString()) {
+                        t = sinAsinBtransform(symbol, map[SIN]);
+                        delete map[SIN];
+                    }
+                    else
+                        //This should actually be redundant code but let's put just in case
+                        t = _.multiply(symbol, map[SIN]); 
+                    retval = t;
+                }
+                else
+                    map[fname] = symbol;
+            }
+            else
+                retval = _.multiply(retval, symbol);
+        }
+        
+        //put back the remaining functions
+        for(var x in map) 
+            retval = _.multiply(retval, map[x]);
+        
+        return retval;
+
+    };
+    
+    core.Settings.integration_depth = 10;
     
     var __ = core.Calculus = {
 
-        version: '1.3.4',
+        version: '1.4.0',
 
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
@@ -336,9 +405,21 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             var arg = symbol.args[0];
                             symbol = _.parse('sin('+arg+')/('+arg+')');
                             break;
+                        case 'Shi':
+                            var arg = symbol.args[0];
+                            symbol = _.parse('sinh('+arg+')/('+arg+')');
+                            break;
                         case 'Ci':
                             var arg = symbol.args[0];
                             symbol = _.parse('cos('+arg+')/('+arg+')');
+                            break;
+                        case 'Chi':
+                            var arg = symbol.args[0];
+                            symbol = _.parse('cosh('+arg+')/('+arg+')');
+                            break;
+                        case 'Ei':
+                            var arg = symbol.args[0];
+                            symbol = _.parse('e^('+arg+')/('+arg+')');
                             break;
                     }
                 }
@@ -1073,7 +1154,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
                             retval.multiplier = retval.multiplier.multiply(m);
                         }
-
                     }
                     else if(g === PL) {
                         retval = __.integration.partial_fraction(symbol, dx, depth);
@@ -1182,7 +1262,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                                 retval = _.add(retval, __.integration.poly_integrate(x.clone()));
                                                             });
                                                         }
-                                                        else {
+                                                        else { 
                                                             //performs double angle transformation
                                                             var double_angle = function(symbol) {
                                                                 var p = symbol.power,
@@ -1242,10 +1322,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                     sym2.invert().updateHash();
                                                     retval = __.integrate(_.multiply(sym1, sym2), dx, depth);
                                                 }
-                                                else {
+                                                else {  
                                                     retval = __.integrate(_.expand(_.multiply(sym1.fnTransform(), sym2.fnTransform())), dx, depth);
                                                 }
                                             }
+                                            /* //TODO: REVISIT AT SOME POINT
+                                            else if((fn1 === SIN || fn1 === COS) && (fn2 === SIN || fn2 === COS)) {
+                                                var transformed = trigTransform(symbols);
+                                                retval = __.integrate(_.expand(transformed), dx, depth);
+                                            }
+                                            */
                                             else {
                                                 __.integration.stop();
                                             }
@@ -1255,8 +1341,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     else if(g1 === FN && g2 === S) {
                                         if(sym1.fname === COS && sym2.power.equals(-1))
                                             retval = _.symfunction('Ci', [sym1.args[0]]);
+                                        if(sym1.fname === COSH && sym2.power.equals(-1))
+                                            retval = _.symfunction('Chi', [sym1.args[0]]);
                                         else if(sym1.fname === SIN && sym2.power.equals(-1))
                                             retval = _.symfunction('Si', [sym1.args[0]]);
+                                        else if(sym1.fname === SINH && sym2.power.equals(-1))
+                                            retval = _.symfunction('Shi', [sym1.args[0]]);
                                         else {
                                             //since group S is guaranteed convergence we need not worry about tracking depth of integration
                                             retval = __.integration.by_parts(symbol, dx, depth, opt);
@@ -1432,6 +1522,19 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 }
                                     
                             }
+                            else if(all_functions(symbols)) {
+                                var t = new Symbol(1);
+                                for(var i=0,l=symbols.length; i<l; i++) {
+                                    t = _.multiply(t, symbols[i].fnTransform());
+                                }
+                                t = _.expand(t);
+                                retval = __.integrate(t, dx, depth);
+                            }
+                            else {
+                                //one more go
+                                var transformed = trigTransform(symbols);
+                                retval = __.integrate(_.expand(transformed), dx, depth);
+                            }
                         }
                         retval = _.multiply(retval, coeff);
                     }
@@ -1440,7 +1543,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         return retval;
                 }
 
-                catch(e){/*no integral found*/ }  
+                catch(e){/*no integral found*/  }  
 
                 //no symbol found so we return the integral again
                 return _.symfunction('integrate', [original_symbol, dt]);
@@ -1450,19 +1553,24 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             var vars = core.Utils.variables(symbol),
                 integral = __.integrate(symbol, dx),
                 retval;
-            if(!integral.hasIntegral()) {
+            if(vars.length === 1)
+                dx = vars[0];
+            if(!integral.hasIntegral()) { 
                 var upper = {},
-                    lower = {};
+                    lower = {},
+                    a, b;
                 upper[dx] = to;
                 lower[dx] = from;
-                retval = _.subtract(_.parse(integral, upper), _.parse(integral, lower));
+                a = _.parse(integral, upper);
+                b = _.parse(integral, lower);
+                retval = _.subtract(a, b);
             }
             else if(vars.length === 1 && from.isConstant() && to.isConstant()) {
                 var f = core.Utils.build(symbol);
                 retval = core.Math2.num_integrate(f, Number(from), Number(to));
             }
             else 
-                retval = _.symfunction('defint', [symbol, dx, from , to]);
+                retval = _.symfunction('defint', [symbol, from , to, dx]);
             return retval;
         }
     };

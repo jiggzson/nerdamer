@@ -95,7 +95,7 @@
                     <hr>
                     <h3 class="text-capitalize">definite integral</h3>
                     <p>
-                        Attempts to compute the definite integral of the expression.
+                        Attempts to compute the definite integral of the expression. Assumes that function is continuous over interval when integrating numerically.
                     </p>
                     <hr>
                     <h4>Usage: <span class="usage-example">nerdamer("defint(expression_or_vector, from, to, dx)")</span></h4>
@@ -135,9 +135,9 @@
                 EXAMPLES:
                 <div>
                     <pre><code class="javascript">var x = nerdamer('defint(e^(cos(x)), 1, 2)');
-console.log(x.toString());
+console.log(x.text());
 var y = nerdamer('defint(x^2+2*x+1, 0, 10)');
-console.log(y.toString());</code></pre>
+console.log(y.text());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -190,9 +190,9 @@ console.log(y.toString());</code></pre>
         $(function() {
             try {
                 var x = nerdamer('defint(e^(cos(x)), 1, 2)');
-oprint(x.toString());
+oprint(x.text());
 var y = nerdamer('defint(x^2+2*x+1, 0, 10)');
-oprint(y.toString());
+oprint(y.text());
             }
             catch(e) {
                 oprint(e.toString());

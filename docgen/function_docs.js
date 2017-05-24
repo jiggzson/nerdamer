@@ -1952,7 +1952,7 @@ FUNCTIONS = {
         type: 'internal',
         usage: 'defint(expression_or_vector, from, to, dx)',
         full_name: 'definite integral',
-        description: 'Attempts to compute the definite integral of the expression.',
+        description: 'Attempts to compute the definite integral of the expression. Assumes that function is continuous over interval when integrating numerically.',
         parameters: {
             expression_or_vector: {
                 type: 'expression',
@@ -1973,9 +1973,9 @@ FUNCTIONS = {
         },
         examples: [
             "var x = nerdamer('defint(e^(cos(x)), 1, 2)');",
-            "console.log(x.toString());",
+            "console.log(x.text());",
             "var y = nerdamer('defint(x^2+2*x+1, 0, 10)');",
-            "console.log(y.toString());"
+            "console.log(y.text());"
         ],
         returns: 'Expression'
     },
