@@ -59,6 +59,10 @@ describe('calculus', function () {
             {
                 given: 'laplace(t^2*e^(a*t), t, s)',
                 expected: '-2*(-s+a)^(-3)'
+            },
+            {
+                given: 'laplace(sinh(t)*e^t, t, s)',
+                expected: '(1/2)*(-s+2)^(-1)+(1/2)*s^(-1)'
             }
         ];
 

@@ -23,7 +23,7 @@ if((typeof module) !== 'undefined') {
         FN = core.groups.FN;
     core.Settings.Laplace_integration_depth = 40;
     var __ = core.Extra = {
-        version: '1.0.0',
+        version: '1.1.0',
         //http://integral-table.com/downloads/LaplaceTable.pdf
         LaPlace: {
             //Using: intgral_0_oo f(t)*e^(-s*t) dt
@@ -92,10 +92,11 @@ if((typeof module) !== 'undefined') {
                         core.Utils.block('PARSE2NUMBER', function() {
                             var u = 't';
                             var sym = symbol.sub(t, u);
-                            retval = core.Calculus.integrate(_.parse('e^(-'+s+'*'+u+')*'+sym), u);
+                            var integration_expr = _.parse('e^(-'+s+'*'+u+')*'+sym);
+                            retval = core.Calculus.integrate(integration_expr, u);
                             if(retval.hasIntegral())
                                 _.error('Unable to compute transform');
-                            retval = retval.sub(u, 0);
+                            retval = retval.sub(t, 0);
                             retval = _.expand(_.multiply(retval, new Symbol(-1)));
                             retval = retval.sub(u, t);
                         }, false);

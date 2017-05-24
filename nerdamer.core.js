@@ -2855,6 +2855,8 @@ var nerdamer = (function(imports) {
                 if(e.is_operator) {
                     var b = q.pop(),
                         a = q.pop();
+                    if(isArray(b)) //misread function
+                        _.error('Unrecognized function "'+a.value+'"');
                     q.push(this[e.fn](a, b));
                 }
                 else if(e.value in functions) { 
@@ -4040,7 +4042,7 @@ var nerdamer = (function(imports) {
                             var x = result.symbols[s];
                             x.multiplier = x.multiplier.multiply(m);
                             if(x.isComposite())
-                                x.distributeMultiplier(true);
+                                x.distributeMultiplier();
                             symbol.symbols[s] = x;
                         }
                     }
