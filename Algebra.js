@@ -814,7 +814,7 @@ if((typeof module) !== 'undefined') {
         return subs;
     };
     var __ = core.Algebra = {
-        version: '1.4.0',
+        version: '1.4.1',
         init: (function() {})(),
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
@@ -1682,6 +1682,58 @@ if((typeof module) !== 'undefined') {
                 return x.invert(); 
             });
         },
+        coeffs: function(symbol, wrt, coeffs) {
+            wrt = String(wrt); 
+            symbol = _.expand(symbol);
+            
+            coeffs = coeffs || [];
+            //we cannot get coeffs for group EX
+            if(symbol.group === EX && symbol.contains(wrt, true))
+                _.error('Unable to get coefficients using expression '+symbol.toString());
+            var vars = variables(symbol);
+            if(vars.length <=1 && vars[0] === wrt) {
+                var a = new Polynomial(symbol).coeffs.map(function(x) {
+                    return new Symbol(x);
+                });
+                for(var i=0,l=a.length;i<l; i++) 
+                    coeffs[i] = a[i]; //transfer it all over
+            }
+            else { 
+                if(!wrt)
+                    _.error('Polynomial contains more than one variable. Please specify which variable is to be used!');
+                //if the variable isn't part of this polynomial then we're looking at x^0
+                
+                if(vars.indexOf(wrt) === -1) {
+                    coeffs[0] = symbol;
+                }
+                    
+                else {
+                    coeffs = coeffs || [];
+                    var coeff;
+                    if(symbol.group === CB) {
+                        var s = symbol.symbols[wrt];
+                        if(!s)
+                            _.error('Expression is not a polynomial!');
+                        var p = Number(s.power);
+                        coeff = _.divide(symbol.clone(), s.clone());
+                        if(coeff.contains(wrt, true) || p < 0 || !isInt(p))
+                            _.error('Expression is not a polynomial!');
+                        coeffs[p] = coeff;
+                    }
+                    else if(symbol.group === CP) {
+                        symbol.each(function(x) {
+                           __.coeffs(x.clone(), wrt, coeffs);
+                        });
+                    }
+                }
+            }
+            //fill holes
+            for(var i=0,l=coeffs.length; i<l; i++) 
+                if(typeof coeffs[i] === 'undefined')
+                    coeffs[i] = new Symbol(0);
+            
+            return coeffs;    
+        },
         /**
          * Get's all the powers of a particular polynomial including the denominators. The denominators powers
          * are returned as negative. All remaining polynomials are returned as zero order polynomials.
@@ -2434,6 +2486,12 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: 2,
             build: function() { return __.div; }
+        },
+        {
+            name: 'coeffs',
+            visible: true,
+            numargs: [1, 2],
+            build: function() { return __.coeffs; }
         }
     ]);
     nerdamer.api();

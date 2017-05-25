@@ -292,4 +292,31 @@ describe('Algebra', function () {
             expect(result.toString()).toEqual(testCases[i].expected);
         }
     });
+    
+    it('should get coeffs', function () {
+        // given
+        var testCases = [
+            {
+                given: 'coeffs(x^2+2*x+1, x)',
+                expected: '[1,2,1]'
+            }, {
+                given: 'coeffs(a*b*x^2+c*x+d, x)',
+                expected: '[d,c,a*b]'
+            }, {
+                given: 'coeffs(t*x, x)',
+                expected: '[0,t]'
+            }, {
+                given: 'coeffs(b*(t*x-5), x)',
+                expected: '[-5*b,b*t]'
+            }
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var result = nerdamer(testCases[i].given);
+
+            // then
+            expect(result.toString()).toEqual(testCases[i].expected);
+        }
+    });
 });

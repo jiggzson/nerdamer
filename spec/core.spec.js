@@ -221,6 +221,11 @@ describe('Nerdamer core', function () {
         // given
         var testCases = [
             {
+                given: '0^(1/2)',
+                expected: '0',
+                expectedValue: '0'
+            },
+            {
                 given: '2^(1/2)',
                 expected: 'sqrt(2)',
                 expectedValue: '1.4142135623730951'
