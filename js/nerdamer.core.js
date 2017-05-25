@@ -923,6 +923,7 @@ var nerdamer = (function(imports) {
                 }
                 return sum;
             },
+            //the cosine integral function
             Chi: function(x) {
                 var dx, g, f;
                 dx = 0.001;
@@ -932,7 +933,8 @@ var nerdamer = (function(imports) {
                 };
                 return Math.log(x)+g+Math2.num_integrate(f, 0.002, x, dx);
             },
-            gamma_incomplete(n, x) {
+            //the gamma incomplete function
+            gamma_incomplete: function(n, x) {
                 var t = n-1,
                     sum = 0,
                     x = x || 0;
@@ -1210,6 +1212,7 @@ var nerdamer = (function(imports) {
      * @returns {Expression} wraps around the Symbol class
      */
     function Expression(symbol) {
+        //we don't want arrays wrapped
         this.symbol = symbol;
     }
     
@@ -1355,12 +1358,13 @@ var nerdamer = (function(imports) {
         expand: function() {
             return new Expression(_.expand(this.symbol));
         },
-        each: function(callback) {
+        each: function(callback, i) {
             if(this.symbol.each)
-                this.symbol.each(callback);
-            else if(isArray(this.symbol))
+                this.symbol.each(callback, i);
+            else if(isArray(this.symbol)) { 
                 for(var i=0; i<this.symbol.length; i++)
-                    callback.call(this.symbol[i], i);
+                    callback.call(this.symbol, this.symbol[i], i);
+            }
             else
                 callback.call(this.symbol);
         },
@@ -2565,7 +2569,7 @@ var nerdamer = (function(imports) {
     Prefix.prototype.toString = function() {
         return '`'+this.val;
     };
-
+    
     //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
         //we want the underscore to point to this parser not the global nerdamer parser.
@@ -2671,7 +2675,6 @@ var nerdamer = (function(imports) {
                 'sqrt'              : [ sqrt, 1],
                 'log'               : [ log , 1],
                 'expand'            : [ expand , 1],
-                'clean'             : [ clean , 1],
                 'abs'               : [ abs , 1],
                 'invert'            : [ invert, 1],
                 'transpose'         : [ transpose, 1],
@@ -4817,7 +4820,11 @@ var nerdamer = (function(imports) {
             var aIsSymbol = isSymbol(a),
                 bIsSymbol = isSymbol(b);
             if(aIsSymbol && bIsSymbol) {
-                if(a.equals(0) && b.equals(0)) err('0^0 is undefined!');
+                var aIsZero = a.equals(0);
+                if(aIsZero && b.equals(0)) err('0^0 is undefined!');
+                //return 0 right away if possible
+                if(aIsZero && b.isConstant() && b.multiplier.greaterThan(0))
+                    return new Symbol(0);
                 
                 var bIsConstant = b.isConstant(),
                     aIsConstant = a.isConstant(), 
@@ -5521,7 +5528,7 @@ var nerdamer = (function(imports) {
         },
 
         // Calls the iterator for each element of the vector in turn
-        each: function(fn) {
+        each: function(fn) { 
             var n = this.elements.length, k=n, i;
             do { 
                 i = k-n;

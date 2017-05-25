@@ -427,7 +427,7 @@ FUNCTIONS = {
         ],
         returns: 'bool'
     },
-    nerdamer__solveFor: {
+    Solve__solveFor: {
         type: 'nerdamer',
         usage: 'nerdamer(equation).solveFor(variable)',
         full_name: 'solveFor',
@@ -448,6 +448,57 @@ FUNCTIONS = {
         ],
         returns: 'Symbol[]'
     },
+    Solve__solve: {
+        type: 'nerdamer',
+        usage: 'nerdamer("solve(expression, variable")',
+        full_name: 'solve',
+        description: 'Similiar to solveFor this will solve for a given variable. The difference is that this is a self contained function.',
+        parameters: {
+            expression: {
+                type: 'Expression',
+                description: 'The expression to solve'
+            },
+            variable: {
+                type: 'String',
+                description: "The variable to solve for."
+            }
+        },
+        examples: [
+            "var x = nerdamer('solve(x^3+1, x)');",
+            "console.log(x.toString());",
+            "x = nerdamer.solve('x^2+2*x+1', 'x');",
+            "console.log(x.toString());",
+            "x = nerdamer.solve('3*(x+a)*(x-b)', 'x');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Symbol[]'
+    },
+    Solve__solveEquations: {
+        type: 'nerdamer',
+        usage: 'nerdamer.solveEquations(expression_or_array, variables)',
+        full_name: 'solveEquations',
+        description: 'Solves a system of linear equations',
+        parameters: {
+            expressions_or_array: {
+                type: 'Expression',
+                description: 'An array of expression'
+            },
+            variables: {
+                type: 'String',
+                description: "The variables to solve for."
+            }
+        },
+        examples: [
+            "var sol = nerdamer.solveEquations(['x+y=1', '2*x=6', '4*z+y=6']);",
+            "console.log(sol.toString());",
+            "sol = nerdamer.solveEquations('cos(x)+cos(3*x)=1','x');",
+            "console.log(sol.toString());",
+            "sol = nerdamer.solveEquations('x^2+8+y=x+6','x');",
+            "console.log(sol.toString());"
+        ],
+        returns: 'Symbol[]'
+    },
+
     Expression__text: {
         type: 'Expression',
         usage: 'nerdamer.text(x)',
@@ -1745,6 +1796,36 @@ FUNCTIONS = {
         ],
         returns: 'Vector'
     },
+    Algebra__coeffs: {
+        type: 'internal',
+        usage: 'coeffs(polynomial, x)',
+        full_name: 'coefficients',
+        description: 'Get the coefficients of a polynomial. The coefficients will be placed in the index of their power.'+
+                ' So constants are in the 0th place, x^2 would be in the 2nd place, etc. Throws an error if expression is'+
+                ' not a polynomial. Holes will be filled with zeroes',
+        parameters: {
+            polynomial: {
+                type: 'expression',
+                description: "The polynomial for which the coefficients are to be found."
+            },
+            x: {
+                type: 'expression',
+                description: "The respective variable with which to get the coefficients"
+            }
+        },
+        examples: [
+            "var coeffs = nerdamer.coeffs('3*x^2+1', 'x');",
+            "console.log(coeffs.toString());",
+            "coeffs.each(function(e, i) {",
+            "   console.log('coeff #'+i+': ', nerdamer(e).add('t').toString());",
+            "});",
+            "var poly = nerdamer('a*x^2+b*x+c+x');",
+            "coeffs = nerdamer.coeffs(poly, 'x');",
+            "console.log(coeffs.toString());",
+            "coeffs = nerdamer.coeffs('a*x+b/x^2', 'x');"
+        ],
+        returns: 'Vector'
+    },
     Algebra__factor: {
         type: 'internal',
         usage: 'factor(x)',
@@ -1984,7 +2065,8 @@ FUNCTIONS = {
         type: 'internal',
         usage: 'laplace(expression, t, s)',
         full_name: 'Laplace',
-        description: 'Attempts to calculate the Laplace transform of an expression. Currently computes transforms of most common expressions.',
+        description: 'Attempts to calculate the Laplace transform of an expression. Currently computes transforms of most common expressions.'+
+                ' Throws and error if no transform could be calculated.',
         parameters: {
             expression: {
                 type: 'expression',

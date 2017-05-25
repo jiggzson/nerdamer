@@ -91,36 +91,30 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>laplace</h1>
+                    <h1>Solve.solve</h1>
                     <hr>
-                    <h3 class="text-capitalize">Laplace</h3>
+                    <h3 class="text-capitalize">solve</h3>
                     <p>
-                        Attempts to calculate the Laplace transform of an expression. Currently computes transforms of most common expressions. Throws and error if no transform could be calculated.
+                        Similiar to solveFor this will solve for a given variable. The difference is that this is a self contained function.
                     </p>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("laplace(expression, t, s)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("solve(expression, variable")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
                         <table class="table table-responsive table-condensed">
                             <tr>
     <td>
-        <span class="parameter-type">expression </span>
+        <span class="parameter-type">Expression </span>
         <span class="parameter-name">expression </span>
     </td>
-    <td><span class="parameter-description">The expression to be transformed</span></td>
+    <td><span class="parameter-description">The expression to solve</span></td>
 </tr><tr>
     <td>
-        <span class="parameter-type">variable </span>
-        <span class="parameter-name">t </span>
+        <span class="parameter-type">String </span>
+        <span class="parameter-name">variable </span>
     </td>
-    <td><span class="parameter-description">The time variable</span></td>
-</tr><tr>
-    <td>
-        <span class="parameter-type">variable </span>
-        <span class="parameter-name">s </span>
-    </td>
-    <td><span class="parameter-description">The transformation variable</span></td>
+    <td><span class="parameter-description">The variable to solve for.</span></td>
 </tr>
                         </table>
                     </div>
@@ -128,12 +122,12 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('laplace(t^6, t, s)').evaluate();
+                    <pre><code class="javascript">var x = nerdamer('solve(x^3+1, x)');
 console.log(x.toString());
-x = nerdamer.laplace('cos(w*t)', 't', 'x');
-console.log(x.toString())
-x = nerdamer.laplace('cos(w*t)*t', 't', 'x');
-console.log(x.toString())</code></pre>
+x = nerdamer.solve('x^2+2*x+1', 'x');
+console.log(x.toString());
+x = nerdamer.solve('3*(x+a)*(x-b)', 'x');
+console.log(x.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -185,12 +179,12 @@ console.log(x.toString())</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('laplace(t^6, t, s)').evaluate();
+                var x = nerdamer('solve(x^3+1, x)');
 oprint(x.toString());
-x = nerdamer.laplace('cos(w*t)', 't', 'x');
-oprint(x.toString())
-x = nerdamer.laplace('cos(w*t)*t', 't', 'x');
-oprint(x.toString())
+x = nerdamer.solve('x^2+2*x+1', 'x');
+oprint(x.toString());
+x = nerdamer.solve('3*(x+a)*(x-b)', 'x');
+oprint(x.toString());
             }
             catch(e) {
                 oprint(e.toString());
