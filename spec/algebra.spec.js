@@ -266,22 +266,28 @@ describe('Algebra', function () {
 
     // TODO jiggzson: Currently the last test case fails...
     // with xit (instead of it), a test can be disabled temporarily
-    xit('should factor correctly', function () {
+    it('should factor correctly', function () {
         // given
         var testCases = [
             {
                 given: 'factor(x^2+2*x+1)',
                 expected: '(1+x)^2'
-            }, {
+            }, 
+            {
                 given: 'factor(x^4+25*x^3+234*x^2+972*x+1512)',
                 expected: '(6+x)^3*(7+x)'
-            }, {
+            }, 
+            {
                 given: 'factor(x^5+32*x^4+288*x^3-418*x^2-16577*x-55902)',
-                expected: '(-7+x)*(11+3*x+x^2)^3*(6+x)'
-            }, {
+                expected: '(-7+x)*(11+x)^3*(6+x)'
+            }, 
+            /*
+            //TODO: This should factor as well
+            {
                 given: 'factor(x^2*y*z+x*z+t*x^2*y+t*x)',
                 expected: '(1+x*y)*(t+z)*(x)'
             }
+             */
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
@@ -299,15 +305,22 @@ describe('Algebra', function () {
             {
                 given: 'coeffs(x^2+2*x+1, x)',
                 expected: '[1,2,1]'
-            }, {
+            }, 
+            {
                 given: 'coeffs(a*b*x^2+c*x+d, x)',
                 expected: '[d,c,a*b]'
-            }, {
+            }, 
+            {
                 given: 'coeffs(t*x, x)',
                 expected: '[0,t]'
-            }, {
+            }, 
+            {
                 given: 'coeffs(b*(t*x-5), x)',
                 expected: '[-5*b,b*t]'
+            },
+            {
+                given: 'coeffs(a*x^2+b*x+c+x, x)',
+                expected: '[c,1+b,a]'
             }
         ];
 

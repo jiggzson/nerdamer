@@ -1695,8 +1695,14 @@ if((typeof module) !== 'undefined') {
                 var a = new Polynomial(symbol).coeffs.map(function(x) {
                     return new Symbol(x);
                 });
-                for(var i=0,l=a.length;i<l; i++) 
-                    coeffs[i] = a[i]; //transfer it all over
+                for(var i=0,l=a.length;i<l; i++)  {
+                    var coeff = a[i],
+                        e = coeffs[i]; 
+                    if(e)
+                        coeff = _.add(e, coeff);
+                    coeffs[i] = coeff; //transfer it all over
+                }
+                    
             }
             else { 
                 if(!wrt)
@@ -1718,12 +1724,15 @@ if((typeof module) !== 'undefined') {
                         coeff = _.divide(symbol.clone(), s.clone());
                         if(coeff.contains(wrt, true) || p < 0 || !isInt(p))
                             _.error('Expression is not a polynomial!');
+                        var e = coeffs[p];
+                        if(e)
+                            coeff = _.add(e, coeff);
                         coeffs[p] = coeff;
                     }
                     else if(symbol.group === CP) {
                         symbol.each(function(x) {
                            __.coeffs(x.clone(), wrt, coeffs);
-                        });
+                        }, true);
                     }
                 }
             }
@@ -2496,3 +2505,6 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer('factor(x^2*y*z+x*z+t*x^2*y+t*x)');
+console.log(x.toString())

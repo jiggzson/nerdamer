@@ -1358,12 +1358,13 @@ var nerdamer = (function(imports) {
         expand: function() {
             return new Expression(_.expand(this.symbol));
         },
-        each: function(callback) {
+        each: function(callback, i) {
             if(this.symbol.each)
-                this.symbol.each(callback);
-            else if(isArray(this.symbol))
+                this.symbol.each(callback, i);
+            else if(isArray(this.symbol)) { 
                 for(var i=0; i<this.symbol.length; i++)
-                    callback.call(this.symbol[i], i);
+                    callback.call(this.symbol, this.symbol[i], i);
+            }
             else
                 callback.call(this.symbol);
         },
@@ -5527,7 +5528,7 @@ var nerdamer = (function(imports) {
         },
 
         // Calls the iterator for each element of the vector in turn
-        each: function(fn) {
+        each: function(fn) { 
             var n = this.elements.length, k=n, i;
             do { 
                 i = k-n;
