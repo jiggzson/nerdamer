@@ -2505,6 +2505,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var x = nerdamer('factor(x^2*y*z+x*z+t*x^2*y+t*x)');
-console.log(x.toString())
