@@ -1828,7 +1828,7 @@ if((typeof module) !== 'undefined') {
                         original = symbol.clone();
 
                     //minor optimization. Seems to cut factor time by half in some cases.
-                    if(multiVar) {
+                    if(multiVar) { 
                         var all_S = true, all_unit = true;
                         symbol.each(function(x) {
                             if(x.group !== S) all_S = false;
@@ -1837,9 +1837,12 @@ if((typeof module) !== 'undefined') {
                         if(all_S && all_unit) 
                             return _.pow(symbol, _.parse(p));
                     }
+                    //factor the coefficients
                     symbol = __.Factor.coeffFactor(symbol, factors);
+                    //factor the power
                     symbol = __.Factor.powerFactor(symbol, factors);
-                    if(vars.length === 1) {
+                    
+                    if(vars.length === 1) { 
                         symbol = __.Factor.squareFree(symbol, factors);
                         symbol = __.Factor.trialAndError(symbol, factors);
                     }
@@ -2085,14 +2088,13 @@ if((typeof module) !== 'undefined') {
                     if(divided[1].equals(0)) { //we found at least one factor
                         var factor = divided[0];
                         factors.add(factor); 
-                        factors.add(new_factor);
+                        //factors.add(new_factor);
                         var d = __.div(symbol, divided[0].clone());
                         var r = d[0];
                         if(r.isConstant()) { 
                             factors.add(r);
                             return r;
                         }
-
                         return __.Factor.mfactor(r, factors);
                     }
                 }
@@ -2395,6 +2397,7 @@ if((typeof module) !== 'undefined') {
 
                     while(dividend_larger && can_divide(s1, s2)) {
                         var q = s1[0].divide(s2[0]);
+
                         quotient.push(q); //add what's divided to the quotient
                         s1.shift();//the first one is guaranteed to be gone so remove from dividend
                         for(var i=1; i<s2.length; i++) { //loop through the denominator

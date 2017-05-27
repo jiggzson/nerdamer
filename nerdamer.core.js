@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.10',
+    var version = '0.7.11',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -4857,18 +4857,27 @@ var nerdamer = (function(imports) {
                 }
 
                 if(aIsConstant && bIsConstant && Settings.PARSE2NUMBER) { 
-                    var base = a.multiplier.toDecimal(), e = b.multiplier.toDecimal();
-
-                    var sign = new Symbol(1);
-                    if(b.multiplier.den.isOdd()) {
-                        var abs_base = Math.abs(base);
-                        sign = new Symbol(base/abs_base);
-                        base = abs_base;
+                    var c;
+                    //remove the sign
+                    if(sign < 0) {
+                        a.negate();
+                        if(b.multiplier.den.equals(2)) 
+                            //we know that the numerator has to be odd and therefore it's i
+                            c = new Symbol(Settings.IMAGINARY);
+                        else if(isInt(b.multiplier)) {
+                            if(even(b.multiplier))
+                                c = new Symbol(1);
+                            else 
+                                c = new Symbol(-1);
+                        }
+                        else
+                            c = _.pow(_.symfunction(PARENTHESIS, [new Symbol(-1)]), b.clone());
                     }
-                    
-                    if(even(e)) sign = new Symbol(1);
-                    
-                    result = _.multiply(new Symbol(Math.pow(base, e)), sign);
+
+                    result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
+                    //put the back sign
+                    if(c)
+                        result = _.multiply(result, c);
                 }
                 else if(bIsInt && !m.equals(1)) { 
                     var p = b.multiplier.toDecimal(),
@@ -4879,13 +4888,27 @@ var nerdamer = (function(imports) {
                 else { 
                     var sign = a.sign();
                     if(b.isConstant() && a.isConstant() && even(b.multiplier.den) && sign < 0 ) { 
-                        var aa = a.clone();
-                        aa.multiplier.negate();
-                        result = _.pow(_.symfunction(PARENTHESIS, [new Symbol(-1)]), b.clone()); 
-                        var _a = _.pow(new Symbol(aa.multiplier.num), b.clone());
-                        var _b = _.pow(new Symbol(aa.multiplier.den), b.clone());
-                        var r = _.divide(_a, _b);
-                        result = _.multiply(result, r);
+                        //we know the sign is negative so if the denominator for b == 2 then it's i
+                        if(b.multiplier.den.equals(2)) {
+                            var i = new Symbol(Settings.IMAGINARY);
+                            a.negate();//remove the sign
+                            //if the power is negative then i is negative
+                            if(b.lessThan(0)) {
+                                i.negate();
+                                b.negate();//remove the sign from the power
+                            }
+                            //pull the power normally and put back the imaginary
+                            result = _.multiply(_.pow(a, b), i);
+                        }
+                        else { 
+                            var aa = a.clone();
+                            aa.multiplier.negate();
+                            result = _.pow(_.symfunction(PARENTHESIS, [new Symbol(-1)]), b.clone()); 
+                            var _a = _.pow(new Symbol(aa.multiplier.num), b.clone());
+                            var _b = _.pow(new Symbol(aa.multiplier.den), b.clone());
+                            var r = _.divide(_a, _b);
+                            result = _.multiply(result, r);
+                        }  
                     }
                     else { 
                         //b is a symbol

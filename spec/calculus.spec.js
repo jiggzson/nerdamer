@@ -281,10 +281,10 @@ describe('calculus', function () {
                 expected: '10*((-1/16)*log(5+x)+(1/16)*log(1+x))*q'
             },
             // TODO jiggzson: This test is produces result (a+x)^(-1)*a+log(a+x)
-            //{
-            //    given: 'integrate(x/(x+a)^2, x)',
-            //    expected: '-(a+x)^(-1)*x+log(a+x)'
-            //},
+            {
+                given: 'integrate(x/(x+a)^2, x)',
+                expected: '(a+x)^(-1)*a+log(a+x)'
+            },
             {
                 given: 'integrate(sqrt(x-a), x)',
                 expected: '(2/3)*(-a+x)^(3/2)'
@@ -321,10 +321,10 @@ describe('calculus', function () {
                 given: 'integrate(t*log(x)^3,x)',
                 expected: '(-3*log(x)^2*x-6*x+6*log(x)*x+log(x)^3*x)*t'
             },
-//            {
-//                given: 'integrate(e^x*sin(x),x)',
-//                expected: '(1/2)*(-cos(x)*e^x+e^x*sin(x))'
-//            },
+            {
+                given: 'integrate(e^x*sin(x),x)',
+                expected: '(1/2)*(-cos(x)*e^x+e^x*sin(x))'
+            },
             {
                 given: 'integrate(e^x*sin(x),x)',
                 expected: '(1/2)*(-cos(x)*e^x+e^x*sin(x))'
@@ -441,6 +441,10 @@ describe('calculus', function () {
                 given: 'integrate(sinh(x)*cos(x), x)',
                 expected: '(-1/4)*e^(-x)*sin(x)+(1/4)*cos(x)*e^(-x)+(1/4)*cos(x)*e^x+(1/4)*e^x*sin(x)'
             },
+            {
+                given: 'integrate(cos(x^2), x)',
+                expected: 'integrate(cos(x^2),x)'
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
@@ -537,9 +541,6 @@ describe('calculus', function () {
           '-(--5*--7)': {
               expected: '-35'
           },
-//          '-(1)--(1-1--1)': {
-//              expected: '0'
-//          },
           '(-1)^(3/4)': {
               expected: '(-1)^(3/4)'
           }

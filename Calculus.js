@@ -1051,8 +1051,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         __.integration.stop();
                                 }
                                 else {
-                                    var ag = symbol.args[0].group;
-                                    if(!(ag === CP || ag === S || ag === CB))
+                                    var ag = symbol.args[0].group,
+                                        decomposed = __.integration.decompose_arg(arg, dx);
+                                    
+                                    if(!(ag === CP || ag === S || ag === CB) || !decomposed[1].power.equals(1))
                                         __.integration.stop();
                                     /**TODO**/ //ASIN, ACOS, ATAN
                                     switch(fname) {

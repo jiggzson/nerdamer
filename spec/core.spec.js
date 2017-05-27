@@ -721,13 +721,11 @@ describe('Nerdamer core', function () {
                 expected: '-1',
                 expectedValue: '-1'
             },
-
-            /* TODO jiggzson: results in 2*NaN
             {
                 given: '(256*i)^(1/8)',
                 expected: '2*(-1)^(1/16)',
-                expectedValue: '2*(-1)^(1/16)'
-            },*/
+                expectedValue: '2*(-1)^0.0625'
+            },
             {
                 given: 'i/i',
                 expected: '1',
@@ -757,14 +755,14 @@ describe('Nerdamer core', function () {
     });
 
     // TODO jiggzson: Does not work
-    xit('should handle powers with results using i', function () {
+    it('should handle powers with results using i', function () {
         // given
         var testCases = [
             {
                 given: '(-2/3*x)^x',
                 expected: '(-x)^x*2^x*3^(-x)',
                 //TODO: Evaluates to NaN somewhere
-                expectedValue: '(-1)^(21/10)*5^(-21/10)*7^(21/10)'
+                expectedValue: '2.0270706004935852*(-1)^2.1'
             }
         ];
 
@@ -1432,12 +1430,11 @@ describe('Nerdamer core', function () {
                     expected: '(1+x)^(5+z)',
                     expectedValue: '887.5036810000004'
                 },
-                /* TODO jiggzson: Does not match expectedValue
                 {
                     given: '(-1)^x',
                     expected: '(-1)^x',
-                    expectedValue: '-1'
-                },*/
+                    expectedValue: '(-1)^2.1'
+                },
                 {
                     given: '(x+y)--(x+y)',
                     expected: '2*x+2*y',

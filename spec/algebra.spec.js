@@ -200,7 +200,7 @@ describe('Algebra', function () {
             /* {
                 given: 'div(3*(x^2*y)+5,6*x^2*y+3*x*y+7)',
                 expected: '[(1+2*x)^(-1)*x,(1+2*x)^(-1)*(3*x+5)]'
-            }, */
+            }, 
             /* {
                 given: 'div(-5*x^2+17*x^2*y+4+3*x*y, 2*x^2*y+4)',
                 expected: '[(3/2)*x^(-1)+17/2,-30-5*x^2-6*x^(-1)]'
@@ -281,13 +281,11 @@ describe('Algebra', function () {
                 given: 'factor(x^5+32*x^4+288*x^3-418*x^2-16577*x-55902)',
                 expected: '(-7+x)*(11+x)^3*(6+x)'
             }, 
-            /*
             //TODO: This should factor as well
             {
                 given: 'factor(x^2*y*z+x*z+t*x^2*y+t*x)',
                 expected: '(1+x*y)*(t+z)*(x)'
             }
-             */
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
