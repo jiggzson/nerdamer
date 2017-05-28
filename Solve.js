@@ -99,7 +99,7 @@ if((typeof module) !== 'undefined') {
     // A utility function to parse an expression to left hand side when working with strings
 
     var toLHS = function(eqn) {
-        var es = eqn.split('=');
+        var es = [eqn.LHS, eqn.RHS];
         if(es[1] === undefined) es[1] = '0';
         var e1 = _.parse(es[0]), e2 = _.parse(es[1]);
         return _.subtract(e1, e2);
@@ -286,7 +286,7 @@ if((typeof module) !== 'undefined') {
      * @param {type} solve_for
      * @returns {Array}
      */
-    var solve = function(eqns, solve_for, solutions) {      
+    var solve = function(eqns, solve_for, solutions) {
         solve_for = solve_for || 'x'; //assumes x by default
         //If it's an array then solve it as a system of equations
         if(isArray(eqns)) {
