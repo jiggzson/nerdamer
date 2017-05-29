@@ -99,7 +99,10 @@ if((typeof module) !== 'undefined') {
     // A utility function to parse an expression to left hand side when working with strings
 
     var toLHS = function(eqn) {
-        var es = [eqn.LHS, eqn.RHS];
+        //If it's an equation then call its toLHS function instead
+        if(eqn instanceof Equation)
+            return eqn.toLHS();
+        var es = eqn.split('=');
         if(es[1] === undefined) es[1] = '0';
         var e1 = _.parse(es[0]), e2 = _.parse(es[1]);
         return _.subtract(e1, e2);
