@@ -3387,7 +3387,7 @@ var nerdamer = (function(imports) {
                             f = dx + '\\left(' + expr + '\\right)';
 
                         }
-                        else if (fname === 'sum') {
+                        else if (fname === 'sum' || fname === 'product') {
                             // Split e.args into 4 parts based on locations of , symbols.
                             var argSplit = [[], [], [], []], j = 0, i;
                             for (i = 0; i < e.args.length; i++){
@@ -3398,7 +3398,7 @@ var nerdamer = (function(imports) {
                                 argSplit[j].push(e.args[i]);
                             }
                             // Then build TeX string.
-                            f = '\\sum_'+LaTeX.braces(this.toTeX(argSplit[1])+' = '+this.toTeX(argSplit[2]));
+                            f = (fname==='sum'?'\\sum_':'\\prod_')+LaTeX.braces(this.toTeX(argSplit[1])+' = '+this.toTeX(argSplit[2]));
                             f += '^'+LaTeX.braces(this.toTeX(argSplit[3])) + LaTeX.braces(this.toTeX(argSplit[0]));
                         }
                         else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL) 
