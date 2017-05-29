@@ -23,6 +23,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         inBrackets = core.Utils.inBrackets,
         isInt = core.Utils.isInt,
         format = core.Utils.format,
+        even = core.Utils.even,
         N = core.groups. N,
         S = core.groups.S,
         FN = core.groups.FN,
@@ -32,6 +33,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         EX = core.groups.EX,
         P = core.groups.P,
         LOG = 'log', 
+        EXP = 'exp', 
         ABS = 'abs', 
         SQRT = 'sqrt',
         SIN = 'sin',  
@@ -50,35 +52,72 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         COSH = 'cosh',
         TANH = 'tanh';
         
+        
+    //custom errors
+    function NoIntegralFound(msg){
+        this.message = msg || "";
+    }
+    NoIntegralFound.prototype = new Error();
+    
     //Preparations
     Symbol.prototype.hasIntegral = function() {
         return this.containsFunction('integrate');
     };
     //transforms a function
     Symbol.prototype.fnTransform = function() {
-        var retval;
-        switch(this.fname) {
-            case SINH:
-                retval = _.parse(format('(e^({0})-e^(-({0})))/2', this.args[0]));
-                break;
-            case COSH:
-                retval = _.parse(format('(e^({0})+e^(-({0})))/2', this.args[0]));
-                break;
-            case TANH:
-                retval = _.parse(format('(e^({0})-e^(-({0})))/(e^({0})+e^(-({0})))', this.args[0]));
-                break;
-            case TAN:
-                retval = _.parse(format('sin({0})/cos({0})', this.args[0]));
-                break;
-            case CSC:
-                retval = _.parse(format('1/sin({0})', this.args[0]));
-                break;
-            case SEC:
-                retval = _.parse(format('1/cos({0})', this.args[0]));
-                break;
-            default:
-                retval = this;
+        var retval, a = this.args[0];
+        if(this.isLinear()) {
+            switch(this.fname) {
+                case SINH:
+                    retval = _.parse(format('(e^({0})-e^(-({0})))/2', a));
+                    break;
+                case COSH:
+                    retval = _.parse(format('(e^({0})+e^(-({0})))/2', a));
+                    break;
+                case TANH:
+                    retval = _.parse(format('(e^({0})-e^(-({0})))/(e^({0})+e^(-({0})))', a));
+                    break;
+                case TAN:
+                    retval = _.parse(format('sin({0})/cos({0})', a));
+                    break;
+                case CSC:
+                    retval = _.parse(format('1/sin({0})', a));
+                    break;
+                case SEC:
+                    retval = _.parse(format('1/cos({0})', a));
+                    break;
+                default:
+                    retval = this;
+            }
         }
+        else if(this.power.equals(2)) {
+            switch(this.fname) {
+                case SIN:
+                    retval = _.parse(format('1/2-cos(2*({0}))/2', a));
+                    break;
+                case COS:
+                    retval = _.parse(format('1/2+cos(2*({0}))/2', a));
+                    break;
+                case TAN:
+                    retval = _.parse(format('(1-cos(2*({0})))/(1+cos(2*({0})))', a));
+                    break;
+                case COSH:
+                    retval = _.parse(format('1/2+cosh(2*({0}))/2', a));
+                    break;
+                case SINH:
+                    retval = _.parse(format('-1/2+cosh(2*({0}))/2', a));
+                    break;
+                case TANH:
+                    retval = _.parse(format('(1+cosh(2*({0})))/(-1+cosh(2*({0})))', a));
+                    break;
+                case SEC:
+                    retval = _.parse(format('(1-cos(2*({0})))/(1+cos(2*({0})))+1', a));
+                    break;
+            }
+        }
+        else
+            retval = this;
+            
         return retval;
     };
     //removes parentheses
@@ -185,7 +224,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     
     var __ = core.Calculus = {
 
-        version: '1.4.0',
+        version: '1.4.1',
 
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
@@ -574,7 +613,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             //wrap integration in a try catch block and call this to stop.
             stop: function(msg) {
                 msg = msg || 'Stopping!';
-                throw new Error(msg);
+                throw new NoIntegralFound(msg);
             },
             partial_fraction: function(input, dx, depth, opt) { 
                 var num, den; 
@@ -724,7 +763,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             parts[1].push(x);
                         else if(fname === LOG)
                             parts[0].push(x);
-                        else {
+                        else { 
                             __.integration.stop();
                         }
                     }
@@ -734,13 +773,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     else if(g === EX || x.isComposite() && !x.isLinear())
                         parts[4].push(x);
                     else
-                        stop();
+                        __.integration.stop();
                 };
+                
                 if(symbol.group === CB) 
-                    symbol.each(function(x) {
+                    symbol.each(function(x) { 
                         setSymbol(Symbol.unwrapSQRT(x, true));
                     });
-                else
+                else 
                     setSymbol(symbol);
                 var u, dv = new Symbol(1);
                 //compile u and dv
@@ -756,7 +796,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         else
                             t = part[0].clone();
 
-                        if(!u) {
+                        if(!u) { 
                             u = t;//the first u encountered gets chosen
                             u.multiplier = u.multiplier.multiply(symbol.multiplier); //the first one gets the mutliplier
                         } 
@@ -830,7 +870,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 }
                 else
                     ax = arg.clone(); 
-
                 a = ax.stripVar(dx);
                 x = _.divide(ax.clone(), a.clone());
                 return [a, x, ax, b];
@@ -1004,13 +1043,17 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 if(x.isLinear() && x.group !== PL)
                                     retval = _.divide(__.integration.poly_integrate(symbol), a);
                                 else { 
-                                    retval = __.integration.partial_fraction(symbol, dx, depth, opt);
+                                    if(symbol.group !== CB && !symbol.power.lessThan(0)) {
+                                        retval = __.integration.by_parts(symbol, dx, depth, opt);
+                                    }
+                                    else
+                                        retval = __.integration.partial_fraction(symbol, dx, depth, opt);
                                 }
                             }
                             retval.multiplier = retval.multiplier.multiply(m);
                         }
                     }
-                    else if(g === FN) {
+                    else if(g === FN) { 
                         var arg = symbol.args[0],
                             m = symbol.multiplier.clone();
                         symbol.toUnitMultiplier();
@@ -1029,11 +1072,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 depth = depth - p; //it needs more room to find the integral
                             retval = __.integration.by_parts(symbol, dx, depth, opt); 
                         }
+                        else if(fname === TAN && symbol.power.lessThan(0)) {
+                            //convert to cotangent
+                            var sym  = symbol.clone();
+                            sym.power.negate();
+                            sym.fname = COT;
+                            return __.integrate(sym, dx, depth);
+                        }
                         else {
                             if(!a.contains(dx, true) && symbol.isLinear()) { //perform a deep search for safety
-
                                 //first handle the special cases 
-
                                 if(fname === ABS) {
                                     //REVISIT **TODO**
                                     var x = _.divide(arg.clone(), a.clone());
@@ -1086,10 +1134,15 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         case TANH:
                                             retval = _.parse(format('log(cosh({0}))', arg));
                                             break;
+                                        case EXP:
+                                            retval = __.integrate(_.parse(format('e^({0})', arg)), dx, depth);
+                                            break;
                                         case 'erf':
                                             var arg = symbol.args[0].clone(),
-                                                aa = arg.stripVar(dx);
-                                            retval = _.parse(format('(({0})*{1}+e^(-{2}^2*{3}^2)/sqrt(pi))', arg, retval, aa, dx));
+                                                dc = __.integration.decompose_arg(arg, dx),
+                                                x_ = dc[1],
+                                                a_ = dc[0];
+                                            retval = _.parse(format('e^(-(({2}))^2)/(({0})*sqrt(pi))+(1/({0})+({1}))*erf(({2}))', a_, x_, arg));
                                             break;
                                         default:
                                             __.integration.stop();
@@ -1098,7 +1151,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     retval = _.divide(retval, a); 
                                 }
                             }
-                            else if(x.isLinear()) {
+                            else if(x.isLinear()) { 
                                 if(fname === COS || fname === SIN) {
                                     var p = Number(symbol.power);
                                     //check to see if it's negative and then just transform it to sec or csc
@@ -1148,6 +1201,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         r = _.parse(r);
                                     retval = _.add(w, _.multiply(new Symbol(n2/n1), __.integrate(r, dx, depth)));
                                 }
+                                else if((fname === COSH || fname === SINH) && symbol.power.equals(2)) {
+                                    retval = __.integrate(symbol.fnTransform(), dx, depth);
+                                }
                                 else
                                     __.integration.stop();
                             }
@@ -1181,7 +1237,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 }
                                 return b.group - a.group; //descending groups
                             }).map(function(x) {
-                                return Symbol.unwrapSQRT(x, true);
+                                var unwrapped = Symbol.unwrapSQRT(x, true);
+                                if(unwrapped.fname === EXP) {
+                                    return _.parse(format('({1})*e^({0})', unwrapped.args[0], unwrapped.multiplier));
+                                }
+                                return unwrapped;
                             });
                             //generate an image for 
                             var l = symbols.length; 
@@ -1340,7 +1400,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 
                                         }
                                     }
-                                    else if(g1 === FN && g2 === S) {
+                                    else if(g1 === FN && g2 === S) { 
                                         if(sym1.fname === COS && sym2.power.equals(-1))
                                             retval = _.symfunction('Ci', [sym1.args[0]]);
                                         if(sym1.fname === COSH && sym2.power.equals(-1))
@@ -1349,7 +1409,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             retval = _.symfunction('Si', [sym1.args[0]]);
                                         else if(sym1.fname === SINH && sym2.power.equals(-1))
                                             retval = _.symfunction('Shi', [sym1.args[0]]);
-                                        else {
+                                        else if(sym1.fname === 'erf') {
+                                            if(sym2.power.equals(1)) {
+                                                var dc = __.integration.decompose_arg(sym1.args[0], dx),
+                                                    a_ = dc[0],
+                                                    x_ = dc[1],
+                                                    arg = sym1.args[0].toString();
+                                                retval = _.parse(format('(e^(-(({2}))^2)*(sqrt(pi)*e^((({2}))^2)*(2*({0})^2*({1})^2-3)*erf(({2}))+2*({0})*({1})-2))/(4*sqrt(pi)*({0})^2)', a_, x_, arg))
+                                            }
+                                        }
+                                        else { 
                                             //since group S is guaranteed convergence we need not worry about tracking depth of integration
                                             retval = __.integration.by_parts(symbol, dx, depth, opt);
                                         }
@@ -1381,7 +1450,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         }
                                         retval = __.integration.partial_fraction(symbol, dx, depth);
                                     }
-                                    else if(g1 === CP && g2 === S) { 
+                                    else if(g1 === CP && g2 === S) {  
                                         //handle cases x^(2*n)/sqrt(1-x^2)
                                         if(sym1.power.equals(-1/2)) { 
                                             var decomp = __.integration.decompose_arg(sym1.clone().toLinear(), dx);
@@ -1461,7 +1530,32 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 retval = __.integration.partial_fraction(symbol, dx, depth);
                                         }
                                         else { 
-                                            retval = __.integration.partial_fraction(symbol, dx, depth);
+                                            //handle cases such as (1-x^2)^(n/2)*x^(m) where n is odd ___ cracking knuckles... This can get a little hairy 
+                                            if(sym1.power.den.equals(2)) { 
+                                                //assume the function is in the form (a^2-b*x^n)^(m/2)
+                                                var dc = __.integration.decompose_arg(sym1.clone().toLinear(), dx),
+                                                    //using the above definition
+                                                    a = dc[3], x = dc[1], b = dc[0], bx = dc[2];
+                                                if(x.power.equals(2) && b.lessThan(0)) { //if n is even && b is negative
+                                                    
+                                                    //make a equal 1 so we can do a trig sub
+                                                    if(!a.equals(1)) { //divide a out of everything
+                                                        //move a to the coeff
+                                                        coeff = _.multiply(coeff, _.pow(a, new Symbol(2)));
+                                                    }
+                                                    var u = dx;
+                                                    var c = _.divide(_.pow(b.clone().negate(), new Symbol(1/2)), _.pow(a, new Symbol(1/2))),
+                                                        du = _.symfunction(COS, [new Symbol(u)]),
+                                                        cosn = _.pow(_.symfunction(COS, [new Symbol(u)]), new Symbol(sym1.power.num)),
+                                                        X = _.pow(_.symfunction(SIN, [new Symbol(u)]), new Symbol(sym2.power)),
+                                                        val = _.multiply(_.multiply(cosn, du), X),
+                                                        integral = __.integrate(val, u, depth);
+                                                        //but remember that u = asin(sqrt(b)*a*x)
+                                                        retval = integral.sub(u, _.symfunction(ASIN, [_.multiply(new Symbol(dx), c)]));
+                                                }
+                                            }
+                                            else
+                                                retval = __.integration.partial_fraction(symbol, dx, depth);
                                         }
 
                                     }
@@ -1545,7 +1639,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         return retval;
                 }
 
-                catch(e){/*no integral found*/  }  
+                catch(error){
+                    //do nothing if it's a NoIntegralFound error otherwise let it bubble
+                    if(!(error instanceof NoIntegralFound)) 
+                        throw error;
+                }  
 
                 //no symbol found so we return the integral again
                 return _.symfunction('integrate', [original_symbol, dt]);

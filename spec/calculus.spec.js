@@ -444,6 +444,14 @@ describe('calculus', function () {
             {
                 given: 'integrate(cos(x^2), x)',
                 expected: 'integrate(cos(x^2),x)'
+            },
+            {
+                given: 'integrate(sqrt(a-x^2)*x^2, x)',
+                expected: '((-1/16)*cos(2*asin(sqrt(a)^(-1)*x))*sin(2*asin(sqrt(a)^(-1)*x))+(1/8)*asin(sqrt(a)^(-1)*x))*a^2'
+            },
+            {
+                given: 'integrate((1-x^2)^(3/2), x)',
+                expected: '(-3/16)*cos(2*asin(x))*sin(2*asin(x))+(-x^2+1)^(3/2)*x+(3/8)*asin(x)'
             }
         ];
 
