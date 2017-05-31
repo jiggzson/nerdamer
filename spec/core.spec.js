@@ -891,7 +891,101 @@ describe('Nerdamer core', function () {
         expect(value).toEqual(testCases[i].expected);
       }
     });
+    
+    //#78
+    it('should substitute variables', function () {
+      // given
+      var testCases = [
+        {
+           given: '2*(x+1)^2',
+           sub: 'x+1',
+           sub_with: 'u',
+           expected: '2*u^2'
+        },
+        {
+           given: '2*(x+1+a)^2',
+           sub: 'x+1',
+           sub_with: 'u',
+           expected: '2*(1+a+x)^2'
+        },
+        {
+           given: '2*(x+1)^(x+1)',
+           sub: 'x+1',
+           sub_with: 'u',
+           expected: '2*u^u'
+        },
+        {
+           given: '2*(x+1)^2',
+           sub: '(x+1)^2',
+           sub_with: 'u^x',
+           expected: '2*u^x'
+        },
+        {
+           given: '2*(x+1)^2',
+           sub: 'x+1',
+           sub_with: 'u^x',
+           expected: '2*u^(2*x)'
+        },
+        {
+           given: '(2*(x+1)^2+a)^2',
+           sub: '(x+1)^2',
+           sub_with: 'u^x',
+           expected: '(2*u^x+a)^2'
+        },
+        {
+           given: '(x^x+y)^(x^x-t)',
+           sub: 'x^x',
+           sub_with: '4',
+           expected: '(4+y)^(-t+4)'
+        },
+        {
+           given: '(cos(x)+cos(x)^2)',
+           sub: 'cos(x)',
+           sub_with: '4',
+           expected: '20'
+        },
+        {
+           given: '(cos(x)+cos(x)^2)',
+           sub: '(cos(x)+cos(x)^2)',
+           sub_with: '4',
+           expected: '4'
+        },
+        {
+           given: '(cos(x)+cos(x^6)^2)',
+           sub: '(cos(x)+cos(x)^2)',
+           sub_with: '4',
+           expected: 'cos(x)+cos(x^6)^2'
+        },
+        {
+           given: '(cos(x)+cos(x^6)^2)',
+           sub: 'cos(x)',
+           sub_with: '4',
+           expected: '4+cos(x^6)^2'
+        },
+        {
+           given: '(cos(x)+cos(x^6)^2)',
+           sub: '2',
+           sub_with: '4',
+           expected: 'error'
+        },
+        
+      ];
 
+      for (var i = 0; i < testCases.length; ++i) {
+          var testCase = testCases[i];
+        // when
+        try {
+            var parsed = nerdamer(testCase.given).sub(testCase.sub, testCase.sub_with).toString();
+        }
+        catch(e){
+            var parsed = 'error';
+        }
+       
+        // then
+        expect(parsed).toEqual(testCases[i].expected);
+      }
+    });
+    
     /** #44: a+b - (a+b) not evaluated as 0 */
     it('should perform subtraction of terms', function () {
       // given

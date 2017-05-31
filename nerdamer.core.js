@@ -1744,8 +1744,9 @@ var nerdamer = (function(imports) {
             };
             var g = this.group;
             
-            if(g === S && this.contains(v)) 
+            if(g === S && this.contains(v)) { 
                 arr.add(new Symbol(this.multiplier), this.power);
+            }
             else if(g === CB){
                 var a = this.stripVar(v),
                     x = _.divide(this.clone(), a.clone());
@@ -2569,6 +2570,18 @@ var nerdamer = (function(imports) {
     Prefix.prototype.toString = function() {
         return '`'+this.val;
     };
+    
+    //custom errors
+    //thrown if trying to divide by zero
+    function DivisionByZero(msg){
+        this.message = msg || "";
+    }
+    DivisionByZero.prototype = new Error();
+    //thrown in parser 
+    function ParseError(msg){
+        this.message = msg || "";
+    }
+    ParseError.prototype = new Error();
     
     //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
@@ -4744,8 +4757,10 @@ var nerdamer = (function(imports) {
         
             if(aIsSymbol && bIsSymbol) {
                 var result;
+                if(b.equals(0)) 
+                    throw new DivisionByZero('Division by zero not allowed!');
+                
                 if(a.isConstant() && b.isConstant()) {
-                    if(b.equals(0)) err('Division by zero not allowed!');
                     result = a.clone();
                     result.multiplier = result.multiplier.divide(b.multiplier);
                 }
@@ -6141,6 +6156,7 @@ var nerdamer = (function(imports) {
     //This contains all the parts of nerdamer and enables nerdamer's internal functions
     //to be used.
     var C = {};
+    C.exceptions = {};
     C.Operator = Operator;
     C.groups = Groups;
     C.Symbol = Symbol;
@@ -6160,6 +6176,9 @@ var nerdamer = (function(imports) {
     C.VARS = VARS;
     C.err = err;
     C.bigInt = bigInt;
+    //load the exceptions
+    C.exceptions.DivisionByZero = DivisionByZero;
+    C.exceptions.ParseError = ParseError;
     //TODO: fix 
     if(!_.error)
         _.error = err;

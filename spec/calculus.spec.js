@@ -280,7 +280,6 @@ describe('calculus', function () {
                 given: 'integrate(10*q/(4*x^2+24*x+20), x)',
                 expected: '10*((-1/16)*log(5+x)+(1/16)*log(1+x))*q'
             },
-            // TODO jiggzson: This test is produces result (a+x)^(-1)*a+log(a+x)
             {
                 given: 'integrate(x/(x+a)^2, x)',
                 expected: '(a+x)^(-1)*a+log(a+x)'
@@ -452,7 +451,35 @@ describe('calculus', function () {
             {
                 given: 'integrate((1-x^2)^(3/2), x)',
                 expected: '(-3/16)*cos(2*asin(x))*sin(2*asin(x))+(-x^2+1)^(3/2)*x+(3/8)*asin(x)'
-            }
+            },
+            {
+                given: 'integrate((1-x^2)^(3/2)*x^2, x)',
+                expected: '(-1/32)*cos(2*asin(x))*sin(2*asin(x))+(-1/48)*cos(2*asin(x))^2*sin(2*asin(x))+(1/16)*asin(x)+(1/48)*sin(2*asin(x))'
+            },
+            {
+                given: 'integrate(cos(x)^2*sin(x)^4, x)',
+                expected: '(-1/32)*cos(2*x)*sin(2*x)+(-1/48)*sin(2*x)+(1/16)*x+(1/48)*cos(2*x)^2*sin(2*x)'
+            },
+            {
+                given: 'integrate(log(a*x+1)/x^2, x)',
+                expected: '(-log(1+a*x)+log(x))*a-log(1+a*x)*x^(-1)'
+            },
+            {
+                given: 'integrate(x^2*(1-x^2)^(5/2), x)',
+                expected: '(-1/128)*cos(2*asin(x))^3*sin(2*asin(x))+(-1/48)*cos(2*asin(x))^2*sin(2*asin(x))+(-3/256)*cos(2*asin(x))*sin(2*asin(x))+(1/48)*sin(2*asin(x))+(5/128)*asin(x)'
+            },
+            {
+                given: 'integrate(1/tan(a*x)^n, x)',
+                expected: 'integrate(tan(a*x)^(-n),x)'
+            },
+            {
+                given: 'integrate(sin(x)^2*cos(x)*tan(x), x)',
+                expected: '(-3/4)*cos(x)+(1/12)*cos(3*x)'
+            },
+            {
+                given: 'integrate(cos(x)^2/sin(x),x)',
+                expected: '-log(cot(x)+csc(x))+cos(x)'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

@@ -1795,7 +1795,23 @@ if((typeof module) !== 'undefined') {
                 }
                 return m;
             },
-            factor: function(symbol, factors) {
+            factor: function(symbol, factors) { 
+                if(symbol.group === CB) {
+                    //TODO: I have to revisit this again. I'm checking if they're all
+                    //group S. I don't know why just adding them to factors isn't working
+                    factors = factors || new Factors();
+                    var all_S = true;
+                    factors.add(new Symbol(symbol.multiplier));
+                    symbol.each(function(x) {
+                        if(x.group !== S)
+                            all_S = false;
+                        factors.add(__.Factor.factor(x.clone()));
+                    });
+                    //if they're all of group S then all this was for nothing and return the symbol as it is.
+                    if(all_S)
+                        return symbol;
+                    return factors.toSymbol();
+                }
                 if(symbol.group === S) 
                     return symbol; //absolutely nothing to do
                 

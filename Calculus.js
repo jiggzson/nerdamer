@@ -99,7 +99,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     retval = _.parse(format('1/2+cos(2*({0}))/2', a));
                     break;
                 case TAN:
-                    retval = _.parse(format('(1-cos(2*({0})))/(1+cos(2*({0})))', a));
+                    //retval = _.parse(format('(1-cos(2*({0})))/(1+cos(2*({0})))', a));
+                    retval = _.parse(format('sin({0})^2/cos({0})^2', a));
                     break;
                 case COSH:
                     retval = _.parse(format('1/2+cosh(2*({0}))/2', a));
@@ -113,6 +114,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 case SEC:
                     retval = _.parse(format('(1-cos(2*({0})))/(1+cos(2*({0})))+1', a));
                     break;
+                default:
+                    retval = this;
             }
         }
         else
@@ -181,18 +184,26 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             symbol = arr[i]; 
             if(symbol.group === FN) {
                 var fname = symbol.fname;
-                if(fname === COS && map[SIN]) {
-                    if(map[SIN].args[0].toString() !== symbol.args[0].toString()) 
+                if(fname === COS && map[SIN]) { 
+                    if(map[SIN].args[0].toString() !== symbol.args[0].toString()) {
                         t = cosAsinBtransform(symbol, map[SIN]);
-                    else
+                        delete map[SIN];
+                    }
+                    else{
                         t = cosAsinAtransform(symbol, map[SIN]);
+                        delete map[SIN];
+                    }
                     retval = _.multiply(retval, t);
                 }
                 else if(fname === SIN && map[COS]) {
-                    if(map[COS].args[0].toString() !== symbol.args[0].toString()) 
+                    if(map[COS].args[0].toString() !== symbol.args[0].toString()) {
                         t = cosAsinBtransform(symbol, map[COS]);
-                    else
+                        delete map[COS];
+                    }
+                    else {
                         t = cosAsinAtransform(symbol, map[COS]);
+                        delete map[COS];
+                    }
                     retval = _.multiply(retval, t);
                 }
                 else if(fname === SIN && map[SIN]) {
@@ -200,9 +211,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         t = sinAsinBtransform(symbol, map[SIN]);
                         delete map[SIN];
                     }
-                    else
+                    else {
                         //This should actually be redundant code but let's put just in case
-                        t = _.multiply(symbol, map[SIN]); 
+                        t = _.multiply(symbol, map[SIN]);
+                        delete map[SIN];
+                    }
+                         
                     retval = t;
                 }
                 else
@@ -569,11 +583,29 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     if(Q)
                         return _.multiply(__.integration.poly_integrate(b), Q);
                 }
-                else if(g1 === EX && g2 !== EX) {
-                    var p = a.power;
+                else if(g1 === EX && g2 !== EX) { 
+                    var p = a.power; 
                     Q = try_combo(b, p.clone());
+                    if(!Q) {
+                        //one more try
+                        var dc = __.integration.decompose_arg(p.clone(), dx);
+                        //consider the possibility of a^x^(n-1)*x^n dx
+                        var xp = __.diff(dc[2].clone(), dx);
+                        var dc2 = __.integration.decompose_arg(xp.clone(), dx);
+                        //if their powers equal, so if dx*p == b
+                        if(_.multiply(dc[1], dc2[1]).power.equals(b.power)) {
+                            var m = _.divide(dc[0].clone(), dc2[0].clone());
+
+                            var new_val = _.multiply(m.clone(), _.pow(new Symbol(a.value), _.multiply(dc[0], new Symbol(u))));
+                            new_val = _.multiply(new_val, new Symbol(u));
+                            return __.integration.by_parts(new_val, u, 0, {}).sub(u, dc[1].clone());
+                        }
+
+                    }
                     var integrated = __.integrate(a.sub(p.clone(), new Symbol(u)), u, 0),
-                        retval = _.multiply(integrated.sub(new Symbol(u), p), Q);
+                            retval = _.multiply(integrated.sub(new Symbol(u), p), Q);
+                        
+                    
                     return retval;
                 }
                 else if(g2 === EX && g1 !== EX) {
@@ -662,13 +694,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     factors.each(function(factor) { 
                         //unwrap parentheses
                         factor = Symbol.unwrapPARENS(factor);
+                        //TODO: red flag. Possible bug. The factors should already be inverted. Why are we inverting them here?
+                        if(factor.power.lessThan(0))
+                            factor.invert();
                         if(factor.isConstant())
                             m = _.multiply(m, factor); //add it to the constants
                         else
                             factor_array.push(factor);
                     });
                 }
-                else {
+                else { 
                     if(q[1].isComposite()) { 
                         //apply the sum rule
                         q[1].each(function(x) {
@@ -733,11 +768,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         if(i !== j) 
                             t = _.multiply(t, factor_array[j].clone());
                     }
+
                     t = _.expand(t).toArray(dx);//this is one of the rows
+
                     var e = num_array[i];
                     c.elements[i] = e ?  [e] : [Symbol(0)]; //fill the holes in the coeffs
                     M.elements[i] = t; //add the row to the matrix
                 }
+
                 //solve for A, B, C, etc. We transpose to have the powers in the columns
                 var L = M.transpose().invert().multiply(c); 
                 //we can now integrate each one of them but remember we divided earlier so integrate the whole if it's not zero
@@ -919,9 +957,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     else if(g === S) {
                         retval = __.integration.poly_integrate(symbol, dx, depth);
                     }
-                    else if(g === EX) {
+                    else if(g === EX) { 
                         //check the base
-                        if(symbol.contains(dx)) {
+                        if(symbol.contains(dx) && symbol.previousGroup !== FN) {
                             //if the symbol also contains dx then we stop since we currently 
                             //don't know what to do with it e.g. x^x
                             if(symbol.power.contains(dx))
@@ -965,7 +1003,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         if(symbol.power.greaterThan(1))
                             symbol = _.expand(symbol);
                         if(symbol.power.equals(1)) {
-                            retval = new Symbol(0)
+                            retval = new Symbol(0);
                             symbol.each(function(x) {
                                 retval = _.add(retval, __.integrate(x, dx, depth));
                             }, true);
@@ -1216,11 +1254,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     else if(g === PL) {
                         retval = __.integration.partial_fraction(symbol, dx, depth);
                     }
-                    else if(g === CB) { 
+                    else if(g === CB) {
                         //separate the coefficient since all we care about are symbols containing dx
                         var coeff = symbol.stripVar(dx); 
                         //now get only those that apply
                         var cfsymbol = _.divide(symbol.clone(), coeff.clone()); //a coeff free symbol
+
                         //if we only have one symbol left then let's not waste time. Just pull the integral
                         //and let the chips fall where they may
                         if(cfsymbol.group !== CB) { 
@@ -1244,13 +1283,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 return unwrapped;
                             });
                             //generate an image for 
-                            var l = symbols.length; 
+                            var l = symbols.length;
                             if(l === 2) { 
                                 //try u substitution
                                 try {
                                     retval = __.integration.u_substitution(symbols, dx);
                                 }
-                                catch(e){/* failed :`(*/;}   
+                                catch(e){/* failed :`(*/; }   
                                 if(!retval) { 
                                     //no success with u substitution so let's try known combinations
                                     //are they two functions
@@ -1262,8 +1301,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         fn2 = sym2.fname; 
                                     //reset the symbol minus the coeff
                                     symbol = _.multiply(sym1.clone(), sym2.clone());
+
                                     if(g1 === FN && g2 === FN) { 
-                                        if(fn1 === LOG || fn2 === LOG) {
+                                        if(fn1 === LOG || fn2 === LOG) { 
                                             retval = __.integration.by_parts(symbol.clone(), dx, depth, opt);
                                         }
                                         else { 
@@ -1285,67 +1325,81 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             //make sure we can integrate FN & FN
                                             var arg2 = sym2.args[0];
                                             //make sure that their argument matches
-                                            if(arg1.equals(arg2)) {
-                                                if(fn1 === SIN && fn2 === COS) {
+                                            if(arg1.equals(arg2)) { 
+                                                if(fn1 === SIN && fn2 === COS || fn1 === COS && fn2 === SIN) { 
                                                     if(sym1.power.lessThan(0))
                                                         __.integration.stop();//we don't know how to handle, sin(x)^n/cos(x)^m where m > n,  yet
                                                     //if it's in the form sin(x)^n*cos(x)^n then we can just return tan(x)^n which we know how to integrate
-                                                    if(fn1 === SIN && sym1.power.add(sym2.power).equals(0)) {
+                                                    if(fn1 === SIN && sym1.power.add(sym2.power).equals(0)) { 
                                                         sym1.fname = TAN;
                                                         sym1.updateHash();
                                                         retval = __.integrate(sym1, dx, depth);
                                                     }
                                                     else {
-                                                        var p1_even = core.Utils.even(sym1.power),
-                                                            p2_even = core.Utils.even(sym2.power);
-                                                        retval = new Symbol(0);
-                                                        if(!p1_even || !p2_even) { 
-                                                            var u, r, trans;
-                                                            //since cos(x) is odd it carries du. If sin was odd then it would be the other way around
-                                                            //know that p1 satifies the odd portion in this case. If p2 did than it would contain r
-                                                            if(!p1_even) {
-                                                                //u = sin(x)
-                                                                u = sym2; r = sym1; 
-                                                            }
-                                                            else {
-                                                                u = sym1; r = sym2;
-                                                            }
-                                                            //get the sign of du. In this case r carries du as stated before and D(cos(x),x) = -sin(x)
-                                                            var sign = u.fname === COS ? -1 : 1,
-                                                                n = r.power, 
-                                                                //remove the du e.g. cos(x)^2*sin(x)^3 dx -> cos(x)^2*sin(x)^2*sin(x). We're left with two 
-                                                                //even powers afterwards which can be transformed
-                                                                k = (n - 1)/2, 
-                                                                //make the transformation cos(x)^2 = 1 - sin(x)^2
-                                                                trans = _.parse('(1-'+u.fname+core.Utils.inBrackets(arg1)+'^2)^'+k), 
-                                                                sym = _.expand(_.multiply(new Symbol(sign), _.multiply(u.clone(), trans)));
-                                                            //we can now just loop through and integrate each since it's now just a polynomial with functions
-                                                            sym.each(function(x) {
-                                                                retval = _.add(retval, __.integration.poly_integrate(x.clone()));
-                                                            });
+                                                        if(even(sym1.power) && fn2 === COS && sym2.power.lessThan(0)) {
+                                                            //transform sin^(2*n) to (1-cos^2)^n
+                                                            var n = Number(sym1.power)/2,
+                                                                new_sym = _.parse(format('(1-cos({0})^2)^({1})', sym1.args[0], n));
+                                                            retval = __.integrate(_.expand(_.multiply(new_sym, sym2.clone())), dx, depth, opt);
                                                         }
-                                                        else { 
-                                                            //performs double angle transformation
-                                                            var double_angle = function(symbol) {
-                                                                var p = symbol.power,
-                                                                    k = p/2, e;
-                                                                if(symbol.fname === COS)
-                                                                    e = '((1/2)+(cos(2*('+symbol.args[0]+'))/2))^'+k;
-                                                                else
-                                                                    e = '((1/2)-(cos(2*('+symbol.args[0]+'))/2))^'+k;
+                                                        else if(even(sym1.power) && fn2 === SIN && sym2.power.lessThan(0)) {
+                                                            //transform cos^(2*n) to (1-sin^2)^n
+                                                            var n = Number(sym1.power)/2,
+                                                                new_sym = _.parse(format('(1-sin({0})^2)^({1})', sym1.args[0], n));
+                                                            retval = __.integrate(_.expand(_.multiply(new_sym, sym2.clone())), dx, depth, opt);
+                                                        }
+                                                        else {
+                                                            var p1_even = core.Utils.even(sym1.power),
+                                                                p2_even = core.Utils.even(sym2.power);
+                                                            retval = new Symbol(0);
+                                                            if(!p1_even || !p2_even) { 
+                                                                var u, r, trans;
+                                                                //since cos(x) is odd it carries du. If sin was odd then it would be the other way around
+                                                                //know that p1 satifies the odd portion in this case. If p2 did than it would contain r
+                                                                if(!p1_even) {
+                                                                    //u = sin(x)
+                                                                    u = sym2; r = sym1; 
+                                                                }
+                                                                else {
+                                                                    u = sym1; r = sym2;
+                                                                }
+                                                                //get the sign of du. In this case r carries du as stated before and D(cos(x),x) = -sin(x)
+                                                                var sign = u.fname === COS ? -1 : 1,
+                                                                    n = r.power, 
+                                                                    //remove the du e.g. cos(x)^2*sin(x)^3 dx -> cos(x)^2*sin(x)^2*sin(x). We're left with two 
+                                                                    //even powers afterwards which can be transformed
+                                                                    k = (n - 1)/2, 
+                                                                    //make the transformation cos(x)^2 = 1 - sin(x)^2
+                                                                    trans = _.parse('(1-'+u.fname+core.Utils.inBrackets(arg1)+'^2)^'+k), 
+                                                                    sym = _.expand(_.multiply(new Symbol(sign), _.multiply(u.clone(), trans)));
+                                                                //we can now just loop through and integrate each since it's now just a polynomial with functions
+                                                                sym.each(function(x) {
+                                                                    retval = _.add(retval, __.integration.poly_integrate(x.clone()));
+                                                                });
+                                                            }
+                                                            else { 
+                                                                //performs double angle transformation
+                                                                var double_angle = function(symbol) {
+                                                                    var p = symbol.power,
+                                                                        k = p/2, e;
+                                                                    if(symbol.fname === COS)
+                                                                        e = '((1/2)+(cos(2*('+symbol.args[0]+'))/2))^'+k;
+                                                                    else
+                                                                        e = '((1/2)-(cos(2*('+symbol.args[0]+'))/2))^'+k;
 
-                                                                return _.parse(e);
-                                                            };
-                                                            //they're both even so transform both using double angle identities and we'll just
-                                                            //be able to integrate by the sum of integrals
-                                                            var a = double_angle(sym1),
-                                                                b = double_angle(sym2),
-                                                                t = _.multiply(a, b);
-                                                            var sym = _.expand(t);
-                                                            sym.each(function(x) {
-                                                                retval = _.add(retval, __.integrate(x, dx, depth));
-                                                            });
-                                                            return _.multiply(retval, coeff);
+                                                                    return _.parse(e);
+                                                                };
+                                                                //they're both even so transform both using double angle identities and we'll just
+                                                                //be able to integrate by the sum of integrals
+                                                                var a = double_angle(sym1),
+                                                                    b = double_angle(sym2),
+                                                                    t = _.multiply(a, b);
+                                                                var sym = _.expand(t);
+                                                                sym.each(function(x) {
+                                                                    retval = _.add(retval, __.integrate(x, dx, depth));
+                                                                });
+                                                                return _.multiply(retval, coeff);
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -1388,12 +1442,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                     retval = __.integrate(_.expand(_.multiply(sym1.fnTransform(), sym2.fnTransform())), dx, depth);
                                                 }
                                             }
-                                            /* //TODO: REVISIT AT SOME POINT
-                                            else if((fn1 === SIN || fn1 === COS) && (fn2 === SIN || fn2 === COS)) {
+                                            //TODO: REVISIT AT SOME POINT
+                                            else if((fn1 === SIN || fn1 === COS) && (fn2 === SIN || fn2 === COS)) { 
                                                 var transformed = trigTransform(symbols);
                                                 retval = __.integrate(_.expand(transformed), dx, depth);
                                             }
-                                            */
+                                            
                                             else {
                                                 __.integration.stop();
                                             }
@@ -1618,7 +1672,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 }
                                     
                             }
-                            else if(all_functions(symbols)) {
+                            else if(all_functions(symbols)) { 
                                 var t = new Symbol(1);
                                 for(var i=0,l=symbols.length; i<l; i++) {
                                     t = _.multiply(t, symbols[i].fnTransform());
@@ -1626,12 +1680,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 t = _.expand(t);
                                 retval = __.integrate(t, dx, depth);
                             }
-                            else {
+                            else { 
                                 //one more go
                                 var transformed = trigTransform(symbols);
                                 retval = __.integrate(_.expand(transformed), dx, depth);
                             }
                         }
+
                         retval = _.multiply(retval, coeff);
                     }
                     //if an integral was found then we return it
@@ -1641,7 +1696,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
                 catch(error){
                     //do nothing if it's a NoIntegralFound error otherwise let it bubble
-                    if(!(error instanceof NoIntegralFound)) 
+                    if(!(error instanceof NoIntegralFound || error instanceof core.exceptions.DivisionByZero)) 
                         throw error;
                 }  
 
