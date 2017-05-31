@@ -586,8 +586,10 @@ if((typeof module) !== 'undefined') {
     Factors.prototype.add = function(s) {
         if(s.equals(0)) return this; //nothing to add
         
-        if(s.group === CB) {
+        if(s.group === CB) { 
             var factors = this;
+            if(!s.multiplier.equals(1)) 
+                factors.add(new Symbol(s.multiplier));
             s.each(function(x){
                 factors.add(x);
             });
@@ -1685,7 +1687,6 @@ if((typeof module) !== 'undefined') {
         coeffs: function(symbol, wrt, coeffs) {
             wrt = String(wrt); 
             symbol = _.expand(symbol);
-            
             coeffs = coeffs || [];
             //we cannot get coeffs for group EX
             if(symbol.group === EX && symbol.contains(wrt, true))
@@ -1795,89 +1796,166 @@ if((typeof module) !== 'undefined') {
                 }
                 return m;
             },
-            factor: function(symbol, factors) { 
-                if(symbol.group === CB) {
-                    //TODO: I have to revisit this again. I'm checking if they're all
-                    //group S. I don't know why just adding them to factors isn't working
-                    factors = factors || new Factors();
-                    var all_S = true;
-                    factors.add(new Symbol(symbol.multiplier));
-                    symbol.each(function(x) {
-                        if(x.group !== S)
-                            all_S = false;
-                        factors.add(__.Factor.factor(x.clone()));
-                    });
-                    //if they're all of group S then all this was for nothing and return the symbol as it is.
-                    if(all_S)
-                        return symbol;
-                    return factors.toSymbol();
-                }
-                if(symbol.group === S) 
-                    return symbol; //absolutely nothing to do
-                
-                if(symbol.isConstant()) {
-                    return core.Math2.factor(symbol);
-                }
-                
-                var p = symbol.power.clone();
-                if(isInt(p)) { 
-                    symbol.toLinear();
-                    factors = factors || new Factors();
-                    var map = {}, original;
-                    symbol = _.parse(core.Utils.subFunctions(symbol, map));
-                    if(keys(map).length > 0) { //it might have functions
-                        factors.preAdd = function(factor) {
-                            return _.parse(factor, core.Utils.getFunctionsSubs(map));
-                        };
-                    }
-                    //strip the power
-                    if(!symbol.isLinear()) {
-                        factors.pFactor = symbol.power.toString();
-                        symbol.toLinear();
-                    } 
-                    
-                    var vars = variables(symbol),
-                        multiVar = vars.length > 1;
-                    //Since multivariate is experiental I want to compare numeric outputs to make
-                    //sure we're returning the correct value
-                    if(multiVar) 
-                        original = symbol.clone();
-
-                    //minor optimization. Seems to cut factor time by half in some cases.
-                    if(multiVar) { 
-                        var all_S = true, all_unit = true;
-                        symbol.each(function(x) {
-                            if(x.group !== S) all_S = false;
-                            if(!x.multiplier.equals(1)) all_unit = false;
+            //TODO: this method is to replace common factoring
+            common: function(symbol, factors) {
+                try {
+                    if(symbol.group === CP) { 
+                        //this may have the unfortunate side effect of expanding and factoring again
+                        //to only end up with the same result. 
+                        //TODO: try to avoid this
+                        //collect the symbols and sort to have the longest first. Thinking is that the longest terms 
+                        //has to contain the variable in order for it to be factorable
+                        var symbols = _.expand(symbol.clone(), true).collectSymbols(null, null, function(a, b) {
+                            return (b.length || 1) - (a.length || 1);
                         });
-                        if(all_S && all_unit) 
-                            return _.pow(symbol, _.parse(p));
-                    }
-                    //factor the coefficients
-                    symbol = __.Factor.coeffFactor(symbol, factors);
-                    //factor the power
-                    symbol = __.Factor.powerFactor(symbol, factors);
-                    
-                    if(vars.length === 1) { 
-                        symbol = __.Factor.squareFree(symbol, factors);
-                        symbol = __.Factor.trialAndError(symbol, factors);
-                    }
-                    else {
-                        symbol = __.Factor.mfactor(symbol, factors);
-                    }
-                    symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
-                    factors.add(symbol);
-                    
-                    var retval = factors.toSymbol();
+                        
+                        var map = {}; //create a map of common factors
+                        var coeffs = [];
+                        for(var i=0; i<symbols.length; i++) {
+                            var sym = symbols[i]; 
+                            coeffs.push(sym.multiplier.clone());
+                            sym.each(function(x) {
+                                var p = Number(x.power);
+                                //This check exits since we have a symbolic power.
+                                //For the future... think about removing this check and modify for symbolic powers
+                                if(isNaN(p))
+                                    throw new Error('exiting');
+                                //loop through the symbols and lump together common terms
+                                if(x.value in map) {
+                                    if(p < map[x.value][0])
+                                        map[x.value][0] = p;
+                                    map[x.value][1].push(x);
+                                }
+                                else
+                                    map[x.value] = [p, [x]];
+                            });
+                        }
+                        //the factor
+                        var factor = new Symbol(1);
+                        for(var x in map) {
+                            //if this factor is found in all terms since the length of 
+                            //matching variable terms matches the number of original terms
+                            if(map[x][1].length === symbols.length) {
+                                //generate a symbol and multiply into the factor
+                                factor = _.multiply(factor, _.pow(new Symbol(x), new Symbol(map[x][0])));
+                            }
+                        }
+                        //get coefficient factor
+                        var c = core.Math2.QGCD.apply(null, coeffs);
 
-                    //compare the inval and outval and they must be the same or else we failed
-                    if(multiVar && !core.Utils.compare(original, retval, vars)) { 
-                        return original;                   
+                        if(!c.equals(1)) {
+                            factors.add(new Symbol(c));
+                            for(var i=0; i<symbols.length; i++) {
+                                symbols[i].multiplier = symbols[i].multiplier.divide(c);
+                            }
+                        }
+                            
+                        //if we actuall found any factors
+                        if(!factor.equals(1)) { 
+                            factors.add(factor);
+                            symbol = new Symbol(0);
+                            for(var i=0; i<symbols.length; i++) {
+                                symbol = _.add(symbol, _.divide(symbols[i], factor.clone()));
+                            }
+                        }
                     }
-                    
-                    return _.pow(retval, _.parse(p));
                 }
-                return symbol;    
+                catch(e){;}
+
+                return symbol;
+            },
+            factor: function(symbol, factors) { 
+                try {
+                    if(symbol.group === CB) {
+                        //TODO: I have to revisit this again. I'm checking if they're all
+                        //group S. I don't know why just adding them to factors isn't working
+                        factors = factors || new Factors();
+                        var all_S = true;
+                        factors.add(new Symbol(symbol.multiplier));
+                        symbol.each(function(x) {
+                            if(x.group !== S)
+                                all_S = false;
+                            factors.add(__.Factor.factor(x.clone()));
+                        });
+                        //if they're all of group S then all this was for nothing and return the symbol as it is.
+                        if(all_S)
+                            return symbol;
+                        return factors.toSymbol();
+                    }
+                    if(symbol.group === S) 
+                        return symbol; //absolutely nothing to do
+
+                    if(symbol.isConstant()) {
+                        return core.Math2.factor(symbol);
+                    }
+
+                    var p = symbol.power.clone();
+                    if(isInt(p)) { 
+                        symbol.toLinear();
+                        factors = factors || new Factors();
+                        var map = {}, original;
+                        symbol = _.parse(core.Utils.subFunctions(symbol, map));
+                        if(keys(map).length > 0) { //it might have functions
+                            factors.preAdd = function(factor) {
+                                return _.parse(factor, core.Utils.getFunctionsSubs(map));
+                            };
+                        }
+                        //strip the power
+                        if(!symbol.isLinear()) {
+                            factors.pFactor = symbol.power.toString();
+                            symbol.toLinear();
+                        } 
+
+                        var vars = variables(symbol),
+                            multiVar = vars.length > 1;
+                        //Since multivariate is experiental I want to compare numeric outputs to make
+                        //sure we're returning the correct value
+                        if(multiVar) 
+                            original = symbol.clone();
+
+                        //minor optimization. Seems to cut factor time by half in some cases.
+                        if(multiVar) { 
+                            var all_S = true, all_unit = true;
+                            symbol.each(function(x) {
+                                if(x.group !== S) all_S = false;
+                                if(!x.multiplier.equals(1)) all_unit = false;
+                            });
+                            if(all_S && all_unit) 
+                                return _.pow(symbol, _.parse(p));
+                        }
+                        //factor the coefficients
+                        symbol = __.Factor.coeffFactor(symbol, factors);
+                        //factor the power
+                        symbol = __.Factor.powerFactor(symbol, factors);
+
+                        if(vars.length === 1) { 
+                            symbol = __.Factor.squareFree(symbol, factors);
+                            symbol = __.Factor.trialAndError(symbol, factors);
+                        }
+                        else {
+                            symbol = __.Factor.mfactor(symbol, factors);
+                        }
+                        symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
+
+                        factors.add(symbol);
+                        
+                        var retval = factors.toSymbol();
+
+                        //compare the inval and outval and they must be the same or else we failed
+                        /*
+                        if(multiVar && !core.Utils.compare(original, retval, vars)) { 
+                            return original;                   
+                        }
+                        */
+
+                        return _.pow(retval, _.parse(p));
+                    }
+                    return symbol;    
+                }
+                catch(e) {
+                    //no need to stop the show because something went wrong :)
+                    return symbol;
+                }
             },
             /**
              * Makes Symbol square free
@@ -2048,72 +2126,102 @@ if((typeof module) !== 'undefined') {
              * @returns {AlgebraL#18.Factor.mSqfrFactor.symbol|Array|AlgebraL#18.__.Factor.mSqfrFactor.d}
              */
             mSqfrFactor: function(symbol, factors) {
-                var vars = variables(symbol).reverse();
-                for(var i=0; i<vars.length; i++) {
-                    do {
-                        var d = __.Factor.coeffFactor(core.Calculus.diff(symbol, vars[i]));
-                        if(d.equals(0)) 
-                            break;
-                        var div = __.div(symbol, d.clone()),
-                            is_factor = div[1].equals(0);
-                        if(div[0].isConstant()) {
-                            factors.add(div[0]);
-                            break;
+                
+                if(symbol.group !== FN) {
+                    var vars = variables(symbol).reverse();
+                    for(var i=0; i<vars.length; i++) {
+                        do {
+                            if(vars[i] === symbol.value){
+                                //the derivative tells us nothing since this symbol is already the factor
+                                factors.add(symbol);
+                                symbol = new Symbol(1);
+                                continue;
+                            }
+                            var d = __.Factor.coeffFactor(core.Calculus.diff(symbol, vars[i]));
+                            
+                            if(d.equals(0)) 
+                                break;
+                            var div = __.div(symbol, d.clone()),
+                                is_factor = div[1].equals(0);
+                            if(div[0].isConstant()) {
+                                factors.add(div[0]);
+                                break;
+                            }
+                            if(is_factor) {
+                                factors.add(div[0]);
+                                symbol = d;
+                            }
                         }
-                        if(is_factor) {
-                            factors.add(div[0]);
-                            symbol = d;
-                        }
+                        while(is_factor)
                     }
-                    while(is_factor)
                 }
+                    
                 return symbol;
             },
             //factoring for multivariate
-            mfactor: function(symbol, factors) {
-                symbol = __.Factor.mSqfrFactor(symbol, factors);
-                var vars = variables(symbol),
-                    symbols = symbol.collectSymbols(),
-                    sorted = {},
-                    maxes = {},
-                    l = vars.length, n = symbols.length;
-                //take all the variables in the symbol and organize by variable name
-                //e.g. a^2+a^2+b*a -> {a: {a^3, a^2, b*a}, b: {b*a}}
-                for(var i=0; i<l; i++) {
-                    var v = vars[i];
-                    sorted[v] = new Symbol(0);
-                    for(var j=0; j<n; j++) {
-                        var s = symbols[j];
-                        if(s.contains(v)) {
-                            var p = s.value === v ? s.power.toDecimal() : s.symbols[v].power.toDecimal();
-                            if(!maxes[v] || p < maxes[v]) maxes[v] = p;
-                            sorted[v] = _.add(sorted[v], s.clone());
+            mfactor: function(symbol, factors) { 
+                if(symbol.group === FN) { 
+                    if(symbol.fname === 'sqrt') {
+                        var factors2 = new Factors(),
+                            arg = __.Factor.common(symbol.args[0].clone(), factors2);
+                        arg = __.Factor.coeffFactor(arg, factors2);
+                        symbol = _.symfunction('sqrt', [arg]);
+                        factors2.each(function(x) {
+                            symbol = _.multiply(symbol, _.parse(core.Utils.format('sqrt({0})', x)));
+                        });
+                    }
+                    else
+                        factors.add(symbol);
+                }
+                else {
+                    //symbol = __.Factor.common(symbol, factors);
+                    symbol = __.Factor.mSqfrFactor(symbol, factors);
+                    var vars = variables(symbol),
+                        symbols = symbol.collectSymbols().map(function(x) {
+                            return Symbol.unwrapSQRT(x);
+                        }),
+                        sorted = {},
+                        maxes = {},
+                        l = vars.length, n = symbols.length;
+                    //take all the variables in the symbol and organize by variable name
+                    //e.g. a^2+a^2+b*a -> {a: {a^3, a^2, b*a}, b: {b*a}}
+                    for(var i=0; i<l; i++) {
+                        var v = vars[i];
+                        sorted[v] = new Symbol(0);
+                        for(var j=0; j<n; j++) {
+                            var s = symbols[j];
+                            if(s.contains(v)) {
+                                var p = s.value === v ? s.power.toDecimal() : s.symbols[v].power.toDecimal();
+                                if(!maxes[v] || p < maxes[v]) maxes[v] = p;
+                                sorted[v] = _.add(sorted[v], s.clone());
+                            }
+                        }
+                    }
+
+                    for(var x in sorted) {
+                        var r = _.parse(x+'^'+maxes[x]); 
+                        var new_factor = _.expand(_.divide(sorted[x], r)); 
+                        var divided = __.div(symbol.clone(), new_factor); 
+                        if(divided[0].equals(0)) { //cant factor anymore
+                            //factors.add(divided[1]);
+                            return divided[1];
+                        }
+
+                        if(divided[1].equals(0)) { //we found at least one factor
+                            var factor = divided[0];
+                            factors.add(factor); 
+                            //factors.add(new_factor);
+                            var d = __.div(symbol, divided[0].clone());
+                            var r = d[0];
+                            if(r.isConstant()) { 
+                                factors.add(r);
+                                return r;
+                            }
+                            return __.Factor.mfactor(r, factors);
                         }
                     }
                 }
-
-                for(var x in sorted) {
-                    var r = _.parse(x+'^'+maxes[x]); 
-                    var new_factor = _.expand(_.divide(sorted[x], r)); 
-                    var divided = __.div(symbol.clone(), new_factor); 
-                    if(divided[0].equals(0)) { //cant factor anymore
-                        //factors.add(divided[1]);
-                        return divided[1];
-                    }
-
-                    if(divided[1].equals(0)) { //we found at least one factor
-                        var factor = divided[0];
-                        factors.add(factor); 
-                        //factors.add(new_factor);
-                        var d = __.div(symbol, divided[0].clone());
-                        var r = d[0];
-                        if(r.isConstant()) { 
-                            factors.add(r);
-                            return r;
-                        }
-                        return __.Factor.mfactor(r, factors);
-                    }
-                }
+                
                 return symbol;
             }
         },
@@ -2524,3 +2632,6 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer('factor(sqrt(4*x^2*y+4*x^2))');
+console.log(x.toString())

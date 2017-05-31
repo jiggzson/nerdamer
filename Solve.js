@@ -623,7 +623,9 @@ if((typeof module) !== 'undefined') {
     };
     
     core.Expression.prototype.solveFor = function(x) {
-        return solve(core.Utils.isSymbol(this.symbol) ? this.symbol : this.symbol.toLHS(), x);
+        return solve(core.Utils.isSymbol(this.symbol) ? this.symbol : this.symbol.toLHS(), x).map(function(x) {
+            return new core.Expression(x);
+        });
     };
     
     core.Expression.prototype.expand = function() {

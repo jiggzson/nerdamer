@@ -281,10 +281,17 @@ describe('Algebra', function () {
                 given: 'factor(x^5+32*x^4+288*x^3-418*x^2-16577*x-55902)',
                 expected: '(-7+x)*(11+x)^3*(6+x)'
             }, 
-            //TODO: This should factor as well
             {
                 given: 'factor(x^2*y*z+x*z+t*x^2*y+t*x)',
                 expected: '(1+x*y)*(t+z)*(x)'
+            },
+            {
+                given: 'factor(x^2*y+x^2)',
+                expected: '(1+y)*x^2'
+            },
+            {
+                given: 'factor(sqrt(4*x^2*y+4*x^2))',
+                expected: '(2)*(abs(x))*(sqrt(1+y))'
             }
         ];
 
