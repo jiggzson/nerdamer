@@ -446,7 +446,7 @@ FUNCTIONS = {
             "var solutions = eq.solveFor('x').toString();",
             "console.log(solutions);"
         ],
-        returns: 'Symbol[]'
+        returns: 'Expression[]'
     },
     Solve__solve: {
         type: 'nerdamer',

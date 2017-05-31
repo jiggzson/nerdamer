@@ -26,6 +26,8 @@ if((typeof module) !== 'undefined') {
         S = core.groups.S,
         PL = core.groups.PL,
         CB = core.groups.CB,
+        CP = core.groups.CP,
+        FN = core.groups.FN,
         isArray = core.Utils.isArray;
     //version solve
     core.Solve = {
@@ -99,6 +101,9 @@ if((typeof module) !== 'undefined') {
     // A utility function to parse an expression to left hand side when working with strings
 
     var toLHS = function(eqn) {
+        //If it's an equation then call its toLHS function instead
+        if(eqn instanceof Equation)
+            return eqn.toLHS();
         var es = eqn.split('=');
         if(es[1] === undefined) es[1] = '0';
         var e1 = _.parse(es[0]), e2 = _.parse(es[1]);
@@ -286,7 +291,7 @@ if((typeof module) !== 'undefined') {
      * @param {type} solve_for
      * @returns {Array}
      */
-    var solve = function(eqns, solve_for, solutions) {      
+    var solve = function(eqns, solve_for, solutions) {
         solve_for = solve_for || 'x'; //assumes x by default
         //If it's an array then solve it as a system of equations
         if(isArray(eqns)) {
@@ -454,7 +459,66 @@ if((typeof module) !== 'undefined') {
             }
             return symbol;
         };
-
+        //rewrites equations/expression in simpler form
+        var rewrite = function(rhs, lhs) { 
+            lhs = lhs || new Symbol(0);
+            rhs = Symbol.unwrapSQRT(_.expand(rhs)); //expand the term expression go get rid of quotients when possible
+            var c = 0, //a counter to see if we have all terms with the variable
+                l = rhs.length;
+            //try to rewrite the whole thing
+            if(rhs.group === CP && rhs.contains(solve_for) && rhs.isLinear()) {
+                rhs.distributeMultiplier();
+                var t = new Symbol(0);
+                //first bring all the terms containing the variable to the lhs
+                rhs.each(function(x) {
+                    if(x.contains(solve_for)) {
+                        c++;
+                        t = _.add(t, x.clone());
+                    }
+                    else
+                        lhs = _.subtract(lhs, x.clone());
+                });
+                rhs = t;
+                
+                //if not all the terms contain the variable so it's in the form
+                //a*x^2+x
+                if(c !== l)
+                    return rewrite(rhs, lhs);
+                else { 
+                    return [rhs, lhs];
+                }
+            }
+            else if(rhs.group === CB && rhs.contains(solve_for) && rhs.isLinear()) {
+                if(rhs.multiplier.lessThan(0)) {
+                    rhs.multiplier = rhs.multiplier.multiply(new core.Frac(-1));
+                    lhs.multiplier = lhs.multiplier.multiply(new core.Frac(-1));
+                }
+                if(lhs.equals(0))
+                    return new Symbol(0);
+                else {
+                    var t = new Symbol(1);
+                    rhs.each(function(x) { 
+                        if(x.contains(solve_for)) 
+                            t = _.multiply(t, x.clone());
+                        else 
+                            lhs = _.divide(lhs, x.clone());
+                    });
+                    rhs = t;
+                    return rewrite(rhs, lhs);
+                    
+                }
+            }   
+            else if(!rhs.isLinear() && rhs.contains(solve_for)) { 
+                var p = _.parse(rhs.power.clone().invert());
+                rhs = _.pow(rhs, p.clone());
+                lhs = _.pow(_.expand(lhs), p.clone());
+                return rewrite(rhs, lhs);
+            }
+            else if(rhs.group === FN || rhs.group === S || rhs.group === PL) {
+                return [rhs, lhs];
+            }
+        };
+        
         //first remove any denominators
         eq = correct_denom(eq);  
         //correct fractionals. I can only handle one type right now
@@ -504,7 +568,7 @@ if((typeof module) !== 'undefined') {
         else {
             //The idea here is to go through the equation and collect the coefficients
             //place them in an array and call the quad or cubic function to get the results
-            if(!eq.hasFunc(solve_for) && eq.isComposite()) { 
+            if(!eq.hasFunc(solve_for) && eq.isComposite()) {
                 try {
                     var coeffs = core.Utils.getCoeffs(eq, solve_for);
                     var l = coeffs.length,
@@ -531,6 +595,22 @@ if((typeof module) !== 'undefined') {
                 }
                 catch(e) { /*something went wrong. EXITING*/; } 
             }
+            else {
+                try {
+                    var rw = rewrite(eq);
+                    var lhs = rw[0];
+                    var rhs = rw[1];
+                    if(lhs.group === FN) {
+                        if(lhs.fname === 'abs') {
+                            solutions.push(rhs.clone());
+                            solutions.push(rhs.negate());
+                        }
+                        else
+                            solutions.push(_.subtract(lhs, rhs));
+                    }
+                }
+                catch(error) {; }
+            }
         }
         
         if(cfact) {
@@ -543,7 +623,9 @@ if((typeof module) !== 'undefined') {
     };
     
     core.Expression.prototype.solveFor = function(x) {
-        return solve(core.Utils.isSymbol(this.symbol) ? this.symbol : this.symbol.toLHS(), x);
+        return solve(core.Utils.isSymbol(this.symbol) ? this.symbol : this.symbol.toLHS(), x).map(function(x) {
+            return new core.Expression(x);
+        });
     };
     
     core.Expression.prototype.expand = function() {
