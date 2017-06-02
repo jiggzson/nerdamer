@@ -480,6 +480,22 @@ describe('calculus', function () {
                 given: 'integrate(cos(x)^2/sin(x),x)',
                 expected: '-log(cot(x)+csc(x))+cos(x)'
             },
+            {
+                given: 'integrate(cos(x)/x,x)',
+                expected: 'Ci(x)'
+            },
+            {
+                given: 'integrate(sin(x)/x,x)',
+                expected: 'Si(x)'
+            },
+            {
+                given: 'integrate(log(x)^3/x,x)',
+                expected: '(1/4)*log(x)^4'
+            },
+            {
+                given: 'integrate(tan(x)^2*sec(x), x)',
+                expected: '(-1/2)*log(sec(x)+tan(x))+(1/2)*sec(x)*tan(x)'
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
