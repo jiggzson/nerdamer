@@ -1520,11 +1520,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         }
                                     }
                                     else if(g1 === EX && g2 === S) { 
-                                        var dc = __.integration.decompose_arg(sym1.args[0], dx);
+                                        var x = fn1 === LOG ? __.integration.decompose_arg(sym1.args[0], dx)[1] : null;
                                         if(sym1.isE() && (sym1.power.group === S || sym1.power.group === CB) && sym2.power.equals(-1)) {
                                             retval = _.symfunction('Ei', [sym1.power.clone()]);
                                         }
-                                        else if(fn1 === LOG && dc[1].value === sym2.value) {
+                                        else if(fn1 === LOG && x.value === sym2.value) {
                                             retval = __.integration.poly_integrate(sym1, dx, depth);
                                         }
                                         else
@@ -1811,3 +1811,5 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     //link registered functions externally
     nerdamer.api();
 })();
+
+var x = nerdamer('integrate(log(x)^n/x,x)')
