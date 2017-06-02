@@ -64,7 +64,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         return this.containsFunction('integrate');
     };
     //transforms a function
-    Symbol.prototype.fnTransform = function() {
+    Symbol.prototype.fnTransform = function() { 
         var retval, a = this.args[0];
         if(this.isLinear()) {
             switch(this.fname) {
@@ -117,6 +117,20 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 default:
                     retval = this;
             }
+        }
+        else if(this.fname === TAN) {
+            if(this.power.lessThan(0)) {
+                retval = _.parse(format('cos({0})^({1})/sin({0})^({1})', this.args[0], this.power.clone().negate()));
+            }
+            else {
+                retval = _.parse(format('sin({0})^({1})/cos({0})^({1})', this.args[0], this.power));
+            }
+        }
+        else if(this.fname === SIN && this.power.lessThan(0)) {
+            retval = _.parse(format('csc({0})^({1})', this.args[0], this.power.clone().negate()));
+        }
+        else if(this.fname === COS && this.power.lessThan(0)) {
+            retval = _.parse(format('sec({0})^({1})', this.args[0], this.power.clone().negate()));
         }
         else
             retval = this;
@@ -634,7 +648,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             //simple integration of a single polynomial x^(n+1)/(n+1)
             poly_integrate: function(x) { 
                 var p = x.power.toString(),
-                    m = x.multiplier.toString(), 
+                    m = x.multiplier.toDecimal(), 
                     s = x.toUnitMultiplier().toLinear();
                 if(Number(p) === -1) {
                     return _.multiply(new Symbol(m), _.symfunction(LOG, [s]));
@@ -860,7 +874,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 vdu = _.multiply(v.clone(), du); 
                 vdu_s = vdu.toString();
                 //currently only supports e^x*(some trig)
-                if(o.previous.indexOf(vdu_s) !== -1 && (core.Utils.in_trig(u.fname)) && dv.isE()) {
+                if(o.previous.indexOf(vdu_s) !== -1 && (core.Utils.in_trig(u.fname)) && dv.isE()) { 
                     //We're going to exploit the fact that vdu can never be constant
                     //to work out way out of this cycle. We'll return the length of
                     //the this.previous array until we're back at level one
@@ -1136,7 +1150,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     else 
                                         __.integration.stop();
                                 }
-                                else {
+                                else { 
                                     var ag = symbol.args[0].group,
                                         decomposed = __.integration.decompose_arg(arg, dx);
                                     
@@ -1254,7 +1268,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     else if(g === PL) {
                         retval = __.integration.partial_fraction(symbol, dx, depth);
                     }
-                    else if(g === CB) {
+                    else if(g === CB) { 
                         //separate the coefficient since all we care about are symbols containing dx
                         var coeff = symbol.stripVar(dx); 
                         //now get only those that apply
@@ -1403,27 +1417,20 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                         }
                                                     }
                                                 }
-                                                else if(fn1 === TAN && fn2 === SEC && x.isLinear()) {
-                                                    //tan(x)*sec(x)^n where n > 0
-                                                    /* REVISIT IN THE FUTURE
-                                                    if(sym2.isLinear()) {
-                                                        var tanx = sym1.clone();
-                                                            tanx.power = new Frac(2);
-                                                        //borrow a power from tan
-                                                        sym1.power = sym1.power.subtract(new Frac(1));
-                                                        if(sym1.power.equals(0))
-                                                            sym1 = _.parse(sym1);
-                                                        else
-                                                            sym1 = sym1.sub(tanx, _.parse(SEC+'('+arg1+')^2-1'));
-                                                        //add it to sec
-                                                        var combined = _.expand(_.multiply(_.multiply(sym2, _.symfunction(TAN, [arg1.clone()])), sym1));
-                                                        retval = new Symbol(0);
-                                                        combined.each(function(x) {
-                                                            retval = _.add(retval, __.integrate(x, dx, depth));
-                                                        });
-                                                    }*/
+                                                //tan(x)*sec(x)^n 
+                                                else if(fn1 === SEC && fn2 === TAN && x.isLinear() && sym2.isLinear()) { 
+                                                    retval = _.parse(format('sec({0})^({1})/({1})', sym1.args[0], sym1.power));
+                                                }
+                                                else if(fn1 === TAN && fn2 === SEC && x.isLinear()) { 
+                                                    //remaining: tan(x)^3*sec(x)^6
                                                     if(sym1.isLinear() && sym2.isLinear()) {
                                                         retval = _.divide(_.symfunction(SEC, [arg1.clone()]), a);
+                                                    }
+                                                    else if(even(sym1.power)) {
+                                                        var p = Number(sym1.power)/2;
+                                                        //transform tangent
+                                                        var t = _.parse(format('(sec({0})^2-1)^({1})', sym1.args[0], p));
+                                                        retval = __.integrate(_.expand(_.multiply(t, sym2)), dx, depth);
                                                     }
                                                     else
                                                         __.integration.stop();
@@ -1455,14 +1462,31 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         }
                                     }
                                     else if(g1 === FN && g2 === S) { 
-                                        if(sym1.fname === COS && sym2.power.equals(-1))
+                                        var sym1_is_linear = sym1.isLinear();
+                                        if(sym1.fname === COS && sym1_is_linear && sym2.power.equals(-1)) 
                                             retval = _.symfunction('Ci', [sym1.args[0]]);
-                                        if(sym1.fname === COSH && sym2.power.equals(-1))
+                                        else if(sym1.fname === COS && sym2.power.equals(-1)) {
+                                            retval = __.integrate(_.multiply(sym1.fnTransform(), sym2.clone()), dx, depth);
+                                        }
+                                        else if(sym1.fname === COSH && sym1_is_linear && sym2.power.equals(-1))
                                             retval = _.symfunction('Chi', [sym1.args[0]]);
-                                        else if(sym1.fname === SIN && sym2.power.equals(-1))
+                                        else if(sym1.fname === COSH && sym2.power.equals(-1)) {
+                                            retval = __.integrate(_.multiply(sym1.fnTransform(), sym2.clone()), dx, depth);
+                                        }
+                                        else if(sym1.fname === SIN && sym1_is_linear && sym2.power.equals(-1))
                                             retval = _.symfunction('Si', [sym1.args[0]]);
-                                        else if(sym1.fname === SINH && sym2.power.equals(-1))
+                                        else if(sym1.fname === SIN && sym2.power.equals(-1)) {
+                                            retval = __.integrate(_.multiply(sym1.fnTransform(), sym2.clone()), dx, depth);
+                                        }
+                                        else if(sym1.fname === SINH && sym1_is_linear && sym2.power.equals(-1))
                                             retval = _.symfunction('Shi', [sym1.args[0]]);
+                                        else if(sym1.fname === SINH && sym2.power.equals(-1)) {
+                                            retval = __.integrate(_.multiply(sym1.fnTransform(), sym2.clone()), dx, depth);
+                                        }
+                                        else if(sym1.fname === LOG && sym2.power.equals(-1)) {
+                                            //log(x)^n/x = log(x)^(n+1)/(n+1)
+                                            retval = __.integration.poly_integrate(sym1, dx, depth);
+                                        }
                                         else if(sym1.fname === 'erf') {
                                             if(sym2.power.equals(1)) {
                                                 var dc = __.integration.decompose_arg(sym1.args[0], dx),

@@ -2632,6 +2632,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var x = nerdamer('factor(sqrt(4*x^2*y+4*x^2))');
-console.log(x.toString())
