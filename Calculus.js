@@ -118,6 +118,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     retval = this;
             }
         }
+        else if(this.fname === SEC) {
+            retval = _.parse(format('1/cos({0})^({1})', this.args[0], this.power));
+        }
+        else if(this.fname === CSC) {
+            retval = _.parse(format('1/sin({0})^({1})', this.args[0], this.power));
+        }
         else if(this.fname === TAN) {
             if(this.power.lessThan(0)) {
                 retval = _.parse(format('cos({0})^({1})/sin({0})^({1})', this.args[0], this.power.clone().negate()));
@@ -131,6 +137,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
         else if(this.fname === COS && this.power.lessThan(0)) {
             retval = _.parse(format('sec({0})^({1})', this.args[0], this.power.clone().negate()));
+        }
+        else if(this.fname === SIN && this.power.equals(3)) {
+            retval = _.parse(format('(3*sin({0})-sin(3*({0})))/4', this.args[0]));
+        }
+        else if(this.fname === COS && this.power.equals(3)) {
+            retval = _.parse(format('(cos(3*({0}))+3*cos({0}))/4', this.args[0]));
         }
         else
             retval = this;
@@ -1445,8 +1457,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                     sym2.invert().updateHash();
                                                     retval = __.integrate(_.multiply(sym1, sym2), dx, depth);
                                                 }
-                                                else {  
-                                                    retval = __.integrate(_.expand(_.multiply(sym1.fnTransform(), sym2.fnTransform())), dx, depth);
+                                                //tan/cos
+                                                else if(fn1 === TAN && (fn2 === COS || fn2 === SIN) && sym2.power.lessThan(0)) {
+                                                    var t = _.multiply(sym1.fnTransform(), sym2);
+                                                    retval = __.integrate(_.expand(t), dx, depth);
+                                                }
+                                                else { 
+                                                    var t = _.multiply(sym1.fnTransform(), sym2.fnTransform());
+                                                    retval = __.integrate(_.expand(t), dx, depth);
                                                 }
                                             }
                                             //TODO: REVISIT AT SOME POINT
@@ -1501,9 +1519,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             retval = __.integration.by_parts(symbol, dx, depth, opt);
                                         }
                                     }
-                                    else if(g1 === EX && g2 === S) {
+                                    else if(g1 === EX && g2 === S) { 
+                                        var dc = __.integration.decompose_arg(sym1.args[0], dx);
                                         if(sym1.isE() && (sym1.power.group === S || sym1.power.group === CB) && sym2.power.equals(-1)) {
                                             retval = _.symfunction('Ei', [sym1.power.clone()]);
+                                        }
+                                        else if(fn1 === LOG && dc[1].value === sym2.value) {
+                                            retval = __.integration.poly_integrate(sym1, dx, depth);
                                         }
                                         else
                                             retval = __.integration.by_parts(symbol, dx, depth, opt);

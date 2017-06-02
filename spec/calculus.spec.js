@@ -495,7 +495,23 @@ describe('calculus', function () {
             {
                 given: 'integrate(tan(x)^2*sec(x), x)',
                 expected: '(-1/2)*log(sec(x)+tan(x))+(1/2)*sec(x)*tan(x)'
-            }
+            },
+            {
+                given: 'integrate(tan(x)/cos(x),x)',
+                expected: 'cos(x)^(-1)'
+            },
+            {
+                given: 'integrate(sin(x)^3/x,x)',
+                expected: '(1/4)*(-Si(3*x)+3*Si(x))'
+            },
+            {
+                given: 'integrate(tan(x)/sec(x)*sin(x)/tan(x),x)',
+                expected: '(-1/2)*cos(x)^2'
+            },
+            {
+                given: 'integrate(log(x)^n/x,x)',
+                expected: '(1+n)^(-1)*log(x)^(1+n)'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
