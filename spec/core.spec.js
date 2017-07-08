@@ -1530,6 +1530,11 @@ describe('Nerdamer core', function () {
                     expectedValue: '(-1)^2.1'
                 },
                 {
+                    given: '(-25)^(1/5)',
+                    expected: '(-1)^(1/5)*5^(2/5)',
+                    expectedValue: '-1.9036539387158786'
+                },
+                {
                     given: '(x+y)--(x+y)',
                     expected: '2*x+2*y',
                     expectedValue: '10.8'

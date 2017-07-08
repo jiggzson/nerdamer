@@ -816,7 +816,7 @@ if((typeof module) !== 'undefined') {
         return subs;
     };
     var __ = core.Algebra = {
-        version: '1.4.1',
+        version: '1.4.2',
         init: (function() {})(),
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
@@ -1865,6 +1865,9 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             factor: function(symbol, factors) { 
+                if(symbol.group === FN)
+                    symbol = core.Utils.evaluate(symbol);
+                
                 try {
                     if(symbol.group === CB) {
                         //TODO: I have to revisit this again. I'm checking if they're all
@@ -2259,6 +2262,13 @@ if((typeof module) !== 'undefined') {
             return status;
         },
         gcd: function(a, b) { 
+            if(a.group === CB || b.group === CB) {
+                var q = _.divide(a.clone(), b.clone()); //get the quotient
+                var t = _.multiply(b.clone(), q.getDenom());//multiply by the denominator
+                //if they have a common factor then the result will not equal one 
+                if(!t.equals(1))
+                    return t;
+            }
             if(a.group === FN || a.group === P)
                 a = core.Utils.block('PARSE2NUMBER', function() {
                    return _.parse(a); 

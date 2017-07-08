@@ -107,7 +107,7 @@ var nerdamer = (function(imports) {
         
         /**
          * Used to pass warnings or low severity errors about the library
-         * @type type
+         * @param msg
          */
         warn = function(msg) {
             WARNINGS += (msg+'\n');
@@ -133,6 +133,7 @@ var nerdamer = (function(imports) {
          * Finds intersection of two arrays
          * @param {array} a
          * @param {Array} b
+         * @param {Array} compare_fn
          * @returns {Array}
          */
         intersection = Utils.intersection = function(a, b, compare_fn) {
@@ -422,6 +423,7 @@ var nerdamer = (function(imports) {
          * This method traverses the symbol structure and grabs all the variables in a symbol. The variable
          * names are then returned in alphabetical order.
          * @param {Symbol} obj
+         * @param {Boolean} poly 
          * @param {Object} vars - An object containing the variables. Do not pass this in as it generated 
          * automatically. In the future this will be a Collector object.
          * @returns {String[]} - An array containing variable names
@@ -647,6 +649,11 @@ var nerdamer = (function(imports) {
             for(var i=last_prime; i<upto; i++) {
                 if(isPrime(i)) PRIMES.push(i);
             }
+        },
+        evaluate = Utils.evaluate = function (symbol) {
+            return block('PARSE2NUMBER', function() {
+                return _.parse(symbol);
+            }, true);
         },
         //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
         //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the 
@@ -2686,6 +2693,7 @@ var nerdamer = (function(imports) {
                 'matrix'            : [ matrix, -1],
                 'parens'            : [ parens, -1],
                 'sqrt'              : [ sqrt, 1],
+                'nthroot'           : [ nthroot, 2],
                 'log'               : [ log , 1],
                 'expand'            : [ expand , 1],
                 'abs'               : [ abs , 1],
@@ -3615,6 +3623,19 @@ var nerdamer = (function(imports) {
 
             return retval;
         }
+
+        function nthroot(symbol, n) { 
+            if(isVector(n)) {
+                var v = new Vector();
+                n.each(function(e) {
+                    v.elements.push(nthroot(symbol.clone(), e));
+                });
+                return  v;
+            }
+            return block('PARSE2NUMBER', function() {
+                return _.pow(symbol, n.invert());
+            }, true);
+        }
         
         function pfactor(symbol) {
             var retval = new Symbol(1);
@@ -3624,7 +3645,7 @@ var nerdamer = (function(imports) {
                     var factors = Math2.ifactor(m);
                     for(var factor in factors) {
                         var p = factors[factor];
-                        retval = _.multiply(retval, _.symfunction('parens', [new Symbol(factor).setPower(new Frac(p))]))
+                        retval = _.multiply(retval, _.symfunction('parens', [new Symbol(factor).setPower(new Frac(p))]));
                     }
                 }
                 else {
@@ -3729,15 +3750,15 @@ var nerdamer = (function(imports) {
                     retval  = new Symbol(even(m) ? 1 : -1);
                 } 
                 else {
-                    var n = m.num, d = m.den;
-                    if(d == 2) retval = new Symbol(0);
-                    else if(d == 3) {
+                    var n = Number(m.num), d = Number(m.den);
+                    if(d === 2) retval = new Symbol(0);
+                    else if(d === 3) {
                         retval = _.parse('1/2'); c = true;
                     }
-                    else if(d == 4) {
+                    else if(d === 4) {
                         retval = _.parse('1/sqrt(2)'); c = true;
                     }
-                    else if(d == 6) {
+                    else if(d === 6) {
                         retval = _.parse('sqrt(3)/2'); c = true;
                     }
                     else retval = _.symfunction('cos', [symbol]);
@@ -4856,7 +4877,7 @@ var nerdamer = (function(imports) {
                     s.multiplyPower(b);
                     result = s; 
                 }
-                else {
+                else { 
                     var sign = m.sign();
                     //handle cases such as (-a^3)^(1/4)
                     if(evenFraction(b) && sign < 0) {
@@ -4885,8 +4906,14 @@ var nerdamer = (function(imports) {
                             else 
                                 c = new Symbol(-1);
                         }
-                        else
-                            c = _.pow(_.symfunction(PARENTHESIS, [new Symbol(-1)]), b.clone());
+                        else if(!even(b.multiplier.den)) {
+                            sign = Math.pow(sign, b.multiplier.num);
+                            c = new Symbol(Math.pow(a, b)*sign);
+                        }
+                        else {
+                            c = _.pow(_.symfunction(PARENTHESIS, [new Symbol(sign)]), b.clone());
+                        }
+                            
                     }
 
                     result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
@@ -4902,7 +4929,7 @@ var nerdamer = (function(imports) {
                 }
                 else { 
                     var sign = a.sign();
-                    if(b.isConstant() && a.isConstant() && even(b.multiplier.den) && sign < 0 ) { 
+                    if(b.isConstant() && a.isConstant() && !b.multiplier.den.equals(1) && sign < 0 ) { 
                         //we know the sign is negative so if the denominator for b == 2 then it's i
                         if(b.multiplier.den.equals(2)) {
                             var i = new Symbol(Settings.IMAGINARY);
