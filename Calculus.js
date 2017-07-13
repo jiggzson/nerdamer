@@ -1103,11 +1103,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     __.integration.stop();
                                 }
                             }
-                            else if(p === -2) {
+                            /*else if(p === -2) {
                                 //TODO 
                                 //integrate((1)/(a+b*x^2)^2,x)
                                 __.integration.stop();
-                            }
+                            }*/
                             else { 
                                 if(x.isLinear() && x.group !== PL)
                                     retval = _.divide(__.integration.poly_integrate(symbol), a);

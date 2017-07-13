@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.11',
+    var version = '0.7.12',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -44,7 +44,9 @@ var nerdamer = (function(imports) {
             //Allow certain characters
             ALLOW_CHARS: ['π'],
             //Allow changing of power operator
-            POWER_OPERATOR: '^'
+            POWER_OPERATOR: '^',
+            //The variable validation regex
+            VALIDATION_REGEX: /^[a-z_][a-z\d\_]*$/i
         },
 
         //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
@@ -85,7 +87,6 @@ var nerdamer = (function(imports) {
         //the container used to store all the reserved functions
         RESERVED = ['__u__'],
 
-
         WARNINGS = '',
         
         /**
@@ -124,8 +125,8 @@ var nerdamer = (function(imports) {
             typ = typ || 'variable';
             if(Settings.ALLOW_CHARS.indexOf(name) !== -1)
                 return;
-            var regex = /^[a-z_][a-z\d\_]*$/gi;
-            if(!(regex.test( name)) ) {
+            var regex = Settings.VALIDATION_REGEX;
+            if(!(regex.test(name)) ) {
                 throw new Error(name+' is not a valid '+typ+' name');
             }
         },
