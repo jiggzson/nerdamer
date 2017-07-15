@@ -264,7 +264,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     
     var __ = core.Calculus = {
 
-        version: '1.4.1',
+        version: '1.4.2',
 
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
@@ -1103,6 +1103,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     __.integration.stop();
                                 }
                             }
+                            /*else if(p === -2) {
+                                //TODO 
+                                //integrate((1)/(a+b*x^2)^2,x)
+                                __.integration.stop();
+                            }*/
                             else { 
                                 if(x.isLinear() && x.group !== PL)
                                     retval = _.divide(__.integration.poly_integrate(symbol), a);
@@ -1110,7 +1115,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     if(symbol.group !== CB && !symbol.power.lessThan(0)) {
                                         retval = __.integration.by_parts(symbol, dx, depth, opt);
                                     }
-                                    else
+                                    else 
                                         retval = __.integration.partial_fraction(symbol, dx, depth, opt);
                                 }
                             }
@@ -1166,7 +1171,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     var ag = symbol.args[0].group,
                                         decomposed = __.integration.decompose_arg(arg, dx);
                                     
-                                    if(!(ag === CP || ag === S || ag === CB) || !decomposed[1].power.equals(1))
+                                    if(!(ag === CP || ag === S || ag === CB) || !decomposed[1].power.equals(1) || arg.hasFunc())
                                         __.integration.stop();
                                     /**TODO**/ //ASIN, ACOS, ATAN
                                     switch(fname) {
@@ -1811,5 +1816,3 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     //link registered functions externally
     nerdamer.api();
 })();
-
-var x = nerdamer('integrate(log(x)^n/x,x)')

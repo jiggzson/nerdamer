@@ -23,7 +23,7 @@ if((typeof module) !== 'undefined') {
         FN = core.groups.FN;
     core.Settings.Laplace_integration_depth = 40;
     var __ = core.Extra = {
-        version: '1.1.0',
+        version: '1.2.0',
         //http://integral-table.com/downloads/LaplaceTable.pdf
         LaPlace: {
             //Using: intgral_0_oo f(t)*e^(-s*t) dt
@@ -90,7 +90,7 @@ if((typeof module) !== 'undefined') {
                         }
 
                         core.Utils.block('PARSE2NUMBER', function() {
-                            var u = 't';
+                            var u = t;
                             var sym = symbol.sub(t, u);
                             var integration_expr = _.parse('e^(-'+s+'*'+u+')*'+sym);
                             retval = core.Calculus.integrate(integration_expr, u);
@@ -251,6 +251,14 @@ if((typeof module) !== 'undefined') {
             },
             zScore: function(x, mean, stdev) {
                 return _.divide(_.subtract(x, mean), stdev);
+            }
+        },
+        Units: {
+            table: {
+                foot: '12 inch',
+                meter: '100 cm',
+                decimeter: '10 cm',
+                
             }
         }
     };
