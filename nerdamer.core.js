@@ -5196,7 +5196,10 @@ var nerdamer = (function(imports) {
                     for(var j=0; j<e.length; j++) {
                         rowTeX.push(this.latex(e[j]));
                     }
-                    TeX += rowTeX.join(' & ')+'\\\\\n';
+                    TeX += rowTeX.join(' & ');
+                    if (i<symbol.elements.length-1){    
+                        TeX+='\\\\\n';
+                    }
                 }
                 TeX += '\\end{pmatrix}';
                 return TeX;
