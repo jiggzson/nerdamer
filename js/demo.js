@@ -28,7 +28,6 @@
  *  Brosnan Yuen for his contributions to graphing
  *  Guppy for graphical input
  */
-
 (function(){
     $(function() {
         var chartNumber = 0;
@@ -56,10 +55,6 @@
                 empty_content: "\\color{gray}{\\text{Visual editor. Enter your expression here}}",
                 done_callback: process
             });
-        //store the validation regex
-        var validation_regex_str = nerdamer.getCore().Settings.VALIDATION_REGEX.toString();
-        //create the regex for extracting variables
-        var variable_regex = new RegExp('('+validation_regex_str.substring(1, validation_regex_str.length-3)+'\\(?,*.*\\)?)(\\s*,\\s*)(.*)');
         //define how the user is being notified.
         function notify(msg) {
             var modal = $('#alertModal');
@@ -146,29 +141,15 @@
         //doing a split by the comma would yield the undesired result. This method walks the string and looks for an open bracket
         //and then a close bracket. If none is found we're golden and it returns the string. If one is found then it looks 
         //for a close bracket. Any comma after that has to be the variable declarations
-        
-        //Note: I cannot use a regex for example diff(cos(x), x). A regex cannot check for matching brackets. Recursively maybe but 
-        //that's tricky with commas
         function extractExpression(str) {
-            /*
-            var match = variable_regex.exec(str);
-            if(match) 
-                return [match[1], match[3]];
-            return [str, ''];
-            */
             var l = str.length,
-                openBrackets = 0,
-                retval;
+                openBrackets = 0;
             for(var i=0; i<l; i++) {
                 var ch = str.charAt(i);
                 if(ch === '(' || ch === '[') openBrackets++; //record and open brackets
                 if(ch === ')' || ch === ']') openBrackets--; //close the bracket
-                if(ch === ',' && !openBrackets) {
-                    retval = [str.substr(0, i), str.substr(i+1, l)];
-                    return retval;
-                }
+                if(ch === ',' && !openBrackets) return [str.substr(0, i), str.substr(i+1, l)];
             }
-
             return [str, ''];
         };
         //this method dictates the formatting of the expression for the panel
@@ -238,11 +219,10 @@
         //perform preparations before parsing. Extract variables and declarations
         function prepareExpression(str) {
             //the string will come in the form x+x, x=y, y=z
-            var extracted = extractExpression(str),
+            var extracted = extractExpression(str.split(' ').join('')),
                 expression = extracted[0],
                 scope = {};
             extracted[1].split(',').map(function(x) {
-                x = x.trim(); //remove white space at both ends
                 var parts = x.split('='),
                    varname = parts[0],
                    value = parts[1];
@@ -285,7 +265,6 @@
                 //we never checked if this is in proper format for nerdamer so we'll just try and if nerdamer complains we'll let the person know
                 try {
                     nerdamer.setFunction(fnName, params, fnBody);
-                    //generate the latex
                     LaTeX = fnName+ //parse the function name with nerdamer so we can get back some nice LaTeX
                             '('+ //do the same for the parameters
                                 params.map(function(x) {
@@ -340,7 +319,6 @@
                         clear();
                     }
                     catch(e){
-                        console.log(e.stack)
                         notify('Something went wrong. Nerdamer could not parse expression!</br>'+e.toString());
                     } 
                 }  
@@ -378,5 +356,5 @@
         });
     });
 })();
-//Π
 
+http://
