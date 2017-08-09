@@ -47,7 +47,6 @@ var nerdamer = (function(imports) {
             POWER_OPERATOR: '^',
             //The variable validation regex
             VALIDATION_REGEX: /^[a-z_][a-z\d\_]*$/i
-            //VALIDATION_REGEX: /^[a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ][a-z\d\_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ]*$/i
         },
 
         //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
@@ -1257,8 +1256,8 @@ var nerdamer = (function(imports) {
          * @returns {String}
          */
         latex: function(option) {
-            if(this.symbol.latex_)
-                return this.symbol.latex_(option);
+            if(this.symbol.latex)
+                return this.symbol.latex(option);
             return LaTeX.latex(this.symbol, option);
         },
         valueOf: function() { 
@@ -5197,7 +5196,10 @@ var nerdamer = (function(imports) {
                     for(var j=0; j<e.length; j++) {
                         rowTeX.push(this.latex(e[j]));
                     }
-                    TeX += rowTeX.join(' & ')+'\\\\\n';
+                    TeX += rowTeX.join(' & ');
+                    if (i<symbol.elements.length-1){    
+                        TeX+='\\\\\n';
+                    }
                 }
                 TeX += '\\end{pmatrix}';
                 return TeX;
