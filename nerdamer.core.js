@@ -1256,8 +1256,8 @@ var nerdamer = (function(imports) {
          * @returns {String}
          */
         latex: function(option) {
-            if(this.symbol.latex_)
-                return this.symbol.latex_(option);
+            if(this.symbol.latex)
+                return this.symbol.latex(option);
             return LaTeX.latex(this.symbol, option);
         },
         valueOf: function() { 
