@@ -314,7 +314,7 @@
                         //set the value
                         nerdamer.setVar(varName, varValue);
                         //generate the LaTeX
-                        LaTeX = varName+'='+nerdamer(varValue).toTeX();
+                        LaTeX = varName+':'+nerdamer(varValue).toTeX();
                         addToPanel(LaTeX, expression, undefined, varName);   
                         clear();
                     }
