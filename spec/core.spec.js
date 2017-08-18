@@ -28,34 +28,51 @@ describe('Nerdamer core', function () {
                 given: '((((((1+1))))))',
                 expected: '2',
                 expectedValue: '2'
-            }, {
+            }, 
+            {
                 given: '((((((1+1))+4)))+3)',
                 expected: '9',
                 expectedValue: '9'
-            }, {
+            },
+            {
                 given: '1+1',
                 expected: '2',
                 expectedValue: '2'
-            }, {
+            },
+            {
                 given: '4^2',
                 expected: '16',
                 expectedValue: '16'
-            }, {
+            },
+            {
                 given: '2*-4',
                 expected: '-8',
                 expectedValue: '-8'
-            }, {
+            },
+            {
                 given: '2+(3/4)',
                 expected: '11/4',
                 expectedValue: '2.75'
-            }, {
+            },
+            {
                 given: '2/3+2/3',
                 expected: '4/3',
                 expectedValue: '1.3333333333333333'
-            }, {
+            },
+            {
                 given: '6.5*2',
                 expected: '13',
                 expectedValue: '13'
+            }, 
+            {
+                given: '5%4+1',
+                expected: '2',
+                expectedValue: '2'
+            }, 
+            {
+                given: 'x%4+1',
+                expected: '1+x%4',
+                expectedValue: '1+x%4'
             }
         ];
 
@@ -221,6 +238,11 @@ describe('Nerdamer core', function () {
         // given
         var testCases = [
             {
+                given: '0^(1/2)',
+                expected: '0',
+                expectedValue: '0'
+            },
+            {
                 given: '2^(1/2)',
                 expected: 'sqrt(2)',
                 expectedValue: '1.4142135623730951'
@@ -258,33 +280,33 @@ describe('Nerdamer core', function () {
        var testCases = [
            {
                given: '(1+x^2)!',
-               expected: 'fact(1+x^2)',
+               expected: 'factorial(1+x^2)',
                expectedValue: '245.1516183677083'
            },
            {
                given: '10!',
-               expected: 'fact(10)',
+               expected: 'factorial(10)',
                expectedValue: '3628800'
            },
            {
                given: 'x!',
-               expected: 'fact(x)',
+               expected: 'factorial(x)',
                expectedValue: '2.197620278392476'
            },
            {
                given: 'x!*x!',
-               expected: 'fact(x)^2',
+               expected: 'factorial(x)^2',
                expectedValue: '4.829534888001823'
            },
            {
                given: '3*(1+x!*x!)',
-               expected: '3*(1+fact(x)^2)',
+               expected: '3*(1+factorial(x)^2)',
                expectedValue: '17.488604664005468'
            },
            {
                given: '3*(1+x!*x!)!',
-               expected: '3*fact(1+fact(x)^2)',
-               expectedValue: '1573.2041488172601'
+               expected: '3*factorial(1+factorial(x)^2)',
+               expectedValue: '1573.20414881726'
            }
        ];
 
@@ -716,13 +738,11 @@ describe('Nerdamer core', function () {
                 expected: '-1',
                 expectedValue: '-1'
             },
-
-            /* TODO jiggzson: results in 2*NaN
             {
                 given: '(256*i)^(1/8)',
                 expected: '2*(-1)^(1/16)',
-                expectedValue: '2*(-1)^(1/16)'
-            },*/
+                expectedValue: '2*(-1)^0.0625'
+            },
             {
                 given: 'i/i',
                 expected: '1',
@@ -752,13 +772,14 @@ describe('Nerdamer core', function () {
     });
 
     // TODO jiggzson: Does not work
-    xit('should handle powers with results using i', function () {
+    it('should handle powers with results using i', function () {
         // given
         var testCases = [
             {
                 given: '(-2/3*x)^x',
                 expected: '(-x)^x*2^x*3^(-x)',
-                expectedValue: '1.9278587+0.626399264*i'
+                //TODO: Evaluates to NaN somewhere
+                expectedValue: '2.0270706004935852*(-1)^2.1'
             }
         ];
 
@@ -857,8 +878,7 @@ describe('Nerdamer core', function () {
     });
 
     /** #35 #76: Support multiple minus signs and brackets */
-    // TODO jiggzson: test can be run once #76 is fixed
-    xit('should support prefix operator with parantheses', function () {
+    it('should support prefix operator with parantheses', function () {
       // given
       var testCases = [
         {
@@ -888,7 +908,101 @@ describe('Nerdamer core', function () {
         expect(value).toEqual(testCases[i].expected);
       }
     });
+    
+    //#78
+    it('should substitute variables', function () {
+      // given
+      var testCases = [
+        {
+           given: '2*(x+1)^2',
+           sub: 'x+1',
+           sub_with: 'u',
+           expected: '2*u^2'
+        },
+        {
+           given: '2*(x+1+a)^2',
+           sub: 'x+1',
+           sub_with: 'u',
+           expected: '2*(1+a+x)^2'
+        },
+        {
+           given: '2*(x+1)^(x+1)',
+           sub: 'x+1',
+           sub_with: 'u',
+           expected: '2*u^u'
+        },
+        {
+           given: '2*(x+1)^2',
+           sub: '(x+1)^2',
+           sub_with: 'u^x',
+           expected: '2*u^x'
+        },
+        {
+           given: '2*(x+1)^2',
+           sub: 'x+1',
+           sub_with: 'u^x',
+           expected: '2*u^(2*x)'
+        },
+        {
+           given: '(2*(x+1)^2+a)^2',
+           sub: '(x+1)^2',
+           sub_with: 'u^x',
+           expected: '(2*u^x+a)^2'
+        },
+        {
+           given: '(x^x+y)^(x^x-t)',
+           sub: 'x^x',
+           sub_with: '4',
+           expected: '(4+y)^(-t+4)'
+        },
+        {
+           given: '(cos(x)+cos(x)^2)',
+           sub: 'cos(x)',
+           sub_with: '4',
+           expected: '20'
+        },
+        {
+           given: '(cos(x)+cos(x)^2)',
+           sub: '(cos(x)+cos(x)^2)',
+           sub_with: '4',
+           expected: '4'
+        },
+        {
+           given: '(cos(x)+cos(x^6)^2)',
+           sub: '(cos(x)+cos(x)^2)',
+           sub_with: '4',
+           expected: 'cos(x)+cos(x^6)^2'
+        },
+        {
+           given: '(cos(x)+cos(x^6)^2)',
+           sub: 'cos(x)',
+           sub_with: '4',
+           expected: '4+cos(x^6)^2'
+        },
+        {
+           given: '(cos(x)+cos(x^6)^2)',
+           sub: '2',
+           sub_with: '4',
+           expected: 'error'
+        },
+        
+      ];
 
+      for (var i = 0; i < testCases.length; ++i) {
+          var testCase = testCases[i];
+        // when
+        try {
+            var parsed = nerdamer(testCase.given).sub(testCase.sub, testCase.sub_with).toString();
+        }
+        catch(e){
+            var parsed = 'error';
+        }
+       
+        // then
+        expect(parsed).toEqual(testCases[i].expected);
+      }
+    });
+    
     /** #44: a+b - (a+b) not evaluated as 0 */
     it('should perform subtraction of terms', function () {
       // given
@@ -1427,12 +1541,16 @@ describe('Nerdamer core', function () {
                     expected: '(1+x)^(5+z)',
                     expectedValue: '887.5036810000004'
                 },
-                /* TODO jiggzson: Does not match expectedValue
                 {
                     given: '(-1)^x',
                     expected: '(-1)^x',
-                    expectedValue: '-1'
-                },*/
+                    expectedValue: '(-1)^2.1'
+                },
+                {
+                    given: '(-25)^(1/5)',
+                    expected: '(-1)^(1/5)*5^(2/5)',
+                    expectedValue: '-1.9036539387158786'
+                },
                 {
                     given: '(x+y)--(x+y)',
                     expected: '2*x+2*y',
@@ -1455,7 +1573,7 @@ describe('Nerdamer core', function () {
                 },
                 {
                     given: '(1/2*x)^(1/2)',
-                    expected: 'sqrt(2)^(-1)*x^(1/2)',
+                    expected: 'sqrt(2)^(-1)*sqrt(x)',
                     expectedValue: '1.02469507659596'
                 },
                 {
