@@ -3746,7 +3746,7 @@ var nerdamer = (function(imports) {
             }
             return retval;
         }
-        
+
         /**
          * Round a number up to s decimal places
          * @param {Number} x
@@ -6636,7 +6636,7 @@ var nerdamer = (function(imports) {
         var raw = _.parse(e, null, true);
         return raw;
     };
-        
+    
     //helper function to set and operator
     //Operator('^', 'pow', 6, false, false),
     //function Operator(val, fn, precedence, left_assoc, is_prefix, is_postfix, operation) 
@@ -7844,3 +7844,4 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
+

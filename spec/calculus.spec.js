@@ -135,6 +135,10 @@ describe('calculus', function () {
             {
                 given: 'diff(x*y,x)',
                 expected: 'y'
+            },
+            {
+                given: 'diff([sin(x), x^2, x],x)',
+                expected: '[cos(x),2*x,1]'
             }
         ];
 
@@ -276,11 +280,10 @@ describe('calculus', function () {
                 given: 'integrate(10*q/(4*x^2+24*x+20), x)',
                 expected: '10*((-1/16)*log(5+x)+(1/16)*log(1+x))*q'
             },
-            // TODO jiggzson: This test is produces result (a+x)^(-1)*a+log(a+x)
-            //{
-            //    given: 'integrate(x/(x+a)^2, x)',
-            //    expected: '-(a+x)^(-1)*x+log(a+x)'
-            //},
+            {
+                given: 'integrate(x/(x+a)^2, x)',
+                expected: '(a+x)^(-1)*a+log(a+x)'
+            },
             {
                 given: 'integrate(sqrt(x-a), x)',
                 expected: '(2/3)*(-a+x)^(3/2)'
@@ -316,6 +319,22 @@ describe('calculus', function () {
             {
                 given: 'integrate(t*log(x)^3,x)',
                 expected: '(-3*log(x)^2*x-6*x+6*log(x)*x+log(x)^3*x)*t'
+            },
+            {
+                given: 'integrate(e^x*sin(x),x)',
+                expected: '(1/2)*(-cos(x)*e^x+e^x*sin(x))'
+            },
+            {
+                given: 'integrate(e^x*sin(x),x)',
+                expected: '(1/2)*(-cos(x)*e^x+e^x*sin(x))'
+            },
+            {
+                given: 'integrate(e^(2*x)*sin(x),x)',
+                expected: '(4/5)*((-1/4)*cos(x)*e^(2*x)+(1/2)*e^(2*x)*sin(x))'
+            },
+            {
+                given: 'integrate(e^(2*x)*sin(x)*x,x)',
+                expected: '(-3/25)*e^(2*x)*sin(x)+(4/25)*cos(x)*e^(2*x)+(4/5)*((-1/4)*cos(x)*e^(2*x)+(1/2)*e^(2*x)*sin(x))*x'
             },
             {
                 given: 'integrate(x*log(x)^2,x)',
@@ -376,7 +395,123 @@ describe('calculus', function () {
             {
                 given: 'integrate((3*x+2)/(x^2+x),x)',
                 expected: '2*log(x)+log(1+x)'
-            }
+            },
+            {
+                given: 'integrate([sin(x), x^2, x],x)',
+                expected: '[-cos(x),(1/3)*x^3,(1/2)*x^2]'
+            },
+            {
+                given: 'integrate(sinh(x),x)',
+                expected: 'cosh(x)'
+            },
+            {
+                given: 'integrate(cosh(x),x)',
+                expected: 'sinh(x)'
+            },
+            {
+                given: 'integrate(tanh(x),x)',
+                expected: 'log(cosh(x))'
+            },
+            {
+                given: 'integrate(sinh(x)*x,x)',
+                expected: '-sinh(x)+cosh(x)*x'
+            },
+            {
+                given: 'integrate((x^6+x^2-7)/(x^2+11), x)',
+                expected: '(-11/3)*x^3+(1/5)*x^5+122*x-1349*atan(sqrt(11)^(-1)*x)*sqrt(11)^(-1)'
+            },
+            {
+                given: 'integrate(x^6/(x^2+11), x)',
+                expected: '(-11/3)*x^3+(1/5)*x^5+121*x-1331*atan(sqrt(11)^(-1)*x)*sqrt(11)^(-1)'
+            },
+            {
+                given: 'integrate(x^2/(x^2+11))',
+                expected: '-11*atan(sqrt(11)^(-1)*x)*sqrt(11)^(-1)+x'
+            },
+            {
+                given: 'integrate(tan(x)*csc(x), x)',
+                expected: 'log(sec(x)+tan(x))'
+            },
+            {
+                given: 'integrate(sinh(x)*e^x, x)',
+                expected: '(-1/2)*x+(1/4)*e^(2*x)'
+            },
+            {
+                given: 'integrate(sinh(x)*cos(x), x)',
+                expected: '(-1/4)*e^(-x)*sin(x)+(1/4)*cos(x)*e^(-x)+(1/4)*cos(x)*e^x+(1/4)*e^x*sin(x)'
+            },
+            {
+                given: 'integrate(cos(x^2), x)',
+                expected: 'integrate(cos(x^2),x)'
+            },
+            {
+                given: 'integrate(sqrt(a-x^2)*x^2, x)',
+                expected: '((-1/16)*cos(2*asin(sqrt(a)^(-1)*x))*sin(2*asin(sqrt(a)^(-1)*x))+(1/8)*asin(sqrt(a)^(-1)*x))*a^2'
+            },
+            {
+                given: 'integrate((1-x^2)^(3/2), x)',
+                expected: '(-3/16)*cos(2*asin(x))*sin(2*asin(x))+(-x^2+1)^(3/2)*x+(3/8)*asin(x)'
+            },
+            {
+                given: 'integrate((1-x^2)^(3/2)*x^2, x)',
+                expected: '(-1/32)*cos(2*asin(x))*sin(2*asin(x))+(-1/48)*cos(2*asin(x))^2*sin(2*asin(x))+(1/16)*asin(x)+(1/48)*sin(2*asin(x))'
+            },
+            {
+                given: 'integrate(cos(x)^2*sin(x)^4, x)',
+                expected: '(-1/32)*cos(2*x)*sin(2*x)+(-1/48)*sin(2*x)+(1/16)*x+(1/48)*cos(2*x)^2*sin(2*x)'
+            },
+            {
+                given: 'integrate(log(a*x+1)/x^2, x)',
+                expected: '(-log(1+a*x)+log(x))*a-log(1+a*x)*x^(-1)'
+            },
+            {
+                given: 'integrate(x^2*(1-x^2)^(5/2), x)',
+                expected: '(-1/128)*cos(2*asin(x))^3*sin(2*asin(x))+(-1/48)*cos(2*asin(x))^2*sin(2*asin(x))+(-3/256)*cos(2*asin(x))*sin(2*asin(x))+(1/48)*sin(2*asin(x))+(5/128)*asin(x)'
+            },
+            {
+                given: 'integrate(1/tan(a*x)^n, x)',
+                expected: 'integrate(tan(a*x)^(-n),x)'
+            },
+            {
+                given: 'integrate(sin(x)^2*cos(x)*tan(x), x)',
+                expected: '(-3/4)*cos(x)+(1/12)*cos(3*x)'
+            },
+            {
+                given: 'integrate(cos(x)^2/sin(x),x)',
+                expected: '-log(cot(x)+csc(x))+cos(x)'
+            },
+            {
+                given: 'integrate(cos(x)/x,x)',
+                expected: 'Ci(x)'
+            },
+            {
+                given: 'integrate(sin(x)/x,x)',
+                expected: 'Si(x)'
+            },
+            {
+                given: 'integrate(log(x)^3/x,x)',
+                expected: '(1/4)*log(x)^4'
+            },
+            {
+                given: 'integrate(tan(x)^2*sec(x), x)',
+                expected: '(-1/2)*log(sec(x)+tan(x))+(1/2)*sec(x)*tan(x)'
+            },
+            {
+                given: 'integrate(tan(x)/cos(x),x)',
+                expected: 'cos(x)^(-1)'
+            },
+            {
+                given: 'integrate(sin(x)^3/x,x)',
+                expected: '(1/4)*(-Si(3*x)+3*Si(x))'
+            },
+            {
+                given: 'integrate(tan(x)/sec(x)*sin(x)/tan(x),x)',
+                expected: '(-1/2)*cos(x)^2'
+            },
+            {
+                given: 'integrate(log(x)^n/x,x)',
+                expected: '(1+n)^(-1)*log(x)^(1+n)'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
@@ -385,6 +520,105 @@ describe('calculus', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
+        }
+    });
+
+    // TODO ljacqu 20170328: Change test cases to typical given / expected structure
+    it('should handle minus sign properly', function () {
+      // given
+      var cases = {
+          '0-4': {
+              expected: '-4'
+          },
+          '-(4)': {
+              expected: '-4'
+          },
+          '3*-(4)': {
+              expected: '-12'
+          },
+          '-3*-(4)': {
+              expected: '12'
+          },
+          '-(3*-(4))': {
+              expected: '12'
+          },
+          '-(-3*-(4))': {
+              expected: '-12'
+          },
+          '-(3)-3': {
+              expected: '-6'
+          },
+          '3^-1^-1': {
+              expected: '1/3'
+          },
+          '-1': {
+              expected: '-1'
+          },
+          '--1': {
+              expected: '1'
+          },
+          '8-1': {
+              expected: '7'
+          },
+          '(-1)': {
+              expected: '-1'
+          },
+          '-(1)-1': {
+              expected: '-2'
+          },
+          '-(-1-1)': {
+              expected: '2'
+          },
+          '-(-1-+1)^2': {
+              expected: '-4'
+          },
+          '-(-1-1+1)': {
+              expected: '1'
+          },
+          '-(1)--(1-1--1)': {
+              expected: '0'
+          },
+          '-(-(1))-(--1)': {
+              expected: '0'
+          },
+          '5^-3': {
+              expected: '1/125'
+          },
+          '5^---3': {
+              expected: '1/125'
+          },
+          '5^-(1--2)': {
+              expected: '1/125'
+          },
+          '5^-(++1+--+2)': {
+              expected: '1/125'
+          },
+          '(5^-(++1+--+2))^-2': {
+              expected: '15625'
+          },
+          '(5^-3^2)': {
+              expected: '1/1953125'
+          },
+          '(5^-3^-2)': {
+              expected: '5^(-1/9)'
+          },
+          '-(5^-3^-2)^-3': {
+              expected: '-5^(1/3)'
+          },
+          '-(--5*--7)': {
+              expected: '-35'
+          },
+          '(-1)^(3/4)': {
+              expected: '(-1)^(3/4)'
+          }
+      };
+
+        for (var k in cases) {
+            // when
+            var parsed = nerdamer(k);
+
+            // then
+            expect(parsed.toString()).toEqual(cases[k].expected);
         }
     });
 });

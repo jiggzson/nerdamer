@@ -200,7 +200,7 @@ describe('Algebra', function () {
             /* {
                 given: 'div(3*(x^2*y)+5,6*x^2*y+3*x*y+7)',
                 expected: '[(1+2*x)^(-1)*x,(1+2*x)^(-1)*(3*x+5)]'
-            }, */
+            }, 
             /* {
                 given: 'div(-5*x^2+17*x^2*y+4+3*x*y, 2*x^2*y+4)',
                 expected: '[(3/2)*x^(-1)+17/2,-30-5*x^2-6*x^(-1)]'
@@ -266,21 +266,66 @@ describe('Algebra', function () {
 
     // TODO jiggzson: Currently the last test case fails...
     // with xit (instead of it), a test can be disabled temporarily
-    xit('should factor correctly', function () {
+    it('should factor correctly', function () {
         // given
         var testCases = [
             {
                 given: 'factor(x^2+2*x+1)',
                 expected: '(1+x)^2'
-            }, {
+            }, 
+            {
                 given: 'factor(x^4+25*x^3+234*x^2+972*x+1512)',
                 expected: '(6+x)^3*(7+x)'
-            }, {
+            }, 
+            {
                 given: 'factor(x^5+32*x^4+288*x^3-418*x^2-16577*x-55902)',
-                expected: '(-7+x)*(11+3*x+x^2)^3*(6+x)'
-            }, {
+                expected: '(-7+x)*(11+x)^3*(6+x)'
+            }, 
+            {
                 given: 'factor(x^2*y*z+x*z+t*x^2*y+t*x)',
                 expected: '(1+x*y)*(t+z)*(x)'
+            },
+            {
+                given: 'factor(x^2*y+x^2)',
+                expected: '(1+y)*x^2'
+            },
+            {
+                given: 'factor(sqrt(4*x^2*y+4*x^2))',
+                expected: '(2)*(abs(x))*(sqrt(1+y))'
+            }
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var result = nerdamer(testCases[i].given);
+
+            // then
+            expect(result.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
+    it('should get coeffs', function () {
+        // given
+        var testCases = [
+            {
+                given: 'coeffs(x^2+2*x+1, x)',
+                expected: '[1,2,1]'
+            }, 
+            {
+                given: 'coeffs(a*b*x^2+c*x+d, x)',
+                expected: '[d,c,a*b]'
+            }, 
+            {
+                given: 'coeffs(t*x, x)',
+                expected: '[0,t]'
+            }, 
+            {
+                given: 'coeffs(b*(t*x-5), x)',
+                expected: '[-5*b,b*t]'
+            },
+            {
+                given: 'coeffs(a*x^2+b*x+c+x, x)',
+                expected: '[c,1+b,a]'
             }
         ];
 
