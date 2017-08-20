@@ -46,9 +46,19 @@ var nerdamer = (function(imports) {
             //Allow changing of power operator
             POWER_OPERATOR: '^',
             //The variable validation regex
-            VALIDATION_REGEX: /^[a-z_][a-z\d\_]*$/i
+            //VALIDATION_REGEX: /^[a-z_][a-z\d\_]*$/i
+            VALIDATION_REGEX: /^[a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ][a-z\d\_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ]*$/i,
+            //Aliases
+            ALIASES: {
+                'π': 'PI'
+            }
         },
+        
+        //Container for custom operators
+        CUSTOM_OPERATORS = {
 
+        },
+        
         //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
         //The groups that help with organizing during parsing. Note that for FN is still a function even 
         //when it's raised to a symbol, which typically results in an EX
@@ -410,13 +420,14 @@ var nerdamer = (function(imports) {
 
             return [na, nb];
         },
-        /**
+        
+         /**
          * Rounds a number up to x decimal places
          * @param {Number} x
          * @param {Number} s
          */
-        round = Utils.round = function( x, s ) { 
-            s = s || 14;
+        _round = Utils.round = function(x, s) { 
+            s = typeof s === 'undefined' ? 14 : s;
             return Math.round( x*Math.pow( 10,s ) )/Math.pow( 10,s );
         },
         
@@ -847,13 +858,16 @@ var nerdamer = (function(imports) {
                 return [c, d, i];
             },
             fib: function(n) {
+                var sign = Math.sign(n);
+                n = Math.abs(n);
+                sign = even(n) ? sign : Math.abs(sign);
                 var a = 0, b = 1, f = 1;
                 for(var i = 2; i <= n; i++) {
                     f = a + b;
                     a = b;
                     b = f;
                 }
-                return f;
+                return f*sign;
             },
             mod: function(x, y) {
                 return x % y;
@@ -881,7 +895,7 @@ var nerdamer = (function(imports) {
                     sum += a;
                 } 
                 //avoid errors with numbers around -1e-14;
-                sum = round(sum, 13);
+                sum = Utils.round(sum, 13);
                 return sum;
             },
             //https://en.wikipedia.org/wiki/Trigonometric_integral
@@ -1061,6 +1075,17 @@ var nerdamer = (function(imports) {
         Math.log10 = Math.log10 || function(x) {
             return Math.log(x) * Math.LOG10E;
         };
+        
+        Math.trunc = Math.trunc || function(x) {
+        if (isNaN(x)) {
+            return NaN;
+        }
+        if (x > 0) {
+            return Math.floor(x);
+        }
+        return Math.ceil(x);
+      };
+
         reserveNames(Math2); //reserve the names in Math2
         
     /* GLOBAL FUNCTIONS */
@@ -1150,7 +1175,16 @@ var nerdamer = (function(imports) {
                     return text(symbol, opt);
                 }).join(','));
             }
-
+            //TODO: Needs to be more efficient. Maybe. 
+            if(group === FN && obj.fname in CUSTOM_OPERATORS) {
+                var a = text(obj.args[0]);
+                var b = text(obj.args[1]);
+                if(obj.args[0].isComposite()) //preserve the brackets
+                    a = inBrackets(a);
+                if(obj.args[1].isComposite()) //preserve the brackets
+                    b = inBrackets(b);
+                value = a+CUSTOM_OPERATORS[obj.fname]+b;
+            }
             //wrap the power since / is less than ^
             //TODO: introduce method call isSimple
             if(power && !isInt(power) && group !== EX && !asDecimal) { power = inBrackets(power); }
@@ -1291,7 +1325,7 @@ var nerdamer = (function(imports) {
         /**
          * Converts a symbol to a JS function. Pass in an array of variables to use that order instead of 
          * the default alphabetical order
-         * @param {Array}
+         * @param vars {Array}
          */
         buildFunction: function(vars) {
             return build(this.symbol, vars);
@@ -2608,26 +2642,31 @@ var nerdamer = (function(imports) {
         var operators = this.operators = {
                 '^' : new Operator('^', 'pow', 6, false, false),
                 '**' : new Operator('**', 'pow', 6, false, false),
-                '!!' : new Operator('!!', 'dfactorial', 5, false, false, true, function(e) {
+                '!!' : new Operator('!!', 'dfactorial',5, false, false, true, function(e) {
                     return _.symfunction(DOUBLEFACTORIAL, [e]); //wrap it in a factorial function
                 }),
                 '!' : new Operator('!', 'factorial', 5, false, false, true, function(e) {
                     return _.symfunction(FACTORIAL, [e]); //wrap it in a factorial function
-                }),
-                //begin crazy fix ... :( TODO!!! revisit
-                '!+' : new Operator('!+', 'factadd', 3, true, true, false),
-                '!!+' : new Operator('!!+', 'dfactadd', 3, true, true, false),
-                '!-' : new Operator('!-', 'factsub', 3, true, true, false),
-                '!!-' : new Operator('!!-', 'dfactsub', 3, true, true, false),
+                }),  
                 //done with crazy fix
                 '*' : new Operator('*', 'multiply', 4, true, false),
                 '/' : new Operator('/', 'divide', 4, true, false),
+                '%' : new Operator('%', 'percent', 4, true, false, true, function(e) {
+                    return _.percent(e);
+                }),
+                '%+' : new Operator('%+', 'percent_add', 3, true, false),
+                '%-' : new Operator('%-', 'percent_subtract', 3, true, false),
                 '+' : new Operator('+', 'add', 3, true, true, false, function(e) {
                     return e;
                 }),
                 '-' : new Operator('-', 'subtract', 3, true, true, false, function(e) {
                     return e.negate();
                 }),
+                //begin crazy fix ... :( TODO!!! revisit
+                '!+' : new Operator('!+', 'factadd', 3, true, true, false),
+                '!!+' : new Operator('!!+', 'dfactadd', 3, true, true, false),
+                '!-' : new Operator('!-', 'factsub', 3, true, true, false),
+                '!!-' : new Operator('!!-', 'dfactsub', 3, true, true, false),
                 '=' : new Operator('=', 'equals', 2, false, false),
                 '==' : new Operator('==', 'eq', 1, false, false),
                 '<' : new Operator('<', 'lt', 1, false, false),
@@ -2659,6 +2698,8 @@ var nerdamer = (function(imports) {
                 'acos'              : [ , 1],
                 'asin'              : [ , 1],
                 'atan'              : [ , 1],
+                'acoth'             : [ acoth, 1],
+                'asech'             : [ asech, 1],
                 'sinh'              : [ , 1],
                 'cosh'              : [ , 1],
                 'tanh'              : [ , 1],
@@ -2672,6 +2713,7 @@ var nerdamer = (function(imports) {
                 'erf'               : [ , 1],
                 'floor'             : [ , 1],
                 'ceil'              : [ , 1],
+                'trunc'             : [ , 1],
                 'Si'                : [ , 1],
                 'step'              : [ , 1],
                 'rect'              : [ , 1],
@@ -2687,18 +2729,21 @@ var nerdamer = (function(imports) {
                 'factorial'         : [factorial, 1],
                 'dfactorial'        : [ , 1],
                 'gamma_incomplete'  : [ , [1, 2]],
-                'round'             : [ , 1],
+                'round'             : [ round, [1, 2]],
                 'mod'               : [ mod, 2],
                 'pfactor'           : [ pfactor , 1],
                 'vector'            : [ vector, -1],
                 'matrix'            : [ matrix, -1],
+                'imatrix'           : [ imatrix, -1],
                 'parens'            : [ parens, -1],
                 'sqrt'              : [ sqrt, 1],
                 'nthroot'           : [ nthroot, 2],
-                'log'               : [ log , 1],
+                'log'               : [ log , [1, 2]],
                 'expand'            : [ expand , 1],
                 'abs'               : [ abs , 1],
                 'invert'            : [ invert, 1],
+                'determinant'       : [ determinant, 1],
+                'size'              : [ size, 1],
                 'transpose'         : [ transpose, 1],
                 'dot'               : [ dot, 2],
                 'cross'             : [ cross, 2],
@@ -3501,6 +3546,8 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         function mod(symbol1, symbol2) {
+            if(!symbol2)
+                return _.divide(symbol2, new Symbol(100));
             if(symbol1.isConstant() && symbol2.isConstant()) {
                 var retval = new Symbol(1);
                 retval.multiplier = retval.multiplier.multiply(symbol1.multiplier.mod(symbol2.multiplier));
@@ -3658,13 +3705,20 @@ var nerdamer = (function(imports) {
             return retval;
         }
         
-        function log(symbol) { 
+        /**
+         * The log function
+         * @param {Symbol} symbol
+         * @returns {Symbol}
+         */
+        function log(symbol, base) { 
             var retval;
             if(symbol.equals(0)) {
                 err('log(0) is undefined!');
             }
-
-            if(symbol.group === EX && symbol.power.multiplier.lessThan(0) || symbol.power.toString() === '-1') {
+            
+            if(symbol.isConstant() && typeof base !== 'undefined' && base.isConstant())
+                retval = new Symbol(Math.log(symbol)/Math.log(base));
+            else if(symbol.group === EX && symbol.power.multiplier.lessThan(0) || symbol.power.toString() === '-1') {
                 symbol.power.negate();
                 //move the negative outside but keep the positive inside :)
                 retval = log(symbol).negate();
@@ -3693,14 +3747,33 @@ var nerdamer = (function(imports) {
                     s = symbol.group === EX ? symbol.power : new Symbol(symbol.power);
                     symbol.toLinear(); 
                 }
-                retval = _.symfunction('log', [symbol]); 
+                retval = _.symfunction('log', arguments); 
                 
                 if(s) retval = _.multiply(s, retval);
 
             }
             return retval;
         }
+
+        /**
+         * Round a number up to s decimal places
+         * @param {Number} x
+         * @param {int} s - the number of decimal places
+         * @returns {undefined}
+         */
+        function round(x, s) {
+            var sIsConstant = s && s.isConstant() || typeof s === 'undefined';
+            if(x.isConstant() && sIsConstant) 
+                return Utils.round(x, Number(s||0));
+            
+            return _.symfunction('round', arguments); 
+        }
         
+        /**
+         * Gets the quadrant of the trig function
+         * @param {Frac} m
+         * @returns {Int}
+         */
         function getQuadrant(m) {
             var v = m % 2, quadrant;
             
@@ -3712,7 +3785,7 @@ var nerdamer = (function(imports) {
             else quadrant = 4;
             return quadrant;
         }
-        
+
         /*
          * Serves as a bridge between numbers and bigNumbers
          * @param {Frac|Number} n
@@ -3973,6 +4046,19 @@ var nerdamer = (function(imports) {
             return retval;
         };
         
+        function acoth(symbol) {
+            if(symbol.equals(1))
+                return _.parse('Infinity');
+            return evaluate(
+                    _.divide(
+                        log(_.divide(_.add(symbol.clone(), new Symbol(1)), _.subtract(symbol.clone(), new Symbol(1)))), 
+                new Symbol(2)));
+        }
+        
+        function asech(symbol) {
+            return evaluate(log(_.add(symbol.clone().invert(), sqrt(_.subtract(_.pow(symbol, new Symbol(-2)), new Symbol(1))))));
+        }
+        
         function clean(symbol) {
             // handle functions with numeric values
             // handle denominator within denominator
@@ -4211,6 +4297,12 @@ var nerdamer = (function(imports) {
             return symbol;
         }
         
+        function size(symbol) {
+            if(isMatrix(symbol))
+                return [new Symbol(symbol.cols()), new Symbol(symbol.rows())];
+            err('size expects a matrix or a vector');
+        }
+        
         function dot(vec1, vec2) {
             if(isVector(vec1) && isVector(vec2)) return vec1.dot(vec2);
             err('function dot expects 2 vectors');
@@ -4407,8 +4499,14 @@ var nerdamer = (function(imports) {
                         b = sqrt(b.toUnitMultiplier().toLinear());
                         b.multiplier = m;
                     }
-                    result = Symbol.shell(CP).attach([a, b]);
-                    result.updateHash();
+                    //fix for issue #3 and #159
+                    if(a.length === 2 && b.length === 2 && even(a.power) && even(b.power)) {
+                        result = _.add(expand(a), expand(b));
+                    }
+                    else {
+                        result = Symbol.shell(CP).attach([a, b]);
+                        result.updateHash();
+                    }  
                 }
 
                 if(result.multiplier.equals(0)) result = new Symbol(0);
@@ -5052,6 +5150,28 @@ var nerdamer = (function(imports) {
             VARS[a.value] = b.clone();
             return b;
         };
+        
+        //modulus
+        this.mod_or_percent = function(a, b) {
+            console.log(a+'', b+'')
+            if(a && b)
+                return mod(a, b);
+            return _.percent(b);
+        };
+        
+        //percent
+        this.percent = function(a) {
+            return _.divide(a, new Symbol(100));
+        };
+        
+        this.percent_add = function(a, b) {
+            return _.add(_.percent(a), b);
+        };
+        
+        this.percent_subtract = function(a, b) {
+            return _.subtract(_.percent(a), b);
+        };
+        
         //check for equality
         this.eq = function(a, b) {
             return a.equals(b);
@@ -5073,7 +5193,7 @@ var nerdamer = (function(imports) {
             return a.lte(b);
         };
         //wraps the factorial
-        this.factorial = function(a) {
+        this.factorial = function(a) {console.log(9)
             return this.symfunction(FACTORIAL, [a]);
         };
         //wraps the double factorial
@@ -6548,7 +6668,20 @@ var nerdamer = (function(imports) {
         var raw = _.parse(e, null, true);
         return raw;
     };
-        
+    
+    //helper function to set and operator
+    //Operator('^', 'pow', 6, false, false),
+    //function Operator(val, fn, precedence, left_assoc, is_prefix, is_postfix, operation) 
+    libExports.setOperator = function(symbol, name, precendence, left_assoc, is_prefix, is_postfix, fn) {
+        _.operators[symbol] = new Operator(symbol, name, precendence, left_assoc, is_prefix, is_postfix);
+        _.name = fn; //make the parser aware of this  new function
+        CUSTOM_OPERATORS[name] = symbol; //let nerdamer know how to display it
+    };
+    
+    libExports.getOperator = function(symbol) {
+        return _.operators[symbol];
+    };
+    
     libExports.api();
 
     return libExports; //Done
