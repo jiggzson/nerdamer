@@ -104,7 +104,7 @@ describe('Nerdamer core', function () {
             {
                 given: '%1',
                 expectError: true
-            }
+            },
             {
                 given: '1%101%10101',
                 expected: '1',
