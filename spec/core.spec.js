@@ -77,6 +77,140 @@ describe('Nerdamer core', function () {
         }
     });
 
+    it('should calculate percentages and modulos correctly', function () {
+        // given
+        var testCases = [
+            {
+                given: '1%',
+                expected: '1/100',
+                expectedValue: '0.01'
+            }, 
+            {
+                given: '101%',
+                expected: '101/100',
+                expectedValue: '1.01'
+            },
+            {
+                given: '1%101',
+                expected: '1',
+                expectedValue: '1'
+            },
+            {
+                //currently fails, gives 101
+                given: '101%1',
+                expected: '0',
+                expectedValue: '0'
+            },
+            {
+                given: '%1',
+                expectError: true
+            }
+            {
+                given: '1%101%10101',
+                expected: '1',
+                expectedValue: '1'
+            },/*
+            {
+                given: '1%+101%10101', //Wolfram Alpha says it is equal to (1%+101)%10101, need to decide whether to follow
+                expected: '10101/100',
+                expectedValue: '101.01'
+            },*/
+            {
+                given: '1%%', //Wolfram Alpha says 1%% == 1‱, maybe support this ‱ symbol too?
+                expected: '1/10000',
+                expectedValue: '0.0001'
+            },
+            {
+                given: '1%%101', //Wolfram Alpha has a bug LOL, 
+                                 //it thinks this is 1‱×101 (obviously should be 1% mod 101),
+                                 //but thinks 1%%%101 is 1‱ mod 101
+                expected: '1/100',
+                expectedValue: '0.01'
+            },
+            {
+                given: '1%%%', //Wolfram Alpha says 1%%% == 1‱%
+                expected: '1/1000000',
+                expectedValue: '0.000001'
+            },
+            {
+                given: '1%%%101',
+                expected: '1/10000',
+                expectedValue: '0.0001'
+            },
+            {
+                given: '(101%)%1',
+                expected: '1/100',
+                expectedValue: '0.01'
+            },
+            {
+                given: '(101%)%1',
+                expected: '1/100',
+                expectedValue: '0.01'
+            },
+            {
+                given: '101%(%1)',
+                expectError: true
+            },
+            {
+                given: '1%1%',
+                expected: '0',
+                expectedValue: '0'
+            },
+            {
+                given: 'i%',
+                expected: '(1/100)*i',
+                expectedValue: '0.01*i'
+            },
+            {
+                given: '1+i%',
+                expected: '(1/100)*i+1',
+                expectedValue: '0.01*i+1'
+            },
+            {
+                given: '(1+i)%',
+                expected: '(1/100)*(1+i)',
+                expectedValue: '0.01*(1+i)' //ummm... should auto-expand?
+            },
+            {
+                given: '1%(1+i)',
+                expected: 'mod(1,1+i)',
+                expectedValue: 'mod(1,1+i)' //take account for complex numbers in mod please
+            },
+            {
+                given: '%',
+                expectError: true
+            },
+            {
+                given: '%%',
+                expectError: true
+            },
+            {
+                given: '%1',
+                expectError: true
+            },
+            {
+                given: '%1%',
+                expectError: true
+            },
+            {
+                given: '1%(%1)',
+                expectError: true
+            },
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            if(!testCases[i].expectError) {
+                // when
+                var parsed = nerdamer(testCases[i].given);
+                var value = parsed.evaluate().text('decimals');
+
+                // then
+                expect(parsed.toString()).toEqual(testCases[i].expected);
+                expect(value).toEqual(testCases[i].expectedValue);
+            } else expect(function () { nerdamer(testCases[i].given) }).toThrowError();
+        }
+    });
+    
     it('should perform simple calculations with variables', function () {
         // given
         var testCases = [
