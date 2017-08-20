@@ -771,7 +771,6 @@ describe('Nerdamer core', function () {
         }
     });
 
-    // TODO jiggzson: Does not work
     it('should handle powers with results using i', function () {
         // given
         var testCases = [
@@ -875,6 +874,49 @@ describe('Nerdamer core', function () {
         // then
         expect(value).toEqual(testCases[i].expected);
       }
+    });
+
+    it('should support trunc()', function () {
+        // given
+        var testCases = [
+            {
+                given: 'trunc(0)',
+                expected: '0'
+            },
+            {
+                given: 'trunc(10.234)',
+                expected: '10'
+            },
+            {
+                given: 'trunc(-9.99)',
+                expected: '-9'
+            },
+            {
+                given: 'trunc(0.99)',
+                expected: '0'
+            },
+            {
+                given: 'trunc(-0.7555)',
+                expected: '0'
+            },
+            {
+                given: 'trunc(8.9 * -4.9)',
+                expected: '-43'
+            },
+            {
+                given: 'trunc(8.9) * trunc(-4.9)',
+                expected: '-32'
+            }
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given);
+            var value = parsed.evaluate().text('decimals');
+
+            // then
+            expect(value).toEqual(testCases[i].expected);
+        }
     });
 
     /** #35 #76: Support multiple minus signs and brackets */
@@ -984,20 +1026,21 @@ describe('Nerdamer core', function () {
            sub: '2',
            sub_with: '4',
            expected: 'error'
-        },
-        
+        }
       ];
 
       for (var i = 0; i < testCases.length; ++i) {
-          var testCase = testCases[i];
+        var testCase = testCases[i];
+
+        var parsed;
         // when
         try {
-            var parsed = nerdamer(testCase.given).sub(testCase.sub, testCase.sub_with).toString();
+            parsed = nerdamer(testCase.given).sub(testCase.sub, testCase.sub_with).toString();
         }
         catch(e){
-            var parsed = 'error';
+            parsed = 'error';
         }
-       
+
         // then
         expect(parsed).toEqual(testCases[i].expected);
       }

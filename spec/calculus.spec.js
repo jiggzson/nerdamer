@@ -523,99 +523,126 @@ describe('calculus', function () {
         }
     });
 
-    // TODO ljacqu 20170328: Change test cases to typical given / expected structure
     it('should handle minus sign properly', function () {
-      // given
-      var cases = {
-          '0-4': {
-              expected: '-4'
-          },
-          '-(4)': {
-              expected: '-4'
-          },
-          '3*-(4)': {
-              expected: '-12'
-          },
-          '-3*-(4)': {
-              expected: '12'
-          },
-          '-(3*-(4))': {
-              expected: '12'
-          },
-          '-(-3*-(4))': {
-              expected: '-12'
-          },
-          '-(3)-3': {
-              expected: '-6'
-          },
-          '3^-1^-1': {
-              expected: '1/3'
-          },
-          '-1': {
-              expected: '-1'
-          },
-          '--1': {
-              expected: '1'
-          },
-          '8-1': {
-              expected: '7'
-          },
-          '(-1)': {
-              expected: '-1'
-          },
-          '-(1)-1': {
-              expected: '-2'
-          },
-          '-(-1-1)': {
-              expected: '2'
-          },
-          '-(-1-+1)^2': {
-              expected: '-4'
-          },
-          '-(-1-1+1)': {
-              expected: '1'
-          },
-          '-(1)--(1-1--1)': {
-              expected: '0'
-          },
-          '-(-(1))-(--1)': {
-              expected: '0'
-          },
-          '5^-3': {
-              expected: '1/125'
-          },
-          '5^---3': {
-              expected: '1/125'
-          },
-          '5^-(1--2)': {
-              expected: '1/125'
-          },
-          '5^-(++1+--+2)': {
-              expected: '1/125'
-          },
-          '(5^-(++1+--+2))^-2': {
-              expected: '15625'
-          },
-          '(5^-3^2)': {
-              expected: '1/1953125'
-          },
-          '(5^-3^-2)': {
-              expected: '5^(-1/9)'
-          },
-          '-(5^-3^-2)^-3': {
-              expected: '-5^(1/3)'
-          },
-          '-(--5*--7)': {
-              expected: '-35'
-          },
-          '(-1)^(3/4)': {
-              expected: '(-1)^(3/4)'
-          }
-      };
+        // given
+        var cases = [
+            {
+                given: '0-4',
+                expected: '-4'
+            },
+            {
+                given: '-(4)',
+                expected: '-4'
+            },
+            {
+                given: '3*-(4)',
+                expected: '-12'
+            },
+            {
+                given: '-3*-(4)',
+                expected: '12'
+            },
+            {
+                given: '-(3*-(4))',
+                expected: '12'
+            },
+            {
+                given: '-(-3*-(4))',
+                expected: '-12'
+            },
+            {
+                given: '-(3)-3',
+                expected: '-6'
+            },
+            {
+                given: '3^-1^-1',
+                expected: '1/3'
+            },
+            {
+                given: '-1',
+                expected: '-1'
+            },
+            {
+                given: '--1',
+                expected: '1'
+            },
+            {
+                given: '8-1',
+                expected: '7'
+            },
+            {
+                given: '(-1)',
+                expected: '-1'
+            },
+            {
+                given: '-(1)-1',
+                expected: '-2'
+            },
+            {
+                given: '-(-1-1)',
+                expected: '2'
+            },
+            {
+                given: '-(-1-+1)^2',
+                expected: '-4'
+            },
+            {
+                given: '-(-1-1+1)',
+                expected: '1'
+            },
+            {
+                given: '-(1)--(1-1--1)',
+                expected: '0'
+            },
+            {
+                given: '-(-(1))-(--1)',
+                expected: '0'
+            },
+            {
+                given: '5^-3',
+                expected: '1/125'
+            },
+            {
+                given: '5^---3',
+                expected: '1/125'
+            },
+            {
+                given: '5^-(1--2)',
+                expected: '1/125'
+            },
+            {
+                given: '5^-(++1+--+2)',
+                expected: '1/125'
+            },
+            {
+                given: '(5^-(++1+--+2))^-2',
+                expected: '15625'
+            },
+            {
+                given: '(5^-3^2)',
+                expected: '1/1953125'
+            },
+            {
+                given: '(5^-3^-2)',
+                expected: '5^(-1/9)'
+            },
+            {
+                given: '-(5^-3^-2)^-3',
+                expected: '-5^(1/3)'
+            },
+            {
+                given: '-(--5*--7)',
+                expected: '-35'
+            },
+            {
+                given: '(-1)^(3/4)',
+                expected: '(-1)^(3/4)'
+            }
+        ];
 
         for (var k in cases) {
             // when
-            var parsed = nerdamer(k);
+            var parsed = nerdamer(cases[k].given);
 
             // then
             expect(parsed.toString()).toEqual(cases[k].expected);

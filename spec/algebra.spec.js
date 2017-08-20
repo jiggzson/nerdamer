@@ -251,7 +251,6 @@ describe('Algebra', function () {
       expect(result).toBe('(1+2*x)^2*(1/4)');
     });
 
-     // 
     /** #43: Formula not expanded. */
     it('should expand formula', function () {
       // given
@@ -264,8 +263,6 @@ describe('Algebra', function () {
       expect(result).toBe('-15+2*x');
     });
 
-    // TODO jiggzson: Currently the last test case fails...
-    // with xit (instead of it), a test can be disabled temporarily
     it('should factor correctly', function () {
         // given
         var testCases = [
