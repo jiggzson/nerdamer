@@ -56,7 +56,7 @@ var nerdamer = (function(imports) {
         
         //Container for custom operators
         CUSTOM_OPERATORS = {
-            'mod': '%'
+
         },
         
         //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
@@ -860,6 +860,7 @@ var nerdamer = (function(imports) {
             fib: function(n) {
                 var sign = Math.sign(n);
                 n = Math.abs(n);
+                sign = even(n) ? sign : Math.abs(sign);
                 var a = 0, b = 1, f = 1;
                 for(var i = 2; i <= n; i++) {
                     f = a + b;
@@ -2646,11 +2647,15 @@ var nerdamer = (function(imports) {
                 }),
                 '!' : new Operator('!', 'factorial', 5, false, false, true, function(e) {
                     return _.symfunction(FACTORIAL, [e]); //wrap it in a factorial function
-                }),    
+                }),  
                 //done with crazy fix
                 '*' : new Operator('*', 'multiply', 4, true, false),
                 '/' : new Operator('/', 'divide', 4, true, false),
-                '%' : new Operator('%', 'mod', 4, true, true, false),
+                '%' : new Operator('%', 'percent', 4, true, false, true, function(e) {
+                    return _.percent(e);
+                }),
+                '%+' : new Operator('%+', 'percent_add', 3, true, false),
+                '%-' : new Operator('%-', 'percent_subtract', 3, true, false),
                 '+' : new Operator('+', 'add', 3, true, true, false, function(e) {
                     return e;
                 }),
@@ -2729,6 +2734,7 @@ var nerdamer = (function(imports) {
                 'pfactor'           : [ pfactor , 1],
                 'vector'            : [ vector, -1],
                 'matrix'            : [ matrix, -1],
+                'imatrix'           : [ imatrix, -1],
                 'parens'            : [ parens, -1],
                 'sqrt'              : [ sqrt, 1],
                 'nthroot'           : [ nthroot, 2],
@@ -3540,6 +3546,8 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         function mod(symbol1, symbol2) {
+            if(!symbol2)
+                return _.divide(symbol2, new Symbol(100));
             if(symbol1.isConstant() && symbol2.isConstant()) {
                 var retval = new Symbol(1);
                 retval.multiplier = retval.multiplier.multiply(symbol1.multiplier.mod(symbol2.multiplier));
@@ -4491,8 +4499,14 @@ var nerdamer = (function(imports) {
                         b = sqrt(b.toUnitMultiplier().toLinear());
                         b.multiplier = m;
                     }
-                    result = Symbol.shell(CP).attach([a, b]);
-                    result.updateHash();
+                    //fix for issue #3 and #159
+                    if(a.length === 2 && b.length === 2 && even(a.power) && even(b.power)) {
+                        result = _.add(expand(a), expand(b));
+                    }
+                    else {
+                        result = Symbol.shell(CP).attach([a, b]);
+                        result.updateHash();
+                    }  
                 }
 
                 if(result.multiplier.equals(0)) result = new Symbol(0);
@@ -5138,7 +5152,25 @@ var nerdamer = (function(imports) {
         };
         
         //modulus
-        this.mod = mod;
+        this.mod_or_percent = function(a, b) {
+            console.log(a+'', b+'')
+            if(a && b)
+                return mod(a, b);
+            return _.percent(b);
+        };
+        
+        //percent
+        this.percent = function(a) {
+            return _.divide(a, new Symbol(100));
+        };
+        
+        this.percent_add = function(a, b) {
+            return _.add(_.percent(a), b);
+        };
+        
+        this.percent_subtract = function(a, b) {
+            return _.subtract(_.percent(a), b);
+        };
         
         //check for equality
         this.eq = function(a, b) {
@@ -5161,7 +5193,7 @@ var nerdamer = (function(imports) {
             return a.lte(b);
         };
         //wraps the factorial
-        this.factorial = function(a) {
+        this.factorial = function(a) {console.log(9)
             return this.symfunction(FACTORIAL, [a]);
         };
         //wraps the double factorial
@@ -7844,4 +7876,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
