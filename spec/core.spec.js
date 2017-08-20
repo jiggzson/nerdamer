@@ -37,7 +37,7 @@ describe('Nerdamer core', function () {
             {
                 given: '1+1',
                 expected: '2',
-                expectedValue: '2'
+,                expectedValue: '2'
             },
             {
                 given: '4^2',
