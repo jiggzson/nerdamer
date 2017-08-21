@@ -690,13 +690,13 @@ var nerdamer = (function(imports) {
                     );
                 return x >= 0 ? result : -result;
             },
-            bigpow: function(n, p) {
-                n = Frac.simple(n);
-                var r = n.clone();
-                for(var i=0; i<p-1; i++) {
-                    r = r.multiply(n);
-                }
-                return r;
+            bigpow: function(n, p) { 
+                if(!(n instanceof Frac))
+                    n = Frac.simple(n);
+                n = n.clone();
+                n.num = n.num.pow(Number(p));
+                n.den = n.den.pow(Number(p));
+                return n;
             },
             //http://stackoverflow.com/questions/15454183/how-to-make-a-function-that-computes-the-factorial-for-numbers-with-decimals
             gamma: function(z) {
@@ -731,6 +731,22 @@ var nerdamer = (function(imports) {
                 for (var i = 2; i <= x; i++) 
                     retval = retval.multiply(new Frac(i));
                 return retval;
+            },
+            //https://en.wikipedia.org/wiki/Logarithm#Calculation
+            bigLog: function(x) {
+                x = new Frac(x);
+                var n = 80;
+                var retval = new Frac(0); 
+                var a = x.subtract(new Frac(1));
+                var b = x.add(new Frac(1));
+                for(var i=0; i<n; i++) {
+                    var t = new Frac(2*i+1);
+                    var k = Math2.bigpow(a.divide(b), t);
+                    var r = t.clone().invert().multiply(k);
+                    retval = retval.add(r);
+                    
+                }
+                return retval.multiply(new Frac(2));
             },
             //the factorial function but using the big library instead
             factorial: function(x) {
@@ -1018,7 +1034,6 @@ var nerdamer = (function(imports) {
                 return 1-x;
             }
         };
-
         //link the Math2 object to Settings.FUNCTION_MODULES
         Settings.FUNCTION_MODULES.push(Math2);
         
@@ -1494,7 +1509,7 @@ var nerdamer = (function(imports) {
             if(m.equals(0)) throw new Error('Division by zero not allowed!');
             return this.clone().multiply(m.clone().invert()).simplify();
         },
-        subtract: function(m) {
+        subtract: function(m) { 
             return this.clone().add(m.clone().neg());
         },
         neg: function() {
@@ -3708,6 +3723,7 @@ var nerdamer = (function(imports) {
         /**
          * The log function
          * @param {Symbol} symbol
+         * @param {Symbol} base
          * @returns {Symbol}
          */
         function log(symbol, base) { 
@@ -3717,7 +3733,7 @@ var nerdamer = (function(imports) {
             }
             
             if(symbol.isConstant() && typeof base !== 'undefined' && base.isConstant())
-                retval = new Symbol(Math.log(symbol)/Math.log(base));
+                retval = new Symbol(Math2.bigLog(new Frac(+symbol)).divide(Math2.bigLog(new Frac(+base))));
             else if(symbol.group === EX && symbol.power.multiplier.lessThan(0) || symbol.power.toString() === '-1') {
                 symbol.power.negate();
                 //move the negative outside but keep the positive inside :)
@@ -5153,7 +5169,6 @@ var nerdamer = (function(imports) {
         
         //modulus
         this.mod_or_percent = function(a, b) {
-            console.log(a+'', b+'')
             if(a && b)
                 return mod(a, b);
             return _.percent(b);
@@ -5193,7 +5208,7 @@ var nerdamer = (function(imports) {
             return a.lte(b);
         };
         //wraps the factorial
-        this.factorial = function(a) {console.log(9)
+        this.factorial = function(a) {
             return this.symfunction(FACTORIAL, [a]);
         };
         //wraps the double factorial
@@ -5221,6 +5236,7 @@ var nerdamer = (function(imports) {
         /**
          * Converts a decimal to a fraction
          * @param {number} value
+         * @param {object} opts
          * @returns {Array} - an array containing the denominator and the numerator
          */
         convert: function( value, opts ) { 
