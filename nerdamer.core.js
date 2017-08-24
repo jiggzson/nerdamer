@@ -6880,7 +6880,7 @@ var nerdamer = (function(imports) {
     return libExports; //Done
 })({
     //https://github.com/peterolson/BigInteger.js
-    bigInt: (function (undefined) {
+    bigInt: (function(undefined) {
         "use strict";
 
         var BASE = 1e7,
@@ -6889,17 +6889,25 @@ var nerdamer = (function(imports) {
             MAX_INT_ARR = smallToArray(MAX_INT),
             LOG_MAX_INT = Math.log(MAX_INT);
 
+        function Integer(v, radix) {
+            if (typeof v === "undefined") return Integer[0];
+            if (typeof radix !== "undefined") return +radix === 10 ? parseValue(v) : parseBase(v, radix);
+            return parseValue(v);
+        }
+
         function BigInteger(value, sign) {
             this.value = value;
             this.sign = sign;
             this.isSmall = false;
         }
+        BigInteger.prototype = Object.create(Integer.prototype);
 
         function SmallInteger(value) {
             this.value = value;
             this.sign = value < 0;
             this.isSmall = true;
         }
+        SmallInteger.prototype = Object.create(Integer.prototype);
 
         function isPrecise(n) {
             return -MAX_INT < n && n < MAX_INT;
@@ -6918,10 +6926,14 @@ var nerdamer = (function(imports) {
             var length = arr.length;
             if (length < 4 && compareAbs(arr, MAX_INT_ARR) < 0) {
                 switch (length) {
-                    case 0: return 0;
-                    case 1: return arr[0];
-                    case 2: return arr[0] + arr[1] * BASE;
-                    default: return arr[0] + (arr[1] + arr[2] * BASE) * BASE;
+                    case 0:
+                        return 0;
+                    case 1:
+                        return arr[0];
+                    case 2:
+                        return arr[0] + arr[1] * BASE;
+                    default:
+                        return arr[0] + (arr[1] + arr[2] * BASE) * BASE;
                 }
             }
             return arr;
@@ -6991,12 +7003,13 @@ var nerdamer = (function(imports) {
             return r;
         }
 
-        BigInteger.prototype.add = function (v) {
-            var value, n = parseValue(v);
+        BigInteger.prototype.add = function(v) {
+            var n = parseValue(v);
             if (this.sign !== n.sign) {
                 return this.subtract(n.negate());
             }
-            var a = this.value, b = n.value;
+            var a = this.value,
+                b = n.value;
             if (n.isSmall) {
                 return new BigInteger(addSmall(a, Math.abs(b)), this.sign);
             }
@@ -7004,7 +7017,7 @@ var nerdamer = (function(imports) {
         };
         BigInteger.prototype.plus = BigInteger.prototype.add;
 
-        SmallInteger.prototype.add = function (v) {
+        SmallInteger.prototype.add = function(v) {
             var n = parseValue(v);
             var a = this.value;
             if (a < 0 !== n.sign) {
@@ -7051,9 +7064,9 @@ var nerdamer = (function(imports) {
         }
 
         function subtractAny(a, b, sign) {
-            var value, isSmall;
+            var value;
             if (compareAbs(a, b) >= 0) {
-                value = subtract(a,b);
+                value = subtract(a, b);
             } else {
                 value = subtract(b, a);
                 sign = !sign;
@@ -7082,22 +7095,24 @@ var nerdamer = (function(imports) {
             if (typeof r === "number") {
                 if (sign) r = -r;
                 return new SmallInteger(r);
-            } return new BigInteger(r, sign);
+            }
+            return new BigInteger(r, sign);
         }
 
-        BigInteger.prototype.subtract = function (v) {
+        BigInteger.prototype.subtract = function(v) {
             var n = parseValue(v);
             if (this.sign !== n.sign) {
                 return this.add(n.negate());
             }
-            var a = this.value, b = n.value;
+            var a = this.value,
+                b = n.value;
             if (n.isSmall)
                 return subtractSmall(a, Math.abs(b), this.sign);
             return subtractAny(a, b, this.sign);
         };
         BigInteger.prototype.minus = BigInteger.prototype.subtract;
 
-        SmallInteger.prototype.subtract = function (v) {
+        SmallInteger.prototype.subtract = function(v) {
             var n = parseValue(v);
             var a = this.value;
             if (a < 0 !== n.sign) {
@@ -7111,20 +7126,20 @@ var nerdamer = (function(imports) {
         };
         SmallInteger.prototype.minus = SmallInteger.prototype.subtract;
 
-        BigInteger.prototype.negate = function () {
+        BigInteger.prototype.negate = function() {
             return new BigInteger(this.value, !this.sign);
         };
-        SmallInteger.prototype.negate = function () {
+        SmallInteger.prototype.negate = function() {
             var sign = this.sign;
             var small = new SmallInteger(-this.value);
             small.sign = !sign;
             return small;
         };
 
-        BigInteger.prototype.abs = function () {
+        BigInteger.prototype.abs = function() {
             return new BigInteger(this.value, false);
         };
-        SmallInteger.prototype.abs = function () {
+        SmallInteger.prototype.abs = function() {
             return new SmallInteger(Math.abs(this.value));
         };
 
@@ -7199,13 +7214,14 @@ var nerdamer = (function(imports) {
             return -0.012 * l1 - 0.012 * l2 + 0.000015 * l1 * l2 > 0;
         }
 
-        BigInteger.prototype.multiply = function (v) {
-            var value, n = parseValue(v),
-                a = this.value, b = n.value,
+        BigInteger.prototype.multiply = function(v) {
+            var n = parseValue(v),
+                a = this.value,
+                b = n.value,
                 sign = this.sign !== n.sign,
                 abs;
             if (n.isSmall) {
-                if (b === 0) return CACHE[0];
+                if (b === 0) return Integer[0];
                 if (b === 1) return this;
                 if (b === -1) return this.negate();
                 abs = Math.abs(b);
@@ -7227,20 +7243,20 @@ var nerdamer = (function(imports) {
             }
             return new BigInteger(multiplyLong(b, smallToArray(a)), sign);
         }
-        SmallInteger.prototype["_multiplyBySmall"] = function (a) {
-                if (isPrecise(a.value * this.value)) {
-                    return new SmallInteger(a.value * this.value);
-                }
-                return multiplySmallAndArray(Math.abs(a.value), smallToArray(Math.abs(this.value)), this.sign !== a.sign);
+        SmallInteger.prototype._multiplyBySmall = function(a) {
+            if (isPrecise(a.value * this.value)) {
+                return new SmallInteger(a.value * this.value);
+            }
+            return multiplySmallAndArray(Math.abs(a.value), smallToArray(Math.abs(this.value)), this.sign !== a.sign);
         };
-        BigInteger.prototype["_multiplyBySmall"] = function (a) {
-                if (a.value === 0) return CACHE[0];
-                if (a.value === 1) return this;
-                if (a.value === -1) return this.negate();
-                return multiplySmallAndArray(Math.abs(a.value), this.value, this.sign !== a.sign);
+        BigInteger.prototype._multiplyBySmall = function(a) {
+            if (a.value === 0) return Integer[0];
+            if (a.value === 1) return this;
+            if (a.value === -1) return this.negate();
+            return multiplySmallAndArray(Math.abs(a.value), this.value, this.sign !== a.sign);
         };
-        SmallInteger.prototype.multiply = function (v) {
-            return parseValue(v)["_multiplyBySmall"](this);
+        SmallInteger.prototype.multiply = function(v) {
+            return parseValue(v)._multiplyBySmall(this);
         };
         SmallInteger.prototype.times = SmallInteger.prototype.multiply;
 
@@ -7263,11 +7279,11 @@ var nerdamer = (function(imports) {
             return r;
         }
 
-        BigInteger.prototype.square = function () {
+        BigInteger.prototype.square = function() {
             return new BigInteger(square(this.value), false);
         };
 
-        SmallInteger.prototype.square = function () {
+        SmallInteger.prototype.square = function() {
             var value = this.value * this.value;
             if (isPrecise(value)) return new SmallInteger(value);
             return new BigInteger(square(smallToArray(Math.abs(this.value))), false);
@@ -7290,7 +7306,7 @@ var nerdamer = (function(imports) {
             for (shift = a_l - b_l; shift >= 0; shift--) {
                 quotientDigit = base - 1;
                 if (remainder[shift + b_l] !== divisorMostSignificantDigit) {
-                  quotientDigit = Math.floor((remainder[shift + b_l] * base + remainder[shift + b_l - 1]) / divisorMostSignificantDigit);
+                    quotientDigit = Math.floor((remainder[shift + b_l] * base + remainder[shift + b_l - 1]) / divisorMostSignificantDigit);
                 }
                 // quotientDigit <= base - 1
                 carry = 0;
@@ -7341,6 +7357,7 @@ var nerdamer = (function(imports) {
                 guess, xlen, highx, highy, check;
             while (a_l) {
                 part.unshift(a[--a_l]);
+                trim(part);
                 if (compareAbs(part, b) < 0) {
                     result.push(0);
                     continue;
@@ -7381,18 +7398,19 @@ var nerdamer = (function(imports) {
 
         function divModAny(self, v) {
             var value, n = parseValue(v);
-            var a = self.value, b = n.value;
+            var a = self.value,
+                b = n.value;
             var quotient;
             if (b === 0) throw new Error("Cannot divide by zero");
             if (self.isSmall) {
                 if (n.isSmall) {
                     return [new SmallInteger(truncate(a / b)), new SmallInteger(a % b)];
                 }
-                return [CACHE[0], self];
+                return [Integer[0], self];
             }
             if (n.isSmall) {
-                if (b === 1) return [self, CACHE[0]];
-                if (b == -1) return [self.negate(), CACHE[0]];
+                if (b === 1) return [self, Integer[0]];
+                if (b == -1) return [self.negate(), Integer[0]];
                 var abs = Math.abs(b);
                 if (abs < BASE) {
                     value = divModSmall(a, abs);
@@ -7408,8 +7426,8 @@ var nerdamer = (function(imports) {
                 b = smallToArray(abs);
             }
             var comparison = compareAbs(a, b);
-            if (comparison === -1) return [CACHE[0], self];
-            if (comparison === 0) return [CACHE[self.sign === n.sign ? 1 : -1], CACHE[0]];
+            if (comparison === -1) return [Integer[0], self];
+            if (comparison === 0) return [Integer[self.sign === n.sign ? 1 : -1], Integer[0]];
 
             // divMod1 is faster on smaller input sizes
             if (a.length + b.length <= 200)
@@ -7431,7 +7449,7 @@ var nerdamer = (function(imports) {
             return [quotient, mod];
         }
 
-        BigInteger.prototype.divmod = function (v) {
+        BigInteger.prototype.divmod = function(v) {
             var result = divModAny(this, v);
             return {
                 quotient: result[0],
@@ -7440,27 +7458,27 @@ var nerdamer = (function(imports) {
         };
         SmallInteger.prototype.divmod = BigInteger.prototype.divmod;
 
-        BigInteger.prototype.divide = function (v) {
+        BigInteger.prototype.divide = function(v) {
             return divModAny(this, v)[0];
         };
         SmallInteger.prototype.over = SmallInteger.prototype.divide = BigInteger.prototype.over = BigInteger.prototype.divide;
 
-        BigInteger.prototype.mod = function (v) {
+        BigInteger.prototype.mod = function(v) {
             return divModAny(this, v)[1];
         };
         SmallInteger.prototype.remainder = SmallInteger.prototype.mod = BigInteger.prototype.remainder = BigInteger.prototype.mod;
 
-        BigInteger.prototype.pow = function (v) {
+        BigInteger.prototype.pow = function(v) {
             var n = parseValue(v),
                 a = this.value,
                 b = n.value,
                 value, x, y;
-            if (b === 0) return CACHE[1];
-            if (a === 0) return CACHE[0];
-            if (a === 1) return CACHE[1];
-            if (a === -1) return n.isEven() ? CACHE[1] : CACHE[-1];
+            if (b === 0) return Integer[1];
+            if (a === 0) return Integer[0];
+            if (a === 1) return Integer[1];
+            if (a === -1) return n.isEven() ? Integer[1] : Integer[-1];
             if (n.sign) {
-                return CACHE[0];
+                return Integer[0];
             }
             if (!n.isSmall) throw new Error("The exponent " + n.toString() + " is too large.");
             if (this.isSmall) {
@@ -7468,7 +7486,7 @@ var nerdamer = (function(imports) {
                     return new SmallInteger(truncate(value));
             }
             x = this;
-            y = CACHE[1];
+            y = Integer[1];
             while (true) {
                 if (b & 1 === 1) {
                     y = y.times(x);
@@ -7482,14 +7500,14 @@ var nerdamer = (function(imports) {
         };
         SmallInteger.prototype.pow = BigInteger.prototype.pow;
 
-        BigInteger.prototype.modPow = function (exp, mod) {
+        BigInteger.prototype.modPow = function(exp, mod) {
             exp = parseValue(exp);
             mod = parseValue(mod);
             if (mod.isZero()) throw new Error("Cannot take modPow with modulus 0");
-            var r = CACHE[1],
+            var r = Integer[1],
                 base = this.mod(mod);
             while (exp.isPositive()) {
-                if (base.isZero()) return CACHE[0];
+                if (base.isZero()) return Integer[0];
                 if (exp.isOdd()) r = r.multiply(base).mod(mod);
                 exp = exp.divide(2);
                 base = base.square().mod(mod);
@@ -7508,14 +7526,14 @@ var nerdamer = (function(imports) {
             return 0;
         }
 
-        BigInteger.prototype.compareAbs = function (v) {
+        BigInteger.prototype.compareAbs = function(v) {
             var n = parseValue(v),
                 a = this.value,
                 b = n.value;
             if (n.isSmall) return 1;
             return compareAbs(a, b);
         };
-        SmallInteger.prototype.compareAbs = function (v) {
+        SmallInteger.prototype.compareAbs = function(v) {
             var n = parseValue(v),
                 a = Math.abs(this.value),
                 b = n.value;
@@ -7526,7 +7544,7 @@ var nerdamer = (function(imports) {
             return -1;
         };
 
-        BigInteger.prototype.compare = function (v) {
+        BigInteger.prototype.compare = function(v) {
             // See discussion about comparison with Infinity:
             // https://github.com/peterolson/BigInteger.js/issues/61
             if (v === Infinity) {
@@ -7549,7 +7567,7 @@ var nerdamer = (function(imports) {
         };
         BigInteger.prototype.compareTo = BigInteger.prototype.compare;
 
-        SmallInteger.prototype.compare = function (v) {
+        SmallInteger.prototype.compare = function(v) {
             if (v === Infinity) {
                 return -1;
             }
@@ -7570,84 +7588,84 @@ var nerdamer = (function(imports) {
         };
         SmallInteger.prototype.compareTo = SmallInteger.prototype.compare;
 
-        BigInteger.prototype.equals = function (v) {
+        BigInteger.prototype.equals = function(v) {
             return this.compare(v) === 0;
         };
         SmallInteger.prototype.eq = SmallInteger.prototype.equals = BigInteger.prototype.eq = BigInteger.prototype.equals;
 
-        BigInteger.prototype.notEquals = function (v) {
+        BigInteger.prototype.notEquals = function(v) {
             return this.compare(v) !== 0;
         };
         SmallInteger.prototype.neq = SmallInteger.prototype.notEquals = BigInteger.prototype.neq = BigInteger.prototype.notEquals;
 
-        BigInteger.prototype.greater = function (v) {
+        BigInteger.prototype.greater = function(v) {
             return this.compare(v) > 0;
         };
         SmallInteger.prototype.gt = SmallInteger.prototype.greater = BigInteger.prototype.gt = BigInteger.prototype.greater;
 
-        BigInteger.prototype.lesser = function (v) {
+        BigInteger.prototype.lesser = function(v) {
             return this.compare(v) < 0;
         };
         SmallInteger.prototype.lt = SmallInteger.prototype.lesser = BigInteger.prototype.lt = BigInteger.prototype.lesser;
 
-        BigInteger.prototype.greaterOrEquals = function (v) {
+        BigInteger.prototype.greaterOrEquals = function(v) {
             return this.compare(v) >= 0;
         };
         SmallInteger.prototype.geq = SmallInteger.prototype.greaterOrEquals = BigInteger.prototype.geq = BigInteger.prototype.greaterOrEquals;
 
-        BigInteger.prototype.lesserOrEquals = function (v) {
+        BigInteger.prototype.lesserOrEquals = function(v) {
             return this.compare(v) <= 0;
         };
         SmallInteger.prototype.leq = SmallInteger.prototype.lesserOrEquals = BigInteger.prototype.leq = BigInteger.prototype.lesserOrEquals;
 
-        BigInteger.prototype.isEven = function () {
+        BigInteger.prototype.isEven = function() {
             return (this.value[0] & 1) === 0;
         };
-        SmallInteger.prototype.isEven = function () {
+        SmallInteger.prototype.isEven = function() {
             return (this.value & 1) === 0;
         };
 
-        BigInteger.prototype.isOdd = function () {
+        BigInteger.prototype.isOdd = function() {
             return (this.value[0] & 1) === 1;
         };
-        SmallInteger.prototype.isOdd = function () {
+        SmallInteger.prototype.isOdd = function() {
             return (this.value & 1) === 1;
         };
 
-        BigInteger.prototype.isPositive = function () {
+        BigInteger.prototype.isPositive = function() {
             return !this.sign;
         };
-        SmallInteger.prototype.isPositive = function () {
+        SmallInteger.prototype.isPositive = function() {
             return this.value > 0;
         };
 
-        BigInteger.prototype.isNegative = function () {
+        BigInteger.prototype.isNegative = function() {
             return this.sign;
         };
-        SmallInteger.prototype.isNegative = function () {
+        SmallInteger.prototype.isNegative = function() {
             return this.value < 0;
         };
 
-        BigInteger.prototype.isUnit = function () {
+        BigInteger.prototype.isUnit = function() {
             return false;
         };
-        SmallInteger.prototype.isUnit = function () {
+        SmallInteger.prototype.isUnit = function() {
             return Math.abs(this.value) === 1;
         };
 
-        BigInteger.prototype.isZero = function () {
+        BigInteger.prototype.isZero = function() {
             return false;
         };
-        SmallInteger.prototype.isZero = function () {
+        SmallInteger.prototype.isZero = function() {
             return this.value === 0;
         };
-        BigInteger.prototype.isDivisibleBy = function (v) {
+        BigInteger.prototype.isDivisibleBy = function(v) {
             var n = parseValue(v);
             var value = n.value;
             if (value === 0) return false;
             if (value === 1) return true;
             if (value === 2) return this.isEven();
-            return this.mod(n).equals(CACHE[0]);
+            return this.mod(n).equals(Integer[0]);
         };
         SmallInteger.prototype.isDivisibleBy = BigInteger.prototype.isDivisibleBy;
 
@@ -7658,9 +7676,9 @@ var nerdamer = (function(imports) {
             if (n.isEven() || n.isDivisibleBy(3) || n.isDivisibleBy(5)) return false;
             if (n.lesser(25)) return true;
             // we don't know if it's prime: let the other functions figure it out
-        };
+        }
 
-        BigInteger.prototype.isPrime = function () {
+        BigInteger.prototype.isPrime = function() {
             var isPrime = isBasicPrime(this);
             if (isPrime !== undefined) return isPrime;
             var n = this.abs(),
@@ -7671,8 +7689,8 @@ var nerdamer = (function(imports) {
             while (b.isEven()) b = b.divide(2);
             for (i = 0; i < a.length; i++) {
                 x = bigInt(a[i]).modPow(b, n);
-                if (x.equals(CACHE[1]) || x.equals(nPrev)) continue;
-                for (t = true, d = b; t && d.lesser(nPrev) ; d = d.multiply(2)) {
+                if (x.equals(Integer[1]) || x.equals(nPrev)) continue;
+                for (t = true, d = b; t && d.lesser(nPrev); d = d.multiply(2)) {
                     x = x.square().mod(n);
                     if (x.equals(nPrev)) t = false;
                 }
@@ -7682,7 +7700,7 @@ var nerdamer = (function(imports) {
         };
         SmallInteger.prototype.isPrime = BigInteger.prototype.isPrime;
 
-        BigInteger.prototype.isProbablePrime = function (iterations) {
+        BigInteger.prototype.isProbablePrime = function(iterations) {
             var isPrime = isBasicPrime(this);
             if (isPrime !== undefined) return isPrime;
             var n = this.abs();
@@ -7696,27 +7714,54 @@ var nerdamer = (function(imports) {
         };
         SmallInteger.prototype.isProbablePrime = BigInteger.prototype.isProbablePrime;
 
-        BigInteger.prototype.next = function () {
+        BigInteger.prototype.modInv = function(n) {
+            var t = bigInt.zero,
+                newT = bigInt.one,
+                r = parseValue(n),
+                newR = this.abs(),
+                q, lastT, lastR;
+            while (!newR.equals(bigInt.zero)) {
+                q = r.divide(newR);
+                lastT = t;
+                lastR = r;
+                t = newT;
+                r = newR;
+                newT = lastT.subtract(q.multiply(newT));
+                newR = lastR.subtract(q.multiply(newR));
+            }
+            if (!r.equals(1)) throw new Error(this.toString() + " and " + n.toString() + " are not co-prime");
+            if (t.compare(0) === -1) {
+                t = t.add(n);
+            }
+            if (this.isNegative()) {
+                return t.negate();
+            }
+            return t;
+        };
+
+        SmallInteger.prototype.modInv = BigInteger.prototype.modInv;
+
+        BigInteger.prototype.next = function() {
             var value = this.value;
             if (this.sign) {
                 return subtractSmall(value, 1, this.sign);
             }
             return new BigInteger(addSmall(value, 1), this.sign);
         };
-        SmallInteger.prototype.next = function () {
+        SmallInteger.prototype.next = function() {
             var value = this.value;
             if (value + 1 < MAX_INT) return new SmallInteger(value + 1);
             return new BigInteger(MAX_INT_ARR, false);
         };
 
-        BigInteger.prototype.prev = function () {
+        BigInteger.prototype.prev = function() {
             var value = this.value;
             if (this.sign) {
                 return new BigInteger(addSmall(value, 1), true);
             }
             return subtractSmall(value, 1, this.sign);
         };
-        SmallInteger.prototype.prev = function () {
+        SmallInteger.prototype.prev = function() {
             var value = this.value;
             if (value - 1 > -MAX_INT) return new SmallInteger(value - 1);
             return new BigInteger(MAX_INT_ARR, true);
@@ -7724,14 +7769,15 @@ var nerdamer = (function(imports) {
 
         var powersOfTwo = [1];
         while (powersOfTwo[powersOfTwo.length - 1] <= BASE) powersOfTwo.push(2 * powersOfTwo[powersOfTwo.length - 1]);
-        var powers2Length = powersOfTwo.length, highestPower2 = powersOfTwo[powers2Length - 1];
+        var powers2Length = powersOfTwo.length,
+            highestPower2 = powersOfTwo[powers2Length - 1];
 
         function shift_isSmall(n) {
             return ((typeof n === "number" || typeof n === "string") && +Math.abs(n) <= BASE) ||
                 (n instanceof BigInteger && n.value.length <= 1);
         }
 
-        BigInteger.prototype.shiftLeft = function (n) {
+        BigInteger.prototype.shiftLeft = function(n) {
             if (!shift_isSmall(n)) {
                 throw new Error(String(n) + " is too large for shifting.");
             }
@@ -7746,7 +7792,7 @@ var nerdamer = (function(imports) {
         };
         SmallInteger.prototype.shiftLeft = BigInteger.prototype.shiftLeft;
 
-        BigInteger.prototype.shiftRight = function (n) {
+        BigInteger.prototype.shiftRight = function(n) {
             var remQuo;
             if (!shift_isSmall(n)) {
                 throw new Error(String(n) + " is too large for shifting.");
@@ -7767,24 +7813,25 @@ var nerdamer = (function(imports) {
 
         function bitwise(x, y, fn) {
             y = parseValue(y);
-            var xSign = x.isNegative(), ySign = y.isNegative();
+            var xSign = x.isNegative(),
+                ySign = y.isNegative();
             var xRem = xSign ? x.not() : x,
                 yRem = ySign ? y.not() : y;
-            var xBits = [], yBits = [];
-            var xStop = false, yStop = false;
+            var xBits = [],
+                yBits = [];
+            var xStop = false,
+                yStop = false;
             while (!xStop || !yStop) {
                 if (xRem.isZero()) { // virtual sign extension for simulating two's complement
                     xStop = true;
                     xBits.push(xSign ? 1 : 0);
-                }
-                else if (xSign) xBits.push(xRem.isEven() ? 1 : 0); // two's complement for negative numbers
+                } else if (xSign) xBits.push(xRem.isEven() ? 1 : 0); // two's complement for negative numbers
                 else xBits.push(xRem.isEven() ? 0 : 1);
 
                 if (yRem.isZero()) {
                     yStop = true;
                     yBits.push(ySign ? 1 : 0);
-                }
-                else if (ySign) yBits.push(yRem.isEven() ? 1 : 0);
+                } else if (ySign) yBits.push(yRem.isEven() ? 1 : 0);
                 else yBits.push(yRem.isEven() ? 0 : 1);
 
                 xRem = xRem.over(2);
@@ -7799,31 +7846,40 @@ var nerdamer = (function(imports) {
             return sum;
         }
 
-        BigInteger.prototype.not = function () {
+        BigInteger.prototype.not = function() {
             return this.negate().prev();
         };
         SmallInteger.prototype.not = BigInteger.prototype.not;
 
-        BigInteger.prototype.and = function (n) {
-            return bitwise(this, n, function (a, b) { return a & b; });
+        BigInteger.prototype.and = function(n) {
+            return bitwise(this, n, function(a, b) {
+                return a & b;
+            });
         };
         SmallInteger.prototype.and = BigInteger.prototype.and;
 
-        BigInteger.prototype.or = function (n) {
-            return bitwise(this, n, function (a, b) { return a | b; });
+        BigInteger.prototype.or = function(n) {
+            return bitwise(this, n, function(a, b) {
+                return a | b;
+            });
         };
         SmallInteger.prototype.or = BigInteger.prototype.or;
 
-        BigInteger.prototype.xor = function (n) {
-            return bitwise(this, n, function (a, b) { return a ^ b; });
+        BigInteger.prototype.xor = function(n) {
+            return bitwise(this, n, function(a, b) {
+                return a ^ b;
+            });
         };
         SmallInteger.prototype.xor = BigInteger.prototype.xor;
 
-        var LOBMASK_I = 1 << 30, LOBMASK_BI = (BASE & -BASE) * (BASE & -BASE) | LOBMASK_I;
+        var LOBMASK_I = 1 << 30,
+            LOBMASK_BI = (BASE & -BASE) * (BASE & -BASE) | LOBMASK_I;
+
         function roughLOB(n) { // get lowestOneBit (rough)
             // SmallInteger: return Min(lowestOneBit(n), 1 << 30)
             // BigInteger: return Min(lowestOneBit(n), 1 << 14) [BASE=1e7]
-            var v = n.value, x = typeof v === "number" ? v | LOBMASK_I : v[0] + v[1] * BASE | LOBMASK_BI;
+            var v = n.value,
+                x = typeof v === "number" ? v | LOBMASK_I : v[0] + v[1] * BASE | LOBMASK_BI;
             return x & -x;
         }
 
@@ -7832,18 +7888,21 @@ var nerdamer = (function(imports) {
             b = parseValue(b);
             return a.greater(b) ? a : b;
         }
-        function min(a,b) {
+
+        function min(a, b) {
             a = parseValue(a);
             b = parseValue(b);
             return a.lesser(b) ? a : b;
         }
+
         function gcd(a, b) {
             a = parseValue(a).abs();
             b = parseValue(b).abs();
             if (a.equals(b)) return a;
             if (a.isZero()) return b;
             if (b.isZero()) return a;
-            var c = CACHE[1], d, t;
+            var c = Integer[1],
+                d, t;
             while (a.isEven() && b.isEven()) {
                 d = Math.min(roughLOB(a), roughLOB(b));
                 a = a.divide(d);
@@ -7858,25 +7917,31 @@ var nerdamer = (function(imports) {
                     b = b.divide(roughLOB(b));
                 }
                 if (a.greater(b)) {
-                    t = b; b = a; a = t;
+                    t = b;
+                    b = a;
+                    a = t;
                 }
                 b = b.subtract(a);
             } while (!b.isZero());
             return c.isUnit() ? a : a.multiply(c);
         }
+
         function lcm(a, b) {
             a = parseValue(a).abs();
             b = parseValue(b).abs();
             return a.divide(gcd(a, b)).multiply(b);
         }
+
         function randBetween(a, b) {
             a = parseValue(a);
             b = parseValue(b);
-            var low = min(a, b), high = max(a, b);
+            var low = min(a, b),
+                high = max(a, b);
             var range = high.subtract(low);
             if (range.isSmall) return low.add(Math.round(Math.random() * range));
             var length = range.value.length - 1;
-            var result = [], restricted = true;
+            var result = [],
+                restricted = true;
             for (var i = length; i >= 0; i--) {
                 var top = restricted ? range.value[i] : BASE;
                 var digit = truncate(Math.random() * top);
@@ -7886,17 +7951,33 @@ var nerdamer = (function(imports) {
             result = arrayToSmall(result);
             return low.add(typeof result === "number" ? new SmallInteger(result) : new BigInteger(result, false));
         }
-        var parseBase = function (text, base) {
-            var val = CACHE[0], pow = CACHE[1],
-                length = text.length;
+        var parseBase = function(text, base) {
+            var length = text.length;
+            var i;
+            var absBase = Math.abs(base);
+            for (var i = 0; i < length; i++) {
+                var c = text[i].toLowerCase();
+                if (c === "-") continue;
+                if (/[a-z0-9]/.test(c)) {
+                    if (/[0-9]/.test(c) && +c >= absBase) {
+                        if (c === "1" && absBase === 1) continue;
+                        throw new Error(c + " is not a valid digit in base " + base + ".");
+                    } else if (c.charCodeAt(0) - 87 >= absBase) {
+                        throw new Error(c + " is not a valid digit in base " + base + ".");
+                    }
+                }
+            }
             if (2 <= base && base <= 36) {
                 if (length <= LOG_MAX_INT / Math.log(base)) {
+                    var result = parseInt(text, base);
+                    if (isNaN(result)) {
+                        throw new Error(c + " is not a valid digit in base " + base + ".");
+                    }
                     return new SmallInteger(parseInt(text, base));
                 }
             }
             base = parseValue(base);
             var digits = [];
-            var i;
             var isNegative = text[0] === "-";
             for (i = isNegative ? 1 : 0; i < text.length; i++) {
                 var c = text[i].toLowerCase(),
@@ -7905,18 +7986,25 @@ var nerdamer = (function(imports) {
                 else if (97 <= charCode && charCode <= 122) digits.push(parseValue(c.charCodeAt(0) - 87));
                 else if (c === "<") {
                     var start = i;
-                    do { i++; } while (text[i] !== ">");
+                    do {
+                        i++;
+                    } while (text[i] !== ">");
                     digits.push(parseValue(text.slice(start + 1, i)));
-                }
-                else throw new Error(c + " is not a valid character");
+                } else throw new Error(c + " is not a valid character");
             }
-            digits.reverse();
-            for (i = 0; i < digits.length; i++) {
+            return parseBaseFromArray(digits, base, isNegative);
+        };
+
+        function parseBaseFromArray(digits, base, isNegative) {
+            var val = Integer[0],
+                pow = Integer[1],
+                i;
+            for (i = digits.length - 1; i >= 0; i--) {
                 val = val.add(digits[i].times(pow));
                 pow = pow.times(base);
             }
             return isNegative ? val.negate() : val;
-        };
+        }
 
         function stringify(digit) {
             var v = digit.value;
@@ -7926,6 +8014,7 @@ var nerdamer = (function(imports) {
             }
             return "<" + v + ">";
         }
+
         function toBase(n, base) {
             base = bigInt(base);
             if (base.isZero()) {
@@ -7947,7 +8036,8 @@ var nerdamer = (function(imports) {
                 return minusSign + new Array(+n + 1).join(1);
             }
             var out = [];
-            var left = n, divmod;
+            var left = n,
+                divmod;
             while (left.isNegative() || left.compareAbs(base) >= 0) {
                 divmod = left.divmod(base);
                 left = divmod.quotient;
@@ -7962,10 +8052,14 @@ var nerdamer = (function(imports) {
             return minusSign + out.reverse().join("");
         }
 
-        BigInteger.prototype.toString = function (radix) {
+        BigInteger.prototype.toString = function(radix) {
             if (radix === undefined) radix = 10;
             if (radix !== 10) return toBase(this, radix);
-            var v = this.value, l = v.length, str = String(v[--l]), zeros = "0000000", digit;
+            var v = this.value,
+                l = v.length,
+                str = String(v[--l]),
+                zeros = "0000000",
+                digit;
             while (--l >= 0) {
                 digit = String(v[l]);
                 str += zeros.slice(digit.length) + digit;
@@ -7973,64 +8067,70 @@ var nerdamer = (function(imports) {
             var sign = this.sign ? "-" : "";
             return sign + str;
         };
-        SmallInteger.prototype.toString = function (radix) {
+        SmallInteger.prototype.toString = function(radix) {
             if (radix === undefined) radix = 10;
             if (radix != 10) return toBase(this, radix);
             return String(this.value);
         };
 
-        BigInteger.prototype.valueOf = function () {
+        BigInteger.prototype.valueOf = function() {
             return +this.toString();
         };
         BigInteger.prototype.toJSNumber = BigInteger.prototype.valueOf;
 
-        SmallInteger.prototype.valueOf = function () {
+        SmallInteger.prototype.valueOf = function() {
             return this.value;
         };
         SmallInteger.prototype.toJSNumber = SmallInteger.prototype.valueOf;
 
         function parseStringValue(v) {
-                if (isPrecise(+v)) {
-                    var x = +v;
-                    if (x === truncate(x))
-                        return new SmallInteger(x);
-                    throw "Invalid integer: " + v;
+            if (isPrecise(+v)) {
+                var x = +v;
+                if (x === truncate(x))
+                    return new SmallInteger(x);
+                throw "Invalid integer: " + v;
+            }
+            var sign = v[0] === "-";
+            if (sign) v = v.slice(1);
+            var split = v.split(/e/i);
+            if (split.length > 2) throw new Error("Invalid integer: " + split.join("e"));
+            if (split.length === 2) {
+                var exp = split[1];
+                if (exp[0] === "+") exp = exp.slice(1);
+                exp = +exp;
+                if (exp !== truncate(exp) || !isPrecise(exp)) throw new Error("Invalid integer: " + exp + " is not a valid exponent.");
+                var text = split[0];
+                var decimalPlace = text.indexOf(".");
+                if (decimalPlace >= 0) {
+                    exp -= text.length - decimalPlace - 1;
+                    text = text.slice(0, decimalPlace) + text.slice(decimalPlace + 1);
                 }
-                var sign = v[0] === "-";
-                if (sign) v = v.slice(1);
-                var split = v.split(/e/i);
-                if (split.length > 2) throw new Error("Invalid integer: " + text.join("e"));
-                if (split.length === 2) {
-                    var exp = split[1];
-                    if (exp[0] === "+") exp = exp.slice(1);
-                    exp = +exp;
-                    if (exp !== truncate(exp) || !isPrecise(exp)) throw new Error("Invalid integer: " + exp + " is not a valid exponent.");
-                    var text = split[0];
-                    var decimalPlace = text.indexOf(".");
-                    if (decimalPlace >= 0) {
-                        exp -= text.length - decimalPlace - 1;
-                        text = text.slice(0, decimalPlace) + text.slice(decimalPlace + 1);
-                    }
-                    if (exp < 0) throw new Error("Cannot include negative exponent part for integers");
-                    text += (new Array(exp + 1)).join("0");
-                    v = text;
-                }
-                var isValid = /^([0-9][0-9]*)$/.test(v);
-                if (!isValid) throw new Error("Invalid integer: " + v);
-                var r = [], max = v.length, l = LOG_BASE, min = max - l;
-                while (max > 0) {
-                    r.push(+v.slice(min, max));
-                    min -= l;
-                    if (min < 0) min = 0;
-                    max -= l;
-                }
-                trim(r);
-                return new BigInteger(r, sign);
+                if (exp < 0) throw new Error("Cannot include negative exponent part for integers");
+                text += (new Array(exp + 1)).join("0");
+                v = text;
+            }
+            var isValid = /^([0-9][0-9]*)$/.test(v);
+            if (!isValid) throw new Error("Invalid integer: " + v);
+            var r = [],
+                max = v.length,
+                l = LOG_BASE,
+                min = max - l;
+            while (max > 0) {
+                r.push(+v.slice(min, max));
+                min -= l;
+                if (min < 0) min = 0;
+                max -= l;
+            }
+            trim(r);
+            return new BigInteger(r, sign);
         }
 
         function parseNumberValue(v) {
-                if (isPrecise(v)) return new SmallInteger(v);
-                return parseStringValue(v.toString());
+            if (isPrecise(v)) {
+                if (v !== truncate(v)) throw new Error(v + " is not an integer.");
+                return new SmallInteger(v);
+            }
+            return parseStringValue(v.toString());
         }
 
         function parseValue(v) {
@@ -8043,26 +8143,28 @@ var nerdamer = (function(imports) {
             return v;
         }
         // Pre-define numbers in range [-999,999]
-        var CACHE = function (v, radix) {
-            if (typeof v === "undefined") return CACHE[0];
-            if (typeof radix !== "undefined") return +radix === 10 ? parseValue(v) : parseBase(v, radix);
-            return parseValue(v);
-        };
         for (var i = 0; i < 1000; i++) {
-            CACHE[i] = new SmallInteger(i);
-            if (i > 0) CACHE[-i] = new SmallInteger(-i);
+            Integer[i] = new SmallInteger(i);
+            if (i > 0) Integer[-i] = new SmallInteger(-i);
         }
         // Backwards compatibility
-        CACHE.one = CACHE[1];
-        CACHE.zero = CACHE[0];
-        CACHE.minusOne = CACHE[-1];
-        CACHE.max = max;
-        CACHE.min = min;
-        CACHE.gcd = gcd;
-        CACHE.lcm = lcm;
-        CACHE.isInstance = function (x) { return x instanceof BigInteger || x instanceof SmallInteger; };
-        CACHE.randBetween = randBetween;
-        return CACHE;
+        Integer.one = Integer[1];
+        Integer.zero = Integer[0];
+        Integer.minusOne = Integer[-1];
+        Integer.max = max;
+        Integer.min = min;
+        Integer.gcd = gcd;
+        Integer.lcm = lcm;
+        Integer.isInstance = function(x) {
+            return x instanceof BigInteger || x instanceof SmallInteger;
+        };
+        Integer.randBetween = randBetween;
+
+        Integer.fromArray = function(digits, base, isNegative) {
+            return parseBaseFromArray(digits.map(parseValue), parseValue(base || 10), isNegative);
+        };
+
+        return Integer;
     })()
 });
 
