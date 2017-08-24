@@ -77,7 +77,7 @@ describe('Nerdamer core', function () {
         }
     });
 
-    it('should calculate percentages correctly', function () {
+    xit('should calculate percentages correctly', function () {
         // given
         var testCases = [
             {
