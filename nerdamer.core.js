@@ -2743,7 +2743,7 @@ var nerdamer = (function(imports) {
                     return _.percent(e);
                 }),
                 '%+' : new Operator('%+', 'percent_add', 2, true, false),
-                '%-' : new Operator('%-', 'percent_subtract', 2, true, false),
+                '%-' : new Operator('%-', 'percent_subtract', 3, true, false),
                 '+' : new Operator('+', 'add', 3, true, true, false, function(e) {
                     return e;
                 }),
@@ -8069,3 +8069,8 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
+
+var x = nerdamer('10+(1/100)-2');
+console.log(x.toString())
+var x = nerdamer('10+1%-2');
+console.log(x.toString())
