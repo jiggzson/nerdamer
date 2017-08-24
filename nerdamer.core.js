@@ -107,6 +107,19 @@ var nerdamer = (function(imports) {
         isReserved = Utils.isReserved = function(value) { 
             return RESERVED.indexOf(value) !== -1;
         },
+        
+        /**
+         * Checks to see that all symbols in array are the same
+         * @param {Symbol[]} arr
+         * @returns {bool}
+         */
+        allSame = Utils.allSame = function(arr) {
+            var last = arr[0];
+            for(var i=1, l=arr.length; i<l; i++) 
+                if(!arr[i].equals(last))
+                    return false;
+            return true;
+        },
 
         /**
          * Use this when errors are suppressible
@@ -2784,8 +2797,8 @@ var nerdamer = (function(imports) {
                 'atanh'             : [ , 1],
                 'log10'             : [ , 1],
                 'exp'               : [ , 1],
-                'min'               : [ ,-1],
-                'max'               : [ ,-1],
+                'min'               : [ min ,-1],
+                'max'               : [ max,-1],
                 'erf'               : [ , 1],
                 'floor'             : [ , 1],
                 'ceil'              : [ , 1],
@@ -3588,7 +3601,13 @@ var nerdamer = (function(imports) {
         
         function abs(symbol) {
             if(symbol.multiplier.lessThan(0)) symbol.multiplier.negate();
-            if(isNumericSymbol(symbol) || even(symbol.power)) {
+            if(symbol.isImaginary) {
+                var re = symbol.realpart();
+                var im = symbol.imagpart();
+                if(re.isConstant() && im.isConstant())
+                    return sqrt(_.add(_.pow(re, new Symbol(2)), _.pow(im, new Symbol(2))));
+            }
+            else if(isNumericSymbol(symbol) || even(symbol.power)) {
                 return symbol;
             }
             if(symbol.isComposite()) {
@@ -3850,6 +3869,32 @@ var nerdamer = (function(imports) {
          */
         function rectform(symbol) {
             
+        }
+        
+        /**
+         * Returns maximum of a set of numbers
+         * @returns {Symbol}
+         */
+        function max() {
+            var args = [].slice.call(arguments);
+            if(allSame(args))
+                return args[0];
+            if(Settings.PARSE2NUMBER && allNumbers(args))
+                return Math.max.apply(null, args);
+            return _.symfunction('max', args);
+        }
+        
+        /**
+         * Returns minimum of a set of numbers
+         * @returns {Symbol}
+         */
+        function min() {
+            var args = [].slice.call(arguments);
+            if(allSame(args))
+                return args[0];
+            if(Settings.PARSE2NUMBER && allNumbers(args))
+                return Math.min.apply(null, args);
+            return _.symfunction('min', args);
         }
         
         /**
