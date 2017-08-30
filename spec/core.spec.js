@@ -1145,8 +1145,7 @@ describe('Nerdamer core', function () {
                     //{ n: 80 }
                 ],
                 expected: '0'
-            },//TODO: Failing test (rounding error)
-            
+            },
             {
                 //The fib(n)^2-fib(n+r)fib(n-r) == (-1)^(n-r)fib(r)^2 identity
                 given: 'fib(n)^2-fib(n+r)fib(n-r) - (-1)^(n-r)fib(r)^2',
