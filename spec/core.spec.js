@@ -1120,7 +1120,7 @@ describe('Nerdamer core', function () {
                     { n: 55 },
                     //TODO: Failing test (rounding error)
                     //{ n: 56 }
-                ]
+                ],
                 expected: '0'
             },
             {
@@ -1132,7 +1132,7 @@ describe('Nerdamer core', function () {
                     { n: 76 },
                     //TODO: Failing test (rounding error)
                     //{ n: 77 }
-                ]
+                ],
                 expected: '-1'
             },
             {
@@ -1143,7 +1143,7 @@ describe('Nerdamer core', function () {
                     { n: 24 },
                     //TODO: Failing test (rounding error)
                     //{ n: 80 }
-                ]
+                ],
                 expected: '0'
             },//TODO: Failing test (rounding error)
             
@@ -1155,7 +1155,7 @@ describe('Nerdamer core', function () {
                     { n: 24, r: 12 },
                     //TODO: Failing test (rounding error)
                     //{ n: 80, r: 11 }
-                ]
+                ],
                 expected: '0'
             }
         ];
