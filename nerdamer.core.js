@@ -3599,9 +3599,9 @@ var nerdamer = (function(imports) {
             return _.symfunction('parens', [symbol]);
         }
         
-        function abs(symbol) {
+        function abs(symbol) { 
             if(symbol.multiplier.lessThan(0)) symbol.multiplier.negate();
-            if(symbol.isImaginary) {
+            if(symbol.isImaginary()) {
                 var re = symbol.realpart();
                 var im = symbol.imagpart();
                 if(re.isConstant() && im.isConstant())
@@ -6606,7 +6606,8 @@ var nerdamer = (function(imports) {
     libExports.setConstant = function(constant, value) {
         validateName(constant); 
         if(!isReserved(constant)) {
-            if(value === 'delete') {
+            //fix for issue #127
+            if(value === 'delete' || value === '') {
                 delete _.constants[constant];
             }
             else {
@@ -8069,8 +8070,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
-var x = nerdamer('10+(1/100)-2');
-console.log(x.toString())
-var x = nerdamer('10+1%-2');
-console.log(x.toString())

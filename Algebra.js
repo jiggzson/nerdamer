@@ -2281,6 +2281,11 @@ if((typeof module) !== 'undefined') {
                 // return core.Math2.QGCD(new Frac(+a), new Frac(+b));
                 return new Symbol(core.Math2.QGCD(new Frac(+a), new Frac(+b)));
             }
+            
+            //feels counter intuitive but it works. Issue #123 (nerdamer("gcd(x+y,(x+y)^2)"))
+            a = _.expand(a);
+            b = _.expand(b);
+            
             if(a.length < b.length) { //swap'm
                 var t = a; a = b; b = t;
             }
@@ -2297,7 +2302,7 @@ if((typeof module) !== 'undefined') {
                     T = __.div(a, t);
                     b = T[1]; 
                     if(T[0].equals(0)) {
-                        return new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier));
+                        return _.multiply(new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier)), b);
                     }
                     a = t; 
                 }
