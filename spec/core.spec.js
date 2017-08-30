@@ -1164,9 +1164,9 @@ describe('Nerdamer core', function () {
             // when
             var parsed = nerdamer(testCases[i].given);
             
-            if(testcases[i].substitutes) {
-                for (var j = 0; j < testcases[i].substitutes.length; ++j) {
-                    var value = parsed.evaluate(testcases[i].substitutes[j]).text('decimals');
+            if(testCases[i].substitutes) {
+                for (var j = 0; j < testCases[i].substitutes.length; ++j) {
+                    var value = parsed.evaluate(testCases[i].substitutes[j]).text('decimals');
                     
                     // then
                     expect(value).toEqual(testCases[i].expected);
