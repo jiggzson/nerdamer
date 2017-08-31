@@ -943,9 +943,9 @@ var nerdamer = (function(imports) {
             },
             //the gamma incomplete function
             gamma_incomplete: function(n, x) {
+                x = x || 0;
                 var t = n-1,
-                    sum = 0,
-                    x = x || 0;
+                    sum = 0;
                 for(var i=0; i<t; i++) {
                     sum += Math.pow(x, i)/Math2.factorial(i);
                 }

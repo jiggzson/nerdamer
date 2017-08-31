@@ -17,7 +17,8 @@ FUNCTIONS = {
             },
             option: {
                 type: "String|String[]",
-                description: "A string or array containing additional options such as parsing directly to number or expanding the expression."
+                description: "A string or array containing additional options such as parsing directly to number or expanding the expression. Use \"numer\" to "+
+                        "when wanting the expression to be evaluated. Use \"expand\" when wanting the expression to be expanded."
             },
             location: {
                 type: "int",
@@ -48,7 +49,7 @@ FUNCTIONS = {
                 description: 'The variable to be set as the constant'
             },
             value: {
-                type: "Number|expression string",
+                type: "Number|expression|string",
                 description: "The value for the expression to be set to."
             }
         },
@@ -232,7 +233,7 @@ FUNCTIONS = {
         type: 'nerdamer',
         usage: 'nerdamer.reserved(asArray)',
         full_name: 'reserved',
-        description: 'Gets the list of reserved names. This is a list of names already in use by nerdamer excluding variable names. This is not a static list.',
+        description: 'Gets the list of reserved names. This is a list of names already in use by nerdamer excluding variable names. This is not a static list. Although some variables are reserved they are not restricted and can be used. This however is not recommended.',
         parameters: {
             asArray: {
                 type: 'bool',
@@ -1371,11 +1372,15 @@ FUNCTIONS = {
     },
     mod: {
         type: 'internal',
-        usage: 'mod(x)',
+        usage: 'mod(x, y)',
         full_name: 'mod',
         description: 'Calculates the modulo of two numbers.',
         parameters: {
             x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            },
+            y: {
                 type: 'expression',
                 description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
             }
@@ -1504,6 +1509,25 @@ FUNCTIONS = {
             "var x = nerdamer('erf(x)');",
             "console.log(x.toString());",
             "var y = nerdamer('erf(1)').evaluate();",
+            "console.log(y.toString());"
+        ],
+        returns: 'Expression'
+    },
+    sign: {
+        type: 'internal',
+        usage: 'sign(x)',
+        full_name: 'sign function',
+        description: 'Returns the sign of the number.',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sign(x)');",
+            "console.log(x.toString());",
+            "var y = nerdamer('sign(-1)').evaluate();",
             "console.log(y.toString());"
         ],
         returns: 'Expression'
@@ -2272,11 +2296,10 @@ FUNCTIONS = {
             }
         },
         examples: [
-            "var x = nerdamer('smpvar(4,2,5,4)').evaluate();",
-            "console.log(x.text());",
-            "x = nerdamer.smpvar('x', 'r+1', '21', 'tan(x)', 'r+1');",
+            "nerdamer.setVar('x', '[3,1,2,6]');",
+            "var x = nerdamer('zscore(2, mean(x), stdev(x))');",
             "console.log(x.toString());",
-            "x = nerdamer.smpvar('11', '12', '13', '14').evaluate();",
+            "x = x.evaluate()",
             "console.log(x.text());"
         ],
         returns: 'Expression'

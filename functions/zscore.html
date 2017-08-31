@@ -128,11 +128,10 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('smpvar(4,2,5,4)').evaluate();
-console.log(x.text());
-x = nerdamer.smpvar('x', 'r+1', '21', 'tan(x)', 'r+1');
+                    <pre><code class="javascript">nerdamer.setVar('x', '[3,1,2,6]');
+var x = nerdamer('zscore(2, mean(x), stdev(x))');
 console.log(x.toString());
-x = nerdamer.smpvar('11', '12', '13', '14').evaluate();
+x = x.evaluate()
 console.log(x.text());</code></pre>
                 </div>
                 OUTPUT:
@@ -185,11 +184,10 @@ console.log(x.text());</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('smpvar(4,2,5,4)').evaluate();
-oprint(x.text());
-x = nerdamer.smpvar('x', 'r+1', '21', 'tan(x)', 'r+1');
+                nerdamer.setVar('x', '[3,1,2,6]');
+var x = nerdamer('zscore(2, mean(x), stdev(x))');
 oprint(x.toString());
-x = nerdamer.smpvar('11', '12', '13', '14').evaluate();
+x = x.evaluate()
 oprint(x.text());
             }
             catch(e) {

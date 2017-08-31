@@ -122,7 +122,7 @@
                                 To plot the a function click the plot button next to the calculated expression. 
                             </p>
                             <p>
-                                Check the evaluate box to evaluate functions. Check the expand button to expand the expression.
+                                Check the evaluate box to evaluate functions. Check the expand checkbox to expand the expression.
                             </p>
                         </div>
                     </div>
@@ -254,9 +254,11 @@
         var supported = nerdamer.supported().sort(),
             l = supported.length,
             supportlist = $('#supported-functions');
+        var excluded = ['IF', 'setEquation'];
         for(var i=0; i<supported.length; i++) {
             var name = supported[i];
-            supportlist.append($('<a href="./functions/'+name+'.html">'+name+'</a>'));
+            if(excluded.indexOf(name) === -1)
+                supportlist.append($('<a href="./functions/'+name+'.html">'+name+'</a>'));
         }
         
     </script>
