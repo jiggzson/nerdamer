@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.12',
+    var version = '0.7.13',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -50,7 +50,7 @@ var nerdamer = (function(imports) {
             VALIDATION_REGEX: /^[a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ][a-z\d\_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ]*$/i,
             //Aliases
             ALIASES: {
-                'π': 'PI'
+                'π': 'pi'
             }
         },
         
@@ -3036,6 +3036,9 @@ var nerdamer = (function(imports) {
                     else {
                         var unsubbed = e;
                         // make substitutions
+                        //first sub in aliases
+                        if(e in Settings.ALIASES)
+                            e = _.parse(Settings.ALIASES[e]);
                         //constants take higher priority
                         if(e in constants)
                             e = new Symbol(constants[e]);

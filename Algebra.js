@@ -2262,6 +2262,11 @@ if((typeof module) !== 'undefined') {
             return status;
         },
         gcd: function(a, b) { 
+            if(a.group === S && b.group === S && a.value !== b.value
+                    || a.group === EX 
+                    || b.group === EX)
+                return _.symfunction('gcd', arguments);
+            
             if(a.group === CB || b.group === CB) {
                 var q = _.divide(a.clone(), b.clone()); //get the quotient
                 var t = _.multiply(b.clone(), q.getDenom());//multiply by the denominator
@@ -2302,7 +2307,8 @@ if((typeof module) !== 'undefined') {
                     T = __.div(a, t);
                     b = T[1]; 
                     if(T[0].equals(0)) {
-                        return _.multiply(new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier)), b);
+                        //return _.multiply(new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier)), b);
+                        new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier));
                     }
                     a = t; 
                 }
@@ -2317,7 +2323,11 @@ if((typeof module) !== 'undefined') {
                         x.multiplier = x.multiplier.divide(gcd);
                     });
                 }
-
+                
+                //return symbolic function for gcd in indeterminate form
+                if(a.equals(1) && !a.isConstant() && !b.isConstant())
+                    return _.symfunction('gcd', arguments);
+                
                 return a;
             }
         },
@@ -2647,3 +2657,7 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer('gcd(x^y,x)');
+console.log(x.toString())
+console.log('done')

@@ -291,7 +291,7 @@ if((typeof module) !== 'undefined') {
      * @param {type} solve_for
      * @returns {Array}
      */
-    var solve = function(eqns, solve_for, solutions) {
+    var solve = function(eqns, solve_for, solutions) { 
         solve_for = solve_for || 'x'; //assumes x by default
         //If it's an array then solve it as a system of equations
         if(isArray(eqns)) {
@@ -649,9 +649,15 @@ if((typeof module) !== 'undefined') {
     };
     
     nerdamer.register([
+//        {
+//            name: 'solveEquations',
+//            parent: 'nerdamer',
+//            visible: true,
+//            build: function(){ return solve; }
+//        },
         {
             name: 'solveEquations',
-            parent: 'nerdamer',
+            parent: 'Solve',
             visible: true,
             build: function(){ return solve; }
         },
@@ -679,3 +685,5 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer('solveEquations(x+y=3, x+3*y=-1)')
