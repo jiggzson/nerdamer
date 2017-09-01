@@ -851,7 +851,7 @@ var nerdamer = (function(imports) {
                 factors.updateHash();
                 return factors;
             },
-            ifactor: function(n, maxn) { console.log('called')
+            ifactor: function(n, maxn) { 
                 n = new bigInt(n); 
                 maxn = maxn || 1000000; //safety
                 //container for the factors
@@ -876,7 +876,7 @@ var nerdamer = (function(imports) {
                     //give the number one more try
                     i--;
                 }
-console.log(factors, 'here')
+
                 return factors;
             },
             //factors a number into rectangular box. If sides are primes that this will be
@@ -1258,7 +1258,7 @@ console.log(factors, 'here')
         else if(isVector(obj)) { 
             var l = obj.elements.length,
                 c = [];
-            for(var i=0; i<l; i++) c.push(obj.elements[i].text());
+            for(var i=0; i<l; i++) c.push(obj.elements[i].text(option));
             return '['+c.join(',')+']';
         }
         else {
@@ -6797,7 +6797,8 @@ console.log(factors, 'here')
         //check if it's not already a constant
         if(v in _.constants)
             err('Cannot set value for constant '+v);
-        if(val === 'delete') delete VARS[v];
+        if(val === 'delete' || val === '') 
+            delete VARS[v];
         else {
             VARS[v] = isSymbol(val) ? val : _.parse(val);
         }
