@@ -42,7 +42,7 @@ FUNCTIONS = {
         type: 'nerdamer',
         usage: 'nerdamer.setContant(name, value)',
         full_name: 'setContant',
-        description: 'Sets a constant value which nerdamer will automatically substitute when parsing expression/equation',
+        description: 'Sets a constant value which nerdamer will automatically substitute when parsing expression/equation. Set to "delete" or "" to unset.',
         parameters: {
             name: {
                 type: 'String',
@@ -67,7 +67,7 @@ FUNCTIONS = {
         type: 'nerdamer',
         usage: 'nerdamer.setVar(variable_name, value)',
         full_name: 'setVar',
-        description: 'Sets a known value in nerdamer. This differs from setConstant as the value can be overridden trough the scope. See example.',
+        description: 'Sets a known value in nerdamer. This differs from setConstant as the value can be overridden trough the scope. See example. Set to "delete" or "" to unset',
         parameters: {
             name: {
                 type: 'String',
