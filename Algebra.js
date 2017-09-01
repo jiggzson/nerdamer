@@ -2657,7 +2657,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var x = nerdamer('gcd(x^y,x)');
-console.log(x.toString())
-console.log('done')
