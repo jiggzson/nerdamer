@@ -2308,7 +2308,7 @@ if((typeof module) !== 'undefined') {
                     b = T[1]; 
                     if(T[0].equals(0)) {
                         //return _.multiply(new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier)), b);
-                        new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier));
+                        return new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier));
                     }
                     a = t; 
                 }
@@ -2657,3 +2657,7 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+//var x = nerdamer('gcd(x^y,x)');
+//console.log(x.toString())
+//console.log('done')

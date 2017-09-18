@@ -13,10 +13,12 @@ describe('Algebra', function () {
             }, {
                 given:'gcd(2*x^2+2*x+1,x+1)',
                 expected: '1'
-            }, {
+            }, 
+            {
                 given:'gcd(x^2+2*x+1,x+1)',
                 expected: '1+x'
-            }, {
+            }, 
+            {
                 given:'gcd(6*x^9+24*x^8+15*x^7+6*x^2+24*x+15, (2*x^2+8*x+5))',
                 expected: '2*x^2+8*x+5'
             }, {

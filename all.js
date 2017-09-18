@@ -14,3 +14,13 @@ require('./Extra.js');
 
 //export nerdamer
 module.exports = nerdamer;
+
+
+
+//var x = nerdamer('pfactor(100!)');
+//var x = nerdamer('pfactor(25563987313)');
+var x = nerdamer('pfactor(93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000)');
+console.log(x.text())
+
+var x = nerdamer('(x/(x+y))^n');
+console.log(x.toString());

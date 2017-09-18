@@ -71,6 +71,48 @@ if((typeof module) !== 'undefined') {
         this.RHS = rhs; //right and side
     };
     
+    var removeDenom = function(a, b) {
+        //swap the groups
+        if(b.group === CP && b.group !== CP) {
+            var t = a; a = b; b = t; //swap
+        }
+            
+        //scan to eliminate denominators
+        if(a.group === CB) { 
+            var t = new Symbol(1),
+                newRHS = b.clone();
+            a.each(function(y) {
+                if(y.power.lessThan(0))
+                    newRHS = _.divide(newRHS, y);
+                else
+                    t = _.multiply(t, y);
+            });
+            a = t;
+            b = newRHS;
+        }
+        else if(a.group === CP) { 
+            //the logic: loop through each and if it has a denominator then multiply it out on both ends
+            //and then start over
+            for(var x in a.symbols) {
+                var sym = a.symbols[x];
+                if(sym.group === CB) {
+                    for(var y in sym.symbols) {
+                        var sym2 = sym.symbols[y];
+                        if(sym2.power.lessThan(0)) {
+                            return removeDenom(
+                                    _.expand(_.multiply(sym2.clone().toLinear(), a)),
+                                    _.expand(_.multiply(sym2.clone().toLinear(), b)),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+            
+            
+        return _.expand(_.subtract(a, b));
+    };
+    
     Equation.prototype = {
         toString: function() {
             return this.LHS.toString()+'='+this.RHS.toString();
@@ -78,8 +120,8 @@ if((typeof module) !== 'undefined') {
         text: function(option) { 
             return this.LHS.text(option)+'='+this.RHS.text(option);
         },
-        toLHS: function() {
-            return _.subtract(this.LHS.clone(), this.RHS.clone());
+        toLHS: function() { 
+            return removeDenom(this.LHS.clone(), this.RHS.clone());
         },
         clone: function() {
             return new Equation(this.LHS.clone(), this.RHS.clone());
@@ -100,20 +142,17 @@ if((typeof module) !== 'undefined') {
     };
     // A utility function to parse an expression to left hand side when working with strings
 
-    var toLHS = function(eqn) {
-        //if it's a vector return it as such
-        if(eqn instanceof core.Vector)
-            eqn = eqn.elements[0];
+    var toLHS = function(eqn) { 
         //If it's an equation then call its toLHS function instead
         if(eqn instanceof Equation)
             return eqn.toLHS();
         var es = eqn.split('=');
         if(es[1] === undefined) es[1] = '0';
         var e1 = _.parse(es[0]), e2 = _.parse(es[1]);
-        return _.subtract(e1, e2);
+        return removeDenom(e1, e2);
     };
     // Solves a system of equations
-    var sys_solve = function(eqns, var_array) { 
+    var sys_solve = function(eqns, var_array) {
         //check if a var_array was specified
         nerdamer.clearVars();
         //parse all the equations to LHS. Remember that they come in as strings
@@ -294,17 +333,15 @@ if((typeof module) !== 'undefined') {
      * @param {type} solve_for
      * @returns {Array}
      */
-    var solve = function(eqns, solve_for, solutions) { 
-        //super lazy fix. Just make it an array of strings. Works but not really efficient
-        if(core.Utils.isVector(eqns))
-            eqns = eqns.elements.map(function(x){ return x.toString(); });
-        
+    var solve = function(eqns, solve_for, solutions) {
+        //unwrap the vector since what we want are the elements
+        if(eqns instanceof core.Vector)
+            eqns = eqns.elements;
         solve_for = solve_for || 'x'; //assumes x by default
         //If it's an array then solve it as a system of equations
         if(isArray(eqns)) {
             return sys_solve.apply(undefined, arguments);
         }
-        
         solutions = solutions || [];
         //maybe we get lucky
         if(eqns.group === S && eqns.contains(solve_for)) {
@@ -452,12 +489,13 @@ if((typeof module) !== 'undefined') {
                             var c = fractionals[p.den];
                             fractionals[p.den] = c ? c++ : 1;
                         }
-                        else if(p.sign() === -1){
-                            var factor = _.parse(solve_for+'^'+Math.abs(p));
+                        else if(p.sign() === -1){ 
+                            var factor = _.parse(solve_for+'^'+Math.abs(p)); //this
+                            //unwrap the symbol's denoniator
                             symbol.each(function(y, index) {
-                               if(y.contains(solve_for)) {
-                                   symbol.symbols[index] = _.multiply(y, factor.clone());
-                               } 
+                                if(y.contains(solve_for)) {
+                                    symbol.symbols[index] = _.multiply(y, factor.clone());
+                                } 
                             });
                             fractionals = {};
                             return correct_denom(_.parse(symbol));
@@ -526,7 +564,6 @@ if((typeof module) !== 'undefined') {
                 return [rhs, lhs];
             }
         };
-        
         //first remove any denominators
         eq = correct_denom(eq);  
         //correct fractionals. I can only handle one type right now
@@ -573,7 +610,7 @@ if((typeof module) !== 'undefined') {
                 attempt_Newton(eq);
             }
         }
-        else {
+        else { 
             //The idea here is to go through the equation and collect the coefficients
             //place them in an array and call the quad or cubic function to get the results
             if(!eq.hasFunc(solve_for) && eq.isComposite()) {
@@ -656,6 +693,9 @@ if((typeof module) !== 'undefined') {
         return _.equals(a, b);
     };
     
+    //link the Equation class back to the core
+    core.Equation = Equation;
+    
     nerdamer.register([
         {
             name: 'solveEquations',
@@ -688,3 +728,6 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer('factor(100!)');
+console.log(x.toString())
