@@ -357,7 +357,42 @@ describe('Nerdamer core', function () {
             expect(value).toEqual(testCases[i].expectedValue);
         }
     });
+    
+    it('should handle imaginary log arguments', function () {
+        // given
+        var testCases = [
+            {
+                given: 'log(5*i)',
+                expected: '1.5707963267948966*i+1.6094379124341003'
+            }, 
+            {
+                given: 'log(8+5*i)',
+                expected: '0.5585993153435624*i+2.24431818486607'
+            }, 
+            {
+                given: 'log(123-2*i)',
+                expected: '-0.01625872980512972*i+4.8123165343435135'
+            }, 
+            {
+                given: 'log(123-2*i+a)',
+                expected: '-atan2(123+a,-2)*i+1.5707963267948966*i+log(sqrt((123+a)^2+4))'
+            }, 
+            {
+                given: 'log(x+2*i)',
+                expected: '-atan2(x,2)*i+1.5707963267948966*i+log(sqrt(4+x^2))'
+            }
+        ];
 
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given);
+            var value = parsed.evaluate().text('decimals');
+
+            // then
+            expect(value).toEqual(testCases[i].expected);
+        }
+    });
+    
     it('should compute powers', function () {
         // given
         var testCases = [
