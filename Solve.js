@@ -101,7 +101,7 @@ if((typeof module) !== 'undefined') {
                         if(sym2.power.lessThan(0)) {
                             return removeDenom(
                                     _.expand(_.multiply(sym2.clone().toLinear(), a)),
-                                    _.expand(_.multiply(sym2.clone().toLinear(), b)),
+                                    _.expand(_.multiply(sym2.clone().toLinear(), b))
                             );
                         }
                     }
