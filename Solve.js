@@ -24,6 +24,7 @@ if((typeof module) !== 'undefined') {
         isSymbol = core.Utils.isSymbol,
         variables = core.Utils.variables,
         S = core.groups.S,
+
         PL = core.groups.PL,
         CB = core.groups.CB,
         CP = core.groups.CP,
@@ -54,7 +55,8 @@ if((typeof module) !== 'undefined') {
             for(var x in this.symbols) {
                 var sym = this.symbols[x];
                 if(sym.group === PL && sym.hasNegativeTerms() || this.symbols[x].power.lessThan(0))
-                    return true;            }
+                    return true;
+            }
         }
         return false;
     };
