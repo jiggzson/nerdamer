@@ -24,7 +24,6 @@ if((typeof module) !== 'undefined') {
         isSymbol = core.Utils.isSymbol,
         variables = core.Utils.variables,
         S = core.groups.S,
-
         PL = core.groups.PL,
         CB = core.groups.CB,
         CP = core.groups.CP,
