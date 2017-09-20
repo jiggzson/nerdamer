@@ -54,8 +54,7 @@ if((typeof module) !== 'undefined') {
             for(var x in this.symbols) {
                 var sym = this.symbols[x];
                 if(sym.group === PL && sym.hasNegativeTerms() || this.symbols[x].power.lessThan(0))
-                    return true;
-            }
+                    return true;            }
         }
         return false;
     };
@@ -101,7 +100,7 @@ if((typeof module) !== 'undefined') {
                         if(sym2.power.lessThan(0)) {
                             return removeDenom(
                                     _.expand(_.multiply(sym2.clone().toLinear(), a)),
-                                    _.expand(_.multiply(sym2.clone().toLinear(), b)),
+                                    _.expand(_.multiply(sym2.clone().toLinear(), b))
                             );
                         }
                     }
