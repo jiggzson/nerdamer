@@ -303,6 +303,53 @@ describe('Algebra', function () {
         }
     });
     
+    it('should prime factor correctly', function () {
+        // given
+        var testCases = [
+            {
+                given: 'pfactor(100!)',
+                expected: '(11^9)*(13^7)*(17^5)*(19^5)*(23^4)*(29^3)*(2^97)*(31^3)*(37^2)*(3^48)*(41^2)*(43^2)*(47^2)*(53)*(59)*(5^24)*(61)*(67)*(71)*(73)*(79)*(7^16)*(83)*(89)*(97)'
+            }, 
+            {
+                given: 'pfactor(100)',
+                expected: '(2^2)*(5^2)'
+            }, 
+            {
+                given: 'pfactor(8)',
+                expected: '(2^3)'
+            }, 
+            {
+                given: 'pfactor(999999999999)',
+                expected: '(101)*(11)*(13)*(37)*(3^3)*(7)*(9901)'
+            }, 
+            {
+                given: 'pfactor(1000000005721)',
+                expected: '(1000000005721)'
+            }, 
+            {
+                given: 'pfactor(1000000005721092)',
+                expected: '(131)*(212044106387)*(2^2)*(3^2)'
+            }, 
+            {
+                given: 'pfactor(-10000000114421840327308)',
+                expected: '(-2^2)*(480827)*(7)*(8345706745687)*(89)'
+            }, 
+            {
+                given: 'pfactor(-7877474663)',
+                expected: '(-97)*(180871)*(449)'
+            }, 
+            
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var result = nerdamer(testCases[i].given);
+
+            // then
+            expect(result.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
     it('should get coeffs', function () {
         // given
         var testCases = [
