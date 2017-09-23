@@ -65,7 +65,7 @@ if((typeof module) !== 'undefined') {
      * This is an equation that has a left hand side and a right hand side
      */
     function Equation(lhs, rhs) {
-        if(rhs.isConstant() && lhs.isConstant() && !lhs.equals(rhs))
+        if(rhs.isConstant() && lhs.isConstant() && !lhs.equals(rhs) || lhs.equals(core.Settings.IMAGINARY))
             throw new Error(lhs.toString()+' does not equal '+rhs.toString());
         this.LHS = lhs; //left hand side
         this.RHS = rhs; //right and side

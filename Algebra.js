@@ -824,13 +824,22 @@ if((typeof module) !== 'undefined') {
             //rarr for polynomial of power n is of format [n, coeff x^n, coeff x^(n-1), ..., coeff x^0]
             decp = decp || 7;
             var zeros = 0;
+            var known_roots = [];
             var get_roots = function(rarr, powers, max) {
-                var roots = calcroots(rarr, powers, max);
+                var roots = calcroots(rarr, powers, max).concat(known_roots);
                 for(var i=0;i<zeros;i++) roots.unshift(0);
                 return roots;
             };
             
             if(symbol instanceof Symbol && symbol.isPoly()) { 
+                symbol.distributeMultiplier();
+                //make it so the symbol has a constants as the lowest term
+                if(symbol.group === PL) {
+                    var lowest_pow = core.Utils.arrayMin(keys(symbol.symbols));
+                    var lowest_symbol = symbol.symbols[lowest_pow].clone().toUnitMultiplier();
+                    symbol = _.expand(_.divide(symbol, lowest_symbol));
+                    known_roots.push(0); //add zero since this is a known root
+                }
                 if(symbol.group === core.groups.S) { 
                     return [0];
                 }
@@ -861,8 +870,8 @@ if((typeof module) !== 'undefined') {
                     // Insert the coeffient but from the front
                     rarr.unshift(c);
                 }
-
-                rarr.push(symbol.symbols['#'].multiplier);
+                
+                rarr.push(symbol.symbols[CONST_HASH].multiplier);
 
                 if(sym.group === S) rarr[0] = sym.multiplier;//the symbol maybe of group CP with one variable
 

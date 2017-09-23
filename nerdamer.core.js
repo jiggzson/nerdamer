@@ -45,6 +45,8 @@ var nerdamer = (function(imports) {
             FUNCTION_MODULES: [Math],
             //Allow certain characters
             ALLOW_CHARS: ['π'],
+            //Allow nerdamer to convert multi-character variables
+            USE_MULTICHARACTER_VARS: true,
             //Allow changing of power operator
             POWER_OPERATOR: '^',
             //The variable validation regex
@@ -1337,7 +1339,7 @@ var nerdamer = (function(imports) {
         else if(isVector(obj)) { 
             var l = obj.elements.length,
                 c = [];
-            for(var i=0; i<l; i++) c.push(obj.elements[i].text());
+            for(var i=0; i<l; i++) c.push(obj.elements[i].text(option));
             return '['+c.join(',')+']';
         }
         else {
@@ -2936,6 +2938,7 @@ var nerdamer = (function(imports) {
                 'arg'               : [ arg, 1],
                 'polarform'         : [ polarform, 1],
                 'rectform'          : [ rectform, 1],
+                'sort'              : [ sort, [1, 2]],
             };
 
         this.error = err;
@@ -3203,6 +3206,11 @@ var nerdamer = (function(imports) {
                 if(!first.match(/[\+\-\/\*]/)) before = str.charAt(start-1);
                 if(before.match(/[a-z]/i)) d = '';
                 return group1+d+group2;
+            })
+            .replace(/([a-z0-9_]+)/g, function(match, a) {
+                if(Settings.USE_MULTICHARACTER_VARS === false && !(a in functions))
+                    return a.split('').join('*');
+                return a;
             })
             .replace(/([a-z0-9_]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
                 var g1 = a || c,
@@ -3657,7 +3665,7 @@ var nerdamer = (function(imports) {
                         else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL) 
                             f = this.toTeX(e.args) + (fname === FACTORIAL ? '!' : '!!');
                         else  {
-                            f = '\\mathrm'+LaTeX.braces(fname) + LaTeX.brackets(this.toTeX(e.args), 'parens');
+                            f = '\\mathrm'+LaTeX.braces(fname.replace(/_/g, '\\_')) + LaTeX.brackets(this.toTeX(e.args), 'parens');
                         }
                             
                         TeX.push(f);
@@ -4006,6 +4014,27 @@ var nerdamer = (function(imports) {
             if(Settings.PARSE2NUMBER && allNumbers(args))
                 return Math.min.apply(null, args);
             return _.symfunction('min', args);
+        }
+        
+        function sort(symbol, opt) {
+            opt = opt ? opt.toString() : 'asc';
+            var getval = function(e) {
+                if(e.group === FN) {
+                    if(e.fname === '')
+                        return getval(e.args[0]);
+                    return e.fname;
+                }
+                
+                return e.value;
+            };
+            var symbols = symbol.collectSymbols();
+            return new Vector(symbols.sort(function(a, b) {
+                var aval = getval(a),
+                    bval = getval(b);
+                if(opt === 'desc')
+                    return bval - aval;
+                return aval - bval;
+            }));
         }
         
         /**
@@ -5754,9 +5783,18 @@ var nerdamer = (function(imports) {
                 index =  inverted ? 1 : 0;
             /*if(group === N) //do nothing since we want to return top & bottom blank; */
             if(group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) { 
-                var value = symbol.value;
-                var greek = this.greek[value];
-                if(greek) value = greek;
+                var value = symbol.value; 
+                if(value.replace) 
+                    value = value.replace(/(.+)_$/, function(match, g1) {
+                        return g1+'\\_'
+                    });
+                //split it so we can check for instances of alpha as well as alpha_b
+                var t_varray = String(value).split('_'); 
+                var greek = this.greek[t_varray[0]];
+                if(greek) {
+                    t_varray[0] = greek;
+                    value = t_varray.join('_');
+                }
                 v[index] = value;
             }
             else if(group === FN || previousGroup === FN) { 
@@ -5793,7 +5831,7 @@ var nerdamer = (function(imports) {
                     v[index] = input[0]+(fname === FACTORIAL ? '!' : '!!');
                 }
                 else { 
-                    var name = fname!=='' ? '\\mathrm'+this.braces(fname) : '';
+                    var name = fname!=='' ? '\\mathrm'+this.braces(fname.replace(/_/g, '\\_')) : '';
                     v[index] = name+this.brackets(input.join(','), 'parens');
                 }  
             }
@@ -6960,6 +6998,11 @@ var nerdamer = (function(imports) {
     libExports.set = function(setting, value) {
         //current options:
         //PARSE2NUMBER, suppress_errors
+        if(typeof setting === 'object')
+            for(var x in setting) { console.log(x)
+                libExports.set(x, setting[x]);
+            }
+                
         var disallowed = ['SAFE'];
         if(disallowed.indexOf(setting) !== -1) err('Cannot modify setting: '+setting);
         Settings[setting] = value;
@@ -7023,7 +7066,8 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
+var x = nerdamer.atan2('pi', 1).evaluate();
+console.log(x.text())
 //TODO LIST:
 //1. finalize factor including ifactor 
 //2. complex numbers log. Use: log(a + b) = log(a * (1 + b/a)) = log a + log(1 + b/a)
