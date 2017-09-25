@@ -6714,10 +6714,15 @@ var nerdamer = (function(imports) {
      */
     
     var libExports = function(expression, subs, option, location) { 
+        //is the user declaring a function?
+        var fndec = /^([a-z_][a-z\d\_]*)\(([a-z_,\s]*)\):=(.+)$/gi.exec(expression);
+        if(fndec) 
+            return nerdamer.setFunction(fndec[1], fndec[2].split(','), fndec[3])
+
         var variable, fn, args;
         //convert any expression passed in to a string
         if(expression instanceof Expression) expression = expression.toString();
-        
+
         var multi_options = isArray(option),
             expand = 'expand',
             numer = multi_options ? option.indexOf('numer') !== -1 : option === 'numer';
