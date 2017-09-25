@@ -145,10 +145,21 @@ describe('TeX features', function () {
                 given: '(x+1)!',
                 TeX: '\\left(x+1\\right)!',
                 decimalTeX: '\\left(x+1\\right)!'
-            }, {
+            }, 
+            {
                 given: 'x!+(x+1)!',
                 TeX: '\\left(x+1\\right)!+x!',
                 decimalTeX: '\\left(x+1\\right)!+x!'
+            },
+            {
+                given: '(x/(x+y))^n',
+                TeX: '\\frac{x^{n}}{x+y}',
+                decimalTeX: '\\frac{x^{n}}{x+y}'
+            },
+            {
+                given: '1/(a*b)',
+                TeX: '\\frac{1}{a \\cdot b}',
+                decimalTeX: '\\frac{1}{a \\cdot b}'
             }
         ];
 

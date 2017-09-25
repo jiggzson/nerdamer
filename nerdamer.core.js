@@ -5655,6 +5655,7 @@ var nerdamer = (function(imports) {
         //grab a list of supported functions but remove the excluded ones found in exclFN
         
         latex: function(symbol, option) { 
+            symbol = symbol.clone(); //leave original as-is
             if(isArray(symbol)) {
                 var LaTeXArray = [];
                 for(var i=0; i<symbol.length; i++) {
@@ -5734,8 +5735,6 @@ var nerdamer = (function(imports) {
                 p_array[index] = p;
 
                 //special case group P and decimal
-
-
                 var retval = (negative ? '-': '')+this.set(m_array, v_array, p_array, symbol.group === CB);
 
                 return retval.replace(/\+\-/gi, '-');
@@ -5785,7 +5784,7 @@ var nerdamer = (function(imports) {
             var group = symbol.group,
                 previousGroup = symbol.previousGroup,
                 v = ['', ''],
-                index =  inverted ? 1 : 0;
+                index =  inverted ? 1 : 0; 
             /*if(group === N) //do nothing since we want to return top & bottom blank; */
             if(group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) { 
                 var value = symbol.value; 
@@ -5859,7 +5858,9 @@ var nerdamer = (function(imports) {
 
                 v[index] = !(symbol.isLinear() && symbol.multiplier.equals(1)) || negative ? this.brackets(value, 'parens') : value;
             }
-            else if(group === CB || previousGroup === EX) { 
+            else if(group === CB || previousGroup === EX || previousGroup === CB) { 
+                if(group === CB)
+                    symbol.distributeExponent();
                 //this almost feels a little like cheating but I need to know if I should be wrapping the symbol
                 //in brackets or not. We'll do this by checking the value of the numerator and then comparing it 
                 //to whether the symbol value is "simple" or not.
@@ -5879,6 +5880,7 @@ var nerdamer = (function(imports) {
                     }  
                     return container;
                 };
+                
                 //generate latex for each of them
                 symbol.each(function(x) { 
                     var isDenom = isNegative(x.power),
@@ -7071,8 +7073,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-//TODO LIST:
-//1. finalize factor including ifactor 
-//2. complex numbers log. Use: log(a + b) = log(a * (1 + b/a)) = log a + log(1 + b/a)
-//3. complex numbers trig

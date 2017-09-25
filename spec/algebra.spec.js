@@ -337,8 +337,7 @@ describe('Algebra', function () {
             {
                 given: 'pfactor(-7877474663)',
                 expected: '(-97)*(180871)*(449)'
-            }, 
-            
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
