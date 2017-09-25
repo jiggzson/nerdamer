@@ -31,7 +31,7 @@ if((typeof module) !== 'undefined') {
         isArray = core.Utils.isArray;
     //version solve
     core.Solve = {
-        version: '1.2.2',
+        version: '1.2.3',
         solve: function(eq, variable) {
             var solution = solve(eq, String(variable));
             return new core.Vector(solution);
@@ -564,6 +564,18 @@ if((typeof module) !== 'undefined') {
                 return [rhs, lhs];
             }
         };
+        //separate the equation
+        var separate = function(eq) {
+            var lhs = new Symbol(0),
+                rhs = new Symbol(0);
+            eq.each(function(x) {
+                if(x.contains(solve_for, true))
+                    lhs = _.add(lhs, x.clone());
+                else
+                    rhs = _.subtract(rhs, x.clone());
+            });
+            return [lhs, rhs];
+        };
         //first remove any denominators
         eq = correct_denom(eq);  
         //correct fractionals. I can only handle one type right now
@@ -613,13 +625,21 @@ if((typeof module) !== 'undefined') {
         else { 
             //The idea here is to go through the equation and collect the coefficients
             //place them in an array and call the quad or cubic function to get the results
-            if(!eq.hasFunc(solve_for) && eq.isComposite()) {
+            if(!eq.hasFunc(solve_for) && eq.isComposite()) { 
                 try {
                     var coeffs = core.Utils.getCoeffs(eq, solve_for);
                     var l = coeffs.length,
                         deg = l-1; //the degree of the polynomial
                     //handle the problem based on the degree
                     switch(deg) {
+                        case 0:
+                            var separated = separate(eq);
+                            var lhs = separated[0],
+                                rhs = separated[1];
+                            if(lhs.group === core.groups.EX) {
+                                add_to_result(_.parse(core.Utils.format('log(({0})/({2}))/log({1})', rhs, lhs.value, lhs.multiplier)));
+                            }
+                            break;
                         case 1:
                             //nothing to do but to return the quotient of the constant and the LT
                             //e.g. 2*x-1
@@ -654,7 +674,28 @@ if((typeof module) !== 'undefined') {
                             solutions.push(_.subtract(lhs, rhs));
                     }
                 }
-                catch(error) {; }
+                catch(error) {
+                    //Let's try this another way
+                    try { 
+                        //1. if the symbol is in the form a*b*c*... then the solution is zero if 
+                        //either a or b or c is zero.
+                        if(eq.group === CB)
+                            solutions.push(0);
+                        else if(eq.group === CP) {
+                            var separated = separate(eq);
+                            var lhs = separated[0],
+                                rhs = separated[1];
+                            
+                            //reduce the equation
+                            if(lhs.group === core.groups.EX && lhs.value === solve_for) {
+                                //change the base of both sides
+                                var p = lhs.power.clone().invert();
+                                solutions.push(_.pow(rhs, p));
+                            }
+                        }
+                    }
+                    catch(error){;}
+                }
             }
         }
         

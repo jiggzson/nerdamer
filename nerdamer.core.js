@@ -2183,8 +2183,13 @@ var nerdamer = (function(imports) {
             if(this.group === N && this.multiplier.equals(1)) return this;
             if(this.group === EX && !isSymbol(p)) {
                 this.group = this.previousGroup; 
-                delete this.previousGroup;
-                this.power = p;
+                delete this.previousGroup; 
+                if(this.group === N) {
+                    this.multiplier = new Frac(this.value);
+                    this.value = CONST_HASH;
+                }
+                else
+                    this.power = p;
             }
             else {
                 var isIntP = false,
@@ -4061,7 +4066,7 @@ var nerdamer = (function(imports) {
             if(symbol.isConstant() && typeof base !== 'undefined' && base.isConstant())
                 retval = new Symbol(Math2.bigLog(new Frac(+symbol)).divide(Math2.bigLog(new Frac(+base))));
             else if(symbol.group === EX && symbol.power.multiplier.lessThan(0) || symbol.power.toString() === '-1') {
-                symbol.power.negate();
+                symbol.power.negate(); 
                 //move the negative outside but keep the positive inside :)
                 retval = log(symbol).negate();
             } 
@@ -6999,7 +7004,7 @@ var nerdamer = (function(imports) {
         //current options:
         //PARSE2NUMBER, suppress_errors
         if(typeof setting === 'object')
-            for(var x in setting) { console.log(x)
+            for(var x in setting) { 
                 libExports.set(x, setting[x]);
             }
                 
@@ -7066,8 +7071,7 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-var x = nerdamer.atan2('pi', 1).evaluate();
-console.log(x.text())
+
 //TODO LIST:
 //1. finalize factor including ifactor 
 //2. complex numbers log. Use: log(a + b) = log(a * (1 + b/a)) = log a + log(1 + b/a)
