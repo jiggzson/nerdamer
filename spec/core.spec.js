@@ -15,12 +15,65 @@ describe('Nerdamer core', function () {
         // given
         var formula1 = '0/0';
         var formula2 = '0^0';
+        var formula3 = '-Infinity+Infinity';
 
         // when / then
         expect(function () { nerdamer(formula1) }).toThrowError();
         expect(function () { nerdamer(formula2) }).toThrowError();
+        expect(function () { nerdamer(formula3) }).toThrowError();
     });
+    
+    it('should correctly calculate Infinity', function () {
+        // given
+        var testCases = [
+            {
+                given: 'Infinity*Infinity',
+                expected: 'Infinity'
+            }, 
+            {
+                given: '-Infinity*Infinity',
+                expected: '-Infinity'
+            }, 
+            {
+                given: '-Infinity*-Infinity',
+                expected: 'Infinity'
+            }, 
+            {
+                given: '-a*-Infinity',
+                expected: 'Infinity*a'
+            }, 
+            {
+                given: '-a-Infinity',
+                expected: '-Infinity'
+            }, 
+            {
+                given: '-a*Infinity',
+                expected: '-Infinity*a'
+            }, 
+            {
+                given: '-a^Infinity',
+                expected: '-a^Infinity'
+            }, 
+            {
+                given: '-2^Infinity',
+                expected: '-Infinity'
+            }, 
+            {
+                given: '-2^-Infinity',
+                expected: '0'
+            }, 
+            
+        ];
 
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given);
+
+            // then
+            expect(parsed.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
     it('should perform simple arithmetic', function () {
         // given
         var testCases = [
@@ -598,7 +651,12 @@ describe('Nerdamer core', function () {
                     given: 'cot(5*pi/6)',
                     expected: '-sqrt(3)',
                     expectedValue: '-1.7320508075688772'
-                }
+                },
+                {
+                    given: 'acot(0)',
+                    expected: '(1/2)*pi',
+                    expectedValue: '1.5707963267948966'
+                },
             ];
 
             for (var i = 0; i < testCases.length; ++i) {

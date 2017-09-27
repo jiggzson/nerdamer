@@ -1739,10 +1739,11 @@ var nerdamer = (function(imports) {
      * @returns {Symbol}
      */
     function Symbol(obj) { 
+        var isInfinity = obj === 'Infinity'
         //this enables the class to be instantiated without the new operator
         if(!(this instanceof Symbol)) { return new Symbol(obj); };
         //define numeric symbols
-        if(!isNaN(obj) && obj !== 'Infinity') { 
+        if(!isNaN(obj) && !isInfinity) { 
             this.group = N;
             this.value = CONST_HASH; 
             this.multiplier = new Frac(obj);
@@ -1754,6 +1755,7 @@ var nerdamer = (function(imports) {
             this.value = obj;
             this.multiplier = new Frac(1);
             this.imaginary = obj === Settings.IMAGINARY;
+            this.isInfinity = isInfinity;
         }
         
         //As of 6.0.0 we switched to infinite precision so all objects have a power
@@ -1773,6 +1775,14 @@ var nerdamer = (function(imports) {
         var s = new Symbol(Settings.IMAGINARY);
         s.imaginary = true;
         return s;
+    };
+    
+    /**
+     * Return nerdamer's representation of Infinity
+     * @returns {Symbol} 
+     */
+    Symbol.infinity = function() {
+        return new Symbol('Infinity');
     };
     
     Symbol.shell = function(group, value) { 
@@ -2229,7 +2239,7 @@ var nerdamer = (function(imports) {
             var clone = c || new Symbol(0),
                 //list of properties excluding power as this may be a symbol and would also need to be a clone.
                 properties = [
-                    'value', 'group', 'length', 'previousGroup', 'imaginary', 'fname', 'args'],
+                    'value', 'group', 'length', 'previousGroup', 'imaginary', 'fname', 'args', 'isInfinity'],
                 l = properties.length, i;
             if(this.symbols) {
                 clone.symbols = {};
@@ -2821,6 +2831,350 @@ var nerdamer = (function(imports) {
                 e:  Math.E,
                 pi: Math.PI
             };
+            
+        var trig = this.Trig = {
+            //container for trigonometric function
+            cos: function(symbol) {
+                if(Settings.PARSE2NUMBER && symbol.isConstant()) {
+                    return new Symbol(Math.cos(symbol.valueOf()));
+                }
+
+                var retval, 
+                    c = false,
+                    q = getQuadrant(symbol.multiplier.toDecimal()),
+                    m = symbol.multiplier.abs();
+                symbol.multiplier = m;
+
+                if(symbol.isPi() && symbol.isLinear()) { 
+                    //return for 1 or -1 for multiples of pi
+                    if(isInt(m)) {
+                        retval  = new Symbol(even(m) ? 1 : -1);
+                    } 
+                    else {
+                        var n = Number(m.num), d = Number(m.den);
+                        if(d === 2) retval = new Symbol(0);
+                        else if(d === 3) {
+                            retval = _.parse('1/2'); c = true;
+                        }
+                        else if(d === 4) {
+                            retval = _.parse('1/sqrt(2)'); c = true;
+                        }
+                        else if(d === 6) {
+                            retval = _.parse('sqrt(3)/2'); c = true;
+                        }
+                        else retval = _.symfunction('cos', [symbol]);
+                    }
+                }
+
+                if(c && (q === 2 || q === 3)) retval.negate();
+
+                if(!retval) retval = _.symfunction('cos', [symbol]);
+
+                return retval;
+            },
+            sin: function(symbol) {
+                if(symbol.isImaginary()) {
+
+                }
+                if(Settings.PARSE2NUMBER && symbol.isConstant()) {
+                    return new Symbol(Math.sin(symbol.valueOf()));
+                }
+                var retval, 
+                    c = false,
+                    q = getQuadrant(symbol.multiplier.toDecimal()),
+                    sign = symbol.multiplier.sign(),
+                    m = symbol.multiplier.abs();
+                symbol.multiplier = m;
+
+                if(symbol.isPi() && symbol.isLinear()) { 
+                    //return for 0 for multiples of pi
+                    if(isInt(m)) {
+                        retval  = new Symbol(0);
+                    } 
+                    else {
+                        var n = m.num, d = m.den;
+                        if(d == 2) {
+                            retval = new Symbol(1); c = true;
+                        }
+                        else if(d == 3) {
+                            retval = _.parse('sqrt(3)/2'); c = true
+                        }
+                        else if(d == 4) {
+                            retval = _.parse('1/sqrt(2)'); c = true;
+                        }
+                        else if(d == 6) {
+                            retval = _.parse('1/2'); c = true;
+                        }
+                        else retval = _.symfunction('sin', [symbol]);
+                    }
+                }
+
+                if(!retval) retval = _.multiply(new Symbol(sign), _.symfunction('sin', [symbol]));
+
+                if(c && (q === 3 || q === 4)) retval.negate();
+
+                return retval;
+            },
+            tan: function(symbol) {
+                if(Settings.PARSE2NUMBER && symbol.isConstant()) {
+                    return new Symbol(Math.tan(symbol.valueOf()));
+                }
+                var retval, 
+                    c = false,
+                    q = getQuadrant(symbol.multiplier.toDecimal()),
+                    m = symbol.multiplier;
+
+                symbol.multiplier = m;
+
+                if(symbol.isPi() && symbol.isLinear()) { 
+                    //return 0 for all multiples of pi
+                    if(isInt(m)) {
+                        retval  = new Symbol(0);
+                    } 
+                    else {
+                        var n = m.num, d = m.den;
+                        if(d == 2) err('tan is undefined for '+symbol.toString());
+                        else if(d == 3) {
+                            retval = _.parse('sqrt(3)'); c = true;
+                        }
+                        else if(d == 4) {
+                            retval = new Symbol(1); c = true;
+                        }
+                        else if(d == 6) {
+                            retval = _.parse('1/sqrt(3)'); c = true;
+                        }
+                        else retval = _.symfunction('tan', [symbol]);
+                    }
+                }
+
+                if(!retval) retval = _.symfunction('tan', [symbol]);
+
+                if(c && (q === 2 || q === 4)) retval.negate();
+
+                return retval;
+            },
+            sec: function(symbol) {
+                //let's be lazy
+                if(Settings.PARSE2NUMBER && symbol.isConstant()) {
+                    return new Symbol(Math2.sec(symbol.valueOf()));
+                }
+
+                var retval, 
+                    c = false,
+                    q = getQuadrant(symbol.multiplier.toDecimal()),
+                    m = symbol.multiplier.abs();
+                symbol.multiplier = m;
+
+                if(symbol.isPi() && symbol.isLinear()) { 
+                    //return for 1 or -1 for multiples of pi
+                    if(isInt(m)) {
+                        retval  = new Symbol(even(m) ? 1 : -1);
+                    } 
+                    else {
+                        var n = m.num, d = m.den;
+                        if(d == 2) err('sec is undefined for '+symbol.toString());
+                        else if(d == 3) {
+                            retval = new Symbol(2); c = true;
+                        }
+                        else if(d == 4) {
+                            retval = _.parse('sqrt(2)'); c = true;
+                        }
+                        else if(d == 6) {
+                            retval = _.parse('2/sqrt(3)'); c = true;
+                        }
+                        else retval = _.symfunction('sec', [symbol]);
+                    }
+                }
+
+                if(c && (q === 2 || q === 3)) retval.negate();
+
+                if(!retval) retval = _.symfunction('sec', [symbol]);
+
+                return retval;
+            },
+            csc: function(symbol) {
+                if(Settings.PARSE2NUMBER && symbol.isConstant()) {
+                    return new Symbol(Math2.csc(symbol.valueOf()));
+                }
+                var retval, 
+                    c = false,
+                    q = getQuadrant(symbol.multiplier.toDecimal()),
+                    m = symbol.multiplier.abs();
+
+                symbol.multiplier = m;
+
+                if(symbol.isPi() && symbol.isLinear()) { 
+                    //return for 0 for multiples of pi
+                    if(isInt(m)) {
+                        err('csc is undefined for '+symbol.toString());
+                    } 
+                    else {
+                        var n = m.num, d = m.den;
+                        if(d == 2) {
+                            retval = new Symbol(1); c = true;
+                        }
+                        else if(d == 3) {
+                            retval = _.parse('2/sqrt(3)'); c = true
+                        }
+                        else if(d == 4) {
+                            retval = _.parse('sqrt(2)'); c = true;
+                        }
+                        else if(d == 6) {
+                            retval = new Symbol(2); c = true;
+                        }
+                        else retval = _.symfunction('csc', [symbol]);
+                    }
+                }
+
+                if(!retval) retval = _.symfunction('csc', [symbol]);
+
+                if(c && (q === 3 || q === 4)) retval.negate();
+
+                return retval;
+            },
+            cot: function(symbol) {
+                if(Settings.PARSE2NUMBER && symbol.isConstant()) {
+                    return new Symbol(Math2.cot(symbol.valueOf()));
+                }
+                var retval, 
+                    c = false,
+                    q = getQuadrant(symbol.multiplier.toDecimal()),
+                    m = symbol.multiplier;
+
+                symbol.multiplier = m;
+
+                if(symbol.isPi() && symbol.isLinear()) { 
+                    //return 0 for all multiples of pi
+                    if(isInt(m)) {
+                        err('cot is undefined for '+symbol.toString());
+                    } 
+                    else {
+                        var n = m.num, d = m.den;
+                        if(d == 2) retval = new Symbol(0);
+                        else if(d == 3) {
+                            retval = _.parse('1/sqrt(3)'); c = true;
+                        }
+                        else if(d == 4) {
+                            retval = new Symbol(1); c = true;
+                        }
+                        else if(d == 6) {
+                            retval = _.parse('sqrt(3)'); c = true;
+                        }
+                        else retval = _.symfunction('cot', [symbol]);
+                    }
+                }
+
+                if(!retval) retval = _.symfunction('cot', [symbol]);
+
+                if(c && (q === 2 || q === 4)) retval.negate();
+
+                return retval;
+            },
+            acos: function(symbol) {
+                if(symbol.isConstant() && Settings.PARSE2NUMBER)
+                    return new Symbol(Math.acos(symbol));
+                return _.symfunction('acos', arguments);
+            },
+            asin: function(symbol) {
+                if(symbol.isConstant() && Settings.PARSE2NUMBER)
+                    return new Symbol(Math.asin(symbol));
+                return _.symfunction('asin', arguments);
+            },
+            atan: function(symbol) {
+                var retval;
+                if(symbol.isConstant() && Settings.PARSE2NUMBER)
+                    retval = new Symbol(Math.atan(symbol));
+                else if(symbol.equals(-1))
+                    retval = _.parse('-pi/4');
+                else 
+                    retval = _.symfunction('atan', arguments);
+                return retval;
+            },
+            asec: function(symbol) {
+                return trig.acos(symbol.invert());
+            },
+            acsc: function(symbol) {
+                return trig.asin(symbol.invert());
+            },
+            acot: function(symbol) {
+                var retval;
+                var k = _.parse('pi/2');
+                if(symbol.equals(0))
+                    retval = k;
+                else {
+                    if(symbol.lessThan(0))
+                        k.negate();
+                    retval = _.subtract(k, trig.atan(symbol));
+                }
+                return retval;    
+            }
+        };
+            
+        var trigh = this.Trigh = {
+            //container for hyperbolic trig function
+            cosh: function(symbol) {
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = _.parse(format('(e^({0})+1/e^({0}))/2', symbol));
+                else 
+                    retval = _.symfunction('cosh', arguments);
+                return retval;
+            },
+            sinh: function(symbol) {
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = _.parse(format('(e^({0})-1/e^({0}))/2', symbol));
+                else 
+                    retval = _.symfunction('sinh', arguments);
+                return retval;
+            },
+            tanh: function(symbol) {
+                var retval;
+                if(Settings.PARSE2NUMBER) {
+                    retval = _.parse(format('(e^(2*({0}))-1)/(e^(2*({0}))+1)', symbol));
+//                    if (symbol.equals('Infinity')) {
+//                        retval = new Symbol(1);
+//                    } 
+//                    else if (symbol.equals('-Infinity')) {
+//                        retval = new Symbol('-1')   
+//                    } 
+//                    else {
+//                        retval = _.parse(format('(e^(2*({0}))-1)/(e^(2*({0}))+1)', symbol));
+//                    }
+                }
+                else 
+                    retval = _.symfunction('tanh', arguments);
+                return retval;
+            },
+            sech: function(symbol) {
+
+            },
+            csch: function(symbol) {
+
+            },
+            coth: function(symbol) {
+
+            },
+            acosh: function(symbol) {
+
+            },
+            asinh: function(symbol) {
+
+            },
+            atanh: function(symbol) {
+
+            },
+            asech: function(symbol) {
+
+            },
+            acsch: function(symbol) {
+
+            },
+            acoth: function(symbol) {
+
+            }
+        };
+        
         //list all the supported operators
         var operators = this.operators = {
                 '^' : new Operator('^', 'pow', 6, false, false),
@@ -2872,21 +3226,24 @@ var nerdamer = (function(imports) {
             // Supported functions.
             // Format: function_name: [mapped_function, number_of_parameters]
             functions = this.functions = {
-                'cos'               : [ cos, 1],
-                'sin'               : [ sin, 1],
-                'tan'               : [ tan, 1],
-                'sec'               : [ sec, 1],
-                'csc'               : [ csc, 1],
-                'cot'               : [ cot, 1],
-                'acos'              : [ , 1],
-                'asin'              : [ , 1],
-                'atan'              : [ , 1],
+                'cos'               : [ trig.cos, 1],
+                'sin'               : [ trig.sin, 1],
+                'tan'               : [ trig.tan, 1],
+                'sec'               : [ trig.sec, 1],
+                'csc'               : [ trig.csc, 1],
+                'cot'               : [ trig.cot, 1],
+                'acos'              : [ trig.acos, 1],
+                'asin'              : [ trig.asin, 1],
+                'atan'              : [ trig.atan, 1],
+                'asec'              : [ trig.asec, 1],
+                'acsc'              : [ trig.acsc, 1],
+                'acot'              : [ trig.acot, 1],
                 'atan2'             : [ , 2],
                 'acoth'             : [ acoth, 1],
                 'asech'             : [ asech, 1],
-                'sinh'              : [ , 1],
-                'cosh'              : [ , 1],
-                'tanh'              : [ , 1],
+                'sinh'              : [ trigh.sinh, 1],
+                'cosh'              : [ trigh.cosh, 1],
+                'tanh'              : [ trigh.tanh, 1],
                 'asinh'             : [ , 1],
                 'acosh'             : [ acosh, 1],
                 'atanh'             : [ , 1],
@@ -4154,251 +4511,9 @@ var nerdamer = (function(imports) {
             return symbol;
         };
         
-        function cos(symbol) {
-            if(Settings.PARSE2NUMBER && symbol.isConstant()) {
-                return new Symbol(Math.cos(symbol.valueOf()));
-            }
-            
-            var retval, 
-                c = false,
-                q = getQuadrant(symbol.multiplier.toDecimal()),
-                m = symbol.multiplier.abs();
-            symbol.multiplier = m;
-
-            if(symbol.isPi() && symbol.isLinear()) { 
-                //return for 1 or -1 for multiples of pi
-                if(isInt(m)) {
-                    retval  = new Symbol(even(m) ? 1 : -1);
-                } 
-                else {
-                    var n = Number(m.num), d = Number(m.den);
-                    if(d === 2) retval = new Symbol(0);
-                    else if(d === 3) {
-                        retval = _.parse('1/2'); c = true;
-                    }
-                    else if(d === 4) {
-                        retval = _.parse('1/sqrt(2)'); c = true;
-                    }
-                    else if(d === 6) {
-                        retval = _.parse('sqrt(3)/2'); c = true;
-                    }
-                    else retval = _.symfunction('cos', [symbol]);
-                }
-            }
-            
-            if(c && (q === 2 || q === 3)) retval.negate();
-           
-            if(!retval) retval = _.symfunction('cos', [symbol]);
-
-            return retval;
-        }
-        
-        function sin(symbol) {
-            if(symbol.isImaginary()) {
-                
-            }
-            if(Settings.PARSE2NUMBER && symbol.isConstant()) {
-                return new Symbol(Math.sin(symbol.valueOf()));
-            }
-            var retval, 
-                c = false,
-                q = getQuadrant(symbol.multiplier.toDecimal()),
-                sign = symbol.multiplier.sign(),
-                m = symbol.multiplier.abs();
-            symbol.multiplier = m;
-            
-            if(symbol.isPi() && symbol.isLinear()) { 
-                //return for 0 for multiples of pi
-                if(isInt(m)) {
-                    retval  = new Symbol(0);
-                } 
-                else {
-                    var n = m.num, d = m.den;
-                    if(d == 2) {
-                        retval = new Symbol(1); c = true;
-                    }
-                    else if(d == 3) {
-                        retval = _.parse('sqrt(3)/2'); c = true
-                    }
-                    else if(d == 4) {
-                        retval = _.parse('1/sqrt(2)'); c = true;
-                    }
-                    else if(d == 6) {
-                        retval = _.parse('1/2'); c = true;
-                    }
-                    else retval = _.symfunction('sin', [symbol]);
-                }
-            }
-
-            if(!retval) retval = _.multiply(new Symbol(sign), _.symfunction('sin', [symbol]));
-            
-            if(c && (q === 3 || q === 4)) retval.negate();
-
-            return retval;
-        }
-        
-        function tan(symbol) {
-            if(Settings.PARSE2NUMBER && symbol.isConstant()) {
-                return new Symbol(Math.tan(symbol.valueOf()));
-            }
-            var retval, 
-                c = false,
-                q = getQuadrant(symbol.multiplier.toDecimal()),
-                m = symbol.multiplier;
-
-            symbol.multiplier = m;
-            
-            if(symbol.isPi() && symbol.isLinear()) { 
-                //return 0 for all multiples of pi
-                if(isInt(m)) {
-                    retval  = new Symbol(0);
-                } 
-                else {
-                    var n = m.num, d = m.den;
-                    if(d == 2) err('tan is undefined for '+symbol.toString());
-                    else if(d == 3) {
-                        retval = _.parse('sqrt(3)'); c = true;
-                    }
-                    else if(d == 4) {
-                        retval = new Symbol(1); c = true;
-                    }
-                    else if(d == 6) {
-                        retval = _.parse('1/sqrt(3)'); c = true;
-                    }
-                    else retval = _.symfunction('tan', [symbol]);
-                }
-            }
-           
-            if(!retval) retval = _.symfunction('tan', [symbol]);
-            
-            if(c && (q === 2 || q === 4)) retval.negate();
-            
-            return retval;
-        }
-        
-        function sec(symbol) {
-            //let's be lazy
-            if(Settings.PARSE2NUMBER && symbol.isConstant()) {
-                return new Symbol(Math2.sec(symbol.valueOf()));
-            }
-            
-            var retval, 
-                c = false,
-                q = getQuadrant(symbol.multiplier.toDecimal()),
-                m = symbol.multiplier.abs();
-            symbol.multiplier = m;
-
-            if(symbol.isPi() && symbol.isLinear()) { 
-                //return for 1 or -1 for multiples of pi
-                if(isInt(m)) {
-                    retval  = new Symbol(even(m) ? 1 : -1);
-                } 
-                else {
-                    var n = m.num, d = m.den;
-                    if(d == 2) err('sec is undefined for '+symbol.toString());
-                    else if(d == 3) {
-                        retval = new Symbol(2); c = true;
-                    }
-                    else if(d == 4) {
-                        retval = _.parse('sqrt(2)'); c = true;
-                    }
-                    else if(d == 6) {
-                        retval = _.parse('2/sqrt(3)'); c = true;
-                    }
-                    else retval = _.symfunction('sec', [symbol]);
-                }
-            }
-            
-            if(c && (q === 2 || q === 3)) retval.negate();
-           
-            if(!retval) retval = _.symfunction('sec', [symbol]);
-
-            return retval;
-        }
-        
-        function csc(symbol) {
-            if(Settings.PARSE2NUMBER && symbol.isConstant()) {
-                return new Symbol(Math2.csc(symbol.valueOf()));
-            }
-            var retval, 
-                c = false,
-                q = getQuadrant(symbol.multiplier.toDecimal()),
-                m = symbol.multiplier.abs();
-
-            symbol.multiplier = m;
-            
-            if(symbol.isPi() && symbol.isLinear()) { 
-                //return for 0 for multiples of pi
-                if(isInt(m)) {
-                    err('csc is undefined for '+symbol.toString());
-                } 
-                else {
-                    var n = m.num, d = m.den;
-                    if(d == 2) {
-                        retval = new Symbol(1); c = true;
-                    }
-                    else if(d == 3) {
-                        retval = _.parse('2/sqrt(3)'); c = true
-                    }
-                    else if(d == 4) {
-                        retval = _.parse('sqrt(2)'); c = true;
-                    }
-                    else if(d == 6) {
-                        retval = new Symbol(2); c = true;
-                    }
-                    else retval = _.symfunction('csc', [symbol]);
-                }
-            }
-           
-            if(!retval) retval = _.symfunction('csc', [symbol]);
-            
-            if(c && (q === 3 || q === 4)) retval.negate();
-            
-            return retval;
-        }
-        
-        function cot(symbol) {
-            if(Settings.PARSE2NUMBER && symbol.isConstant()) {
-                return new Symbol(Math2.cot(symbol.valueOf()));
-            }
-            var retval, 
-                c = false,
-                q = getQuadrant(symbol.multiplier.toDecimal()),
-                m = symbol.multiplier;
-
-            symbol.multiplier = m;
-            
-            if(symbol.isPi() && symbol.isLinear()) { 
-                //return 0 for all multiples of pi
-                if(isInt(m)) {
-                    err('cot is undefined for '+symbol.toString());
-                } 
-                else {
-                    var n = m.num, d = m.den;
-                    if(d == 2) retval = new Symbol(0);
-                    else if(d == 3) {
-                        retval = _.parse('1/sqrt(3)'); c = true;
-                    }
-                    else if(d == 4) {
-                        retval = new Symbol(1); c = true;
-                    }
-                    else if(d == 6) {
-                        retval = _.parse('sqrt(3)'); c = true;
-                    }
-                    else retval = _.symfunction('cot', [symbol]);
-                }
-            }
-           
-            if(!retval) retval = _.symfunction('cot', [symbol]);
-            
-            if(c && (q === 2 || q === 4)) retval.negate();
-            
-            return retval;
-        };
-        
         function acoth(symbol) {
             if(symbol.equals(1))
-                return _.parse('Infinity');
+                return Symbol.infinity();
             return evaluate(
                     _.divide(
                         log(_.divide(_.add(symbol.clone(), new Symbol(1)), _.subtract(symbol.clone(), new Symbol(1)))), 
@@ -4741,6 +4856,22 @@ var nerdamer = (function(imports) {
                 bIsSymbol = isSymbol(b);
             //we're dealing with two symbols
             if(aIsSymbol && bIsSymbol) { 
+                //handle Infinity
+                //https://www.encyclopediaofmath.org/index.php/Infinity
+                if(a.isInfinity || b.isInfinity) {
+                    var aneg = a.multiplier.lessThan(0),
+                        bneg = b.multiplier.lessThan(0);
+                
+                    if(a.isInfinity && b.isInfinity && aneg !== bneg) {
+                        err('('+a+')+('+b+') is not defined!');
+                    }
+                    
+                    var inf = Symbol.infinity();
+                    if(bneg)
+                        inf.negate();
+                    return inf;
+                }
+                
                 if(a.isComposite() && a.isLinear() && b.isComposite() && b.isLinear()) {
                     a.distributeMultiplier();
                     b.distributeMultiplier();
@@ -4994,6 +5125,16 @@ var nerdamer = (function(imports) {
                 bIsSymbol = isSymbol(b);
         
             if(aIsSymbol && bIsSymbol) {
+                //handle Infinty
+                if(a.isInfinity || b.isInfinity) { 
+                    var sign = a.multiplier.multiply(b.multiplier).sign(),
+                        inf = Symbol.infinity();
+                    if(a.isConstant() || b.isConstant() || (a.isInfinity && b.isInfinity)) {
+                        if(sign < 0)
+                            inf.negate();
+                        return inf;
+                    }
+                }
                 //the quickies
                 if(a.isConstant() && b.isConstant() && Settings.PARSE2NUMBER) {
                     return new Symbol(a.multiplier.multiply(b.multiplier).valueOf());
@@ -5310,6 +5451,27 @@ var nerdamer = (function(imports) {
             var aIsSymbol = isSymbol(a),
                 bIsSymbol = isSymbol(b);
             if(aIsSymbol && bIsSymbol) {
+                //handle infinity
+                if(a.isInfinity || b.isInfinity) {
+                    if(a.isInfinity && b.isInfinity)
+                        err('('+a+')^('+b+') is undefined!');
+                    
+                    if(a.isConstant() && b.isInfinity) {
+                        //a^-oo
+                        if(b.lessThan(0))
+                            return new Symbol(0);
+                        //a^oo
+                        if(!a.lessThan(0))
+                            return Symbol.infinity();
+                    }
+                        
+                    if(a.isInfinity && b.isConstant()) {
+                        if(b.lessThan(0))
+                            return new Symbol(0);
+                        return _.multiply(Symbol.infinity(), _.pow(new Symbol(a.sign()), b.clone()));
+                    }
+                }
+                    
                 var aIsZero = a.equals(0);
                 if(aIsZero && b.equals(0)) err('0^0 is undefined!');
                 //return 0 right away if possible
@@ -7050,8 +7212,8 @@ var nerdamer = (function(imports) {
     //Operator('^', 'pow', 6, false, false),
     //function Operator(val, fn, precedence, left_assoc, is_prefix, is_postfix, operation) 
     libExports.setOperator = function(symbol, name, precendence, left_assoc, is_prefix, is_postfix, fn) {
-        _.operators[symbol] = new Operator(symbol, name, precendence, left_assoc, is_prefix, is_postfix);
-        _.name = fn; //make the parser aware of this  new function
+        _.operators[symbol] = new Operator(symbol, name, precendence, left_assoc, is_prefix, is_postfix, fn);
+        _.name = name; //make the parser aware of this  new function
         CUSTOM_OPERATORS[name] = symbol; //let nerdamer know how to display it
     };
     
