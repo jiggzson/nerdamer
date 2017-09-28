@@ -3557,7 +3557,7 @@ var nerdamer = (function(imports) {
                 return scientificToDecimal(x);
             })
             //allow omission of multiplication after coefficients
-            .replace(/([\+\-\/\*]*[0-9]+)([a-z_]+[\+\-\/\*]*)/gi, function() {
+            .replace(/([\+\-\/\*]*[0-9]+)([a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ]+[\+\-\/\*]*)/gi, function() {
                 var str = arguments[4],
                     group1 = arguments[1],
                     group2 = arguments[2],
@@ -7240,3 +7240,4 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+

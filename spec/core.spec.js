@@ -74,6 +74,41 @@ describe('Nerdamer core', function () {
         }
     });
     
+    it('should calculate fib correctly', function () {
+        // given
+        var testCases = [
+            {
+                given: 'fib(0)',
+                expected: '0'
+            }, 
+            {
+                given: 'fib(14)',
+                expected: '377'
+            }, 
+            {
+                given: 'fib(-14)',
+                expected: '-377'
+            }, 
+            {
+                given: 'fib(15)',
+                expected: '610'
+            }, 
+            {
+                given: 'fib(-15)',
+                expected: '610'
+            }, 
+            
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given).evaluate();
+
+            // then
+            expect(parsed.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
     it('should perform simple arithmetic', function () {
         // given
         var testCases = [
