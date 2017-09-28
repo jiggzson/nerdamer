@@ -472,6 +472,7 @@ if((typeof module) !== 'undefined') {
         var fractionals = {},
             cfact;
         var correct_denom = function(symbol) { 
+            var original = symbol.clone(); //preserve the original
             if(symbol.symbols) {
                 for(var x in symbol.symbols) { 
                     var sym = symbol.symbols[x];
@@ -480,7 +481,7 @@ if((typeof module) !== 'undefined') {
                     var v = Symbol.unwrapSQRT(parts[1]);
                     var p = v.power.clone();
                     if(!isSymbol(p)) {
-                        if(p.den.gt(1)) {
+                        if(p.den.gt(1)) { 
                             if(is_sqrt) {
                                 symbol = _.subtract(symbol, sym.clone());
                                 symbol = _.add(symbol, _.multiply(parts[0], v));
@@ -499,6 +500,17 @@ if((typeof module) !== 'undefined') {
                             });
                             fractionals = {};
                             return correct_denom(_.parse(symbol));
+                        }
+                        else if(sym.group === PL) {
+                            var min_p = core.Utils.arrayMin(core.Utils.keys(sym.symbols));
+                            if(min_p < 0) {
+                                var factor = _.parse(solve_for+'^'+Math.abs(min_p));
+                                var corrected = new Symbol(0);
+                                original.each(function(x) {
+                                    corrected = _.add(corrected, _.multiply(x.clone(), factor.clone()));
+                                }, true);
+                                return corrected;
+                            }
                         }
                     }
                 }
