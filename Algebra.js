@@ -2348,7 +2348,7 @@ if((typeof module) !== 'undefined') {
          */
         divide: function(symbol1, symbol2) {
             var result = __.div(symbol1, symbol2);
-            var remainder = _.divide(__.Factor.factor(result[1]), __.Factor.factor(symbol2));
+            var remainder = _.divide(result[1], symbol2);
             return _.add(result[0], remainder);
         },
         div: function(symbol1, symbol2) {
