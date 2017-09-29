@@ -2366,6 +2366,12 @@ if((typeof module) !== 'undefined') {
                     return [new Symbol(1), _.subtract(symbol1.clone(), symbol2.clone())];
                 }
             }
+            if(symbol1.group === S && symbol2.group === S) {
+                var r = _.divide(symbol1.clone(), symbol2.clone());
+                if(r.isConstant()) //we have a whole
+                    return [r, new Symbol(0)];
+                return [new Symbol(0), symbol1.clone()];
+            }
             var symbol1_has_func = symbol1.hasFunc(),
                 symbol2_has_func = symbol2.hasFunc(),
                 parse_funcs = false;
