@@ -576,6 +576,7 @@ if((typeof module) !== 'undefined') {
                 return [rhs, lhs];
             }
         };
+
         //separate the equation
         var separate = function(eq) {
             var lhs = new Symbol(0),
@@ -588,6 +589,7 @@ if((typeof module) !== 'undefined') {
             });
             return [lhs, rhs];
         };
+
         //first remove any denominators
         eq = correct_denom(eq);  
         //correct fractionals. I can only handle one type right now

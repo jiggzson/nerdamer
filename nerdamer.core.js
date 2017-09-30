@@ -4287,7 +4287,6 @@ var nerdamer = (function(imports) {
             return retval;
         }
         
-        
         /**
          * Get's the real part of a complex number. Return number if real
          * @param {Symbol} symbol
@@ -4407,6 +4406,7 @@ var nerdamer = (function(imports) {
          */
         function log(symbol, base) { 
             var retval;
+
             //log(0) is undefined so complain
             if(symbol.equals(0)) {
                 err('log(0) is undefined!');
@@ -5709,7 +5709,7 @@ var nerdamer = (function(imports) {
             return a.lte(b);
         };
         //wraps the factorial
-        this.factorial = function(a) {
+        this.factorial = function(a) {console.log(9)
             return this.symfunction(FACTORIAL, [a]);
         };
         //wraps the double factorial
