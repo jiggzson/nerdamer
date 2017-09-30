@@ -13,6 +13,14 @@ describe('Solve', function () {
                 expected: '[0]'
             },
             {
+                given: 'solve(5*y^x=8, x)',
+                expected: '[log(8/5)*log(y)^(-1)]'
+            },
+            {
+                given: 'solve(x^y+8=a*b, x)',
+                expected: '[(-8+a*b)^y^(-1)]'
+            },
+            {
                 given: 'solve(x^2, x)',
                 expected: '[0]'
             },

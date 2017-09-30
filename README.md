@@ -252,7 +252,7 @@ console.log(answer);
 Custom functions alternatively be set in following manner.
 
 ```javascript
-nerdamer('hyp(a, b) = sqrt(a^2 + b^2) ');
+nerdamer('hyp(a, b) := sqrt(a^2 + b^2) ');
 var result = nerdamer('hyp(3, 4)').evaluate().text();
 console.log(result);
 //result: 5
