@@ -65,7 +65,7 @@ if((typeof module) !== 'undefined') {
      * This is an equation that has a left hand side and a right hand side
      */
     function Equation(lhs, rhs) {
-        if(rhs.isConstant() && lhs.isConstant() && !lhs.equals(rhs) || lhs.equals(core.Settings.IMAGINARY))
+        if(rhs.isConstant() && lhs.isConstant() && !lhs.equals(rhs) || lhs.equals(core.Settings.IMAGINARY) || rhs.equals(core.Settings.IMAGINARY))
             throw new Error(lhs.toString()+' does not equal '+rhs.toString());
         this.LHS = lhs; //left hand side
         this.RHS = rhs; //right and side
@@ -342,6 +342,9 @@ if((typeof module) !== 'undefined') {
         if(isArray(eqns)) {
             return sys_solve.apply(undefined, arguments);
         }
+        //parse out functions. Fix for issue #300
+        eqns = core.Utils.evaluate(eqns);
+        
         solutions = solutions || [];
         //maybe we get lucky
         if(eqns.group === S && eqns.contains(solve_for)) {
