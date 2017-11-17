@@ -485,11 +485,7 @@ if((typeof module) !== 'undefined') {
                     var p = v.power.clone();
                     if(!isSymbol(p)) {
                         if(p.den.gt(1)) { 
-                            if(is_sqrt) {
-                                symbol = _.subtract(symbol, sym.clone());
-                                symbol = _.add(symbol, _.multiply(parts[0], v));
-                                return correct_denom(symbol);
-                            }
+                            if(is_sqrt) return symbol;
                             var c = fractionals[p.den];
                             fractionals[p.den] = c ? c++ : 1;
                         }
