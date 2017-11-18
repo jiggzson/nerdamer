@@ -341,7 +341,7 @@ describe('Nerdamer core', function () {
             }, {
                 given: 'x^y+x^y',
                 expected: '2*x^y',
-                expectedValue: '23.139483900482922'
+                expectedValue: '23.13948390048293'
             }, {
                 given: 'x*x',
                 expected: 'x^2',
@@ -1583,7 +1583,7 @@ describe('Nerdamer core', function () {
                 {
                     given: '2*x^2+3*x+y+y^2',
                     expected: '2*x^2+3*x+y+y^2',
-                    expectedValue: '29.31'
+                    expectedValue: '29.309999999999995'
                 },
                 {
                     given: '(y+y^2)^6+y',
