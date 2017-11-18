@@ -42,11 +42,11 @@ describe('Solve', function () {
             },
             {
                 given: 'solve(3*(x+5)*(x-4), x)',
-                expected: '[-5,4]'
+                expected: '[4,-5]'
             },
             {
                 given: 'solve(3*(x+a)*(x-b), x)',
-                expected: '[-a,b]'
+                expected: '[b,-a]'
             },
             {
                 given: 'solve(a*x^2+b, x)',
