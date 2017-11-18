@@ -824,22 +824,13 @@ if((typeof module) !== 'undefined') {
             //rarr for polynomial of power n is of format [n, coeff x^n, coeff x^(n-1), ..., coeff x^0]
             decp = decp || 7;
             var zeros = 0;
-            var known_roots = [];
             var get_roots = function(rarr, powers, max) {
-                var roots = calcroots(rarr, powers, max).concat(known_roots);
+                var roots = calcroots(rarr, powers, max);
                 for(var i=0;i<zeros;i++) roots.unshift(0);
                 return roots;
             };
             
             if(symbol instanceof Symbol && symbol.isPoly()) { 
-                symbol.distributeMultiplier();
-                //make it so the symbol has a constants as the lowest term
-                if(symbol.group === PL) {
-                    var lowest_pow = core.Utils.arrayMin(keys(symbol.symbols));
-                    var lowest_symbol = symbol.symbols[lowest_pow].clone().toUnitMultiplier();
-                    symbol = _.expand(_.divide(symbol, lowest_symbol));
-                    known_roots.push(0); //add zero since this is a known root
-                }
                 if(symbol.group === core.groups.S) { 
                     return [0];
                 }
@@ -870,8 +861,8 @@ if((typeof module) !== 'undefined') {
                     // Insert the coeffient but from the front
                     rarr.unshift(c);
                 }
-                
-                rarr.push(symbol.symbols[CONST_HASH].multiplier);
+
+                rarr.push(symbol.symbols['#'].multiplier);
 
                 if(sym.group === S) rarr[0] = sym.multiplier;//the symbol maybe of group CP with one variable
 
@@ -2271,11 +2262,6 @@ if((typeof module) !== 'undefined') {
             return status;
         },
         gcd: function(a, b) { 
-            if(a.group === S && b.group === S && a.value !== b.value
-                    || a.group === EX 
-                    || b.group === EX)
-                return _.symfunction('gcd', arguments);
-            
             if(a.group === CB || b.group === CB) {
                 var q = _.divide(a.clone(), b.clone()); //get the quotient
                 var t = _.multiply(b.clone(), q.getDenom());//multiply by the denominator
@@ -2295,11 +2281,6 @@ if((typeof module) !== 'undefined') {
                 // return core.Math2.QGCD(new Frac(+a), new Frac(+b));
                 return new Symbol(core.Math2.QGCD(new Frac(+a), new Frac(+b)));
             }
-            
-            //feels counter intuitive but it works. Issue #123 (nerdamer("gcd(x+y,(x+y)^2)"))
-            a = _.expand(a);
-            b = _.expand(b);
-            
             if(a.length < b.length) { //swap'm
                 var t = a; a = b; b = t;
             }
@@ -2316,7 +2297,6 @@ if((typeof module) !== 'undefined') {
                     T = __.div(a, t);
                     b = T[1]; 
                     if(T[0].equals(0)) {
-                        //return _.multiply(new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier)), b);
                         return new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier));
                     }
                     a = t; 
@@ -2332,11 +2312,7 @@ if((typeof module) !== 'undefined') {
                         x.multiplier = x.multiplier.divide(gcd);
                     });
                 }
-                
-                //return symbolic function for gcd in indeterminate form
-                if(a.equals(1) && !a.isConstant() && !b.isConstant())
-                    return _.symfunction('gcd', arguments);
-                
+
                 return a;
             }
         },
@@ -2365,12 +2341,6 @@ if((typeof module) !== 'undefined') {
                 if(s && symbol2.isLinear() && s.isLinear() && symbol1.isLinear()) {
                     return [new Symbol(1), _.subtract(symbol1.clone(), symbol2.clone())];
                 }
-            }
-            if(symbol1.group === S && symbol2.group === S) {
-                var r = _.divide(symbol1.clone(), symbol2.clone());
-                if(r.isConstant()) //we have a whole
-                    return [r, new Symbol(0)];
-                return [new Symbol(0), symbol1.clone()];
             }
             var symbol1_has_func = symbol1.hasFunc(),
                 symbol2_has_func = symbol2.hasFunc(),
