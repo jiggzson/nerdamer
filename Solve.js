@@ -31,7 +31,7 @@ if((typeof module) !== 'undefined') {
         isArray = core.Utils.isArray;
     //version solve
     core.Solve = {
-        version: '1.2.3',
+        version: '1.2.4',
         solve: function(eq, variable) {
             var solution = solve(eq, String(variable));
             return new core.Vector(solution);
@@ -39,7 +39,7 @@ if((typeof module) !== 'undefined') {
         }
     };
     // The search radius for the roots
-    core.Settings.solve_radius = 500;
+    core.Settings.solve_radius = 1000;
     // The maximum number to fish for on each side of the zero
     core.Settings.roots_per_side = 5;
     // Covert the number to multiples of pi if possible
@@ -65,7 +65,7 @@ if((typeof module) !== 'undefined') {
      * This is an equation that has a left hand side and a right hand side
      */
     function Equation(lhs, rhs) {
-        if(rhs.isConstant() && lhs.isConstant() && !lhs.equals(rhs) || lhs.equals(core.Settings.IMAGINARY))
+        if(rhs.isConstant() && lhs.isConstant() && !lhs.equals(rhs) || lhs.equals(core.Settings.IMAGINARY) || rhs.equals(core.Settings.IMAGINARY))
             throw new Error(lhs.toString()+' does not equal '+rhs.toString());
         this.LHS = lhs; //left hand side
         this.RHS = rhs; //right and side
@@ -342,6 +342,9 @@ if((typeof module) !== 'undefined') {
         if(isArray(eqns)) {
             return sys_solve.apply(undefined, arguments);
         }
+        //parse out functions. Fix for issue #300
+        //eqns = core.Utils.evaluate(eqns);
+        
         solutions = solutions || [];
         //maybe we get lucky
         if(eqns.group === S && eqns.contains(solve_for)) {
@@ -402,7 +405,7 @@ if((typeof module) !== 'undefined') {
             // where the function dips to negative and then back the positive with a step size of 0.1. The function
             // will miss the zeros because it will jump right over it. Think of a case where this can happen.
             for(var i=start; i<core.Settings.solve_radius; i++){
-                var val = f(i),
+                var val = f(i*0.1),
                     sign = val/Math.abs(val);
                 if(isNaN(val) || !isFinite(val) || points.length > rside)
                     break;
@@ -432,11 +435,17 @@ if((typeof module) !== 'undefined') {
             //first try the point itself. If it's zero viola. We're done
             var x0 = point, x;
             do {
+                var fx0 = f(x0); //store the result of the function
+                //if the value is zero then we're done because 0 - (0/d f(x0)) = 0
+                if(x0 === 0 && fx0 === 0) {
+                    x = 0;
+                    break;
+                }
                 iter++;
                 if(iter > maxiter)
                     return; //naximum iterations reached
                 
-                x = x0 - f(x0)/fp(x0);
+                x = x0 - fx0/fp(x0);
                 var e = Math.abs(x - x0);
                 x0 = x;
             }
@@ -480,11 +489,13 @@ if((typeof module) !== 'undefined') {
                     var is_sqrt = parts[1].fname === core.Settings.SQRT;
                     var v = Symbol.unwrapSQRT(parts[1]);
                     var p = v.power.clone();
-                    if(!isSymbol(p)) {
+                    //circular logic with sqrt. Since sqrt(x) becomes x^(1/2) which then becomes sqrt(x), this continues forever
+                    //this needs to be terminated if p = 1/2
+                    if(!isSymbol(p) && !p.equals(1/2)) {
                         if(p.den.gt(1)) { 
                             if(is_sqrt) {
                                 symbol = _.subtract(symbol, sym.clone());
-                                symbol = _.add(symbol, _.multiply(parts[0], v));
+                                symbol = _.add(symbol, _.multiply(parts[0].clone(), v));
                                 return correct_denom(symbol);
                             }
                             var c = fractionals[p.den];
@@ -589,12 +600,12 @@ if((typeof module) !== 'undefined') {
             });
             return [lhs, rhs];
         };
-
+        
         //first remove any denominators
         eq = correct_denom(eq);  
         //correct fractionals. I can only handle one type right now
         var fkeys = core.Utils.keys(fractionals);
-        if(fkeys.length === 1) {
+        if(fkeys.length === 1) { 
             //make a note of the factor
             cfact = fkeys[0];
             eq.each(function(x, index) {
@@ -630,7 +641,7 @@ if((typeof module) !== 'undefined') {
                         _A.proots(eq).map(add_to_result);
                 }
             }
-            else {
+            else { 
                 //since it's not a polynomial then we'll try to look for a solution using Newton's method
                 //this is not a very broad search but takes the positions that something is better than nothing
                 attempt_Newton(eq);
@@ -746,6 +757,19 @@ if((typeof module) !== 'undefined') {
     
     var setEq = function(a, b) {
         return _.equals(a, b);
+    };
+    
+    core.Utils.convertToVector = function(x) {
+        if(core.Utils.isArray(x)) {
+            var vector = new core.Vector([]);
+            for(var i=0; i<x.length; i++) 
+                vector.elements.push(core.Utils.convertToVector(x[i]));
+            return vector;
+        }
+        //Ensure that a nerdamer ready object is returned
+        if(!core.Utils.isSymbol(x))
+            return _.parse(x);
+        return x;
     };
     
     //link the Equation class back to the core
