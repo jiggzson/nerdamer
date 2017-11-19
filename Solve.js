@@ -343,7 +343,7 @@ if((typeof module) !== 'undefined') {
             return sys_solve.apply(undefined, arguments);
         }
         //parse out functions. Fix for issue #300
-        eqns = core.Utils.evaluate(eqns);
+        //eqns = core.Utils.evaluate(eqns);
         
         solutions = solutions || [];
         //maybe we get lucky
@@ -475,6 +475,7 @@ if((typeof module) !== 'undefined') {
         var fractionals = {},
             cfact;
         var correct_denom = function(symbol) { 
+            console.log('>>>>>>> beginning: '+symbol)
             var original = symbol.clone(); //preserve the original
             if(symbol.symbols) {
                 for(var x in symbol.symbols) { 
@@ -483,11 +484,13 @@ if((typeof module) !== 'undefined') {
                     var is_sqrt = parts[1].fname === core.Settings.SQRT;
                     var v = Symbol.unwrapSQRT(parts[1]);
                     var p = v.power.clone();
-                    if(!isSymbol(p)) {
+                    //circular logic with sqrt. Since sqrt(x) becomes x^(1/2) which then becomes sqrt(x), this continues forever
+                    //this needs to be terminated if p = 1/2
+                    if(!isSymbol(p) && !p.equals(1/2)) {
                         if(p.den.gt(1)) { 
                             if(is_sqrt) {
                                 symbol = _.subtract(symbol, sym.clone());
-                                symbol = _.add(symbol, _.multiply(parts[0], v));
+                                symbol = _.add(symbol, _.multiply(parts[0].clone(), v));
                                 return correct_denom(symbol);
                             }
                             var c = fractionals[p.den];
@@ -786,3 +789,6 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer('solve(-5*sqrt(14)-14x-10,x)');
+console.log(x.toString())
