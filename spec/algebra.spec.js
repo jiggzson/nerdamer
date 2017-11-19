@@ -58,37 +58,55 @@ describe('Algebra', function () {
                 {
                     given: '51',
                     expected: true
-                }, {
+                }, 
+                {
                     given: 'x^2+1',
                     expected: true
-                }, {
+                }, 
+                {
                     given: '51/x',
                     expected: false
-                }, {
+                }, 
+                {
                     given: 'x^2+1/x',
                     expected: false
-                }, {
+                }, 
+                {
                     given: 'y*x^2+1/x',
                     expected: false
-                }, {
+                }, 
+                {
                     given: 'y*x^2+x',
                     expected: true
-                }, {
+                }, 
+                {
                     given: '7*y*x^2+z*x+4',
                     expected: true
-                }, {
+                }, 
+                {
                     given: '7*y*x^2+z*x^-1+4',
                     expected: false
-                }, {
+                }, 
+                {
                     given: 'sqrt(5*x)+7',
                     expected: false
-                }, {
+                }, 
+                {
                     given: 'abs(5*x^3)-x+7',
                     expected: false
-                }, {
+                }, 
+                {
                     given: 'cos(x)^2+cos(x)+1',
                     expected: false
-                }
+                },
+                {
+                    given: 'sqrt(97)x^2-sqrt(13)x+sqrt(14)x+sqrt(43)x^2+sqrt(3)*sqrt(101)',
+                    expected: true
+                },
+                {
+                    given: '-5 sqrt(14)x-14x^2 sqrt(83)',
+                    expected: true
+                },
             ];
 
             for (var i = 0; i < testCases.length; ++i) {
