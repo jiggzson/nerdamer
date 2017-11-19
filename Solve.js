@@ -31,7 +31,7 @@ if((typeof module) !== 'undefined') {
         isArray = core.Utils.isArray;
     //version solve
     core.Solve = {
-        version: '1.2.3',
+        version: '1.2.4',
         solve: function(eq, variable) {
             var solution = solve(eq, String(variable));
             return new core.Vector(solution);
@@ -39,7 +39,7 @@ if((typeof module) !== 'undefined') {
         }
     };
     // The search radius for the roots
-    core.Settings.solve_radius = 500;
+    core.Settings.solve_radius = 1000;
     // The maximum number to fish for on each side of the zero
     core.Settings.roots_per_side = 5;
     // Covert the number to multiples of pi if possible
@@ -405,7 +405,7 @@ if((typeof module) !== 'undefined') {
             // where the function dips to negative and then back the positive with a step size of 0.1. The function
             // will miss the zeros because it will jump right over it. Think of a case where this can happen.
             for(var i=start; i<core.Settings.solve_radius; i++){
-                var val = f(i),
+                var val = f(i*0.1),
                     sign = val/Math.abs(val);
                 if(isNaN(val) || !isFinite(val) || points.length > rside)
                     break;
@@ -435,11 +435,17 @@ if((typeof module) !== 'undefined') {
             //first try the point itself. If it's zero viola. We're done
             var x0 = point, x;
             do {
+                var fx0 = f(x0); //store the result of the function
+                //if the value is zero then we're done because 0 - (0/d f(x0)) = 0
+                if(x0 === 0 && fx0 === 0) {
+                    x = 0;
+                    break;
+                }
                 iter++;
                 if(iter > maxiter)
                     return; //naximum iterations reached
                 
-                x = x0 - f(x0)/fp(x0);
+                x = x0 - fx0/fp(x0);
                 var e = Math.abs(x - x0);
                 x0 = x;
             }
@@ -475,7 +481,6 @@ if((typeof module) !== 'undefined') {
         var fractionals = {},
             cfact;
         var correct_denom = function(symbol) { 
-            console.log('>>>>>>> beginning: '+symbol)
             var original = symbol.clone(); //preserve the original
             if(symbol.symbols) {
                 for(var x in symbol.symbols) { 
@@ -595,12 +600,12 @@ if((typeof module) !== 'undefined') {
             });
             return [lhs, rhs];
         };
-
+        
         //first remove any denominators
         eq = correct_denom(eq);  
         //correct fractionals. I can only handle one type right now
         var fkeys = core.Utils.keys(fractionals);
-        if(fkeys.length === 1) {
+        if(fkeys.length === 1) { 
             //make a note of the factor
             cfact = fkeys[0];
             eq.each(function(x, index) {
@@ -636,7 +641,7 @@ if((typeof module) !== 'undefined') {
                         _A.proots(eq).map(add_to_result);
                 }
             }
-            else {
+            else { 
                 //since it's not a polynomial then we'll try to look for a solution using Newton's method
                 //this is not a very broad search but takes the positions that something is better than nothing
                 attempt_Newton(eq);
@@ -790,5 +795,3 @@ if((typeof module) !== 'undefined') {
     nerdamer.api();
 })();
 
-var x = nerdamer('solve(-5*sqrt(14)-14x-10,x)');
-console.log(x.toString())

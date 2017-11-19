@@ -1898,21 +1898,45 @@ var nerdamer = (function(imports) {
             var g = this.group, 
                 p = this.power; 
             //the power must be a integer so fail if it's not
-            if(!isInt(p) || p < 0) return false;
+            if(!isInt(p) || p < 0) 
+                return false;
             //constants and first orders
-            if(g === N  || g === S) return true;
+            if(g === N  || g === S || this.isConstant(true)) 
+                return true;
+            var vars = variables(this);
+            if(g === CB && vars.length === 1) { 
+                //the variable is assumed the only one that was found
+                var v = vars[0];
+                //if no variable then guess what!?!? We're done!!! We have a polynomial.
+                if(!v)
+                    return true;
+                for(var x in this.symbols) {
+                    var sym = this.symbols[x];
+                    //sqrt(x)
+                    if(sym.group === FN && sym.fname === SQRT && !sym.args[0].isConstant())
+                        return false;
+                    if(!sym.contains(v) && !sym.isConstant(true))
+                        return false;
+                }
+                return true;
+            }
             //PL groups. These only fail if a power is not an int
-            if(this.isComposite() || g === CB && multivariate) {
+            //this should handle cases such as x^2*t
+            if(this.isComposite() || g === CB && multivariate) { 
                 //fail if we're not checking for multivariate polynomials
-                if(!multivariate && variables(this) > 1) return false;
+                if(!multivariate && vars.length > 1) 
+                    return false;
                 //loop though the symbols and check if they qualify
                 for(var x in this.symbols) {
                     //we've already the symbols if we're not checking for multivariates at this point
                     //so we check the sub-symbols
-                    if(!this.symbols[x].isPoly(multivariate)) return false;
+                    if(!this.symbols[x].isPoly(multivariate)) 
+                        return false;
                 }
+                return true;
             }
-            else return false;
+            else 
+                return false;
             
             //all tests must have passed so we must be dealing with a polynomial
             return true;
@@ -2108,7 +2132,14 @@ var nerdamer = (function(imports) {
         isSQRT: function() {
             return this.fname === SQRT;
         },
-        isConstant: function() {
+        isConstant: function(check_functions) {
+            if(check_functions && this.group === FN) {
+                for(var i=0; i<this.args.length; i++) {
+                    if(!this.args[i].isConstant())
+                        return false;
+                }
+                return true;
+            }
             return this.value === CONST_HASH;
         },
         //the symbols is imaginary if 
