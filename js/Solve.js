@@ -31,7 +31,7 @@ if((typeof module) !== 'undefined') {
         isArray = core.Utils.isArray;
     //version solve
     core.Solve = {
-        version: '1.2.2',
+        version: '1.2.4',
         solve: function(eq, variable) {
             var solution = solve(eq, String(variable));
             return new core.Vector(solution);
@@ -39,7 +39,7 @@ if((typeof module) !== 'undefined') {
         }
     };
     // The search radius for the roots
-    core.Settings.solve_radius = 500;
+    core.Settings.solve_radius = 1000;
     // The maximum number to fish for on each side of the zero
     core.Settings.roots_per_side = 5;
     // Covert the number to multiples of pi if possible
@@ -65,10 +65,52 @@ if((typeof module) !== 'undefined') {
      * This is an equation that has a left hand side and a right hand side
      */
     function Equation(lhs, rhs) {
-        if(rhs.isConstant() && lhs.isConstant() && !lhs.equals(rhs))
+        if(rhs.isConstant() && lhs.isConstant() && !lhs.equals(rhs) || lhs.equals(core.Settings.IMAGINARY) || rhs.equals(core.Settings.IMAGINARY))
             throw new Error(lhs.toString()+' does not equal '+rhs.toString());
         this.LHS = lhs; //left hand side
         this.RHS = rhs; //right and side
+    };
+    
+    var removeDenom = function(a, b) {
+        //swap the groups
+        if(b.group === CP && b.group !== CP) {
+            var t = a; a = b; b = t; //swap
+        }
+            
+        //scan to eliminate denominators
+        if(a.group === CB) { 
+            var t = new Symbol(1),
+                newRHS = b.clone();
+            a.each(function(y) {
+                if(y.power.lessThan(0))
+                    newRHS = _.divide(newRHS, y);
+                else
+                    t = _.multiply(t, y);
+            });
+            a = t;
+            b = newRHS;
+        }
+        else if(a.group === CP) { 
+            //the logic: loop through each and if it has a denominator then multiply it out on both ends
+            //and then start over
+            for(var x in a.symbols) {
+                var sym = a.symbols[x];
+                if(sym.group === CB) {
+                    for(var y in sym.symbols) {
+                        var sym2 = sym.symbols[y];
+                        if(sym2.power.lessThan(0)) {
+                            return removeDenom(
+                                    _.expand(_.multiply(sym2.clone().toLinear(), a)),
+                                    _.expand(_.multiply(sym2.clone().toLinear(), b))
+                            );
+                        }
+                    }
+                }
+            }
+        }
+            
+            
+        return _.expand(_.subtract(a, b));
     };
     
     Equation.prototype = {
@@ -78,8 +120,8 @@ if((typeof module) !== 'undefined') {
         text: function(option) { 
             return this.LHS.text(option)+'='+this.RHS.text(option);
         },
-        toLHS: function() {
-            return _.subtract(this.LHS.clone(), this.RHS.clone());
+        toLHS: function() { 
+            return removeDenom(this.LHS.clone(), this.RHS.clone());
         },
         clone: function() {
             return new Equation(this.LHS.clone(), this.RHS.clone());
@@ -100,14 +142,14 @@ if((typeof module) !== 'undefined') {
     };
     // A utility function to parse an expression to left hand side when working with strings
 
-    var toLHS = function(eqn) {
+    var toLHS = function(eqn) { 
         //If it's an equation then call its toLHS function instead
         if(eqn instanceof Equation)
             return eqn.toLHS();
         var es = eqn.split('=');
         if(es[1] === undefined) es[1] = '0';
         var e1 = _.parse(es[0]), e2 = _.parse(es[1]);
-        return _.subtract(e1, e2);
+        return removeDenom(e1, e2);
     };
     // Solves a system of equations
     var sys_solve = function(eqns, var_array) {
@@ -292,11 +334,17 @@ if((typeof module) !== 'undefined') {
      * @returns {Array}
      */
     var solve = function(eqns, solve_for, solutions) {
+        //unwrap the vector since what we want are the elements
+        if(eqns instanceof core.Vector)
+            eqns = eqns.elements;
         solve_for = solve_for || 'x'; //assumes x by default
         //If it's an array then solve it as a system of equations
         if(isArray(eqns)) {
             return sys_solve.apply(undefined, arguments);
         }
+        //parse out functions. Fix for issue #300
+        //eqns = core.Utils.evaluate(eqns);
+        
         solutions = solutions || [];
         //maybe we get lucky
         if(eqns.group === S && eqns.contains(solve_for)) {
@@ -357,7 +405,7 @@ if((typeof module) !== 'undefined') {
             // where the function dips to negative and then back the positive with a step size of 0.1. The function
             // will miss the zeros because it will jump right over it. Think of a case where this can happen.
             for(var i=start; i<core.Settings.solve_radius; i++){
-                var val = f(i),
+                var val = f(i*0.1),
                     sign = val/Math.abs(val);
                 if(isNaN(val) || !isFinite(val) || points.length > rside)
                     break;
@@ -387,11 +435,17 @@ if((typeof module) !== 'undefined') {
             //first try the point itself. If it's zero viola. We're done
             var x0 = point, x;
             do {
+                var fx0 = f(x0); //store the result of the function
+                //if the value is zero then we're done because 0 - (0/d f(x0)) = 0
+                if(x0 === 0 && fx0 === 0) {
+                    x = 0;
+                    break;
+                }
                 iter++;
                 if(iter > maxiter)
                     return; //naximum iterations reached
                 
-                x = x0 - f(x0)/fp(x0);
+                x = x0 - fx0/fp(x0);
                 var e = Math.abs(x - x0);
                 x0 = x;
             }
@@ -427,6 +481,7 @@ if((typeof module) !== 'undefined') {
         var fractionals = {},
             cfact;
         var correct_denom = function(symbol) { 
+            var original = symbol.clone(); //preserve the original
             if(symbol.symbols) {
                 for(var x in symbol.symbols) { 
                     var sym = symbol.symbols[x];
@@ -434,25 +489,39 @@ if((typeof module) !== 'undefined') {
                     var is_sqrt = parts[1].fname === core.Settings.SQRT;
                     var v = Symbol.unwrapSQRT(parts[1]);
                     var p = v.power.clone();
-                    if(!isSymbol(p)) {
-                        if(p.den.gt(1)) {
+                    //circular logic with sqrt. Since sqrt(x) becomes x^(1/2) which then becomes sqrt(x), this continues forever
+                    //this needs to be terminated if p = 1/2
+                    if(!isSymbol(p) && !p.equals(1/2)) {
+                        if(p.den.gt(1)) { 
                             if(is_sqrt) {
                                 symbol = _.subtract(symbol, sym.clone());
-                                symbol = _.add(symbol, _.multiply(parts[0], v));
+                                symbol = _.add(symbol, _.multiply(parts[0].clone(), v));
                                 return correct_denom(symbol);
                             }
                             var c = fractionals[p.den];
                             fractionals[p.den] = c ? c++ : 1;
                         }
-                        else if(p.sign() === -1){
-                            var factor = _.parse(solve_for+'^'+Math.abs(p));
+                        else if(p.sign() === -1){ 
+                            var factor = _.parse(solve_for+'^'+Math.abs(p)); //this
+                            //unwrap the symbol's denoniator
                             symbol.each(function(y, index) {
-                               if(y.contains(solve_for)) {
-                                   symbol.symbols[index] = _.multiply(y, factor.clone());
-                               } 
+                                if(y.contains(solve_for)) {
+                                    symbol.symbols[index] = _.multiply(y, factor.clone());
+                                } 
                             });
                             fractionals = {};
                             return correct_denom(_.parse(symbol));
+                        }
+                        else if(sym.group === PL) {
+                            var min_p = core.Utils.arrayMin(core.Utils.keys(sym.symbols));
+                            if(min_p < 0) {
+                                var factor = _.parse(solve_for+'^'+Math.abs(min_p));
+                                var corrected = new Symbol(0);
+                                original.each(function(x) {
+                                    corrected = _.add(corrected, _.multiply(x.clone(), factor.clone()));
+                                }, true);
+                                return corrected;
+                            }
                         }
                     }
                 }
@@ -518,12 +587,25 @@ if((typeof module) !== 'undefined') {
                 return [rhs, lhs];
             }
         };
+
+        //separate the equation
+        var separate = function(eq) {
+            var lhs = new Symbol(0),
+                rhs = new Symbol(0);
+            eq.each(function(x) {
+                if(x.contains(solve_for, true))
+                    lhs = _.add(lhs, x.clone());
+                else
+                    rhs = _.subtract(rhs, x.clone());
+            });
+            return [lhs, rhs];
+        };
         
         //first remove any denominators
         eq = correct_denom(eq);  
         //correct fractionals. I can only handle one type right now
         var fkeys = core.Utils.keys(fractionals);
-        if(fkeys.length === 1) {
+        if(fkeys.length === 1) { 
             //make a note of the factor
             cfact = fkeys[0];
             eq.each(function(x, index) {
@@ -559,22 +641,30 @@ if((typeof module) !== 'undefined') {
                         _A.proots(eq).map(add_to_result);
                 }
             }
-            else {
+            else { 
                 //since it's not a polynomial then we'll try to look for a solution using Newton's method
                 //this is not a very broad search but takes the positions that something is better than nothing
                 attempt_Newton(eq);
             }
         }
-        else {
+        else { 
             //The idea here is to go through the equation and collect the coefficients
             //place them in an array and call the quad or cubic function to get the results
-            if(!eq.hasFunc(solve_for) && eq.isComposite()) {
+            if(!eq.hasFunc(solve_for) && eq.isComposite()) { 
                 try {
                     var coeffs = core.Utils.getCoeffs(eq, solve_for);
                     var l = coeffs.length,
                         deg = l-1; //the degree of the polynomial
                     //handle the problem based on the degree
                     switch(deg) {
+                        case 0:
+                            var separated = separate(eq);
+                            var lhs = separated[0],
+                                rhs = separated[1];
+                            if(lhs.group === core.groups.EX) {
+                                add_to_result(_.parse(core.Utils.format('log(({0})/({2}))/log({1})', rhs, lhs.value, lhs.multiplier)));
+                            }
+                            break;
                         case 1:
                             //nothing to do but to return the quotient of the constant and the LT
                             //e.g. 2*x-1
@@ -609,7 +699,28 @@ if((typeof module) !== 'undefined') {
                             solutions.push(_.subtract(lhs, rhs));
                     }
                 }
-                catch(error) {; }
+                catch(error) {
+                    //Let's try this another way
+                    try { 
+                        //1. if the symbol is in the form a*b*c*... then the solution is zero if 
+                        //either a or b or c is zero.
+                        if(eq.group === CB)
+                            solutions.push(0);
+                        else if(eq.group === CP) {
+                            var separated = separate(eq);
+                            var lhs = separated[0],
+                                rhs = separated[1];
+                            
+                            //reduce the equation
+                            if(lhs.group === core.groups.EX && lhs.value === solve_for) {
+                                //change the base of both sides
+                                var p = lhs.power.clone().invert();
+                                solutions.push(_.pow(rhs, p));
+                            }
+                        }
+                    }
+                    catch(error){;}
+                }
             }
         }
         
@@ -648,10 +759,27 @@ if((typeof module) !== 'undefined') {
         return _.equals(a, b);
     };
     
+    core.Utils.convertToVector = function(x) {
+        if(core.Utils.isArray(x)) {
+            var vector = new core.Vector([]);
+            for(var i=0; i<x.length; i++) 
+                vector.elements.push(core.Utils.convertToVector(x[i]));
+            return vector;
+        }
+        //Ensure that a nerdamer ready object is returned
+        if(!core.Utils.isSymbol(x))
+            return _.parse(x);
+        return x;
+    };
+    
+    //link the Equation class back to the core
+    core.Equation = Equation;
+    
     nerdamer.register([
         {
             name: 'solveEquations',
             parent: 'nerdamer',
+            numargs: -1,
             visible: true,
             build: function(){ return solve; }
         },
