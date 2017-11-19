@@ -5898,11 +5898,18 @@ var nerdamer = (function(imports) {
         //grab a list of supported functions but remove the excluded ones found in exclFN
         
         latex: function(symbol, option) { 
-            symbol = symbol.clone(); //leave original as-is
+            //it might be an array
+            if(symbol.clone)
+                symbol = symbol.clone(); //leave original as-is
+            
             if(isArray(symbol)) {
                 var LaTeXArray = [];
                 for(var i=0; i<symbol.length; i++) {
-                    LaTeXArray.push(this.latex(symbol[i]));
+                    var sym = symbol[i];
+                    //This way I can generate LaTeX on an array of strings.
+                    if(!isSymbol(sym))
+                        sym = _.parse(sym);
+                    LaTeXArray.push(this.latex(sym));
                 }
                 return this.brackets(LaTeXArray.join(', '), 'square');
             }
