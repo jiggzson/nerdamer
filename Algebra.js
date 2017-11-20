@@ -816,7 +816,7 @@ if((typeof module) !== 'undefined') {
         return subs;
     };
     var __ = core.Algebra = {
-        version: '1.4.2',
+        version: '1.4.3',
         init: (function() {})(),
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
@@ -1905,7 +1905,7 @@ if((typeof module) !== 'undefined') {
                     if(isInt(p)) { 
                         symbol.toLinear();
                         factors = factors || new Factors();
-                        var map = {}, original;
+                        var map = {};
                         symbol = _.parse(core.Utils.subFunctions(symbol, map));
                         if(keys(map).length > 0) { //it might have functions
                             factors.preAdd = function(factor) {
@@ -1920,10 +1920,6 @@ if((typeof module) !== 'undefined') {
 
                         var vars = variables(symbol),
                             multiVar = vars.length > 1;
-                        //Since multivariate is experiental I want to compare numeric outputs to make
-                        //sure we're returning the correct value
-                        if(multiVar) 
-                            original = symbol.clone();
 
                         //minor optimization. Seems to cut factor time by half in some cases.
                         if(multiVar) { 
@@ -1942,16 +1938,21 @@ if((typeof module) !== 'undefined') {
 
                         if(vars.length === 1) { 
                             symbol = __.Factor.squareFree(symbol, factors);
-                            symbol = __.Factor.trialAndError(symbol, factors);
+                            var t_factors = new Factors();
+                            symbol = __.Factor.trialAndError(symbol, t_factors);
+                            for(var x in t_factors.factors) {
+                                factors.add(_.pow(t_factors.factors[x], _.parse(p)));
+                            }
+                            
                         }
                         else {
                             symbol = __.Factor.mfactor(symbol, factors);
                         }
                         symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
 
-                        factors.add(symbol);
+                        factors.add(_.pow(symbol, _.parse(p)));
                         
-                        var retval = factors.toSymbol();
+                        return factors.toSymbol();
 
                         //compare the inval and outval and they must be the same or else we failed
                         /*
@@ -1960,7 +1961,7 @@ if((typeof module) !== 'undefined') {
                         }
                         */
 
-                        return _.pow(retval, _.parse(p));
+                        //return _.pow(retval, _.parse(p));
                     }
                     return symbol;    
                 }

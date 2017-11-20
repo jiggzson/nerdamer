@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.13',
+    var version = '0.7.14',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
