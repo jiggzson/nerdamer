@@ -2340,6 +2340,9 @@ if((typeof module) !== 'undefined') {
                 return a;
             }
         },
+        lcm: function(a, b) {
+            return _.divide(_.multiply(a.clone(), b.clone()), __.gcd(a.clone(), b.clone()));
+        },
         /**
          * Divides one expression by another
          * @param {Symbol} symbol1
@@ -2646,6 +2649,12 @@ if((typeof module) !== 'undefined') {
             build: function() { return __.gcd; }
         },
         {
+            name: 'lcm',
+            visible: true,
+            numargs: 2,
+            build: function() { return __.lcm; }
+        },
+        {
             name: 'roots',
             visible: true,
             numargs: -1,
@@ -2667,7 +2676,9 @@ if((typeof module) !== 'undefined') {
             name: 'coeffs',
             visible: true,
             numargs: [1, 2],
-            build: function() { return __.coeffs; }
+            build: function() { return function() {
+                return new core.Vector(__.coeffs.apply(null, arguments));
+            };}
         }
     ]);
     nerdamer.api();

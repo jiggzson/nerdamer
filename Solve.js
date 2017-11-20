@@ -781,7 +781,12 @@ if((typeof module) !== 'undefined') {
             parent: 'nerdamer',
             numargs: -1,
             visible: true,
-            build: function(){ return solve; }
+            build: function(){ 
+                return solve; //comment out to return a vector
+                return function() {
+                    return core.Utils.convertToVector(solve.apply(null, arguments));
+                };
+            }
         },
         {
             name: 'solve',
@@ -807,3 +812,4 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+

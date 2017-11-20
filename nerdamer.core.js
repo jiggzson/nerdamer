@@ -3647,8 +3647,11 @@ var nerdamer = (function(imports) {
                 return group1+d+group2;
             })
             .replace(/([a-z0-9_]+)/g, function(match, a) {
-                if(Settings.USE_MULTICHARACTER_VARS === false && !(a in functions))
+                if(Settings.USE_MULTICHARACTER_VARS === false && !(a in functions)) {
+                    if(!isNaN(a))
+                        return a;
                     return a.split('').join('*');
+                }
                 return a;
             })
             .replace(/([a-z0-9_]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
@@ -3870,7 +3873,7 @@ var nerdamer = (function(imports) {
                         while(true) {
                             var entry = stack.pop();
                             if(entry === undefined)
-                                err("Unmatched open bracket for bracket '"+bracket+"'!");
+                                err("Missing open bracket for bracket '"+bracket+"'!");
                             //we found the matching bracket so our search is over
                             if(entry.bracket_id === bracket.bracket_id)
                                 break; // We discard the closing bracket
@@ -3901,7 +3904,7 @@ var nerdamer = (function(imports) {
                     for(bracket in brackets)
                         if(brackets[bracket].bracket_id === i && !brackets[bracket].open)
                             brkt = brackets[bracket];
-                    err('Unmatched close bracket for bracket '+brkt+'!');
+                    err('Missing close bracket. Expected "'+brkt+'"!');
                 }
                    
             if(tree)
@@ -4549,7 +4552,7 @@ var nerdamer = (function(imports) {
         function round(x, s) {
             var sIsConstant = s && s.isConstant() || typeof s === 'undefined';
             if(x.isConstant() && sIsConstant) 
-                return Utils.round(x, Number(s||0));
+                return new Symbol(Utils.round(x, Number(s||0)));
             
             return _.symfunction('round', arguments); 
         }
@@ -5768,26 +5771,29 @@ var nerdamer = (function(imports) {
         this.percent_subtract = function(a, b) {
             return _.subtract(_.percent(a), b);
         };
-        
+        //function to quickly convert bools to Symbols
+        var bool2Symbol = function(x) {
+            return new Symbol(x === true ? 1 : 0);
+        };
         //check for equality
         this.eq = function(a, b) {
-            return a.equals(b);
+            return bool2Symbol(a.equals(b));
         };
         //checks for greater than
         this.gt = function(a, b) {
-            return a.gt(b);
+            return bool2Symbol(a.gt(b));
         };
         //checks for greater than equal
         this.gte = function(a, b) {
-            return a.gte(b);
+            return bool2Symbol(a.gte(b));
         };
         //checks for less than
         this.lt = function(a, b) {
-            return a.lt(b);
+            return bool2Symbol(a.lt(b));
         };
         //checks for less than equal
         this.lte = function(a, b) {
-            return a.lte(b);
+            return bool2Symbol(a.lte(b));
         };
         //wraps the factorial
         this.factorial = function(a) {
@@ -6083,6 +6089,12 @@ var nerdamer = (function(imports) {
                         input[0] = this.brackets(input[0]);
                     }
                     v[index] = input[0]+(fname === FACTORIAL ? '!' : '!!');
+                }
+                else if(fname === 'floor') {
+                    v[index] = '\\left \\lfloor'+this.braces(input[0])+'\\right \\rfloor';
+                }
+                else if(fname === 'ceil') {
+                    v[index] = '\\left \\lceil'+this.braces(input[0])+'\\right \\rceil';
                 }
                 else { 
                     var name = fname!=='' ? '\\mathrm'+this.braces(fname.replace(/_/g, '\\_')) : '';
