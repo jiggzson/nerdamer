@@ -157,7 +157,7 @@ if((typeof module) !== 'undefined') {
     // Solves a system of equations
     var sys_solve = function(eqns, var_array) {
         //check if a var_array was specified
-        nerdamer.clearVars();
+        //nerdamer.clearVars();// this deleted ALL variables: not what we want
         //parse all the equations to LHS. Remember that they come in as strings
         for(var i=0; i<eqns.length; i++) 
             eqns[i] = toLHS(eqns[i]);
@@ -179,6 +179,11 @@ if((typeof module) !== 'undefined') {
                 vars = vars.concat(variables(eqns[i])); 
             //remove duplicates
             vars = core.Utils.arrayUnique(vars).sort();
+            
+            // deletes only the variables of the linear equations in the nerdamer namespace
+            for (var i=0;i<vars.length;i++){
+                nerdamer.setVar(vars[i],"delete");
+            }
             // populate the matrix
             for(var i=0; i<l; i++) {
                 var e = eqns[i]; //store the expression
