@@ -23,7 +23,7 @@ if((typeof module) !== 'undefined') {
         FN = core.groups.FN;
     core.Settings.Laplace_integration_depth = 40;
     var __ = core.Extra = {
-        version: '1.2.0',
+        version: '1.2.1',
         //http://integral-table.com/downloads/LaplaceTable.pdf
         LaPlace: {
             //Using: intgral_0_oo f(t)*e^(-s*t) dt
@@ -189,6 +189,10 @@ if((typeof module) !== 'undefined') {
                     c = 0, //number of iterations
                     s = 0, //variable to measure if all values had equal frequency
                     fv;
+                //the mode of 1 item is that item as per issue #310 (verified by Happypig375). 
+                if(core.Utils.keys(map).length === 1)
+                    return args[0];
+                
                 for(var x in map) {
                     var e = map[x],
                         first_iter = c === 0;;
@@ -324,3 +328,6 @@ if((typeof module) !== 'undefined') {
     //link registered functions externally
     nerdamer.api();
 }());
+
+var x = nerdamer('mode(a,a,b,c,a,b,d)');
+console.log(x.toString())

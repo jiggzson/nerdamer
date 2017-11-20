@@ -75,5 +75,34 @@ describe('calculus', function () {
         }
     });
     
+    it('should calculate mode correctly', function () {
+        // given
+        var testCases = [
+            {
+                given: 'mode(r,r,r,r)',
+                expected: 'r'
+            },
+            {
+                given: 'mode(1,2)',
+                expected: 'mode(1,2)'
+            },
+            {
+                given: 'mode(1,1,2)',
+                expected: '1'
+            },
+            {
+                given: 'mode(a,a,b,c,a,b,d)',
+                expected: 'a'
+            }
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given);
+
+            // then
+            expect(parsed.toString()).toEqual(testCases[i].expected);
+        }
+    });
 });
     

@@ -945,7 +945,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             if(!dt) {
                 var vars = core.Utils.variables(original_symbol);
                 if(vars.length === 1)
-                    dt = vars[0];
+                    dt = vars[0]; 
+                //defaults to x
+                dt = dt || 'x';
             }
             //add support for integrating vectors
             if(core.Utils.isVector(original_symbol)) {
@@ -957,6 +959,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }
             if(!isNaN(dt))
                 _.error('variable expected but received '+dt);
+            //get rid of constants right away
+            if(original_symbol.isConstant(true))
+                return _.multiply(original_symbol.clone(), _.parse(dt));
+            
             //configurations options for integral. This is needed for tracking extra options
             //e.g. cyclic integrals or additional settings
             opt = opt || {};

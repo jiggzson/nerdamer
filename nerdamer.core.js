@@ -3646,7 +3646,7 @@ var nerdamer = (function(imports) {
                 if(before.match(/[a-z]/i)) d = '';
                 return group1+d+group2;
             })
-            .replace(/([a-z0-9_]+)/g, function(match, a) {
+            .replace(/([a-z0-9_]+)/gi, function(match, a) {
                 if(Settings.USE_MULTICHARACTER_VARS === false && !(a in functions)) {
                     if(!isNaN(a))
                         return a;

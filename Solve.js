@@ -132,6 +132,9 @@ if((typeof module) !== 'undefined') {
             clone.RHS = clone.RHS.sub(x.clone(), y.clone());
             return clone;
         },
+        isZero: function() {
+            return core.Utils.evaluate(this.toLHS()).equals(0);
+        },
         latex: function(option) { 
             return [this.LHS.latex(option), this.RHS.latex(option)].join('=');
         }
@@ -333,7 +336,18 @@ if((typeof module) !== 'undefined') {
      * @param {type} solve_for
      * @returns {Array}
      */
-    var solve = function(eqns, solve_for, solutions) {
+    var solve = function(eqns, solve_for, solutions) { 
+        if(eqns instanceof Equation) {
+            //if it's zero then we're done
+            if(eqns.isZero())
+                return [new Symbol(0)];
+            //if the lhs = x then we're done
+            if(eqns.LHS.equals(solve_for))
+                return [eqns.RHS];
+            //if the rhs = x then we're done
+            if(eqns.RHS.equals(solve_for))
+                return [eqns.LHS];
+        }
         //unwrap the vector since what we want are the elements
         if(eqns instanceof core.Vector)
             eqns = eqns.elements;
@@ -603,6 +617,9 @@ if((typeof module) !== 'undefined') {
         
         //first remove any denominators
         eq = correct_denom(eq);  
+        
+        if(eq.equals(0))
+            return [eq];
         //correct fractionals. I can only handle one type right now
         var fkeys = core.Utils.keys(fractionals);
         if(fkeys.length === 1) { 
@@ -812,4 +829,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
