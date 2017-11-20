@@ -6472,8 +6472,8 @@ var nerdamer = (function(imports) {
         },
         latex: function(option) {
             var tex = [];
-            for(var el in this.elements) {
-                tex.push(LaTeX.latex.call(LaTeX, this.elements[el], option));
+            for(var i=0;i<this.elements.length;i++) {
+                tex.push(LaTeX.latex.call(LaTeX, this.elements[i], option));
             }
             return '['+tex.join(', ')+']';
         }
