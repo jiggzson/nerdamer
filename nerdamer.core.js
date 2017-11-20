@@ -943,23 +943,6 @@ var nerdamer = (function(imports) {
                             //divide out the factor
                             n = n.divide(factor);
                         }
-                            var xf = new bigInt(2),
-                                cz = new bigInt(2),
-                                x = new bigInt(2),
-                                factor = new bigInt(1);
-
-                            while(factor.abs().equals(1)) { 
-                                for(var i=0; i<=cz && factor <=1; i++) {
-                                    x = x.pow(2).add(1).mod(n);
-                                    factor = bigInt.gcd(x.minus(xf), n);
-                                }
-
-                                cz = cz.times(2);
-                                xf = x;
-                            }
-                            add(factor);
-                            //divide out the factor
-                            n = n.divide(factor);
                     }
                 }
                 
@@ -4349,13 +4332,13 @@ var nerdamer = (function(imports) {
             //Fix issue #298
             if(symbol.equals(Math.PI))
                 return new Symbol(Math.PI);
+            //evaluate the symbol to merge constants
+            symbol = evaluate(symbol.clone());
             
-            if(symbol.group === FN)
-                symbol = evaluate(symbol);
             var retval = new Symbol(1);
             if(symbol.isConstant()) {
                 var m = symbol.toString();
-                if(isInt(m)) {
+                if(isInt(m)) { 
                     var factors = Math2.ifactor(m);
                     for(var factor in factors) {
                         var p = factors[factor];
