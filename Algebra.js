@@ -2304,7 +2304,9 @@ if((typeof module) !== 'undefined') {
                 var t = a; a = b; b = t;
             }
             var vars_a = variables(a), vars_b = variables(b);
-            if(vars_a.length === vars_b.length && vars_a.length === 1 && vars_a[0] === vars_b[0]) {
+            if((vars_a.length === vars_b.length && vars_a.length === 1 && vars_a[0] === vars_b[0]) 
+                    || vars_a.length === 1 && vars_b.length === 0 
+                    || vars_a.length === 0 && vars_b.length === 1) {
                 a = new Polynomial(a); b = new Polynomial(b);
                 return a.gcd(b).toSymbol();
             }

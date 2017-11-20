@@ -3337,7 +3337,7 @@ var nerdamer = (function(imports) {
                 'rect'              : [ , 1],
                 'sinc'              : [ , 1],
                 'tri'               : [ , 1],
-                'sign'              : [ , 1],
+                'sign'              : [ sign, 1],
                 'Ci'                : [ , 1],
                 'Ei'                : [ , 1],
                 'Shi'               : [ , 1],
@@ -4443,8 +4443,8 @@ var nerdamer = (function(imports) {
             var args = [].slice.call(arguments);
             if(allSame(args))
                 return args[0];
-            if(Settings.PARSE2NUMBER && allNumbers(args))
-                return Math.max.apply(null, args);
+            if(allNumbers(args))
+                return new Symbol(Math.max.apply(null, args));
             return _.symfunction('max', args);
         }
         
@@ -4456,9 +4456,20 @@ var nerdamer = (function(imports) {
             var args = [].slice.call(arguments);
             if(allSame(args))
                 return args[0];
-            if(Settings.PARSE2NUMBER && allNumbers(args))
-                return Math.min.apply(null, args);
+            if(allNumbers(args))
+                return new Symbol(Math.min.apply(null, args));
             return _.symfunction('min', args);
+        }
+        
+        /**
+         * Returns the sign of a number
+         * @param {Symbol} x
+         * @returns {Symbol}
+         */
+        function sign(x) {
+            if(x.isConstant(true))
+                return new Symbol(Math.sign(evaluate(x)));
+            return _.symfunction('sign', arguments);
         }
         
         function sort(symbol, opt) {
