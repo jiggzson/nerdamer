@@ -451,7 +451,6 @@ if((typeof module) !== 'undefined') {
                     points.push((i-1)/2); //take note of the possible zero location
                 last_sign = sign;
             }
-            console.log(points)
             return points;
         };   
         //Newton's iteration

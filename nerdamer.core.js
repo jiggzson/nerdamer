@@ -4524,16 +4524,20 @@ var nerdamer = (function(imports) {
                 retval = new Symbol(Math.log(symbol.multiplier.toDecimal()));
                 if(img_part) retval = _.add(retval, img_part);
             }
-            else {
+            else { 
                 var s;
                 if(!symbol.power.equals(1)) {
                     s = symbol.group === EX ? symbol.power : new Symbol(symbol.power);
                     symbol.toLinear(); 
                 }
-                retval = _.symfunction('log', arguments); 
+                //log(a,a) = 1 since the base is allowed to be changed. 
+                //This was pointed out by Happypig375 in issue #280
+                if(arguments.length > 1 && allSame(arguments))
+                    retval = new Symbol(1);
+                else
+                    retval = _.symfunction('log', arguments); 
                 
                 if(s) retval = _.multiply(s, retval);
-
             }
             return retval;
         }
@@ -7330,3 +7334,6 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+var x = nerdamer('log(a^x,a)');
+console.log(x.toString())
