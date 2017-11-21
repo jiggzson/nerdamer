@@ -5840,8 +5840,8 @@ var nerdamer = (function(imports) {
             }
             else {
                 if( value < 1e-6 || value > 1e20) {
-                    var qc = this.quickConversion( Number( value ) );
-                    if( qc[1] <= 1e20 ) {
+                    var qc = this.quickConversion( Number(value) );
+                    if( qc[1] <= 1e20 ) { 
                         var abs = Math.abs( value );
                         var sign = value/abs;
                         frac = this.fullConversion( abs.toFixed( (qc[1]+'').length-1 ));
@@ -5862,11 +5862,12 @@ var nerdamer = (function(imports) {
          * @param {number} dec
          * @returns {Array} - an array containing the denominator and the numerator
          */
-        quickConversion: function( dec ) {
+        quickConversion: function(dec) {
             var x = (dec.toExponential()+'').split('e');
             var d = x[0].split('.')[1];// get the number of places after the decimal
             var l = d ? d.length : 0; // maybe the coefficient is an integer;
-            return [Math.pow(10,l)*x[0], Math.pow(10, Math.abs(x[1])+l)];
+            //call Math.round to avoid rounding error
+            return [Math.round(Math.pow(10,l)*x[0]), Math.pow(10, Math.abs(x[1])+l)];
         },
         /**
          * Returns a good approximation of a fraction. This method gets called by convert

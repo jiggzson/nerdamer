@@ -270,37 +270,48 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
             index = index.value;
             var retval;
+            var symbolic_sum = function() {
+                var f = fn.text(),
+                    subs = {'~': true}, //lock subs. Is this even being used?
+                retval = new core.Symbol(0);
+
+                for(var i=start; i<=end; i++) {
+                    subs[index] = new Symbol(i); 
+                    var ans = _.parse(f, subs);
+                    retval = _.add(retval, ans);
+                }
+                
+                return retval;
+            };
             if(core.Utils.isNumericSymbol(start) && core.Utils.isNumericSymbol(end)) {
                 start = start.multiplier;
                 end = end.multiplier;
 
                 var variables = core.Utils.variables(fn);
                 if(variables.length === 1 && index === variables[0]) { 
-                    var f = core.Utils.build(fn),
-                        ans;
-                    retval = 0;
-                    for(var i=start; i<=end; i++) {
-                        ans = f.call(undefined, i);
-                        //check if the value is NaN to guard against ruining the rest of the answer. Issue #285
-                        if(isNaN(ans)) { 
-                            var known_obj = {};
-                            known_obj[variables[0]] = i;
-                            ans = Number(core.Utils.evaluate(_.parse(fn.toString(), known_obj)));
+                    try {
+                        var f = core.Utils.build(fn),
+                            ans;
+                        retval = 0;
+                        for(var i=start; i<=end; i++) {
+                            ans = f.call(undefined, i);
+                            //check if the value is NaN to guard against ruining the rest of the answer. Issue #285
+                            if(isNaN(ans)) { 
+                                var known_obj = {};
+                                known_obj[variables[0]] = i;
+                                ans = Number(core.Utils.evaluate(_.parse(fn.toString(), known_obj)));
+                            }
+
+                            retval += ans;
                         }
-                            
-                        retval += ans;
+                        retval = new Symbol(retval);
                     }
-                    retval = new Symbol(retval);
+                    catch(e) {
+                        retval = symbolic_sum();
+                    }   
                 }
                 else {
-                    var f = fn.text(),
-                        subs = {'~': true}, //lock subs. Is this even being used?
-                    retval = new core.Symbol(0);
-
-                    for(var i=start; i<=end; i++) {
-                        subs[index] = new Symbol(i); 
-                        retval = _.add(retval, _.parse(f, subs));
-                    }
+                    retval = symbolic_sum();
                 }
             }
             else {
