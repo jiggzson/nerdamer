@@ -2339,7 +2339,9 @@ if((typeof module) !== 'undefined') {
                 // return core.Math2.QGCD(new Frac(+a), new Frac(+b));
                 return new Symbol(core.Math2.QGCD(new Frac(+a), new Frac(+b)));
             }
-            
+            var den = _.multiply(a.getDenom() || new Symbol(1), b.getDenom() || new Symbol(1)).invert();
+            a = _.multiply(a.clone(), den.clone());
+            b = _.multiply(b.clone(), den.clone());
             //feels counter intuitive but it works. Issue #123 (nerdamer("gcd(x+y,(x+y)^2)"))
             a = _.expand(a);
             b = _.expand(b);
@@ -2352,7 +2354,7 @@ if((typeof module) !== 'undefined') {
                     || vars_a.length === 1 && vars_b.length === 0 
                     || vars_a.length === 0 && vars_b.length === 1) {
                 a = new Polynomial(a); b = new Polynomial(b);
-                return a.gcd(b).toSymbol();
+                return _.divide(a.gcd(b).toSymbol(), den);
             }
             else {
                 var T;
@@ -2363,7 +2365,7 @@ if((typeof module) !== 'undefined') {
                     b = T[1]; 
                     if(T[0].equals(0)) {
                         //return _.multiply(new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier)), b);
-                        return new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier));
+                        return _.divide(new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier)), den)
                     }
                     a = t; 
                 }
@@ -2381,9 +2383,9 @@ if((typeof module) !== 'undefined') {
                 
                 //return symbolic function for gcd in indeterminate form
                 if(a.equals(1) && !a.isConstant() && !b.isConstant())
-                    return _.symfunction('gcd', arguments);
+                    return _.divide(_.symfunction('gcd', arguments), den);
                 
-                return a;
+                return _.divide(a, den);
             }
         },
         lcm: function(a, b) {
