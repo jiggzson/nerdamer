@@ -87,6 +87,10 @@ describe('calculus', function () {
                 expected: 'mode(1,2)'
             },
             {
+                given: 'mode(1,2,3,1,2)',
+                expected: 'mode(1,2)'
+            },
+            {
                 given: 'mode(1,1,2)',
                 expected: '1'
             },

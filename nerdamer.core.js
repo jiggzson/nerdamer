@@ -4587,8 +4587,15 @@ var nerdamer = (function(imports) {
             }
             if(isSymbol(n))
                 return n;
-            if(typeof n === 'number')
-                n = Frac.simple(n);
+            if(typeof n === 'number') {
+                try {
+                    n = Frac.simple(n);
+                }
+                catch(e) {
+                    n = new Frac(n);
+                }
+            }
+                
             var symbol = new Symbol(0);
             symbol.multiplier = n;
             return symbol;
@@ -7334,6 +7341,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-var x = nerdamer('log(a^x,a)');
-console.log(x.toString())

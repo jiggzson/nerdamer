@@ -188,7 +188,9 @@ if((typeof module) !== 'undefined') {
                     max = [],
                     c = 0, //number of iterations
                     s = 0, //variable to measure if all values had equal frequency
-                    fv;
+                    fv,
+                    matches = []; //keep track if others with the same frequency
+                
                 //the mode of 1 item is that item as per issue #310 (verified by Happypig375). 
                 if(core.Utils.keys(map).length === 1)
                     return args[0];
@@ -203,6 +205,10 @@ if((typeof module) !== 'undefined') {
                         max[0] = x;
                         max[1] = e;
                     }
+                    //keep track if another max was found matching this frequency. We do this by adding it to matches
+                    else if(e === max[1]) {
+                        matches.push(x);
+                    }
                     //starts with itself and then increments each time another max equals this number
                     if(e === fv)
                         s++;
@@ -211,7 +217,11 @@ if((typeof module) !== 'undefined') {
                 }
 
                 //check if s and c are equal then no max was found so return a sym function
-                if(s === c)
+                if(matches.length > 0) { //most common values returned as per #319
+                    matches.push(max[0]);
+                    retval = _.symfunction('mode', matches.sort());
+                }
+                else if(s === c)
                     retval = _.symfunction('mode', args);
                 else
                     retval = _.parse(max[0]);
@@ -328,6 +338,3 @@ if((typeof module) !== 'undefined') {
     //link registered functions externally
     nerdamer.api();
 }());
-
-var x = nerdamer('mode(a,a,b,c,a,b,d)');
-console.log(x.toString())
