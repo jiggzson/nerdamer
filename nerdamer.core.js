@@ -743,7 +743,8 @@ var nerdamer = (function(imports) {
                     1.5056327351493116e-7]
                 ;
 
-                if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+                if (z < 0.5) 
+                    return Math.PI / (Math.sin(Math.PI * z) * Math2.gamma(1 - z));
                 else {
                     z -= 1;
 
