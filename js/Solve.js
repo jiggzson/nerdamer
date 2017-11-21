@@ -132,6 +132,9 @@ if((typeof module) !== 'undefined') {
             clone.RHS = clone.RHS.sub(x.clone(), y.clone());
             return clone;
         },
+        isZero: function() {
+            return core.Utils.evaluate(this.toLHS()).equals(0);
+        },
         latex: function(option) { 
             return [this.LHS.latex(option), this.RHS.latex(option)].join('=');
         }
@@ -154,7 +157,7 @@ if((typeof module) !== 'undefined') {
     // Solves a system of equations
     var sys_solve = function(eqns, var_array) {
         //check if a var_array was specified
-        nerdamer.clearVars();
+        //nerdamer.clearVars();// this deleted ALL variables: not what we want
         //parse all the equations to LHS. Remember that they come in as strings
         for(var i=0; i<eqns.length; i++) 
             eqns[i] = toLHS(eqns[i]);
@@ -176,6 +179,11 @@ if((typeof module) !== 'undefined') {
                 vars = vars.concat(variables(eqns[i])); 
             //remove duplicates
             vars = core.Utils.arrayUnique(vars).sort();
+            
+            // deletes only the variables of the linear equations in the nerdamer namespace
+            for (var i=0;i<vars.length;i++){
+                nerdamer.setVar(vars[i],"delete");
+            }
             // populate the matrix
             for(var i=0; i<l; i++) {
                 var e = eqns[i]; //store the expression
@@ -333,7 +341,18 @@ if((typeof module) !== 'undefined') {
      * @param {type} solve_for
      * @returns {Array}
      */
-    var solve = function(eqns, solve_for, solutions) {
+    var solve = function(eqns, solve_for, solutions) { 
+        if(eqns instanceof Equation) {
+            //if it's zero then we're done
+            if(eqns.isZero())
+                return [new Symbol(0)];
+            //if the lhs = x then we're done
+            if(eqns.LHS.equals(solve_for))
+                return [eqns.RHS];
+            //if the rhs = x then we're done
+            if(eqns.RHS.equals(solve_for))
+                return [eqns.LHS];
+        }
         //unwrap the vector since what we want are the elements
         if(eqns instanceof core.Vector)
             eqns = eqns.elements;
@@ -392,6 +411,7 @@ if((typeof module) !== 'undefined') {
         //gets points around which to solve. It does that because it builds on the principle that if
         //the sign changes over an interval then there must be a zero on that interval
         var get_points = function(symbol) {
+            
             var f = build(symbol);
             var start = Math.round(f(0)),
                 last = f(start),
@@ -401,6 +421,11 @@ if((typeof module) !== 'undefined') {
                 lside = rside*2+1; // the max number of roots on left side
             // check around the starting point
             points.push(Math.floor(start/2));
+            //adjust for log. A good starting point to include for log is 0.1
+            symbol.each(function(x) {
+                if(x.containsFunction('log'))
+                    points.push(0.1);
+            });
             // Possible issue #1. If the step size exceeds the zeros then they'll be missed. Consider the case
             // where the function dips to negative and then back the positive with a step size of 0.1. The function
             // will miss the zeros because it will jump right over it. Think of a case where this can happen.
@@ -429,7 +454,7 @@ if((typeof module) !== 'undefined') {
             return points;
         };   
         //Newton's iteration
-        var Newton = function(point, f, fp) {
+        var Newton = function(point, f, fp) { 
             var maxiter = 200,
                 iter = 0;
             //first try the point itself. If it's zero viola. We're done
@@ -603,6 +628,9 @@ if((typeof module) !== 'undefined') {
         
         //first remove any denominators
         eq = correct_denom(eq);  
+        
+        if(eq.equals(0))
+            return [eq];
         //correct fractionals. I can only handle one type right now
         var fkeys = core.Utils.keys(fractionals);
         if(fkeys.length === 1) { 
@@ -781,7 +809,12 @@ if((typeof module) !== 'undefined') {
             parent: 'nerdamer',
             numargs: -1,
             visible: true,
-            build: function(){ return solve; }
+            build: function(){ 
+                return solve; //comment out to return a vector
+                return function() {
+                    return core.Utils.convertToVector(solve.apply(null, arguments));
+                };
+            }
         },
         {
             name: 'solve',
