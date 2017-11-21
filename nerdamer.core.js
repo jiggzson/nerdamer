@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.13',
+    var version = '0.7.14',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -743,7 +743,8 @@ var nerdamer = (function(imports) {
                     1.5056327351493116e-7]
                 ;
 
-                if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+                if (z < 0.5) 
+                    return Math.PI / (Math.sin(Math.PI * z) * Math2.gamma(1 - z));
                 else {
                     z -= 1;
 
@@ -943,23 +944,6 @@ var nerdamer = (function(imports) {
                             //divide out the factor
                             n = n.divide(factor);
                         }
-                            var xf = new bigInt(2),
-                                cz = new bigInt(2),
-                                x = new bigInt(2),
-                                factor = new bigInt(1);
-
-                            while(factor.abs().equals(1)) { 
-                                for(var i=0; i<=cz && factor <=1; i++) {
-                                    x = x.pow(2).add(1).mod(n);
-                                    factor = bigInt.gcd(x.minus(xf), n);
-                                }
-
-                                cz = cz.times(2);
-                                xf = x;
-                            }
-                            add(factor);
-                            //divide out the factor
-                            n = n.divide(factor);
                     }
                 }
                 
@@ -3337,7 +3321,7 @@ var nerdamer = (function(imports) {
                 'rect'              : [ , 1],
                 'sinc'              : [ , 1],
                 'tri'               : [ , 1],
-                'sign'              : [ , 1],
+                'sign'              : [ sign, 1],
                 'Ci'                : [ , 1],
                 'Ei'                : [ , 1],
                 'Shi'               : [ , 1],
@@ -3646,9 +3630,12 @@ var nerdamer = (function(imports) {
                 if(before.match(/[a-z]/i)) d = '';
                 return group1+d+group2;
             })
-            .replace(/([a-z0-9_]+)/g, function(match, a) {
-                if(Settings.USE_MULTICHARACTER_VARS === false && !(a in functions))
+            .replace(/([a-z0-9_]+)/gi, function(match, a) {
+                if(Settings.USE_MULTICHARACTER_VARS === false && !(a in functions)) {
+                    if(!isNaN(a))
+                        return a;
                     return a.split('').join('*');
+                }
                 return a;
             })
             .replace(/([a-z0-9_]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
@@ -3870,7 +3857,7 @@ var nerdamer = (function(imports) {
                         while(true) {
                             var entry = stack.pop();
                             if(entry === undefined)
-                                err("Unmatched open bracket for bracket '"+bracket+"'!");
+                                err("Missing open bracket for bracket '"+bracket+"'!");
                             //we found the matching bracket so our search is over
                             if(entry.bracket_id === bracket.bracket_id)
                                 break; // We discard the closing bracket
@@ -3901,7 +3888,7 @@ var nerdamer = (function(imports) {
                     for(bracket in brackets)
                         if(brackets[bracket].bracket_id === i && !brackets[bracket].open)
                             brkt = brackets[bracket];
-                    err('Unmatched close bracket for bracket '+brkt+'!');
+                    err('Missing close bracket. Expected "'+brkt+'"!');
                 }
                    
             if(tree)
@@ -4346,13 +4333,13 @@ var nerdamer = (function(imports) {
             //Fix issue #298
             if(symbol.equals(Math.PI))
                 return new Symbol(Math.PI);
+            //evaluate the symbol to merge constants
+            symbol = evaluate(symbol.clone());
             
-            if(symbol.group === FN)
-                symbol = evaluate(symbol);
             var retval = new Symbol(1);
             if(symbol.isConstant()) {
                 var m = symbol.toString();
-                if(isInt(m)) {
+                if(isInt(m)) { 
                     var factors = Math2.ifactor(m);
                     for(var factor in factors) {
                         var p = factors[factor];
@@ -4440,8 +4427,8 @@ var nerdamer = (function(imports) {
             var args = [].slice.call(arguments);
             if(allSame(args))
                 return args[0];
-            if(Settings.PARSE2NUMBER && allNumbers(args))
-                return Math.max.apply(null, args);
+            if(allNumbers(args))
+                return new Symbol(Math.max.apply(null, args));
             return _.symfunction('max', args);
         }
         
@@ -4453,9 +4440,20 @@ var nerdamer = (function(imports) {
             var args = [].slice.call(arguments);
             if(allSame(args))
                 return args[0];
-            if(Settings.PARSE2NUMBER && allNumbers(args))
-                return Math.min.apply(null, args);
+            if(allNumbers(args))
+                return new Symbol(Math.min.apply(null, args));
             return _.symfunction('min', args);
+        }
+        
+        /**
+         * Returns the sign of a number
+         * @param {Symbol} x
+         * @returns {Symbol}
+         */
+        function sign(x) {
+            if(x.isConstant(true))
+                return new Symbol(Math.sign(evaluate(x)));
+            return _.symfunction('sign', arguments);
         }
         
         function sort(symbol, opt) {
@@ -4526,16 +4524,20 @@ var nerdamer = (function(imports) {
                 retval = new Symbol(Math.log(symbol.multiplier.toDecimal()));
                 if(img_part) retval = _.add(retval, img_part);
             }
-            else {
+            else { 
                 var s;
                 if(!symbol.power.equals(1)) {
                     s = symbol.group === EX ? symbol.power : new Symbol(symbol.power);
                     symbol.toLinear(); 
                 }
-                retval = _.symfunction('log', arguments); 
+                //log(a,a) = 1 since the base is allowed to be changed. 
+                //This was pointed out by Happypig375 in issue #280
+                if(arguments.length > 1 && allSame(arguments))
+                    retval = new Symbol(1);
+                else
+                    retval = _.symfunction('log', arguments); 
                 
                 if(s) retval = _.multiply(s, retval);
-
             }
             return retval;
         }
@@ -4549,7 +4551,7 @@ var nerdamer = (function(imports) {
         function round(x, s) {
             var sIsConstant = s && s.isConstant() || typeof s === 'undefined';
             if(x.isConstant() && sIsConstant) 
-                return Utils.round(x, Number(s||0));
+                return new Symbol(Utils.round(x, Number(s||0)));
             
             return _.symfunction('round', arguments); 
         }
@@ -4585,8 +4587,15 @@ var nerdamer = (function(imports) {
             }
             if(isSymbol(n))
                 return n;
-            if(typeof n === 'number')
-                n = Frac.simple(n);
+            if(typeof n === 'number') {
+                try {
+                    n = Frac.simple(n);
+                }
+                catch(e) {
+                    n = new Frac(n);
+                }
+            }
+                
             var symbol = new Symbol(0);
             symbol.multiplier = n;
             return symbol;
@@ -5768,26 +5777,29 @@ var nerdamer = (function(imports) {
         this.percent_subtract = function(a, b) {
             return _.subtract(_.percent(a), b);
         };
-        
+        //function to quickly convert bools to Symbols
+        var bool2Symbol = function(x) {
+            return new Symbol(x === true ? 1 : 0);
+        };
         //check for equality
         this.eq = function(a, b) {
-            return a.equals(b);
+            return bool2Symbol(a.equals(b));
         };
         //checks for greater than
         this.gt = function(a, b) {
-            return a.gt(b);
+            return bool2Symbol(a.gt(b));
         };
         //checks for greater than equal
         this.gte = function(a, b) {
-            return a.gte(b);
+            return bool2Symbol(a.gte(b));
         };
         //checks for less than
         this.lt = function(a, b) {
-            return a.lt(b);
+            return bool2Symbol(a.lt(b));
         };
         //checks for less than equal
         this.lte = function(a, b) {
-            return a.lte(b);
+            return bool2Symbol(a.lte(b));
         };
         //wraps the factorial
         this.factorial = function(a) {
@@ -5828,8 +5840,8 @@ var nerdamer = (function(imports) {
             }
             else {
                 if( value < 1e-6 || value > 1e20) {
-                    var qc = this.quickConversion( Number( value ) );
-                    if( qc[1] <= 1e20 ) {
+                    var qc = this.quickConversion( Number(value) );
+                    if( qc[1] <= 1e20 ) { 
                         var abs = Math.abs( value );
                         var sign = value/abs;
                         frac = this.fullConversion( abs.toFixed( (qc[1]+'').length-1 ));
@@ -5850,11 +5862,12 @@ var nerdamer = (function(imports) {
          * @param {number} dec
          * @returns {Array} - an array containing the denominator and the numerator
          */
-        quickConversion: function( dec ) {
+        quickConversion: function(dec) {
             var x = (dec.toExponential()+'').split('e');
             var d = x[0].split('.')[1];// get the number of places after the decimal
             var l = d ? d.length : 0; // maybe the coefficient is an integer;
-            return [Math.pow(10,l)*x[0], Math.pow(10, Math.abs(x[1])+l)];
+            //call Math.round to avoid rounding error
+            return [Math.round(Math.pow(10,l)*x[0]), Math.pow(10, Math.abs(x[1])+l)];
         },
         /**
          * Returns a good approximation of a fraction. This method gets called by convert
@@ -6083,6 +6096,12 @@ var nerdamer = (function(imports) {
                         input[0] = this.brackets(input[0]);
                     }
                     v[index] = input[0]+(fname === FACTORIAL ? '!' : '!!');
+                }
+                else if(fname === 'floor') {
+                    v[index] = '\\left \\lfloor'+this.braces(input[0])+'\\right \\rfloor';
+                }
+                else if(fname === 'ceil') {
+                    v[index] = '\\left \\lceil'+this.braces(input[0])+'\\right \\rceil';
                 }
                 else { 
                     var name = fname!=='' ? '\\mathrm'+this.braces(fname.replace(/_/g, '\\_')) : '';
@@ -6472,8 +6491,8 @@ var nerdamer = (function(imports) {
         },
         latex: function(option) {
             var tex = [];
-            for(var el in this.elements) {
-                tex.push(LaTeX.latex.call(LaTeX, this.elements[el], option));
+            for(var i=0;i<this.elements.length;i++) {
+                tex.push(LaTeX.latex.call(LaTeX, this.elements[i], option));
             }
             return '['+tex.join(', ')+']';
         }

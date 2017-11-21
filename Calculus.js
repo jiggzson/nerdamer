@@ -270,28 +270,48 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
             index = index.value;
             var retval;
+            var symbolic_sum = function() {
+                var f = fn.text(),
+                    subs = {'~': true}, //lock subs. Is this even being used?
+                retval = new core.Symbol(0);
+
+                for(var i=start; i<=end; i++) {
+                    subs[index] = new Symbol(i); 
+                    var ans = _.parse(f, subs);
+                    retval = _.add(retval, ans);
+                }
+                
+                return retval;
+            };
             if(core.Utils.isNumericSymbol(start) && core.Utils.isNumericSymbol(end)) {
                 start = start.multiplier;
                 end = end.multiplier;
 
                 var variables = core.Utils.variables(fn);
-                if(variables.length === 1 && index === variables[0]) {
-                    var f = core.Utils.build(fn);
-                    retval = 0;
-                    for(var i=start; i<=end; i++) {
-                        retval += f.call(undefined, i);
+                if(variables.length === 1 && index === variables[0]) { 
+                    try {
+                        var f = core.Utils.build(fn),
+                            ans;
+                        retval = 0;
+                        for(var i=start; i<=end; i++) {
+                            ans = f.call(undefined, i);
+                            //check if the value is NaN to guard against ruining the rest of the answer. Issue #285
+                            if(isNaN(ans)) { 
+                                var known_obj = {};
+                                known_obj[variables[0]] = i;
+                                ans = Number(core.Utils.evaluate(_.parse(fn.toString(), known_obj)));
+                            }
+
+                            retval += ans;
+                        }
+                        retval = new Symbol(retval);
                     }
-                    retval = new Symbol(retval);
+                    catch(e) {
+                        retval = symbolic_sum();
+                    }   
                 }
                 else {
-                    var f = fn.text(),
-                        subs = {'~': true}, //lock subs. Is this even being used?
-                    retval = new core.Symbol(0);
-
-                    for(var i=start; i<=end; i++) {
-                        subs[index] = new Symbol(i); 
-                        retval = _.add(retval, _.parse(f, subs));
-                    }
+                    retval = symbolic_sum();
                 }
             }
             else {
@@ -945,7 +965,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             if(!dt) {
                 var vars = core.Utils.variables(original_symbol);
                 if(vars.length === 1)
-                    dt = vars[0];
+                    dt = vars[0]; 
+                //defaults to x
+                dt = dt || 'x';
             }
             //add support for integrating vectors
             if(core.Utils.isVector(original_symbol)) {
@@ -957,6 +979,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }
             if(!isNaN(dt))
                 _.error('variable expected but received '+dt);
+            //get rid of constants right away
+            if(original_symbol.isConstant(true))
+                return _.multiply(original_symbol.clone(), _.parse(dt));
+            
             //configurations options for integral. This is needed for tracking extra options
             //e.g. cyclic integrals or additional settings
             opt = opt || {};
@@ -1773,7 +1799,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }
             else if(vars.length === 1 && from.isConstant() && to.isConstant()) {
                 var f = core.Utils.build(symbol);
-                retval = core.Math2.num_integrate(f, Number(from), Number(to));
+                retval = new Symbol(core.Math2.num_integrate(f, Number(from), Number(to)));
             }
             else 
                 retval = _.symfunction('defint', [symbol, from , to, dx]);
