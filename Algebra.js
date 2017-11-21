@@ -1878,6 +1878,7 @@ if((typeof module) !== 'undefined') {
                     symbol = core.Utils.evaluate(symbol);
                 
                 try {
+                    
                     if(symbol.group === CB) {
                         //TODO: I have to revisit this again. I'm checking if they're all
                         //group S. I don't know why just adding them to factors isn't working
@@ -1932,10 +1933,10 @@ if((typeof module) !== 'undefined') {
                                 return _.pow(symbol, _.parse(p));
                         }
                         //factor the coefficients
+                        
                         symbol = __.Factor.coeffFactor(symbol, factors);
                         //factor the power
                         symbol = __.Factor.powerFactor(symbol, factors);
-
                         if(vars.length === 1) { 
                             symbol = __.Factor.squareFree(symbol, factors);
                             var t_factors = new Factors();
@@ -1969,6 +1970,35 @@ if((typeof module) !== 'undefined') {
                     //no need to stop the show because something went wrong :)
                     return symbol;
                 }
+            },
+            reduce: function(symbol, factors) {
+                if(symbol.group === CP && symbol.length === 2) {
+                    var symbols = symbol.collectSymbols().sort(function(a, b) {
+                        return b.multiplier - a.multiplier;
+                    });
+                    if(symbols[0].power.equals(symbols[1].power)) {
+                        //x^n-a^n
+                        var n = _.parse(symbols[0].power),
+                            a = symbols[0].clone().toLinear(),
+                            b = symbols[1].clone().toLinear();
+                    
+                        //apply rule: (a-b)*sum(a^(n-i)*b^(i-1),1,n)
+                        factors.add(_.add(a.clone(), b.clone()));
+                        //flip the sign
+                        b.negate();
+                        //turn n into a number
+                        var nn = Number(n);
+                        //the remainder
+                        var result = new Symbol(0);
+                        for(var i=1; i<=nn; i++) {
+                            var aa = _.pow(a.clone(), _.subtract(n.clone(), new Symbol(i))),
+                                bb = _.pow(b.clone(), _.subtract(new Symbol(i), new Symbol(1)));
+                            result = _.add(result, _.multiply(aa, bb));
+                        }
+                        return result;
+                    }
+                }
+                return symbol;
             },
             /**
              * Makes Symbol square free
@@ -2030,7 +2060,8 @@ if((typeof module) !== 'undefined') {
                         });
                     }
                     symbol.updateHash();
-                    if(factors) factors.add(new Symbol(gcd));
+                    if(factors) 
+                        factors.add(new Symbol(gcd));
                 }
                 return symbol;
             },
@@ -2173,6 +2204,7 @@ if((typeof module) !== 'undefined') {
             },
             //factoring for multivariate
             mfactor: function(symbol, factors) { 
+                
                 if(symbol.group === FN) { 
                     if(symbol.fname === 'sqrt') {
                         var factors2 = new Factors(),
@@ -2210,7 +2242,7 @@ if((typeof module) !== 'undefined') {
                             }
                         }
                     }
-
+                    
                     for(var x in sorted) {
                         var r = _.parse(x+'^'+maxes[x]); 
                         var new_factor = _.expand(_.divide(sorted[x], r)); 
@@ -2219,17 +2251,28 @@ if((typeof module) !== 'undefined') {
                             //factors.add(divided[1]);
                             return divided[1];
                         }
-
+                        
                         if(divided[1].equals(0)) { //we found at least one factor
-                            var factor = divided[0];
-                            factors.add(factor); 
                             //factors.add(new_factor);
-                            var d = __.div(symbol, divided[0].clone());
+                            var d = __.div(symbol.clone(), divided[0].clone());
                             var r = d[0];
+                            //we don't want to just flip the sign. If the remainder is -1 then we accomplished nothing
+                            //and we just return the symbol;
+                            if(r.equals(-1))
+                                return symbol;
+                            var factor = divided[0]; 
+                            if(symbol.equals(factor)) {
+                                var rem = __.Factor.reduce(factor, factors);
+                                if(!symbol.equals(rem))
+                                    return __.Factor.mfactor(rem, factors);
+                            }
+                            else
+                                factors.add(factor); 
                             if(r.isConstant()) { 
                                 factors.add(r);
                                 return r;
                             }
+                            
                             return __.Factor.mfactor(r, factors);
                         }
                     }

@@ -275,11 +275,20 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 end = end.multiplier;
 
                 var variables = core.Utils.variables(fn);
-                if(variables.length === 1 && index === variables[0]) {
-                    var f = core.Utils.build(fn);
+                if(variables.length === 1 && index === variables[0]) { 
+                    var f = core.Utils.build(fn),
+                        ans;
                     retval = 0;
                     for(var i=start; i<=end; i++) {
-                        retval += f.call(undefined, i);
+                        ans = f.call(undefined, i);
+                        //check if the value is NaN to guard against ruining the rest of the answer. Issue #285
+                        if(isNaN(ans)) { 
+                            var known_obj = {};
+                            known_obj[variables[0]] = i;
+                            ans = Number(core.Utils.evaluate(_.parse(fn.toString(), known_obj)));
+                        }
+                            
+                        retval += ans;
                     }
                     retval = new Symbol(retval);
                 }
