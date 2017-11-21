@@ -2729,5 +2729,7 @@ if((typeof module) !== 'undefined') {
             };}
         }
     ]);
+    _['divide+_*/^%Algebra'] = __.divide;
+    _.operators['/'].fn = 'divide+_*/^%Algebra';
     nerdamer.api();
 })();
