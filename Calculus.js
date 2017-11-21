@@ -1788,7 +1788,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }
             else if(vars.length === 1 && from.isConstant() && to.isConstant()) {
                 var f = core.Utils.build(symbol);
-                retval = core.Math2.num_integrate(f, Number(from), Number(to));
+                retval = new Symbol(core.Math2.num_integrate(f, Number(from), Number(to)));
             }
             else 
                 retval = _.symfunction('defint', [symbol, from , to, dx]);
