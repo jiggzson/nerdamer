@@ -411,6 +411,7 @@ if((typeof module) !== 'undefined') {
         //gets points around which to solve. It does that because it builds on the principle that if
         //the sign changes over an interval then there must be a zero on that interval
         var get_points = function(symbol) {
+            
             var f = build(symbol);
             var start = Math.round(f(0)),
                 last = f(start),
@@ -420,6 +421,11 @@ if((typeof module) !== 'undefined') {
                 lside = rside*2+1; // the max number of roots on left side
             // check around the starting point
             points.push(Math.floor(start/2));
+            //adjust for log. A good starting point to include for log is 0.1
+            symbol.each(function(x) {
+                if(x.containsFunction('log'))
+                    points.push(0.1);
+            });
             // Possible issue #1. If the step size exceeds the zeros then they'll be missed. Consider the case
             // where the function dips to negative and then back the positive with a step size of 0.1. The function
             // will miss the zeros because it will jump right over it. Think of a case where this can happen.
@@ -445,10 +451,11 @@ if((typeof module) !== 'undefined') {
                     points.push((i-1)/2); //take note of the possible zero location
                 last_sign = sign;
             }
+            console.log(points)
             return points;
         };   
         //Newton's iteration
-        var Newton = function(point, f, fp) {
+        var Newton = function(point, f, fp) { 
             var maxiter = 200,
                 iter = 0;
             //first try the point itself. If it's zero viola. We're done
