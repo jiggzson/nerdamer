@@ -3168,6 +3168,14 @@ var nerdamer = (function(imports) {
                     retval = _.subtract(k, trig.atan(symbol));
                 }
                 return retval;    
+            },
+            atan2: function(a, b) {
+                if(a.equals(0) && b.equals(0))
+                    throw new Error('atan2 is undefined for 0, 0');
+                if(Settings.PARSE2NUMBER && a.isConstant() && b.isConstant()) {
+                    return Math.atan2(a, b);
+                }
+                return _.symfunction('atan2', arguments);
             }
         };
             
@@ -3605,11 +3613,20 @@ var nerdamer = (function(imports) {
              */
             var e = String(expression_string), match;
             //add support for spaces between variables
-            while(true) {
+            while(true) { 
                 match = this.operator_filter_regex.exec(e);
                 if(!match)
                     break;
-                e = e.replace(match[0], match[1]+'*'+match[2]);
+                try {
+                    var a = match[1],
+                        b = match[2];
+                    validateName(a);
+                    validateName(b);
+                    e = e.replace(match[0], a+'*'+b);
+                }
+                catch(e) {
+                    break;
+                }
             }
 
             e = e.split(' ').join('')//strip empty spaces
