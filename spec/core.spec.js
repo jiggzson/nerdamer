@@ -838,6 +838,157 @@ describe('Nerdamer core', function () {
             }
         });
     });
+    describe('hyperbolic trigonometric functions', function () {
+        it('should be computed properly', function () {
+            // given
+            var testCases = [
+                {
+                    given: 'acosh(1/23.12)',
+                    expected: 'log((1/578)*i*sqrt(333459)+25/578)',
+                    expectedValue: '-4.440892098500627e-16+1.5275302342078616*i'
+                },
+            ];
+
+            for (var i = 0; i < testCases.length; ++i) {
+                // when
+                var parsed = nerdamer(testCases[i].given);
+                var value = parsed.evaluate().text('decimals');
+
+                // then
+                expect(parsed.toString()).toEqual(testCases[i].expected);
+                expect(value).toEqual(testCases[i].expectedValue);
+            }
+        });
+
+        it('should throw for wrong trigonometric arguments', function () {
+            // given
+            var testCases = [
+                'tan(pi/2)',
+                'sec(pi/2)',
+                'csc(pi)',
+                'csc(2*pi)',
+                'cot(pi)',
+                'cot(2*pi)'
+            ];
+
+            for (var i = 0; i < testCases.length; ++i) {
+                var threwError = false;
+                try {
+                    nerdamer(testCases[i]);
+                } catch (e) {
+                    threwError = true;
+                }
+                expect(threwError).toBe(true);
+            }
+        });
+
+        it('should calculate correctly with variables', function () {
+            // given
+            var testCases = [
+                {
+                    given: 'cos(x)',
+                    expected: 'cos(x)',
+                    expectedValue: '-0.5048461045998576'
+                },
+                {
+                    given: 'sin(x)',
+                    expected: 'sin(x)',
+                    expectedValue: '0.8632093666488737'
+                },
+                {
+                    given: 'tan(x)',
+                    expected: 'tan(x)',
+                    expectedValue: '-1.7098465429045073'
+                },
+                {
+                    given: 'y*tan(x)*tan(x)',
+                    expected: 'tan(x)^2*y',
+                    expectedValue: '9.647798160932235'
+                },
+                {
+                    given: '2*cos(x)+cos(x)',
+                    expected: '3*cos(x)',
+                    expectedValue: '-1.514538313799573'
+                },
+                {
+                    given: '2*cos(x)+cos(x+8+5*x)',
+                    expected: '2*cos(x)+cos(6*x+8)',
+                    expectedValue: '-1.18837521422445'
+                },
+                {
+                    given: 'x^2+2*cos(x)+cos(x+8+5*x)+4*x^2',
+                    expected: '2*cos(x)+5*x^2+cos(6*x+8)',
+                    expectedValue: '20.86162478577555'
+                },
+                {
+                    given: 'cos(x)*cos(x)',
+                    expected: 'cos(x)^2',
+                    expectedValue: '0.25486958932965037'
+                },
+                {
+                    given: 'x^x*cos(x)*sin(x)/x',
+                    expected: 'cos(x)*sin(x)*x^(-1+x)',
+                    expectedValue: '-0.9856355924988681'
+                },
+                {
+                    given: '2*cos(x)+5*cos(2*x)',
+                    expected: '2*cos(x)+5*cos(2*x)',
+                    expectedValue: '-3.460996315903212'
+                },
+                {
+                    given: '2*cos(x)*5*cos(2*x)',
+                    expected: '10*cos(2*x)*cos(x)',
+                    expectedValue: '2.4750626589177886'
+                },
+                {
+                    given: 'cos(x)+(x+x^2+x)',
+                    expected: '2*x+x^2+cos(x)',
+                    expectedValue: '8.105153895400143'
+                },
+                {
+                    given: 'cos(x)+(x+x^2+7)',
+                    expected: '7+cos(x)+x+x^2',
+                    expectedValue: '13.005153895400143'
+                },
+                {
+                    given: 'x/cos(x)*cos(x)',
+                    expected: 'x',
+                    expectedValue: '2.1'
+                },
+                {
+                    given: 'tan(x)*tan(x)',
+                    expected: 'tan(x)^2',
+                    expectedValue: '2.923575200282495'
+                },
+                {
+                    given: '2*(tan(x)+tan(2*x)+7)-6*tan(x)',
+                    expected: '-4*tan(x)+14+2*tan(2*x)',
+                    expectedValue: '24.394945720635707'
+                },
+                {
+                    given: '((3+y)*2-(cos(x)*4+z))',
+                    expected: '-4*cos(x)-z+2*y+6',
+                    expectedValue: '13.61938441839943'
+                },
+                /* TODO jiggzson: Results in NaN
+                {
+                    given: 'cos(x^2)*cos(x^2)^x',
+                    expected: 'cos(x^2)^(1+x)',
+                    expectedValue: '0.02339774318212161*(-1)^3.1'
+                }*/
+            ];
+
+            for (var i = 0; i < testCases.length; ++i) {
+                // when
+                var parsed = nerdamer(testCases[i].given);
+                var value = parsed.evaluate(values).text('decimals');
+
+                // then
+                expect(parsed.toString()).toEqual(testCases[i].expected);
+                expect(value).toEqual(testCases[i].expectedValue);
+            }
+        });
+    });
 
     it('should handle square roots', function () {
         // given
