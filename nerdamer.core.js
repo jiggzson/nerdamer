@@ -1142,25 +1142,29 @@ var nerdamer = (function(imports) {
                     A = new Frac(A.toString());
                 if(!(n instanceof Frac))
                     n = new Frac(n.toString());
+                if(n.equals(1))
+                    return A;
                 //begin algorithm
                 var xk = A.divide(new Frac(2)); //x0
                 var e = new Frac(1e-15);
-                var dk, xk0, d0;console.log(n)
+                var dk, dk0, d0;
                 var a = n.clone().invert(),
                     b = n.subtract(new Frac(1));
                 do {
-                    //dk = a*(A/Math.pow(xk, b)-xk);
-                    dk = a.multiply(A.divide(Math2.bigpow(b)).subtract(xk));
-                    //xk+=dk;
-                    xk = xk.add(dk);
-                    //check to see if there's no change from the last xk
+                    var powb = Math2.bigpow(xk, b);
+                    var dk_dec = a.multiply(A.divide(powb).subtract(xk)).toDecimal(25);
+                    dk = Frac.create(dk_dec);
                     if(d0)
                         break;
-                    d0 = xk0.equals(xk);
-                    xk0 = xk;
-                    //console.log(xk, dk, e, Math.abs(dk) > e)
+                    
+                    xk = xk.add(dk);
+                    //check to see if there's no change from the last xk
+                    var dk_dec = dk.toDecimal();
+                    d0 = dk0 ? dk0 === dk_dec : false;
+                    dk0 = dk_dec;
                 }
-                while(dk.absEquals(e))
+                while(dk.abs().gte(e))
+
                 return xk;
             }
         };
@@ -1599,8 +1603,13 @@ var nerdamer = (function(imports) {
         if(n instanceof Frac) return n;
         if(n === undefined) return this;
         if(isInt(n)) { 
-            this.num = bigInt(n);
-            this.den = bigInt(1);
+            try {
+                this.num = bigInt(n);
+                this.den = bigInt(1);
+            }
+            catch(e) {
+                return Frac.simple(n);
+            }
         }
         else {
             var frac = Fraction.convert(n);
@@ -1608,6 +1617,20 @@ var nerdamer = (function(imports) {
             this.den = new bigInt(frac[1]);
         }
     }
+    //safe to use with negative numbers or other types
+    Frac.create = function(n) {
+        if(n instanceof Frac)
+            return n;
+        n = n.toString();
+        var is_neg = n.charAt(0) === '-'; //check if it's negative
+        if(is_neg)
+            n = n.substr(1, n.length-1); //remove the sign
+        var frac = new Frac(n);
+        //put the sign back
+        if(is_neg)
+            frac.negate();
+        return frac;
+    };
     
     Frac.isFrac = function(o) {
         return (o instanceof Frac);
@@ -1695,41 +1718,43 @@ var nerdamer = (function(imports) {
             m.den = new bigInt(this.den);
             return m;
         },
-        toDecimal: function() {
-            if(!Settings.precision)
+        toDecimal: function(prec) {
+            if(prec || Settings.precision) { 
+                var sign = this.num.isNegative() ? '-' : '';
+                if(this.num.equals(this.den))
+                    return '1';
+                //go plus one for rounding
+                prec = prec+1 || 19;
+                var narr = [], 
+                    n = this.num.abs(),
+                    d = this.den;
+                for(var i=0; i<prec; i++) {
+                    var w = n.divide(d), //divide out whole
+                        r = n.subtract(w.multiply(d)); //get remainder
+
+                    narr.push(w);    
+                    if(r.equals(0))
+                            break;
+                    n = r.times(10); //shift one dec place
+                }
+                var whole = narr.shift();
+                if(narr.length === 0)
+                    return whole.toString();
+
+                if(i === prec) {
+                    var lt = [];
+                    //get the last two so we can round it
+                    for(var i=0; i<2; i++)
+                        lt.unshift(narr.pop());
+                    //put the last digit back by rounding the last two
+                    narr.push(Math.round(lt.join('.')));
+                }
+
+                var dec = whole.toString()+'.'+narr.join('');
+                return sign+dec;
+            }
+            else
                 return this.num/this.den;
-            //return this.num/this.den;
-            var sign = this.num.isNegative() ? '-' : '';
-            if(this.num.equals(this.den))
-                return '1';
-            //go plus one for rounding
-            prec = prec+1 || 19;
-            var narr = [], 
-                n = this.num.abs(),
-                d = this.den;
-            for(var i=0; i<prec; i++) {
-                var w = n.divide(d), //divide out whole
-                    r = n.subtract(w.multiply(d)); //get remainder
-                    
-                narr.push(w);    
-                if(r.equals(0))
-                        break;
-                n = r.times(10); //shift one dec place
-            }
-            var whole = narr.shift();
-            if(narr.length === 0)
-                return whole.toString();
-            
-            if(i === prec) {
-                var lt = [];
-                //get the last two so we can round it
-                for(var i=0; i<2; i++)
-                    lt.unshift(narr.pop());
-                //put the last digit back by rounding the last two
-                narr.push(Math.round(lt.join('.')));
-            }
-            var dec = whole+'.'+narr.join('');
-            return sign+dec;
         },
         qcompare: function(n) { 
             return [this.num.multiply(n.den), n.num.multiply(this.den)];
@@ -1752,6 +1777,12 @@ var nerdamer = (function(imports) {
             var q = this.qcompare(n);
             
             return q[0].gt(q[1]);
+        },
+        gte: function(n) {
+            return this.greaterThan(n) || this.equals(n);
+        },
+        lte: function(n) {
+            return this.lessThan(n) || this.equals(n);
         },
         lessThan: function(n) { 
             if(!isNaN(n)) n = new Frac(n);
@@ -4360,23 +4391,31 @@ var nerdamer = (function(imports) {
          * @param {bool} asbig - true if a bigDecimal is wanted
          * @returns {Symbol}
          */
+        //TODO: this method needs serious optimization
         function nthroot(num, p, prec, asbig) {
+            prec = prec || 25;
             if(!isSymbol(p))
                 p = _.parse(p);
             if(isInt(num) && p.isConstant()) {
                 var sign = num.sign(),
                     x;
                 num = abs(num); //remove the sign
-                console.log(Math2.nthroot(num, p).toString())
                 var idx = num+'-'+p;
                 if(idx in Settings.CACHE.roots) {
                     x = new bigInt(Settings.CACHE.roots[idx]);
                     if(!even(p))
                         x = x.multiply(sign);
                 }
+                else {
+                    if(num < 18446744073709551616) //2^64
+                        x = Frac.create(Math.pow(num, p));
+                    else
+                        x = Math2.nthroot(num, p);
+                }
+                    
                 if(asbig)
                     return x;
-                return evaluate(x);
+                return x.toDecimal(prec);
             }
             
             return _.symfunction('nthroot', arguments);
@@ -7397,6 +7436,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-//var x = nerdamer('nthroot(-27,3)')
-//console.log(x)
