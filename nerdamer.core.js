@@ -13,8 +13,6 @@ var nerdamer = (function(imports) {
         _ = new Parser(), //nerdamer's parser
         //import bigInt
         bigInt = imports.bigInt,
-        //import bigNumber
-        bigDecimal = imports.bigDecimal,
         
         Groups = {},
         
@@ -67,7 +65,9 @@ var nerdamer = (function(imports) {
             //Aliases
             ALIASES: {
                 'π': 'pi'
-            }
+            },
+            //Cached items
+            CACHE: {}
         },
         
         //Container for custom operators
@@ -1134,14 +1134,51 @@ var nerdamer = (function(imports) {
                 if(x >= 1)
                     return 0;
                 return 1-x;
+            },
+            //https://en.wikipedia.org/wiki/Nth_root_algorithm
+            nthroot: function(A, n) { 
+                //make sure the input is of type Frac
+                if(!(A instanceof Frac))
+                    A = new Frac(A.toString());
+                if(!(n instanceof Frac))
+                    n = new Frac(n.toString());
+                //begin algorithm
+                var xk = A.divide(new Frac(2)); //x0
+                var e = new Frac(1e-15);
+                var dk, xk0, d0;console.log(n)
+                var a = n.clone().invert(),
+                    b = n.subtract(new Frac(1));
+                do {
+                    //dk = a*(A/Math.pow(xk, b)-xk);
+                    dk = a.multiply(A.divide(Math2.bigpow(b)).subtract(xk));
+                    //xk+=dk;
+                    xk = xk.add(dk);
+                    //check to see if there's no change from the last xk
+                    if(d0)
+                        break;
+                    d0 = xk0.equals(xk);
+                    xk0 = xk;
+                    //console.log(xk, dk, e, Math.abs(dk) > e)
+                }
+                while(dk.absEquals(e))
+                return xk;
             }
         };
         //link the Math2 object to Settings.FUNCTION_MODULES
         Settings.FUNCTION_MODULES.push(Math2);
         
-        //Make Math2 visible to the parser
-        Settings.FUNCTION_MODULES.push(Math2);
-
+        var cacheRoots = function() {
+            Settings.CACHE.roots = {};
+            var x = 40, 
+                y = 40;
+            for(var i=2; i<=x; i++) {
+                for(var j=2; j<=y; j++) {
+                    var nthpow = bigInt(i).pow(j);
+                    Settings.CACHE.roots[nthpow+'-'+j] = i;
+                }
+            }
+        };
+        cacheRoots();
         //polyfills
         //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/
         Math.sign = Math.sign || function(x) { 
@@ -4327,14 +4364,15 @@ var nerdamer = (function(imports) {
             if(!isSymbol(p))
                 p = _.parse(p);
             if(isInt(num) && p.isConstant()) {
-                num = new bigDecimal(num.toString());
-                var n = new bigDecimal((p || 2).toString()); //default to sqrt
-                //TODO: needs a better way to be determined. Idea: check the num^p-x and continue if epsilon too big
-                prec = prec || bigDecimal.log(num).times(15); //adjust precision to log(num)*15
-                var x = new bigDecimal(1); // Initial guess.
-                var k = new bigDecimal(1).dividedBy(n);
-                for (var i=0; i<prec; i++) {
-                    x = k.times(n.minus(1).times(x).add(num.dividedBy(x.toPower(n.minus(1)))));
+                var sign = num.sign(),
+                    x;
+                num = abs(num); //remove the sign
+                console.log(Math2.nthroot(num, p).toString())
+                var idx = num+'-'+p;
+                if(idx in Settings.CACHE.roots) {
+                    x = new bigInt(Settings.CACHE.roots[idx]);
+                    if(!even(p))
+                        x = x.multiply(sign);
                 }
                 if(asbig)
                     return x;
@@ -7359,3 +7397,6 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+//var x = nerdamer('nthroot(-27,3)')
+//console.log(x)
