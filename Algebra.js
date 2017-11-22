@@ -2625,6 +2625,17 @@ if((typeof module) !== 'undefined') {
 
             return [quot, rem];
         },
+        line: function(v1, v2, x) {
+            x = _.parse(x || 'x');
+            if(!core.Utils.isVector(v1)||!core.Utils.isVector(v2))
+                _.err('Line expects a vector! Received "'+v1+'" & "'+v2+'"');
+            var dx = _.subtract(v2.e(1).clone(), v1.e(1).clone()),
+                dy = _.subtract(v2.e(2).clone(), v1.e(2).clone()),
+                m = _.divide(dy, dx),
+                a = _.multiply(x, m.clone()),
+                b = _.multiply(v1.e(1).clone(),m);
+            return _.add(_.subtract(a, b), v1.e(2).clone());
+        },
         Classes: {
             Polynomial: Polynomial,
             Factors: Factors,
@@ -2668,6 +2679,12 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: [1, 2],
             build: function() { return __.coeffs; }
+        },
+        {
+            name: 'line',
+            visible: true,
+            numargs: [2, 3],
+            build: function() { return __.line; }
         }
     ]);
     nerdamer.api();

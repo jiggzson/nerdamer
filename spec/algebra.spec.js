@@ -400,4 +400,27 @@ describe('Algebra', function () {
             expect(result.toString()).toEqual(testCases[i].expected);
         }
     });
+    
+    it('should calculate the line function', function () {
+        // given
+        var testCases = [
+            {
+                given: 'line([1,2], [3,4])',
+                expected: '1+x'
+            }, 
+            {
+                given: 'line([a1,b1], [a2,b2], t)',
+                expected: '(-a1+a2)^(-1)*(-b1+b2)*t-(-a1+a2)^(-1)*(-b1+b2)*a1+b1'
+            }, 
+            
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var result = nerdamer(testCases[i].given);
+
+            // then
+            expect(result.toString()).toEqual(testCases[i].expected);
+        }
+    });
 });
