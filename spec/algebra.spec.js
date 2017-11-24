@@ -355,6 +355,14 @@ describe('Algebra', function () {
             {
                 given: 'pfactor(-7877474663)',
                 expected: '(-97)*(180871)*(449)'
+            },
+            {
+                given: 'pfactor(15!+1)',
+                expected: '(46271341)*(479)*(59)'
+            },
+            {
+                given: 'pfactor(15!+11!)',
+                expected: '(11)*(181^2)*(2^8)*(3^4)*(5^2)*(7)'
             }
         ];
 
