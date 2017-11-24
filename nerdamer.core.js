@@ -4623,8 +4623,17 @@ var nerdamer = (function(imports) {
                 return _.add(_.parse(a), _.parse(b));
             }
             
-            if(symbol.isConstant() && typeof base !== 'undefined' && base.isConstant())
-                retval = new Symbol(Math2.bigLog(new Frac(+symbol)).divide(Math2.bigLog(new Frac(+base))));
+            if(symbol.isConstant() && typeof base !== 'undefined' && base.isConstant()) {
+                /*
+                var log_sym = Math2.bigLog(symbol.multiplier);
+                var log_base = Math2.bigLog(base.multiplier);
+                retval = new Symbol(log_sym.divide());
+                */
+                var log_sym = Math.log(symbol);
+                var log_base = Math.log(base);
+                retval = new Symbol(log_sym/log_base);
+            }
+                
             else if(symbol.group === EX && symbol.power.multiplier.lessThan(0) || symbol.power.toString() === '-1') {
                 symbol.power.negate(); 
                 //move the negative outside but keep the positive inside :)
