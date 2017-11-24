@@ -697,6 +697,18 @@ var nerdamer = (function(imports) {
                 return _.parse(symbol);
             }, true);
         },
+        convertToVector = Utils.convertToVector = function(x) {
+            if(isArray(x)) {
+                var vector = new Vector([]);
+                for(var i=0; i<x.length; i++) 
+                    vector.elements.push(convertToVector(x[i]));
+                return vector;
+            }
+            //Ensure that a nerdamer ready object is returned
+            if(!isSymbol(x))
+                return _.parse(x);
+            return x;
+        },
         //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
         //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the 
         //functions within are pretty self-explanatory.
@@ -722,11 +734,22 @@ var nerdamer = (function(imports) {
             },
             bigpow: function(n, p) { 
                 if(!(n instanceof Frac))
-                    n = Frac.simple(n);
-                n = n.clone();
-                n.num = n.num.pow(Number(p));
-                n.den = n.den.pow(Number(p));
-                return n;
+                    n = Frac.create(n);
+                if(!(p instanceof Frac))
+                    p = Frac.create(p);
+                var retval = new Frac(0);
+                if(p.isInteger()) {
+                    retval.num = n.num.pow(p.toString());
+                    retval.den = n.den.pow(p.toString());
+                }
+                else {
+                    var num = Frac.create(Math.pow(n.num, p.num));
+                    var den = Frac.create(Math.pow(n.den, p.num));
+
+                    retval.num = Math2.nthroot(num, p.den.toString());
+                    retval.den = Math2.nthroot(den, p.den);
+                }  
+                return retval;
             },
             //http://stackoverflow.com/questions/15454183/how-to-make-a-function-that-computes-the-factorial-for-numbers-with-decimals
             gamma: function(z) {
@@ -3527,7 +3550,7 @@ var nerdamer = (function(imports) {
          * @param {Array} args
          * @returns {Symbol}
          */
-        this.callfunction = function(fn_name, args) { 
+        this.callfunction = function(fn_name, args, allowed_args) { 
             var fn_settings = functions[fn_name];
             
             if(!fn_settings) 
@@ -3723,15 +3746,22 @@ var nerdamer = (function(imports) {
                 }
                 return a;
             })
-            .replace(/([a-z0-9_]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
-                var g1 = a || c,
-                    g2 = b || d;
-                if(g1 in functions) //create a passthrough for functions
-                    return g1+g2;
-                return g1+'*'+g2;
-            })
             //allow omission of multiplication sign between brackets
             .replace( /\)\(/g, ')*(' ) || '0';
+            //replace x(x+a) with x*(x+a)
+            while(true) {
+                var e_org = e; //store the original
+                e = e.replace(/([a-z0-9_]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
+                    var g1 = a || c,
+                        g2 = b || d;
+                    if(g1 in functions) //create a passthrough for functions
+                        return g1+g2;
+                    return g1+'*'+g2;
+                });
+                //if the original equals the replace we're done
+                if(e_org === e) 
+                    break;
+            }
 
             var l = e.length, //the length of the string
                 output = [], //the output array. This is what's returned
@@ -5717,6 +5747,7 @@ var nerdamer = (function(imports) {
                     }
 
                     result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
+                    //result = new Symbol(Math2.bigpow(a.multiplier, b.multiplier));
                     //put the back sign
                     if(c)
                         result = _.multiply(result, c);

@@ -2677,9 +2677,13 @@ if((typeof module) !== 'undefined') {
             return [quot, rem];
         },
         line: function(v1, v2, x) {
+            if(core.Utils.isArray(v1))
+                v1 = core.Utils.convertToVector(v1);
+            if(core.Utils.isArray(v2))
+                v2 = core.Utils.convertToVector(v2);
             x = _.parse(x || 'x');
             if(!core.Utils.isVector(v1)||!core.Utils.isVector(v2))
-                _.err('Line expects a vector! Received "'+v1+'" & "'+v2+'"');
+                _.error('Line expects a vector! Received "'+v1+'" & "'+v2+'"');
             var dx = _.subtract(v2.e(1).clone(), v1.e(1).clone()),
                 dy = _.subtract(v2.e(2).clone(), v1.e(2).clone()),
                 m = _.divide(dy, dx),
