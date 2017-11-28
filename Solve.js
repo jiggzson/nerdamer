@@ -786,20 +786,7 @@ if((typeof module) !== 'undefined') {
     var setEq = function(a, b) {
         return _.equals(a, b);
     };
-    
-    core.Utils.convertToVector = function(x) {
-        if(core.Utils.isArray(x)) {
-            var vector = new core.Vector([]);
-            for(var i=0; i<x.length; i++) 
-                vector.elements.push(core.Utils.convertToVector(x[i]));
-            return vector;
-        }
-        //Ensure that a nerdamer ready object is returned
-        if(!core.Utils.isSymbol(x))
-            return _.parse(x);
-        return x;
-    };
-    
+
     //link the Equation class back to the core
     core.Equation = Equation;
     

@@ -36,15 +36,10 @@ describe('Algebra', function () {
             }, {
                 given:'gcd(5*x^11+90*x^9+361*x^7+473*x^5+72*x^3+91*x, 7150*x^12+9360*x^10+1375*x^9+1430*x^8+37550*x^7+1872*x^6+47075*x^5+7510*x^3+9360*x)',
                 expected: '5*x^5+x'
-            }, 
-            {
+            }, {
                 given:'gcd(7*x^4+7*x^3+4*x^2+5*x+1, 21*x^6+47*x^4+80*x^3+20*x^2+49*x+11)',
                 expected: '1+4*x+7*x^3'
-            },
-            {
-                given:'gcd(x^-1,x)',
-                expected: 'x^(-1)'
-            },
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
@@ -314,10 +309,6 @@ describe('Algebra', function () {
             {
                 given: 'factor(sqrt(4*x^2*y+4*x^2))',
                 expected: '(2)*(abs(x))*(sqrt(1+y))'
-            },
-            {
-                given: 'factor(x^5-y^5)',
-                expected: '(-y+x)*(x*y^3+x^2*y^2+x^3*y+x^4+y^4)'
             }
         ];
 
@@ -366,13 +357,13 @@ describe('Algebra', function () {
                 expected: '(-97)*(180871)*(449)'
             },
             {
-                given: 'pfactor(15!-1)',
-                expected: '(1510259)*(17)*(31^2)*(53)'
-            }, 
+                given: 'pfactor(15!+1)',
+                expected: '(46271341)*(479)*(59)'
+            },
             {
-                given: 'pfactor(PI)',
-                expected: '245850922/78256779'
-            }, 
+                given: 'pfactor(15!+11!)',
+                expected: '(11)*(181^2)*(2^8)*(3^4)*(5^2)*(7)'
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
@@ -407,6 +398,29 @@ describe('Algebra', function () {
                 given: 'coeffs(a*x^2+b*x+c+x, x)',
                 expected: '[c,1+b,a]'
             }
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var result = nerdamer(testCases[i].given);
+
+            // then
+            expect(result.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
+    it('should calculate the line function', function () {
+        // given
+        var testCases = [
+            {
+                given: 'line([1,2], [3,4])',
+                expected: '1+x'
+            }, 
+            {
+                given: 'line([a1,b1], [a2,b2], t)',
+                expected: '(-a1+a2)^(-1)*(-b1+b2)*t-(-a1+a2)^(-1)*(-b1+b2)*a1+b1'
+            }, 
+            
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

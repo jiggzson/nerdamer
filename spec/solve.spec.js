@@ -70,7 +70,7 @@ describe('Solve', function () {
             },
             {
                 given: 'solve(sqrt(x^3)+sqrt(x^2)-sqrt(x)=0,x)',
-                expected: '[0,130447637/401725972]'
+                expected: '[0,78202389238903801/240831735646702201]'
             },
             {
                 given: 'solve(sqrt(97)x^2-sqrt(13)x+sqrt(14)x+sqrt(43)x^2+sqrt(3)*sqrt(101)=0,x)',
@@ -146,12 +146,19 @@ describe('Solve', function () {
             // when
             var testCase = testCases[i],
                 parsed;
-            if(testCase.variables)
+            if (testCase.variables)
                 parsed = nerdamer.solveEquations(testCase.given, testCase.variables);
             else
                 parsed = nerdamer.solveEquations(testCase.given);
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
         }
+    });
+
+    /** #55: nerdamer.solveEquation quits working */
+    it('should handle text("fractions") without later impact', function () {
+        expect(nerdamer.solveEquations("x+1=2", "x").toString()).toEqual('1');
+        expect(nerdamer('x=1').text("fractions")).toEqual('x=1');
+        expect(nerdamer.solveEquations("x+1=2", "x").toString()).toEqual('1');
     });
 });

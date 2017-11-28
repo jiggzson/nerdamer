@@ -2676,6 +2676,21 @@ if((typeof module) !== 'undefined') {
 
             return [quot, rem];
         },
+        line: function(v1, v2, x) {
+            if(core.Utils.isArray(v1))
+                v1 = core.Utils.convertToVector(v1);
+            if(core.Utils.isArray(v2))
+                v2 = core.Utils.convertToVector(v2);
+            x = _.parse(x || 'x');
+            if(!core.Utils.isVector(v1)||!core.Utils.isVector(v2))
+                _.error('Line expects a vector! Received "'+v1+'" & "'+v2+'"');
+            var dx = _.subtract(v2.e(1).clone(), v1.e(1).clone()),
+                dy = _.subtract(v2.e(2).clone(), v1.e(2).clone()),
+                m = _.divide(dy, dx),
+                a = _.multiply(x, m.clone()),
+                b = _.multiply(v1.e(1).clone(),m);
+            return _.add(_.subtract(a, b), v1.e(2).clone());
+        },
         Classes: {
             Polynomial: Polynomial,
             Factors: Factors,
@@ -2683,6 +2698,27 @@ if((typeof module) !== 'undefined') {
         }
     };
     
+   nerdamer.useAlgebraDiv = function() {
+        var divide = __.divideFn = _.divide;
+        var calls = 0; //keep track of how many calls were made
+        _.divide = function(a, b) {
+            calls++;
+            var ans;
+            if(calls === 1) //check if this is the first call. If it is use algebra divide
+                ans = core.Algebra.divide(a, b);
+            else //otherwise use parser divide
+                ans = divide(a, b);
+            calls = 0; //reset the number of calls back to none
+            return ans;
+        };
+    };
+    
+    nerdamer.useParserDiv = function() {
+        if(__.divideFn)
+            _.divide = __.divideFn;
+        delete __.divideFn;
+    };
+	
     nerdamer.register([
         {
             name: 'factor',
@@ -2695,12 +2731,6 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: 2,
             build: function() { return __.gcd; }
-        },
-        {
-            name: 'lcm',
-            visible: true,
-            numargs: 2,
-            build: function() { return __.lcm; }
         },
         {
             name: 'roots',
@@ -2724,9 +2754,13 @@ if((typeof module) !== 'undefined') {
             name: 'coeffs',
             visible: true,
             numargs: [1, 2],
-            build: function() { return function() {
-                return new core.Vector(__.coeffs.apply(null, arguments));
-            };}
+            build: function() { return __.coeffs; }
+        },
+        {
+            name: 'line',
+            visible: true,
+            numargs: [2, 3],
+            build: function() { return __.line; }
         }
     ]);
     nerdamer.api();
