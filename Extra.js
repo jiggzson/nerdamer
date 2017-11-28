@@ -338,3 +338,5 @@ if((typeof module) !== 'undefined') {
     //link registered functions externally
     nerdamer.api();
 }());
+
+nerdamer.useAlgebraDiv();
