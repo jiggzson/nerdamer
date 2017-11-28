@@ -1239,6 +1239,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 a_ = dc[0];
                                             retval = _.parse(format('e^(-(({2}))^2)/(({0})*sqrt(pi))+(1/({0})+({1}))*erf(({2}))', a_, x_, arg));
                                             break;
+                                        case 'sign':
+                                            retval = _.multiply(symbol.clone(), arg.clone());
+                                            break;
                                         default:
                                             __.integration.stop();
                                     }

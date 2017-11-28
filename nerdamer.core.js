@@ -1193,7 +1193,7 @@ var nerdamer = (function(imports) {
         };
         //link the Math2 object to Settings.FUNCTION_MODULES
         Settings.FUNCTION_MODULES.push(Math2);
-        
+
         var cacheRoots = function() {
             Settings.CACHE.roots = {};
             var x = 40, 
@@ -5762,8 +5762,14 @@ var nerdamer = (function(imports) {
                         result = _.multiply(result, c);
                 }
                 else if(bIsInt && !m.equals(1)) { 
-                    var p = b.multiplier.toDecimal(),
-                        multiplier = new Frac(Math.pow(m.num, p) / Math.pow(m.den, p)); 
+                    var p = b.multiplier.toDecimal();
+                    var sgn = Math.sign(p);
+                    p = Math.abs(p);
+                    var multiplier = new Frac(1); 
+                    multiplier.num = m.num.pow(p);
+                    multiplier.den = m.den.pow(p);
+                    if(sgn < 0)
+                        multiplier.invert();
                     //multiplying is justified since after mulltiplyPower if it was of group P it will now be of group N
                     result.multiplier = result.multiplier.multiply(multiplier);
                 }
