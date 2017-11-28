@@ -13,8 +13,6 @@ var nerdamer = (function(imports) {
         _ = new Parser(), //nerdamer's parser
         //import bigInt
         bigInt = imports.bigInt,
-        //import bigNumber
-        bigDecimal = imports.bigDecimal,
         
         Groups = {},
         
@@ -67,7 +65,9 @@ var nerdamer = (function(imports) {
             //Aliases
             ALIASES: {
                 'π': 'pi'
-            }
+            },
+            //Cached items
+            CACHE: {}
         },
         
         //Container for custom operators
@@ -697,6 +697,18 @@ var nerdamer = (function(imports) {
                 return _.parse(symbol);
             }, true);
         },
+        convertToVector = Utils.convertToVector = function(x) {
+            if(isArray(x)) {
+                var vector = new Vector([]);
+                for(var i=0; i<x.length; i++) 
+                    vector.elements.push(convertToVector(x[i]));
+                return vector;
+            }
+            //Ensure that a nerdamer ready object is returned
+            if(!isSymbol(x))
+                return _.parse(x);
+            return x;
+        },
         //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
         //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the 
         //functions within are pretty self-explanatory.
@@ -722,11 +734,22 @@ var nerdamer = (function(imports) {
             },
             bigpow: function(n, p) { 
                 if(!(n instanceof Frac))
-                    n = Frac.simple(n);
-                n = n.clone();
-                n.num = n.num.pow(Number(p));
-                n.den = n.den.pow(Number(p));
-                return n;
+                    n = Frac.create(n);
+                if(!(p instanceof Frac))
+                    p = Frac.create(p);
+                var retval = new Frac(0);
+                if(p.isInteger()) {
+                    retval.num = n.num.pow(p.toString());
+                    retval.den = n.den.pow(p.toString());
+                }
+                else {
+                    var num = Frac.create(Math.pow(n.num, p.num));
+                    var den = Frac.create(Math.pow(n.den, p.num));
+
+                    retval.num = Math2.nthroot(num, p.den.toString());
+                    retval.den = Math2.nthroot(den, p.den);
+                }  
+                return retval;
             },
             //http://stackoverflow.com/questions/15454183/how-to-make-a-function-that-computes-the-factorial-for-numbers-with-decimals
             gamma: function(z) {
@@ -1134,14 +1157,55 @@ var nerdamer = (function(imports) {
                 if(x >= 1)
                     return 0;
                 return 1-x;
+            },
+            //https://en.wikipedia.org/wiki/Nth_root_algorithm
+            nthroot: function(A, n) { 
+                //make sure the input is of type Frac
+                if(!(A instanceof Frac))
+                    A = new Frac(A.toString());
+                if(!(n instanceof Frac))
+                    n = new Frac(n.toString());
+                if(n.equals(1))
+                    return A;
+                //begin algorithm
+                var xk = A.divide(new Frac(2)); //x0
+                var e = new Frac(1e-15);
+                var dk, dk0, d0;
+                var a = n.clone().invert(),
+                    b = n.subtract(new Frac(1));
+                do {
+                    var powb = Math2.bigpow(xk, b);
+                    var dk_dec = a.multiply(A.divide(powb).subtract(xk)).toDecimal(25);
+                    dk = Frac.create(dk_dec);
+                    if(d0)
+                        break;
+                    
+                    xk = xk.add(dk);
+                    //check to see if there's no change from the last xk
+                    var dk_dec = dk.toDecimal();
+                    d0 = dk0 ? dk0 === dk_dec : false;
+                    dk0 = dk_dec;
+                }
+                while(dk.abs().gte(e))
+
+                return xk;
             }
         };
         //link the Math2 object to Settings.FUNCTION_MODULES
         Settings.FUNCTION_MODULES.push(Math2);
-        
-        //Make Math2 visible to the parser
-        Settings.FUNCTION_MODULES.push(Math2);
 
+        var cacheRoots = function() {
+            Settings.CACHE.roots = {};
+            var x = 40, 
+                y = 40;
+            for(var i=2; i<=x; i++) {
+                for(var j=2; j<=y; j++) {
+                    var nthpow = bigInt(i).pow(j);
+                    Settings.CACHE.roots[nthpow+'-'+j] = i;
+                }
+            }
+        };
+        cacheRoots();
         //polyfills
         //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/
         Math.sign = Math.sign || function(x) { 
@@ -1562,8 +1626,13 @@ var nerdamer = (function(imports) {
         if(n instanceof Frac) return n;
         if(n === undefined) return this;
         if(isInt(n)) { 
-            this.num = bigInt(n);
-            this.den = bigInt(1);
+            try {
+                this.num = bigInt(n);
+                this.den = bigInt(1);
+            }
+            catch(e) {
+                return Frac.simple(n);
+            }
         }
         else {
             var frac = Fraction.convert(n);
@@ -1571,6 +1640,20 @@ var nerdamer = (function(imports) {
             this.den = new bigInt(frac[1]);
         }
     }
+    //safe to use with negative numbers or other types
+    Frac.create = function(n) {
+        if(n instanceof Frac)
+            return n;
+        n = n.toString();
+        var is_neg = n.charAt(0) === '-'; //check if it's negative
+        if(is_neg)
+            n = n.substr(1, n.length-1); //remove the sign
+        var frac = new Frac(n);
+        //put the sign back
+        if(is_neg)
+            frac.negate();
+        return frac;
+    };
     
     Frac.isFrac = function(o) {
         return (o instanceof Frac);
@@ -1658,41 +1741,43 @@ var nerdamer = (function(imports) {
             m.den = new bigInt(this.den);
             return m;
         },
-        toDecimal: function() {
-            if(!Settings.precision)
+        toDecimal: function(prec) {
+            if(prec || Settings.precision) { 
+                var sign = this.num.isNegative() ? '-' : '';
+                if(this.num.equals(this.den))
+                    return '1';
+                //go plus one for rounding
+                prec = prec+1 || 19;
+                var narr = [], 
+                    n = this.num.abs(),
+                    d = this.den;
+                for(var i=0; i<prec; i++) {
+                    var w = n.divide(d), //divide out whole
+                        r = n.subtract(w.multiply(d)); //get remainder
+
+                    narr.push(w);    
+                    if(r.equals(0))
+                            break;
+                    n = r.times(10); //shift one dec place
+                }
+                var whole = narr.shift();
+                if(narr.length === 0)
+                    return whole.toString();
+
+                if(i === prec) {
+                    var lt = [];
+                    //get the last two so we can round it
+                    for(var i=0; i<2; i++)
+                        lt.unshift(narr.pop());
+                    //put the last digit back by rounding the last two
+                    narr.push(Math.round(lt.join('.')));
+                }
+
+                var dec = whole.toString()+'.'+narr.join('');
+                return sign+dec;
+            }
+            else
                 return this.num/this.den;
-            //return this.num/this.den;
-            var sign = this.num.isNegative() ? '-' : '';
-            if(this.num.equals(this.den))
-                return '1';
-            //go plus one for rounding
-            prec = prec+1 || 19;
-            var narr = [], 
-                n = this.num.abs(),
-                d = this.den;
-            for(var i=0; i<prec; i++) {
-                var w = n.divide(d), //divide out whole
-                    r = n.subtract(w.multiply(d)); //get remainder
-                    
-                narr.push(w);    
-                if(r.equals(0))
-                        break;
-                n = r.times(10); //shift one dec place
-            }
-            var whole = narr.shift();
-            if(narr.length === 0)
-                return whole.toString();
-            
-            if(i === prec) {
-                var lt = [];
-                //get the last two so we can round it
-                for(var i=0; i<2; i++)
-                    lt.unshift(narr.pop());
-                //put the last digit back by rounding the last two
-                narr.push(Math.round(lt.join('.')));
-            }
-            var dec = whole+'.'+narr.join('');
-            return sign+dec;
         },
         qcompare: function(n) { 
             return [this.num.multiply(n.den), n.num.multiply(this.den)];
@@ -1715,6 +1800,12 @@ var nerdamer = (function(imports) {
             var q = this.qcompare(n);
             
             return q[0].gt(q[1]);
+        },
+        gte: function(n) {
+            return this.greaterThan(n) || this.equals(n);
+        },
+        lte: function(n) {
+            return this.lessThan(n) || this.equals(n);
         },
         lessThan: function(n) { 
             if(!isNaN(n)) n = new Frac(n);
@@ -3168,6 +3259,14 @@ var nerdamer = (function(imports) {
                     retval = _.subtract(k, trig.atan(symbol));
                 }
                 return retval;    
+            },
+            atan2: function(a, b) {
+                if(a.equals(0) && b.equals(0))
+                    throw new Error('atan2 is undefined for 0, 0');
+                if(Settings.PARSE2NUMBER && a.isConstant() && b.isConstant()) {
+                    return Math.atan2(a, b);
+                }
+                return _.symfunction('atan2', arguments);
             }
         };
             
@@ -3451,7 +3550,7 @@ var nerdamer = (function(imports) {
          * @param {Array} args
          * @returns {Symbol}
          */
-        this.callfunction = function(fn_name, args) { 
+        this.callfunction = function(fn_name, args, allowed_args) { 
             var fn_settings = functions[fn_name];
             
             if(!fn_settings) 
@@ -3605,11 +3704,20 @@ var nerdamer = (function(imports) {
              */
             var e = String(expression_string), match;
             //add support for spaces between variables
-            while(true) {
+            while(true) { 
                 match = this.operator_filter_regex.exec(e);
                 if(!match)
                     break;
-                e = e.replace(match[0], match[1]+'*'+match[2]);
+                try {
+                    var a = match[1],
+                        b = match[2];
+                    validateName(a);
+                    validateName(b);
+                    e = e.replace(match[0], a+'*'+b);
+                }
+                catch(e) {
+                    break;
+                }
             }
 
             e = e.split(' ').join('')//strip empty spaces
@@ -3638,15 +3746,22 @@ var nerdamer = (function(imports) {
                 }
                 return a;
             })
-            .replace(/([a-z0-9_]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
-                var g1 = a || c,
-                    g2 = b || d;
-                if(g1 in functions) //create a passthrough for functions
-                    return g1+g2;
-                return g1+'*'+g2;
-            })
             //allow omission of multiplication sign between brackets
             .replace( /\)\(/g, ')*(' ) || '0';
+            //replace x(x+a) with x*(x+a)
+            while(true) {
+                var e_org = e; //store the original
+                e = e.replace(/([a-z0-9_]+)(\()|(\))([a-z0-9]+)/gi, function(match, a, b, c, d) {
+                    var g1 = a || c,
+                        g2 = b || d;
+                    if(g1 in functions) //create a passthrough for functions
+                        return g1+g2;
+                    return g1+'*'+g2;
+                });
+                //if the original equals the replace we're done
+                if(e_org === e) 
+                    break;
+            }
 
             var l = e.length, //the length of the string
                 output = [], //the output array. This is what's returned
@@ -4306,22 +4421,31 @@ var nerdamer = (function(imports) {
          * @param {bool} asbig - true if a bigDecimal is wanted
          * @returns {Symbol}
          */
+        //TODO: this method needs serious optimization
         function nthroot(num, p, prec, asbig) {
+            prec = prec || 25;
             if(!isSymbol(p))
                 p = _.parse(p);
             if(isInt(num) && p.isConstant()) {
-                num = new bigDecimal(num.toString());
-                var n = new bigDecimal((p || 2).toString()); //default to sqrt
-                //TODO: needs a better way to be determined. Idea: check the num^p-x and continue if epsilon too big
-                prec = prec || bigDecimal.log(num).times(15); //adjust precision to log(num)*15
-                var x = new bigDecimal(1); // Initial guess.
-                var k = new bigDecimal(1).dividedBy(n);
-                for (var i=0; i<prec; i++) {
-                    x = k.times(n.minus(1).times(x).add(num.dividedBy(x.toPower(n.minus(1)))));
+                var sign = num.sign(),
+                    x;
+                num = abs(num); //remove the sign
+                var idx = num+'-'+p;
+                if(idx in Settings.CACHE.roots) {
+                    x = new bigInt(Settings.CACHE.roots[idx]);
+                    if(!even(p))
+                        x = x.multiply(sign);
                 }
+                else {
+                    if(num < 18446744073709551616) //2^64
+                        x = Frac.create(Math.pow(num, p));
+                    else
+                        x = Math2.nthroot(num, p);
+                }
+                    
                 if(asbig)
                     return x;
-                return evaluate(x);
+                return x.toDecimal(prec);
             }
             
             return _.symfunction('nthroot', arguments);
@@ -4499,8 +4623,17 @@ var nerdamer = (function(imports) {
                 return _.add(_.parse(a), _.parse(b));
             }
             
-            if(symbol.isConstant() && typeof base !== 'undefined' && base.isConstant())
-                retval = new Symbol(Math2.bigLog(new Frac(+symbol)).divide(Math2.bigLog(new Frac(+base))));
+            if(symbol.isConstant() && typeof base !== 'undefined' && base.isConstant()) {
+                /*
+                var log_sym = Math2.bigLog(symbol.multiplier);
+                var log_base = Math2.bigLog(base.multiplier);
+                retval = new Symbol(log_sym.divide());
+                */
+                var log_sym = Math.log(symbol);
+                var log_base = Math.log(base);
+                retval = new Symbol(log_sym/log_base);
+            }
+                
             else if(symbol.group === EX && symbol.power.multiplier.lessThan(0) || symbol.power.toString() === '-1') {
                 symbol.power.negate(); 
                 //move the negative outside but keep the positive inside :)
@@ -5623,13 +5756,20 @@ var nerdamer = (function(imports) {
                     }
 
                     result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
+                    //result = new Symbol(Math2.bigpow(a.multiplier, b.multiplier));
                     //put the back sign
                     if(c)
                         result = _.multiply(result, c);
                 }
                 else if(bIsInt && !m.equals(1)) { 
-                    var p = b.multiplier.toDecimal(),
-                        multiplier = new Frac(Math.pow(m.num, p) / Math.pow(m.den, p)); 
+                    var p = b.multiplier.toDecimal();
+                    var sgn = Math.sign(p);
+                    p = Math.abs(p);
+                    var multiplier = new Frac(1); 
+                    multiplier.num = m.num.pow(p);
+                    multiplier.den = m.den.pow(p);
+                    if(sgn < 0)
+                        multiplier.invert();
                     //multiplying is justified since after mulltiplyPower if it was of group P it will now be of group N
                     result.multiplier = result.multiplier.multiply(multiplier);
                 }
