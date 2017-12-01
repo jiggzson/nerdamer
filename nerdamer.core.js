@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.14',
+    var version = '0.7.15',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -111,7 +111,7 @@ var nerdamer = (function(imports) {
         VARS = {},
         
         //the container used to store all the reserved functions
-        RESERVED = ['__u__'],
+        RESERVED = [],
 
         WARNINGS = '',
         
@@ -505,6 +505,30 @@ var nerdamer = (function(imports) {
                 }
             }
             return vars.c.sort();
+        },
+        
+        getU = Utils.getU = function() {
+            //start with u
+            var u = 'u', //start with u
+                v = u, //init with u
+                c = 0; //postfix number
+            while(RESERVED.indexOf(v) !== -1)  
+                v = u + c++;
+            //get an empty slot. It seems easier to just push but the
+            //problem is that we may have some which are created by clearU
+            for(var i=0, l=RESERVED.length; i<=l; i++)
+                //reserved cannot equals false or 0 so we can safely check for a falsy type
+                if(!RESERVED[i]) {
+                    RESERVED[i] = v;
+                    break;
+                }
+            return v;
+        },
+        
+        clearU = Utils.clearU = function(u) {
+            var indx = RESERVED.indexOf(u);
+            if(indx !== -1)
+                RESERVED[indx] = undefined;
         },
         
         /**
@@ -2303,7 +2327,7 @@ var nerdamer = (function(imports) {
                 return true;
             if(this.symbols) {
                 for(var x in this.symbols) {
-                    if(this.symbols[x].hasIntegral(names))
+                    if(this.symbols[x].containsFunction(names))
                         return true;
                 }
             }

@@ -890,7 +890,19 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
                 return [u, dv];
             },
-
+            
+            trig_sub: function(symbol, dx, parts) {
+                var fn = symbol.clone().toLinear();
+                parts = parts || __.integration.decompose_arg(fn, dx);
+                var b = parts[3],
+                    ax = parts[2],
+                    a = parts[0],
+                    x = parts[1];
+                if(x.power.equals(2)) {
+                    
+                }
+            },
+            
             by_parts: function(symbol, dx, depth, o) { 
                 o.previous = o.previous || [];
                 var udv, u, dv, du, v, vdu, uv, retval, integral_vdu, m, c, vdu_s;
@@ -1138,6 +1150,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 if(x.isLinear() && x.group !== PL)
                                     retval = _.divide(__.integration.poly_integrate(symbol), a);
                                 else { 
+                                    //try trig substitution
+                                    try {
+                                        retval = __.integration.trig_sub(symbol, dx, decomp);
+                                    }
+                                    catch(e) {}
+                                    
                                     if(symbol.group !== CB && !symbol.power.lessThan(0)) {
                                         retval = __.integration.by_parts(symbol, dx, depth, opt);
                                     }
@@ -1716,7 +1734,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             });
                                         }
                                     }
-                                    else if(g1 === CP) {
+                                    else if(g1 === CP && symbols[0].power.greaterThan(0)) {
                                         sym1 = _.expand(sym1);
                                         retval = new Symbol(0);
                                         sym1.each(function(x) {
@@ -1727,10 +1745,18 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         sym1 = sym1.fnTransform();
                                         retval = __.integrate(_.expand(_.multiply(sym1, sym2)), dx, depth);
                                     }
+                                    else if(g1 === CP && g2 === FN && sym1.power.lessThan(0) && sym1.containsFunction(TAN) && fn2 === SEC && sym2.power.greaterThan(0)) {
+                                        var u_var = core.Utils.getU(); //get a variable for u substitution
+                                        var u = _.parse('tan('+dx+')'); //create du
+                                        var du = __.diff(u.clone(), dx); //compute du
+                                        var ufn = symbol.clone().sub(u, u_var).sub(du, '1');
+                                        if(ufn.contains(dx))
+                                            retval = __.integration.by_parts(symbol, dx, depth, opt);
+                                        else retval = __.integrate(ufn, u_var).sub(u_var, u);
+                                    }
                                     else { 
                                         retval = __.integration.by_parts(symbol, dx, depth, opt);
                                     }
-                                        
                                 }
                             }
                             else if(l === 3 && (symbols[2].group === S && symbols[2].power.lessThan(2) || symbols[0].group === CP)) { 
