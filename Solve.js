@@ -237,6 +237,7 @@ if((typeof module) !== 'undefined') {
                     c.set(i, 0, _.add(c.get(i, 0), e[k]));
                 }
             }
+            //consider case (a+b)*I+u
         }
             
         // Use M^-1*c to solve system
