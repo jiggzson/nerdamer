@@ -3661,6 +3661,8 @@ var nerdamer = (function(imports) {
                         a = q.pop();
                     if(isArray(b)) //misread function
                         _.error('Unrecognized function "'+a.value+'"');
+                    if(typeof a === 'undefined' && !e.is_postfix)
+                        _.error(e+' is not a valid postfix opertor');
                     q.push(this[e.fn](a, b));
                 }
                 else if(e.value in functions) { 
