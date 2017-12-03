@@ -907,6 +907,18 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     core.Utils.clearU(u);
                     return integral;
                 }
+                /*  
+                //(x^2+a)^n -> Use tan(x)
+                else if(x.power.equals(2) && x.multiplier.greaterThan(0) && a.multiplier.greaterThan(0)) { 
+                    var u_var = core.Utils.getU(symbol); 
+                    //get a variable for u substitution
+                    var u = _.parse('tan('+u_var+')'), //create du
+                        du = _.parse('sec('+u_var+')'), //compute derivative du
+                        fn = _.multiply(symbol.clone().sub(dx, u), du.clone());
+                    var integral = __.integrate(fn, u_var, depth, opt).sub(u, dx);
+                    return integral;
+                }
+                */
             },
             
             by_parts: function(symbol, dx, depth, o) { 
@@ -1118,34 +1130,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     retval = _.divide(__.integration.poly_integrate(symbol), a);
                                 }
                                 else { 
-                                    //1/(x^4+1)
-                                    if(x.power.equals(4)) {
-                                        //https://www.freemathhelp.com/forum/threads/55678-difficult-integration-int-1-(1-x-4)-dx
-                                        var A, B, C, D, E, F, f1, f2, f3, f4, L1, L2;
-                                        var br = inBrackets;
-                                        //apply rule: ax^4+b = (√ax^2+√2∜a∜bx+√b)(√ax^2-√2∜a∜bx+√b)
-                                        //get quadratic factors
-                                        A = _.parse(SQRT+br(a)+'*'+dx+'^2');
-                                        B = _.parse(SQRT+br(2)+'*'+br(a)+'^'+br('1/4')+'*'+br(b)+'^'+br('1/4')+'*'+dx);
-                                        C = _.parse(SQRT+br(b));
-                                        f1 = _.add(_.add(A.clone(), B.clone()), C.clone());
-                                        f2 = _.add(_.subtract(A, B), C);
-                                        //calculate numerators: [D+E, D-E] -> [√2*b^(3/4)+√b∜ax, √2*b^(3/4)-√b∜ax]
-                                        D = _.parse(SQRT+br(2)+'*'+br(b)+'^'+br('3/4'));
-                                        E = _.parse(SQRT+br(b)+'*'+br(b)+'^'+br('1/4')+'*'+dx);
-                                        //let F = 2b√2∜b
-                                        F = _.parse(2+'*'+br(b)+'*'+SQRT+br(2)+'*'+br(b)+'^'+br('1/4'));
-                                        //calculate the factors
-                                        L1 = _.divide(_.subtract(D.clone(), E.clone()), _.multiply(F.clone(), f2));
-                                        L2 = _.divide(_.add(D, E), _.multiply(F, f1.clone()));
-                                        retval = _.add(
-                                                    __.integrate(L1, dx, depth, opt),
-                                                    __.integrate(L2, dx, depth, opt)
-                                                );
-                                    }
-                                    else
-                                        //let's try partial fractions
-                                        retval = __.integration.partial_fraction(symbol, dx, depth);
+                                    //let's try partial fractions
+                                    retval = __.integration.partial_fraction(symbol, dx, depth);
                                 }
                             }
                             else if(p === -1/2) {
