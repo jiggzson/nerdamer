@@ -507,19 +507,21 @@ var nerdamer = (function(imports) {
             return vars.c.sort();
         },
         
-        getU = Utils.getU = function() {
+        getU = Utils.getU = function(symbol) {
             //start with u
             var u = 'u', //start with u
                 v = u, //init with u
-                c = 0; //postfix number
-            while(RESERVED.indexOf(v) !== -1)  
+                c = 0, //postfix number
+                vars = variables(symbol);
+            //make sure this variable isn't reserved and isn't in the variable list
+            while(!(RESERVED.indexOf(v) === -1 && vars.indexOf(v) === -1))  
                 v = u + c++;
             //get an empty slot. It seems easier to just push but the
             //problem is that we may have some which are created by clearU
             for(var i=0, l=RESERVED.length; i<=l; i++)
                 //reserved cannot equals false or 0 so we can safely check for a falsy type
                 if(!RESERVED[i]) {
-                    RESERVED[i] = v;
+                    RESERVED[i] = v; //reserve the variable
                     break;
                 }
             return v;

@@ -891,16 +891,34 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 return [u, dv];
             },
             
-            trig_sub: function(symbol, dx, parts) {
-                var fn = symbol.clone().toLinear();
-                parts = parts || __.integration.decompose_arg(fn, dx);
+            trig_sub: function(symbol, dx, depth, opt, parts, symbols) {  
+                parts = parts || __.integration.decompose_arg(symbol.clone().toLinear(), dx);
                 var b = parts[3],
                     ax = parts[2],
                     a = parts[0],
-                    x = parts[1];
-                if(x.power.equals(2)) {
-                    
+                    x = parts[1]; 
+                if(x.power.equals(2) && a.greaterThan(0)) {
+                    //use tan(x)
+                    var t = core.Utils.getU(symbol), //get an appropriate u
+                        u = _.parse(TAN+inBrackets(t)), //u
+                        du = _.parse(SEC+inBrackets(t)+'^2'), //du
+                        f = _.multiply(symbol.sub(x, u), du);
+                    var integral = __.integrate(f, t, depth, opt).sub(u, x);
+                    core.Utils.clearU(u);
+                    return integral;
                 }
+                /*  
+                //(x^2+a)^n -> Use tan(x)
+                else if(x.power.equals(2) && x.multiplier.greaterThan(0) && a.multiplier.greaterThan(0)) { 
+                    var u_var = core.Utils.getU(symbol); 
+                    //get a variable for u substitution
+                    var u = _.parse('tan('+u_var+')'), //create du
+                        du = _.parse('sec('+u_var+')'), //compute derivative du
+                        fn = _.multiply(symbol.clone().sub(dx, u), du.clone());
+                    var integral = __.integrate(fn, u_var, depth, opt).sub(u, dx);
+                    return integral;
+                }
+                */
             },
             
             by_parts: function(symbol, dx, depth, o) { 
@@ -1029,6 +1047,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             if(symbol.power.contains(dx))
                                 __.integration.stop();
                             else { 
+                                var t = __.diff(symbol.clone().toLinear(), dx);
+                                if(t.contains(dx))
+                                    __.integration.stop();
                                 //since at this point it's the base only then we do standard single poly integration
                                 //e.g. x^y
                                 retval = __.integration.poly_integrate(symbol, dx, depth);
@@ -1141,21 +1162,30 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     __.integration.stop();
                                 }
                             }
-                            /*else if(p === -2) {
-                                //TODO 
-                                //integrate((1)/(a+b*x^2)^2,x)
-                                __.integration.stop();
-                            }*/
                             else { 
                                 if(x.isLinear() && x.group !== PL)
                                     retval = _.divide(__.integration.poly_integrate(symbol), a);
+                                else if(x.power.equals(2) && a.greaterThan(0)) { 
+                                    var sqa, sqb, aob, bsqi, n, integral, u, v, uv;
+                                    //1/(a*x^2+b^2)^n
+                                    //strip the value of b so b = 1
+                                    sqa = _.parse(SQRT+inBrackets(a)); //strip a so b = 1
+                                    sqb = _.parse(SQRT+inBrackets(b));
+                                    aob = _.multiply(sqa.clone(), sqb.clone()).invert();
+                                    bsqi = _.pow(b, new Symbol(symbol.power));
+                                    uv = core.Utils.getU(symbol);
+                                    u = _.multiply(aob, x.clone().toLinear());
+                                    v = _.parse(ATAN+inBrackets(u));
+                                    //the conversion will be 1+tan(x)^2 -> sec(x)^2
+                                    //since the denominator is now (sec(x)^2)^n and the numerator is sec(x)^2 
+                                    //then the remaining sec will be (n-1)*2;
+                                    var n = (Math.abs(symbol.power)-1)*2; 
+                                    //1/sec(x)^n can now be converted to cos(x)^n and we can pull the integral of that
+                                    var integral = __.integrate(_.parse(COS+inBrackets(uv)+'^'+n));
+                                    core.Utils.clearU(uv);
+                                    return _.multiply(integral.sub(uv, v), bsqi);
+                                }
                                 else { 
-                                    //try trig substitution
-                                    try {
-                                        retval = __.integration.trig_sub(symbol, dx, decomp);
-                                    }
-                                    catch(e) {}
-                                    
                                     if(symbol.group !== CB && !symbol.power.lessThan(0)) {
                                         retval = __.integration.by_parts(symbol, dx, depth, opt);
                                     }
@@ -1744,15 +1774,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     else if(g1 === FN && g2 === EX && core.Utils.in_htrig(sym1.fname)) {
                                         sym1 = sym1.fnTransform();
                                         retval = __.integrate(_.expand(_.multiply(sym1, sym2)), dx, depth);
-                                    }
-                                    else if(g1 === CP && g2 === FN && sym1.power.lessThan(0) && sym1.containsFunction(TAN) && fn2 === SEC && sym2.power.greaterThan(0)) {
-                                        var u_var = core.Utils.getU(); //get a variable for u substitution
-                                        var u = _.parse('tan('+dx+')'); //create du
-                                        var du = __.diff(u.clone(), dx); //compute du
-                                        var ufn = symbol.clone().sub(u, u_var).sub(du, '1');
-                                        if(ufn.contains(dx))
-                                            retval = __.integration.by_parts(symbol, dx, depth, opt);
-                                        else retval = __.integrate(ufn, u_var).sub(u_var, u);
                                     }
                                     else { 
                                         retval = __.integration.by_parts(symbol, dx, depth, opt);
