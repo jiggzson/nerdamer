@@ -2314,7 +2314,19 @@ if((typeof module) !== 'undefined') {
             else if(g === S && e.power === 1) status = true;
             return status;
         },
-        gcd: function(a, b) { 
+        gcd: function() {
+            var aggregate = arguments[0];
+            //go from [0, 1] to [arguments.length-2, arguments.length-1]
+            for(var i = 1; i < arguments.length; i++) {
+                if(arguments[i-1].group === S && arguments[i].group === S && arguments[i-1].value !== arguments[i].value
+                        || arguments[i-1].group === EX 
+                        || arguments[i].group === EX)
+                    return _.symfunction('gcd', arguments);
+                aggregate = __.gcd_(aggregate, arguments[i]);
+            }
+            return aggregate;
+        },
+        gcd_: function(a, b) { 
             if(a.group === S && b.group === S && a.value !== b.value
                     || a.group === EX 
                     || b.group === EX)
@@ -2388,8 +2400,11 @@ if((typeof module) !== 'undefined') {
                 return _.divide(a, den);
             }
         },
-        lcm: function(a, b) {
-            return _.divide(_.multiply(a.clone(), b.clone()), __.gcd(a.clone(), b.clone()));
+        lcm: function() {
+            var product = arguments[0].clone();
+            for(var i = 1; i < arguments.length; i++)
+                product = _.multiply(product, arguments[i].clone());
+            return _.divide(product, __.gcd.apply(null, arguments));
         },
         /**
          * Divides one expression by another
@@ -2729,13 +2744,13 @@ if((typeof module) !== 'undefined') {
         {
             name: 'gcd',
             visible: true,
-            numargs: 2,
+            numargs: [2, ],
             build: function() { return __.gcd; }
         },
         {
             name: 'lcm',
             visible: true,
-            numargs: 2,
+            numargs: [2, ],
             build: function() { return __.lcm; }
         },
         {
