@@ -47,7 +47,7 @@ describe('Algebra', function () {
                 expected: '3+x^3'
             }, {
                 given:'gcd(a, b, c)',
-                expected: 'gcd(a, b, c)'
+                expected: 'gcd(a,b,c)'
             }, {
                 given:'gcd(18,12, 6)',
                 expected: '6'
