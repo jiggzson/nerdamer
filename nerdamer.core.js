@@ -3289,8 +3289,9 @@ var nerdamer = (function(imports) {
             atan2: function(a, b) {
                 if(a.equals(0) && b.equals(0))
                     throw new Error('atan2 is undefined for 0, 0');
+                
                 if(Settings.PARSE2NUMBER && a.isConstant() && b.isConstant()) {
-                    return Math.atan2(a, b);
+                    return new Symbol(Math.atan2(a, b));
                 }
                 return _.symfunction('atan2', arguments);
             }
@@ -3424,7 +3425,7 @@ var nerdamer = (function(imports) {
                 'asec'              : [ trig.asec, 1],
                 'acsc'              : [ trig.acsc, 1],
                 'acot'              : [ trig.acot, 1],
-                'atan2'             : [ , 2],
+                'atan2'             : [ trig.atan2, 2],
                 'acoth'             : [ acoth, 1],
                 'asech'             : [ asech, 1],
                 'sinh'              : [ trigh.sinh, 1],
@@ -4851,8 +4852,9 @@ var nerdamer = (function(imports) {
                 var p = symbol.power,
                     m = symbol.multiplier,
                     pn = Number(p);
-
-                if(!symbol.symbols) return symbol;
+                
+                if(!symbol.symbols) 
+                    return symbol;
 
                 //expand all the symbols
                 for(var s in symbol.symbols) {
@@ -4910,13 +4912,14 @@ var nerdamer = (function(imports) {
                         }
                         else sub.power = sub.power.multiply(sp);
                     }
-
+                    
                     symbol.toLinear();
 
                     //I'm going to be super lazy here and take the easy way out. TODO: do this without re-parsing
                     symbol = _.parse(symbol.text());
 
-                    if(!hascomposites) return symbol; //nothing to do here
+                    if(!hascomposites) 
+                        return symbol; //nothing to do here
 
                     var result = new Symbol(0);
                     var composites = [],
@@ -4925,6 +4928,8 @@ var nerdamer = (function(imports) {
                     //sort them out
                     for(var s in symbol.symbols) {
                         var x = symbol.symbols[s];
+                        if(x.group === EX)
+                            continue;
                         if(x.isComposite()) {
                             var p = x.power, isDenom = false;;
                             if(isInt(p)) {
@@ -5092,8 +5097,10 @@ var nerdamer = (function(imports) {
         this.mapped_function = function() { 
             var subs = {},
                 params = this.params;
-            for(var i=0; i<params.length; i++) subs[params[i]] = arguments[i];
-            return _.parse(this.body, subs);
+            for(var i=0; i<params.length; i++) 
+                subs[params[i]] = arguments[i].toString();
+            var f = _.parse(this.body, subs);
+            return f;
         };
         
         /**
@@ -6254,6 +6261,9 @@ var nerdamer = (function(imports) {
                 }
                 else if(fname === PARENTHESIS) { 
                     v[index] = this.brackets(input.join(','), 'parens');
+                }
+                else if(fname === 'defint') {
+                    v[index] = '\\int_'+this.braces(input[1])+'^'+this.braces(input[2])+this.braces(input[0])+this.braces('d'+input[3]);
                 }
                 else if(fname === 'integrate') {
                     v[index] = '\\int'+this.braces(input[0])+this.braces('d'+input[1]);

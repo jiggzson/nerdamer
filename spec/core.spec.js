@@ -432,11 +432,17 @@ describe('Nerdamer core', function () {
                 given: 'expand((9*y*x+1)^2)',
                 expected: '1+18*x*y+81*x^2*y^2',
                 expectedValue: '4015.7568999999994'
-            }, {
+            }, 
+            {
                 given: 'expand((x+5)*(x-3)-x^2)',
                 expected: '-15+2*x',
                 expectedValue: '-10.8'
-            }
+            },
+            {
+                given: 'expand(((x^3+x)^x*(x^2+x)^x+1)*x)',
+                expected: '(x+x^2)^x*(x+x^3)^x*x+x',
+                expectedValue: '17667.12052556627'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
@@ -459,11 +465,11 @@ describe('Nerdamer core', function () {
             }, 
             {
                 given: 'log(8+5*i)',
-                expected: '0.5585993153435624*i+2.24431818486607'
+                expected: '0.5585993153435626*i+2.24431818486607'
             }, 
             {
                 given: 'log(123-2*i)',
-                expected: '-0.01625872980512972*i+4.8123165343435135'
+                expected: '-0.016258729805129723*i+4.8123165343435135'
             }, 
             {
                 given: 'log(123-2*i+a)',
