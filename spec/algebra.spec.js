@@ -39,6 +39,30 @@ describe('Algebra', function () {
             }, {
                 given:'gcd(7*x^4+7*x^3+4*x^2+5*x+1, 21*x^6+47*x^4+80*x^3+20*x^2+49*x+11)',
                 expected: '1+4*x+7*x^3'
+            }, {
+                given:'gcd(5*x^11+90*x^9+361*x^7+473*x^5+72*x^3+91*x, 7150*x^12+9360*x^10+1375*x^9+1430*x^8+37550*x^7+1872*x^6+47075*x^5+7510*x^3+9360*x,x)',
+                expected: 'x'
+            }, {
+                given:'gcd(x^8+4*x^7+4*x^6+3*x^5+12*x^4+12*x^3, (x^3+3), 3+x^3)',
+                expected: '3+x^3'
+            }, {
+                given:'gcd(a, b, c)',
+                expected: 'gcd(a, b, c)'
+            }, {
+                given:'gcd(18,12, 6)',
+                expected: '6'
+            }, {
+                given:'gcd(3, 5, 7)',
+                expected: '1'
+            }, {
+                given:'gcd(1/2, 1/3, 1/4)',
+                expected: '1/12'
+            }, {
+                given:'gcd(5%, 15%, 25%)',
+                expected: '1/20'
+            }, {
+                given:'gcd(1/a, 1/b, 1/c)',
+                expected: 'gcd(a^(-1),b^(-1),c^(-1))'
             }
         ];
 
@@ -50,7 +74,78 @@ describe('Algebra', function () {
             expect(result.toString()).toEqual(testCases[i].expected);
         }
     });
+    
+    it('should perform lcm operations correctly', function () {
+        // given
+        var testCases = [
+            {
+                given:'lcm(5*x^6+5*x^5+27*x^4+27*x^3+28*x^2+28*x, 5*x^3+7*x)',
+                expected: '27*x^3+27*x^4+28*x+28*x^2+5*x^5+5*x^6'
+            }, {
+                given:'lcm(2*x^2+2*x+1,x+1)',
+                expected: '(1+2*x+2*x^2)*(1+x)'
+            }, 
+            {
+                given:'lcm(x^2+2*x+1,x+1)',
+                expected: '1+2*x+x^2'
+            }, 
+            {
+                given:'lcm(6*x^9+24*x^8+15*x^7+6*x^2+24*x+15, (2*x^2+8*x+5))',
+                expected: '15+15*x^7+24*x+24*x^8+6*x^2+6*x^9'
+            }, {
+                given:'lcm(x^8+4*x^7+4*x^6+3*x^5+12*x^4+12*x^3, (x^3+3))',
+                expected: '12*x^3+12*x^4+3*x^5+4*x^6+4*x^7+x^8'
+            }, {
+                given:'lcm(6*x^9+24*x^8+15*x^7+6*x^2+24*x+15, x^7+1)',
+                expected: '15+15*x^7+24*x+24*x^8+6*x^2+6*x^9'
+            }, {
+                given:'lcm(1+x^2,2*x)',
+                expected: '2*(1+x^2)*x'
+            }, {
+                given:'lcm(84*x^4+147*x^3+16*x^2+28*x, 44*x^5+77*x^4+16*x^3+28*x^2+12*x+21)',
+                expected: '(12*x+16*x^3+28*x^2+44*x^5+77*x^4+21)*(147*x^3+16*x^2+28*x+84*x^4)*(4*x+7)^(-1)'
+            }, {
+                given:'lcm(5*x^11+90*x^9+361*x^7+473*x^5+72*x^3+91*x, 7150*x^12+9360*x^10+1375*x^9+1430*x^8+37550*x^7+1872*x^6+47075*x^5+7510*x^3+9360*x)',
+                expected: '(1375*x^9+1430*x^8+1872*x^6+37550*x^7+47075*x^5+7150*x^12+7510*x^3+9360*x+9360*x^10)*(361*x^7+473*x^5+5*x^11+72*x^3+90*x^9+91*x)*(5*x^5+x)^(-1)'
+            }, {
+                given:'lcm(7*x^4+7*x^3+4*x^2+5*x+1, 21*x^6+47*x^4+80*x^3+20*x^2+49*x+11)',
+                expected: '(1+4*x+7*x^3)^(-1)*(1+4*x^2+5*x+7*x^3+7*x^4)*(11+20*x^2+21*x^6+47*x^4+49*x+80*x^3)'
+            }, {
+                given:'lcm(5*x^11+90*x^9+361*x^7+473*x^5+72*x^3+91*x, 7150*x^12+9360*x^10+1375*x^9+1430*x^8+37550*x^7+1872*x^6+47075*x^5+7510*x^3+9360*x,x)',
+                expected: '(1375*x^9+1430*x^8+1872*x^6+37550*x^7+47075*x^5+7150*x^12+7510*x^3+9360*x+9360*x^10)*(361*x^7+473*x^5+5*x^11+72*x^3+90*x^9+91*x)'
+            }, {
+                given:'lcm(x^8+4*x^7+4*x^6+3*x^5+12*x^4+12*x^3, (x^3+3), 3+x^3)',
+                expected: '(12*x^3+12*x^4+3*x^5+4*x^6+4*x^7+x^8)*(3+x^3)'
+            }, {
+                given:'lcm(a, b, c)',
+                expected: 'a*b*c*gcd(a,b,c)^(-1)'
+            }, {
+                given:'lcm(18,12, 6)',
+                expected: '216' //Please check, should be 36
+            }, {
+                given:'lcm(3, 5, 7)',
+                expected: '105'
+            }, {
+                given:'lcm(1/2, 1/3, 1/4)', //Please check, should be 1
+                expected: '1/2'
+            }, {
+                given:'lcm(5%, 15%, 25%)',
+                expected: '3/80' //Please check, should be 3/4
+            }, {
+                given:'lcm(1/a, 1/b, 1/c)',
+                expected: 'a^(-1)*b^(-1)*c^(-1)*gcd(a^(-1),b^(-1),c^(-1))^(-1)'
+            }
+        ];
 
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var result = nerdamer(testCases[i].given);
+
+            // then
+            expect(result.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
     describe('isPoly', function () {
         it('should detect polynomials', function () {
             // given
