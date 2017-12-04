@@ -512,6 +512,22 @@ describe('calculus', function () {
                 given: 'integrate(log(x)^n/x,x)',
                 expected: '(1+n)^(-1)*log(x)^(1+n)'
             },
+            {
+                given: 'integrate(1/(x^2+9)^3,x)',
+                expected: '(1/729)*((1/4)*cos(atan((1/3)*x))^3*sin(atan((1/3)*x))+(3/8)*atan((1/3)*x)+(3/8)*cos(atan((1/3)*x))*sin(atan((1/3)*x)))'
+            },
+            {
+                given: 'integrate(1/(a*x^2+b)^3,x)',
+                expected: '((1/4)*cos(atan(sqrt(a)^(-1)*sqrt(b)^(-1)*x))^3*sin(atan(sqrt(a)^(-1)*sqrt(b)^(-1)*x))+(3/8)*atan(sqrt(a)^(-1)*sqrt(b)^(-1)*x)+(3/8)*cos(atan(sqrt(a)^(-1)*sqrt(b)^(-1)*x))*sin(atan(sqrt(a)^(-1)*sqrt(b)^(-1)*x)))*b^(-3)'
+            },
+            {
+                given: 'integrate(asin(x)/sqrt(2-2x^2),x)',
+                expected: '(1/2)*asin(x)^2*sqrt(2)^(-1)'
+            },
+            {
+                given: 'integrate(atan(x)/(2+2*x^2),x)',
+                expected: '(1/4)*atan(x)^2'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

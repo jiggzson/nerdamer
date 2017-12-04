@@ -821,7 +821,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     c.elements[i] = e ?  [e] : [Symbol(0)]; //fill the holes in the coeffs
                     M.elements[i] = t; //add the row to the matrix
                 }
-
                 //solve for A, B, C, etc. We transpose to have the powers in the columns
                 var L = M.transpose().invert().multiply(c); 
                 //we can now integrate each one of them but remember we divided earlier so integrate the whole if it's not zero
@@ -1788,6 +1787,24 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     else if(g1 === FN && g2 === EX && core.Utils.in_htrig(sym1.fname)) {
                                         sym1 = sym1.fnTransform();
                                         retval = __.integrate(_.expand(_.multiply(sym1, sym2)), dx, depth);
+                                    }
+                                    else if(g1 === FN && g2 === CP || g2 === FN && g1 === CP) {
+                                        if(g2 === FN && g1 === CP) {
+                                            var t = sym1; sym1 = sym2; sym2 = t; //swap
+                                        }
+                                        var du, sym2_clone, p, q;
+                                        du = Symbol.unwrapSQRT(__.diff(sym1.clone(), dx), true);
+                                        sym2_clone = Symbol.unwrapSQRT(sym2, true);
+                                        if(du.power.equals(sym2_clone.power)) {
+                                            p = new Symbol(sym2.power);
+                                            q = core.Algebra.divide(du.toLinear(), sym2.clone().toLinear());
+                                            if(q.isConstant()) {
+                                                var nq = _.pow(q, p.negate());
+                                                retval = _.multiply(nq, __.integration.poly_integrate(sym1.clone()));
+                                            }
+                                        }
+                                        else
+                                            retval = __.integration.by_parts(symbol, dx, depth, opt);
                                     }
                                     else { 
                                         retval = __.integration.by_parts(symbol, dx, depth, opt);
