@@ -2733,12 +2733,6 @@ if((typeof module) !== 'undefined') {
             build: function() { return __.gcd; }
         },
         {
-            name: 'lcm',
-            visible: true,
-            numargs: 2,
-            build: function() { return __.lcm; }
-        },
-        {
             name: 'roots',
             visible: true,
             numargs: -1,
