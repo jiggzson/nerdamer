@@ -1288,7 +1288,54 @@ describe('Nerdamer core', function () {
         expect(value).toEqual(testCases[i].expected);
       }
     });
+    
+    it('should round', function () {
+      // given
+      var testCases = [
+          {
+              given: 'round(204)',
+              expected: '204'
+          },
+          {
+              given: 'round(10.893)',
+              expected: '11'
+          },
+          {
+              given: 'round(10.893, 1)',
+              expected: '10.9'
+          },
+          {
+              given: 'round(-10.3)',
+              expected: '-10'
+          },
+          {
+              given: 'round(204)',
+              expected: '204'
+          },
+          {
+              given: 'round(10.1)',
+              expected: '10'
+          },
+          {
+              given: 'round(1.23423534e-12,-2)',
+              expected: '1.23e-12'
+          },
+          {
+              given: 'round(1.23423534e12,-2)',
+              expected: '1230000000000'
+          }
+      ];
 
+      for (var i = 0; i < testCases.length; ++i) {
+        // when
+        var parsed = nerdamer(testCases[i].given);
+        var value = parsed.evaluate().text('decimals');
+
+        // then
+        expect(value).toEqual(testCases[i].expected);
+      }
+    });
+    
     it('should support trunc()', function () {
         // given
         var testCases = [
