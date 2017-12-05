@@ -3276,14 +3276,18 @@ var nerdamer = (function(imports) {
             },
             acot: function(symbol) {
                 var retval;
-                var k = _.parse('pi/2');
-                if(symbol.equals(0))
-                    retval = k;
-                else {
-                    if(symbol.lessThan(0))
-                        k.negate();
-                    retval = _.subtract(k, trig.atan(symbol));
+                if(Settings.PARSE2NUMBER) {
+                    var k = _.parse('pi/2');
+                    if(symbol.equals(0))
+                        retval = k;
+                    else {
+                        if(symbol.lessThan(0))
+                            k.negate();
+                        retval = _.subtract(k, trig.atan(symbol));
+                    }
                 }
+                else 
+                    retval = _.symfunction('acot', arguments);
                 return retval;    
             },
             atan2: function(a, b) {
@@ -3318,47 +3322,90 @@ var nerdamer = (function(imports) {
             tanh: function(symbol) {
                 var retval;
                 if(Settings.PARSE2NUMBER) {
-                    retval = _.parse(format('(e^(2*({0}))-1)/(e^(2*({0}))+1)', symbol));
-//                    if (symbol.equals('Infinity')) {
-//                        retval = new Symbol(1);
-//                    } 
-//                    else if (symbol.equals('-Infinity')) {
-//                        retval = new Symbol('-1')   
-//                    } 
-//                    else {
-//                        retval = _.parse(format('(e^(2*({0}))-1)/(e^(2*({0}))+1)', symbol));
-//                    }
+                    retval = _.parse(format('sinh({0})/cosh({0})', symbol));
                 }
                 else 
                     retval = _.symfunction('tanh', arguments);
                 return retval;
             },
             sech: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = _.parse(format('1/cosh({0})', symbol));
+                else 
+                    retval = _.symfunction('sech', arguments);
+                return retval;
             },
             csch: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = _.parse(format('1/sinh({0})', symbol));
+                else 
+                    retval = _.symfunction('csch', arguments);
+                return retval;
             },
             coth: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = _.parse(format('1/tanh({0})', symbol));
+                else 
+                    retval = _.symfunction('coth', arguments);
+                return retval;
             },
             acosh: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = evaluate(_.parse(format('log(({0})+sqrt(({0})^2-1))', symbol.toString())));
+                else 
+                    retval = _.symfunction('acosh', arguments);
+                return retval;
             },
             asinh: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = evaluate(_.parse(format('log(({0})+sqrt(({0})^2+1))', symbol.toString())));
+                else 
+                    retval = _.symfunction('asinh', arguments);
+                return retval;
             },
             atanh: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = evaluate(_.parse(format('(1/2)*log((1+({0}))/(1-({0})))', symbol.toString())));
+                else 
+                    retval = _.symfunction('atanh', arguments);
+                return retval;
             },
             asech: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = evaluate(log(_.add(symbol.clone().invert(), sqrt(_.subtract(_.pow(symbol, new Symbol(-2)), new Symbol(1))))));
+                else 
+                    retval = _.symfunction('asech', arguments);
+                return retval;
             },
             acsch: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = evaluate(_.parse(format('log((1+sqrt(1+({0})^2))/({0}))', symbol.toString())));
+                else 
+                    retval = _.symfunction('acsch', arguments);
+                return retval;
             },
             acoth: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.equals(1))
+                        retval = Symbol.infinity();
+                    else
+                        retval = evaluate(
+                                _.divide(
+                                    log(_.divide(_.add(symbol.clone(), new Symbol(1)), _.subtract(symbol.clone(), new Symbol(1)))), 
+                            new Symbol(2)));
+                }
+                else 
+                    retval = _.symfunction('acoth', arguments);
+                return retval;
             }
         };
         
@@ -3426,14 +3473,18 @@ var nerdamer = (function(imports) {
                 'acsc'              : [ trig.acsc, 1],
                 'acot'              : [ trig.acot, 1],
                 'atan2'             : [ trig.atan2, 2],
-                'acoth'             : [ acoth, 1],
-                'asech'             : [ asech, 1],
+                'acoth'             : [ trigh.acoth, 1],
+                'asech'             : [ trigh.asech, 1],
+                'acsch'             : [ trigh.acsch, 1],
                 'sinh'              : [ trigh.sinh, 1],
                 'cosh'              : [ trigh.cosh, 1],
                 'tanh'              : [ trigh.tanh, 1],
-                'asinh'             : [ , 1],
-                'acosh'             : [ acosh, 1],
-                'atanh'             : [ , 1],
+                'asinh'             : [ trigh.asinh, 1],
+                'sech'              : [ trigh.sech, 1],
+                'csch'              : [ trigh.csch, 1],
+                'coth'              : [ trigh.coth, 1],
+                'acosh'             : [ trigh.acosh, 1],
+                'atanh'             : [ trigh.atanh, 1],
                 'log10'             : [ , 1],
                 'exp'               : [ , 1],
                 'min'               : [ min ,-1],
@@ -4783,24 +4834,6 @@ var nerdamer = (function(imports) {
             return symbol;
         };
         
-        function acoth(symbol) {
-            if(symbol.equals(1))
-                return Symbol.infinity();
-            return evaluate(
-                    _.divide(
-                        log(_.divide(_.add(symbol.clone(), new Symbol(1)), _.subtract(symbol.clone(), new Symbol(1)))), 
-                new Symbol(2)));
-        }
-        
-        function asech(symbol) {
-            return evaluate(log(_.add(symbol.clone().invert(), sqrt(_.subtract(_.pow(symbol, new Symbol(-2)), new Symbol(1))))));
-        }
-        
-        function acosh(symbol) {
-            //return Math.log(x + Math.sqrt(x * x - 1));
-            return _.parse(format('log(({0})+sqrt(({0})^2-1))', symbol.toString()));
-        }
-        
         function clean(symbol) {
             // handle functions with numeric values
             // handle denominator within denominator
@@ -5641,8 +5674,8 @@ var nerdamer = (function(imports) {
         
         /**
          * Gets called when the parser finds the / operator. See this.add
-         * @param {Symbol} symbol1
-         * @param {Symbol} symbol2
+         * @param {Symbol} a
+         * @param {Symbol} b
          * @returns {Symbol}
          */
         this.divide = function(a, b) { 

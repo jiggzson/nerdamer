@@ -699,7 +699,7 @@ describe('Nerdamer core', function () {
                 },
                 {
                     given: 'acot(0)',
-                    expected: '(1/2)*pi',
+                    expected: 'acot(0)',
                     expectedValue: '1.5707963267948966'
                 },
             ];
@@ -850,9 +850,59 @@ describe('Nerdamer core', function () {
             var testCases = [
                 {
                     given: 'acosh(1/23.12)',
-                    expected: 'log((1/578)*i*sqrt(333459)+25/578)',
+                    expected: 'acosh(25/578)',
                     expectedValue: '-4.440892098500627e-16+1.5275302342078616*i'
                 },
+                {
+                    given: 'sech(0.1)',
+                    expected: 'sech(1/10)',
+                    expectedValue: '0.9950207489532263'
+                },
+                {
+                    given: 'csch(0.1)',
+                    expected: 'csch(1/10)',
+                    expectedValue: '9.983352757296105'
+                },
+                {
+                    given: 'tanh(0.1)',
+                    expected: 'tanh(1/10)',
+                    expectedValue: '0.09966799462495585'
+                },
+                {
+                    given: 'coth(0.1)',
+                    expected: 'coth(1/10)',
+                    expectedValue: '10.033311132253987'
+                },
+                {
+                    given: 'acosh(0.1)',
+                    expected: 'acosh(1/10)',
+                    expectedValue: '1.4706289056333368*i'
+                },
+                {
+                    given: 'asinh(0.1)',
+                    expected: 'asinh(1/10)',
+                    expectedValue: '0.0998340788992076'
+                },
+                {
+                    given: 'atanh(-5)',
+                    expected: 'atanh(-5)',
+                    expectedValue: '0.5*(-0.4054651081081645+3.141592653589793*i)'
+                },
+                {
+                    given: 'asech(0.5)',
+                    expected: 'asech(1/2)',
+                    expectedValue: '1.3169578969248166'
+                },
+                {
+                    given: 'acsch(1.1)',
+                    expected: 'acsch(11/10)',
+                    expectedValue: '0.8156089004401478'
+                },
+                {
+                    given: 'acoth(1.2)',
+                    expected: 'acoth(6/5)',
+                    expectedValue: '1.1989476363991853'
+                }
             ];
 
             for (var i = 0; i < testCases.length; ++i) {
