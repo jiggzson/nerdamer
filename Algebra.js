@@ -2368,7 +2368,7 @@ if((typeof module) !== 'undefined') {
                 a = new Polynomial(a); b = new Polynomial(b);
                 return _.divide(a.gcd(b).toSymbol(), den);
             }
-            else {
+            else { 
                 var T;
                 while(!b.equals(0)) {  
                     var t = b.clone(); 

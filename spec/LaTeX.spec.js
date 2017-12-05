@@ -235,5 +235,26 @@ describe('TeX features', function () {
         expect(teX).toEqual(testCases[i].expected);
       }
     });
+    it('should display integrals', function () {
+      // given
+      var testCases = [
+        {
+          given: 'defint(log(2cos(x/2)),-π,π,x)',
+          expected: '\\int_{-\\pi}^{\\pi}{\\mathrm{log}\\left(2 \\cdot \\mathrm{cos}\\left(\\frac{x}{2}\\right)\\right)}{dx}'
+        },
+        {
+          given: 'integrate(sin(x^x),x)',
+          expected: '\\int{\\mathrm{sin}\\left(x^{x}\\right)}{dx}'
+        },
+      ];
+
+      for (var i = 0; i < testCases.length; ++i) {
+        // when
+        var teX = nerdamer(testCases[i].given).toTeX();
+
+        // then
+        expect(teX).toEqual(testCases[i].expected);
+      }
+    });
     
 });

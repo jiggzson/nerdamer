@@ -3289,8 +3289,9 @@ var nerdamer = (function(imports) {
             atan2: function(a, b) {
                 if(a.equals(0) && b.equals(0))
                     throw new Error('atan2 is undefined for 0, 0');
+                
                 if(Settings.PARSE2NUMBER && a.isConstant() && b.isConstant()) {
-                    return Math.atan2(a, b);
+                    return new Symbol(Math.atan2(a, b));
                 }
                 return _.symfunction('atan2', arguments);
             }
@@ -3424,7 +3425,7 @@ var nerdamer = (function(imports) {
                 'asec'              : [ trig.asec, 1],
                 'acsc'              : [ trig.acsc, 1],
                 'acot'              : [ trig.acot, 1],
-                'atan2'             : [ , 2],
+                'atan2'             : [ trig.atan2, 2],
                 'acoth'             : [ acoth, 1],
                 'asech'             : [ asech, 1],
                 'sinh'              : [ trigh.sinh, 1],
@@ -3646,7 +3647,7 @@ var nerdamer = (function(imports) {
          * @param {String[]} rpn
          * @returns {Symbol}
          */
-        this.parseTree = function(rpn) { 
+        this.parseTree = function(rpn, subs) { 
             var q = []; // The container for parsed values
             var l = rpn.length;
             // begin parsing
@@ -3684,8 +3685,9 @@ var nerdamer = (function(imports) {
                         if(e in constants)
                             e = new Symbol(constants[e]);
                         //next subs
-                        else if(e in subs)
+                        else if(e in subs) {
                             e = subs[e].clone();
+                        }
                         else if(e in VARS) {
                             e = VARS[e].clone();
                         }
@@ -3718,7 +3720,7 @@ var nerdamer = (function(imports) {
             }
             else
                 subs = {};
-            
+
             //link e and pi
             if(Settings.PARSE2NUMBER) {
                 subs.e = new Symbol(Math.E);
@@ -3731,6 +3733,7 @@ var nerdamer = (function(imports) {
              * a side-by-side close and open parenthesis
              */
             var e = String(expression_string), match;
+            
             //add support for spaces between variables
             while(true) { 
                 match = this.operator_filter_regex.exec(e);
@@ -3790,7 +3793,7 @@ var nerdamer = (function(imports) {
                 if(e_org === e) 
                     break;
             }
-
+            
             var l = e.length, //the length of the string
                 output = [], //the output array. This is what's returned
                 stack = [], //the operator stack
@@ -4037,7 +4040,7 @@ var nerdamer = (function(imports) {
             if(tree)
                 return output;
             
-            return this.parseTree(output);
+            return this.parseTree(output, subs);
 
         };
         
@@ -4711,8 +4714,26 @@ var nerdamer = (function(imports) {
          */
         function round(x, s) {
             var sIsConstant = s && s.isConstant() || typeof s === 'undefined';
-            if(x.isConstant() && sIsConstant) 
-                return new Symbol(Utils.round(x, Number(s||0)));
+            if(x.isConstant() && sIsConstant) {
+                var v, e, exp, retval;
+                v = x;
+                //round the coefficient of then number but not the actual decimal value
+                //we know this because a negative number was passed
+                if(s && s.lessThan(0)) {
+                    s = abs(s);
+                    //convert the number to exponential form
+                    e = Number(x).toExponential().toString().split('e');
+                    //point v to the coefficient of then number
+                    v = e[0];
+                    //set the expontent
+                    exp = e[1];
+                }
+                //round the number to the requested precision
+                retval = new Symbol(Utils.round(v, Number(s||0)));
+                //if there's a exponent then put it back
+                return _.multiply(retval, _.pow(new Symbol(10), new Symbol(exp || 0)))
+            }
+                
             
             return _.symfunction('round', arguments); 
         }
@@ -4851,8 +4872,9 @@ var nerdamer = (function(imports) {
                 var p = symbol.power,
                     m = symbol.multiplier,
                     pn = Number(p);
-
-                if(!symbol.symbols) return symbol;
+                
+                if(!symbol.symbols) 
+                    return symbol;
 
                 //expand all the symbols
                 for(var s in symbol.symbols) {
@@ -4910,13 +4932,14 @@ var nerdamer = (function(imports) {
                         }
                         else sub.power = sub.power.multiply(sp);
                     }
-
+                    
                     symbol.toLinear();
 
                     //I'm going to be super lazy here and take the easy way out. TODO: do this without re-parsing
                     symbol = _.parse(symbol.text());
 
-                    if(!hascomposites) return symbol; //nothing to do here
+                    if(!hascomposites) 
+                        return symbol; //nothing to do here
 
                     var result = new Symbol(0);
                     var composites = [],
@@ -4925,6 +4948,8 @@ var nerdamer = (function(imports) {
                     //sort them out
                     for(var s in symbol.symbols) {
                         var x = symbol.symbols[s];
+                        if(x.group === EX)
+                            continue;
                         if(x.isComposite()) {
                             var p = x.power, isDenom = false;;
                             if(isInt(p)) {
@@ -5092,7 +5117,9 @@ var nerdamer = (function(imports) {
         this.mapped_function = function() { 
             var subs = {},
                 params = this.params;
-            for(var i=0; i<params.length; i++) subs[params[i]] = arguments[i];
+            for(var i=0; i<params.length; i++) 
+                subs[params[i]] = arguments[i];
+            
             return _.parse(this.body, subs);
         };
         
@@ -6254,6 +6281,9 @@ var nerdamer = (function(imports) {
                 }
                 else if(fname === PARENTHESIS) { 
                     v[index] = this.brackets(input.join(','), 'parens');
+                }
+                else if(fname === 'defint') {
+                    v[index] = '\\int_'+this.braces(input[1])+'^'+this.braces(input[2])+this.braces(input[0])+this.braces('d'+input[3]);
                 }
                 else if(fname === 'integrate') {
                     v[index] = '\\int'+this.braces(input[0])+this.braces('d'+input[1]);
