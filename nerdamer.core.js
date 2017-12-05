@@ -3647,7 +3647,7 @@ var nerdamer = (function(imports) {
          * @param {String[]} rpn
          * @returns {Symbol}
          */
-        this.parseTree = function(rpn) { 
+        this.parseTree = function(rpn, subs) { 
             var q = []; // The container for parsed values
             var l = rpn.length;
             // begin parsing
@@ -3685,8 +3685,9 @@ var nerdamer = (function(imports) {
                         if(e in constants)
                             e = new Symbol(constants[e]);
                         //next subs
-                        else if(e in subs)
+                        else if(e in subs) {
                             e = subs[e].clone();
+                        }
                         else if(e in VARS) {
                             e = VARS[e].clone();
                         }
@@ -3719,7 +3720,7 @@ var nerdamer = (function(imports) {
             }
             else
                 subs = {};
-            
+
             //link e and pi
             if(Settings.PARSE2NUMBER) {
                 subs.e = new Symbol(Math.E);
@@ -3732,6 +3733,7 @@ var nerdamer = (function(imports) {
              * a side-by-side close and open parenthesis
              */
             var e = String(expression_string), match;
+            
             //add support for spaces between variables
             while(true) { 
                 match = this.operator_filter_regex.exec(e);
@@ -3791,7 +3793,7 @@ var nerdamer = (function(imports) {
                 if(e_org === e) 
                     break;
             }
-
+            
             var l = e.length, //the length of the string
                 output = [], //the output array. This is what's returned
                 stack = [], //the operator stack
@@ -4038,7 +4040,7 @@ var nerdamer = (function(imports) {
             if(tree)
                 return output;
             
-            return this.parseTree(output);
+            return this.parseTree(output, subs);
 
         };
         
@@ -5098,9 +5100,9 @@ var nerdamer = (function(imports) {
             var subs = {},
                 params = this.params;
             for(var i=0; i<params.length; i++) 
-                subs[params[i]] = arguments[i].toString();
-            var f = _.parse(this.body, subs);
-            return f;
+                subs[params[i]] = arguments[i];
+            
+            return _.parse(this.body, subs);
         };
         
         /**
