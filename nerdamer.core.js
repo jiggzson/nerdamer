@@ -7591,7 +7591,7 @@ var nerdamer = (function(imports) {
     libExports.replaceFunction = function(name, fn, num_args) {
         var existing = _.functions[name];
         var new_num_args = typeof num_args === 'undefined' ? existing[1]: num_args;
-        _.functions = [fn.call(undefined, existing[0]), new_num_args];
+        _.functions[name] = [fn.call(undefined, existing[0], C), new_num_args];
     };
     
     //helper function to set and operator
@@ -7621,3 +7621,4 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
