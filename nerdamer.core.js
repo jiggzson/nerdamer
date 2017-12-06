@@ -451,6 +451,19 @@ var nerdamer = (function(imports) {
             return [na, nb];
         },
         
+        decompose_fn = Utils.decompose_fn = function(fn, wrt) { 
+            var ax, a, x, b;
+            if(fn.group === CP) {
+                var t = _.expand(fn.clone()).stripVar(wrt); 
+                ax = _.subtract(fn.clone(), t.clone());
+                b = t;
+            }
+            else
+                ax = fn.clone(); 
+            a = ax.stripVar(wrt);
+            x = _.divide(ax.clone(), a.clone());
+            return [a, x, ax, b];
+        },
          /**
          * Rounds a number up to x decimal places
          * @param {Number} x
@@ -2891,12 +2904,13 @@ var nerdamer = (function(imports) {
          */
         getDenom: function() { 
             if(this.power.lessThan(0)) return this.clone();
-            if(this.group === CB) 
+            if(this.group === CB) {
                 var retval = new Symbol(1);
                 for(var x in this.symbols) 
                     if(this.symbols[x].power < 0) 
                         retval = _.multiply(retval, this.symbols[x].clone());
                 return retval;
+            }
             return new Symbol(this.multiplier.den);
         },
         getNum: function() {
@@ -4542,8 +4556,9 @@ var nerdamer = (function(imports) {
             //evaluate the symbol to merge constants
             symbol = evaluate(symbol.clone());
             
-            var retval = new Symbol(1);
+            
             if(symbol.isConstant()) {
+                var retval = new Symbol(1);
                 var m = symbol.toString();
                 if(isInt(m)) { 
                     var factors = Math2.ifactor(m);
@@ -4558,6 +4573,8 @@ var nerdamer = (function(imports) {
                     retval = _.multiply(_.symfunction('parens', [n]), _.symfunction('parens', [d]).invert());
                 }
             }
+            else 
+                retval = _.symfunction('pfactor', arguments);
             return retval;
         }
         
@@ -7297,6 +7314,15 @@ var nerdamer = (function(imports) {
     };
     
     /**
+     * Returns the value of a previously set constant
+     * @param {type} constant
+     * @returns {String}
+     */
+    libExports.getConstant = function(constant) {
+        return String(_.constant[constant]);
+    };
+    
+    /**
      * 
      * @param {String} name The name of the function
      * @param {Array} params_array A list containing the parameter name of the functions
@@ -7368,6 +7394,7 @@ var nerdamer = (function(imports) {
      * 
      * @param {Boolean} asObject
      * @param {Boolean} asLaTeX
+     * @param {String|String[]} option 
      * @returns {Array}
      */
     libExports.expressions = function( asObject, asLaTeX, option ) {
@@ -7456,13 +7483,22 @@ var nerdamer = (function(imports) {
         //check if it's not already a constant
         if(v in _.constants)
             err('Cannot set value for constant '+v);
-        if(val === 'delete') delete VARS[v];
+        if(val === 'delete' || val === '') 
+            delete VARS[v];
         else {
             VARS[v] = isSymbol(val) ? val : _.parse(val);
         }
         return this;
     };
-
+    
+    /**
+     * Returns the value of a set variable
+     * @param {type} v
+     * @returns {varies}
+     */
+    libExports.getVar = function(v) {
+        return VARS[v];
+    };
     /**
      * Clear the variables from the VARS object
      * @returns {Object} Returns the nerdamer object
@@ -7483,7 +7519,8 @@ var nerdamer = (function(imports) {
     };
     
     /**
-     * @param {String} Output format. Can be 'object' (just returns the VARS object), 'text' or 'latex'. Default: 'text'
+     * @param {String} output - output format. Can be 'object' (just returns the VARS object), 'text' or 'latex'. Default: 'text'
+     * @param {String|String[]} option
      * @returns {Object} Returns an object with the variables
      */    
     libExports.getVars = function(output, option) {
@@ -7503,7 +7540,7 @@ var nerdamer = (function(imports) {
     };
     
     /**
-     * 
+     * Set the value of a setting
      * @param {String} setting The setting to be changed
      * @param {boolean} value 
      */
@@ -7519,6 +7556,16 @@ var nerdamer = (function(imports) {
         if(disallowed.indexOf(setting) !== -1) err('Cannot modify setting: '+setting);
         Settings[setting] = value;
     };
+    
+    /**
+     * Get the value of a setting
+     * @param {type} setting
+     * @returns {undefined}
+     */
+    libExports.get = function(setting) {
+        return Settings[setting];
+    };
+    
     /**
      * This functions makes internal functions available externally
      * @param {bool} override Override the functions when calling api if it exists 

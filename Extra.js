@@ -19,14 +19,16 @@ if((typeof module) !== 'undefined') {
         isVector = core.Utils.isVector,
         S = core.groups.S,
         EX = core.groups.EX,
+        CP = core.groups.CP,
         CB = core.groups.CB,
         FN = core.groups.FN;
     core.Settings.Laplace_integration_depth = 40;
     var __ = core.Extra = {
-        version: '1.2.1',
+        version: '1.4.1',
         //http://integral-table.com/downloads/LaplaceTable.pdf
+        //Laplace assumes all coefficients to be positive
         LaPlace: {
-            //Using: intgral_0_oo f(t)*e^(-s*t) dt
+            //Using: integral_0^oo f(t)*e^(-s*t) dt
             transform: function(symbol, t, s) {
                 t = t.toString();
                 //First try a lookup for a speed boost
@@ -112,6 +114,46 @@ if((typeof module) !== 'undefined') {
                 }
 
                 return _.multiply(retval, coeff);
+            },
+            inverse: function(symbol, s_, t) {
+                if(symbol.group === S || symbol.group === CB) {
+                    var num, den, s, retval;
+                    s = s_.toString();
+                    num = symbol.getNum();
+                    den = symbol.getDenom().invert();
+                    //check if in the form t^n
+                    if(den.group === S && den.value === s) {
+                        var fact, p;
+                        p = den.power-1;
+                        fact = core.Math2.factorial(p);
+                        //  n!/s^(n-1)
+                        retval = _.divide(_.pow(t, new Symbol(p)), new Symbol(fact));
+                        //put back the numerator
+                        retval = _.multiply(retval, num);
+                    }
+                    else if(den.group === CP && den.isLinear()) {
+                        var parts, a, x, ax, b;
+                        parts = core.Utils.decompose_fn(den, s);
+                        a = parts[0];
+                        x = parts[1];
+                        ax = parts[2];
+                        b = parts[3];
+                        // a/(b*s-c) -> ae^(-bt)
+                        if(x.isLinear() && !num.contains(s)) {
+                            retval = _.pow(new Symbol('e'), _.multiply(t, b.negate()));
+                            //put back the numerator
+                            retval = _.multiply(retval, num);
+                        }
+                        // a*s/(b*s^2+c^2)
+                        else if(!num.contains(s) && x.power.equals(2))
+                        console.log(parts.toString(), den.toString())
+                    }
+                }
+                    
+                
+                if(!retval)
+                    retval = _.symfunction('ilt', arguments);
+                return retval;
             }
         },
         Statistics: {
@@ -284,6 +326,12 @@ if((typeof module) !== 'undefined') {
             numargs: 3,
             build: function() { return __.LaPlace.transform; }
         },
+        {
+            name: 'ilt',
+            visible: true,
+            numargs: 3,
+            build: function() { return __.LaPlace.inverse; }
+        },
         //statistical
         {
             name: 'mean',
@@ -338,3 +386,4 @@ if((typeof module) !== 'undefined') {
     //link registered functions externally
     nerdamer.api();
 }());
+
