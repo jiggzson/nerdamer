@@ -7588,9 +7588,10 @@ var nerdamer = (function(imports) {
                 libExports[x] = linker(x);
     };
     
-    libExports.convert = function(e) {
-        var raw = _.parse(e, null, true);
-        return raw;
+    libExports.replaceFunction = function(name, fn, num_args) {
+        var existing = _.functions[name];
+        var new_num_args = typeof num_args === 'undefined' ? existing[1]: num_args;
+        _.functions = [fn.call(undefined, existing[0]), new_num_args];
     };
     
     //helper function to set and operator
