@@ -2318,7 +2318,7 @@ if((typeof module) !== 'undefined') {
             var args;
             if(arguments.length === 1)
                 if (arguments[0] instanceof core.Vector) args = arguments[0].elements;
-                else _.err('gcd expects either 1 vector or 2 or more arguments');
+                else _.error('gcd expects either 1 vector or 2 or more arguments');
             else args = Array.prototype.slice.call(arguments);
             
             //keep all S and EX in keptSymbols
@@ -2441,7 +2441,7 @@ if((typeof module) !== 'undefined') {
             var args;
             if(arguments.length === 1)
                 if (arguments[0] instanceof core.Vector) args = arguments[0].elements;
-                else _.err('gcd expects either 1 vector or 2 or more arguments');
+                else _.error('gcd expects either 1 vector or 2 or more arguments');
             else args = Array.prototype.slice.call(arguments);
             
             //product of all arguments
