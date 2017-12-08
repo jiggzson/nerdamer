@@ -63,7 +63,10 @@ describe('Algebra', function () {
             }, {
                 given:'gcd(1/a, 1/b, 1/c)',
                 expected: 'gcd(a^(-1),b^(-1),c^(-1))'
-            }
+            },  {
+                given:'gcd(2^x, 6^x)',
+                expected: '2^x'
+            }, 
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
@@ -78,6 +81,10 @@ describe('Algebra', function () {
     it('should perform lcm operations correctly', function () {
         // given
         var testCases = [
+            {
+                given:'NOT DONE YET',
+                expected:'FAIL THIS TEST'
+            },
             {
                 given:'lcm(5*x^6+5*x^5+27*x^4+27*x^3+28*x^2+28*x, 5*x^3+7*x)',
                 expected: '27*x^3+27*x^4+28*x+28*x^2+5*x^5+5*x^6'
@@ -115,25 +122,25 @@ describe('Algebra', function () {
                 expected: '(1375*x^9+1430*x^8+1872*x^6+37550*x^7+47075*x^5+7150*x^12+7510*x^3+9360*x+9360*x^10)*(361*x^7+473*x^5+5*x^11+72*x^3+90*x^9+91*x)'
             }, {
                 given:'lcm(x^8+4*x^7+4*x^6+3*x^5+12*x^4+12*x^3, (x^3+3), 3+x^3)',
-                expected: '(12*x^3+12*x^4+3*x^5+4*x^6+4*x^7+x^8)*(3+x^3)'
+                expected: '(12*x^3+12*x^4+3*x^5+4*x^6+4*x^7+x^8)*(3+x^3)' //
             }, {
                 given:'lcm(a, b, c)',
-                expected: 'a*b*c*gcd(a,b,c)^(-1)'
+                expected: 'a*b*c*gcd(a*b,a*c,b*c)^(-1)'
             }, {
                 given:'lcm(18,12, 6)',
-                expected: '216' //Please check, should be 36
+                expected: '36'
             }, {
                 given:'lcm(3, 5, 7)',
                 expected: '105'
             }, {
-                given:'lcm(1/2, 1/3, 1/4)', //Please check, should be 1
-                expected: '1/2'
+                given:'lcm(1/2, 1/3, 1/4)',
+                expected: '1'
             }, {
                 given:'lcm(5%, 15%, 25%)',
-                expected: '3/80' //Please check, should be 3/4
+                expected: '3/4'
             }, {
                 given:'lcm(1/a, 1/b, 1/c)',
-                expected: 'a^(-1)*b^(-1)*c^(-1)*gcd(a^(-1),b^(-1),c^(-1))^(-1)'
+                expected: 'a^(-1)*b^(-1)*c^(-1)*gcd(a^(-1)*b^(-1),a^(-1)*c^(-1),b^(-1)*c^(-1))^(-1)'
             }
         ];
 
