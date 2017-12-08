@@ -2365,6 +2365,29 @@ if((typeof module) !== 'undefined') {
             
         },
         gcd_: function(a, b) { 
+            if(a.group === FN || a.group === P)
+                a = core.Utils.block('PARSE2NUMBER', function() {
+                   return _.parse(a); 
+                });
+		
+            if(b.group === FN)
+                b = core.Utils.block('PARSE2NUMBER', function() {
+                   return _.parse(b); 
+                });
+		
+            if(a.isConstant() && b.isConstant()) { 
+                // return core.Math2.QGCD(new Frac(+a), new Frac(+b));
+                return new Symbol(core.Math2.QGCD(new Frac(+a), new Frac(+b)));
+            }
+		
+            var den = _.multiply(a.getDenom() || new Symbol(1), b.getDenom() || new Symbol(1)).invert();
+            a = _.multiply(a.clone(), den.clone());
+            b = _.multiply(b.clone(), den.clone());
+		
+            //feels counter intuitive but it works. Issue #123 (nerdamer("gcd(x+y,(x+y)^2)"))
+            a = _.expand(a);
+            b = _.expand(b);
+		
             if(a.group === CB || b.group === CB) {
                 var q = _.divide(a.clone(), b.clone()); //get the quotient
                 var t = _.multiply(b.clone(), q.getDenom());//multiply by the denominator
@@ -2372,25 +2395,6 @@ if((typeof module) !== 'undefined') {
                 if(!t.equals(1))
                     return t;
             }
-            
-            if(a.group === FN || a.group === P)
-                a = core.Utils.block('PARSE2NUMBER', function() {
-                   return _.parse(a); 
-                });
-            if(b.group === FN)
-                b = core.Utils.block('PARSE2NUMBER', function() {
-                   return _.parse(b); 
-                });
-            if(a.isConstant() && b.isConstant()) { 
-                // return core.Math2.QGCD(new Frac(+a), new Frac(+b));
-                return new Symbol(core.Math2.QGCD(new Frac(+a), new Frac(+b)));
-            }
-            var den = _.multiply(a.getDenom() || new Symbol(1), b.getDenom() || new Symbol(1)).invert();
-            a = _.multiply(a.clone(), den.clone());
-            b = _.multiply(b.clone(), den.clone());
-            //feels counter intuitive but it works. Issue #123 (nerdamer("gcd(x+y,(x+y)^2)"))
-            a = _.expand(a);
-            b = _.expand(b);
             
             if(a.length < b.length) { //swap'm
                 var t = a; a = b; b = t;
