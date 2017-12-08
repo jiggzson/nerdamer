@@ -2326,7 +2326,7 @@ if((typeof module) !== 'undefined') {
             for(var i = 0; i < args.length; i++) {
                 if(args[i].group === S || args[i].group === EX)
                     //avoid duplication in keptSymbols
-                    if (keptSymbols.every(function(s){return !s.value === args[i].value}))
+                    if (keptSymbols.every(function(s){return s.value !== args[i].value}))
                         keptSymbols.push(args[i]);
                     else continue;
                 else if(args[i].group === FN && args[i].fname === 'gcd')
