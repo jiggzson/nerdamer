@@ -264,7 +264,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     
     var __ = core.Calculus = {
 
-        version: '1.4.2',
+        version: '1.4.3',
 
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
@@ -962,19 +962,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             /*
              * dependents: [Solve, integrate]
              */
-            decompose_arg: function(arg, dx) { 
-                var ax, a, x, b;
-                if(arg.group === CP) {
-                    var t = _.expand(arg.clone()).stripVar(dx); 
-                    ax = _.subtract(arg.clone(), t.clone());
-                    b = t;
-                }
-                else
-                    ax = arg.clone(); 
-                a = ax.stripVar(dx);
-                x = _.divide(ax.clone(), a.clone());
-                return [a, x, ax, b];
-            }
+            decompose_arg: core.Utils.decompose_fn
         },
         //TODO: nerdamer.integrate('-e^(-a*t)*sin(t)', 't') -> gives incorrect output
         integrate: function(original_symbol, dt, depth, opt) { 

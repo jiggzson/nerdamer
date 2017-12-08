@@ -451,6 +451,19 @@ var nerdamer = (function(imports) {
             return [na, nb];
         },
         
+        decompose_fn = Utils.decompose_fn = function(fn, wrt) { 
+            var ax, a, x, b;
+            if(fn.group === CP) {
+                var t = _.expand(fn.clone()).stripVar(wrt); 
+                ax = _.subtract(fn.clone(), t.clone());
+                b = t;
+            }
+            else
+                ax = fn.clone(); 
+            a = ax.stripVar(wrt);
+            x = _.divide(ax.clone(), a.clone());
+            return [a, x, ax, b];
+        },
          /**
          * Rounds a number up to x decimal places
          * @param {Number} x
@@ -2891,12 +2904,13 @@ var nerdamer = (function(imports) {
          */
         getDenom: function() { 
             if(this.power.lessThan(0)) return this.clone();
-            if(this.group === CB) 
+            if(this.group === CB) {
                 var retval = new Symbol(1);
                 for(var x in this.symbols) 
                     if(this.symbols[x].power < 0) 
                         retval = _.multiply(retval, this.symbols[x].clone());
                 return retval;
+            }
             return new Symbol(this.multiplier.den);
         },
         getNum: function() {
@@ -3276,14 +3290,18 @@ var nerdamer = (function(imports) {
             },
             acot: function(symbol) {
                 var retval;
-                var k = _.parse('pi/2');
-                if(symbol.equals(0))
-                    retval = k;
-                else {
-                    if(symbol.lessThan(0))
-                        k.negate();
-                    retval = _.subtract(k, trig.atan(symbol));
+                if(Settings.PARSE2NUMBER) {
+                    var k = _.parse('pi/2');
+                    if(symbol.equals(0))
+                        retval = k;
+                    else {
+                        if(symbol.lessThan(0))
+                            k.negate();
+                        retval = _.subtract(k, trig.atan(symbol));
+                    }
                 }
+                else 
+                    retval = _.symfunction('acot', arguments);
                 return retval;    
             },
             atan2: function(a, b) {
@@ -3318,47 +3336,90 @@ var nerdamer = (function(imports) {
             tanh: function(symbol) {
                 var retval;
                 if(Settings.PARSE2NUMBER) {
-                    retval = _.parse(format('(e^(2*({0}))-1)/(e^(2*({0}))+1)', symbol));
-//                    if (symbol.equals('Infinity')) {
-//                        retval = new Symbol(1);
-//                    } 
-//                    else if (symbol.equals('-Infinity')) {
-//                        retval = new Symbol('-1')   
-//                    } 
-//                    else {
-//                        retval = _.parse(format('(e^(2*({0}))-1)/(e^(2*({0}))+1)', symbol));
-//                    }
+                    retval = _.parse(format('sinh({0})/cosh({0})', symbol));
                 }
                 else 
                     retval = _.symfunction('tanh', arguments);
                 return retval;
             },
             sech: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = _.parse(format('1/cosh({0})', symbol));
+                else 
+                    retval = _.symfunction('sech', arguments);
+                return retval;
             },
             csch: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = _.parse(format('1/sinh({0})', symbol));
+                else 
+                    retval = _.symfunction('csch', arguments);
+                return retval;
             },
             coth: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = _.parse(format('1/tanh({0})', symbol));
+                else 
+                    retval = _.symfunction('coth', arguments);
+                return retval;
             },
             acosh: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = evaluate(_.parse(format('log(({0})+sqrt(({0})^2-1))', symbol.toString())));
+                else 
+                    retval = _.symfunction('acosh', arguments);
+                return retval;
             },
             asinh: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = evaluate(_.parse(format('log(({0})+sqrt(({0})^2+1))', symbol.toString())));
+                else 
+                    retval = _.symfunction('asinh', arguments);
+                return retval;
             },
             atanh: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = evaluate(_.parse(format('(1/2)*log((1+({0}))/(1-({0})))', symbol.toString())));
+                else 
+                    retval = _.symfunction('atanh', arguments);
+                return retval;
             },
             asech: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = evaluate(log(_.add(symbol.clone().invert(), sqrt(_.subtract(_.pow(symbol, new Symbol(-2)), new Symbol(1))))));
+                else 
+                    retval = _.symfunction('asech', arguments);
+                return retval;
             },
             acsch: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER)
+                    retval = evaluate(_.parse(format('log((1+sqrt(1+({0})^2))/({0}))', symbol.toString())));
+                else 
+                    retval = _.symfunction('acsch', arguments);
+                return retval;
             },
             acoth: function(symbol) {
-
+                var retval;
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.equals(1))
+                        retval = Symbol.infinity();
+                    else
+                        retval = evaluate(
+                                _.divide(
+                                    log(_.divide(_.add(symbol.clone(), new Symbol(1)), _.subtract(symbol.clone(), new Symbol(1)))), 
+                            new Symbol(2)));
+                }
+                else 
+                    retval = _.symfunction('acoth', arguments);
+                return retval;
             }
         };
         
@@ -3426,14 +3487,18 @@ var nerdamer = (function(imports) {
                 'acsc'              : [ trig.acsc, 1],
                 'acot'              : [ trig.acot, 1],
                 'atan2'             : [ trig.atan2, 2],
-                'acoth'             : [ acoth, 1],
-                'asech'             : [ asech, 1],
+                'acoth'             : [ trigh.acoth, 1],
+                'asech'             : [ trigh.asech, 1],
+                'acsch'             : [ trigh.acsch, 1],
                 'sinh'              : [ trigh.sinh, 1],
                 'cosh'              : [ trigh.cosh, 1],
                 'tanh'              : [ trigh.tanh, 1],
-                'asinh'             : [ , 1],
-                'acosh'             : [ acosh, 1],
-                'atanh'             : [ , 1],
+                'asinh'             : [ trigh.asinh, 1],
+                'sech'              : [ trigh.sech, 1],
+                'csch'              : [ trigh.csch, 1],
+                'coth'              : [ trigh.coth, 1],
+                'acosh'             : [ trigh.acosh, 1],
+                'atanh'             : [ trigh.atanh, 1],
                 'log10'             : [ , 1],
                 'exp'               : [ , 1],
                 'min'               : [ min ,-1],
@@ -4491,8 +4556,9 @@ var nerdamer = (function(imports) {
             //evaluate the symbol to merge constants
             symbol = evaluate(symbol.clone());
             
-            var retval = new Symbol(1);
+            
             if(symbol.isConstant()) {
+                var retval = new Symbol(1);
                 var m = symbol.toString();
                 if(isInt(m)) { 
                     var factors = Math2.ifactor(m);
@@ -4507,6 +4573,8 @@ var nerdamer = (function(imports) {
                     retval = _.multiply(_.symfunction('parens', [n]), _.symfunction('parens', [d]).invert());
                 }
             }
+            else 
+                retval = _.symfunction('pfactor', arguments);
             return retval;
         }
         
@@ -4782,24 +4850,6 @@ var nerdamer = (function(imports) {
             symbol.multiplier = n;
             return symbol;
         };
-        
-        function acoth(symbol) {
-            if(symbol.equals(1))
-                return Symbol.infinity();
-            return evaluate(
-                    _.divide(
-                        log(_.divide(_.add(symbol.clone(), new Symbol(1)), _.subtract(symbol.clone(), new Symbol(1)))), 
-                new Symbol(2)));
-        }
-        
-        function asech(symbol) {
-            return evaluate(log(_.add(symbol.clone().invert(), sqrt(_.subtract(_.pow(symbol, new Symbol(-2)), new Symbol(1))))));
-        }
-        
-        function acosh(symbol) {
-            //return Math.log(x + Math.sqrt(x * x - 1));
-            return _.parse(format('log(({0})+sqrt(({0})^2-1))', symbol.toString()));
-        }
         
         function clean(symbol) {
             // handle functions with numeric values
@@ -5641,8 +5691,8 @@ var nerdamer = (function(imports) {
         
         /**
          * Gets called when the parser finds the / operator. See this.add
-         * @param {Symbol} symbol1
-         * @param {Symbol} symbol2
+         * @param {Symbol} a
+         * @param {Symbol} b
          * @returns {Symbol}
          */
         this.divide = function(a, b) { 
@@ -7264,6 +7314,15 @@ var nerdamer = (function(imports) {
     };
     
     /**
+     * Returns the value of a previously set constant
+     * @param {type} constant
+     * @returns {String}
+     */
+    libExports.getConstant = function(constant) {
+        return String(_.constant[constant]);
+    };
+    
+    /**
      * 
      * @param {String} name The name of the function
      * @param {Array} params_array A list containing the parameter name of the functions
@@ -7335,6 +7394,7 @@ var nerdamer = (function(imports) {
      * 
      * @param {Boolean} asObject
      * @param {Boolean} asLaTeX
+     * @param {String|String[]} option 
      * @returns {Array}
      */
     libExports.expressions = function( asObject, asLaTeX, option ) {
@@ -7423,13 +7483,22 @@ var nerdamer = (function(imports) {
         //check if it's not already a constant
         if(v in _.constants)
             err('Cannot set value for constant '+v);
-        if(val === 'delete') delete VARS[v];
+        if(val === 'delete' || val === '') 
+            delete VARS[v];
         else {
             VARS[v] = isSymbol(val) ? val : _.parse(val);
         }
         return this;
     };
-
+    
+    /**
+     * Returns the value of a set variable
+     * @param {type} v
+     * @returns {varies}
+     */
+    libExports.getVar = function(v) {
+        return VARS[v];
+    };
     /**
      * Clear the variables from the VARS object
      * @returns {Object} Returns the nerdamer object
@@ -7450,7 +7519,8 @@ var nerdamer = (function(imports) {
     };
     
     /**
-     * @param {String} Output format. Can be 'object' (just returns the VARS object), 'text' or 'latex'. Default: 'text'
+     * @param {String} output - output format. Can be 'object' (just returns the VARS object), 'text' or 'latex'. Default: 'text'
+     * @param {String|String[]} option
      * @returns {Object} Returns an object with the variables
      */    
     libExports.getVars = function(output, option) {
@@ -7470,7 +7540,7 @@ var nerdamer = (function(imports) {
     };
     
     /**
-     * 
+     * Set the value of a setting
      * @param {String} setting The setting to be changed
      * @param {boolean} value 
      */
@@ -7486,6 +7556,16 @@ var nerdamer = (function(imports) {
         if(disallowed.indexOf(setting) !== -1) err('Cannot modify setting: '+setting);
         Settings[setting] = value;
     };
+    
+    /**
+     * Get the value of a setting
+     * @param {type} setting
+     * @returns {undefined}
+     */
+    libExports.get = function(setting) {
+        return Settings[setting];
+    };
+    
     /**
      * This functions makes internal functions available externally
      * @param {bool} override Override the functions when calling api if it exists 
@@ -7508,9 +7588,10 @@ var nerdamer = (function(imports) {
                 libExports[x] = linker(x);
     };
     
-    libExports.convert = function(e) {
-        var raw = _.parse(e, null, true);
-        return raw;
+    libExports.replaceFunction = function(name, fn, num_args) {
+        var existing = _.functions[name];
+        var new_num_args = typeof num_args === 'undefined' ? existing[1]: num_args;
+        _.functions[name] = [fn.call(undefined, existing[0], C), new_num_args];
     };
     
     //helper function to set and operator
@@ -7540,3 +7621,4 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+

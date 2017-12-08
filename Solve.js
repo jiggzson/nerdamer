@@ -31,7 +31,7 @@ if((typeof module) !== 'undefined') {
         isArray = core.Utils.isArray;
     //version solve
     core.Solve = {
-        version: '1.2.4',
+        version: '1.2.5',
         solve: function(eq, variable) {
             var solution = solve(eq, String(variable));
             return new core.Vector(solution);
