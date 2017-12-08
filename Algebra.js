@@ -9858,23 +9858,43 @@ if((typeof module) !== 'undefined') {
             return status;
         },
         gcd: function() {
-            var aggregate, keptSymbols = [], args = Array.prototype.slice.call(arguments);
-            if(args.length === 1 && args[0] instanceof core.Vector) args = args[0].elements;
+            var args;
+            if(arguments.length === 1)
+                if (arguments[0] instanceof core.Vector) args = arguments[0].elements;
+                else _.err('gcd expects either 1 vector or 2 or more arguments');
+            else args = Array.prototype.slice.call(arguments);
+            
+            //keep all S and EX in keptSymbols
+            var aggregate, keptSymbols = [];
             for(var i = 0; i < args.length; i++) {
                 if(args[i].group === S || args[i].group === EX)
-                    //avoid duplication
-                    if (keptSymbols.every(function(s){return !s.equals(args[i])}))
+                    //avoid duplication in keptSymbols
+                    if (keptSymbols.every(function(s){return !s.value === args[i].value}))
                         keptSymbols.push(args[i]);
                     else continue;
                 else if(args[i].group === FN && args[i].fname === 'gcd')
+                    //compress gcd(a,gcd(b,c)) into gcd(a,b,c)
                     args = args.concat(arguments[i].args);
                 else if (aggregate === undefined)
                     //first argument to actually process
                     aggregate = args[i];
                 else
-                    aggregate = __.gcd_(aggregate, args[i]);
+                {
+                    var foundGcd = false;
+                    for(var j = 0; j < keptSymbols.length; j++)
+                    {
+                        if(args[i].value === keptSymbols[j].value)
+                        {
+                            //Look, args[i] has a gcd with keptSymbols[j]
+                            args[i] = __.gcd(x, args[i]);
+                            foundGcd = true;
+                        }
+                    }
+                    if(!foundGcd) aggregate = __.gcd_(aggregate, args[i]);
+                }
             }
             if (keptSymbols.length === 0)
+                //no need to care about keptSymbols
                 return aggregate;
             else if (keptSymbols.length === 1 && aggregate === undefined)
                 //avoid gcd(x), return x 
@@ -9888,11 +9908,6 @@ if((typeof module) !== 'undefined') {
             
         },
         gcd_: function(a, b) { 
-            if(a.group === S && b.group === S && a.value !== b.value
-                    || a.group === EX 
-                    || b.group === EX)
-                return _.symfunction('gcd', arguments);
-            
             if(a.group === CB || b.group === CB) {
                 var q = _.divide(a.clone(), b.clone()); //get the quotient
                 var t = _.multiply(b.clone(), q.getDenom());//multiply by the denominator
@@ -9965,11 +9980,19 @@ if((typeof module) !== 'undefined') {
         lcm: function() { 
             //https://math.stackexchange.com/a/319310
             //generalization of the 2-variable formula of lcm
-            //divide product of all arguments by gcd of complementary terms
-            return _.divide(
-                //start with new Symbol(1) so that prev.clone() which makes unnessesary clones can be avoided
-                Array.prototype.slice.call(arguments).reduce(function(prev,curr){return _.multiply(prev, curr.clone())}, new Symbol(1)),
-                __.gcd.apply(null, 
+            
+            var args;
+            if(arguments.length === 1)
+                if (arguments[0] instanceof core.Vector) args = arguments[0].elements;
+                else _.err('gcd expects either 1 vector or 2 or more arguments');
+            else args = Array.prototype.slice.call(arguments);
+            
+            //product of all arguments
+            //start with new Symbol(1) so that prev.clone() which makes unnessesary clones can be avoided
+            var numer = args.reduce(function(prev,curr){return _.multiply(prev, curr.clone())}, new Symbol(1));
+            
+            //gcd of complementary terms
+            var denom_args = 
                 //https://stackoverflow.com/a/18223072
                 //take all complementary terms, e.g.
                 //[a,b,c] => [a*b, b*c, a*c]
@@ -9992,7 +10015,16 @@ if((typeof module) !== 'undefined') {
                 }
                 return results; 
                 //start with new Symbol(1) so that prev.clone() which makes unnessesary clones can be avoided
-            })(arguments,arguments.length-1).map(function(x){return x.reduce(function(prev,curr){return _.multiply(prev,curr.clone())},new Symbol(1))})));
+            })(arguments,arguments.length-1).map(function(x){return x.reduce(function(prev,curr){return _.multiply(prev,curr.clone())},new Symbol(1))});
+            
+            //don't eat the gcd term if all arguments are symbols
+            if(args.every(function(x){return x.group === S}))
+                var denom = _.symfunction('gcd', denom_args);
+            else
+                var denom = __.gcd.apply(null, denom_args);
+                
+            //divide product of all arguments by gcd of complementary terms
+            return _.divide(numer, denom);
         },
         /**
          * Divides one expression by another
@@ -10332,13 +10364,13 @@ if((typeof module) !== 'undefined') {
         {
             name: 'gcd',
             visible: true,
-            numargs: [2, ],
+            numargs: [1, ],
             build: function() { return __.gcd; }
         },
         {
             name: 'lcm',
             visible: true,
-            numargs: [2, ],
+            numargs: [1, ],
             build: function() { return __.lcm; }
         },
         {
