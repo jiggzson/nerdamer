@@ -1782,6 +1782,9 @@ if((typeof module) !== 'undefined') {
                     else if(g === N || for_variable !== v) powers.push(0);
                 }
             }
+            else if(g === CB && e.contains(for_variable)) {
+                powers.push(core.Utils.decompose_fn(e, for_variable, true).x.power);
+            }
             return core.Utils.arrayUnique(powers).sort();
         },
         //The factor object
@@ -2788,6 +2791,16 @@ if((typeof module) !== 'undefined') {
                 b = _.multiply(v1.e(1).clone(),m);
             return _.add(_.subtract(a, b), v1.e(2).clone());
         },
+        partfrac: function(symbol, x) {
+            var num, den, num_max, den_max;
+            num = symbol.getNum();
+            den = symbol.getDenom().toLinear(true);
+            num_max = core.Utils.arrayMax(__.polyPowers(num, x.toString()));
+            den_max = core.Utils.arrayMax(__.polyPowers(den, x.toString()));
+            if(num_max > den_max) {
+                var div = __.div(num.clone(), den.clone());
+            }
+        },
         Classes: {
             Polynomial: Polynomial,
             Factors: Factors,
@@ -2859,6 +2872,14 @@ if((typeof module) !== 'undefined') {
             numargs: [1, 2],
             build: function() { return __.coeffs; }
         },
+        /*
+        {
+            name: 'partfrac',
+            visible: true,
+            numargs: 2,
+            build: function() { return __.partfrac; }
+        },
+        */
         {
             name: 'line',
             visible: true,

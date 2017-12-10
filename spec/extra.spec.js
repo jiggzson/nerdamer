@@ -98,6 +98,22 @@ describe('calculus', function () {
                 given: 'ilt(5*sqrt(pi)/(3*s^(3/2)),s,t)',
                 expected: '(10/3)*sqrt(t)'
             },
+            {
+                given: 'ilt(3/(7*s^2+1)^2, s, t)',
+                expected: '(-3/14)*cos((1/7)*sqrt(7)*t)*t+(3/2)*sin((1/7)*sqrt(7)*t)*sqrt(7)^(-1)'
+            },
+            {
+                given: 'ilt(5*s/(s^2+4)^2, s, t)',
+                expected: '(5/4)*sin(2*t)*t'
+            },
+            {
+                given: 'ilt(8*s^2/(2*s^2+3)^2, s, t)',
+                expected: '2*sin((1/2)*sqrt(6)*t)*sqrt(6)^(-1)+cos((1/2)*sqrt(6)*t)*t'
+            },
+            {
+                given: 'ilt((6*s^2-1)/(4*s^2+1)^2, s, t)',
+                expected: '(1/8)*sin((1/2)*t)+(5/16)*cos((1/2)*t)*t'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

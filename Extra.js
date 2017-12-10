@@ -9,6 +9,7 @@
 if((typeof module) !== 'undefined') {
     nerdamer = require('./nerdamer.core.js');
     require('./Calculus');
+    require('./Algebra');
 }
 
 (function(){
@@ -140,13 +141,23 @@ if((typeof module) !== 'undefined') {
                         //put back a
                         retval = _.divide(retval, f.a);
                     };
-                    var num, den, s, retval, f, p, m;
+                    var num, den, s, retval, f, p, m, den_p;
                     //remove the multiplier
                     m = symbol.multiplier.clone();
                     symbol.toUnitMultiplier();
                     //get the numerator and denominator
                     num = symbol.getNum();
                     den = symbol.getDenom().invert(null, true);
+                    
+                    if(den.group === CP) {
+                        den_p = den.power.clone();
+                        den.toLinear();
+                    }
+                    else
+                        den_p === new core.Frac(1);
+                    //TODO: Make it so factor doesn't destroy pi
+                    //num = core.Algebra.Factor.factor(symbol.getNum());
+                    //den = core.Algebra.Factor.factor(symbol.getDenom().invert(null, true));
                     //convert s to a string
                     s = s_.toString();
                     //split up the denominator if in the form ax+b
@@ -164,7 +175,7 @@ if((typeof module) !== 'undefined') {
                         //wrap it up
                         finalize();
                     }
-                    else if(den.group === CP && den.isLinear()) {
+                    else if(den.group === CP && den_p.equals(1)) { 
                         // a/(b*s-c) -> ae^(-bt)
                         if(f.x.isLinear() && !num.contains(s)) { 
                             t = _.divide(t, f.a.clone());
@@ -173,7 +184,7 @@ if((typeof module) !== 'undefined') {
                             finalize();
                         }
                         else {
-                            if(f.x.group === S && f.x.power.equals(2)) {
+                            if(f.x.group === S && f.x.power.equals(2)) { 
                                 if(!num.contains(s)) {
                                     retval = _.parse(format('(({1})*sin((sqrt(({2})*({3}))*({0}))/({2})))/sqrt(({2})*({3}))', t, num, f.a, f.b));
                                 }
@@ -190,12 +201,43 @@ if((typeof module) !== 'undefined') {
                         }
                     }
                     else if(f.x.power.num && f.x.power.num.equals(3) && f.x.power.den.equals(2) && num.contains('sqrt(pi)') && !num.contains(s) && num.isLinear()){
-                        var b = _.divide(num.clone(), _.parse('sqrt(pi)'));
-                        retval = _.parse(format('(2*({2})*sqrt({0}))/({1})', t, f.a, b));
+                        var b = _.divide(num.clone(), _.parse('sqrt(pi)')); 
+                        retval = _.parse(format('(2*({2})*sqrt({0}))/({1})', t, f.a, b, num));
+                    }
+                    else if(den_p.equals(2) && f.x.power.equals(2)) {
+                        var a, d, exp;
+                        if(!num.contains(s)) {
+                            a = _.divide(num, new Symbol(2));
+                            exp = '(({1})*sin((sqrt(({2})*({3}))*({0}))/({2})))/(({3})*sqrt(({2})*({3})))-(({1})*({0})*cos((sqrt(({2})*({3}))*({0}))/({2})))/(({2})*({3}))';
+                            retval = _.parse(format(exp, t, a, f.a, f.b));
+                        }
+                        else {
+                            //decompose the numerator to check value of s
+                            f2 = core.Utils.decompose_fn(num, s, true);
+                            if(f2.x.isLinear()) {
+                                a = _.divide(f2.a, new Symbol(2));
+                                exp = '(({1})*({0})*sin((sqrt(({2})*({3}))*({0}))/({2})))/(({2})*sqrt(({2})*({3})))';
+                                retval = _.parse(format(exp, t, a, f.a, f.b));
+                            }
+                            else if(f2.x.power.equals(2)) {
+                                if(f2.b.equals(0)) {
+                                    a = _.divide(f2.a, new Symbol(2));
+                                    exp = '(({1})*sin((sqrt(({2})*({3}))*({0}))/({2})))/(({2})*sqrt(({2})*({3})))+(({1})*({0})*cos((sqrt(({2})*({3}))*({0}))/({2})))/({2})^2';
+                                    retval = _.parse(format(exp, t, a, f.a, f.b));
+                                }
+                                else {
+                                    a = _.divide(f2.a, new Symbol(2));
+                                    d = f2.b.negate();
+                                    exp = '-((({2})*({4})-2*({1})*({3}))*sin((sqrt(({2})*({3}))*({0}))/({2})))/(2*({2})*({3})*sqrt(({2})*({3})))+'+
+                                        '(({4})*({0})*cos((sqrt(({2})*({3}))*({0}))/({2})))/(2*({2})*({3}))+(({1})*({0})*cos((sqrt(({2})*({3}))*({0}))/({2})))/({2})^2';
+                                    retval = _.parse(format(exp, t, a, f.a, f.b, d));
+                                    
+                                }
+                            }
+                        }
                     }
                 }
-                    
-                
+
                 if(!retval)
                     retval = _.symfunction('ilt', arguments);
                 return retval;
