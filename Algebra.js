@@ -1873,6 +1873,104 @@ if((typeof module) !== 'undefined') {
 
                 return symbol;
             },
+            zeroes: function(symbol, factors) {
+                var exit = function() {
+                    throw new Error('Exiting');
+                };
+                try {
+                    var vars, term, sum, p, e;
+                    symbol = _.expand(symbol.clone());
+                    e = symbol.toString();
+                    vars = variables(symbol);
+
+                    sum = new Symbol(0);
+                    
+                    var terms = [];
+                    var powers = [];
+                    
+                    //start setting each variable to zero
+                    for(var i=0, l=vars.length; i<vars.length; i++) {
+                        var subs = {};
+                        //we want to create a subs object with all but the current variable set to zero
+                        for(var j=0; j<l; j++) 
+                            if(i !== j) //make sure we're not looking at the same variable
+                                subs[vars[j]] = 0;
+                        term = _.parse(e, subs);
+                        var tp = term.power;
+                        //the temporary power has to be an integer as well
+                        if(!isInt(tp))
+                            exit();
+                        terms.push(term);
+                        powers.push(term.power);
+                    }
+
+                    //get the gcd. This will be the p in (a^n+b^m)^p
+                    //if the gcd equals 1 meaning n = m then we need a tie breakder
+                    if(core.Utils.allSame(powers)) { 
+                        //get p given x number of terms
+                        var n_terms = symbol.length;
+                        //the number of zeroes determines
+                        var n_zeroes = terms.length;
+                        if(n_zeroes === 2) {
+                            p = new Frac(powers[0]/(n_terms-1));
+                        }
+                        if(n_zeroes === 3) {
+                            p = new Frac(powers[0]/Math.round((Math.sqrt(8*n_terms-1)-3)/2));
+                        }
+                        /*
+                        //get the lowest possible power
+                        //e.g. given b^4+2*a^2*b^2+a^4, the power we're looking for would be 2
+                        symbol.each(function(x) {
+                            if(x.group === CB)
+                                x.each(function(y) {
+                                    if(!p || y.power.lessThan(p))
+                                        //p = Number(y.power);
+                                        p = y.power;
+                                });
+                            else if(!p || x.power.lessThan(p))
+                                //p = Number(x.power);
+                                p = x.power;
+                        });
+                        */
+                    }
+                    else
+                        //p is just the gcd of the powers
+                        p = core.Math2.QGCD.apply(null, powers);
+
+                    //if we don't have an integer then exit
+                    if(!isInt(p))
+                        exit();
+                    
+                    //build the factor
+                    for(var i=0; i<terms.length; i++) {
+                        var t = terms[i];
+                        var n = t.power.clone().divide(p);
+                        t.multiplier = new Frac(Math.pow(t.multiplier, 1/n));
+                        t.power = p.clone();
+                        sum = _.add(sum, t);
+                    }
+
+                    //by now we have the factor of zeroes. We'll know if we got it right because 
+                    //we'll get a remainder of zero each time we divide by it
+                    if(sum.group !== CP)
+                        return symbol; //nothing to do
+
+                    while(true) {
+                        var d = __.div(symbol.clone(), sum.clone());
+                        if(d[1].equals(0)) {
+                            symbol = d[0];
+                            factors.add(sum.clone());
+                            if(symbol.equals(1)) //we've reached 1 so done.
+                                break;
+                        }
+                        else
+                            break;
+                    }
+                }
+                catch(e){};
+                
+                return symbol;
+            },
             factor: function(symbol, factors) { 
                 if(symbol.group === FN)
                     symbol = core.Utils.evaluate(symbol);
@@ -2203,8 +2301,7 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             //factoring for multivariate
-            mfactor: function(symbol, factors) { 
-                
+            mfactor: function(symbol, factors) {       
                 if(symbol.group === FN) { 
                     if(symbol.fname === 'sqrt') {
                         var factors2 = new Factors(),
@@ -2218,7 +2315,7 @@ if((typeof module) !== 'undefined') {
                     else
                         factors.add(symbol);
                 }
-                else {
+                else { 
                     //symbol = __.Factor.common(symbol, factors);
                     symbol = __.Factor.mSqfrFactor(symbol, factors);
                     var vars = variables(symbol),
@@ -2277,7 +2374,7 @@ if((typeof module) !== 'undefined') {
                         }
                     }
                 }
-                
+                symbol = __.Factor.zeroes(symbol, factors);
                 return symbol;
             }
         },
@@ -2771,4 +2868,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
