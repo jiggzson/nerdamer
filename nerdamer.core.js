@@ -288,7 +288,7 @@ var nerdamer = (function(imports) {
          * @param {Symbol} symbol
          */
         isVariableSymbol = Utils.isVariableSymbol = function(symbol) {
-            return symbol.group === S && symbol.multipier.equals(1) && symbol.power.equals(1);
+            return symbol.group === S && symbol.multiplier.equals(1) && symbol.power.equals(1);
         },
         
         /**
