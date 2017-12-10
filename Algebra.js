@@ -29,7 +29,9 @@ if((typeof module) !== 'undefined') {
         variables = core.Utils.variables,
         round = core.Utils.round,
         Frac = core.Frac,
+        arguments2Array = core.Utils.arguments2Array,
         isInt = core.Utils.isInt,
+        isVariableSymbol = core.Utils.isVariableSymbol,
         Symbol = core.Symbol,
         CONST_HASH = core.Settings.CONST_HASH;
         
@@ -2319,12 +2321,12 @@ if((typeof module) !== 'undefined') {
             if(arguments.length === 1)
                 if (arguments[0] instanceof core.Vector) args = arguments[0].elements;
                 else _.error('gcd expects either 1 vector or 2 or more arguments');
-            else args = Array.prototype.slice.call(arguments);
+            else args = arguments2Array(arguments);
             
             //keep all S and EX in keptSymbols
             var aggregate, keptSymbols = [];
             for(var i = 0; i < args.length; i++) {
-                if(args[i].group === S || args[i].group === EX)
+                if(isVariableSymbol(args[i]) || args[i].group === EX)
                     //avoid duplication in keptSymbols
                     if (keptSymbols.every(function(s){return s.value !== args[i].value}))
                         keptSymbols.push(args[i]);
@@ -2332,7 +2334,7 @@ if((typeof module) !== 'undefined') {
                 else if(args[i].group === FN && args[i].fname === 'gcd')
                     //compress gcd(a,gcd(b,c)) into gcd(a,b,c)
                     args = args.concat(arguments[i].args);
-                else if (aggregate === undefined)
+                else if (typeof aggregate === 'undefined')
                     //first argument to actually process
                     aggregate = args[i];
                 else
@@ -2446,8 +2448,7 @@ if((typeof module) !== 'undefined') {
             if(arguments.length === 1)
                 if (arguments[0] instanceof core.Vector) args = arguments[0].elements;
                 else _.error('gcd expects either 1 vector or 2 or more arguments');
-            else args = Array.prototype.slice.call(arguments);
-            
+            else args = arguments2Array(arguments);
             //product of all arguments
             //start with new Symbol(1) so that prev.clone() which makes unnessesary clones can be avoided
             var numer = args.reduce(function(prev,curr){return _.multiply(prev, curr.clone())}, new Symbol(1));
@@ -2479,7 +2480,7 @@ if((typeof module) !== 'undefined') {
             })(arguments,arguments.length-1).map(function(x){return x.reduce(function(prev,curr){return _.multiply(prev,curr.clone())},new Symbol(1))});
             
             //don't eat the gcd term if all arguments are symbols
-            if(args.every(function(x){return x.group === S}))
+            if(args.every(function(x){return isVariableSymbol(x)}))
                 var denom = _.symfunction('gcd', denom_args);
             else
                 var denom = __.gcd.apply(null, denom_args);
