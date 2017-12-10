@@ -29,9 +29,7 @@ if((typeof module) !== 'undefined') {
         variables = core.Utils.variables,
         round = core.Utils.round,
         Frac = core.Frac,
-        arguments2Array = core.Utils.arguments2Array,
         isInt = core.Utils.isInt,
-        isVariableSymbol = core.Utils.isVariableSymbol,
         Symbol = core.Symbol,
         CONST_HASH = core.Settings.CONST_HASH;
         
@@ -780,7 +778,22 @@ if((typeof module) !== 'undefined') {
         var sum = 0, l = arr.length;
         for(var i=0; i<l; i++) sum += arr[i];
         return sum;
-    };
+    };    
+    /**
+     * Intersects 2 arrays.
+     * @param {Array} a
+     * @param {Array} b
+     * @returns {Array} The array containing the intersecting elements
+     */
+    core.Utils.intersection = function(a, b) {
+        var t;
+        if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
+        return a.filter(function (e) {
+            return b.indexOf(e) > -1;
+        }).filter(function (e, i, c) { // extra step to remove duplicates
+            return c.indexOf(e) === i;
+        });
+    }
     /**
      * Substitutes out functions as variables so they can be used in regular algorithms
      * @param {Symbol} symbol
@@ -2321,12 +2334,12 @@ if((typeof module) !== 'undefined') {
             if(arguments.length === 1)
                 if (arguments[0] instanceof core.Vector) args = arguments[0].elements;
                 else _.error('gcd expects either 1 vector or 2 or more arguments');
-            else args = arguments2Array(arguments);
+            else args = core.Utils.arguments2Array(arguments);
             
             //keep all S and EX in keptSymbols
             var aggregate, keptSymbols = [];
             for(var i = 0; i < args.length; i++) {
-                if(isVariableSymbol(args[i]) || args[i].group === EX)
+                if(core.Utils.isVariableSymbol(args[i]) || args[i].group === EX)
                     //avoid duplication in keptSymbols
                     if (keptSymbols.every(function(s){return s.value !== args[i].value}))
                         keptSymbols.push(args[i]);
@@ -2334,22 +2347,27 @@ if((typeof module) !== 'undefined') {
                 else if(args[i].group === FN && args[i].fname === 'gcd')
                     //compress gcd(a,gcd(b,c)) into gcd(a,b,c)
                     args = args.concat(arguments[i].args);
-                else if (typeof aggregate === 'undefined')
-                    //first argument to actually process
-                    aggregate = args[i];
                 else
                 {
                     var foundGcd = false;
                     for(var j = 0; j < keptSymbols.length; j++)
                     {
-                        if(args[i].value === keptSymbols[j].value)
+                        if(core.Utils.haveIntersection(
+                            core.Utils.variables(args[i]),
+                            core.Utils.variables(keptSymbols[j])))
                         {
-                            //Look, args[i] has a gcd with keptSymbols[j]
-                            args[i] = __.gcd(x, args[i]);
+                            //Look, args[i] has at least one variable that keptSymbols[j] also has
+                            args[i] = __.gcd_(keptSymbols[j], args[i]);
                             foundGcd = true;
                         }
                     }
-                    if(!foundGcd) aggregate = __.gcd_(aggregate, args[i]);
+                    if(!foundGcd)
+                        if (typeof aggregate === 'undefined')
+                            //first argument to actually process
+                            aggregate = args[i];
+                        else
+                            aggregate = __.gcd_(aggregate, args[i]);
+                    else continue;
                 }
             }
             if (keptSymbols.length === 0)
@@ -2448,7 +2466,7 @@ if((typeof module) !== 'undefined') {
             if(arguments.length === 1)
                 if (arguments[0] instanceof core.Vector) args = arguments[0].elements;
                 else _.error('gcd expects either 1 vector or 2 or more arguments');
-            else args = arguments2Array(arguments);
+            else args = core.Utils.arguments2Array(arguments);
             //product of all arguments
             //start with new Symbol(1) so that prev.clone() which makes unnessesary clones can be avoided
             var numer = args.reduce(function(prev,curr){return _.multiply(prev, curr.clone())}, new Symbol(1));
@@ -2480,7 +2498,7 @@ if((typeof module) !== 'undefined') {
             })(arguments,arguments.length-1).map(function(x){return x.reduce(function(prev,curr){return _.multiply(prev,curr.clone())},new Symbol(1))});
             
             //don't eat the gcd term if all arguments are symbols
-            if(args.every(function(x){return isVariableSymbol(x)}))
+            if(args.every(function(x){return core.Utils.isVariableSymbol(x)}))
                 var denom = _.symfunction('gcd', denom_args);
             else
                 var denom = __.gcd.apply(null, denom_args);
