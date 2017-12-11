@@ -2437,13 +2437,17 @@ if((typeof module) !== 'undefined') {
             var appeared = [], evaluate = false;
             for(var i = 0; i < args.length; i++) {
                 if(args[i].group === FN && args[i].fname === 'gcd')
+                {
                     //compress gcd(a,gcd(b,c)) into gcd(a,b,c)
                     args = args.concat(arguments[i].args);
+                    //do not keep gcd in args
+                    args.splice(i, 1);
+                }
                 else
                 {
                     //Look if there are any common variables such that
                     //gcd(a,b) => gcd(a,b); gcd(a,a) => a
-                    var vars = core.Utils.variables(args[i]);
+                    var vars = variables(args[i]);
                     if(core.Utils.haveIntersection(vars, appeared))
                     {
                         //Ok, there are common variables
@@ -2495,6 +2499,15 @@ if((typeof module) !== 'undefined') {
                     return t;
             }
             
+            //just take the gcd of each component when either of them is in group EX
+            if(a.group === EX || b.group === EX)
+            {
+                var gcd_m = new Symbol(core.Math2.GCD(a.multiplier, b.multiplier));
+                var gcd_v = __.gcd_(a.value === CONST_HASH ? new Symbol(1) : _.parse(a.value), b.value === CONST_HASH ? new Symbol(1) : _.parse(b.value));
+                var gcd_p = __.gcd_(_.parse(a.power), _.parse(b.power));
+                return _.multiply(gcd_m, _.pow(gcd_v, gcd_p));
+            }
+            		  
             if(a.length < b.length) { //swap'm
                 var t = a; a = b; b = t;
             }
