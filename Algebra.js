@@ -780,20 +780,18 @@ if((typeof module) !== 'undefined') {
         return sum;
     };    
     /**
-     * Intersects 2 arrays.
+     * Determines if 2 arrays have intersecting elements.
      * @param {Array} a
      * @param {Array} b
-     * @returns {Array} The array containing the intersecting elements
+     * @returns {Boolean} True if a and b have intersecting elements.
      */
-    core.Utils.intersection = function(a, b) {
+    core.Utils.haveIntersection = function(a, b) {
         var t;
         if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
-        return a.filter(function (e) {
+        return a.some(function (e) {
             return b.indexOf(e) > -1;
-        }).filter(function (e, i, c) { // extra step to remove duplicates
-            return c.indexOf(e) === i;
         });
-    }
+    };
     /**
      * Substitutes out functions as variables so they can be used in regular algorithms
      * @param {Symbol} symbol
