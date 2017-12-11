@@ -2454,7 +2454,8 @@ if((typeof module) !== 'undefined') {
                 }
             }
             
-            if (evaluate)
+            //appeared.length is 0 when all arguments are group N
+            if (evaluate || appeared.length === 0)
             {
                 var aggregate = args[0];
                 for(var i = 1; i < args.length; i++) aggregate = __.gcd_(aggregate, args[i]);
