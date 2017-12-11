@@ -1217,6 +1217,26 @@ describe('Nerdamer core', function () {
                 expectedValue: '1'
             },
             {
+                given: 'i^(-1)',
+                expected: '-i',
+                expectedValue: '-i'
+            },
+            {
+                given: 'i^(2)',
+                expected: '-1',
+                expectedValue: '-1'
+            },
+            {
+                given: 'i^(-2)',
+                expected: '-1',
+                expectedValue: '-1'
+            },
+            {
+                given: 'i^(-1)',
+                expected: '-i',
+                expectedValue: '-i'
+            },
+            {
                 given: 'e^(i*pi)+e^(2*i*pi)',
                 expected: '0',
                 expectedValue: '0'
