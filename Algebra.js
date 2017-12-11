@@ -2434,53 +2434,33 @@ if((typeof module) !== 'undefined') {
                 else _.error('gcd expects either 1 vector or 2 or more arguments');
             else args = core.Utils.arguments2Array(arguments);
             
-            //keep all S and EX in keptSymbols
-            var aggregate, keptSymbols = [];
+            var appeared = [], evaluate = false;
             for(var i = 0; i < args.length; i++) {
-                if(core.Utils.isVariableSymbol(args[i]) || args[i].group === EX)
-                    //avoid duplication in keptSymbols
-                    if (keptSymbols.every(function(s){return s.value !== args[i].value}))
-                        keptSymbols.push(args[i]);
-                    else continue;
-                else if(args[i].group === FN && args[i].fname === 'gcd')
+                if(args[i].group === FN && args[i].fname === 'gcd')
                     //compress gcd(a,gcd(b,c)) into gcd(a,b,c)
                     args = args.concat(arguments[i].args);
                 else
                 {
-                    var foundGcd = false;
-                    for(var j = 0; j < keptSymbols.length; j++)
+                    //Look if there are any common variables such that
+                    //gcd(a,b) => gcd(a,b); gcd(a,a) => a
+                    var vars = core.Utils.variables(args[i]);
+                    if(core.Utils.haveIntersection(vars, appeared))
                     {
-                        if(core.Utils.haveIntersection(
-                            core.Utils.variables(args[i]),
-                            core.Utils.variables(keptSymbols[j])))
-                        {
-                            //Look, args[i] has at least one variable that keptSymbols[j] also has
-                            args[i] = __.gcd_(keptSymbols[j], args[i]);
-                            foundGcd = true;
-                        }
+                        //Ok, there are common variables
+                        evaluate = true;
+                        break;
                     }
-                    if(!foundGcd)
-                        if (typeof aggregate === 'undefined')
-                            //first argument to actually process
-                            aggregate = args[i];
-                        else
-                            aggregate = __.gcd_(aggregate, args[i]);
-                    else continue;
+                    else appeared = appeared.concat(vars);
                 }
             }
-            if (keptSymbols.length === 0)
-                //no need to care about keptSymbols
-                return aggregate;
-            else if (keptSymbols.length === 1 && aggregate === undefined)
-                //avoid gcd(x), return x 
-                return keptSymbols[0];
-            else
-            {
-                //avoid gcd(1,x,y), return gcd(x,y)
-                if (aggregate !== undefined) keptSymbols.unshift(aggregate);
-                return _.symfunction('gcd', keptSymbols);
-            }
             
+            if (evaluate)
+            {
+                var aggregate = args[0];
+                for(var i = 1; i < args.length; i++) aggregate = __.gcd_(aggregate, args[i]);
+                return aggregate;
+            }
+            else return _.symfunction('gcd', args);
         },
         gcd_: function(a, b) { 
             if(a.group === FN || a.group === P)
