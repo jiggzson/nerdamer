@@ -221,15 +221,18 @@ if((typeof module) !== 'undefined') {
 
                                     //we need more information about the denominator to decide
                                     var f2 = core.Utils.decompose_fn(num, s, true);
+                                    var fn1, fn2,  a_has_sin, b_has_cos;
+                                    fn1 = f2.a;
+                                    fn2 = f2.b;
+                                    a_has_sin = fn1.containsFunction('sin');
+                                    b_has_cos = fn2.containsFunction('cos')
 
-                                    if(f2.x.value === s && f2.x.isLinear() && false) {
+                                    if(f2.x.value === s && f2.x.isLinear() && !(a_has_sin && b_has_cos)) {
                                         retval = _.parse(format('(({1})*cos((sqrt(({2})*({3}))*({0}))/({2})))/({2})', t, f2.a, f.a, f.b));
                                     }
                                     else {
-                                        var fn1, fn2;
-                                        fn1 = f2.a;
-                                        fn2 = f2.b;
-                                        if(fn1.containsFunction('sin') && fn2.containsFunction('cos')) { 
+                                        
+                                        if(a_has_sin && b_has_cos) { 
                                             var sin, cos;
                                             sin = fn1.findFunction('sin');
                                             cos = fn2.findFunction('cos');
