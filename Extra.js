@@ -24,6 +24,21 @@ if((typeof module) !== 'undefined') {
         CB = core.groups.CB,
         FN = core.groups.FN;
     core.Settings.Laplace_integration_depth = 40;
+    
+    Symbol.prototype.findFunction = function(fname) {
+        //this is what we're looking for
+        if(this.group === FN && this.fname === fname) 
+                return this.clone();
+        var found;
+        if(this.symbols)
+            for(var x in this.symbols) {
+                found = this.symbols[x].findFunction(fname);
+                if(found)
+                    break;
+            }
+        
+        return found;
+    };
     //a temp function
     var print = function(arr, map, depth) { 
         depth = depth || 1;
@@ -132,8 +147,8 @@ if((typeof module) !== 'undefined') {
 
                 return _.multiply(retval, coeff);
             },
-            inverse: function(symbol, s_, t) {
-                if(symbol.group === S || symbol.group === CB || symbol.group === CP) {
+            inverse: function(symbol, s_, t) { 
+                if(symbol.group === S || symbol.group === CB || symbol.group === CP) { 
                     var finalize = function() {
                         //put back the numerator
                         retval = _.multiply(retval, num);
@@ -141,28 +156,30 @@ if((typeof module) !== 'undefined') {
                         //put back a
                         retval = _.divide(retval, f.a);
                     };
-                    var num, den, s, retval, f, p, m, den_p;
+                    var num, den, s, retval, f, p, m, den_p, fe;
                     //remove the multiplier
                     m = symbol.multiplier.clone();
                     symbol.toUnitMultiplier();
                     //get the numerator and denominator
                     num = symbol.getNum();
                     den = symbol.getDenom().invert(null, true);
-                    
+                    //TODO: Make it so factor doesn't destroy pi
+                    //num = core.Algebra.Factor.factor(symbol.getNum());
+                    //den = core.Algebra.Factor.factor(symbol.getDenom().invert(null, true));
+
                     if(den.group === CP) {
                         den_p = den.power.clone();
                         den.toLinear();
                     }
                     else
-                        den_p === new core.Frac(1);
-                    //TODO: Make it so factor doesn't destroy pi
-                    //num = core.Algebra.Factor.factor(symbol.getNum());
-                    //den = core.Algebra.Factor.factor(symbol.getDenom().invert(null, true));
+                        den_p = new core.Frac(1);
+
                     //convert s to a string
                     s = s_.toString();
                     //split up the denominator if in the form ax+b
                     f = core.Utils.decompose_fn(den, s, true);
                     //move the multiplier to the numerator
+                    fe = core.Utils.decompose_fn(_.expand(num.clone()), s, true);
                     num.multiplier = num.multiplier.multiply(m);
                     //store the parts in variables for easy recognition 
                     //check if in the form t^n where n = integer
@@ -183,18 +200,52 @@ if((typeof module) !== 'undefined') {
                             //wrap it up
                             finalize();
                         }
-                        else {
+                        else { 
                             if(f.x.group === S && f.x.power.equals(2)) { 
                                 if(!num.contains(s)) {
                                     retval = _.parse(format('(({1})*sin((sqrt(({2})*({3}))*({0}))/({2})))/sqrt(({2})*({3}))', t, num, f.a, f.b));
                                 }
                                 // a*s/(b*s^2+c^2)
                                 else {
+                                    var a = new Symbol(1);
+                                    if(num.group === CB) {
+                                        var new_num = new Symbol(1);
+                                        num.each(function(x) {
+                                           if(x.contains(s))
+                                               new_num = _.multiply(new_num, x);
+                                           else
+                                               a = _.multiply(a, x);
+                                        });
+                                        num = new_num;
+                                    }
+
                                     //we need more information about the denominator to decide
                                     var f2 = core.Utils.decompose_fn(num, s, true);
-                                    if(f2.x.value === s && f2.x.isLinear()) {
+
+                                    if(f2.x.value === s && f2.x.isLinear() && false) {
                                         retval = _.parse(format('(({1})*cos((sqrt(({2})*({3}))*({0}))/({2})))/({2})', t, f2.a, f.a, f.b));
                                     }
+                                    else {
+                                        var fn1, fn2;
+                                        fn1 = f2.a;
+                                        fn2 = f2.b;
+                                        if(fn1.containsFunction('sin') && fn2.containsFunction('cos')) { 
+                                            var sin, cos;
+                                            sin = fn1.findFunction('sin');
+                                            cos = fn2.findFunction('cos');
+                                            //who has the s?
+                                            if(sin.args[0].equals(cos.args[0]) && !sin.args[0].contains(s)) { 
+                                                var b, c, d, e;
+                                                b = _.divide(fn2, cos.toUnitMultiplier()).toString();
+                                                c = sin.args[0].toString();
+                                                d = f.b;
+                                                e = _.divide(fn1, sin.toUnitMultiplier());
+                                                exp = '(({1})*({2})*cos({3})*sin(sqrt({4})*({0})))/sqrt({4})+({1})*sin({3})*({5})*cos(sqrt({4})*({0}))';
+                                                retval = _.parse(format(exp, t, a, b, c, d, e));
+                                            }
+                                        }
+                                    }
+                                        
                                 }
                             }
                                     
@@ -204,36 +255,76 @@ if((typeof module) !== 'undefined') {
                         var b = _.divide(num.clone(), _.parse('sqrt(pi)')); 
                         retval = _.parse(format('(2*({2})*sqrt({0}))/({1})', t, f.a, b, num));
                     }
-                    else if(den_p.equals(2) && f.x.power.equals(2)) {
+                    else if(den_p.equals(2) && f.x.power.equals(2)) { 
                         var a, d, exp;
-                        if(!num.contains(s)) {
+                        if(!num.contains(s)) { 
                             a = _.divide(num, new Symbol(2));
                             exp = '(({1})*sin((sqrt(({2})*({3}))*({0}))/({2})))/(({3})*sqrt(({2})*({3})))-(({1})*({0})*cos((sqrt(({2})*({3}))*({0}))/({2})))/(({2})*({3}))';
                             retval = _.parse(format(exp, t, a, f.a, f.b));
                         }
-                        else {
+                        else { 
                             //decompose the numerator to check value of s
-                            f2 = core.Utils.decompose_fn(num, s, true);
-                            if(f2.x.isLinear()) {
-                                a = _.divide(f2.a, new Symbol(2));
-                                exp = '(({1})*({0})*sin((sqrt(({2})*({3}))*({0}))/({2})))/(({2})*sqrt(({2})*({3})))';
-                                retval = _.parse(format(exp, t, a, f.a, f.b));
+                            f2 = core.Utils.decompose_fn(_.expand(num.clone()), s, true);
+                            if(f2.x.isComposite()) {
+                                var s_terms = [];
+                                //first collect the factors e.g. (a)(bx)(cx^2+d)
+                                var symbols = num.collectSymbols(function(x) {
+                                    x = Symbol.unwrapPARENS(x);
+                                    var t = core.Utils.decompose_fn(x, s, true);
+                                    t.symbol = x;
+                                    return t;
+                                }).
+                                //then sort them by power hightest to lowest
+                                sort(function(a, b) {
+                                    var p1, p2;
+                                    p1 = a.x.value !== s ? 0 : a.x.power;
+                                    p2 = b.x.value !== s ? 0 : b.x.power;
+                                    return p2 - p1;
+                                });
+                                a = new Symbol(-1);
+                                //grab only the ones which have s
+                                for(var i=0; i<symbols.length; i++) {
+                                    var fc = symbols[i];
+                                    if(fc.x.value === s)
+                                        s_terms.push(fc);
+                                    else 
+                                        a = _.multiply(a, fc.symbol);
+                                }
+                                //the following 2 assumptions are made
+                                //1. since the numerator was factored above then each s_term has a unique power
+                                //2. because the terms are sorted by descending powers then the first item 
+                                //   has the highest power
+                                //we can now check for the next type s(s^2-a^2)/(s^2+a^2)^2
+                                if(s_terms[0].x.power.equals(2) && s_terms[1].x.power.equals(1) && s_terms[1].b.equals(0) && !s_terms[0].b.equals(0)) {
+                                    b = s_terms[0].a.negate();
+                                    exp = '-(({1})*({2})*({5})*({0})*sin((sqrt(({4})*({5}))*({0}))/({4})))/'+
+                                            '(2*({4})^2*sqrt(({4})*({5})))-(({1})*({3})*({0})*sin((sqrt(({4})*({5}))*({0}))/({4})))'+
+                                            '/(2*({4})*sqrt(({4})*({5})))+(({1})*({2})*cos((sqrt(({4})*({5}))*({0}))/({4})))/({4})^2';
+                                    retval = _.parse(format(exp, t, a, b, s_terms[0].b, f.a, f.b));
+                                }
                             }
-                            else if(f2.x.power.equals(2)) {
-                                if(f2.b.equals(0)) {
+                            else { 
+                                if(f2.x.isLinear()) {
                                     a = _.divide(f2.a, new Symbol(2));
-                                    exp = '(({1})*sin((sqrt(({2})*({3}))*({0}))/({2})))/(({2})*sqrt(({2})*({3})))+(({1})*({0})*cos((sqrt(({2})*({3}))*({0}))/({2})))/({2})^2';
+                                    exp = '(({1})*({0})*sin((sqrt(({2})*({3}))*({0}))/({2})))/(({2})*sqrt(({2})*({3})))';
                                     retval = _.parse(format(exp, t, a, f.a, f.b));
                                 }
-                                else {
-                                    a = _.divide(f2.a, new Symbol(2));
-                                    d = f2.b.negate();
-                                    exp = '-((({2})*({4})-2*({1})*({3}))*sin((sqrt(({2})*({3}))*({0}))/({2})))/(2*({2})*({3})*sqrt(({2})*({3})))+'+
-                                        '(({4})*({0})*cos((sqrt(({2})*({3}))*({0}))/({2})))/(2*({2})*({3}))+(({1})*({0})*cos((sqrt(({2})*({3}))*({0}))/({2})))/({2})^2';
-                                    retval = _.parse(format(exp, t, a, f.a, f.b, d));
-                                    
+                                else if(f2.x.power.equals(2)) {
+                                    if(f2.b.equals(0)) {
+                                        a = _.divide(f2.a, new Symbol(2));
+                                        exp = '(({1})*sin((sqrt(({2})*({3}))*({0}))/({2})))/(({2})*sqrt(({2})*({3})))+(({1})*({0})*cos((sqrt(({2})*({3}))*({0}))/({2})))/({2})^2';
+                                        retval = _.parse(format(exp, t, a, f.a, f.b));
+                                    }
+                                    else {
+                                        a = _.divide(f2.a, new Symbol(2));
+                                        d = f2.b.negate();
+                                        exp = '-((({2})*({4})-2*({1})*({3}))*sin((sqrt(({2})*({3}))*({0}))/({2})))/(2*({2})*({3})*sqrt(({2})*({3})))+'+
+                                            '(({4})*({0})*cos((sqrt(({2})*({3}))*({0}))/({2})))/(2*({2})*({3}))+(({1})*({0})*cos((sqrt(({2})*({3}))*({0}))/({2})))/({2})^2';
+                                        retval = _.parse(format(exp, t, a, f.a, f.b, d));
+
+                                    }
                                 }
-                            }
+                            }  
                         }
                     }
                 }

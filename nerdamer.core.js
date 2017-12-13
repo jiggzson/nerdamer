@@ -3040,7 +3040,12 @@ var nerdamer = (function(imports) {
         var trig = this.Trig = {
             //container for trigonometric function
             cos: function(symbol) {
-                if(Settings.PARSE2NUMBER) {
+                if(symbol.equals('pi') && symbol.multiplier.den.equals(2))
+                    return new Symbol(0);
+                
+                if(Settings.PARSE2NUMBER) { 
+                    if(symbol.equals(new Symbol(Math.PI/2)))
+                        return new Symbol(0);
                     if(symbol.isConstant()) 
                         return new Symbol(Math.cos(symbol.valueOf()));
                     if(symbol.isImaginary()) 

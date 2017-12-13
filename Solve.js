@@ -71,7 +71,7 @@ if((typeof module) !== 'undefined') {
         this.RHS = rhs; //right and side
     };
     
-    var removeDenom = function(a, b) {
+    var removeDenom = function(a, b) { 
         //swap the groups
         if(b.group === CP && b.group !== CP) {
             var t = a; a = b; b = t; //swap
@@ -79,7 +79,7 @@ if((typeof module) !== 'undefined') {
             
         //scan to eliminate denominators
         if(a.group === CB) { 
-            var t = new Symbol(1),
+            var t = new Symbol(a.multiplier),
                 newRHS = b.clone();
             a.each(function(y) {
                 if(y.power.lessThan(0))
@@ -89,6 +89,7 @@ if((typeof module) !== 'undefined') {
             });
             a = t;
             b = newRHS;
+            
         }
         else if(a.group === CP) { 
             //the logic: loop through each and if it has a denominator then multiply it out on both ends
@@ -492,6 +493,7 @@ if((typeof module) !== 'undefined') {
             }
             solutions.sort();
         };
+
         var eq = core.Utils.isSymbol(eqns) ? eqns : toLHS(eqns),
             vars = core.Utils.variables(eq),//get a list of all the variables
             numvars = vars.length;//how many variables are we dealing with
@@ -628,7 +630,7 @@ if((typeof module) !== 'undefined') {
         
         //first remove any denominators
         eq = correct_denom(eq);  
-        
+
         if(eq.equals(0))
             return [eq];
         //correct fractionals. I can only handle one type right now
@@ -681,6 +683,7 @@ if((typeof module) !== 'undefined') {
             if(!eq.hasFunc(solve_for) && eq.isComposite()) { 
                 try {
                     var coeffs = core.Utils.getCoeffs(eq, solve_for);
+                    
                     var l = coeffs.length,
                         deg = l-1; //the degree of the polynomial
                     //handle the problem based on the degree

@@ -620,6 +620,8 @@ if((typeof module) !== 'undefined') {
                 _.symfunction(core.PARENTHESIS, [this.factors[x]]) : this. factors[x];
             factored = _.multiply(factored, factor);
         }
+        if(factored.fname === '')
+            factored = Symbol.unwrapPARENS(factored);
         return factored;
     };
     /**
@@ -1975,7 +1977,7 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             factor: function(symbol, factors) { 
-                if(symbol.group === FN)
+                if(symbol.group === FN && symbol.fname !== 'sqrt')
                     symbol = core.Utils.evaluate(symbol);
                 
                 try {
@@ -2000,6 +2002,8 @@ if((typeof module) !== 'undefined') {
                         return symbol; //absolutely nothing to do
 
                     if(symbol.isConstant()) {
+                        if(symbol.equals(1))
+                            return symbol.clone();
                         return core.Math2.factor(symbol);
                     }
 
@@ -2065,6 +2069,7 @@ if((typeof module) !== 'undefined') {
 
                         //return _.pow(retval, _.parse(p));
                     }
+                    
                     return symbol;    
                 }
                 catch(e) {
