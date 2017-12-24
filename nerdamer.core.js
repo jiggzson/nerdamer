@@ -3591,6 +3591,10 @@ var nerdamer = (function(imports) {
                 'vecset'            : [ vecset, 3],
                 'matget'            : [ matget, 3],
                 'matset'            : [ matset, 4],
+                'matgetrow'         : [ matgetrow, 2],
+                'matsetrow'         : [ matsetrow, 3],
+                'matgetcol'         : [ matgetcol, 2],
+                'matsetcol'         : [ matsetcol, 3],
                 'IF'                : [ IF, 3],
                 //imaginary support
                 'realpart'          : [ realpart, 1],
@@ -4441,13 +4445,15 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         function mod(symbol1, symbol2) {
-            if(!symbol2)
-                return _.divide(symbol2, new Symbol(100));
             if(symbol1.isConstant() && symbol2.isConstant()) {
                 var retval = new Symbol(1);
                 retval.multiplier = retval.multiplier.multiply(symbol1.multiplier.mod(symbol2.multiplier));
                 return retval;
             }
+            //try to see if division has remainder of zero
+            var r = _.divide(symbol1.clone(), symbol2.clone());
+            if(isInt(r))
+                return new Symbol(0);
             return _.symfunction('mod', [symbol1, symbol2]);
         }
         /**
@@ -5145,6 +5151,40 @@ var nerdamer = (function(imports) {
         function matget(matrix, i, j) {
             return matrix.elements[i][j];
         }
+        
+        function matgetrow(matrix, i) {
+            return new Matrix(matrix.elements[i]);
+        }
+        
+        function matsetrow(matrix, i, x) {
+            if(matrix.elements[i].length !== x.elements.length)
+                throw new Error('Matrix row must match row dimensions!');
+            var M = matrix.clone();
+            M.elements[i] = x.clone().elements;
+            return M;
+        }
+        
+        function matgetcol(matrix, col_index) {
+            col_index = Number(col_index);
+            var M = Matrix.fromArray([]);
+            matrix.each(function(x, i, j) {
+                if(j === col_index) {
+                    M.elements.push([x.clone()]);
+                }
+            });
+            return M;
+        }
+        
+        function matsetcol(matrix, j, col) {
+            j = Number(j);
+            if(matrix.rows() !== col.elements.length)
+                throw new Error('Matrix columns must match number of columns!');
+            col.each(function(x, i) {
+               matrix.set(i-1, j, x.elements[0].clone());
+            });
+            return matrix;
+        }
+        
         
         function matset(matrix, i, j, value) {
             matrix.elements[i][j] = value;

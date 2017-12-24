@@ -32,7 +32,7 @@ if((typeof module) !== 'undefined') {
         isInt = core.Utils.isInt,
         Symbol = core.Symbol,
         CONST_HASH = core.Settings.CONST_HASH;
-        
+
     //*************** CLASSES ***************//
     /**
     * Converts a symbol into an equivalent polynomial arrays of 
@@ -2835,8 +2835,8 @@ if((typeof module) !== 'undefined') {
             MVTerm: MVTerm
         }
     };
-    
-   nerdamer.useAlgebraDiv = function() {
+
+    nerdamer.useAlgebraDiv = function() {
         var divide = __.divideFn = _.divide;
         var calls = 0; //keep track of how many calls were made
         _.divide = function(a, b) {

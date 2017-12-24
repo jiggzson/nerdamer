@@ -462,6 +462,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         case ATAN:
                             symbol = _.parse('(1+('+text(symbol.args[0])+')^2)^(-1)');
                             break;
+                        case 'acot':
+                            symbol = _.parse('-1/(('+symbol.args[0]+')^2+1)');
+                            break;
                         case ABS: 
                             m = symbol.multiplier.clone(); 
                             symbol.toUnitMultiplier();
@@ -494,6 +497,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             // Use a clone if this gives errors
                             symbol = qdiff(symbol, '-tanh');
                             break;
+                        case 'csch': 
+                            var arg = String(symbol.args[0]);
+                            return _.parse('-coth('+arg+')*csch('+arg+')');
+                            break;
                         case 'asinh':
                             symbol = _.parse('(sqrt(1+('+text(symbol.args[0])+')^2))^(-1)');
                             break;
@@ -502,6 +509,17 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             break;
                         case 'atanh':
                             symbol = _.parse('(1-('+text(symbol.args[0])+')^2)^(-1)');
+                            break;
+                        case 'asech':
+                            var arg = String(symbol.args[0]);
+                            symbol = _.parse('-1/(sqrt(1/('+arg+')^2-1)*('+arg+')^2)');
+                            break;
+                        case 'acoth':
+                            symbol = _.parse('-1/(('+symbol.args[0]+')^2-1)');
+                            break;
+                        case 'acsch':
+                            var arg = String(symbol.args[0]);
+                            symbol = _.parse('-1/(sqrt(1/('+arg+')^2+1)*('+arg+')^2)');
                             break;
                         case 'Si':
                             var arg = symbol.args[0];
@@ -523,6 +541,22 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             var arg = symbol.args[0];
                             symbol = _.parse('e^('+arg+')/('+arg+')');
                             break;
+                        case 'erf':
+                            symbol = _.parse('(2*e^(-('+symbol.args[0]+')^2))/sqrt(pi)');
+                            break;
+                        case 'atan2':
+                            var x_ = String(symbol.args[0]),
+                                y_ = String(symbol.args[1]);
+                            symbol = _.parse('('+y_+')/(('+y_+')^2+('+x_+')^2)');
+                            break;
+                        case 'sign':
+                            symbol = new Symbol(0);
+                            break;
+                        case 'log10':
+                            symbol = _.parse('1/(('+symbol.args[0]+')*log(10))');
+                            break;
+                        default:
+                            symbol = _.symfunction('diff', [symbol, wrt]);
                     }
                 }
                 else if(g === EX || g === FN && isSymbol(symbol.power)) { 
