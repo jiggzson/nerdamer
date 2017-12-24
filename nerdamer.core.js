@@ -66,6 +66,7 @@ var nerdamer = (function(imports) {
             ALIASES: {
                 'π': 'pi'
             },
+            POSITIVE_MULTIPLIERS: false,
             //Cached items
             CACHE: {}
         },
@@ -1642,22 +1643,37 @@ var nerdamer = (function(imports) {
                 callback.call(this.symbol);
         },
         eq: function(value) {
-            value = _.parse(value);
-            if(this.symbol.isConstant() && value.isConstant())
-                return this.symbol.equals(_.parse(value));
-            return false;
+            if(!isSymbol(value))
+                value = _.parse(value);
+            try {
+                var d = _.subtract(this.symbol.clone(), value);
+                return d.equals(0);
+            }
+            catch(e){
+                return false;
+            };    
         },
         lt: function(value) {
-            value = _.parse(value);
-            if(this.symbol.isConstant() && value.isConstant())
-                return this.symbol.lessThan(_.parse(value));
-            return false;
+            if(!isSymbol(value))
+                value = _.parse(value);
+            try {
+                var d = evaluate(_.subtract(this.symbol.clone(), value));
+                return d.lessThan(0);
+            }
+            catch(e){
+                return false;
+            };   
         },
         gt: function(value) {
-            value = _.parse(value);
-            if(this.symbol.isConstant() && value.isConstant())
-                return this.symbol.greaterThan(_.parse(value));
-            return false;
+            if(!isSymbol(value))
+                value = _.parse(value);
+            try {
+                var d = evaluate(_.subtract(this.symbol.clone(), value));
+                return d.greaterThan(0);
+            }
+            catch(e){
+                return false;
+            }; 
         },
         gte: function(value) {
             return this.greaterThan(value) || this.equals(value);
@@ -2254,8 +2270,8 @@ var nerdamer = (function(imports) {
         isSQRT: function() {
             return this.fname === SQRT;
         },
-        isConstant: function(check_functions) {
-            if(check_functions && this.group === FN) {
+        isConstant: function(check_all) {
+            if(check_all && this.group === FN) {
                 for(var i=0; i<this.args.length; i++) {
                     if(!this.args[i].isConstant())
                         return false;
@@ -3600,6 +3616,17 @@ var nerdamer = (function(imports) {
             return true;
         };
         
+        var allConstants = function(args) {
+            for(var i=0; i<args.length; i++) {
+                if(args[i].isPi() || args[i].isE())
+                    continue;
+                if(!args[i].isConstant(true))
+                    return false;
+            }
+                    
+            return true;
+        };
+        
         /**
          * This method gives the ability to override operators with new methods.
          * @param {String} which
@@ -4665,6 +4692,23 @@ var nerdamer = (function(imports) {
         function rectform(symbol) {
             
         }
+
+        function symMinMax(f, args) {
+            args.map(function(x) {
+                x.numVal = evaluate(x).multiplier;
+            });
+            var l, a, b, a_val, b_val;
+            while(true) {
+                l = args.length;
+                if(l < 2) return args[0];
+                a = args.pop();
+                b = args[l-2];
+                if(f === 'min' ? a.numVal < b.numVal : a.numVal > b.numVal) {
+                    args.pop();
+                    args.push(a);
+                }
+            } 
+        }
         
         /**
          * Returns maximum of a set of numbers
@@ -4676,6 +4720,8 @@ var nerdamer = (function(imports) {
                 return args[0];
             if(allNumbers(args))
                 return new Symbol(Math.max.apply(null, args));
+            if(Settings.SYMBOLIC_MIN_MAX && allConstants(args)) 
+                return symMinMax('max', args);
             return _.symfunction('max', args);
         }
         
@@ -4689,6 +4735,8 @@ var nerdamer = (function(imports) {
                 return args[0];
             if(allNumbers(args))
                 return new Symbol(Math.min.apply(null, args));
+            if(Settings.SYMBOLIC_MIN_MAX && allConstants(args)) 
+                return symMinMax('min', args);
             return _.symfunction('min', args);
         }
         
@@ -5973,6 +6021,9 @@ var nerdamer = (function(imports) {
                                     result = _.multiply(_.symfunction(ABS, [result.clone().toLinear()]), 
                                         result.clone().setPower(new Frac(n-1)));
                                 }
+                                //quick workaround. Revisit
+                                if(Settings.POSITIVE_MULTIPLIERS && result.fname === ABS)
+                                    result = result.args[0];
                             }
                         }   
                     }   
@@ -6386,6 +6437,14 @@ var nerdamer = (function(imports) {
                 }
                 else if(fname === 'ceil') {
                     v[index] = '\\left \\lceil'+this.braces(input[0])+'\\right \\rceil';
+                }
+                //capture log(a, b)
+                else if(fname === 'log' && input.length > 1) {
+                    v[index] = '\\mathrm'+this.braces('log')+'_'+this.braces(input[1])+this.brackets(input[0]);
+                }
+                //capture log(a, b)
+                else if(fname === 'log10') {
+                    v[index] = '\\mathrm'+this.braces('log')+'_'+this.braces(10)+this.brackets(input[0]);
                 }
                 else { 
                     var name = fname!=='' ? '\\mathrm'+this.braces(fname.replace(/_/g, '\\_')) : '';

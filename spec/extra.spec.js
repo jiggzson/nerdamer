@@ -114,6 +114,10 @@ describe('calculus', function () {
                 given: 'ilt((6*s^2-1)/(4*s^2+1)^2, s, t)',
                 expected: '(1/8)*sin((1/2)*t)+(5/16)*cos((1/2)*t)*t'
             },
+            {
+                given: 'ilt((5*(sin(1)*s+3*cos(1)))/(s^2+9),s, t)',
+                expected: '5*cos(1)*sin(3*t)+5*cos(3*t)*sin(1)'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

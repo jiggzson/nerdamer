@@ -1976,13 +1976,12 @@ if((typeof module) !== 'undefined') {
                 
                 return symbol;
             },
-            factor: function(symbol, factors) { 
+            factor: function(symbol, factors) {
                 if(symbol.group === FN && symbol.fname !== 'sqrt')
                     symbol = core.Utils.evaluate(symbol);
                 
                 try {
-                    
-                    if(symbol.group === CB) {
+                    if(symbol.group === CB) { 
                         //TODO: I have to revisit this again. I'm checking if they're all
                         //group S. I don't know why just adding them to factors isn't working
                         factors = factors || new Factors();
@@ -1991,7 +1990,8 @@ if((typeof module) !== 'undefined') {
                         symbol.each(function(x) {
                             if(x.group !== S)
                                 all_S = false;
-                            factors.add(__.Factor.factor(x.clone()));
+                            var factored = __.Factor.factor(x.clone());
+                            factors.add(factored);
                         });
                         //if they're all of group S then all this was for nothing and return the symbol as it is.
                         if(all_S)
@@ -2033,7 +2033,7 @@ if((typeof module) !== 'undefined') {
                             symbol.each(function(x) {
                                 if(x.group !== S) all_S = false;
                                 if(!x.multiplier.equals(1)) all_unit = false;
-                            });
+                            });       
                             if(all_S && all_unit) 
                                 return _.pow(symbol, _.parse(p));
                         }
@@ -2309,7 +2309,7 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             //factoring for multivariate
-            mfactor: function(symbol, factors) {       
+            mfactor: function(symbol, factors) {  
                 if(symbol.group === FN) { 
                     if(symbol.fname === 'sqrt') {
                         var factors2 = new Factors(),
@@ -2350,7 +2350,8 @@ if((typeof module) !== 'undefined') {
                     
                     for(var x in sorted) {
                         var r = _.parse(x+'^'+maxes[x]); 
-                        var new_factor = _.expand(_.divide(sorted[x], r)); 
+                        var div = _.divide(sorted[x], r);
+                        var new_factor = _.expand(div); 
                         var divided = __.div(symbol.clone(), new_factor); 
                         if(divided[0].equals(0)) { //cant factor anymore
                             //factors.add(divided[1]);
@@ -2368,7 +2369,7 @@ if((typeof module) !== 'undefined') {
                             var factor = divided[0]; 
                             if(symbol.equals(factor)) {
                                 var rem = __.Factor.reduce(factor, factors);
-                                if(!symbol.equals(rem))
+                                if(!symbol.equals(rem)) 
                                     return __.Factor.mfactor(rem, factors);
                             }
                             else
@@ -2382,6 +2383,7 @@ if((typeof module) !== 'undefined') {
                         }
                     }
                 }
+                
                 symbol = __.Factor.zeroes(symbol, factors);
                 return symbol;
             }
@@ -2508,6 +2510,27 @@ if((typeof module) !== 'undefined') {
             return _.add(result[0], remainder);
         },
         div: function(symbol1, symbol2) {
+//            
+//            if(!symbol1.isComposite() && !symbol2.isComposite()) {
+//                var t = 'symbol1: '+symbol1+'     symbol2: '+symbol2;
+//                var r = _.divide(symbol1.clone(), symbol2.clone());
+//                console.log(r.toString(), t)
+//                if(r.isConstant())
+//                    return [r, new Symbol(0)];
+//                return [new Symbol(0), symbol1];
+//            }
+//            if(symbol1.isComposite() && !symbol2.isComposite()) {
+//                console.log('symbol1: '+symbol1+'     symbol2: '+symbol2, 'TWO')
+//                var rem = new Symbol(0),
+//                    q = new Symbol(0);
+//                symbol1.each(function(x) {
+//                    var r = __.div(x, symbol2.clone());
+//                    q = _.add(q, r[0]);
+//                    rem = _.add(rem, r[1]);
+//                });
+//                console.log([q, rem].toString())
+//                return [q, rem];
+//            }
             //division by constants
             if(symbol2.isConstant()) {
                 symbol1.each(function(x) { 
@@ -2894,3 +2917,9 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer.coeffs('11x^2+2*x+7', 'x').each(function(x, i) {
+    console.log(x.toString(), i)
+});
+
+console.log(x)
