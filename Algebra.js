@@ -2917,9 +2917,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var x = nerdamer.coeffs('11x^2+2*x+7', 'x').each(function(x, i) {
-    console.log(x.toString(), i)
-});
-
-console.log(x)

@@ -1757,7 +1757,7 @@ var nerdamer = (function(imports) {
             return c.simplify();
         },
         divide: function(m) {
-            if(m.equals(0)) throw new Error('Division by zero not allowed!');
+            if(m.equals(0)) throw new DivisionByZero('Division by zero not allowed!');
             return this.clone().multiply(m.clone().invert()).simplify();
         },
         subtract: function(m) { 
@@ -3032,12 +3032,17 @@ var nerdamer = (function(imports) {
     function DivisionByZero(msg){
         this.message = msg || "";
     }
-    DivisionByZero.prototype = new Error();
+    DivisionByZero.prototype = Object.create(Error.prototype);
     //thrown in parser 
     function ParseError(msg){
         this.message = msg || "";
     }
-    ParseError.prototype = new Error();
+    ParseError.prototype = Object.create(Error.prototype);
+    //thrown for undefined errors
+    function UndefinedError(msg){
+        this.message = msg || "";
+    }
+    UndefinedError.prototype = Object.create(Error.prototype);
     
     //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
@@ -3165,7 +3170,8 @@ var nerdamer = (function(imports) {
                     } 
                     else {
                         var n = m.num, d = m.den;
-                        if(d == 2) err('tan is undefined for '+symbol.toString());
+                        if(d == 2) 
+                            throw new UndefinedError('tan is undefined for '+symbol.toString());
                         else if(d == 3) {
                             retval = _.parse('sqrt(3)'); c = true;
                         }
@@ -3204,7 +3210,8 @@ var nerdamer = (function(imports) {
                     } 
                     else {
                         var n = m.num, d = m.den;
-                        if(d == 2) err('sec is undefined for '+symbol.toString());
+                        if(d == 2) 
+                            throw new UndefinedError('sec is undefined for '+symbol.toString());
                         else if(d == 3) {
                             retval = new Symbol(2); c = true;
                         }
@@ -3238,7 +3245,7 @@ var nerdamer = (function(imports) {
                 if(symbol.isPi() && symbol.isLinear()) { 
                     //return for 0 for multiples of pi
                     if(isInt(m)) {
-                        err('csc is undefined for '+symbol.toString());
+                        throw new UndefinedError('csc is undefined for '+symbol.toString());
                     } 
                     else {
                         var n = m.num, d = m.den;
@@ -3278,7 +3285,7 @@ var nerdamer = (function(imports) {
                 if(symbol.isPi() && symbol.isLinear()) { 
                     //return 0 for all multiples of pi
                     if(isInt(m)) {
-                        err('cot is undefined for '+symbol.toString());
+                        throw new UndefinedError('cot is undefined for '+symbol.toString());
                     } 
                     else {
                         var n = m.num, d = m.den;
@@ -3346,7 +3353,7 @@ var nerdamer = (function(imports) {
             },
             atan2: function(a, b) {
                 if(a.equals(0) && b.equals(0))
-                    throw new Error('atan2 is undefined for 0, 0');
+                    throw new UndefinedError('atan2 is undefined for 0, 0');
                 
                 if(Settings.PARSE2NUMBER && a.isConstant() && b.isConstant()) {
                     return new Symbol(Math.atan2(a, b));
@@ -4783,7 +4790,7 @@ var nerdamer = (function(imports) {
 
             //log(0) is undefined so complain
             if(symbol.equals(0)) {
-                err('log(0) is undefined!');
+                throw new UndefinedError('log(0) is undefined!');
             }
             
             //deal with imaginary values
@@ -5527,6 +5534,10 @@ var nerdamer = (function(imports) {
             if(aIsSymbol && bIsSymbol) {
                 //handle Infinty
                 if(a.isInfinity || b.isInfinity) { 
+                    if(a.equals(0) || b.equals(0))
+                        throw new UndefinedError(a+'*'+b+' is undefined!');
+                    if(b.power.lessThan(0))
+                        throw new UndefinedError('Infinity/Infinity is not defined!');
                     var sign = a.multiplier.multiply(b.multiplier).sign(),
                         inf = Symbol.infinity();
                     if(a.isConstant() || b.isConstant() || (a.isInfinity && b.isInfinity)) {
@@ -5856,7 +5867,14 @@ var nerdamer = (function(imports) {
                     if(a.isInfinity && b.isInfinity)
                         err('('+a+')^('+b+') is undefined!');
                     
-                    if(a.isConstant() && b.isInfinity) {
+                    if(a.isConstant() && b.isInfinity) { 
+                        if(a.equals(0)) {
+                            if(b.lessThan(0))
+                                throw new UndefinedError('0^Infinity is undefined!');
+                            return new Symbol(0);
+                        }
+                        if(a.equals(1))
+                            throw new UndefinedError('1^'+b.toString()+' is undefined!');
                         //a^-oo
                         if(b.lessThan(0))
                             return new Symbol(0);
@@ -5865,7 +5883,9 @@ var nerdamer = (function(imports) {
                             return Symbol.infinity();
                     }
                         
-                    if(a.isInfinity && b.isConstant()) {
+                    if(a.isInfinity && b.isConstant()) { 
+                        if(b.equals(0))
+                            throw new UndefinedError(a+'^0 is undefined!');
                         if(b.lessThan(0))
                             return new Symbol(0);
                         return _.multiply(Symbol.infinity(), _.pow(new Symbol(a.sign()), b.clone()));
@@ -7309,6 +7329,7 @@ var nerdamer = (function(imports) {
     //load the exceptions
     C.exceptions.DivisionByZero = DivisionByZero;
     C.exceptions.ParseError = ParseError;
+    C.exceptions.UndefinedError = UndefinedError;
     //TODO: fix 
     if(!_.error)
         _.error = err;
