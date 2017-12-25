@@ -2461,8 +2461,11 @@ if((typeof module) !== 'undefined') {
             //appeared.length is 0 when all arguments are group N
             if (evaluate || appeared.length === 0)
             {
-                var aggregate = args[0];
-                for(var i = 1; i < args.length; i++) aggregate = __.gcd_(aggregate, args[i]);
+                //distribute exponent so that (a^-1*b^-1)^-1 => a*b
+                var aggregate = args[0].distributeExponent();
+                for(var i = 1; i < args.length; i++)
+                    //gcd_ cannot handle denominators correctly
+                    aggregate = _.divide(__.gcd_(args[i].getNum(), aggregate), __.gcd_(args[i].getDenom().invert().distributeExponent(), aggregate));
                 return aggregate;
             }
             else return _.symfunction('gcd', args);
