@@ -1910,6 +1910,72 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             else 
                 retval = _.symfunction('defint', [symbol, from , to, dx]);
             return retval;
+        },
+        limit: function(symbol, x, c) {
+            //used to evaluate function at limit
+            var evaluate = function(symbol) {
+                try {
+                    return _.parse(symbol.sub(x, c));
+                }
+                catch(e) {
+                    if(e instanceof core.exceptions.UndefinedError)
+                        return undefined;
+                    throw new Error('Stopping!');
+                }
+            };
+            
+            try {
+                var a, b, num, den, retval, safety, f, g;
+                num = symbol.getNum(true);
+                den = symbol.getDenom(true);
+                a = evaluate(num);
+                b = evaluate(den);
+                safety = 10;
+                //Make a copy of the numerator and denominator
+                f = num;
+                g = den;
+                
+                var iter = 0; //Guard against infinite loops
+                //indeterminate. Apply L'Hospital's rule
+                while(typeof a === 'undefined' && typeof b === 'undefined' 
+                        || a.equals(0) && b.equals(0) || a.isInfinty && b.isInfinity) {
+                    if(iter > safety) { 
+                        //we're not going anywhere so one last hail mary
+                        var subs = {};
+                        subs[x] = c;
+                        try {
+                            return core.Utils.block('PARSE2NUMBER', function() {
+                                return _.parse(symbol, subs);
+                            }, true);
+                        }
+                        catch(e){
+                            throw core.exceptions.MaximumIterationsReached();
+                        }    
+                    }
+
+                    f = __.diff(f, x);
+                    g = __.diff(g, x);
+                    a = evaluate(f.clone());
+                    b = evaluate(g.clone());
+                    
+                    iter++;
+                }
+                if(a.isConstant(true) || b.isConstant(true)) {
+                    if(b.equals(0))
+                        retval = Symbol.infinity();
+                    else
+                        retval = _.divide(a, b);
+                }
+                else if(a.isInfinity)
+                    retval = a;
+                else if(b.isInfinity)
+                    retval = b;
+                //console.log(String(a), String(b))
+                return retval;
+            }
+            catch(e) {
+                return _.symfunction('limit', arguments);
+            }   
         }
     };
     
@@ -1943,8 +2009,15 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             visible: true,
             numargs: [3, 4],
             build: function() { return __.defint; }
+        },
+        {
+            name: 'limit',
+            visible: true,
+            numargs: 3,
+            build: function() { return __.limit; }
         }
     ]);
     //link registered functions externally
     nerdamer.api();
 })();
+
