@@ -12,20 +12,29 @@ describe('Nerdamer core', function () {
     };
 
     it('should handle errors', function () {
-        // given
-        var formula1 = '0/0';
-        var formula2 = '0^0';
-        var formula3 = '-Infinity+Infinity';
+        var formulas = [
+            '0/0',
+            '0^0',
+            '-Infinity+Infinity',
+            'Infinity/Infinity',
+            'Infinity^Infinity',
+            '1^Infinity',
+            'Infinity^0',
+            '(-Infinity)^0',
+            'Infinity*0'
+        ];
 
-        // when / then
-        expect(function () { nerdamer(formula1) }).toThrowError();
-        expect(function () { nerdamer(formula2) }).toThrowError();
-        expect(function () { nerdamer(formula3) }).toThrowError();
+        for(var i=0; i<formulas.length; i++)
+            expect(function () { nerdamer(formulas[i]) }).toThrowError();
     });
     
     it('should correctly calculate Infinity', function () {
         // given
         var testCases = [
+            {
+                given: '0^Infinity',
+                expected: '0'
+            }, 
             {
                 given: 'Infinity*Infinity',
                 expected: 'Infinity'
@@ -432,11 +441,17 @@ describe('Nerdamer core', function () {
                 given: 'expand((9*y*x+1)^2)',
                 expected: '1+18*x*y+81*x^2*y^2',
                 expectedValue: '4015.7568999999994'
-            }, {
+            }, 
+            {
                 given: 'expand((x+5)*(x-3)-x^2)',
                 expected: '-15+2*x',
                 expectedValue: '-10.8'
-            }
+            },
+            {
+                given: 'expand(((x^3+x)^x*(x^2+x)^x+1)*x)',
+                expected: '(x+x^2)^x*(x+x^3)^x*x+x',
+                expectedValue: '17667.12052556627'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
@@ -459,11 +474,11 @@ describe('Nerdamer core', function () {
             }, 
             {
                 given: 'log(8+5*i)',
-                expected: '0.5585993153435624*i+2.24431818486607'
+                expected: '0.5585993153435626*i+2.24431818486607'
             }, 
             {
                 given: 'log(123-2*i)',
-                expected: '-0.01625872980512972*i+4.8123165343435135'
+                expected: '-0.016258729805129723*i+4.8123165343435135'
             }, 
             {
                 given: 'log(123-2*i+a)',
@@ -693,7 +708,7 @@ describe('Nerdamer core', function () {
                 },
                 {
                     given: 'acot(0)',
-                    expected: '(1/2)*pi',
+                    expected: 'acot(0)',
                     expectedValue: '1.5707963267948966'
                 },
             ];
@@ -844,9 +859,59 @@ describe('Nerdamer core', function () {
             var testCases = [
                 {
                     given: 'acosh(1/23.12)',
-                    expected: 'log((1/578)*i*sqrt(333459)+25/578)',
+                    expected: 'acosh(25/578)',
                     expectedValue: '-4.440892098500627e-16+1.5275302342078616*i'
                 },
+                {
+                    given: 'sech(0.1)',
+                    expected: 'sech(1/10)',
+                    expectedValue: '0.9950207489532263'
+                },
+                {
+                    given: 'csch(0.1)',
+                    expected: 'csch(1/10)',
+                    expectedValue: '9.983352757296105'
+                },
+                {
+                    given: 'tanh(0.1)',
+                    expected: 'tanh(1/10)',
+                    expectedValue: '0.09966799462495585'
+                },
+                {
+                    given: 'coth(0.1)',
+                    expected: 'coth(1/10)',
+                    expectedValue: '10.033311132253987'
+                },
+                {
+                    given: 'acosh(0.1)',
+                    expected: 'acosh(1/10)',
+                    expectedValue: '1.4706289056333368*i'
+                },
+                {
+                    given: 'asinh(0.1)',
+                    expected: 'asinh(1/10)',
+                    expectedValue: '0.0998340788992076'
+                },
+                {
+                    given: 'atanh(-5)',
+                    expected: 'atanh(-5)',
+                    expectedValue: '0.5*(-0.4054651081081645+3.141592653589793*i)'
+                },
+                {
+                    given: 'asech(0.5)',
+                    expected: 'asech(1/2)',
+                    expectedValue: '1.3169578969248166'
+                },
+                {
+                    given: 'acsch(1.1)',
+                    expected: 'acsch(11/10)',
+                    expectedValue: '0.8156089004401478'
+                },
+                {
+                    given: 'acoth(1.2)',
+                    expected: 'acoth(6/5)',
+                    expectedValue: '1.1989476363991853'
+                }
             ];
 
             for (var i = 0; i < testCases.length; ++i) {
@@ -1161,6 +1226,26 @@ describe('Nerdamer core', function () {
                 expectedValue: '1'
             },
             {
+                given: 'i^(-1)',
+                expected: '-i',
+                expectedValue: '-i'
+            },
+            {
+                given: 'i^(2)',
+                expected: '-1',
+                expectedValue: '-1'
+            },
+            {
+                given: 'i^(-2)',
+                expected: '-1',
+                expectedValue: '-1'
+            },
+            {
+                given: 'i^(-1)',
+                expected: '-i',
+                expectedValue: '-i'
+            },
+            {
                 given: 'e^(i*pi)+e^(2*i*pi)',
                 expected: '0',
                 expectedValue: '0'
@@ -1282,7 +1367,54 @@ describe('Nerdamer core', function () {
         expect(value).toEqual(testCases[i].expected);
       }
     });
+    
+    it('should round', function () {
+      // given
+      var testCases = [
+          {
+              given: 'round(204)',
+              expected: '204'
+          },
+          {
+              given: 'round(10.893)',
+              expected: '11'
+          },
+          {
+              given: 'round(10.893, 1)',
+              expected: '10.9'
+          },
+          {
+              given: 'round(-10.3)',
+              expected: '-10'
+          },
+          {
+              given: 'round(204)',
+              expected: '204'
+          },
+          {
+              given: 'round(10.1)',
+              expected: '10'
+          },
+          {
+              given: 'round(1.23423534e-12,-2)',
+              expected: '1.23e-12'
+          },
+          {
+              given: 'round(1.23423534e12,-2)',
+              expected: '1230000000000'
+          }
+      ];
 
+      for (var i = 0; i < testCases.length; ++i) {
+        // when
+        var parsed = nerdamer(testCases[i].given);
+        var value = parsed.evaluate().text('decimals');
+
+        // then
+        expect(value).toEqual(testCases[i].expected);
+      }
+    });
+    
     it('should support trunc()', function () {
         // given
         var testCases = [

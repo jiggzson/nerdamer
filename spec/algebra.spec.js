@@ -291,6 +291,18 @@ describe('Algebra', function () {
                 expected: '(1+x)^2'
             }, 
             {
+                given: 'factor(b^6+3*a^2*b^4+3*a^4*b^2+a^6)',
+                expected: '(a^2+b^2)^3'
+            }, 
+            {
+                given: 'factor(b^6+12*a^2*b^4+48*a^4*b^2+64*a^6)',
+                expected: '((9007199254740996/2251799813685249)*a^2+b^2)^3' //fix rounding error
+            }, 
+            {
+                given: 'factor(c^6+3*b^2*c^4+3*a^2*c^4+3*b^4*c^2+6*a^2*b^2*c^2+3*a^4*c^2+b^6+3*a^2*b^4+3*a^4*b^2+a^6)',
+                expected: '(a^2+b^2+c^2)^3' 
+            }, 
+            {
                 given: 'factor(x^4+25*x^3+234*x^2+972*x+1512)',
                 expected: '(6+x)^3*(7+x)'
             }, 

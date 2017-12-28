@@ -75,6 +75,60 @@ describe('calculus', function () {
         }
     });
     
+    it('should invert a Laplace transform correctly', function () {
+        // given
+        var testCases = [
+            {
+                given: 'ilt(a/(b*x), x, t)',
+                expected: 'a*b^(-1)'
+            },
+            {
+                given: 'ilt(a*6/(b*s^6),s,t)',
+                expected: '(1/20)*a*b^(-1)*t^5'
+            },
+            {
+                given: 'ilt(3*s/(4*s^2+5),s,t)',
+                expected: '(3/4)*cos((1/2)*sqrt(5)*t)'
+            },
+            {
+                given: 'ilt(2/(3*s^2+1),s,t)',
+                expected: '2*sin((1/3)*sqrt(3)*t)*sqrt(3)^(-1)'
+            },
+            {
+                given: 'ilt(5*sqrt(pi)/(3*s^(3/2)),s,t)',
+                expected: '(10/3)*sqrt(t)'
+            },
+            {
+                given: 'ilt(3/(7*s^2+1)^2, s, t)',
+                expected: '(-3/14)*cos((1/7)*sqrt(7)*t)*t+(3/2)*sin((1/7)*sqrt(7)*t)*sqrt(7)^(-1)'
+            },
+            {
+                given: 'ilt(5*s/(s^2+4)^2, s, t)',
+                expected: '(5/4)*sin(2*t)*t'
+            },
+            {
+                given: 'ilt(8*s^2/(2*s^2+3)^2, s, t)',
+                expected: '2*sin((1/2)*sqrt(6)*t)*sqrt(6)^(-1)+cos((1/2)*sqrt(6)*t)*t'
+            },
+            {
+                given: 'ilt((6*s^2-1)/(4*s^2+1)^2, s, t)',
+                expected: '(1/8)*sin((1/2)*t)+(5/16)*cos((1/2)*t)*t'
+            },
+            {
+                given: 'ilt((5*(sin(1)*s+3*cos(1)))/(s^2+9),s, t)',
+                expected: '5*cos(1)*sin(3*t)+5*cos(3*t)*sin(1)'
+            },
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given);
+
+            // then
+            expect(parsed.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
     it('should calculate mode correctly', function () {
         // given
         var testCases = [
