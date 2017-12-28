@@ -2837,6 +2837,7 @@ if((typeof module) !== 'undefined') {
                 var div = __.div(num.clone(), den.clone());
             }
         },
+
         Classes: {
             Polynomial: Polynomial,
             Factors: Factors,
@@ -2845,6 +2846,22 @@ if((typeof module) !== 'undefined') {
     };
 
     nerdamer.useAlgebraDiv = function() {
+        var divide = __.divideFn = _.divide;
+        var calls = 0; //keep track of how many calls were made
+        _.divide = function(a, b) {
+            calls++;
+            var ans;
+            if(calls === 1) //check if this is the first call. If it is use algebra divide
+                ans = core.Algebra.divide(a, b);
+            else //otherwise use parser divide
+                ans = divide(a, b);
+            calls = 0; //reset the number of calls back to none
+            return ans;
+        };
+    };
+    
+
+   nerdamer.useAlgebraDiv = function() {
         var divide = __.divideFn = _.divide;
         var calls = 0; //keep track of how many calls were made
         _.divide = function(a, b) {
@@ -2879,12 +2896,6 @@ if((typeof module) !== 'undefined') {
             build: function() { return __.gcd; }
         },
         {
-            name: 'lcm',
-            visible: true,
-            numargs: 2,
-            build: function() { return __.lcm; }
-        },
-        {
             name: 'roots',
             visible: true,
             numargs: -1,
@@ -2908,14 +2919,6 @@ if((typeof module) !== 'undefined') {
             numargs: [1, 2],
             build: function() { return __.coeffs; }
         },
-        /*
-        {
-            name: 'partfrac',
-            visible: true,
-            numargs: 2,
-            build: function() { return __.partfrac; }
-        },
-        */
         {
             name: 'line',
             visible: true,

@@ -67,6 +67,7 @@ var nerdamer = (function(imports) {
                 'π': 'pi'
             },
             POSITIVE_MULTIPLIERS: false,
+
             //Cached items
             CACHE: {}
         },
@@ -3947,7 +3948,6 @@ var nerdamer = (function(imports) {
                 if(e_org === e) 
                     break;
             }
-            
             var l = e.length, //the length of the string
                 output = [], //the output array. This is what's returned
                 stack = [], //the operator stack
