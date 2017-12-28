@@ -2012,7 +2012,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         },
         {
             name: 'limit',
-            visible: true,
+            visible: false,
             numargs: 3,
             build: function() { return __.limit; }
         }
@@ -2020,4 +2020,3 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     //link registered functions externally
     nerdamer.api();
 })();
-

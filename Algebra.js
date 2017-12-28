@@ -2421,7 +2421,15 @@ if((typeof module) !== 'undefined') {
             else if(g === S && e.power === 1) status = true;
             return status;
         },
-        gcd: function(a, b) { 
+        gcd: function() { 
+            var args = [].slice.call(arguments),
+                b = args.pop(),
+                a = args.pop();
+            //keep calling gcd on remainder because gcd(a, b, c) = gcd(gcd(a,b), c)
+            if(args.length > 0) {
+                args.push(__.gcd(a, b));
+                return __.gcd.apply(__, args);
+            }
             if(a.group === S && b.group === S && a.value !== b.value
                     || a.group === EX 
                     || b.group === EX)
@@ -2867,7 +2875,7 @@ if((typeof module) !== 'undefined') {
         {
             name: 'gcd',
             visible: true,
-            numargs: 2,
+            numargs: -1,
             build: function() { return __.gcd; }
         },
         {
