@@ -818,7 +818,7 @@ if((typeof module) !== 'undefined') {
         return subs;
     };
     var __ = core.Algebra = {
-        version: '1.4.4',
+        version: '1.4.5',
         init: (function() {})(),
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
@@ -2917,7 +2917,13 @@ if((typeof module) !== 'undefined') {
             name: 'coeffs',
             visible: true,
             numargs: [1, 2],
-            build: function() { return __.coeffs; }
+            build: function() { 
+                var f = function() {
+                    var coeffs = __.coeffs.apply(__, arguments);
+                    return new core.Vector(coeffs);
+                };
+                return f;
+            }
         },
         {
             name: 'line',
