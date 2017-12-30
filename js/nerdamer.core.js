@@ -3628,7 +3628,7 @@ var nerdamer = (function(imports) {
                 'realpart'          : [ realpart, 1],
                 'imagpart'          : [ imagpart, 1],
                 'conjugate'         : [ conjugate, 1],
-                'arg'               : [ arg, 1],
+                //'arg'               : [ arg, 1],
                 'polarform'         : [ polarform, 1],
                 'rectform'          : [ rectform, 1],
                 'sort'              : [ sort, [1, 2]],

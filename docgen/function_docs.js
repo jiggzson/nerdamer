@@ -994,6 +994,63 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+    asec: {
+        type: 'internal',
+        usage: 'asec(x)',
+        full_name: 'arcsecant',
+        description: 'Returns the inverse of sec in radians. ',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('asec(11)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('asec(-21)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    acsc: {
+        type: 'internal',
+        usage: 'asec(x)',
+        full_name: 'arccosecant',
+        description: 'Returns the inverse of csc in radians. ',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('acsc(81)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('acsc(1)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    acot: {
+        type: 'internal',
+        usage: 'acot(x)',
+        full_name: 'arccotangent',
+        description: 'Returns the inverse of cot in radians. ',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('acot(0)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('acot(-1)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
     atanh: {
         type: 'internal',
         usage: 'atan(x)',
@@ -1010,6 +1067,25 @@ FUNCTIONS = {
             "console.log(r.text());",
             "var t = nerdamer('atanh(-1)').evaluate()", 
             "console.log(t.text());"
+        ],
+        returns: 'Expression'
+    },
+    acot: {
+        type: 'internal',
+        usage: 'acoth(x)',
+        full_name: 'hyperbolic arccotangent',
+        description: 'Returns the inverse of hyperbolic cot in radians. ',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('acoth(0)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('acot(e)').evaluate()", 
+            "console.log(t.toString());"
         ],
         returns: 'Expression'
     },
@@ -1268,6 +1344,25 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+//    arg: {
+//        type: 'internal',
+//        usage: 'arg(x)',
+//        full_name: 'argument',
+//        description: 'Returns the argument of a complex number. ',
+//        parameters: {
+//            x: {
+//                type: 'expression',
+//                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+//            }
+//        },
+//        examples: [
+//            "var r = nerdamer('acsc(81)');", 
+//            "console.log(r.toString());",
+//            "var t = nerdamer('acsc(1)')", 
+//            "console.log(t.toString());"
+//        ],
+//        returns: 'Expression'
+//    },
     Ci: {
         type: 'internal',
         usage: 'Ci(number)',
