@@ -21,7 +21,7 @@
      "type":"finite_field",
      "group":"number_theory",
      "attrs":[
-	 {"name":"size"},
+	 {"name":"size"}
      ]
     },
         

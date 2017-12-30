@@ -336,9 +336,64 @@ FUNCTIONS = {
         type: 'nerdamer',
         usage: 'nerdamer.set(setting, value)',
         full_name: 'set',
-        description: 'Sets the value of a nerdamer setting. Currently PARSE2NUMBER and IMAGINARY. \n\
-                      Setting PARSE2NUMBER to true will let nerdamer always try to return a number whenenver possible.\n\
-                      IMAGINARY allows you to change the variable used for imaginary to j for instance.',
+        description: "Some settings within nerdamer can be changed if needed to accommodate your current needs. Below is a table and\n\
+                        a description of the settings which can be changes.\n\
+                    <table class='table table-condensed'>\n\
+                        <thead>\n\
+                            <tr>\n\
+                                <th>Setting</th>\n\
+                                <th>Default</th>\n\
+                                <th>Description</th>\n\
+                            </tr>\n\
+                        </thead>\n\
+                        <tbody>\n\
+                            <tr>\n\
+                                <td>IMAGINARY: </td>\n\
+                                <td>i</td>\n\
+                                <td>Use this to set the letter used for imaginary numbers. For instance for using '<strong>j</strong>' instead of '<strong>i</strong>' for imaginary numbers</td>\n\
+                            </tr>\n\
+                            <tr>\n\
+                                <td>VALIDATION_REGEX</td>\n\
+                                <td>new RegExp('^[a-z_'+\n\
+                                    'αAβBγΓδΔϵEζZηHθΘιI'+\n\
+                                    'κKλΛμMνNξΞoOπΠρPσΣ'+\n\
+                                    'τTυϒϕΦχXψΨωΩ][a-z\\'+\n\
+                                    'd\\_αAβBγΓδΔϵEζZηHθΘ'+\n\
+                                    'ιIκKλΛμMνNξΞoOπΠρPσ'+\n\
+                                    'ΣτTυϒϕΦχXψΨωΩ]*$$','i')\n\
+                                </td>\n\
+                                <td>This regex is used to validate variables. Changes this to allow other characters to be used. Caution: this might break the library \n\
+                                    so proceed carefully. </td>\n\
+                            </tr>\n\
+                            <tr>\n\
+                                <td>PARSE2NUMBER</td>\n\
+                                <td>false</td>\n\
+                                <td>Forces evaluation to a number for functions and variables</td>\n\
+                            </tr>\n\
+                            <tr>\n\
+                                <td>SYMBOLIC_MIN_MAX</td>\n\
+                                <td>false</td>\n\
+                                <td>The library returns a symbolic min or max e.g. <strong>min(sqrt(2), sqrt(3))</strong> returns <strong>sqrt(2)</strong></td>\n\
+                            </tr>\n\
+                            <tr>\n\
+                                <td>USE_MULTICHARACTER_VARS</td>\n\
+                                <td>true</td>\n\
+                                <td>When this is set to false nerdamer will treat each letter as a variable so the input '<strong>six</strong>' will be treated as '<strong>s*i*x</strong>'</td>\n\
+                            </tr>\n\
+                            <tr>\n\
+                                <td>integration_depth</td>\n\
+                                <td>10</td>\n\
+                                <td>When integrating nerdamer makes recursive calls. Nerdamer will stop searching for a solution after this many recursive calls. \n\
+                                    Be careful as setting this too high may result in poor preformance</td>\n\
+                            </tr>\n\
+                            <tr>\n\
+                                <td>Laplace_integration_depth</td>\n\
+                                <td>40</td>\n\
+                                <td>Because Laplace transforms typically need more room to calculate the transform, this number \n\
+                                    needs to be higher than <strong>integration_depth</strong>. It's strongly recommended to never set this number lower than 40.</td>\n\
+                            </tr>\n\
+                        </tbody>\n\
+                    </table>",
         parameters: {
             setting: {
                 type: 'setting',

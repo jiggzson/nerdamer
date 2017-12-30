@@ -3584,7 +3584,7 @@ var nerdamer = (function(imports) {
                 'trunc'             : [ , 1],
                 'Si'                : [ , 1],
                 'step'              : [ , 1],
-                'rect'              : [ , 1],
+                //'rect'              : [ , 1],
                 'sinc'              : [ , 1],
                 'tri'               : [ , 1],
                 'sign'              : [ sign, 1],
