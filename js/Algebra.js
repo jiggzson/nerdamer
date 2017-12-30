@@ -32,7 +32,7 @@ if((typeof module) !== 'undefined') {
         isInt = core.Utils.isInt,
         Symbol = core.Symbol,
         CONST_HASH = core.Settings.CONST_HASH;
-        
+
     //*************** CLASSES ***************//
     /**
     * Converts a symbol into an equivalent polynomial arrays of 
@@ -620,6 +620,8 @@ if((typeof module) !== 'undefined') {
                 _.symfunction(core.PARENTHESIS, [this.factors[x]]) : this. factors[x];
             factored = _.multiply(factored, factor);
         }
+        if(factored.fname === '')
+            factored = Symbol.unwrapPARENS(factored);
         return factored;
     };
     /**
@@ -816,7 +818,7 @@ if((typeof module) !== 'undefined') {
         return subs;
     };
     var __ = core.Algebra = {
-        version: '1.4.3',
+        version: '1.4.4',
         init: (function() {})(),
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
@@ -1782,6 +1784,9 @@ if((typeof module) !== 'undefined') {
                     else if(g === N || for_variable !== v) powers.push(0);
                 }
             }
+            else if(g === CB && e.contains(for_variable)) {
+                powers.push(core.Utils.decompose_fn(e, for_variable, true).x.power);
+            }
             return core.Utils.arrayUnique(powers).sort();
         },
         //The factor object
@@ -1873,13 +1878,110 @@ if((typeof module) !== 'undefined') {
 
                 return symbol;
             },
-            factor: function(symbol, factors) { 
-                if(symbol.group === FN)
+            zeroes: function(symbol, factors) {
+                var exit = function() {
+                    throw new Error('Exiting');
+                };
+                try {
+                    var vars, term, sum, p, e;
+                    symbol = _.expand(symbol.clone());
+                    e = symbol.toString();
+                    vars = variables(symbol);
+
+                    sum = new Symbol(0);
+                    
+                    var terms = [];
+                    var powers = [];
+                    
+                    //start setting each variable to zero
+                    for(var i=0, l=vars.length; i<vars.length; i++) {
+                        var subs = {};
+                        //we want to create a subs object with all but the current variable set to zero
+                        for(var j=0; j<l; j++) 
+                            if(i !== j) //make sure we're not looking at the same variable
+                                subs[vars[j]] = 0;
+                        term = _.parse(e, subs);
+                        var tp = term.power;
+                        //the temporary power has to be an integer as well
+                        if(!isInt(tp))
+                            exit();
+                        terms.push(term);
+                        powers.push(term.power);
+                    }
+
+                    //get the gcd. This will be the p in (a^n+b^m)^p
+                    //if the gcd equals 1 meaning n = m then we need a tie breakder
+                    if(core.Utils.allSame(powers)) { 
+                        //get p given x number of terms
+                        var n_terms = symbol.length;
+                        //the number of zeroes determines
+                        var n_zeroes = terms.length;
+                        if(n_zeroes === 2) {
+                            p = new Frac(powers[0]/(n_terms-1));
+                        }
+                        if(n_zeroes === 3) {
+                            p = new Frac(powers[0]/Math.round((Math.sqrt(8*n_terms-1)-3)/2));
+                        }
+                        /*
+                        //get the lowest possible power
+                        //e.g. given b^4+2*a^2*b^2+a^4, the power we're looking for would be 2
+                        symbol.each(function(x) {
+                            if(x.group === CB)
+                                x.each(function(y) {
+                                    if(!p || y.power.lessThan(p))
+                                        //p = Number(y.power);
+                                        p = y.power;
+                                });
+                            else if(!p || x.power.lessThan(p))
+                                //p = Number(x.power);
+                                p = x.power;
+                        });
+                        */
+                    }
+                    else
+                        //p is just the gcd of the powers
+                        p = core.Math2.QGCD.apply(null, powers);
+
+                    //if we don't have an integer then exit
+                    if(!isInt(p))
+                        exit();
+                    
+                    //build the factor
+                    for(var i=0; i<terms.length; i++) {
+                        var t = terms[i];
+                        var n = t.power.clone().divide(p);
+                        t.multiplier = new Frac(Math.pow(t.multiplier, 1/n));
+                        t.power = p.clone();
+                        sum = _.add(sum, t);
+                    }
+
+                    //by now we have the factor of zeroes. We'll know if we got it right because 
+                    //we'll get a remainder of zero each time we divide by it
+                    if(sum.group !== CP)
+                        return symbol; //nothing to do
+
+                    while(true) {
+                        var d = __.div(symbol.clone(), sum.clone());
+                        if(d[1].equals(0)) {
+                            symbol = d[0];
+                            factors.add(sum.clone());
+                            if(symbol.equals(1)) //we've reached 1 so done.
+                                break;
+                        }
+                        else
+                            break;
+                    }
+                }
+                catch(e){};
+                
+                return symbol;
+            },
+            factor: function(symbol, factors) {
+                if(symbol.group === FN && symbol.fname !== 'sqrt')
                     symbol = core.Utils.evaluate(symbol);
                 
                 try {
-                    
-                    if(symbol.group === CB) {
+                    if(symbol.group === CB) { 
                         //TODO: I have to revisit this again. I'm checking if they're all
                         //group S. I don't know why just adding them to factors isn't working
                         factors = factors || new Factors();
@@ -1888,7 +1990,8 @@ if((typeof module) !== 'undefined') {
                         symbol.each(function(x) {
                             if(x.group !== S)
                                 all_S = false;
-                            factors.add(__.Factor.factor(x.clone()));
+                            var factored = __.Factor.factor(x.clone());
+                            factors.add(factored);
                         });
                         //if they're all of group S then all this was for nothing and return the symbol as it is.
                         if(all_S)
@@ -1899,6 +2002,8 @@ if((typeof module) !== 'undefined') {
                         return symbol; //absolutely nothing to do
 
                     if(symbol.isConstant()) {
+                        if(symbol.equals(1))
+                            return symbol.clone();
                         return core.Math2.factor(symbol);
                     }
 
@@ -1928,7 +2033,7 @@ if((typeof module) !== 'undefined') {
                             symbol.each(function(x) {
                                 if(x.group !== S) all_S = false;
                                 if(!x.multiplier.equals(1)) all_unit = false;
-                            });
+                            });       
                             if(all_S && all_unit) 
                                 return _.pow(symbol, _.parse(p));
                         }
@@ -1964,6 +2069,7 @@ if((typeof module) !== 'undefined') {
 
                         //return _.pow(retval, _.parse(p));
                     }
+                    
                     return symbol;    
                 }
                 catch(e) {
@@ -2203,8 +2309,7 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             //factoring for multivariate
-            mfactor: function(symbol, factors) { 
-                
+            mfactor: function(symbol, factors) {  
                 if(symbol.group === FN) { 
                     if(symbol.fname === 'sqrt') {
                         var factors2 = new Factors(),
@@ -2218,7 +2323,7 @@ if((typeof module) !== 'undefined') {
                     else
                         factors.add(symbol);
                 }
-                else {
+                else { 
                     //symbol = __.Factor.common(symbol, factors);
                     symbol = __.Factor.mSqfrFactor(symbol, factors);
                     var vars = variables(symbol),
@@ -2245,7 +2350,8 @@ if((typeof module) !== 'undefined') {
                     
                     for(var x in sorted) {
                         var r = _.parse(x+'^'+maxes[x]); 
-                        var new_factor = _.expand(_.divide(sorted[x], r)); 
+                        var div = _.divide(sorted[x], r);
+                        var new_factor = _.expand(div); 
                         var divided = __.div(symbol.clone(), new_factor); 
                         if(divided[0].equals(0)) { //cant factor anymore
                             //factors.add(divided[1]);
@@ -2263,7 +2369,7 @@ if((typeof module) !== 'undefined') {
                             var factor = divided[0]; 
                             if(symbol.equals(factor)) {
                                 var rem = __.Factor.reduce(factor, factors);
-                                if(!symbol.equals(rem))
+                                if(!symbol.equals(rem)) 
                                     return __.Factor.mfactor(rem, factors);
                             }
                             else
@@ -2278,6 +2384,7 @@ if((typeof module) !== 'undefined') {
                     }
                 }
                 
+                symbol = __.Factor.zeroes(symbol, factors);
                 return symbol;
             }
         },
@@ -2314,7 +2421,15 @@ if((typeof module) !== 'undefined') {
             else if(g === S && e.power === 1) status = true;
             return status;
         },
-        gcd: function(a, b) { 
+        gcd: function() { 
+            var args = [].slice.call(arguments),
+                b = args.pop(),
+                a = args.pop();
+            //keep calling gcd on remainder because gcd(a, b, c) = gcd(gcd(a,b), c)
+            if(args.length > 0) {
+                args.push(__.gcd(a, b));
+                return __.gcd.apply(__, args);
+            }
             if(a.group === S && b.group === S && a.value !== b.value
                     || a.group === EX 
                     || b.group === EX)
@@ -2356,7 +2471,7 @@ if((typeof module) !== 'undefined') {
                 a = new Polynomial(a); b = new Polynomial(b);
                 return _.divide(a.gcd(b).toSymbol(), den);
             }
-            else {
+            else { 
                 var T;
                 while(!b.equals(0)) {  
                     var t = b.clone(); 
@@ -2403,6 +2518,27 @@ if((typeof module) !== 'undefined') {
             return _.add(result[0], remainder);
         },
         div: function(symbol1, symbol2) {
+//            
+//            if(!symbol1.isComposite() && !symbol2.isComposite()) {
+//                var t = 'symbol1: '+symbol1+'     symbol2: '+symbol2;
+//                var r = _.divide(symbol1.clone(), symbol2.clone());
+//                console.log(r.toString(), t)
+//                if(r.isConstant())
+//                    return [r, new Symbol(0)];
+//                return [new Symbol(0), symbol1];
+//            }
+//            if(symbol1.isComposite() && !symbol2.isComposite()) {
+//                console.log('symbol1: '+symbol1+'     symbol2: '+symbol2, 'TWO')
+//                var rem = new Symbol(0),
+//                    q = new Symbol(0);
+//                symbol1.each(function(x) {
+//                    var r = __.div(x, symbol2.clone());
+//                    q = _.add(q, r[0]);
+//                    rem = _.add(rem, r[1]);
+//                });
+//                console.log([q, rem].toString())
+//                return [q, rem];
+//            }
             //division by constants
             if(symbol2.isConstant()) {
                 symbol1.each(function(x) { 
@@ -2691,13 +2827,40 @@ if((typeof module) !== 'undefined') {
                 b = _.multiply(v1.e(1).clone(),m);
             return _.add(_.subtract(a, b), v1.e(2).clone());
         },
+        partfrac: function(symbol, x) {
+            var num, den, num_max, den_max;
+            num = symbol.getNum();
+            den = symbol.getDenom().toLinear(true);
+            num_max = core.Utils.arrayMax(__.polyPowers(num, x.toString()));
+            den_max = core.Utils.arrayMax(__.polyPowers(den, x.toString()));
+            if(num_max > den_max) {
+                var div = __.div(num.clone(), den.clone());
+            }
+        },
+
         Classes: {
             Polynomial: Polynomial,
             Factors: Factors,
             MVTerm: MVTerm
         }
     };
+
+    nerdamer.useAlgebraDiv = function() {
+        var divide = __.divideFn = _.divide;
+        var calls = 0; //keep track of how many calls were made
+        _.divide = function(a, b) {
+            calls++;
+            var ans;
+            if(calls === 1) //check if this is the first call. If it is use algebra divide
+                ans = core.Algebra.divide(a, b);
+            else //otherwise use parser divide
+                ans = divide(a, b);
+            calls = 0; //reset the number of calls back to none
+            return ans;
+        };
+    };
     
+
    nerdamer.useAlgebraDiv = function() {
         var divide = __.divideFn = _.divide;
         var calls = 0; //keep track of how many calls were made
@@ -2729,7 +2892,7 @@ if((typeof module) !== 'undefined') {
         {
             name: 'gcd',
             visible: true,
-            numargs: 2,
+            numargs: -1,
             build: function() { return __.gcd; }
         },
         {

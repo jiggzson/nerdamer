@@ -504,11 +504,11 @@ FUNCTIONS = {
         type: 'Expression',
         usage: 'nerdamer.text(x)',
         full_name: 'text',
-        description: 'Gets the list of reserved names. This is a list of names already in use by nerdamer excluding variable names. This is not a static list.',
+        description: 'Returns the text representation of the expression.',
         parameters: {
             asArray: {
                 type: 'String',
-                description: "Pass in the string 'decimals' to always get back numers as decimals. Pass in the string 'fractions' to always get back number as fractions. Defaults to decimals."
+                description: "Pass in the string 'decimals' to get back numers as decimals. Pass in the string 'fractions' to get back number as fractions. Defaults to decimals."
             }
         },
         examples: [
@@ -550,7 +550,7 @@ FUNCTIONS = {
         },
         examples: [
             "var x = nerdamer('sin(9+5)');",
-            "//the expression is simpliefied but the functions aren't called",
+            "//the expression is simplified but the functions aren't called.",
             "console.log(x.toString());",
             "//force function calls with evaluate",
             "console.log(x.evaluate().toString());"
@@ -561,7 +561,7 @@ FUNCTIONS = {
         type: 'Expression',
         usage: 'nerdamer(expression).sub(value, for_value)',
         full_name: 'substitute',
-        description: 'Substitutes a given value for another given value',
+        description: 'Substitutes a given value with another given value.',
         parameters: {
             value: {
                 type: 'String',
@@ -588,7 +588,8 @@ FUNCTIONS = {
         usage: 'nerdamer(expression).buildFunction(args_array)',
         full_name: 'buildFunction',
         description: 'Generates a JavaScript function given the expression. This is perfect for plotting and filtering user input. Plotting for the demo is accomplished \n\
-                     using this. The order of the parameters is in alphabetical order by default but an argument array can be provided with the desired order.',
+                     using this. The order of the function parameters is in alphabetical order by default but an array containing the list of arguments \n\
+                     in the preferred order can be passed to the function.',
         parameters: {
             args_array: {
                 type: 'String[]',
@@ -609,7 +610,7 @@ FUNCTIONS = {
         type: 'Expression',
         usage: 'nerdamer(expression).variables()',
         full_name: 'variables',
-        description: 'Get a list of the variables contained within the expression',
+        description: 'Get a list of the variables contained within the expression.',
         parameters: {
             none: {
                 type: '',
@@ -1871,11 +1872,15 @@ FUNCTIONS = {
     },
     Algebra__divide: {
         type: 'internal',
-        usage: 'divide(x)',
+        usage: 'divide(x, y)',
         full_name: 'divide',
         description: 'Divides 2 polynomials.',
         parameters: {
             x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            },
+            y: {
                 type: 'expression',
                 description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
             }

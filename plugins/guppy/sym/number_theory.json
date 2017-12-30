@@ -1,0 +1,40 @@
+{
+    "legendre":
+    {"output":{
+        "latex":"\\left(\\dfrac{{$1}}{{$2}}\\right)",
+        "small_latex":"\\left(\\frac{{$1}}{{$2}}\\right)",
+	"text":"leg({$1},{$2})"},
+     "current":0,
+     "type":"legendre",
+     "group":"number_theory",
+     "attrs":[
+	 {"up":"1","down":"2","name":"root"},
+	 {"up":"1","down":"2","name":"modulus"}
+     ]
+    },
+
+    "Fq":
+    {"output":{
+        "latex":"\\mathbf{F}_{{$1}}",
+	"text":"GF({$1})"},
+     "current":0,
+     "type":"finite_field",
+     "group":"number_theory",
+     "attrs":[
+	 {"name":"size"},
+     ]
+    },
+        
+    "cohom":
+    {"output":{
+        "latex":"H^{{$1}}\\left({$2}\\right)",
+	"text":"cohomology({$2},{$1})"},
+     "current":0,
+     "group":"group_theory",
+     "type":"cohomology",
+     "attrs":[
+	 {"up":"2","down":"1","small":"yes","name":"degree"},
+	 {"up":"2","down":"1","name":"space"}
+     ]
+    }
+}

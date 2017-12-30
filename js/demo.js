@@ -51,11 +51,32 @@
             }
         });
         //make preparations for Guppy
-        Guppy.get_symbols(["builtins","plugins/guppy/sym/symbols.json","plugins/guppy/sym/extra_symbols.json"]);
-        var guppy = new Guppy(inputId, {
-                empty_content: "\\color{gray}{\\text{Visual editor. Enter your expression here}}",
-                done_callback: process
+        //Guppy.get_symbols(["builtins","plugins/guppy/sym/symbols.json","plugins/guppy/sym/extra_symbols.json"]);
+        var guppySettings = {
+            path: "plugins/guppy/build",
+            symbols: "plugins/guppy/sym/symbols.json",
+            settings: {
+                empty_content: "\\color{gray}{\\text{Visual editor. Enter your expression here}}"
+            },
+            events: {
+                done: process
+            }
+        };
+        
+        //load the osk if it's not a mobile browser
+        if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            guppySettings.osk = new GuppyOSK({
+                goto_tab: "qwerty",
+                attach:"focus"
             });
+        }
+        //initialize guppy
+        Guppy.init(guppySettings);
+        var guppy = new Guppy(inputId, {
+            empty_content: "\\color{gray}{\\text{Visual editor. Enter your expression here}}"
+            //done_callback: process
+        });
+        
         //store the validation regex
         var validation_regex_str = nerdamer.getCore().Settings.VALIDATION_REGEX.toString();
         //create the regex for extracting variables
@@ -121,7 +142,7 @@
         //function to fetch the text from the input
         function getText() {
             if(USE_GUPPY)
-                return Guppy.instances[inputId].get_content('text');
+                return Guppy.instances[inputId].text();
             //else return textInput.val();
             else return editor.getValue();
         }
@@ -210,8 +231,9 @@
         //set the value for the input
         function setInputValue(value) {
             clear();
+            console.log(value)
             if(USE_GUPPY) {
-                guppy.insert_string(value);
+                guppy.engine.insert_string(value);
                 guppy.activate();
             }
             else {
@@ -254,12 +276,12 @@
         //Clears the input
         function clear() {
             if(USE_GUPPY) {
-                guppy.set_content('<m><e/></m>');
+                guppy.engine.set_content('<m><e/></m>');
                 guppy.render(true);
             }
             else {
                 //$('#text-input').val('');
-                editor.setValue('')
+                editor.setValue('');
             }    
         }
         //callback for handling of entered expression
@@ -325,7 +347,10 @@
                 else {
                     try {
                         //wrap the expression in expand if expand is checked
-                        var evaluated = nerdamer(expandIsChecked() ? 'expand('+expression+')' : expression, scope),
+                        if(expandIsChecked())
+                            expression = 'expand('+expression+')';
+
+                        var evaluated = nerdamer(expression, scope),
                             //check if the user wants decimals
                             decimal = toDecimal() ? 'decimal' : undefined,
                             //the output is for the reload button

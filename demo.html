@@ -28,6 +28,8 @@
     <link rel="stylesheet" href="./plugins/highlightjs/styles/vs.css"> 
     <script src="./plugins/highlightjs/highlight.pack.js"></script> 
     <link rel="stylesheet" href="plugins/guppy/build/guppy.min.css">
+    <link rel="stylesheet" href="plugins/guppy/build/guppy-default.min.css">
+    <link rel="stylesheet" href="plugins/guppy/build/guppy-default-osk.min.css">
     <link rel="stylesheet" href="./plugins/font-awesome/css/font-awesome.min.css">
     <!--codemirror -->
     <link rel="stylesheet" href="./plugins/codemirror/codemirror.css">
@@ -40,7 +42,7 @@
     <link rel="stylesheet" href="./plugins/codemirror/theme/neat.css">
     <!-- katex -->
     <script src="./plugins/katex/katex.min.js"></script> 
-    <link rel="stylesheet" href="./plugins/katex/katex.min.css">
+    <!--<link rel="stylesheet" href="./plugins/katex/katex.min.css">-->
     <!-- c3 -->
     <!--<link rel="stylesheet" href="./plugins/c3/c3.min.css">-->
     <script>
@@ -100,7 +102,8 @@
         <div class="row">
             <div class="col-sm-9">
                 <h1>Demo</h1>
-                <h5 class="text-muted">Using nerdamer version: <strong><span id="version"></span></strong></h5>
+                <h5><span class="text-muted">Using nerdamer version: </span><strong><span id="version" style="color: #222;"></span></strong> 
+                    <a href="./demo_dev.html" style="margin-left: 10px;">( switch to dev mode )</a></h5>
                 <div class="alert alert-danger demo-alert">
                     <!--<button type="button" class="close" data-dismiss="alert">&times;</button>-->
 <!--                    Make sure to enter multiplication explicitly. e.g. <strong>use 3*x not 3x or 2*(x+1) not 2(x+1);</strong>-->
@@ -125,7 +128,7 @@
                     </div>
                 </div>
                 <div class="text-right">
-                    <a href="javascript:void(0)" id="input-switch"><small>Use visual editor</small></a>
+                    <!--<a href="javascript:void(0)" id="input-switch"><small>Use visual editor</small></a>-->
                 </div>
                 
                 <div id="nerdamer-demo">
@@ -149,6 +152,15 @@
                           <input type="checkbox" id="to-decimal">
                           <span class="cr"><i class="cr-icon glyphicon glyphicon-ok"></i></span>
                           <span class="checkbox-label">DECIMAL</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="pull-right">
+                    <div class="checkbox">
+                        <label>
+                          <input type="checkbox" id="expression-expand">
+                          <span class="cr"><i class="cr-icon glyphicon glyphicon-ok"></i></span>
+                          <span class="checkbox-label">EXPAND</span>
                         </label>
                     </div>
                 </div>
@@ -210,13 +222,51 @@
     <script src="./js/Solve.js"></script>
 <!--    <script src="./js/nerdamer.all.min.js"></script>-->
     <script src="plugins/guppy/build/guppy.min.js"></script>
+    <script src="plugins/guppy/build/guppy_osk.js"></script>
     <script src="./plugins/d3/d3.min.js"></script>
     <!--<script src="./plugins/c3/c3.min.js"></script>-->
     <script src="./plugins/function-plot/function-plot.min.js"></script>
     <script>
         var USE_GUPPY = false;
+
         $(function() {
-            var textInput = $('#text-input');
+            var textInput = $('#text-input'),
+                guppyInput = $('#demo-input'),
+                editorType = '',
+                toggleSwitch = $('#input-switch');
+            
+            var useVisualInput = function() {
+                textInput.hide();
+                guppyInput.show();
+                editorType = 'visual';
+            };
+            
+            var setSwitchText = function(useText) {
+                toggleSwitch.text('Use '+(useText || editorType)+' editor');
+            };
+            
+            var useTextInput = function() {
+                textInput.show();
+                guppyInput.hide();
+                editorType = 'text';
+            };
+
+            var chooseEditor =function(){
+                if(!USE_GUPPY)
+                    useTextInput();
+                else
+                    useVisualInput();
+            };
+            
+            var initEditor = function() {
+                setSwitchText(!USE_GUPPY ? 'visual' : 'text');
+                chooseEditor();
+            };
+            
+            var toggleEditor = function() {
+                setSwitchText();
+                chooseEditor();
+            };
             //link the enter button    
             textInput.keypress(function(e) { 
                 if(e.keyCode === 13) {
@@ -224,21 +274,12 @@
                 }
             });
             
-            $('#input-switch').click(function() {
+            //start the editor
+            initEditor();
+            
+            toggleSwitch.click(function() {
                 USE_GUPPY = !USE_GUPPY; //hit the switch
-                var defaultText = 'Use text input',
-                    altText = 'Use visual editor',
-                    guppyInput = $('#demo-input');
-                
-                $(this).text(USE_GUPPY ? defaultText : altText);
-                if(USE_GUPPY) {
-                    textInput.hide();
-                    guppyInput.show();
-                }
-                else {
-                    guppyInput.hide();
-                    textInput.show();
-                }
+                toggleEditor();
             });
         });
     </script>
@@ -257,7 +298,6 @@
             if(excluded.indexOf(name) === -1)
                 supportlist.append($('<a href="./functions/'+name+'.html">'+name+'</a>'));
         }
-        
     </script>
     <script type="text/javascript">
         var editor = CodeMirror.fromTextArea(document.getElementById("codemirror"), {

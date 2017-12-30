@@ -123,3 +123,16 @@
 .graph svg text.title {
     font-size: 20px;
 }
+/*Guppy*/
+.guppy_active, .guppy_inactive {
+    padding: 30px !important;
+}
+.guppy_active {
+    border: 2px solid #b1d0ff !important;
+}
+.guppy_inactive {
+    border: 2px solid #7A95FC !important;
+}
+.guppy_buttons {
+    display: none !important;
+}

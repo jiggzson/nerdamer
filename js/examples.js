@@ -322,7 +322,10 @@ var examples = [
     'log(e)',
     'log(e^e)',
     'log(1/e^e)',
-    '((x)^(1/2)*x^(1/3))-x^(5/6)'
+    '((x)^(1/2)*x^(1/3))-x^(5/6)',
+    'cross([a, x, 1],[b, y, 2])',
+    'dot([a, x, 1],[b, y, 2])',
+    'invert(matrix([a^2, b], [b^2, 4]))*matrix([3],[4])',
 ];
 
 //var nerdamer = require('../js/nerdamer.core');
@@ -355,7 +358,6 @@ benchmark(function() {
 //benchmark how long it took for generation of LaTeX
 benchmark(function() {
     for(var i=0; i<l; i++) {
-        console.log(parsed[i].toString(), parsed[i])
         TeX.push(parsed[i].toTeX());
     }
 }, LaTeX);
@@ -379,4 +381,6 @@ $(function() {
                 .append($('<div/>', {class: "parsed-tex"}).html(parsedTeX[i]));
         table.append(row);
     }
+    
+    $('#calculating').hide();
 });
