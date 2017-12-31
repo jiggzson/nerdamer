@@ -1977,7 +1977,8 @@ FUNCTIONS = {
         full_name: 'coefficients',
         description: 'Get the coefficients of a polynomial. The coefficients will be placed in the index of their power.'+
                 ' So constants are in the 0th place, x^2 would be in the 2nd place, etc. Throws an error if expression is'+
-                ' not a polynomial. Holes will be filled with zeroes',
+                ' not a polynomial. Holes will be filled with zeroes. Coeffs returns a vector so the methods vecget and vecset '+
+                'can be used to access it\'s elements.',
         parameters: {
             polynomial: {
                 type: 'expression',
@@ -1997,7 +1998,9 @@ FUNCTIONS = {
             "var poly = nerdamer('a*x^2+b*x+c+x');",
             "coeffs = nerdamer.coeffs(poly, 'x');",
             "console.log(coeffs.toString());",
-            "coeffs = nerdamer.coeffs('a*x+b/x^2', 'x');"
+            "coeffs = nerdamer.coeffs('a*x+b/x^2', 'x');",
+            "var p = nerdamer('vecget(coeffs(7*x^2+3*x+11, x), 2)');",
+            "console.log(p.toString());"
         ],
         returns: 'Vector'
     },
