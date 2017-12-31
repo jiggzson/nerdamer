@@ -155,7 +155,7 @@
         "small_latex":"\\int{{$1}}d{$2}",
 	"asciimath":"int {$1} d{$2}"},
      "attrs":{
-	 "type":"indefinite_integral",
+	 "type":"integrate",
 	 "group":"calculus"},
      "args":[
 	 {"delete":"1","name":"integrand"},
@@ -163,7 +163,7 @@
      ]
     },
     
-    "defi":
+    "defint":
     {"output":{
         "latex":"\\displaystyle\\int_{{$1}}^{{$2}}{$3}d{$4}",
         "small_latex":"\\int_{{$1}}^{{$2}}{$3}d{$4}",
@@ -179,13 +179,13 @@
      ]
     },
     
-    "deriv":
+    "diff":
     {"output":{
         "latex":"\\displaystyle\\frac{d}{d{$1}}{$2}",
         "small_latex":"\\frac{d}{d{$1}}{$2}",
 	"asciimath":"diff({$2},{$1})"},
      "attrs":{
-	 "type":"derivative",
+	 "type":"diff",
 	 "group":"calculus"},
      "args":[
 	 {"down":"1","up":"2","bracket":"yes","name":"function"},

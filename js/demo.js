@@ -231,9 +231,11 @@
         //set the value for the input
         function setInputValue(value) {
             clear();
-            console.log(value)
+            //remove expand
+            value = value.replace(/(^expand\()(.+)(\)$)/i,'$2');
+            
             if(USE_GUPPY) {
-                guppy.engine.insert_string(value);
+                guppy.import_text(value);
                 guppy.activate();
             }
             else {
