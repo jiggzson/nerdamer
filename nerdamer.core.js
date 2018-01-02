@@ -115,7 +115,7 @@ var nerdamer = (function(imports) {
         //the container used to store all the reserved functions
         RESERVED = [],
 
-        WARNINGS = '',
+        WARNINGS = [],
         
         /**
          * Checks to see if value is one of nerdamer's reserved names
@@ -143,16 +143,24 @@ var nerdamer = (function(imports) {
          * Use this when errors are suppressible
          * @param {String} msg
          */
-        err = function(msg) {
-            if(!Settings.suppress_errors) throw new Error(msg);
+        err = function(msg, ErrorObj) {
+            if(!Settings.suppress_errors) {
+                if(ErrorObj)
+                    throw new ErrorObj(msg);
+                else
+                    throw new Error(msg);
+            }
         },
         
         /**
          * Used to pass warnings or low severity errors about the library
          * @param msg
          */
-        warn = function(msg) {
-            WARNINGS += (msg+'\n');
+        warn = Utils.warn = function(msg) {
+            WARNINGS.push(msg);
+            if(console && console.warn) {
+                console.warn(msg);
+            }
         },
         
         /**
@@ -258,6 +266,42 @@ var nerdamer = (function(imports) {
          */
         isExpression = Utils.isExpression = function(obj) {
             return (obj instanceof Expression);
+        },
+        
+        /**
+         * Separates out the variables into terms of variabls. 
+         * e.g. x+y+x*y+sqrt(2)+pi returns 
+         * {x: x, y: y, x y: x*y, constants: sqrt(2)+pi
+         * @param {type} symbol
+         * @returns {undefined}
+         * @throws {Error} for expontentials
+         */
+        separate = Utils.separate = function(symbol, o) {
+            symbol = _.expand(symbol);
+            o = o || {};
+            var insert = function(key, sym) {
+                if(!o[key])
+                    o[key] = new Symbol(0);
+                o[key] = _.add(o[key], sym.clone());
+            };
+            symbol.each(function(x) {
+                if(x.isConstant('all')) 
+                    insert('constants', x);
+                else if(x.group === S) {
+                    insert(x.value, x);
+                }
+                else if(x.group === FN && (x.fname === ABS || x.fname === '')) {
+                    separate(x.args[0]);
+                }
+                else if(x.group === EX || x.group === FN) {
+                    throw new Error('Unable to separate. Term cannot be a function!');
+                }
+                else {
+                    insert(variables(x).join(' '), x);
+                }
+            });
+            
+            return o;
         },
         
         /**
@@ -379,8 +423,11 @@ var nerdamer = (function(imports) {
          * @param {Object} obj
          * @returns {*}
          */
-        firstObject = Utils.firstObject = function(obj) {
-            for( var x in obj ) break;
+        firstObject = Utils.firstObject = function(obj, key) {
+            for( var x in obj ) 
+                break;
+            if(key)
+                return x;
             return obj[x];
         },
         
@@ -1924,7 +1971,7 @@ var nerdamer = (function(imports) {
      * @returns {Symbol}
      */
     function Symbol(obj) { 
-        var isInfinity = obj === 'Infinity'
+        var isInfinity = obj === 'Infinity';
         //this enables the class to be instantiated without the new operator
         if(!(this instanceof Symbol)) { return new Symbol(obj); };
         //define numeric symbols
@@ -1992,6 +2039,54 @@ var nerdamer = (function(imports) {
         return symbol;
     };
     Symbol.prototype = {
+        //returns a clone.
+        powSimp: function() {
+            if(this.group === CB) {
+                var powers = [],
+                    sign = this.multiplier.sign();
+                this.each(function(x) {
+                    var p = x.power;
+                    //why waste time if I can't do anything anyway
+                    if(isSymbol(p) || p.equals(1))
+                        return this.clone();
+                    powers.push(p);
+                });
+                var min = new Frac(arrayMin(powers));
+                
+                //handle the coefficient
+                //handle the multiplier
+                var sign = this.multiplier.sign(),
+                    m = this.multiplier.clone().abs(),
+                    mfactors = Math2.ifactor(m);
+                //if we have a multiplier of 6750 and a min of 2 then the factors are 5^3*5^3*2
+                //we can then reduce it to 2*3*5*(15)^2 
+                var out_ = new Frac(1);
+                var in_ = new Frac(1);
+                
+                for(var x in mfactors) {
+                    var n = new Frac(mfactors[x]);
+                    if(!n.lessThan(min)) {
+                        n = n.divide(min).subtract(new Frac(1));
+                        in_ = in_.multiply(new Frac(x)); //move the factor inside the bracket
+                    }
+                    
+                    out_ = out_.multiply(_.parse(inBrackets(x)+'^'+inBrackets(n)).multiplier);
+                }
+                var t = new Symbol(in_);
+                this.each(function(x) { 
+                    x = x.clone();
+                    x.power = x.power.divide(min);
+                    t = _.multiply(t, x);
+                });
+                
+                var xt = _.symfunction(PARENTHESIS, [t]);
+                xt.power = min;
+                xt.multiplier = sign < 0 ? out_.negate() : out_;
+
+                return xt;
+            }
+            return this.clone();
+        },
         /**
          * Checks to see if two functions are of equal value
          */
@@ -2272,6 +2367,8 @@ var nerdamer = (function(imports) {
             return this.fname === SQRT;
         },
         isConstant: function(check_all) {
+            if(check_all === 'all' && (this.isPi() || this.isE()))
+                return true;
             if(check_all && this.group === FN) {
                 for(var i=0; i<this.args.length; i++) {
                     if(!this.args[i].isConstant())
@@ -7399,7 +7496,17 @@ var nerdamer = (function(imports) {
             MaximumIterationsReached: MaximumIterationsReached
         }
     };
-
+    
+    //provide a mechanism for accessing functions directly
+    //Not yet complete!!! Some functions will return undefined. This can maybe 
+    //just remove the function object at some point when all functions are eventually
+    //housed in the global function object.
+    C.Utils.importFunctions = function() {
+        var o = {};
+        for(var x in _.functions)
+            o[x] = _.functions[x][0];
+        return o;
+    };
     //TODO: fix 
     if(!_.error)
         _.error = err;
@@ -7473,7 +7580,7 @@ var nerdamer = (function(imports) {
     
     /**
      * Get nerdamer generated warnings
-     * @returns {String}
+     * @returns {String[]}
      */
     libExports.getWarnings = function() {
         return WARNINGS;
@@ -7807,4 +7914,4 @@ var nerdamer = (function(imports) {
 
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
-};
+};                  

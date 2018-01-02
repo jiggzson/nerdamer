@@ -31,7 +31,8 @@ if((typeof module) !== 'undefined') {
         Frac = core.Frac,
         isInt = core.Utils.isInt,
         Symbol = core.Symbol,
-        CONST_HASH = core.Settings.CONST_HASH;
+        CONST_HASH = core.Settings.CONST_HASH,
+        math = core.Utils.importFunctions();
 
     //*************** CLASSES ***************//
     /**
@@ -657,6 +658,25 @@ if((typeof module) !== 'undefined') {
      */
     Factors.prototype.count = function() {
         return keys(this.factors).length;
+    };
+    /**
+     * Cleans up factors from -1
+     * @returns {undefined}
+     */
+    Factors.prototype.clean = function() {
+        try {
+            var h = core.Settings.CONST_HASH;
+            if(this.factors[h].lessThan(0)) {
+                if(this.factors[h].equals(-1))
+                    delete this.factors[h];
+                else
+                    this.factors[h].negate();
+                this.each(function(x) {
+                    x.negate();
+                });
+            }
+        }
+        catch(e){};
     };
     Factors.prototype.toString = function() {
         return this.toSymbol().toString();
@@ -1977,6 +1997,20 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             factor: function(symbol, factors) {
+                //expand the symbol to get it in a predictable form. If this step
+                //is skipped some factors are missed.
+                
+                if(symbol.group === CP) {
+                    var t = new Symbol(0);
+                    symbol.each(function(x) {
+                        if((x.group === CP && x.power.greaterThan(1) || x.group === CB))
+                            x = _.expand(x);
+                        t = _.add(t, x);
+                    });
+                    t.power = symbol.power;
+                    symbol = t;
+                }
+                
                 if(symbol.group === FN && symbol.fname !== 'sqrt')
                     symbol = core.Utils.evaluate(symbol);
                 
@@ -2041,7 +2075,7 @@ if((typeof module) !== 'undefined') {
                         
                         symbol = __.Factor.coeffFactor(symbol, factors);
                         //factor the power
-                        symbol = __.Factor.powerFactor(symbol, factors);
+                        symbol = __.Factor.powerFactor(symbol, factors);       
                         if(vars.length === 1) { 
                             symbol = __.Factor.squareFree(symbol, factors);
                             var t_factors = new Factors();
@@ -2058,6 +2092,7 @@ if((typeof module) !== 'undefined') {
 
                         factors.add(_.pow(symbol, _.parse(p)));
                         
+                        factors.clean();
                         return factors.toSymbol();
 
                         //compare the inval and outval and they must be the same or else we failed
@@ -2305,7 +2340,66 @@ if((typeof module) !== 'undefined') {
                         while(is_factor)
                     }
                 }
-                    
+
+                return symbol;
+            },
+            //difference of squares factorization
+            sqdiff: function(symbol, factors) { 
+                try {
+                    var remove_square = function(x) {
+                        return core.Utils.block('POSITIVE_MULTIPLIERS', function() {
+                            return Symbol.unwrapPARENS(math.sqrt(math.abs(x)));
+                        }, true);
+                    }; 
+                    var separated = core.Utils.separate(symbol.clone());
+                    var obj_array = [];
+                    //get the unique variables
+                    for(var x in separated) {
+                        if(x !== 'constants') {
+                            obj_array.push(separated[x]);
+                        }
+                    }
+                    obj_array.sort(function(a, b) {
+                        return b.power - a.power;
+                    });
+
+                    //if we have the same number of variables as unique variables then we can apply the difference of squares
+                    if(obj_array.length === 2) { 
+                        var a, b;
+                        a = obj_array.pop();
+                        b = obj_array.pop();
+                        if(a.isComposite() && b.power.equals(2)) {
+                            //remove the square from b
+                            b = remove_square(b);
+                            var f = __.Factor.factor(_.add(a, separated.constants));
+                            if(f.power.equals(2)) {
+                                f.toLinear();
+                                factors.add(_.subtract(f.clone(), b.clone()));
+                                factors.add(_.add(f, b));
+                                symbol = new Symbol(1);
+                            }
+                        }
+                        else {
+                            a = a.powSimp();
+                            b = b.powSimp();
+                            
+                            if((a.group === S || a.fname === '') && a.power.equals(2) && (b.group === S || b.fname === '') && b.power.equals(2)) {
+                                if(a.multiplier.lessThan(0)) {
+                                    var t = b; b = a; a = t;
+                                }
+                                if(a.multiplier.greaterThan(0)) {
+                                    a = remove_square(a);
+                                    b = remove_square(b);
+                                }
+                                factors.add(_.subtract(a.clone(), b.clone()));
+                                factors.add(_.add(a, b));
+                                symbol = new Symbol(1);
+                            }
+                        }
+                    }
+                }
+                catch(e){;}
+                
                 return symbol;
             },
             //factoring for multivariate
@@ -2326,6 +2420,7 @@ if((typeof module) !== 'undefined') {
                 else { 
                     //symbol = __.Factor.common(symbol, factors);
                     symbol = __.Factor.mSqfrFactor(symbol, factors);
+                    
                     var vars = variables(symbol),
                         symbols = symbol.collectSymbols().map(function(x) {
                             return Symbol.unwrapSQRT(x);
@@ -2352,29 +2447,37 @@ if((typeof module) !== 'undefined') {
                         var r = _.parse(x+'^'+maxes[x]); 
                         var div = _.divide(sorted[x], r);
                         var new_factor = _.expand(div); 
+                        
+                        if(new_factor.equals(1))
+                            break; //why divide by one. Just move 
                         var divided = __.div(symbol.clone(), new_factor); 
-                        if(divided[0].equals(0)) { //cant factor anymore
-                            //factors.add(divided[1]);
-                            return divided[1];
+                        if(divided[0].equals(0)) { 
+                            //cant factor anymore
+                            break;
                         }
                         
-                        if(divided[1].equals(0)) { //we found at least one factor
+                        var neg_numeric_factor = isInt(new_factor) && new_factor.lessThan(0);
+                        
+                        if(divided[1].equals(0) && !neg_numeric_factor) { //we found at least one factor
                             //factors.add(new_factor);
                             var d = __.div(symbol.clone(), divided[0].clone());
                             var r = d[0];
+                            symbol = d[1];
                             //we don't want to just flip the sign. If the remainder is -1 then we accomplished nothing
                             //and we just return the symbol;
                             if(r.equals(-1))
                                 return symbol;
+                            
                             var factor = divided[0]; 
                             if(symbol.equals(factor)) {
                                 var rem = __.Factor.reduce(factor, factors);
                                 if(!symbol.equals(rem)) 
                                     return __.Factor.mfactor(rem, factors);
                             }
-                            else
+                            else 
                                 factors.add(factor); 
-                            if(r.isConstant()) { 
+                            
+                            if(r.isConstant('all')) { 
                                 factors.add(r);
                                 return r;
                             }
@@ -2384,7 +2487,11 @@ if((typeof module) !== 'undefined') {
                     }
                 }
                 
+                //difference of squares factorization
+                symbol = __.Factor.sqdiff(symbol, factors);
+                //factors by fishing for zeroes
                 symbol = __.Factor.zeroes(symbol, factors);
+                
                 return symbol;
             }
         },
@@ -2518,27 +2625,6 @@ if((typeof module) !== 'undefined') {
             return _.add(result[0], remainder);
         },
         div: function(symbol1, symbol2) {
-//            
-//            if(!symbol1.isComposite() && !symbol2.isComposite()) {
-//                var t = 'symbol1: '+symbol1+'     symbol2: '+symbol2;
-//                var r = _.divide(symbol1.clone(), symbol2.clone());
-//                console.log(r.toString(), t)
-//                if(r.isConstant())
-//                    return [r, new Symbol(0)];
-//                return [new Symbol(0), symbol1];
-//            }
-//            if(symbol1.isComposite() && !symbol2.isComposite()) {
-//                console.log('symbol1: '+symbol1+'     symbol2: '+symbol2, 'TWO')
-//                var rem = new Symbol(0),
-//                    q = new Symbol(0);
-//                symbol1.each(function(x) {
-//                    var r = __.div(x, symbol2.clone());
-//                    q = _.add(q, r[0]);
-//                    rem = _.add(rem, r[1]);
-//                });
-//                console.log([q, rem].toString())
-//                return [q, rem];
-//            }
             //division by constants
             if(symbol2.isConstant()) {
                 symbol1.each(function(x) { 

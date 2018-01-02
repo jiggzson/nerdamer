@@ -291,6 +291,18 @@ describe('Algebra', function () {
                 expected: '(1+x)^2'
             }, 
             {
+                given: 'factor(x^2-y^2)',
+                expected: '(-y+x)*(x+y)'
+            }, 
+            {
+                given: 'factor(a^2*x^2-b^2*y^2)',
+                expected: '(-b*y+a*x)*(a*x+b*y)'
+            }, 
+            {
+                given: 'factor(x^2-6*x+9-4*y^2)',
+                expected: '(-2*y-3+x)*(-3+2*y+x)'
+            }, 
+            {
                 given: 'factor(b^6+3*a^2*b^4+3*a^4*b^2+a^6)',
                 expected: '(a^2+b^2)^3'
             }, 
