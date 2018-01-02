@@ -150,19 +150,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         return retval;
     };
 
-    //removes parentheses
-    Symbol.unwrapPARENS = function(symbol) {
-        if(symbol.fname === '') {
-            var r = symbol.args[0];
-            r.power = r.power.multiply(symbol.power);
-            r.multiplier = r.multiplier.multiply(symbol.multiplier);
-            if(symbol.fname === '')
-                return Symbol.unwrapPARENS(r);
-            return r;
-        }
-        return symbol;
-    };
-    
     core.Expression.prototype.hasIntegral = function() {
         return this.symbol.hasIntegral();
     };

@@ -590,6 +590,20 @@ if((typeof module) !== 'undefined') {
         return grouped;
     };
     /**
+     * Use this to collect Factors
+     * @returns {Symbol[]}
+     */
+    Symbol.prototype.collectFactors = function() {
+        var factors = [];
+        if(this.group === CB)
+            this.each(function(x) {
+               factors.push(x.clone());
+            });
+        else
+            factors.push(this.clone());
+        return factors;
+    };
+    /**
      * A container class for factors
      * @returns {Factors}
      */
@@ -634,7 +648,10 @@ if((typeof module) !== 'undefined') {
     Factors.prototype.toSymbol = function() {
         var factored = new Symbol(1);
         for(var x in this.factors) {
-            var factor = this.factors[x].power.equals(1) ? 
+            var f = this.factors[x],
+                g = f.group;
+            //don't wrap group S or FN
+            var factor = f.power.equals(1)? 
                 _.symfunction(core.PARENTHESIS, [this.factors[x]]) : this. factors[x];
             factored = _.multiply(factored, factor);
         }
@@ -2920,53 +2937,78 @@ if((typeof module) !== 'undefined') {
                 b = _.multiply(v1.e(1).clone(),m);
             return _.add(_.subtract(a, b), v1.e(2).clone());
         },
-        partfrac: function(symbol, x, asArray) {
-            try {
-                var num, den, factors, factor_arr, nterms, dterms, max, M, c, r, div;
-                num = _.expand(symbol.getNum());
-                den = symbol.getDenom(true);
-                //trial division since it's faster than checking if to is greater
-                div = __.div(num, den);
-                r = div[0]; //remove the wholes
-                num = div[1]; //work with the remainder
-                //first factor the denominator. This means that the strength of this
-                //algorithm depends on how well we can factor the denominator. 
-                factors = __.Factor.factor(den);
-                //create a container for the denominator terms
-                dterms = [];
-                //we only have a meaningful change if n factors > 1. This means that
-                //the returned group will be a CB
-                if(factors.group === CB && factors.power.equals(1) && factors.length > 1 || factors.isComposite() && factors.power.greaterThan(1)) {
-                    //collect the terms wrt the x
-                    nterms = num.groupTerms(x);
-                    //assume the max to be length of the c vector
-                    max = nterms.length;
-                    //set the length to the longest possible length
-                    var check_length = function(t) {
-                        if(t.length > max)
-                                max = t.length;
-                    };
-                    //create a location for the factors
-                    factor_arr = [];
-                    if(factors.group === CB)
-                        factors.each(function(e) {
-                            factor_arr.push(e);
-                            var t = Symbol.unwrapPARENS(e).groupTerms(x);
-                            check_length(t);
-                            dterms.push(t);
-                        });
-                    else {
-                        var f = factors.clone().toLinear();
-                        //Place in the form P^0, P^1 , ..., P^n where p is a polynomial
-                        for(var i=0, l=Number(factors.power); i<l; i++) { 
-                            var factor = _.expand(_.parse(core.Utils.inBrackets(f)+'^'+i));
-                            factor_arr.push(_.parse(core.Utils.inBrackets(f)+'^'+(i+1)));
-                            var t = factor.groupTerms(x);
-                            check_length(t);
-                            dterms.push(t);
+        PartFrac: {
+            createTemplate: function(den, denom_factors, f_array) {
+                //clean up the denominator function by factors so it reduces nicely
+                den = __.Factor.factor(den);
+                var factors, factors_vec;
+                factors = denom_factors.collectFactors();
+                factors_vec = []; //a vector for the template
+
+                for(var i=0; i<factors.length; i++) { //loop through the factors
+                    var factor = Symbol.unwrapPARENS(factors[i]);
+                    //if in he for P^n where P is polynomial and n = integer
+                    if(factor.power.greaterThan(1)) { 
+                        var p = Number(factor.power),
+                            f = factor.clone().toLinear(); //remove the power so we have only the function
+                        //expand the factor
+                        for(var j=0; j<p; j++){
+                            var efactor = _.pow(f.clone(), new Symbol(j+1));
+                            f_array.push(efactor.clone());
+                            var d = _.divide(den.clone(), efactor.clone());
+                            factors_vec.push(_.expand(Symbol.unwrapPARENS(d)));
                         }
                     }
-                    
+                    else {
+                        f_array.push(factor.clone());
+                        var d = _.divide(den.clone(), factor.clone());
+                        factors_vec.push(_.expand(Symbol.unwrapPARENS(d)));
+                    }
+                }
+                return [f_array, factors_vec];
+            },
+            partfrac: function(symbol, v, asArray) {
+                var vars = variables(symbol);
+                v = v || _.parse(vars[0]); //make wrt optional and assume first variable
+                if(vars.length > 1)
+                    return symbol.clone(); //currently only does univariate
+                try {
+                    var num, den, factors, ofactors, factor_arr, nterms, 
+                        dterms, max, M, c, powers, div, r, factors_vec;
+                    num = _.expand(symbol.getNum());
+                    den = symbol.getDenom(true);
+                    //trial division since it's faster than checking if to is greater
+                    div = __.div(num, den);
+                    r = div[0]; //remove the wholes
+                    num = div[1]; //work with the remainder
+                    //first factor the denominator. This means that the strength of this
+                    //algorithm depends on how well we can factor the denominator. 
+                    ofactors = __.Factor.factor(den);
+                    //create the template. This method will create the template for solving 
+                    //the partial fractions. So given x/(x-1)^2 the template creates A/(x-1)+B/(x-1)^2
+                    var template = __.PartFrac.createTemplate(den.clone(), ofactors, []);
+                    factors = template[0].reverse();
+                    factors_vec = template[1];
+
+                    //we only have a meaningful change if n factors > 1. This means that
+                    //the returned group will be a CB
+                    //collect the terms wrt the x
+                    nterms = num.groupTerms(v);
+                    //make note of the powers of each term
+                    powers = [nterms.length];
+
+                    //create the array vector and matrix to solve for A, B, C, ...
+                    //Place in the form P^0, P^1 , ..., P^n where p is a polynomial
+                    dterms = factors_vec.map(function(x) {
+                        var t = x.groupTerms(v);
+                        //make a note of the power which corresponds to the length of the array
+                        powers.push(t.length); 
+                        return t;
+                    });
+
+                    //get the max power
+                    max = core.Utils.arrayMax(powers);
+
                     //fill the holes and create a matrix
                     c = new core.Matrix(core.Utils.fillHoles(nterms, max)).transpose();
                     //for each of the factors we do the same
@@ -2974,28 +3016,28 @@ if((typeof module) !== 'undefined') {
                     for(var i=0; i<dterms.length; i++) {
                         M.elements.push(core.Utils.fillHoles(dterms[i], max));
                     }
-
                     var partials = _.multiply(M.transpose().invert(), c);
                     //the results are backwards to reverse it
                     partials.elements.reverse();
                     //convert it all back
                     var retval = asArray ? [] : new Symbol(0);
                     partials.each(function(e, i) {
-                        var term = _.divide(e, factor_arr[i]);
+                        var term = _.divide(e, factors[i]);
                         if(asArray)
                             retval.push(term);
                         else 
                             retval = _.add(retval, term);
                     });
-                    
+
                     //done
                     return retval;
                 }
+                catch(e){};
+
+                return symbol;
             }
-            catch(e){console.log(e)};
-            
-            return symbol;
         },
+            
         Classes: {
             Polynomial: Polynomial,
             Factors: Factors,
@@ -3074,8 +3116,8 @@ if((typeof module) !== 'undefined') {
         {
             name: 'partfrac',
             visible: true,
-            numargs: 2,
-            build: function() { return __.partfrac; }
+            numargs: [1,2],
+            build: function() { return __.PartFrac.partfrac; }
         },
         {
             name: 'coeffs',

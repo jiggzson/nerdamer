@@ -350,7 +350,8 @@ describe('Algebra', function () {
         var testCases = [
             {
                 given: 'partfrac((3*x+2)/(x^2+x), x)',
-                expected: '(1+x)^(-1)+2*(x)^(-1)'
+                //expected: '(1+x)^(-1)+2*(x)^(-1)' //old output
+                expected: '(1+x)^(-1)+2*x^(-1)'
             }, 
             {
                 given: 'partfrac((17*x-53)/(x^2-2*x-15), x)',
@@ -359,6 +360,14 @@ describe('Algebra', function () {
             {
                 given: 'partfrac((x^3+2)/(x+1)^2,x)',
                 expected: '(1+x)^(-2)+3*(1+x)^(-1)'
+            }, 
+            {
+                given: 'partfrac(x/(x-1)^2, x)',
+                expected: '(-1+x)^(-1)+(-1+x)^(-2)'
+            }, 
+            {
+                given: 'partfrac((x^2+1)/(x*(x-1)^3), x)',
+                expected: '(-1+x)^(-2)+2*(-1+x)^(-3)-x^(-1)'
             }, 
         ];
 

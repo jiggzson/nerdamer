@@ -2050,6 +2050,20 @@ var nerdamer = (function(imports) {
             
         return symbol;
     };
+    
+    //removes parentheses
+    Symbol.unwrapPARENS = function(symbol) {
+        if(symbol.fname === '') {
+            var r = symbol.args[0];
+            r.power = r.power.multiply(symbol.power);
+            r.multiplier = r.multiplier.multiply(symbol.multiplier);
+            if(symbol.fname === '')
+                return Symbol.unwrapPARENS(r);
+            return r;
+        }
+        return symbol;
+    };
+    
     Symbol.prototype = {
         //returns a clone.
         powSimp: function() {
@@ -5154,26 +5168,40 @@ var nerdamer = (function(imports) {
                 }
                 symbol = _.parse(symbol);
 
-                if(isInt(p) && pn > 0 && symbol.isComposite()) { 
-                    //leave original untouched
-                    symbol = symbol.toLinear().toUnitMultiplier();
-                    var result = symbol.clone();
-
-                    for(var i=0; i<pn-1; i++) {
-                        var t = new Symbol(0); 
-                        for(var s in symbol.symbols) {
-                            var x = symbol.symbols[s];
-                            for(var s2 in result.symbols) {
-                                var y = result.symbols[s2];
-                                var r = _.expand(_.multiply(x.clone(), y.clone())),
-                                    rp = Number(r.power);
-                                if(r.group === CB && rp !== 1 || r.group === PL && rp !== 1) r = expand(r);
-                                t = _.add(t, r);
-                            }
-                        }
-                        result = t;
+                if(isInt(pn) && pn > 0 && symbol.isComposite()) { 
+                    var f = new Symbol(0);
+                    //we loop through the f and make sure that it's fully expanded
+                    for(var x in symbol.symbols) {
+                        var sym = symbol.symbols[x];
+                        if(sym.power.greaterThan(1)) 
+                            sym = _.expand(sym);
+                        f = _.add(f, sym);
                     }
 
+                    //assume (a+b)^3 = (a+b)(a+b)(a+b) = (b^2+2*a*b+a^2)(a+b)
+                    //we have n=p-1=2 iterations where p=3 in this case
+                    var n = pn-1;
+                    //Initiate with the first term. Remember that we have p-1 iterations because
+                    //the first iteration is equal to P where p is the polynomial
+                    var result = f.clone(); //initiate this as the first term
+                    //the first loop is the top iterator and remains untouched. No sub-symbols
+                    //from this symbol are allowed to be touched
+                    for(var i=0; i<n; i++) {
+                        var t = new Symbol(0);
+                        for(var x in f.symbols) {
+                            var a = f.symbols[x];
+                            //we now loop through the 
+                            for(var y in result.symbols) {
+                                var b = _.multiply(a.clone(), result.symbols[y]);
+                                //the result must always be a composite. If not expand
+                                if(b.group === CB)
+                                    b = _.expand(b);
+                                t = _.add(t, b);
+                            }
+                        };
+                        result = t;
+                    }
+                        
                     //put back the multiplier
                     if(!m.equals(1)) {
                         for(var s in result.symbols) {
