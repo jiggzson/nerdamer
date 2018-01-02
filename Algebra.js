@@ -573,6 +573,23 @@ if((typeof module) !== 'undefined') {
         return true;
     };
     /**
+     * Groups the terms in a symbol with respect to a variable
+     * For instance the symbol {a*b^2*x^2+a*b*x^2+x+6} returns [6,1,a*b+a*b^2]
+     * @returns {Factors}
+     */
+    Symbol.prototype.groupTerms = function(x) {
+        x = String(x);
+        var f, p;
+        var grouped = [];
+        this.each(function(e) {
+            f = core.Utils.decompose_fn(e, x, true);
+            p = f.x.value === x ? Number(f.x.power) : 0;
+            //check if there's an existing value
+            grouped[p] = _.add(grouped[p] || new Symbol(0), f.a);
+        });
+        return grouped;
+    };
+    /**
      * A container class for factors
      * @returns {Factors}
      */
@@ -2072,7 +2089,6 @@ if((typeof module) !== 'undefined') {
                                 return _.pow(symbol, _.parse(p));
                         }
                         //factor the coefficients
-                        
                         symbol = __.Factor.coeffFactor(symbol, factors);
                         //factor the power
                         symbol = __.Factor.powerFactor(symbol, factors);       
@@ -2083,26 +2099,17 @@ if((typeof module) !== 'undefined') {
                             for(var x in t_factors.factors) {
                                 factors.add(_.pow(t_factors.factors[x], _.parse(p)));
                             }
-                            
                         }
                         else {
                             symbol = __.Factor.mfactor(symbol, factors);
                         }
+                        
                         symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
 
                         factors.add(_.pow(symbol, _.parse(p)));
-                        
+                        //last minute clean up
                         factors.clean();
                         return factors.toSymbol();
-
-                        //compare the inval and outval and they must be the same or else we failed
-                        /*
-                        if(multiVar && !core.Utils.compare(original, retval, vars)) { 
-                            return original;                   
-                        }
-                        */
-
-                        //return _.pow(retval, _.parse(p));
                     }
                     
                     return symbol;    
@@ -2913,17 +2920,82 @@ if((typeof module) !== 'undefined') {
                 b = _.multiply(v1.e(1).clone(),m);
             return _.add(_.subtract(a, b), v1.e(2).clone());
         },
-        partfrac: function(symbol, x) {
-            var num, den, num_max, den_max;
-            num = symbol.getNum();
-            den = symbol.getDenom().toLinear(true);
-            num_max = core.Utils.arrayMax(__.polyPowers(num, x.toString()));
-            den_max = core.Utils.arrayMax(__.polyPowers(den, x.toString()));
-            if(num_max > den_max) {
-                var div = __.div(num.clone(), den.clone());
-            }
-        },
+        partfrac: function(symbol, x, asArray) {
+            try {
+                var num, den, factors, factor_arr, nterms, dterms, max, M, c, r, div;
+                num = _.expand(symbol.getNum());
+                den = symbol.getDenom(true);
+                //trial division since it's faster than checking if to is greater
+                div = __.div(num, den);
+                r = div[0]; //remove the wholes
+                num = div[1]; //work with the remainder
+                //first factor the denominator. This means that the strength of this
+                //algorithm depends on how well we can factor the denominator. 
+                factors = __.Factor.factor(den);
+                //create a container for the denominator terms
+                dterms = [];
+                //we only have a meaningful change if n factors > 1. This means that
+                //the returned group will be a CB
+                if(factors.group === CB && factors.power.equals(1) && factors.length > 1 || factors.isComposite() && factors.power.greaterThan(1)) {
+                    //collect the terms wrt the x
+                    nterms = num.groupTerms(x);
+                    //assume the max to be length of the c vector
+                    max = nterms.length;
+                    //set the length to the longest possible length
+                    var check_length = function(t) {
+                        if(t.length > max)
+                                max = t.length;
+                    };
+                    //create a location for the factors
+                    factor_arr = [];
+                    if(factors.group === CB)
+                        factors.each(function(e) {
+                            factor_arr.push(e);
+                            var t = Symbol.unwrapPARENS(e).groupTerms(x);
+                            check_length(t);
+                            dterms.push(t);
+                        });
+                    else {
+                        var f = factors.clone().toLinear();
+                        //Place in the form P^0, P^1 , ..., P^n where p is a polynomial
+                        for(var i=0, l=Number(factors.power); i<l; i++) { 
+                            var factor = _.expand(_.parse(core.Utils.inBrackets(f)+'^'+i));
+                            factor_arr.push(_.parse(core.Utils.inBrackets(f)+'^'+(i+1)));
+                            var t = factor.groupTerms(x);
+                            check_length(t);
+                            dterms.push(t);
+                        }
+                    }
+                    
+                    //fill the holes and create a matrix
+                    c = new core.Matrix(core.Utils.fillHoles(nterms, max)).transpose();
+                    //for each of the factors we do the same
+                    M = new core.Matrix();
+                    for(var i=0; i<dterms.length; i++) {
+                        M.elements.push(core.Utils.fillHoles(dterms[i], max));
+                    }
 
+                    var partials = _.multiply(M.transpose().invert(), c);
+                    //the results are backwards to reverse it
+                    partials.elements.reverse();
+                    //convert it all back
+                    var retval = asArray ? [] : new Symbol(0);
+                    partials.each(function(e, i) {
+                        var term = _.divide(e, factor_arr[i]);
+                        if(asArray)
+                            retval.push(term);
+                        else 
+                            retval = _.add(retval, term);
+                    });
+                    
+                    //done
+                    return retval;
+                }
+            }
+            catch(e){console.log(e)};
+            
+            return symbol;
+        },
         Classes: {
             Polynomial: Polynomial,
             Factors: Factors,
@@ -2998,6 +3070,12 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: 2,
             build: function() { return __.div; }
+        },
+        {
+            name: 'partfrac',
+            visible: true,
+            numargs: 2,
+            build: function() { return __.partfrac; }
         },
         {
             name: 'coeffs',

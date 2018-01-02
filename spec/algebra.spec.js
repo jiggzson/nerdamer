@@ -345,6 +345,32 @@ describe('Algebra', function () {
         }
     });
     
+    it('should correctly peform partial fraction decomposition', function () {
+        // given
+        var testCases = [
+            {
+                given: 'partfrac((3*x+2)/(x^2+x), x)',
+                expected: '(1+x)^(-1)+2*(x)^(-1)'
+            }, 
+            {
+                given: 'partfrac((17*x-53)/(x^2-2*x-15), x)',
+                expected: '13*(3+x)^(-1)+4*(-5+x)^(-1)'
+            }, 
+            {
+                given: 'partfrac((x^3+2)/(x+1)^2,x)',
+                expected: '(1+x)^(-2)+3*(1+x)^(-1)'
+            }, 
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var result = nerdamer(testCases[i].given);
+
+            // then
+            expect(result.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
     it('should prime factor correctly', function () {
         // given
         var testCases = [

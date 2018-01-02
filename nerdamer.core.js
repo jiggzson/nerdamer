@@ -273,6 +273,7 @@ var nerdamer = (function(imports) {
          * e.g. x+y+x*y+sqrt(2)+pi returns 
          * {x: x, y: y, x y: x*y, constants: sqrt(2)+pi
          * @param {type} symbol
+         * @param {type} o
          * @returns {undefined}
          * @throws {Error} for expontentials
          */
@@ -302,6 +303,17 @@ var nerdamer = (function(imports) {
             });
             
             return o;
+        },
+        
+        //fills holes in an array with zero symbol
+        fillHoles = Utils.fillHoles = function(arr, n) {
+            n = n || arr.length;
+            for(var i=0; i<n; i++) {
+                var sym = arr[i];
+                if(!sym)
+                    arr[i] = new Symbol(0);
+            }
+            return arr;
         },
         
         /**
