@@ -7808,3 +7808,7 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+nerdamer.setVar('M', 'matrix([x,y],[a,b])');
+var M2 = nerdamer('matsetcol(M, 0, [[1],[2]])');
+console.log(M2.toString())

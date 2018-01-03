@@ -1070,25 +1070,6 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
-    acot: {
-        type: 'internal',
-        usage: 'acoth(x)',
-        full_name: 'hyperbolic arccotangent',
-        description: 'Returns the inverse of hyperbolic cot in radians. ',
-        parameters: {
-            x: {
-                type: 'expression',
-                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
-            }
-        },
-        examples: [
-            "var r = nerdamer('acoth(0)');", 
-            "console.log(r.toString());",
-            "var t = nerdamer('acot(e)').evaluate()", 
-            "console.log(t.toString());"
-        ],
-        returns: 'Expression'
-    },
     atan: {
         type: 'internal',
         usage: 'atan(x)',
@@ -1889,6 +1870,102 @@ FUNCTIONS = {
         ],
         returns: 'Matrix'
     },
+    matgetcol: {
+        type: 'internal',
+        usage: 'matgetcol(M, i)',
+        full_name: 'matrix get column',
+        description: 'Gets a column of a matrix. Returns a new vector.',
+        parameters: {
+            M: {
+                type: 'expression',
+                description: "a matrix from which the column is being retrieved."
+            },
+            i: {
+                type: 'expression',
+                description: "the zero based column index"
+            }
+        },
+        examples: [
+            "nerdamer.setVar('M', 'matrix([x,y],[a,b])');",
+            "var x = nerdamer('matgetcol(M, 0)');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Matrix'
+    },
+    matgetrow: {
+        type: 'internal',
+        usage: 'matgetrow(M, i)',
+        full_name: 'matrix get row',
+        description: 'Gets a row of a matrix. Returns a new vector.',
+        parameters: {
+            M: {
+                type: 'expression',
+                description: "a matrix from which the row is being retrieved."
+            },
+            i: {
+                type: 'expression',
+                description: "the zero based row index"
+            }
+        },
+        examples: [
+            "nerdamer.setVar('M', 'matrix([x,y],[a,b])');",
+            "var x = nerdamer('matgetrowl(M, 0)');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Matrix'
+    },
+    matsetcol: {
+        type: 'internal',
+        usage: 'matsetcol(M, i, col)',
+        full_name: 'matrix set column',
+        description: 'Sets a column of a matrix. Returns a new matrix.',
+        parameters: {
+            M: {
+                type: 'expression',
+                description: "a matrix for which the column is being set."
+            },
+            i: {
+                type: 'expression',
+                description: "the zero based column index"
+            },
+            col: {
+                type: 'vector',
+                description: 'the vector representation of the column'
+            }
+        },
+        examples: [
+            "nerdamer.setVar('M', 'matrix([x,y],[a,b])');",
+            "var M2 = nerdamer('matsetcol(M, 0, [[1],[2]])');",
+            "console.log(M2.toString());"
+        ],
+        returns: 'Matrix'
+    },
+    matsetrow: {
+        type: 'internal',
+        usage: 'matsetrow(M, i, row)',
+        full_name: 'matrix set row',
+        description: 'Sets a row of a matrix. Returns a new matrix.',
+        parameters: {
+            M: {
+                type: 'expression',
+                description: "a matrix for which the row is being set."
+            },
+            i: {
+                type: 'expression',
+                description: "the zero based row index"
+            },
+            row: {
+                type: 'vector',
+                description: 'the vector representation of the row'
+            }
+        },
+        examples: [
+            "nerdamer.setVar('M', 'matrix([x,y],[a,b])');",
+            "var M2 = nerdamer('matsetrow(M, 0, [1, 2])');",
+            "console.log(M2.toString());"
+        ],
+        returns: 'Matrix'
+    },
     transpose: {
         type: 'internal',
         usage: 'transpose(M)',
@@ -2001,6 +2078,29 @@ FUNCTIONS = {
             "coeffs = nerdamer.coeffs('a*x+b/x^2', 'x');",
             "var p = nerdamer('vecget(coeffs(7*x^2+3*x+11, x), 2)');",
             "console.log(p.toString());"
+        ],
+        returns: 'Vector'
+    },
+    Algebra__partfrac: {
+        type: 'internal',
+        usage: 'partfrac(expression, x)',
+        full_name: 'partial fractions',
+        description: 'Performs partial fraction decomposition',
+        parameters: {
+            expression: {
+                type: 'expression',
+                description: "The expression for which the partrial fractions are to be found."
+            },
+            x: {
+                type: 'expression',
+                description: "The variable for which the partial fractions are to be found."
+            }
+        },
+        examples: [
+            "var x = nerdamer('partfrac((x^2+a)/(x*(x-1)^3), x)');",
+            "console.log(x.toString())",
+            "var y = nerdamer('partfrac(1/(x^6+x^5),x)');",
+            "console.log(y.toString());"
         ],
         returns: 'Vector'
     },

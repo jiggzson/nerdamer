@@ -91,14 +91,14 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>acot</h1>
+                    <h1>matsetrow</h1>
                     <hr>
-                    <h3 class="text-capitalize">arccotangent</h3>
+                    <h3 class="text-capitalize">matrix set row</h3>
                     <div>
-                        Returns the inverse of cot in radians. 
+                        Sets a row of a matrix. Returns a new matrix.
                     </div>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("acot(x)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("matsetrow(M, i, row)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -106,9 +106,21 @@
                             <tr>
     <td>
         <span class="parameter-type">expression </span>
-        <span class="parameter-name">x </span>
+        <span class="parameter-name">M </span>
     </td>
-    <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
+    <td><span class="parameter-description">a matrix for which the row is being set.</span></td>
+</tr><tr>
+    <td>
+        <span class="parameter-type">expression </span>
+        <span class="parameter-name">i </span>
+    </td>
+    <td><span class="parameter-description">the zero based row index</span></td>
+</tr><tr>
+    <td>
+        <span class="parameter-type">vector </span>
+        <span class="parameter-name">row </span>
+    </td>
+    <td><span class="parameter-description">the vector representation of the row</span></td>
 </tr>
                         </table>
                     </div>
@@ -116,10 +128,9 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var r = nerdamer('acot(0)');
-console.log(r.toString());
-var t = nerdamer('acot(-1)')
-console.log(t.toString());</code></pre>
+                    <pre><code class="javascript">nerdamer.setVar('M', 'matrix([x,y],[a,b])');
+var M2 = nerdamer('matsetrow(M, 0, [1, 2])');
+console.log(M2.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -171,10 +182,9 @@ console.log(t.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var r = nerdamer('acot(0)');
-oprint(r.toString());
-var t = nerdamer('acot(-1)')
-oprint(t.toString());
+                nerdamer.setVar('M', 'matrix([x,y],[a,b])');
+var M2 = nerdamer('matsetrow(M, 0, [1, 2])');
+oprint(M2.toString());
             }
             catch(e) {
                 oprint(e.toString());

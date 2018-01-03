@@ -91,14 +91,14 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>acot</h1>
+                    <h1>partfrac</h1>
                     <hr>
-                    <h3 class="text-capitalize">arccotangent</h3>
+                    <h3 class="text-capitalize">partial fractions</h3>
                     <div>
-                        Returns the inverse of cot in radians. 
+                        Performs partial fraction decomposition
                     </div>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("acot(x)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("partfrac(expression, x)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -106,9 +106,15 @@
                             <tr>
     <td>
         <span class="parameter-type">expression </span>
+        <span class="parameter-name">expression </span>
+    </td>
+    <td><span class="parameter-description">The expression for which the partrial fractions are to be found.</span></td>
+</tr><tr>
+    <td>
+        <span class="parameter-type">expression </span>
         <span class="parameter-name">x </span>
     </td>
-    <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
+    <td><span class="parameter-description">The variable for which the partial fractions are to be found.</span></td>
 </tr>
                         </table>
                     </div>
@@ -116,10 +122,10 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var r = nerdamer('acot(0)');
-console.log(r.toString());
-var t = nerdamer('acot(-1)')
-console.log(t.toString());</code></pre>
+                    <pre><code class="javascript">var x = nerdamer('partfrac((x^2+a)/(x*(x-1)^3), x)');
+console.log(x.toString())
+var y = nerdamer('partfrac(1/(x^6+x^5),x)');
+console.log(y.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -171,10 +177,10 @@ console.log(t.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var r = nerdamer('acot(0)');
-oprint(r.toString());
-var t = nerdamer('acot(-1)')
-oprint(t.toString());
+                var x = nerdamer('partfrac((x^2+a)/(x*(x-1)^3), x)');
+oprint(x.toString())
+var y = nerdamer('partfrac(1/(x^6+x^5),x)');
+oprint(y.toString());
             }
             catch(e) {
                 oprint(e.toString());
