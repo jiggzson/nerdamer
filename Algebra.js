@@ -579,13 +579,23 @@ if((typeof module) !== 'undefined') {
      */
     Symbol.prototype.groupTerms = function(x) {
         x = String(x);
-        var f, p;
+        var f, p, egrouped;
         var grouped = [];
         this.each(function(e) {
-            f = core.Utils.decompose_fn(e, x, true);
-            p = f.x.value === x ? Number(f.x.power) : 0;
-            //check if there's an existing value
-            grouped[p] = _.add(grouped[p] || new Symbol(0), f.a);
+            if(e.group === PL) {
+                egrouped = e.groupTerms(x);
+                for(var i=0; i<egrouped.length; i++) {
+                    var el = egrouped[i];
+                    if(el)
+                        grouped[i] = el;
+                }
+            }
+            else {
+                f = core.Utils.decompose_fn(e, x, true);
+                p = f.x.value === x ? Number(f.x.power) : 0;
+                //check if there's an existing value
+                grouped[p] = _.add(grouped[p] || new Symbol(0), f.a);
+            }   
         });
         return grouped;
     };
@@ -2994,6 +3004,8 @@ if((typeof module) !== 'undefined') {
                         dterms, max, M, c, powers, div, r, factors_vec;
                     num = _.expand(symbol.getNum());
                     den = symbol.getDenom(true);
+                    //move the entire multipier to the numerator
+                    num.multiplier = symbol.multiplier;
                     //we only have a meaningful change if n factors > 1. This means that
                     //the returned group will be a CB
                     //collect the terms wrt the x
@@ -3041,7 +3053,9 @@ if((typeof module) !== 'undefined') {
                     for(var i=0; i<dterms.length; i++) {
                         M.elements.push(core.Utils.fillHoles(dterms[i], max));
                     }
+                    //solve the system of equations
                     var partials = _.multiply(M.transpose().invert(), c);
+
                     //the results are backwards to reverse it
                     partials.elements.reverse();
                     //convert it all back
@@ -3057,7 +3071,7 @@ if((typeof module) !== 'undefined') {
                     //done
                     return retval;
                 }
-                catch(e){console.log(e)};
+                catch(e){;};
 
                 return symbol;
             }
@@ -3166,12 +3180,5 @@ if((typeof module) !== 'undefined') {
     nerdamer.api();
 })();
 
-//partfrac((x^3+2)/(x+1)^2,x)
-//var core = nerdamer.getCore();
-//var _ = core.PARSER;
-//var x = _.parse('(a*x^2+1)');
-//console.log(x.groupTerms('x').toString())
-
-var x = nerdamer('partfrac((3*x^2+1)/(x*(x-1)^3), x)');
-//var x = nerdamer('partfrac((x^2+1)/(x*(x-1)^3), x)');
+var x = nerdamer('partfrac((x^2+1)/(x*(x-1)^3), x)');
 console.log(x.toString())

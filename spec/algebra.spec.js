@@ -359,7 +359,7 @@ describe('Algebra', function () {
             }, 
             {
                 given: 'partfrac((x^3+2)/(x+1)^2,x)',
-                expected: '(1+x)^(-2)+3*(1+x)^(-1)'
+                expected: '(1+x)^(-2)+3*(1+x)^(-1)-2+x'
             }, 
             {
                 given: 'partfrac(x/(x-1)^2, x)',
@@ -367,8 +367,12 @@ describe('Algebra', function () {
             }, 
             {
                 given: 'partfrac((x^2+1)/(x*(x-1)^3), x)',
-                expected: '(-1+x)^(-2)+2*(-1+x)^(-3)-x^(-1)'
+                expected: '(-1+x)^(-1)+2*(-1+x)^(-3)-x^(-1)'
             }, 
+            {
+                given: 'partfrac((17-53)/(x^2-2*x-15), x)',
+                expected: '(-9/2)*(-5+x)^(-1)+(9/2)*(3+x)^(-1)'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
