@@ -138,7 +138,7 @@ describe('Algebra', function () {
                 given:'a^a,a^a',
                 expected_gcd: 'a^a',
                 expected_lcm: 'a^a'
-            },
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
@@ -392,6 +392,18 @@ describe('Algebra', function () {
                 expected: '(1+x)^2'
             }, 
             {
+                given: 'factor(x^2-y^2)',
+                expected: '(-y+x)*(x+y)'
+            }, 
+            {
+                given: 'factor(a^2*x^2-b^2*y^2)',
+                expected: '(-b*y+a*x)*(a*x+b*y)'
+            }, 
+            {
+                given: 'factor(x^2-6*x+9-4*y^2)',
+                expected: '(-2*y-3+x)*(-3+2*y+x)'
+            }, 
+            {
                 given: 'factor(b^6+3*a^2*b^4+3*a^4*b^2+a^6)',
                 expected: '(a^2+b^2)^3'
             }, 
@@ -423,6 +435,41 @@ describe('Algebra', function () {
                 given: 'factor(sqrt(4*x^2*y+4*x^2))',
                 expected: '(2)*(abs(x))*(sqrt(1+y))'
             }
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var result = nerdamer(testCases[i].given);
+
+            // then
+            expect(result.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
+    it('should correctly peform partial fraction decomposition', function () {
+        // given
+        var testCases = [
+            {
+                given: 'partfrac((3*x+2)/(x^2+x), x)',
+                //expected: '(1+x)^(-1)+2*(x)^(-1)' //old output
+                expected: '(1+x)^(-1)+2*x^(-1)'
+            }, 
+            {
+                given: 'partfrac((17*x-53)/(x^2-2*x-15), x)',
+                expected: '13*(3+x)^(-1)+4*(-5+x)^(-1)'
+            }, 
+            {
+                given: 'partfrac((x^3+2)/(x+1)^2,x)',
+                expected: '(1+x)^(-2)+3*(1+x)^(-1)'
+            }, 
+            {
+                given: 'partfrac(x/(x-1)^2, x)',
+                expected: '(-1+x)^(-1)+(-1+x)^(-2)'
+            }, 
+            {
+                given: 'partfrac((x^2+1)/(x*(x-1)^3), x)',
+                expected: '(-1+x)^(-2)+2*(-1+x)^(-3)-x^(-1)'
+            }, 
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

@@ -1,4 +1,4 @@
-/*
+﻿/*
 * Author : Martin Donk
 * Website : http://www.nerdamer.com
 * Email : martin.r.donk@gmail.com
@@ -149,17 +149,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             
         return retval;
     };
-    //removes parentheses
-    Symbol.unwrapPARENS = function(symbol) {
-        if(symbol.group === FN && !symbol.fname) {
-            var r = symbol.args[0];
-            r.power = r.power.multiply(symbol.power);
-            r.multiplier = r.multiplier.multiply(symbol.multiplier);
-            return r;
-        }
-        return symbol;
-    };
-    
+
     core.Expression.prototype.hasIntegral = function() {
         return this.symbol.hasIntegral();
     };
@@ -264,7 +254,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     
     var __ = core.Calculus = {
 
-        version: '1.4.3',
+        version: '1.4.4',
 
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
@@ -459,6 +449,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         case ATAN:
                             symbol = _.parse('(1+('+text(symbol.args[0])+')^2)^(-1)');
                             break;
+                        case 'acot':
+                            symbol = _.parse('-1/(('+symbol.args[0]+')^2+1)');
+                            break;
                         case ABS: 
                             m = symbol.multiplier.clone(); 
                             symbol.toUnitMultiplier();
@@ -491,6 +484,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             // Use a clone if this gives errors
                             symbol = qdiff(symbol, '-tanh');
                             break;
+                        case 'csch': 
+                            var arg = String(symbol.args[0]);
+                            return _.parse('-coth('+arg+')*csch('+arg+')');
+                            break;
                         case 'asinh':
                             symbol = _.parse('(sqrt(1+('+text(symbol.args[0])+')^2))^(-1)');
                             break;
@@ -499,6 +496,17 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             break;
                         case 'atanh':
                             symbol = _.parse('(1-('+text(symbol.args[0])+')^2)^(-1)');
+                            break;
+                        case 'asech':
+                            var arg = String(symbol.args[0]);
+                            symbol = _.parse('-1/(sqrt(1/('+arg+')^2-1)*('+arg+')^2)');
+                            break;
+                        case 'acoth':
+                            symbol = _.parse('-1/(('+symbol.args[0]+')^2-1)');
+                            break;
+                        case 'acsch':
+                            var arg = String(symbol.args[0]);
+                            symbol = _.parse('-1/(sqrt(1/('+arg+')^2+1)*('+arg+')^2)');
                             break;
                         case 'Si':
                             var arg = symbol.args[0];
@@ -520,6 +528,22 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             var arg = symbol.args[0];
                             symbol = _.parse('e^('+arg+')/('+arg+')');
                             break;
+                        case 'erf':
+                            symbol = _.parse('(2*e^(-('+symbol.args[0]+')^2))/sqrt(pi)');
+                            break;
+                        case 'atan2':
+                            var x_ = String(symbol.args[0]),
+                                y_ = String(symbol.args[1]);
+                            symbol = _.parse('('+y_+')/(('+y_+')^2+('+x_+')^2)');
+                            break;
+                        case 'sign':
+                            symbol = new Symbol(0);
+                            break;
+                        case 'log10':
+                            symbol = _.parse('1/(('+symbol.args[0]+')*log(10))');
+                            break;
+                        default:
+                            symbol = _.symfunction('diff', [symbol, wrt]);
                     }
                 }
                 else if(g === EX || g === FN && isSymbol(symbol.power)) { 
@@ -1873,6 +1897,72 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             else 
                 retval = _.symfunction('defint', [symbol, from , to, dx]);
             return retval;
+        },
+        limit: function(symbol, x, c) {
+            //used to evaluate function at limit
+            var evaluate = function(symbol) {
+                try {
+                    return _.parse(symbol.sub(x, c));
+                }
+                catch(e) {
+                    if(e instanceof core.exceptions.UndefinedError)
+                        return undefined;
+                    throw new Error('Stopping!');
+                }
+            };
+            
+            try {
+                var a, b, num, den, retval, safety, f, g;
+                num = symbol.getNum(true);
+                den = symbol.getDenom(true);
+                a = evaluate(num);
+                b = evaluate(den);
+                safety = 10;
+                //Make a copy of the numerator and denominator
+                f = num;
+                g = den;
+                
+                var iter = 0; //Guard against infinite loops
+                //indeterminate. Apply L'Hospital's rule
+                while(typeof a === 'undefined' && typeof b === 'undefined' 
+                        || a.equals(0) && b.equals(0) || a.isInfinty && b.isInfinity) {
+                    if(iter > safety) { 
+                        //we're not going anywhere so one last hail mary
+                        var subs = {};
+                        subs[x] = c;
+                        try {
+                            return core.Utils.block('PARSE2NUMBER', function() {
+                                return _.parse(symbol, subs);
+                            }, true);
+                        }
+                        catch(e){
+                            throw core.exceptions.MaximumIterationsReached();
+                        }    
+                    }
+
+                    f = __.diff(f, x);
+                    g = __.diff(g, x);
+                    a = evaluate(f.clone());
+                    b = evaluate(g.clone());
+                    
+                    iter++;
+                }
+                if(a.isConstant(true) || b.isConstant(true)) {
+                    if(b.equals(0))
+                        retval = Symbol.infinity();
+                    else
+                        retval = _.divide(a, b);
+                }
+                else if(a.isInfinity)
+                    retval = a;
+                else if(b.isInfinity)
+                    retval = b;
+                //console.log(String(a), String(b))
+                return retval;
+            }
+            catch(e) {
+                return _.symfunction('limit', arguments);
+            }   
         }
     };
     
@@ -1906,6 +1996,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             visible: true,
             numargs: [3, 4],
             build: function() { return __.defint; }
+        },
+        {
+            name: 'limit',
+            visible: false,
+            numargs: 3,
+            build: function() { return __.limit; }
         }
     ]);
     //link registered functions externally

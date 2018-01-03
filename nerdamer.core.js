@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Author : Martin Donk
  * Website : http://www.nerdamer.com
  * Email : martin.r.donk@gmail.com
@@ -8,7 +8,7 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.15',
+    var version = '0.7.16',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
@@ -66,6 +66,8 @@ var nerdamer = (function(imports) {
             ALIASES: {
                 'π': 'pi'
             },
+            POSITIVE_MULTIPLIERS: false,
+
             //Cached items
             CACHE: {}
         },
@@ -113,7 +115,7 @@ var nerdamer = (function(imports) {
         //the container used to store all the reserved functions
         RESERVED = [],
 
-        WARNINGS = '',
+        WARNINGS = [],
         
         /**
          * Checks to see if value is one of nerdamer's reserved names
@@ -141,16 +143,24 @@ var nerdamer = (function(imports) {
          * Use this when errors are suppressible
          * @param {String} msg
          */
-        err = function(msg) {
-            if(!Settings.suppress_errors) throw new Error(msg);
+        err = function(msg, ErrorObj) {
+            if(!Settings.suppress_errors) {
+                if(ErrorObj)
+                    throw new ErrorObj(msg);
+                else
+                    throw new Error(msg);
+            }
         },
         
         /**
          * Used to pass warnings or low severity errors about the library
          * @param msg
          */
-        warn = function(msg) {
-            WARNINGS += (msg+'\n');
+        warn = Utils.warn = function(msg) {
+            WARNINGS.push(msg);
+            if(console && console.warn) {
+                console.warn(msg);
+            }
         },
         
         /**
@@ -256,6 +266,54 @@ var nerdamer = (function(imports) {
          */
         isExpression = Utils.isExpression = function(obj) {
             return (obj instanceof Expression);
+        },
+        
+        /**
+         * Separates out the variables into terms of variabls. 
+         * e.g. x+y+x*y+sqrt(2)+pi returns 
+         * {x: x, y: y, x y: x*y, constants: sqrt(2)+pi
+         * @param {type} symbol
+         * @param {type} o
+         * @returns {undefined}
+         * @throws {Error} for expontentials
+         */
+        separate = Utils.separate = function(symbol, o) {
+            symbol = _.expand(symbol);
+            o = o || {};
+            var insert = function(key, sym) {
+                if(!o[key])
+                    o[key] = new Symbol(0);
+                o[key] = _.add(o[key], sym.clone());
+            };
+            symbol.each(function(x) {
+                if(x.isConstant('all')) 
+                    insert('constants', x);
+                else if(x.group === S) {
+                    insert(x.value, x);
+                }
+                else if(x.group === FN && (x.fname === ABS || x.fname === '')) {
+                    separate(x.args[0]);
+                }
+                else if(x.group === EX || x.group === FN) {
+                    throw new Error('Unable to separate. Term cannot be a function!');
+                }
+                else {
+                    insert(variables(x).join(' '), x);
+                }
+            });
+            
+            return o;
+        },
+        
+        //fills holes in an array with zero symbol
+        fillHoles = Utils.fillHoles = function(arr, n) {
+            n = n || arr.length;
+            for(var i=0; i<n; i++) {
+                var sym = arr[i];
+                if(!sym)
+                    arr[i] = new Symbol(0);
+            }
+            return arr;
         },
         
         /**
@@ -386,8 +444,11 @@ var nerdamer = (function(imports) {
          * @param {Object} obj
          * @returns {*}
          */
-        firstObject = Utils.firstObject = function(obj) {
-            for( var x in obj ) break;
+        firstObject = Utils.firstObject = function(obj, key) {
+            for( var x in obj ) 
+                break;
+            if(key)
+                return x;
             return obj[x];
         },
         
@@ -1651,22 +1712,37 @@ var nerdamer = (function(imports) {
                 callback.call(this.symbol);
         },
         eq: function(value) {
-            value = _.parse(value);
-            if(this.symbol.isConstant() && value.isConstant())
-                return this.symbol.equals(_.parse(value));
-            return false;
+            if(!isSymbol(value))
+                value = _.parse(value);
+            try {
+                var d = _.subtract(this.symbol.clone(), value);
+                return d.equals(0);
+            }
+            catch(e){
+                return false;
+            };    
         },
         lt: function(value) {
-            value = _.parse(value);
-            if(this.symbol.isConstant() && value.isConstant())
-                return this.symbol.lessThan(_.parse(value));
-            return false;
+            if(!isSymbol(value))
+                value = _.parse(value);
+            try {
+                var d = evaluate(_.subtract(this.symbol.clone(), value));
+                return d.lessThan(0);
+            }
+            catch(e){
+                return false;
+            };   
         },
         gt: function(value) {
-            value = _.parse(value);
-            if(this.symbol.isConstant() && value.isConstant())
-                return this.symbol.greaterThan(_.parse(value));
-            return false;
+            if(!isSymbol(value))
+                value = _.parse(value);
+            try {
+                var d = evaluate(_.subtract(this.symbol.clone(), value));
+                return d.greaterThan(0);
+            }
+            catch(e){
+                return false;
+            }; 
         },
         gte: function(value) {
             return this.greaterThan(value) || this.equals(value);
@@ -1750,7 +1826,7 @@ var nerdamer = (function(imports) {
             return c.simplify();
         },
         divide: function(m) {
-            if(m.equals(0)) throw new Error('Division by zero not allowed!');
+            if(m.equals(0)) throw new DivisionByZero('Division by zero not allowed!');
             return this.clone().multiply(m.clone().invert()).simplify();
         },
         subtract: function(m) { 
@@ -1916,7 +1992,7 @@ var nerdamer = (function(imports) {
      * @returns {Symbol}
      */
     function Symbol(obj) { 
-        var isInfinity = obj === 'Infinity'
+        var isInfinity = obj === 'Infinity';
         //this enables the class to be instantiated without the new operator
         if(!(this instanceof Symbol)) { return new Symbol(obj); };
         //define numeric symbols
@@ -1983,7 +2059,69 @@ var nerdamer = (function(imports) {
             
         return symbol;
     };
+    
+    //removes parentheses
+    Symbol.unwrapPARENS = function(symbol) {
+        if(symbol.fname === '') {
+            var r = symbol.args[0];
+            r.power = r.power.multiply(symbol.power);
+            r.multiplier = r.multiplier.multiply(symbol.multiplier);
+            if(symbol.fname === '')
+                return Symbol.unwrapPARENS(r);
+            return r;
+        }
+        return symbol;
+    };
+    
     Symbol.prototype = {
+        //returns a clone.
+        powSimp: function() {
+            if(this.group === CB) {
+                var powers = [],
+                    sign = this.multiplier.sign();
+                this.each(function(x) {
+                    var p = x.power;
+                    //why waste time if I can't do anything anyway
+                    if(isSymbol(p) || p.equals(1))
+                        return this.clone();
+                    powers.push(p);
+                });
+                var min = new Frac(arrayMin(powers));
+                
+                //handle the coefficient
+                //handle the multiplier
+                var sign = this.multiplier.sign(),
+                    m = this.multiplier.clone().abs(),
+                    mfactors = Math2.ifactor(m);
+                //if we have a multiplier of 6750 and a min of 2 then the factors are 5^3*5^3*2
+                //we can then reduce it to 2*3*5*(15)^2 
+                var out_ = new Frac(1);
+                var in_ = new Frac(1);
+                
+                for(var x in mfactors) {
+                    var n = new Frac(mfactors[x]);
+                    if(!n.lessThan(min)) {
+                        n = n.divide(min).subtract(new Frac(1));
+                        in_ = in_.multiply(new Frac(x)); //move the factor inside the bracket
+                    }
+                    
+                    out_ = out_.multiply(_.parse(inBrackets(x)+'^'+inBrackets(n)).multiplier);
+                }
+                var t = new Symbol(in_);
+                this.each(function(x) { 
+                    x = x.clone();
+                    x.power = x.power.divide(min);
+                    t = _.multiply(t, x);
+                });
+                
+                var xt = _.symfunction(PARENTHESIS, [t]);
+                xt.power = min;
+                xt.multiplier = sign < 0 ? out_.negate() : out_;
+
+                return xt;
+            }
+            return this.clone();
+        },
         /**
          * Checks to see if two functions are of equal value
          */
@@ -2263,8 +2401,10 @@ var nerdamer = (function(imports) {
         isSQRT: function() {
             return this.fname === SQRT;
         },
-        isConstant: function(check_functions) {
-            if(check_functions && this.group === FN) {
+        isConstant: function(check_all) {
+            if(check_all === 'all' && (this.isPi() || this.isE()))
+                return true;
+            if(check_all && this.group === FN) {
                 for(var i=0; i<this.args.length; i++) {
                     if(!this.args[i].isConstant())
                         return false;
@@ -2924,27 +3064,42 @@ var nerdamer = (function(imports) {
          * Take x^-1+x^-2. If the symbol was to be mixed such as x+x^-2 then the symbol doesn't have have an exclusive
          * denominator and has to be found by looking at the actual symbols themselves.
          */
-        getDenom: function() { 
-            if(this.power.lessThan(0)) return this.clone();
-            if(this.group === CB) {
-                var retval = new Symbol(1);
+        getDenom: function(include_multiplier) { 
+            var retval;
+            if(this.power.lessThan(0)) 
+                retval = this.clone();
+            else if(this.group === CB) {
+                retval = new Symbol(1);
                 for(var x in this.symbols) 
                     if(this.symbols[x].power < 0) 
                         retval = _.multiply(retval, this.symbols[x].clone());
-                return retval;
             }
-            return new Symbol(this.multiplier.den);
+            else
+                retval = new Symbol(this.multiplier.den);
+            
+            if(include_multiplier)
+                retval = _.multiply(retval.invert(), new Symbol(this.multiplier.den));
+            
+            return retval;
         },
-        getNum: function() {
-            if(this.power.lessThan(0)) return new Symbol(this.multiplier.num);
-            if(this.group === CB) {
+        getNum: function(include_multiplier) {
+            var retval;
+            if(this.power.lessThan(0)) 
+                retval = new Symbol(this.multiplier.num);
+            else if(this.group === CB) {
                 var newSymbol = new Symbol(1);
                 for(var x in this.symbols) 
                     if(this.symbols[x].power > 0)
                         newSymbol = _.multiply(newSymbol, this.symbols[x].clone());
-                return newSymbol;
+                retval = newSymbol;
             }
-            return this.clone();
+            else 
+                retval = this.clone();
+            
+            if(include_multiplier)
+                retval = _.multiply(retval, new Symbol(this.multiplier.num));
+            
+            return retval;
         },
         toString: function() {
             return this.text();
@@ -3025,12 +3180,22 @@ var nerdamer = (function(imports) {
     function DivisionByZero(msg){
         this.message = msg || "";
     }
-    DivisionByZero.prototype = new Error();
+    DivisionByZero.prototype = Object.create(Error.prototype);
     //thrown in parser 
     function ParseError(msg){
         this.message = msg || "";
     }
-    ParseError.prototype = new Error();
+    ParseError.prototype = Object.create(Error.prototype);
+    //thrown for undefined errors
+    function UndefinedError(msg){
+        this.message = msg || "";
+    }
+    UndefinedError.prototype = Object.create(Error.prototype);
+    //thrown for maximum iteration error
+    function MaximumIterationsReached(msg){
+        this.message = msg || "";
+    }
+    MaximumIterationsReached.prototype = Object.create(Error.prototype);
     
     //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
@@ -3049,13 +3214,20 @@ var nerdamer = (function(imports) {
         var trig = this.Trig = {
             //container for trigonometric function
             cos: function(symbol) {
-                if(Settings.PARSE2NUMBER) {
+                if(symbol.equals('pi') && symbol.multiplier.den.equals(2))
+                    return new Symbol(0);
+                
+                if(Settings.PARSE2NUMBER) { 
+                    if(symbol.equals(new Symbol(Math.PI/2)))
+                        return new Symbol(0);
                     if(symbol.isConstant()) 
                         return new Symbol(Math.cos(symbol.valueOf()));
                     if(symbol.isImaginary()) 
                         return evaluate(_.parse(format('(e^(i*({0}))+e^(-i*({0})))/2', symbol)));
                 }
-
+                if(symbol.equals(0))
+                    return new Symbol(1);
+                
                 var retval, 
                     c = false,
                     q = getQuadrant(symbol.multiplier.toDecimal()),
@@ -3089,21 +3261,26 @@ var nerdamer = (function(imports) {
 
                 return retval;
             },
-            sin: function(symbol) {
+            sin: function(symbol) { 
                 if(Settings.PARSE2NUMBER) {
                     if(symbol.isConstant()) 
                         return new Symbol(Math.sin(symbol.valueOf()));
                     if(symbol.isImaginary()) 
                         return evaluate(_.parse(format('(e^(i*({0}))-e^(-i*({0})))/(2*i)', symbol)));
                 }
+                
+                if(symbol.equals(0))
+                    return new Symbol(0);
+                
                 var retval, 
                     c = false,
                     q = getQuadrant(symbol.multiplier.toDecimal()),
                     sign = symbol.multiplier.sign(),
                     m = symbol.multiplier.abs();
                 symbol.multiplier = m;
-
-                if(symbol.isPi() && symbol.isLinear()) { 
+                if(symbol.equals('pi'))
+                    retval = new Symbol(0);
+                else if(symbol.isPi() && symbol.isLinear()) { 
                     //return for 0 for multiples of pi
                     if(isInt(m)) {
                         retval  = new Symbol(0);
@@ -3153,7 +3330,8 @@ var nerdamer = (function(imports) {
                     } 
                     else {
                         var n = m.num, d = m.den;
-                        if(d == 2) err('tan is undefined for '+symbol.toString());
+                        if(d == 2) 
+                            throw new UndefinedError('tan is undefined for '+symbol.toString());
                         else if(d == 3) {
                             retval = _.parse('sqrt(3)'); c = true;
                         }
@@ -3192,7 +3370,8 @@ var nerdamer = (function(imports) {
                     } 
                     else {
                         var n = m.num, d = m.den;
-                        if(d == 2) err('sec is undefined for '+symbol.toString());
+                        if(d == 2) 
+                            throw new UndefinedError('sec is undefined for '+symbol.toString());
                         else if(d == 3) {
                             retval = new Symbol(2); c = true;
                         }
@@ -3226,7 +3405,7 @@ var nerdamer = (function(imports) {
                 if(symbol.isPi() && symbol.isLinear()) { 
                     //return for 0 for multiples of pi
                     if(isInt(m)) {
-                        err('csc is undefined for '+symbol.toString());
+                        throw new UndefinedError('csc is undefined for '+symbol.toString());
                     } 
                     else {
                         var n = m.num, d = m.den;
@@ -3266,7 +3445,7 @@ var nerdamer = (function(imports) {
                 if(symbol.isPi() && symbol.isLinear()) { 
                     //return 0 for all multiples of pi
                     if(isInt(m)) {
-                        err('cot is undefined for '+symbol.toString());
+                        throw new UndefinedError('cot is undefined for '+symbol.toString());
                     } 
                     else {
                         var n = m.num, d = m.den;
@@ -3334,7 +3513,7 @@ var nerdamer = (function(imports) {
             },
             atan2: function(a, b) {
                 if(a.equals(0) && b.equals(0))
-                    throw new Error('atan2 is undefined for 0, 0');
+                    throw new UndefinedError('atan2 is undefined for 0, 0');
                 
                 if(Settings.PARSE2NUMBER && a.isConstant() && b.isConstant()) {
                     return new Symbol(Math.atan2(a, b));
@@ -3572,6 +3751,10 @@ var nerdamer = (function(imports) {
                 'vecset'            : [ vecset, 3],
                 'matget'            : [ matget, 3],
                 'matset'            : [ matset, 4],
+                'matgetrow'         : [ matgetrow, 2],
+                'matsetrow'         : [ matsetrow, 3],
+                'matgetcol'         : [ matgetcol, 2],
+                'matsetcol'         : [ matsetcol, 3],
                 'IF'                : [ IF, 3],
                 //imaginary support
                 'realpart'          : [ realpart, 1],
@@ -3601,6 +3784,17 @@ var nerdamer = (function(imports) {
             for(var i=0; i<args.length; i++)
                 if(args[i].group !== N)
                     return false;
+            return true;
+        };
+        
+        var allConstants = function(args) {
+            for(var i=0; i<args.length; i++) {
+                if(args[i].isPi() || args[i].isE())
+                    continue;
+                if(!args[i].isConstant(true))
+                    return false;
+            }
+                    
             return true;
         };
         
@@ -3886,7 +4080,6 @@ var nerdamer = (function(imports) {
                 if(e_org === e) 
                     break;
             }
-            
             var l = e.length, //the length of the string
                 output = [], //the output array. This is what's returned
                 stack = [], //the operator stack
@@ -4411,13 +4604,15 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         function mod(symbol1, symbol2) {
-            if(!symbol2)
-                return _.divide(symbol2, new Symbol(100));
             if(symbol1.isConstant() && symbol2.isConstant()) {
                 var retval = new Symbol(1);
                 retval.multiplier = retval.multiplier.multiply(symbol1.multiplier.mod(symbol2.multiplier));
                 return retval;
             }
+            //try to see if division has remainder of zero
+            var r = _.divide(symbol1.clone(), symbol2.clone());
+            if(isInt(r))
+                return new Symbol(0);
             return _.symfunction('mod', [symbol1, symbol2]);
         }
         /**
@@ -4669,6 +4864,23 @@ var nerdamer = (function(imports) {
         function rectform(symbol) {
             
         }
+
+        function symMinMax(f, args) {
+            args.map(function(x) {
+                x.numVal = evaluate(x).multiplier;
+            });
+            var l, a, b, a_val, b_val;
+            while(true) {
+                l = args.length;
+                if(l < 2) return args[0];
+                a = args.pop();
+                b = args[l-2];
+                if(f === 'min' ? a.numVal < b.numVal : a.numVal > b.numVal) {
+                    args.pop();
+                    args.push(a);
+                }
+            } 
+        }
         
         /**
          * Returns maximum of a set of numbers
@@ -4680,6 +4892,8 @@ var nerdamer = (function(imports) {
                 return args[0];
             if(allNumbers(args))
                 return new Symbol(Math.max.apply(null, args));
+            if(Settings.SYMBOLIC_MIN_MAX && allConstants(args)) 
+                return symMinMax('max', args);
             return _.symfunction('max', args);
         }
         
@@ -4693,6 +4907,8 @@ var nerdamer = (function(imports) {
                 return args[0];
             if(allNumbers(args))
                 return new Symbol(Math.min.apply(null, args));
+            if(Settings.SYMBOLIC_MIN_MAX && allConstants(args)) 
+                return symMinMax('min', args);
             return _.symfunction('min', args);
         }
         
@@ -4739,7 +4955,7 @@ var nerdamer = (function(imports) {
 
             //log(0) is undefined so complain
             if(symbol.equals(0)) {
-                err('log(0) is undefined!');
+                throw new UndefinedError('log(0) is undefined!');
             }
             
             //deal with imaginary values
@@ -4944,7 +5160,12 @@ var nerdamer = (function(imports) {
          * @param symbol
          */
         function expand(symbol) { 
+            //deal with parenthesis
+            if(symbol.group === FN && symbol.fname === '')
+                return _.expand(symbol.args[0]);
+            
             if(!symbol.symbols) return symbol; //nothing to do
+            
             var original = symbol.clone(); 
             try {
                 var p = symbol.power,
@@ -4961,26 +5182,40 @@ var nerdamer = (function(imports) {
                 }
                 symbol = _.parse(symbol);
 
-                if(isInt(p) && pn > 0 && symbol.isComposite()) { 
-                    //leave original untouched
-                    symbol = symbol.toLinear().toUnitMultiplier();
-                    var result = symbol.clone();
-
-                    for(var i=0; i<pn-1; i++) {
-                        var t = new Symbol(0); 
-                        for(var s in symbol.symbols) {
-                            var x = symbol.symbols[s];
-                            for(var s2 in result.symbols) {
-                                var y = result.symbols[s2];
-                                var r = _.expand(_.multiply(x.clone(), y.clone())),
-                                    rp = Number(r.power);
-                                if(r.group === CB && rp !== 1 || r.group === PL && rp !== 1) r = expand(r);
-                                t = _.add(t, r);
-                            }
-                        }
-                        result = t;
+                if(isInt(pn) && pn > 0 && symbol.isComposite()) { 
+                    var f = new Symbol(0);
+                    //we loop through the f and make sure that it's fully expanded
+                    for(var x in symbol.symbols) {
+                        var sym = symbol.symbols[x];
+                        if(sym.power.greaterThan(1)) 
+                            sym = _.expand(sym);
+                        f = _.add(f, sym);
                     }
 
+                    //assume (a+b)^3 = (a+b)(a+b)(a+b) = (b^2+2*a*b+a^2)(a+b)
+                    //we have n=p-1=2 iterations where p=3 in this case
+                    var n = pn-1;
+                    //Initiate with the first term. Remember that we have p-1 iterations because
+                    //the first iteration is equal to P where p is the polynomial
+                    var result = f.clone(); //initiate this as the first term
+                    //the first loop is the top iterator and remains untouched. No sub-symbols
+                    //from this symbol are allowed to be touched
+                    for(var i=0; i<n; i++) {
+                        var t = new Symbol(0);
+                        for(var x in f.symbols) {
+                            var a = f.symbols[x];
+                            //we now loop through the 
+                            for(var y in result.symbols) {
+                                var b = _.multiply(a.clone(), result.symbols[y]);
+                                //the result must always be a composite. If not expand
+                                if(b.group === CB)
+                                    b = _.expand(b);
+                                t = _.add(t, b);
+                            }
+                        };
+                        result = t;
+                    }
+                        
                     //put back the multiplier
                     if(!m.equals(1)) {
                         for(var s in result.symbols) {
@@ -5094,6 +5329,40 @@ var nerdamer = (function(imports) {
         function matget(matrix, i, j) {
             return matrix.elements[i][j];
         }
+        
+        function matgetrow(matrix, i) {
+            return new Matrix(matrix.elements[i]);
+        }
+        
+        function matsetrow(matrix, i, x) {
+            if(matrix.elements[i].length !== x.elements.length)
+                throw new Error('Matrix row must match row dimensions!');
+            var M = matrix.clone();
+            M.elements[i] = x.clone().elements;
+            return M;
+        }
+        
+        function matgetcol(matrix, col_index) {
+            col_index = Number(col_index);
+            var M = Matrix.fromArray([]);
+            matrix.each(function(x, i, j) {
+                if(j === col_index) {
+                    M.elements.push([x.clone()]);
+                }
+            });
+            return M;
+        }
+        
+        function matsetcol(matrix, j, col) {
+            j = Number(j);
+            if(matrix.rows() !== col.elements.length)
+                throw new Error('Matrix columns must match number of columns!');
+            col.each(function(x, i) {
+               matrix.set(i-1, j, x.elements[0].clone());
+            });
+            return matrix;
+        }
+        
         
         function matset(matrix, i, j, value) {
             matrix.elements[i][j] = value;
@@ -5219,7 +5488,7 @@ var nerdamer = (function(imports) {
                         bneg = b.multiplier.lessThan(0);
                 
                     if(a.isInfinity && b.isInfinity && aneg !== bneg) {
-                        err('('+a+')+('+b+') is not defined!');
+                        throw new UndefinedError('('+a+')+('+b+') is not defined!');
                     }
                     
                     var inf = Symbol.infinity();
@@ -5483,6 +5752,10 @@ var nerdamer = (function(imports) {
             if(aIsSymbol && bIsSymbol) {
                 //handle Infinty
                 if(a.isInfinity || b.isInfinity) { 
+                    if(a.equals(0) || b.equals(0))
+                        throw new UndefinedError(a+'*'+b+' is undefined!');
+                    if(b.power.lessThan(0))
+                        throw new UndefinedError('Infinity/Infinity is not defined!');
                     var sign = a.multiplier.multiply(b.multiplier).sign(),
                         inf = Symbol.infinity();
                     if(a.isConstant() || b.isConstant() || (a.isInfinity && b.isInfinity)) {
@@ -5810,9 +6083,16 @@ var nerdamer = (function(imports) {
                 //handle infinity
                 if(a.isInfinity || b.isInfinity) {
                     if(a.isInfinity && b.isInfinity)
-                        err('('+a+')^('+b+') is undefined!');
+                        throw new UndefinedError('('+a+')^('+b+') is undefined!');
                     
-                    if(a.isConstant() && b.isInfinity) {
+                    if(a.isConstant() && b.isInfinity) { 
+                        if(a.equals(0)) {
+                            if(b.lessThan(0))
+                                throw new UndefinedError('0^Infinity is undefined!');
+                            return new Symbol(0);
+                        }
+                        if(a.equals(1))
+                            throw new UndefinedError('1^'+b.toString()+' is undefined!');
                         //a^-oo
                         if(b.lessThan(0))
                             return new Symbol(0);
@@ -5821,7 +6101,9 @@ var nerdamer = (function(imports) {
                             return Symbol.infinity();
                     }
                         
-                    if(a.isInfinity && b.isConstant()) {
+                    if(a.isInfinity && b.isConstant()) { 
+                        if(b.equals(0))
+                            throw new UndefinedError(a+'^0 is undefined!');
                         if(b.lessThan(0))
                             return new Symbol(0);
                         return _.multiply(Symbol.infinity(), _.pow(new Symbol(a.sign()), b.clone()));
@@ -5839,6 +6121,8 @@ var nerdamer = (function(imports) {
                     bIsInt = b.isInteger(),
                     m = a.multiplier,
                     result = a.clone();
+                if(aIsConstant && bIsConstant && a.equals(0) && b.lessThan(0))
+                    throw new UndefinedError('Division by zero is not allowed!');
                 //take care of the symbolic part
                 result.toUnitMultiplier();
                 //simpifly sqrt
@@ -5977,6 +6261,9 @@ var nerdamer = (function(imports) {
                                     result = _.multiply(_.symfunction(ABS, [result.clone().toLinear()]), 
                                         result.clone().setPower(new Frac(n-1)));
                                 }
+                                //quick workaround. Revisit
+                                if(Settings.POSITIVE_MULTIPLIERS && result.fname === ABS)
+                                    result = result.args[0];
                             }
                         }   
                     }   
@@ -6390,6 +6677,14 @@ var nerdamer = (function(imports) {
                 }
                 else if(fname === 'ceil') {
                     v[index] = '\\left \\lceil'+this.braces(input[0])+'\\right \\rceil';
+                }
+                //capture log(a, b)
+                else if(fname === 'log' && input.length > 1) {
+                    v[index] = '\\mathrm'+this.braces('log')+'_'+this.braces(input[1])+this.brackets(input[0]);
+                }
+                //capture log(a, b)
+                else if(fname === 'log10') {
+                    v[index] = '\\mathrm'+this.braces('log')+'_'+this.braces(10)+this.brackets(input[0]);
                 }
                 else { 
                     var name = fname!=='' ? '\\mathrm'+this.braces(fname.replace(/_/g, '\\_')) : '';
@@ -7230,30 +7525,42 @@ var nerdamer = (function(imports) {
     /* BUILD CORE */
     //This contains all the parts of nerdamer and enables nerdamer's internal functions
     //to be used.
-    var C = {};
-    C.exceptions = {};
-    C.Operator = Operator;
-    C.groups = Groups;
-    C.Symbol = Symbol;
-    C.Expression = Expression;
-    C.Frac = Frac;
-    C.Vector = Vector;
-    C.Matrix = Matrix;
-    C.Parser = Parser;
-    C.Fraction = Fraction;
-    C.Math2 = Math2;
-    C.LaTeX = LaTeX;
-    C.Utils = Utils;
-    C.PRIMES = PRIMES;
-    C.PARSER = _;
-    C.PARENTHESIS = PARENTHESIS;
-    C.Settings = Settings;
-    C.VARS = VARS;
-    C.err = err;
-    C.bigInt = bigInt;
-    //load the exceptions
-    C.exceptions.DivisionByZero = DivisionByZero;
-    C.exceptions.ParseError = ParseError;
+    var C = {
+        Operator: Operator,
+        groups: Groups,
+        Symbol: Symbol,
+        Expression: Expression,
+        Frac: Frac,
+        Vector: Vector,
+        Matrix: Matrix,
+        Parser: Parser,
+        Fraction: Fraction,
+        Math2: Math2,
+        LaTeX: LaTeX,
+        Utils: Utils,
+        PARSER: _,
+        PARENTHESIS: PARENTHESIS, 
+        Settings: Settings,
+        err: err,
+        bigInt: bigInt,
+        exceptions: {
+            DivisionByZero: DivisionByZero,
+            ParseError: ParseError,
+            UndefinedError: UndefinedError, 
+            MaximumIterationsReached: MaximumIterationsReached
+        }
+    };
+    
+    //provide a mechanism for accessing functions directly
+    //Not yet complete!!! Some functions will return undefined. This can maybe 
+    //just remove the function object at some point when all functions are eventually
+    //housed in the global function object.
+    C.Utils.importFunctions = function() {
+        var o = {};
+        for(var x in _.functions)
+            o[x] = _.functions[x][0];
+        return o;
+    };
     //TODO: fix 
     if(!_.error)
         _.error = err;
@@ -7275,7 +7582,7 @@ var nerdamer = (function(imports) {
         //is the user declaring a function?
         var fndec = /^([a-z_][a-z\d\_]*)\(([a-z_,\s]*)\):=(.+)$/gi.exec(expression);
         if(fndec) 
-            return nerdamer.setFunction(fndec[1], fndec[2].split(','), fndec[3])
+            return nerdamer.setFunction(fndec[1], fndec[2].split(','), fndec[3]);
 
         var variable, fn, args;
         //convert any expression passed in to a string
@@ -7327,7 +7634,7 @@ var nerdamer = (function(imports) {
     
     /**
      * Get nerdamer generated warnings
-     * @returns {String}
+     * @returns {String[]}
      */
     libExports.getWarnings = function() {
         return WARNINGS;
@@ -7661,4 +7968,4 @@ var nerdamer = (function(imports) {
 
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
-};
+};                 

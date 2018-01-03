@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 var nerdamer = require('../nerdamer.core.js');
 
@@ -12,20 +12,29 @@ describe('Nerdamer core', function () {
     };
 
     it('should handle errors', function () {
-        // given
-        var formula1 = '0/0';
-        var formula2 = '0^0';
-        var formula3 = '-Infinity+Infinity';
+        var formulas = [
+            '0/0',
+            '0^0',
+            '-Infinity+Infinity',
+            'Infinity/Infinity',
+            'Infinity^Infinity',
+            '1^Infinity',
+            'Infinity^0',
+            '(-Infinity)^0',
+            'Infinity*0'
+        ];
 
-        // when / then
-        expect(function () { nerdamer(formula1) }).toThrowError();
-        expect(function () { nerdamer(formula2) }).toThrowError();
-        expect(function () { nerdamer(formula3) }).toThrowError();
+        for(var i=0; i<formulas.length; i++)
+            expect(function () { nerdamer(formulas[i]) }).toThrowError();
     });
     
     it('should correctly calculate Infinity', function () {
         // given
         var testCases = [
+            {
+                given: '0^Infinity',
+                expected: '0'
+            }, 
             {
                 given: 'Infinity*Infinity',
                 expected: 'Infinity'

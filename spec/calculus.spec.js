@@ -184,6 +184,42 @@ describe('calculus', function () {
             expect(parsed.toString()).toEqual(testCases[i].expected);
         }
     });
+    
+    xit('should calculate limits correctly', function () {
+        // given
+        var testCases = [
+            {
+                given: 'limit((2-2*x^2)/(x-1), x, 1)',
+                expected: '-4'
+            },
+            {
+                given: 'limit(1/2*(x^2 - 1)/(x^2 + 1), x, 3)',
+                expected: '2/5'
+            },
+            {
+                given: 'limit(tan(3*x)/tan(x), x, pi/2)',
+                expected: '1/3'
+            },
+            /*
+            {
+                given: 'limit((x+1)^(1+1/x)-x^(1+x),x, Infinity)',
+                expected: '-Infinity'
+            },
+            {
+                given: 'limit(log(x),x, 0)',
+                expected: 'Infinity'
+            },
+            */
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given);
+
+            // then
+            expect(parsed.toString()).toEqual(testCases[i].expected);
+        }
+    });
 
     it('should integrate properly', function () {
         // given
