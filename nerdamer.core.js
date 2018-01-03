@@ -4405,7 +4405,7 @@ var nerdamer = (function(imports) {
                 }
             }
             return chunks;
-        }
+        };
         
         var rem_brackets = function(str) {
             return str.replace(/^\\left\((.+)\\right\)$/g, function(str, a) {
@@ -4514,7 +4514,8 @@ var nerdamer = (function(imports) {
                         else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL) 
                             f = this.toTeX(e.args) + (fname === FACTORIAL ? '!' : '!!');
                         else  {
-                            f = '\\mathrm'+LaTeX.braces(fname.replace(/_/g, '\\_')) + LaTeX.brackets(this.toTeX(e.args), 'parens');
+                            f = LaTeX.latex(e);
+                            //f = '\\mathrm'+LaTeX.braces(fname.replace(/_/g, '\\_')) + LaTeX.brackets(this.toTeX(e.args), 'parens');
                         }
                             
                         TeX.push(f);
@@ -6612,12 +6613,13 @@ var nerdamer = (function(imports) {
                 v = ['', ''],
                 index =  inverted ? 1 : 0; 
             /*if(group === N) //do nothing since we want to return top & bottom blank; */
-            if(group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) { 
+            if(symbol.isInfinity) {
+                v[index] = '\\infty';
+            }
+            else if(group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) { 
                 var value = symbol.value; 
                 if(value.replace) 
-                    value = value.replace(/(.+)_$/, function(match, g1) {
-                        return g1+'\\_'
-                    });
+                    value = value.replace(/(.+)_$/, '$1\\_');
                 //split it so we can check for instances of alpha as well as alpha_b
                 var t_varray = String(value).split('_'); 
                 var greek = this.greek[t_varray[0]];
@@ -6676,6 +6678,32 @@ var nerdamer = (function(imports) {
                 //capture log(a, b)
                 else if(fname === 'log10') {
                     v[index] = '\\mathrm'+this.braces('log')+'_'+this.braces(10)+this.brackets(input[0]);
+                }
+                else if(fname === 'sum') {
+                    var a = input[0],
+                        b = input[1],
+                        c = input[2],
+                        d = input[3];
+                    v[index] = '\\sum_{'+this.braces(b)+'='+this.braces(c)+'}^'+this.braces(d)+' '+this.braces(a)+'';
+                }
+                else if(fname === 'product') {
+                    var a = input[0],
+                        b = input[1],
+                        c = input[2],
+                        d = input[3];
+                    v[index] = '\\prod_{'+this.braces(b)+'='+this.braces(c)+'}^'+this.braces(d)+' '+this.braces(a)+'';
+                }
+                else if(fname === 'nthroot') {
+                    v[index] = '\\sqrt['+input[1]+']'+this.braces(input[0]);
+                }
+                else if(fname === 'mod') {
+                    v[index] = input[0]+' \\bmod '+input[1];
+                }
+                else if(fname === 'realpart') { 
+                    v[index] = '\\operatorname{Re}'+this.brackets(input[0]);
+                }
+                else if(fname === 'imagpart') { 
+                    v[index] = '\\operatorname{Im}'+this.brackets(input[0]);
                 }
                 else { 
                     var name = fname!=='' ? '\\mathrm'+this.braces(fname.replace(/_/g, '\\_')) : '';

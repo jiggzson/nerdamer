@@ -3179,6 +3179,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var x = nerdamer('partfrac((x^2+1)/(x*(x-1)^3), x)');
-console.log(x.toString())
