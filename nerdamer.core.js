@@ -5151,7 +5151,12 @@ var nerdamer = (function(imports) {
          * @param symbol
          */
         function expand(symbol) { 
+            //deal with parenthesis
+            if(symbol.group === FN && symbol.fname === '')
+                return _.expand(symbol.args[0]);
+            
             if(!symbol.symbols) return symbol; //nothing to do
+            
             var original = symbol.clone(); 
             try {
                 var p = symbol.power,
@@ -7954,4 +7959,4 @@ var nerdamer = (function(imports) {
 
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
-};                  
+};                 

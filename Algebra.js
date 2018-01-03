@@ -2941,6 +2941,20 @@ if((typeof module) !== 'undefined') {
             createTemplate: function(den, denom_factors, f_array) {
                 //clean up the denominator function by factors so it reduces nicely
                 den = __.Factor.factor(den);
+                //clean up factors. This is so inefficient but factors are wrapped in parens for safety
+                den.each(function(x, key) {
+                    if(x.group === FN && x.fname === '' && x.args[0].group === S) {
+                        var y = x.args[0];
+                        if(this.symbols) {
+                            delete this.symbols[key];
+                            this.symbols[y.value] = y;
+                        }
+                        else {
+                            den = x.args[0];
+                        }
+                    }
+                });
+
                 var factors, factors_vec;
                 factors = denom_factors.collectFactors();
                 factors_vec = []; //a vector for the template
@@ -2962,6 +2976,7 @@ if((typeof module) !== 'undefined') {
                     else {
                         f_array.push(factor.clone());
                         var d = _.divide(den.clone(), factor.clone());
+
                         factors_vec.push(_.expand(Symbol.unwrapPARENS(d)));
                     }
                 }
@@ -2979,11 +2994,22 @@ if((typeof module) !== 'undefined') {
                         dterms, max, M, c, powers, div, r, factors_vec;
                     num = _.expand(symbol.getNum());
                     den = symbol.getDenom(true);
-                    
+                    //we only have a meaningful change if n factors > 1. This means that
+                    //the returned group will be a CB
+                    //collect the terms wrt the x
+                    nterms = num.groupTerms(v);
+                    //a very rough and inefficient way of checking that top is larger
+                    var top_larger = nterms.length > _.expand(den.clone()).groupTerms(v).length;
+
                     //trial division since it's faster than checking if to is greater
-                    div = __.div(num, _.expand(den.clone()));
-                    r = div[0]; //remove the wholes
-                    num = div[1]; //work with the remainder
+                    if(top_larger) {
+                        div = __.div(num.clone(), _.expand(den.clone()));
+                        r = div[0]; //remove the wholes
+                        num = div[1]; //work with the remainder
+                        nterms = num.groupTerms(v); //recalculate the nterms
+                    }
+                    else
+                        r = new Symbol(0);
                     //first factor the denominator. This means that the strength of this
                     //algorithm depends on how well we can factor the denominator. 
                     ofactors = __.Factor.factor(den);
@@ -2992,11 +3018,7 @@ if((typeof module) !== 'undefined') {
                     var template = __.PartFrac.createTemplate(den.clone(), ofactors, []);
                     factors = template[0].reverse();
                     factors_vec = template[1];
-                    
-                    //we only have a meaningful change if n factors > 1. This means that
-                    //the returned group will be a CB
-                    //collect the terms wrt the x
-                    nterms = num.groupTerms(v);
+
                     //make note of the powers of each term
                     powers = [nterms.length];
 
@@ -3023,7 +3045,7 @@ if((typeof module) !== 'undefined') {
                     //the results are backwards to reverse it
                     partials.elements.reverse();
                     //convert it all back
-                    var retval = asArray ? [] : new Symbol(0);
+                    var retval = asArray ? [r] : r;
                     partials.each(function(e, i) {
                         var term = _.divide(e, factors[i]);
                         if(asArray)
@@ -3143,3 +3165,13 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+//partfrac((x^3+2)/(x+1)^2,x)
+//var core = nerdamer.getCore();
+//var _ = core.PARSER;
+//var x = _.parse('(a*x^2+1)');
+//console.log(x.groupTerms('x').toString())
+
+var x = nerdamer('partfrac((3*x^2+1)/(x*(x-1)^3), x)');
+//var x = nerdamer('partfrac((x^2+1)/(x*(x-1)^3), x)');
+console.log(x.toString())
