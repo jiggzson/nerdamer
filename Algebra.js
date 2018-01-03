@@ -2970,15 +2970,18 @@ if((typeof module) !== 'undefined') {
             partfrac: function(symbol, v, asArray) {
                 var vars = variables(symbol);
                 v = v || _.parse(vars[0]); //make wrt optional and assume first variable
+                /*
                 if(vars.length > 1)
                     return symbol.clone(); //currently only does univariate
+                */
                 try {
                     var num, den, factors, ofactors, factor_arr, nterms, 
                         dterms, max, M, c, powers, div, r, factors_vec;
                     num = _.expand(symbol.getNum());
                     den = symbol.getDenom(true);
+                    
                     //trial division since it's faster than checking if to is greater
-                    div = __.div(num, den);
+                    div = __.div(num, _.expand(den.clone()));
                     r = div[0]; //remove the wholes
                     num = div[1]; //work with the remainder
                     //first factor the denominator. This means that the strength of this
@@ -2989,7 +2992,7 @@ if((typeof module) !== 'undefined') {
                     var template = __.PartFrac.createTemplate(den.clone(), ofactors, []);
                     factors = template[0].reverse();
                     factors_vec = template[1];
-
+                    
                     //we only have a meaningful change if n factors > 1. This means that
                     //the returned group will be a CB
                     //collect the terms wrt the x
@@ -3032,7 +3035,7 @@ if((typeof module) !== 'undefined') {
                     //done
                     return retval;
                 }
-                catch(e){};
+                catch(e){console.log(e)};
 
                 return symbol;
             }
