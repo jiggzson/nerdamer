@@ -345,6 +345,37 @@ describe('Algebra', function () {
         }
     });
     
+    it('should correctly determine the polynomial degree', function () {
+        // given
+        var testCases = [
+            {
+                given: 'deg(x^2+2*x+x^5)',
+                expected: '5'
+            }, 
+            {
+                given: 'deg(x^2+2*x+x^x)',
+                expected: 'max(2,x)'
+            }, 
+            {
+                given: 'deg(x^2+2*x+cos(x))',
+                expected: '2'
+            }, 
+            {
+                given: 'deg(x^a+x^b+x^c,x)',
+                expected: 'max(a,b,c)'
+            }, 
+            
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var result = nerdamer(testCases[i].given);
+
+            // then
+            expect(result.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
     it('should correctly peform partial fraction decomposition', function () {
         // given
         var testCases = [

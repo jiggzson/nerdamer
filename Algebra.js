@@ -2986,7 +2986,6 @@ if((typeof module) !== 'undefined') {
                     else {
                         f_array.push(factor.clone());
                         var d = _.divide(den.clone(), factor.clone());
-
                         factors_vec.push(_.expand(Symbol.unwrapPARENS(d)));
                     }
                 }
@@ -3030,7 +3029,6 @@ if((typeof module) !== 'undefined') {
                     var template = __.PartFrac.createTemplate(den.clone(), ofactors, []);
                     factors = template[0].reverse();
                     factors_vec = template[1];
-
                     //make note of the powers of each term
                     powers = [nterms.length];
 
@@ -3053,6 +3051,7 @@ if((typeof module) !== 'undefined') {
                     for(var i=0; i<dterms.length; i++) {
                         M.elements.push(core.Utils.fillHoles(dterms[i], max));
                     }
+                    
                     //solve the system of equations
                     var partials = _.multiply(M.transpose().invert(), c);
 
@@ -3071,12 +3070,66 @@ if((typeof module) !== 'undefined') {
                     //done
                     return retval;
                 }
-                catch(e){;};
+                catch(e){console.log(e);};
 
                 return symbol;
             }
         },
+        degree: function(symbol, v, o) { 
+            o = o || {
+                nd: [], //numeric
+                sd: [], //symbolic
+                depth: 0 //call depth
+            };
             
+            if(!v) {
+                var vars = variables(symbol);
+                //The user must specify the variable for multivariate
+                if(vars.length > 1)
+                    throw new Error('You must specify the variable for multivariate polynomials!');
+                //if it's empty then we're dealing with a constant
+                if(vars.length === 0)
+                    return new Symbol(0);
+                //assume the variable for univariate
+                v = _.parse(vars[0]);
+            }
+            //store the group
+            var g = symbol.group;
+            //we're going to trust the user and assume no EX. Calling isPoly 
+            //would eliminate this but no sense in checking twice. 
+            if(symbol.isComposite()) { 
+                symbol.each(function(x) {
+                    o.depth++;
+                    __.degree(x, v, o);
+                    o.depth--;
+                });
+            }
+            else if(symbol.group === CB) {
+                symbol.each(function(x) {
+                    o.depth++;
+                    __.degree(x, v, o);
+                    o.depth++;
+                });
+            }
+            else if(g === EX && symbol.value === v.value) { 
+                o.sd.push(symbol.power.clone());
+            }
+            else if(g === S && symbol.value === v.value){ 
+                o.nd.push(_.parse(symbol.power));
+            }
+            else
+                o.nd.push(new Symbol(0));
+            //get the max out of the array
+            var deg = o.nd.length > 0 ? core.Utils.arrayMax(o.nd) : undefined;
+            
+            if(o.depth === 0 && o.sd.length > 0) {
+                if(deg !== undefined)
+                    o.sd.unshift(deg);
+                return _.symfunction('max', o.sd);
+            }
+            //return the degree
+            return deg;
+        },
         Classes: {
             Polynomial: Polynomial,
             Factors: Factors,
@@ -3157,6 +3210,12 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: [1,2],
             build: function() { return __.PartFrac.partfrac; }
+        },
+        {
+            name: 'deg',
+            visible: true,
+            numargs: [1,2],
+            build: function() { return __.degree; }
         },
         {
             name: 'coeffs',

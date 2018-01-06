@@ -2607,7 +2607,7 @@ var nerdamer = (function(imports) {
             this.setPower(new Frac(1));
             return this;
         },
-        each: function(fn, deep) {
+        each: function(fn, deep, restrictToGroup) {
             if(!this.symbols) {
                 fn.call(this, this, this.value);
             }
@@ -4649,8 +4649,12 @@ var nerdamer = (function(imports) {
             //if the symbol is already sqrt then it's that symbol^(1/4) and we can unwrap it
             else if(symbol.fname === SQRT) { 
                 var s = symbol.args[0];
+                var ms = symbol.multiplier;
                 s.setPower(symbol.power.multiply(new Frac(0.25)));
                 retval = s;
+                //grab the multiplier
+                if(!ms.equals(1))
+                    retval = _.multiply(sqrt(_.parse(ms)), retval);
             }
             //if the symbol is a fraction then we don't keep can unwrap it. For instance
             //no need to keep sqrt(x^(1/3))
