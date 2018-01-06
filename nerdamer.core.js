@@ -4575,7 +4575,7 @@ var nerdamer = (function(imports) {
         /**
          * The factorial functions
          * @param {Symbol} symbol
-         * @return {Symbol)
+         * @return {Symbol}
          */
         function factorial(symbol) {
             var retval;
@@ -6656,11 +6656,14 @@ var nerdamer = (function(imports) {
                 else if(fname === PARENTHESIS) { 
                     v[index] = this.brackets(input.join(','), 'parens');
                 }
-                else if(fname === 'defint') {
-                    v[index] = '\\int_'+this.braces(input[1])+'^'+this.braces(input[2])+this.braces(input[0])+this.braces('d'+input[3]);
+                else if(fname === 'limit') {
+                    v[index] = ' \lim\limits_{'+input[1]+' \to '+input[2]+'} '+input[0];
                 }
                 else if(fname === 'integrate') {
                     v[index] = '\\int'+this.braces(input[0])+this.braces('d'+input[1]);
+                }
+                else if(fname === 'defint') {
+                    v[index] = '\\int\\limits_'+this.braces(input[1])+'^'+this.braces(input[2])+' '+input[0]+' d'+input[3];
                 }
                 else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL) {
                     var arg = symbol.args[0];
@@ -6688,14 +6691,14 @@ var nerdamer = (function(imports) {
                         b = input[1],
                         c = input[2],
                         d = input[3];
-                    v[index] = '\\sum_{'+this.braces(b)+'='+this.braces(c)+'}^'+this.braces(d)+' '+this.braces(a)+'';
+                    v[index] = '\\sum\\limits_{'+this.braces(b)+'='+this.braces(c)+'}^'+this.braces(d)+' '+this.braces(a)+'';
                 }
                 else if(fname === 'product') {
                     var a = input[0],
                         b = input[1],
                         c = input[2],
                         d = input[3];
-                    v[index] = '\\prod_{'+this.braces(b)+'='+this.braces(c)+'}^'+this.braces(d)+' '+this.braces(a)+'';
+                    v[index] = '\\prod\\limits_{'+this.braces(b)+'='+this.braces(c)+'}^'+this.braces(d)+' '+this.braces(a)+'';
                 }
                 else if(fname === 'nthroot') {
                     v[index] = '\\sqrt['+input[1]+']'+this.braces(input[0]);

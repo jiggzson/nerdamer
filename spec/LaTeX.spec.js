@@ -163,13 +163,13 @@ describe('TeX features', function () {
             },
             {
                 given: 'sum(a,b,c,Infinity)',
-                TeX: '\\sum_{{b}={c}}^{\\infty} {a}',
-                decimalTeX: '\\sum_{{b}={c}}^{\\infty} {a}'
+                TeX: '\\sum\\limits_{{b}={c}}^{\\infty} {a}',
+                decimalTeX: '\\sum\\limits_{{b}={c}}^{\\infty} {a}'
             },
             {
                 given: 'product(a,b,c,Infinity)',
-                TeX: '\\prod_{{b}={c}}^{\\infty} {a}',
-                decimalTeX: '\\prod_{{b}={c}}^{\\infty} {a}'
+                TeX: '\\prod\\limits_{{b}={c}}^{\\infty} {a}',
+                decimalTeX: '\\prod\\limits_{{b}={c}}^{\\infty} {a}'
             },
             {
                 given: 'mod(a,b)',
@@ -291,7 +291,7 @@ describe('TeX features', function () {
       var testCases = [
         {
           given: 'defint(log(2cos(x/2)),-π,π,x)',
-          expected: '\\int_{-\\pi}^{\\pi}{\\mathrm{log}\\left(2 \\cdot \\mathrm{cos}\\left(\\frac{x}{2}\\right)\\right)}{dx}'
+          expected: '\\int\\limits_{-\\pi}^{\\pi} \\mathrm{log}\\left(2 \\cdot \\mathrm{cos}\\left(\\frac{x}{2}\\right)\\right) dx'
         },
         {
           given: 'integrate(sin(x^x),x)',
