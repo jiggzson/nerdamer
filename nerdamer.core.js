@@ -4575,7 +4575,7 @@ var nerdamer = (function(imports) {
         /**
          * The factorial functions
          * @param {Symbol} symbol
-         * @return {Symbol)
+         * @return {Symbol}
          */
         function factorial(symbol) {
             var retval;
