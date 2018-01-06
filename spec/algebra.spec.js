@@ -364,7 +364,10 @@ describe('Algebra', function () {
                 given: 'deg(x^a+x^b+x^c,x)',
                 expected: 'max(a,b,c)'
             }, 
-            
+            {
+                given: 'deg(a*x^2+b*x+c,x)',
+                expected: '2'
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

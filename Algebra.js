@@ -2948,7 +2948,7 @@ if((typeof module) !== 'undefined') {
             return _.add(_.subtract(a, b), v1.e(2).clone());
         },
         PartFrac: {
-            createTemplate: function(den, denom_factors, f_array) {
+            createTemplate: function(den, denom_factors, f_array, v) {
                 //clean up the denominator function by factors so it reduces nicely
                 den = __.Factor.factor(den);
                 //clean up factors. This is so inefficient but factors are wrapped in parens for safety
@@ -2965,7 +2965,7 @@ if((typeof module) !== 'undefined') {
                     }
                 });
 
-                var factors, factors_vec;
+                var factors, factors_vec, f, k, p, deg;
                 factors = denom_factors.collectFactors();
                 factors_vec = []; //a vector for the template
 
@@ -2973,8 +2973,10 @@ if((typeof module) !== 'undefined') {
                     var factor = Symbol.unwrapPARENS(factors[i]);
                     //if in he for P^n where P is polynomial and n = integer
                     if(factor.power.greaterThan(1)) { 
-                        var p = Number(factor.power),
-                            f = factor.clone().toLinear(); //remove the power so we have only the function
+                        p = Number(factor.power);
+                        f = factor.clone().toLinear(); //remove the power so we have only the function
+                        deg = __.degree(f); //get the degree of f
+                        k = _.expand(_.parse('(1+'+v+')^('+(deg-1)+')'));
                         //expand the factor
                         for(var j=0; j<p; j++){
                             var efactor = _.pow(f.clone(), new Symbol(j+1));
@@ -2984,9 +2986,18 @@ if((typeof module) !== 'undefined') {
                         }
                     }
                     else {
+                        deg = Number(__.degree(factor))-1;
                         f_array.push(factor.clone());
                         var d = _.divide(den.clone(), factor.clone());
-                        factors_vec.push(_.expand(Symbol.unwrapPARENS(d)));
+                        d = _.expand(Symbol.unwrapPARENS(d));
+                        //get it in the for a_n*x^n+a_(n-1)x^(n-1)+...+a_0*x^0
+                        for(var j=0; j<deg; j++) {
+                            var t = _.parse(v+'^'+(j+1));
+                            factors_vec.push(_.expand(_.multiply(d.clone(), t)));
+                            f_array.push(factor.clone());
+                        }
+
+                        factors_vec.push(d);
                     }
                 }
                 return [f_array, factors_vec];
@@ -2999,7 +3010,7 @@ if((typeof module) !== 'undefined') {
                     return symbol.clone(); //currently only does univariate
                 */
                 try {
-                    var num, den, factors, ofactors, factor_arr, nterms, 
+                    var num, den, factors, ofactors, nterms, 
                         dterms, max, M, c, powers, div, r, factors_vec;
                     num = _.expand(symbol.getNum());
                     den = symbol.getDenom(true);
@@ -3009,11 +3020,9 @@ if((typeof module) !== 'undefined') {
                     //the returned group will be a CB
                     //collect the terms wrt the x
                     nterms = num.groupTerms(v);
-                    //a very rough and inefficient way of checking that top is larger
-                    var top_larger = nterms.length > _.expand(den.clone()).groupTerms(v).length;
 
-                    //trial division since it's faster than checking if to is greater
-                    if(top_larger) {
+                    //divide out wholes if top is larger
+                    if(__.degree(num, v) > __.degree(den, v)) {
                         div = __.div(num.clone(), _.expand(den.clone()));
                         r = div[0]; //remove the wholes
                         num = div[1]; //work with the remainder
@@ -3026,7 +3035,7 @@ if((typeof module) !== 'undefined') {
                     ofactors = __.Factor.factor(den);
                     //create the template. This method will create the template for solving 
                     //the partial fractions. So given x/(x-1)^2 the template creates A/(x-1)+B/(x-1)^2
-                    var template = __.PartFrac.createTemplate(den.clone(), ofactors, []);
+                    var template = __.PartFrac.createTemplate(den.clone(), ofactors, [], v);
                     factors = template[0].reverse();
                     factors_vec = template[1];
                     //make note of the powers of each term
@@ -3051,7 +3060,7 @@ if((typeof module) !== 'undefined') {
                     for(var i=0; i<dterms.length; i++) {
                         M.elements.push(core.Utils.fillHoles(dterms[i], max));
                     }
-                    
+
                     //solve the system of equations
                     var partials = _.multiply(M.transpose().invert(), c);
 
@@ -3099,9 +3108,9 @@ if((typeof module) !== 'undefined') {
             //would eliminate this but no sense in checking twice. 
             if(symbol.isComposite()) { 
                 symbol.each(function(x) {
-                    o.depth++;
+                    o.depth++; //mark a depth increase
                     __.degree(x, v, o);
-                    o.depth--;
+                    o.depth--; //we're back
                 });
             }
             else if(symbol.group === CB) {
@@ -3238,3 +3247,4 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+

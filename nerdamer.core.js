@@ -1736,10 +1736,10 @@ var nerdamer = (function(imports) {
             }; 
         },
         gte: function(value) {
-            return this.greaterThan(value) || this.equals(value);
+            return this.gt(value) || this.eq(value);
         },
         lte: function(value) {
-            return this.lessThan(value) || this.equals(value);
+            return this.lt(value) || this.eq(value);
         }
     };
     //Aliases
@@ -6657,7 +6657,7 @@ var nerdamer = (function(imports) {
                     v[index] = this.brackets(input.join(','), 'parens');
                 }
                 else if(fname === 'limit') {
-                    v[index] = ' \lim\limits_{'+input[1]+' \to '+input[2]+'} '+input[0];
+                    v[index] = ' \\lim\\limits_{'+input[1]+' \\to '+input[2]+'} '+input[0];
                 }
                 else if(fname === 'integrate') {
                     v[index] = '\\int'+this.braces(input[0])+this.braces('d'+input[1]);
