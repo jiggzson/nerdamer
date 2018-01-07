@@ -4743,6 +4743,7 @@ var nerdamer = (function(imports) {
          */
         //TODO: this method needs serious optimization
         function nthroot(num, p, prec, asbig) {
+            if(typeof asbig === 'undefined') asbig = true;
             prec = prec || 25;
             if(!isSymbol(p))
                 p = _.parse(p);
@@ -4764,8 +4765,8 @@ var nerdamer = (function(imports) {
                 }
                     
                 if(asbig)
-                    return x;
-                return x.toDecimal(prec);
+                    return new Symbol(x);
+                return new Symbol(x.toDecimal(prec));
             }
             
             return _.symfunction('nthroot', arguments);
