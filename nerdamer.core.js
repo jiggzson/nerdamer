@@ -2063,6 +2063,11 @@ var nerdamer = (function(imports) {
         }
         return symbol;
     };
+    //quickly creates a Symbol
+    Symbol.create = function(value, power) {
+        power = power === undefined ? 1 : power;
+        return _.parse('('+value+')^('+power+')');
+    };
     
     Symbol.prototype = {
         //returns a clone.
@@ -2727,7 +2732,7 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         distributeExponent: function() { 
-            if(this.power !== 1) {
+            if(!this.power.equals(1)) {
                 var p = this.power;
                 for(var x in this.symbols) {
                     var s = this.symbols[x];

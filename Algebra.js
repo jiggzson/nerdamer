@@ -2667,10 +2667,12 @@ if((typeof module) !== 'undefined') {
                 return [symbol1, new Symbol(0)];
             }
             //special case. May need revisiting
-            if(symbol1.group === S && symbol2.group === CP) {
-                var s = symbol2.symbols[symbol1.value];
-                if(s && symbol2.isLinear() && s.isLinear() && symbol1.isLinear()) {
-                    return [new Symbol(1), _.subtract(symbol1.clone(), symbol2.clone())];
+            if(symbol1.group === S && symbol2.group === CP) { 
+                var x = symbol1.value;
+                var f = core.Utils.decompose_fn(symbol2.clone(), x, true);
+                if(symbol1.isLinear() && f.x && f.x.isLinear() && symbol2.isLinear()) {
+                    var k = Symbol.create(symbol1.multiplier);
+                    return [_.divide(k.clone(), f.a.clone()), _.divide(_.multiply(k, f.b), f.a).negate()];
                 }
             }
             if(symbol1.group === S && symbol2.group === S) {
@@ -2951,6 +2953,7 @@ if((typeof module) !== 'undefined') {
             createTemplate: function(den, denom_factors, f_array, v) {
                 //clean up the denominator function by factors so it reduces nicely
                 den = __.Factor.factor(den);
+                
                 //clean up factors. This is so inefficient but factors are wrapped in parens for safety
                 den.each(function(x, key) {
                     if(x.group === FN && x.fname === '' && x.args[0].group === S) {
@@ -2965,9 +2968,11 @@ if((typeof module) !== 'undefined') {
                     }
                 });
 
-                var factors, factors_vec, f, k, p, deg;
+                var factors, factors_vec, f, p, deg, degrees, m;
                 factors = denom_factors.collectFactors();
                 factors_vec = []; //a vector for the template
+                degrees = [];
+                m = new Symbol(1);
 
                 for(var i=0; i<factors.length; i++) { //loop through the factors
                     var factor = Symbol.unwrapPARENS(factors[i]);
@@ -2975,43 +2980,43 @@ if((typeof module) !== 'undefined') {
                     if(factor.power.greaterThan(1)) { 
                         p = Number(factor.power);
                         f = factor.clone().toLinear(); //remove the power so we have only the function
-                        deg = __.degree(f); //get the degree of f
-                        k = _.expand(_.parse('(1+'+v+')^('+(deg-1)+')'));
+                        deg = Number(__.degree(f, v)); //get the degree of f
                         //expand the factor
                         for(var j=0; j<p; j++){
                             var efactor = _.pow(f.clone(), new Symbol(j+1));
                             f_array.push(efactor.clone());
                             var d = _.divide(den.clone(), efactor.clone());
-                            factors_vec.push(_.expand(Symbol.unwrapPARENS(d)));
+                            degrees.push(deg);
+                            factors_vec.push(d);
                         }
                     }
+                    else if(factor.isConstant('all')) {
+                        m = _.multiply(m, factor);
+                    }
                     else {
-                        deg = Number(__.degree(factor))-1;
-                        f_array.push(factor.clone());
+                        //get the degree of the factor so we tack it on tot he factor. This should probably be an array
+                        //but for now we note it on the symbol
+                        deg = Number(__.degree(factor, v)); 
+                        f_array.push(factor);
                         var d = _.divide(den.clone(), factor.clone());
                         d = _.expand(Symbol.unwrapPARENS(d));
-                        //get it in the for a_n*x^n+a_(n-1)x^(n-1)+...+a_0*x^0
-                        for(var j=0; j<deg; j++) {
-                            var t = _.parse(v+'^'+(j+1));
-                            factors_vec.push(_.expand(_.multiply(d.clone(), t)));
-                            f_array.push(factor.clone());
-                        }
-
+                        degrees.push(deg);
                         factors_vec.push(d);
                     }
                 }
-                return [f_array, factors_vec];
+                //put back the constant
+                f_array = f_array.map(function(x) {
+                    return _.multiply(x, m.clone());
+                });
+                return [f_array, factors_vec, degrees];
             },
             partfrac: function(symbol, v, asArray) {
                 var vars = variables(symbol);
                 v = v || _.parse(vars[0]); //make wrt optional and assume first variable
-                /*
-                if(vars.length > 1)
-                    return symbol.clone(); //currently only does univariate
-                */
                 try {
-                    var num, den, factors, ofactors, nterms, 
-                        dterms, max, M, c, powers, div, r, factors_vec;
+                    var num, den, factors, tfactors, ofactors, nterms, degrees,
+                        dterms, max, M, c, powers, div, r, factors_vec, ks,
+                        template, tfactors;
                     num = _.expand(symbol.getNum());
                     den = symbol.getDenom(true);
                     //move the entire multipier to the numerator
@@ -3020,9 +3025,8 @@ if((typeof module) !== 'undefined') {
                     //the returned group will be a CB
                     //collect the terms wrt the x
                     nterms = num.groupTerms(v);
-
                     //divide out wholes if top is larger
-                    if(__.degree(num, v) > __.degree(den, v)) {
+                    if(__.degree(num, v) >= __.degree(den, v)) {
                         div = __.div(num.clone(), _.expand(den.clone()));
                         r = div[0]; //remove the wholes
                         num = div[1]; //work with the remainder
@@ -3030,24 +3034,42 @@ if((typeof module) !== 'undefined') {
                     }
                     else
                         r = new Symbol(0);
+                    
+                    if(__.degree(den, v) === 1) {
+                        var q = _.divide(num, den);
+                        if(asArray)
+                            return [r, q];
+                        return _.add(r, q);
+                    }
                     //first factor the denominator. This means that the strength of this
                     //algorithm depends on how well we can factor the denominator. 
                     ofactors = __.Factor.factor(den);
                     //create the template. This method will create the template for solving 
                     //the partial fractions. So given x/(x-1)^2 the template creates A/(x-1)+B/(x-1)^2
-                    var template = __.PartFrac.createTemplate(den.clone(), ofactors, [], v);
-                    factors = template[0].reverse();
-                    factors_vec = template[1];
+                    template = __.PartFrac.createTemplate(den.clone(), ofactors, [], v);
+                    tfactors = template[0]; //grab the factors
+                    factors_vec = template[1]; //grab the factor vectors
+                    degrees = template[2]; //grab the degrees
                     //make note of the powers of each term
                     powers = [nterms.length];
-
-                    //create the array vector and matrix to solve for A, B, C, ...
-                    //Place in the form P^0, P^1 , ..., P^n where p is a polynomial
-                    dterms = factors_vec.map(function(x) {
-                        var t = x.groupTerms(v);
-                        //make a note of the power which corresponds to the length of the array
-                        powers.push(t.length); 
-                        return t;
+                    //create the dterms vector
+                    dterms = [];
+                    factors = [];
+                    ks = []; 
+                    var factor, deg;
+                    factors_vec.map(function(x, idx) { 
+                        factor = tfactors[idx];
+                        deg = degrees[idx];
+                        for(var i=0; i<deg; i++) {
+                            factors.push(factor.clone());
+                            var k = Symbol.create(v, i);
+                            var t = _.expand(_.multiply(x, k.clone())).groupTerms(v);
+                            //make a note of the power which corresponds to the length of the array
+                            var p = t.length;
+                            powers.push(p); 
+                            dterms.push(t);
+                            ks.push(k.clone());
+                        }
                     });
 
                     //get the max power
@@ -3063,13 +3085,12 @@ if((typeof module) !== 'undefined') {
 
                     //solve the system of equations
                     var partials = _.multiply(M.transpose().invert(), c);
-
                     //the results are backwards to reverse it
-                    partials.elements.reverse();
+                    //partials.elements.reverse();
                     //convert it all back
                     var retval = asArray ? [r] : r;
                     partials.each(function(e, i) {
-                        var term = _.divide(e, factors[i]);
+                        var term = _.multiply(ks[i],_.divide(e, factors[i]));
                         if(asArray)
                             retval.push(term);
                         else 
@@ -3107,6 +3128,8 @@ if((typeof module) !== 'undefined') {
             //we're going to trust the user and assume no EX. Calling isPoly 
             //would eliminate this but no sense in checking twice. 
             if(symbol.isComposite()) { 
+                symbol = symbol.clone();
+                symbol.distributeExponent();
                 symbol.each(function(x) {
                     o.depth++; //mark a depth increase
                     __.degree(x, v, o);
@@ -3128,6 +3151,7 @@ if((typeof module) !== 'undefined') {
             }
             else
                 o.nd.push(new Symbol(0));
+            
             //get the max out of the array
             var deg = o.nd.length > 0 ? core.Utils.arrayMax(o.nd) : undefined;
             
@@ -3248,3 +3272,7 @@ if((typeof module) !== 'undefined') {
     nerdamer.api();
 })();
 
+//var x = nerdamer('partfrac((a*x+b)^(-1)*x, x)');
+////var x = nerdamer('div(x, a+b*x)');
+////
+//console.log(x.toString());

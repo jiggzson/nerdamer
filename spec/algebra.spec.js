@@ -407,6 +407,15 @@ describe('Algebra', function () {
                 given: 'partfrac((17-53)/(x^2-2*x-15), x)',
                 expected: '(-9/2)*(-5+x)^(-1)+(9/2)*(3+x)^(-1)'
             },
+            {
+                given: 'partfrac(1/(x^6-1),x)',
+                //this result is in expanded form and future versions should avoid this.
+                expected: '(-1/3)*(-x+x^2+1)^(-1)+(-1/3)*(1+x+x^2)^(-1)+(-1/6)*(1+x)^(-1)+(-1/6)*(1+x+x^2)^(-1)*x+(1/6)*(-1+x)^(-1)+(1/6)*(-x+x^2+1)^(-1)*x'
+            },
+            {
+                given: 'partfrac((3*x^2-3*x-8)/((x-5)*(x^2+x-4)),x)',
+                expected: '(-4+x+x^2)^(-1)*x+2*(-5+x)^(-1)'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
