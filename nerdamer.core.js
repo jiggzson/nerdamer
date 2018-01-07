@@ -1745,10 +1745,10 @@ var nerdamer = (function(imports) {
             }; 
         },
         gte: function(value) {
-            return this.greaterThan(value) || this.equals(value);
+            return this.gt(value) || this.eq(value);
         },
         lte: function(value) {
-            return this.lessThan(value) || this.equals(value);
+            return this.lt(value) || this.eq(value);
         }
     };
     //Aliases
@@ -2071,6 +2071,11 @@ var nerdamer = (function(imports) {
             return r;
         }
         return symbol;
+    };
+    //quickly creates a Symbol
+    Symbol.create = function(value, power) {
+        power = power === undefined ? 1 : power;
+        return _.parse('('+value+')^('+power+')');
     };
     
     Symbol.prototype = {
@@ -2616,7 +2621,7 @@ var nerdamer = (function(imports) {
             this.setPower(new Frac(1));
             return this;
         },
-        each: function(fn, deep) {
+        each: function(fn, deep, restrictToGroup) {
             if(!this.symbols) {
                 fn.call(this, this, this.value);
             }
@@ -2736,7 +2741,7 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         distributeExponent: function() { 
-            if(this.power !== 1) {
+            if(!this.power.equals(1)) {
                 var p = this.power;
                 for(var x in this.symbols) {
                     var s = this.symbols[x];
@@ -4414,7 +4419,7 @@ var nerdamer = (function(imports) {
                 }
             }
             return chunks;
-        }
+        };
         
         var rem_brackets = function(str) {
             return str.replace(/^\\left\((.+)\\right\)$/g, function(str, a) {
@@ -4523,7 +4528,8 @@ var nerdamer = (function(imports) {
                         else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL) 
                             f = this.toTeX(e.args) + (fname === FACTORIAL ? '!' : '!!');
                         else  {
-                            f = '\\mathrm'+LaTeX.braces(fname.replace(/_/g, '\\_')) + LaTeX.brackets(this.toTeX(e.args), 'parens');
+                            f = LaTeX.latex(e);
+                            //f = '\\mathrm'+LaTeX.braces(fname.replace(/_/g, '\\_')) + LaTeX.brackets(this.toTeX(e.args), 'parens');
                         }
                             
                         TeX.push(f);
@@ -4583,7 +4589,7 @@ var nerdamer = (function(imports) {
         /**
          * The factorial functions
          * @param {Symbol} symbol
-         * @return {Symbol)
+         * @return {Symbol}
          */
         function factorial(symbol) {
             var retval;
@@ -4657,8 +4663,12 @@ var nerdamer = (function(imports) {
             //if the symbol is already sqrt then it's that symbol^(1/4) and we can unwrap it
             else if(symbol.fname === SQRT) { 
                 var s = symbol.args[0];
+                var ms = symbol.multiplier;
                 s.setPower(symbol.power.multiply(new Frac(0.25)));
                 retval = s;
+                //grab the multiplier
+                if(!ms.equals(1))
+                    retval = _.multiply(sqrt(_.parse(ms)), retval);
             }
             //if the symbol is a fraction then we don't keep can unwrap it. For instance
             //no need to keep sqrt(x^(1/3))
@@ -6621,12 +6631,13 @@ var nerdamer = (function(imports) {
                 v = ['', ''],
                 index =  inverted ? 1 : 0; 
             /*if(group === N) //do nothing since we want to return top & bottom blank; */
-            if(group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) { 
+            if(symbol.isInfinity) {
+                v[index] = '\\infty';
+            }
+            else if(group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) { 
                 var value = symbol.value; 
                 if(value.replace) 
-                    value = value.replace(/(.+)_$/, function(match, g1) {
-                        return g1+'\\_'
-                    });
+                    value = value.replace(/(.+)_$/, '$1\\_');
                 //split it so we can check for instances of alpha as well as alpha_b
                 var t_varray = String(value).split('_'); 
                 var greek = this.greek[t_varray[0]];
@@ -6659,11 +6670,14 @@ var nerdamer = (function(imports) {
                 else if(fname === PARENTHESIS) { 
                     v[index] = this.brackets(input.join(','), 'parens');
                 }
-                else if(fname === 'defint') {
-                    v[index] = '\\int_'+this.braces(input[1])+'^'+this.braces(input[2])+this.braces(input[0])+this.braces('d'+input[3]);
+                else if(fname === 'limit') {
+                    v[index] = ' \\lim\\limits_{'+input[1]+' \\to '+input[2]+'} '+input[0];
                 }
                 else if(fname === 'integrate') {
                     v[index] = '\\int'+this.braces(input[0])+this.braces('d'+input[1]);
+                }
+                else if(fname === 'defint') {
+                    v[index] = '\\int\\limits_'+this.braces(input[1])+'^'+this.braces(input[2])+' '+input[0]+' d'+input[3];
                 }
                 else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL) {
                     var arg = symbol.args[0];
@@ -6685,6 +6699,32 @@ var nerdamer = (function(imports) {
                 //capture log(a, b)
                 else if(fname === 'log10') {
                     v[index] = '\\mathrm'+this.braces('log')+'_'+this.braces(10)+this.brackets(input[0]);
+                }
+                else if(fname === 'sum') {
+                    var a = input[0],
+                        b = input[1],
+                        c = input[2],
+                        d = input[3];
+                    v[index] = '\\sum\\limits_{'+this.braces(b)+'='+this.braces(c)+'}^'+this.braces(d)+' '+this.braces(a)+'';
+                }
+                else if(fname === 'product') {
+                    var a = input[0],
+                        b = input[1],
+                        c = input[2],
+                        d = input[3];
+                    v[index] = '\\prod\\limits_{'+this.braces(b)+'='+this.braces(c)+'}^'+this.braces(d)+' '+this.braces(a)+'';
+                }
+                else if(fname === 'nthroot') {
+                    v[index] = '\\sqrt['+input[1]+']'+this.braces(input[0]);
+                }
+                else if(fname === 'mod') {
+                    v[index] = input[0]+' \\bmod '+input[1];
+                }
+                else if(fname === 'realpart') { 
+                    v[index] = '\\operatorname{Re}'+this.brackets(input[0]);
+                }
+                else if(fname === 'imagpart') { 
+                    v[index] = '\\operatorname{Im}'+this.brackets(input[0]);
                 }
                 else { 
                     var name = fname!=='' ? '\\mathrm'+this.braces(fname.replace(/_/g, '\\_')) : '';

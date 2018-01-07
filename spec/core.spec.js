@@ -1064,6 +1064,11 @@ describe('Nerdamer core', function () {
                 expectedValue: '115.80281433592612'
             },
             {
+                given: 'sqrt(2*sqrt(5))',
+                expected: '5^(1/4)*sqrt(2)',
+                expectedValue: '2.114742526881128'
+            },
+            {
                 given: 'sqrt(2)*sqrt(2)',
                 expected: '2',
                 expectedValue: '2'
@@ -1314,6 +1319,28 @@ describe('Nerdamer core', function () {
             expect(parsed.toString()).toEqual(testCases[i].expected);
             expect(value).toEqual(testCases[i].expectedValue);
         }
+    });
+    it('should check for equality', function () {
+        var a, b, c, d, e, f, g;
+        a = nerdamer("2sqrt(5)");
+        b = nerdamer("2sqrt(5)");
+        c = nerdamer("sqrt(13)");
+        d = nerdamer("sqrt(21)");
+        e = nerdamer("sqrt(20)");
+        f = nerdamer("sqrt(5) + sqrt(3)");
+        g = nerdamer("sqrt(5) + sqrt(7)");
+        expect(a.lt(g)).toBe(true);
+        expect(a.lt(f)).toBe(false);
+        expect(a.gt(c)).toBe(true);
+        expect(a.gt(d)).toBe(false);
+        expect(a.gt(e)).toBe(false);
+        expect(a.lt(e)).toBe(false);
+        expect(a.eq(e)).toBe(true);
+        expect(b.gte(a)).toBe(true);
+        expect(c.gte(a)).toBe(false);
+        expect(e.lte(d)).toBe(true);
+        expect(f.lte(g)).toBe(true);
+        
     });
 
     /** Based on commit cf8c0f8. */

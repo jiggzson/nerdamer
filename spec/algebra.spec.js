@@ -446,6 +446,40 @@ describe('Algebra', function () {
         }
     });
     
+    it('should correctly determine the polynomial degree', function () {
+        // given
+        var testCases = [
+            {
+                given: 'deg(x^2+2*x+x^5)',
+                expected: '5'
+            }, 
+            {
+                given: 'deg(x^2+2*x+x^x)',
+                expected: 'max(2,x)'
+            }, 
+            {
+                given: 'deg(x^2+2*x+cos(x))',
+                expected: '2'
+            }, 
+            {
+                given: 'deg(x^a+x^b+x^c,x)',
+                expected: 'max(a,b,c)'
+            }, 
+            {
+                given: 'deg(a*x^2+b*x+c,x)',
+                expected: '2'
+            }
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var result = nerdamer(testCases[i].given);
+
+            // then
+            expect(result.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
     it('should correctly peform partial fraction decomposition', function () {
         // given
         var testCases = [
@@ -460,7 +494,7 @@ describe('Algebra', function () {
             }, 
             {
                 given: 'partfrac((x^3+2)/(x+1)^2,x)',
-                expected: '(1+x)^(-2)+3*(1+x)^(-1)'
+                expected: '(1+x)^(-2)+3*(1+x)^(-1)-2+x'
             }, 
             {
                 given: 'partfrac(x/(x-1)^2, x)',
@@ -468,8 +502,21 @@ describe('Algebra', function () {
             }, 
             {
                 given: 'partfrac((x^2+1)/(x*(x-1)^3), x)',
-                expected: '(-1+x)^(-2)+2*(-1+x)^(-3)-x^(-1)'
+                expected: '(-1+x)^(-1)+2*(-1+x)^(-3)-x^(-1)'
             }, 
+            {
+                given: 'partfrac((17-53)/(x^2-2*x-15), x)',
+                expected: '(-9/2)*(-5+x)^(-1)+(9/2)*(3+x)^(-1)'
+            },
+            {
+                given: 'partfrac(1/(x^6-1),x)',
+                //this result is in expanded form and future versions should avoid this.
+                expected: '(-1/3)*(-x+x^2+1)^(-1)+(-1/3)*(1+x+x^2)^(-1)+(-1/6)*(1+x)^(-1)+(-1/6)*(1+x+x^2)^(-1)*x+(1/6)*(-1+x)^(-1)+(1/6)*(-x+x^2+1)^(-1)*x'
+            },
+            {
+                given: 'partfrac((3*x^2-3*x-8)/((x-5)*(x^2+x-4)),x)',
+                expected: '(-4+x+x^2)^(-1)*x+2*(-5+x)^(-1)'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

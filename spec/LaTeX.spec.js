@@ -160,7 +160,27 @@ describe('TeX features', function () {
                 given: '1/(a*b)',
                 TeX: '\\frac{1}{a \\cdot b}',
                 decimalTeX: '\\frac{1}{a \\cdot b}'
-            }
+            },
+            {
+                given: 'sum(a,b,c,Infinity)',
+                TeX: '\\sum\\limits_{{b}={c}}^{\\infty} {a}',
+                decimalTeX: '\\sum\\limits_{{b}={c}}^{\\infty} {a}'
+            },
+            {
+                given: 'product(a,b,c,Infinity)',
+                TeX: '\\prod\\limits_{{b}={c}}^{\\infty} {a}',
+                decimalTeX: '\\prod\\limits_{{b}={c}}^{\\infty} {a}'
+            },
+            {
+                given: 'mod(a,b)',
+                TeX: 'a \\bmod b',
+                decimalTeX: 'a \\bmod b'
+            },
+            {
+                given: 'nthroot(a,b)',
+                TeX: '\\sqrt[b]{a}',
+                decimalTeX: '\\sqrt[b]{a}'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
@@ -235,12 +255,43 @@ describe('TeX features', function () {
         expect(teX).toEqual(testCases[i].expected);
       }
     });
+    
+    it('should explicitly convert to LaTeX', function () {
+      // given
+      var testCases = [
+        {
+          given: 'realpart(a)',
+          expected: '\\operatorname{Re}\\left(a\\right)'
+        },
+        {
+          given: 'imagpart(a)',
+          expected: '\\operatorname{Im}\\left(a\\right)'
+        },
+        {
+          given: 'diff(cos(x),x)',
+          expected: '\\frac{d}{d x}\\left({\\mathrm{cos}\\left(x\\right)}\\right)'
+        },
+        {
+          given: 'integrate(cos(x),x)',
+          expected: '\\int {\\mathrm{cos}\\left(x\\right)}\\, dx'
+        },
+      ];
+
+      for (var i = 0; i < testCases.length; ++i) {
+        // when
+        var teX = nerdamer.convertToLaTeX(testCases[i].given);
+
+        // then
+        expect(teX).toEqual(testCases[i].expected);
+      }
+    });
+    
     it('should display integrals', function () {
       // given
       var testCases = [
         {
           given: 'defint(log(2cos(x/2)),-π,π,x)',
-          expected: '\\int_{-\\pi}^{\\pi}{\\mathrm{log}\\left(2 \\cdot \\mathrm{cos}\\left(\\frac{x}{2}\\right)\\right)}{dx}'
+          expected: '\\int\\limits_{-\\pi}^{\\pi} \\mathrm{log}\\left(2 \\cdot \\mathrm{cos}\\left(\\frac{x}{2}\\right)\\right) dx'
         },
         {
           given: 'integrate(sin(x^x),x)',
