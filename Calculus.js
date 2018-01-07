@@ -718,144 +718,163 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 throw new NoIntegralFound(msg);
             },
             partial_fraction: function(input, dx, depth, opt) { 
-                var num, den; 
-                var m = new Symbol(input.multiplier);
-                
-                //make prepartions
-                //check if it's a symbol. If so get num and denom
-                if(isSymbol(input)) { 
-                    den = input.getDenom().invert();
-                    num = input.getNum();
-                }
-                else {
-                    //we assume it's an array
-                    num = input[0];
-                    den = input[1];
-                }
+                try {
+                    var num, den; 
+                    var m = new Symbol(input.multiplier);
 
-                //although technically not partial fractions we can  save ourselves a lot of headache with a simple u sub
-                if(num.isConstant()) {
-                    var fn = den.clone().toLinear(),
-                        a = fn.stripVar(dx),
-                        bx = _.subtract(fn.clone(), a);
-                    if(bx.group === S && bx.isLinear()) { 
-                        //we make the u substitution
-                        return __.integration.poly_integrate(input);
+                    //make prepartions
+                    //check if it's a symbol. If so get num and denom
+                    if(isSymbol(input)) { 
+                        den = input.getDenom().invert();
+                        num = input.getNum();
                     }
-                    
-                    if(den.power.greaterThan(1))
-                        den = _.expand(den);
-                }
+                    else {
+                        //we assume it's an array
+                        num = input[0];
+                        den = input[1];
+                    }
 
-                //make sure that den > num
-                var q = core.Algebra.div(num, den.clone()),
-                    M = new core.Matrix(), //prepare the two matrices
-                    c = new core.Matrix(),
-                    num_array = q[1].toArray(dx), //point to the remainder not the numerator
-                num = q[1]; //point to the remainder not the whole
-                //get the factors of the denominator
-                var factors = Symbol.unwrapPARENS(core.Algebra.Factor.factor(den)); 
+                    //although technically not partial fractions we can  save ourselves a lot of headache with a simple u sub
+                    if(num.isConstant()) {
+                        var fn = den.clone().toLinear(),
+                            a = fn.stripVar(dx),
+                            bx = _.subtract(fn.clone(), a);
+                        if(bx.group === S && bx.isLinear()) { 
+                            //we make the u substitution
+                            return __.integration.poly_integrate(input);
+                        }
 
-                var factor_array = []; 
-                //we first have to unwrap the factor and get them in ordered form. We use an array for this
-                //the first part of q can just be integrated using standard integration so we do so
-                var result = q[0].equals(0) ? q[0] : __.integrate(q[0], dx, depth || 0);
-                if(factors.group !== CP) { 
-                    factors.each(function(factor) { 
-                        //unwrap parentheses
-                        factor = Symbol.unwrapPARENS(factor);
-                        //TODO: red flag. Possible bug. The factors should already be inverted. Why are we inverting them here?
-                        if(factor.power.lessThan(0))
-                            factor.invert();
-                        if(factor.isConstant())
-                            m = _.multiply(m, factor); //add it to the constants
-                        else
-                            factor_array.push(factor);
-                    });
-                }
-                else { 
-                    if(q[1].isComposite()) { 
-                        //apply the sum rule
-                        q[1].each(function(x) {
-                            var s = _.divide(x.clone(), factors.clone());//put it back in the form num/den
-                            result = _.add(result, __.integrate(s, dx, depth || 0));
+                        if(den.power.greaterThan(1))
+                            den = _.expand(den);
+                    }
+
+                    //make sure that den > num
+                    var q = core.Algebra.div(num, den.clone()),
+                        M = new core.Matrix(), //prepare the two matrices
+                        c = new core.Matrix(),
+                        num_array = q[1].toArray(dx), //point to the remainder not the numerator
+                    num = q[1]; //point to the remainder not the whole
+                    //get the factors of the denominator
+                    var factors = Symbol.unwrapPARENS(core.Algebra.Factor.factor(den)); 
+
+                    var factor_array = []; 
+                    //we first have to unwrap the factor and get them in ordered form. We use an array for this
+                    //the first part of q can just be integrated using standard integration so we do so
+                    var result = q[0].equals(0) ? q[0] : __.integrate(q[0], dx, depth || 0);
+                    if(factors.group !== CP) { 
+                        factors.each(function(factor) { 
+                            //unwrap parentheses
+                            factor = Symbol.unwrapPARENS(factor);
+                            //TODO: red flag. Possible bug. The factors should already be inverted. Why are we inverting them here?
+                            if(factor.power.lessThan(0))
+                                factor.invert();
+                            if(factor.isConstant())
+                                m = _.multiply(m, factor); //add it to the constants
+                            else
+                                factor_array.push(factor);
                         });
                     }
                     else { 
-                        //I have no idea why integration by parts doesn't work for p === 2
-                        var fn = factors.clone().toLinear(),
-                            decomp = __.integration.decompose_arg(fn, dx),
-                            x = decomp[1],
-                            a = decomp[0],
-                            b = decomp[3];
-                        if(!x.isLinear())
-                            //we stop because u du takes care of quadratics
-                            __.integration.stop();
-                        if(factors.power.greaterThan(0)) { 
-                            if(q[1].isConstant()) {
-                                result = __.integration.poly_integrate(_.divide(q[1], factors));
-                            }
-                            else {
-                                //since we know x is linear we can just let u = x+a and u-a = x = r
-                                //TODO: On a serious note what is u du doing in partial fractions. This has got to be redone
-                                //rewrite the expression to become (1/a)*[ (ax+b)/(ax+b) - b/(ax+b)] which we can do 
-                                //since x is linear from above
-                                result = _.add(
-                                    __.integrate(_.divide(fn.clone(), factors.clone()), dx, depth || 0),
-                                    __.integrate(_.divide(b.negate(), factors.clone()), dx, depth || 0)
-                                );
-                            }
-                            result = _.divide(result, a);
+                        if(q[1].isComposite()) { 
+                            //apply the sum rule
+                            q[1].each(function(x) {
+                                var s = _.divide(x.clone(), factors.clone());//put it back in the form num/den
+                                result = _.add(result, __.integrate(s, dx, depth || 0));
+                            });
                         }
                         else { 
-                            result = __.integration.by_parts(_.divide(q[1], factors.clone()), dx, core.Settings.integration_depth, opt);
-                        }
-                    }  
+                            //I have no idea why integration by parts doesn't work for p === 2
+                            var fn = factors.clone().toLinear(),
+                                decomp = __.integration.decompose_arg(fn, dx),
+                                x = decomp[1],
+                                a = decomp[0],
+                                b = decomp[3];
+                            if(!x.isLinear())
+                                //we stop because u du takes care of quadratics
+                                __.integration.stop();
+                            if(factors.power.greaterThan(0)) { 
+                                if(q[1].isConstant()) { 
+                                    if(factors.group === CP && core.Algebra.degree(factors, _.parse(dx)).greaterThan(1))
+                                        __.integration.stop();
+                                    result = __.integration.poly_integrate(_.divide(q[1], factors));
+                                }
+                                else {
+                                    //since we know x is linear we can just let u = x+a and u-a = x = r
+                                    //TODO: On a serious note what is u du doing in partial fractions. This has got to be redone
+                                    //rewrite the expression to become (1/a)*[ (ax+b)/(ax+b) - b/(ax+b)] which we can do 
+                                    //since x is linear from above
+                                    result = _.add(
+                                        __.integrate(_.divide(fn.clone(), factors.clone()), dx, depth || 0),
+                                        __.integrate(_.divide(b.negate(), factors.clone()), dx, depth || 0)
+                                    );
+                                }
+                                result = _.divide(result, a);
+                            }
+                            else { 
+                                result = __.integration.by_parts(_.divide(q[1], factors.clone()), dx, core.Settings.integration_depth, opt);
+                            }
+                        }  
 
-                    return result;
-                }
-
-                var l = factor_array.length;
-                //if there's only one factor then we can exit since there's nothing else to compute
-                //other than the current integral of the whole and remainder
-                if(l === 1) { 
-                    //put it back in the proper form. Remember that this is the remainder so it still has a 
-                    //denominator
-                    var s = _.divide(q[1], factor_array[0]); 
-                    var intg = __.integrate(s, dx, depth || 0); //compute the integral of the remainder
-                    intg = _.divide(intg, m); //put back the multiplier
-                    result = _.add(result, intg);
-                    return result;
-                }
-                //the next step is to expand the factors excluding the current factor
-                //e.g. if the factors were (x+7)*(x+1)*(x+5) we want them as:
-                //x^2+6*x+5 because of: (x+1)*(x+5)
-                //x^2+12*x+35 because of: (x+7)*(x+5)
-                //x^2+8*x+7 because of: (x+7)*(x+1)
-                for(var i=0; i<l; i++) { 
-                    var t = new Symbol(1);
-                    for(var j=0; j<l; j++) {
-                        if(i !== j) 
-                            t = _.multiply(t, factor_array[j].clone());
+                        return result;
                     }
 
-                    t = _.expand(t).toArray(dx);//this is one of the rows
+                    var l = factor_array.length;
+                    //if there's only one factor then we can exit since there's nothing else to compute
+                    //other than the current integral of the whole and remainder
+                    if(l === 1) { 
+                        //put it back in the proper form. Remember that this is the remainder so it still has a 
+                        //denominator
+                        var s = _.divide(q[1], factor_array[0]); 
+                        var intg = __.integrate(s, dx, depth || 0); //compute the integral of the remainder
+                        intg = _.divide(intg, m); //put back the multiplier
+                        result = _.add(result, intg);
+                        return result;
+                    }
+                    //the next step is to expand the factors excluding the current factor
+                    //e.g. if the factors were (x+7)*(x+1)*(x+5) we want them as:
+                    //x^2+6*x+5 because of: (x+1)*(x+5)
+                    //x^2+12*x+35 because of: (x+7)*(x+5)
+                    //x^2+8*x+7 because of: (x+7)*(x+1)
+                    for(var i=0; i<l; i++) { 
+                        var t = new Symbol(1);
+                        for(var j=0; j<l; j++) {
+                            if(i !== j) 
+                                t = _.multiply(t, factor_array[j].clone());
+                        }
 
-                    var e = num_array[i];
-                    c.elements[i] = e ?  [e] : [Symbol(0)]; //fill the holes in the coeffs
-                    M.elements[i] = t; //add the row to the matrix
-                }
-                //solve for A, B, C, etc. We transpose to have the powers in the columns
-                var L = M.transpose().invert().multiply(c); 
-                //we can now integrate each one of them but remember we divided earlier so integrate the whole if it's not zero
-                for(var i=0; i<l; i++) { 
-                    var integral = __.integrate(_.divide(q[1].clone(), factor_array[i]), dx, depth || 0),
-                        cf = _.expand(L.elements[i][0]); 
-                    var mm = _.divide(cf, m.clone()); 
-                    result = _.add(result, _.multiply(integral, mm));
-                }
+                        t = _.expand(t).toArray(dx);//this is one of the rows
 
-                return result;
+                        var e = num_array[i];
+                        c.elements[i] = e ?  [e] : [Symbol(0)]; //fill the holes in the coeffs
+                        M.elements[i] = t; //add the row to the matrix
+                    }
+                    //solve for A, B, C, etc. We transpose to have the powers in the columns
+                    var L = M.transpose().invert().multiply(c); 
+                    //we can now integrate each one of them but remember we divided earlier so integrate the whole if it's not zero
+                    for(var i=0; i<l; i++) { 
+                        var integral = __.integrate(_.divide(q[1].clone(), factor_array[i]), dx, depth || 0),
+                            cf = _.expand(L.elements[i][0]); 
+                        var mm = _.divide(cf, m.clone()); 
+                        result = _.add(result, _.multiply(integral, mm));
+                    }
+
+                    return result;
+                }
+                catch(e){
+                    //TODO: This whole thing needs to be rolled into one but for now I'll leave it as two separate parts
+                    if(!isSymbol(dx))
+                        dx = _.parse(dx);
+                    var result, partial_fractions;
+                    result = new Symbol(0);
+                    partial_fractions = core.Algebra.PartFrac.partfrac(input, dx);
+                    if(partial_fractions.isLinear())
+                        partial_fractions.each(function(x) {
+                            result = _.add(result, __.integrate(x, dx, depth, opt));
+                        });
+                    else
+                        __.integration.stop();
+                    return result;
+                }
             },
             get_udv: function(symbol) { 
                 var parts = [[/*L*/], [/*I*/], [/*A*/], [/*T*/], [/*E*/]];
@@ -1077,7 +1096,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             retval = _.divide(retval, a);
                         }
                     }
-                    else if(symbol.isComposite() && symbol.isLinear()) {
+                    else if(symbol.isComposite() && symbol.isLinear()) { 
                         retval = new Symbol(0);
                         symbol.each(function(x) {
                             retval = _.add(retval, __.integrate(x, dx, depth));
@@ -1188,7 +1207,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 }
                             }
                             else { 
-                                if(x.isLinear() && x.group !== PL)
+                                if(x.isLinear() && x.group !== PL) 
                                     retval = _.divide(__.integration.poly_integrate(symbol), a);
                                 else if(x.power.equals(2) && a.greaterThan(0)) { 
                                     var sqa, sqb, aob, bsqi, n, integral, u, v, uv;
@@ -1211,11 +1230,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     return _.multiply(integral.sub(uv, v), bsqi);
                                 }
                                 else { 
+                                    var f = symbol.clone().toLinear();
                                     if(symbol.group !== CB && !symbol.power.lessThan(0)) {
                                         retval = __.integration.by_parts(symbol, dx, depth, opt);
                                     }
-                                    else 
+                                    else { 
                                         retval = __.integration.partial_fraction(symbol, dx, depth, opt);
+                                    }
                                 }
                             }
                             retval.multiplier = retval.multiplier.multiply(m);
@@ -1506,7 +1527,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                                     trans = _.parse('(1-'+u.fname+core.Utils.inBrackets(arg1)+'^2)^'+k), 
                                                                     sym = _.expand(_.multiply(new Symbol(sign), _.multiply(u.clone(), trans)));
                                                                 //we can now just loop through and integrate each since it's now just a polynomial with functions
-                                                                sym.each(function(x) {
+                                                                sym.each(function(x) { 
                                                                     retval = _.add(retval, __.integration.poly_integrate(x.clone()));
                                                                 });
                                                             }
@@ -1658,6 +1679,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         retval = __.integration.partial_fraction(symbol, dx, depth);
                                     }
                                     else if(g1 === CP && g2 === S) {  
+                                        var f = sym1.clone().toLinear(),
+                                            f_is_linear = core.Algebra.degree(f, _.parse(dx)).equals(1);
                                         //handle cases x^(2*n)/sqrt(1-x^2)
                                         if(sym1.power.equals(-1/2)) { 
                                             var decomp = __.integration.decompose_arg(sym1.clone().toLinear(), dx);
@@ -1678,7 +1701,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 retval = _.multiply(c, integral.sub(new Symbol('u'), bksub));
                                             }   
                                         }
-                                        else if(sym1.power.equals(-1) && sym2.isLinear()) { 
+                                        else if(sym1.power.equals(-1) && sym2.isLinear() && f_is_linear) { 
                                             retval = __.integration.partial_fraction(symbol, dx, depth);
                                         }
                                         else if(!sym1.power.lessThan(0) && isInt(sym1.power)) { 
@@ -1695,7 +1718,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                     retval = _.add(retval, __.integrate(_.multiply(sym2.clone(), x), dx, depth));
                                             });
                                         }
-                                        else if(sym1.power.lessThan(-2)) {
+                                        else if(sym1.power.lessThan(-2)) { 
                                             retval = __.integration.by_parts(symbol, dx, depth, opt);
                                         }
                                         else if(sym1.power.lessThan(0) && sym2.power.greaterThan(1)) { 
@@ -1761,7 +1784,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                         retval = integral.sub(u, _.symfunction(ASIN, [_.multiply(new Symbol(dx), c)]));
                                                 }
                                             }
-                                            else
+                                            else if(f_is_linear)
                                                 retval = __.integration.partial_fraction(symbol, dx, depth);
                                         }
 

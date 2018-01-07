@@ -3026,7 +3026,7 @@ if((typeof module) !== 'undefined') {
                     //collect the terms wrt the x
                     nterms = num.groupTerms(v);
                     //divide out wholes if top is larger
-                    if(__.degree(num, v) >= __.degree(den, v)) {
+                    if(Number(__.degree(num, v)) >= Number(__.degree(den, v))) {
                         div = __.div(num.clone(), _.expand(den.clone()));
                         r = div[0]; //remove the wholes
                         num = div[1]; //work with the remainder
@@ -3035,7 +3035,7 @@ if((typeof module) !== 'undefined') {
                     else
                         r = new Symbol(0);
                     
-                    if(__.degree(den, v) === 1) {
+                    if(Number(__.degree(den, v)) === 1) {
                         var q = _.divide(num, den);
                         if(asArray)
                             return [r, q];
@@ -3100,7 +3100,7 @@ if((typeof module) !== 'undefined') {
                     //done
                     return retval;
                 }
-                catch(e){console.log(e);};
+                catch(e){};
 
                 return symbol;
             }
@@ -3160,6 +3160,8 @@ if((typeof module) !== 'undefined') {
                     o.sd.unshift(deg);
                 return _.symfunction('max', o.sd);
             }
+            if(!core.Utils.isSymbol(deg))
+                deg = _.parse(deg);
             //return the degree
             return deg;
         },
@@ -3271,8 +3273,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-//var x = nerdamer('partfrac((a*x+b)^(-1)*x, x)');
-////var x = nerdamer('div(x, a+b*x)');
-////
-//console.log(x.toString());
