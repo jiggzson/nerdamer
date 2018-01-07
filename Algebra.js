@@ -2579,7 +2579,7 @@ if((typeof module) !== 'undefined') {
             var args;
             if(arguments.length === 1 && arguments[0] instanceof core.Vector)
                 args = arguments[0].elements;
-            else args = arguments2Array(arguments);
+            else args = core.Utils.arguments2Array(arguments);
             
             var appeared = [], evaluate = false;
             for(var i = 0; i < args.length; i++) {
