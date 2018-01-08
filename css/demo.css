@@ -136,3 +136,15 @@
 .guppy_buttons {
     display: none !important;
 }
+
+.checkbox label {
+    padding-left: 10px;
+}
+
+.checkbox-label {
+    font-size: 0.6em;
+}
+
+.expression-body .katex .mfrac .frac-line {
+    border-bottom-style: none !important;
+}
