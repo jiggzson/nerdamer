@@ -31,7 +31,8 @@ if((typeof module) !== 'undefined') {
         Frac = core.Frac,
         isInt = core.Utils.isInt,
         Symbol = core.Symbol,
-        CONST_HASH = core.Settings.CONST_HASH;
+        CONST_HASH = core.Settings.CONST_HASH,
+        math = core.Utils.importFunctions();
 
     //*************** CLASSES ***************//
     /**
@@ -572,6 +573,47 @@ if((typeof module) !== 'undefined') {
         return true;
     };
     /**
+     * Groups the terms in a symbol with respect to a variable
+     * For instance the symbol {a*b^2*x^2+a*b*x^2+x+6} returns [6,1,a*b+a*b^2]
+     * @returns {Factors}
+     */
+    Symbol.prototype.groupTerms = function(x) {
+        x = String(x);
+        var f, p, egrouped;
+        var grouped = [];
+        this.each(function(e) {
+            if(e.group === PL) {
+                egrouped = e.groupTerms(x);
+                for(var i=0; i<egrouped.length; i++) {
+                    var el = egrouped[i];
+                    if(el)
+                        grouped[i] = el;
+                }
+            }
+            else {
+                f = core.Utils.decompose_fn(e, x, true);
+                p = f.x.value === x ? Number(f.x.power) : 0;
+                //check if there's an existing value
+                grouped[p] = _.add(grouped[p] || new Symbol(0), f.a);
+            }   
+        });
+        return grouped;
+    };
+    /**
+     * Use this to collect Factors
+     * @returns {Symbol[]}
+     */
+    Symbol.prototype.collectFactors = function() {
+        var factors = [];
+        if(this.group === CB)
+            this.each(function(x) {
+               factors.push(x.clone());
+            });
+        else
+            factors.push(this.clone());
+        return factors;
+    };
+    /**
      * A container class for factors
      * @returns {Factors}
      */
@@ -616,7 +658,10 @@ if((typeof module) !== 'undefined') {
     Factors.prototype.toSymbol = function() {
         var factored = new Symbol(1);
         for(var x in this.factors) {
-            var factor = this.factors[x].power.equals(1) ? 
+            var f = this.factors[x],
+                g = f.group;
+            //don't wrap group S or FN
+            var factor = f.power.equals(1)? 
                 _.symfunction(core.PARENTHESIS, [this.factors[x]]) : this. factors[x];
             factored = _.multiply(factored, factor);
         }
@@ -657,6 +702,25 @@ if((typeof module) !== 'undefined') {
      */
     Factors.prototype.count = function() {
         return keys(this.factors).length;
+    };
+    /**
+     * Cleans up factors from -1
+     * @returns {undefined}
+     */
+    Factors.prototype.clean = function() {
+        try {
+            var h = core.Settings.CONST_HASH;
+            if(this.factors[h].lessThan(0)) {
+                if(this.factors[h].equals(-1))
+                    delete this.factors[h];
+                else
+                    this.factors[h].negate();
+                this.each(function(x) {
+                    x.negate();
+                });
+            }
+        }
+        catch(e){};
     };
     Factors.prototype.toString = function() {
         return this.toSymbol().toString();
@@ -818,7 +882,7 @@ if((typeof module) !== 'undefined') {
         return subs;
     };
     var __ = core.Algebra = {
-        version: '1.4.4',
+        version: '1.4.5',
         init: (function() {})(),
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
@@ -1752,7 +1816,7 @@ if((typeof module) !== 'undefined') {
             for(var i=0,l=coeffs.length; i<l; i++) 
                 if(typeof coeffs[i] === 'undefined')
                     coeffs[i] = new Symbol(0);
-            
+
             return coeffs;    
         },
         /**
@@ -1977,6 +2041,20 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             factor: function(symbol, factors) {
+                //expand the symbol to get it in a predictable form. If this step
+                //is skipped some factors are missed.
+                
+                if(symbol.group === CP) {
+                    var t = new Symbol(0);
+                    symbol.each(function(x) {
+                        if((x.group === CP && x.power.greaterThan(1) || x.group === CB))
+                            x = _.expand(x);
+                        t = _.add(t, x);
+                    });
+                    t.power = symbol.power;
+                    symbol = t;
+                }
+                
                 if(symbol.group === FN && symbol.fname !== 'sqrt')
                     symbol = core.Utils.evaluate(symbol);
                 
@@ -2038,10 +2116,9 @@ if((typeof module) !== 'undefined') {
                                 return _.pow(symbol, _.parse(p));
                         }
                         //factor the coefficients
-                        
                         symbol = __.Factor.coeffFactor(symbol, factors);
                         //factor the power
-                        symbol = __.Factor.powerFactor(symbol, factors);
+                        symbol = __.Factor.powerFactor(symbol, factors);       
                         if(vars.length === 1) { 
                             symbol = __.Factor.squareFree(symbol, factors);
                             var t_factors = new Factors();
@@ -2049,25 +2126,17 @@ if((typeof module) !== 'undefined') {
                             for(var x in t_factors.factors) {
                                 factors.add(_.pow(t_factors.factors[x], _.parse(p)));
                             }
-                            
                         }
                         else {
                             symbol = __.Factor.mfactor(symbol, factors);
                         }
+                        
                         symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
 
                         factors.add(_.pow(symbol, _.parse(p)));
-                        
+                        //last minute clean up
+                        factors.clean();
                         return factors.toSymbol();
-
-                        //compare the inval and outval and they must be the same or else we failed
-                        /*
-                        if(multiVar && !core.Utils.compare(original, retval, vars)) { 
-                            return original;                   
-                        }
-                        */
-
-                        //return _.pow(retval, _.parse(p));
                     }
                     
                     return symbol;    
@@ -2305,7 +2374,66 @@ if((typeof module) !== 'undefined') {
                         while(is_factor)
                     }
                 }
-                    
+
+                return symbol;
+            },
+            //difference of squares factorization
+            sqdiff: function(symbol, factors) { 
+                try {
+                    var remove_square = function(x) {
+                        return core.Utils.block('POSITIVE_MULTIPLIERS', function() {
+                            return Symbol.unwrapPARENS(math.sqrt(math.abs(x)));
+                        }, true);
+                    }; 
+                    var separated = core.Utils.separate(symbol.clone());
+                    var obj_array = [];
+                    //get the unique variables
+                    for(var x in separated) {
+                        if(x !== 'constants') {
+                            obj_array.push(separated[x]);
+                        }
+                    }
+                    obj_array.sort(function(a, b) {
+                        return b.power - a.power;
+                    });
+
+                    //if we have the same number of variables as unique variables then we can apply the difference of squares
+                    if(obj_array.length === 2) { 
+                        var a, b;
+                        a = obj_array.pop();
+                        b = obj_array.pop();
+                        if(a.isComposite() && b.power.equals(2)) {
+                            //remove the square from b
+                            b = remove_square(b);
+                            var f = __.Factor.factor(_.add(a, separated.constants));
+                            if(f.power.equals(2)) {
+                                f.toLinear();
+                                factors.add(_.subtract(f.clone(), b.clone()));
+                                factors.add(_.add(f, b));
+                                symbol = new Symbol(1);
+                            }
+                        }
+                        else {
+                            a = a.powSimp();
+                            b = b.powSimp();
+                            
+                            if((a.group === S || a.fname === '') && a.power.equals(2) && (b.group === S || b.fname === '') && b.power.equals(2)) {
+                                if(a.multiplier.lessThan(0)) {
+                                    var t = b; b = a; a = t;
+                                }
+                                if(a.multiplier.greaterThan(0)) {
+                                    a = remove_square(a);
+                                    b = remove_square(b);
+                                }
+                                factors.add(_.subtract(a.clone(), b.clone()));
+                                factors.add(_.add(a, b));
+                                symbol = new Symbol(1);
+                            }
+                        }
+                    }
+                }
+                catch(e){;}
+                
                 return symbol;
             },
             //factoring for multivariate
@@ -2326,6 +2454,7 @@ if((typeof module) !== 'undefined') {
                 else { 
                     //symbol = __.Factor.common(symbol, factors);
                     symbol = __.Factor.mSqfrFactor(symbol, factors);
+                    
                     var vars = variables(symbol),
                         symbols = symbol.collectSymbols().map(function(x) {
                             return Symbol.unwrapSQRT(x);
@@ -2352,29 +2481,37 @@ if((typeof module) !== 'undefined') {
                         var r = _.parse(x+'^'+maxes[x]); 
                         var div = _.divide(sorted[x], r);
                         var new_factor = _.expand(div); 
+                        
+                        if(new_factor.equals(1))
+                            break; //why divide by one. Just move 
                         var divided = __.div(symbol.clone(), new_factor); 
-                        if(divided[0].equals(0)) { //cant factor anymore
-                            //factors.add(divided[1]);
-                            return divided[1];
+                        if(divided[0].equals(0)) { 
+                            //cant factor anymore
+                            break;
                         }
                         
-                        if(divided[1].equals(0)) { //we found at least one factor
+                        var neg_numeric_factor = isInt(new_factor) && new_factor.lessThan(0);
+                        
+                        if(divided[1].equals(0) && !neg_numeric_factor) { //we found at least one factor
                             //factors.add(new_factor);
                             var d = __.div(symbol.clone(), divided[0].clone());
                             var r = d[0];
+                            symbol = d[1];
                             //we don't want to just flip the sign. If the remainder is -1 then we accomplished nothing
                             //and we just return the symbol;
                             if(r.equals(-1))
                                 return symbol;
+                            
                             var factor = divided[0]; 
                             if(symbol.equals(factor)) {
                                 var rem = __.Factor.reduce(factor, factors);
                                 if(!symbol.equals(rem)) 
                                     return __.Factor.mfactor(rem, factors);
                             }
-                            else
+                            else 
                                 factors.add(factor); 
-                            if(r.isConstant()) { 
+                            
+                            if(r.isConstant('all')) { 
                                 factors.add(r);
                                 return r;
                             }
@@ -2384,7 +2521,11 @@ if((typeof module) !== 'undefined') {
                     }
                 }
                 
+                //difference of squares factorization
+                symbol = __.Factor.sqdiff(symbol, factors);
+                //factors by fishing for zeroes
                 symbol = __.Factor.zeroes(symbol, factors);
+                
                 return symbol;
             }
         },
@@ -2518,27 +2659,6 @@ if((typeof module) !== 'undefined') {
             return _.add(result[0], remainder);
         },
         div: function(symbol1, symbol2) {
-//            
-//            if(!symbol1.isComposite() && !symbol2.isComposite()) {
-//                var t = 'symbol1: '+symbol1+'     symbol2: '+symbol2;
-//                var r = _.divide(symbol1.clone(), symbol2.clone());
-//                console.log(r.toString(), t)
-//                if(r.isConstant())
-//                    return [r, new Symbol(0)];
-//                return [new Symbol(0), symbol1];
-//            }
-//            if(symbol1.isComposite() && !symbol2.isComposite()) {
-//                console.log('symbol1: '+symbol1+'     symbol2: '+symbol2, 'TWO')
-//                var rem = new Symbol(0),
-//                    q = new Symbol(0);
-//                symbol1.each(function(x) {
-//                    var r = __.div(x, symbol2.clone());
-//                    q = _.add(q, r[0]);
-//                    rem = _.add(rem, r[1]);
-//                });
-//                console.log([q, rem].toString())
-//                return [q, rem];
-//            }
             //division by constants
             if(symbol2.isConstant()) {
                 symbol1.each(function(x) { 
@@ -2547,10 +2667,12 @@ if((typeof module) !== 'undefined') {
                 return [symbol1, new Symbol(0)];
             }
             //special case. May need revisiting
-            if(symbol1.group === S && symbol2.group === CP) {
-                var s = symbol2.symbols[symbol1.value];
-                if(s && symbol2.isLinear() && s.isLinear() && symbol1.isLinear()) {
-                    return [new Symbol(1), _.subtract(symbol1.clone(), symbol2.clone())];
+            if(symbol1.group === S && symbol2.group === CP) { 
+                var x = symbol1.value;
+                var f = core.Utils.decompose_fn(symbol2.clone(), x, true);
+                if(symbol1.isLinear() && f.x && f.x.isLinear() && symbol2.isLinear()) {
+                    var k = Symbol.create(symbol1.multiplier);
+                    return [_.divide(k.clone(), f.a.clone()), _.divide(_.multiply(k, f.b), f.a).negate()];
                 }
             }
             if(symbol1.group === S && symbol2.group === S) {
@@ -2827,17 +2949,274 @@ if((typeof module) !== 'undefined') {
                 b = _.multiply(v1.e(1).clone(),m);
             return _.add(_.subtract(a, b), v1.e(2).clone());
         },
-        partfrac: function(symbol, x) {
-            var num, den, num_max, den_max;
-            num = symbol.getNum();
-            den = symbol.getDenom().toLinear(true);
-            num_max = core.Utils.arrayMax(__.polyPowers(num, x.toString()));
-            den_max = core.Utils.arrayMax(__.polyPowers(den, x.toString()));
-            if(num_max > den_max) {
-                var div = __.div(num.clone(), den.clone());
+        PartFrac: {
+            createTemplate: function(den, denom_factors, f_array, v) {
+                //clean up the denominator function by factors so it reduces nicely
+                den = __.Factor.factor(den);
+                
+                //clean up factors. This is so inefficient but factors are wrapped in parens for safety
+                den.each(function(x, key) {
+                    if(x.group === FN && x.fname === '' && x.args[0].group === S) {
+                        var y = x.args[0];
+                        if(this.symbols) {
+                            delete this.symbols[key];
+                            this.symbols[y.value] = y;
+                        }
+                        else {
+                            den = x.args[0];
+                        }
+                    }
+                });
+
+                var factors, factors_vec, f, p, deg, degrees, m;
+                factors = denom_factors.collectFactors();
+                factors_vec = []; //a vector for the template
+                degrees = [];
+                m = new Symbol(1);
+
+                for(var i=0; i<factors.length; i++) { //loop through the factors
+                    var factor = Symbol.unwrapPARENS(factors[i]);
+                    //if in he for P^n where P is polynomial and n = integer
+                    if(factor.power.greaterThan(1)) { 
+                        p = Number(factor.power);
+                        f = factor.clone().toLinear(); //remove the power so we have only the function
+                        deg = Number(__.degree(f, v)); //get the degree of f
+                        //expand the factor
+                        for(var j=0; j<p; j++){
+                            var efactor = _.pow(f.clone(), new Symbol(j+1));
+                            f_array.push(efactor.clone());
+                            var d = _.divide(den.clone(), efactor.clone());
+                            degrees.push(deg);
+                            factors_vec.push(d);
+                        }
+                    }
+                    else if(factor.isConstant('all')) {
+                        m = _.multiply(m, factor);
+                    }
+                    else {
+                        //get the degree of the factor so we tack it on tot he factor. This should probably be an array
+                        //but for now we note it on the symbol
+                        deg = Number(__.degree(factor, v)); 
+                        f_array.push(factor);
+                        var d = _.divide(den.clone(), factor.clone());
+                        d = _.expand(Symbol.unwrapPARENS(d));
+                        degrees.push(deg);
+                        factors_vec.push(d);
+                    }
+                }
+                //put back the constant
+                f_array = f_array.map(function(x) {
+                    return _.multiply(x, m.clone());
+                });
+                return [f_array, factors_vec, degrees];
+            },
+            partfrac: function(symbol, v, asArray) {
+                var vars = variables(symbol);
+                v = v || _.parse(vars[0]); //make wrt optional and assume first variable
+                try {
+                    var num, den, factors, tfactors, ofactors, nterms, degrees,
+                        dterms, max, M, c, powers, div, r, factors_vec, ks,
+                        template, tfactors;
+                    num = _.expand(symbol.getNum());
+                    den = symbol.getDenom(true);
+                    //move the entire multipier to the numerator
+                    num.multiplier = symbol.multiplier;
+                    //we only have a meaningful change if n factors > 1. This means that
+                    //the returned group will be a CB
+                    //collect the terms wrt the x
+                    nterms = num.groupTerms(v);
+                    //divide out wholes if top is larger
+                    if(Number(__.degree(num, v)) >= Number(__.degree(den, v))) {
+                        div = __.div(num.clone(), _.expand(den.clone()));
+                        r = div[0]; //remove the wholes
+                        num = div[1]; //work with the remainder
+                        nterms = num.groupTerms(v); //recalculate the nterms
+                    }
+                    else
+                        r = new Symbol(0);
+                    
+                    if(Number(__.degree(den, v)) === 1) {
+                        var q = _.divide(num, den);
+                        if(asArray)
+                            return [r, q];
+                        return _.add(r, q);
+                    }
+                    //first factor the denominator. This means that the strength of this
+                    //algorithm depends on how well we can factor the denominator. 
+                    ofactors = __.Factor.factor(den);
+                    //create the template. This method will create the template for solving 
+                    //the partial fractions. So given x/(x-1)^2 the template creates A/(x-1)+B/(x-1)^2
+                    template = __.PartFrac.createTemplate(den.clone(), ofactors, [], v);
+                    tfactors = template[0]; //grab the factors
+                    factors_vec = template[1]; //grab the factor vectors
+                    degrees = template[2]; //grab the degrees
+                    //make note of the powers of each term
+                    powers = [nterms.length];
+                    //create the dterms vector
+                    dterms = [];
+                    factors = [];
+                    ks = []; 
+                    var factor, deg;
+                    factors_vec.map(function(x, idx) { 
+                        factor = tfactors[idx];
+                        deg = degrees[idx];
+                        for(var i=0; i<deg; i++) {
+                            factors.push(factor.clone());
+                            var k = Symbol.create(v, i);
+                            var t = _.expand(_.multiply(x, k.clone())).groupTerms(v);
+                            //make a note of the power which corresponds to the length of the array
+                            var p = t.length;
+                            powers.push(p); 
+                            dterms.push(t);
+                            ks.push(k.clone());
+                        }
+                    });
+
+                    //get the max power
+                    max = core.Utils.arrayMax(powers);
+
+                    //fill the holes and create a matrix
+                    c = new core.Matrix(core.Utils.fillHoles(nterms, max)).transpose();
+                    //for each of the factors we do the same
+                    M = new core.Matrix();
+                    for(var i=0; i<dterms.length; i++) {
+                        M.elements.push(core.Utils.fillHoles(dterms[i], max));
+                    }
+
+                    //solve the system of equations
+                    var partials = _.multiply(M.transpose().invert(), c);
+                    //the results are backwards to reverse it
+                    //partials.elements.reverse();
+                    //convert it all back
+                    var retval = asArray ? [r] : r;
+                    partials.each(function(e, i) {
+                        var term = _.multiply(ks[i],_.divide(e, factors[i]));
+                        if(asArray)
+                            retval.push(term);
+                        else 
+                            retval = _.add(retval, term);
+                    });
+
+                    //done
+                    return retval;
+                }
+                catch(e){};
+
+                return symbol;
             }
         },
+        degree: function(symbol, v, o) { 
+            o = o || {
+                nd: [], //numeric
+                sd: [], //symbolic
+                depth: 0 //call depth
+            };
+            
+            if(!v) {
+                var vars = variables(symbol);
+                //The user must specify the variable for multivariate
+                if(vars.length > 1)
+                    throw new Error('You must specify the variable for multivariate polynomials!');
+                //if it's empty then we're dealing with a constant
+                if(vars.length === 0)
+                    return new Symbol(0);
+                //assume the variable for univariate
+                v = _.parse(vars[0]);
+            }
 
+            //store the group
+            var g = symbol.group;
+            //we're going to trust the user and assume no EX. Calling isPoly 
+            //would eliminate this but no sense in checking twice. 
+            if(symbol.isComposite()) { 
+                symbol = symbol.clone();
+                symbol.distributeExponent();
+                symbol.each(function(x) {
+                    o.depth++; //mark a depth increase
+                    __.degree(x, v, o);
+                    o.depth--; //we're back
+                });
+            }
+            else if(symbol.group === CB) {
+                symbol.each(function(x) {
+                    o.depth++;
+                    __.degree(x, v, o);
+                    o.depth++;
+                });
+            }
+            else if(g === EX && symbol.value === v.value) { 
+                o.sd.push(symbol.power.clone());
+            }
+            else if(g === S && symbol.value === v.value){ 
+                o.nd.push(_.parse(symbol.power));
+            }
+            else
+                o.nd.push(new Symbol(0));
+            
+            //get the max out of the array
+            var deg = o.nd.length > 0 ? core.Utils.arrayMax(o.nd) : undefined;
+            
+            if(o.depth === 0 && o.sd.length > 0) {
+                if(deg !== undefined)
+                    o.sd.unshift(deg);
+                return _.symfunction('max', o.sd);
+            }
+            if(!core.Utils.isSymbol(deg))
+                deg = _.parse(deg);
+            //return the degree
+            return deg;
+        },
+        /**
+         * Attempts to complete the square of a polynomial
+         * @param {type} symbol
+         * @param {type} v
+         * @param {type} raw
+         * @throws {Error} 
+         * @returns {Object|Symbol[]}
+         */
+        sqComplete: function(symbol, v, raw) {
+            if(!core.Utils.isSymbol(v))
+                v = _.parse(v);
+            var stop = function(msg) {
+                msg = msg || 'Stopping';
+                throw new Error(msg);
+            };
+            //if not CP then nothing to do
+            if(symbol.group !== CP) 
+                stop('Must be a polynomial!');
+            //declare vars
+            var deg, a, b, c, d, e, coeffs, sign, br, sym, sqrt_a;
+
+            br = core.Utils.inBrackets;
+            //make a copy
+            symbol = symbol.clone();
+            deg = core.Algebra.degree(symbol, v); //get the degree of polynomial
+            //must be in form ax^2 +/- bx +/- c
+            if(!deg.equals(2))
+                stop('Cannot complete square for degree '+deg);
+            //get the coeffs
+            coeffs = core.Algebra.coeffs(symbol, v);
+            a = coeffs[2];
+            //store the sign
+            sign = coeffs[1].sign(); 
+            //divide the linear term by two and square it
+            b = _.divide(coeffs[1], new Symbol(2));
+            //add the difference to the constant
+            c = _.pow(b.clone(), new Symbol(2));
+            if(raw)
+                return [a, b, d];
+            sqrt_a = math.sqrt(a);
+            e = _.divide(math.sqrt(c), sqrt_a.clone());
+            //calculate d which is the constant
+            d = _.subtract(coeffs[0], _.pow(e.clone(), new Symbol(2)));
+            //compute the square part
+            sym = _.parse(br(sqrt_a.clone()+'*'+v+(sign < 0 ? '-' : '+')+e));
+            return {
+                a: sym,
+                c: d,
+                f: _.add(_.pow(sym.clone(), new Symbol(2)), d.clone())
+            };
+        },
         Classes: {
             Polynomial: Polynomial,
             Factors: Factors,
@@ -2914,17 +3293,58 @@ if((typeof module) !== 'undefined') {
             build: function() { return __.div; }
         },
         {
+            name: 'partfrac',
+            visible: true,
+            numargs: [1,2],
+            build: function() { return __.PartFrac.partfrac; }
+        },
+        {
+            name: 'deg',
+            visible: true,
+            numargs: [1,2],
+            build: function() { return __.degree; }
+        },
+        {
             name: 'coeffs',
             visible: true,
             numargs: [1, 2],
-            build: function() { return __.coeffs; }
+            build: function() { 
+                var f = function() {
+                    var coeffs = __.coeffs.apply(__, arguments);
+                    return new core.Vector(coeffs);
+                };
+                return f;
+            }
         },
         {
             name: 'line',
             visible: true,
             numargs: [2, 3],
             build: function() { return __.line; }
+        },
+        {
+            name: 'sqcomp',
+            visible: true,
+            numargs: [1,2],
+            build: function() { 
+                var f = function(x, v) {
+                    try {
+                        v = v || variables(x)[0];
+                        var sq = __.sqComplete(x.clone(), v);
+                        return sq.f;
+                    }
+                    catch(e) {
+                        return x;
+                    }
+                };
+                return f;
+            }
         }
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer('sqcomp(9*x^2-18*x+17)');
+console.log(x.toString());
+var y = nerdamer('sqcomp(a*x^2+b*x-11*c, x)');
+console.log(y.toString());

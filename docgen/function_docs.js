@@ -401,7 +401,7 @@ FUNCTIONS = {
             },
             value: {
                 type: 'VARIES',
-                description: "The value to set the setting to."
+                description: "The value to set the setting to. Pass in an object for multiple settings."
             }
         },
         examples: [
@@ -2078,6 +2078,29 @@ FUNCTIONS = {
             "coeffs = nerdamer.coeffs('a*x+b/x^2', 'x');",
             "var p = nerdamer('vecget(coeffs(7*x^2+3*x+11, x), 2)');",
             "console.log(p.toString());"
+        ],
+        returns: 'Vector'
+    },
+    Algebra__sqcomp: {
+        type: 'internal',
+        usage: 'sqcomp(polynomial, x)',
+        full_name: 'complete the square',
+        description: 'Attempts to rewrite to polynomial to complete the square.',
+        parameters: {
+            polynomial: {
+                type: 'expression',
+                description: "The polynomial for which is to be rewritten."
+            },
+            x: {
+                type: 'expression',
+                description: "The variable to use. Will automatically assume the variable for univariate polynomials."
+            }
+        },
+        examples: [
+            "var x = nerdamer('sqcomp(9*x^2-18*x+17)');",
+            "console.log(x.toString());",
+            "var y = nerdamer('sqcomp(a*x^2+b*x-11*c, x)');",
+            "console.log(y.toString());"
         ],
         returns: 'Vector'
     },
