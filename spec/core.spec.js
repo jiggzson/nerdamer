@@ -1729,6 +1729,115 @@ describe('Nerdamer core', function () {
         expect(result).toEqual(testCases[i].expected, testCases[i].given);
       }
     });
+    
+    it('should compute complex numbers', function() {
+        var testCases = [
+            //SYMBOLIC
+            {
+                given: 'cos(3*i+a)',
+                expected: 'cos(3*i+a)'
+            },
+            {
+                given: 'sin(3*i+a)',
+                expected: 'sin(3*i+a)'
+            },
+            {
+                given: 'tan(3*i+a)',
+                expected: 'tan(3*i+a)'
+            },
+            {
+                given: 'sec(3*i+a)',
+                expected: 'sec(3*i+a)'
+            },
+            {
+                given: 'csc(3*i+a)',
+                expected: 'csc(3*i+a)'
+            },
+            {
+                given: 'cot(3*i+a)',
+                expected: 'cot(3*i+a)'
+            },
+            {
+                given: 'acos(3*i+a)',
+                expected: 'acos(3*i+a)'
+            },
+            {
+                given: 'asin(3*i+a)',
+                expected: 'asin(3*i+a)'
+            },
+            {
+                given: 'atan(3*i+a)',
+                expected: 'atan(3*i+a)'
+            },
+            {
+                given: 'asec(3*i+a)',
+                expected: 'asec(3*i+a)'
+            },
+            {
+                given: 'acsc(3*i+a)',
+                expected: 'acsc(3*i+a)'
+            },
+            {
+                given: 'acot(3*i+a)',
+                expected: 'acot(3*i+a)'
+            },
+            
+            //NUMERIC
+            {
+                given: 'cos(3*i+5)',
+                expected: '2.855815004227387+9.606383448432581*i'
+            },
+            {
+                given: 'sin(3*i+5)',
+                expected: '-2.841692295606352*i-9.654125476854839'
+            },
+            {
+                given: 'tan(3*i+5)',
+                expected: '-0.002708235836224119-1.0041647106948153*i'
+            },
+            {
+                given: 'sec(3*i+5)',
+                expected: '-0.0956446409552863*i+0.028433530909971663'
+            },
+            {
+                given: 'csc(3*i+5)',
+                expected: '-0.02805851642308007*i-0.09532363467417838'
+            },
+            {
+                given: 'cot(3*i+5)',
+                expected: '-0.0026857984057586373-0.995845318575854*i'
+            },
+            {
+                given: 'acos(3*i+5)',
+                expected: '-2.452913742502812*i+0.5469745802831136'
+            },
+            {
+                given: 'asin(3*i+5)',
+                expected: '1.023821746511783+2.452913742502812*i'
+            },
+            {
+                given: 'atan(3*i+5)',
+                expected: '0.08656905917945859*i+1.4236790442393028'
+            },
+            {
+                given: 'asec(3*i+5)',
+                expected: '0.08907951708809479*i+1.4237901324243536'
+            },
+            {
+                given: 'acsc(3*i+5)',
+                expected: '-0.08907951708809479*i+0.14700619437054302'
+            },
+            {
+                given: 'acot(3*i+5)',
+                expected: '-0.08656905917945851*i+0.1471172825555938'
+            },
+        ];
+        
+        for (var i = 0; i < testCases.length; ++i) {
+            var result = nerdamer(testCases[i].given, null, 'numer').text();
+            expect(result.toString()).toEqual(testCases[i].expected);
+      }
+    });
 
     describe('Further arithmetic test cases', function () {
         it('Batch 1', function () {

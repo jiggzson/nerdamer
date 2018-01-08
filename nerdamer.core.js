@@ -3209,53 +3209,106 @@ var nerdamer = (function(imports) {
             
         var complex = {
             prec: undefined,
-            cos: function(symbol) {
-                var r, i, re, im;
-                r = symbol.realpart();
-                i = symbol.imagpart();
+            cos: function(r, i) {
+                var re, im;
                 re = _.parse(Math.cos(r)*Math.cosh(i));
                 im = _.parse(Math.sin(r)*Math.sinh(i));
                 return _.subtract(re, _.multiply(im, Symbol.imaginary()));
             },
-            sin: function(symbol) {
-                var r, i, re, im;
-                r = symbol.realpart();
-                i = symbol.imagpart();
+            sin: function(r, i) {
+                var re, im;
                 re = _.parse(Math.sin(r)*Math.cosh(i));
                 im = _.parse(Math.cos(r)*Math.sinh(i));
                 return _.subtract(re, _.multiply(im, Symbol.imaginary()));
             },
-            tan: function(symbol) {
-                var r, i, re, im;
-                r = symbol.realpart();
-                i = symbol.imagpart();
+            tan: function(r, i) {
+                var re, im;
                 re = _.parse(Math.sin(2*r)/(Math.cos(2*r)+Math.cosh(2*i)));
                 im = _.parse(Math.sinh(2*i)/(Math.cos(2*r)+Math.cosh(2*i)));
                 return _.subtract(re, _.multiply(im, Symbol.imaginary()));
             },
-            sec: function(symbol) {
-                var t = complex.removeDen(complex.cos(symbol));
+            sec: function(r, i) {
+                var t = this.removeDen(this.cos(r, i));
                 return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
-                //use rule (a-ib)/(a^2+b^2);
             },
-            csc: function(symbol) {
-                var t = complex.removeDen(complex.sin(symbol));
-                return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
-                //use rule (a-ib)/(a^2+b^2);
+            csc: function(r, i) { 
+                var t = this.removeDen(this.sin(r, i));
+                return _.add(t[0], _.multiply(t[1], Symbol.imaginary()));
             },
-            cot: function(symbol) {
-                var t = complex.removeDen(complex.tan(symbol));
-                return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
-                //use rule (a-ib)/(a^2+b^2);
+            cot: function(r, i) {
+                var t = this.removeDen(this.tan(r, i));
+                return _.add(t[0], _.multiply(t[1], Symbol.imaginary()));
+            },
+            acos: function(r, i) { 
+                var symbol, sq, a, b, c;
+                symbol = this.fromArray([r, i]);
+                sq = _.expand(_.pow(symbol.clone(), new Symbol(2))); //z*z
+                a = _.multiply(sqrt(_.subtract(new Symbol(1), sq)), Symbol.imaginary());
+                b = _.expand(_.add(symbol.clone(), a));
+                c = log(b);
+                return _.expand(_.multiply(Symbol.imaginary().negate(), c));
+            },
+            asin: function(r, i) {
+                return _.subtract(_.parse('pi/2'), this.acos(r, i));
+            },
+            atan: function(r, i) {
+                var a, b, c, symbol;
+                symbol = complex.fromArray([r, i]);
+                a = _.expand(_.multiply(Symbol.imaginary(), symbol.clone()));
+                b = log(_.expand(_.subtract(new Symbol(1), a.clone())));
+                c = log(_.expand(_.add(new Symbol(1), a.clone())));
+                return _.expand(_.multiply(_.divide(Symbol.imaginary(), new Symbol(2)), _.subtract(b, c)));
+            },
+            asec: function(r, i) {
+                var d = this.removeDen([r, i]);
+                d[1].negate();
+                return this.acos.apply(this, d);
+            },
+            acsc: function(r, i) {
+                var d = this.removeDen([r, i]);
+                d[1].negate();
+                return this.asin.apply(this, d);
+            },
+            acot: function(r, i) {
+                var d = this.removeDen([r, i]);
+                d[1].negate();
+                return this.atan.apply(this, d);
+            },
+            sqrt: function(symbol) {
+                var re, im, h, a, d;
+                re = symbol.realpart();
+                im = symbol.imagpart();
+                h = hyp(re, im);
+                a = _.add(re.clone(), h);
+                d = sqrt(_.multiply(new Symbol(2), a.clone()));
+                return _.add(_.divide(a.clone(), d.clone()), _.multiply(_.divide(im, d), Symbol.imaginary()));
             },
             removeDen: function(symbol) {
-                var d, den, r, i, re, im;
-                r = symbol.realpart();
-                i = symbol.imagpart();
+                var den, r, i, re, im;
+                if(isArray(symbol)) {
+                    r = symbol[0];
+                    i = symbol[1];
+                }
+                else {
+                    r = symbol.realpart();
+                    i = symbol.imagpart();
+                }
+                    
                 den = Math.pow(r, 2)+Math.pow(i, 2);
                 re = _.parse(r/den);
                 im = _.parse(i/den);
                 return [re, im];
+            },
+            fromArray: function(arr) {
+                return _.add(arr[0], _.multiply(Symbol.imaginary(), arr[1]));
+            },
+            evaluate: function(symbol, f) {
+                var re, im;
+                re = symbol.realpart();
+                im = symbol.imagpart();
+                if(re.isConstant('all') && im.isConstant('all'))
+                    return this[f].call(this, re, im);
+                return _.symfunction(f, [symbol]);
             }
         };
             
@@ -3271,7 +3324,7 @@ var nerdamer = (function(imports) {
                     if(symbol.isConstant()) 
                         return new Symbol(Math.cos(symbol.valueOf()));
                     if(symbol.isImaginary()) {
-                        return complex.cos(symbol);
+                        return complex.evaluate(symbol, 'cos');
                     }
                 }
                 if(symbol.equals(0))
@@ -3315,7 +3368,7 @@ var nerdamer = (function(imports) {
                     if(symbol.isConstant()) 
                         return new Symbol(Math.sin(symbol.valueOf()));
                     if(symbol.isImaginary()) 
-                        return complex.sin(symbol);
+                        return complex.evaluate(symbol, 'sin');
                 }
                 
                 if(symbol.equals(0))
@@ -3363,7 +3416,7 @@ var nerdamer = (function(imports) {
                     if(symbol.isConstant())
                         return new Symbol(Math.tan(symbol.valueOf()));
                     if(symbol.isImaginary()) 
-                        return complex.tan(symbol);
+                        return complex.evaluate(symbol, 'tan');
                 }
                 var retval, 
                     c = false,
@@ -3405,7 +3458,7 @@ var nerdamer = (function(imports) {
                     if(symbol.isConstant())
                         return new Symbol(Math2.sec(symbol.valueOf()));
                     if(symbol.isImaginary()) 
-                        return complex.sec(symbol);
+                        return complex.evaluate(symbol, 'sec');
                 }
 
                 var retval, 
@@ -3447,7 +3500,7 @@ var nerdamer = (function(imports) {
                     if(symbol.isConstant())
                         return new Symbol(Math2.csc(symbol.valueOf()));
                     if(symbol.isImaginary()) 
-                        return complex.csc(symbol);
+                        return complex.evaluate(symbol, 'csc');
                 }
                 
                 var retval, 
@@ -3491,7 +3544,7 @@ var nerdamer = (function(imports) {
                     if(symbol.isConstant())
                         return new Symbol(Math2.cot(symbol.valueOf()));
                     if(symbol.isImaginary()) 
-                        return complex.cot(symbol);
+                        return complex.evaluate(symbol, 'cot');
                 }
                 var retval, 
                     c = false,
@@ -3528,19 +3581,31 @@ var nerdamer = (function(imports) {
                 return retval;
             },
             acos: function(symbol) {
-                if(symbol.isConstant() && Settings.PARSE2NUMBER)
-                    return new Symbol(Math.acos(symbol));
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.isConstant())
+                        return new Symbol(Math.acos(symbol.valueOf()));
+                    if(symbol.isImaginary()) 
+                        return complex.evaluate(symbol, 'acos');
+                }
                 return _.symfunction('acos', arguments);
             },
             asin: function(symbol) {
-                if(symbol.isConstant() && Settings.PARSE2NUMBER)
-                    return new Symbol(Math.asin(symbol));
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.isConstant())
+                        return new Symbol(Math.asin(symbol.valueOf()));
+                    if(symbol.isImaginary()) 
+                        return complex.evaluate(symbol, 'asin');
+                }
                 return _.symfunction('asin', arguments);
             },
             atan: function(symbol) {
                 var retval;
-                if(symbol.isConstant() && Settings.PARSE2NUMBER)
-                    retval = new Symbol(Math.atan(symbol));
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.isConstant())
+                        return new Symbol(Math.atan(symbol.valueOf()));
+                    if(symbol.isImaginary()) 
+                        return complex.evaluate(symbol, 'atan');
+                }
                 else if(symbol.equals(-1))
                     retval = _.parse('-pi/4');
                 else 
@@ -3548,21 +3613,38 @@ var nerdamer = (function(imports) {
                 return retval;
             },
             asec: function(symbol) {
-                return trig.acos(symbol.invert());
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.isConstant())
+                        return new Symbol(Math.acos(symbol.invert().valueOf()));
+                    if(symbol.isImaginary()) 
+                        return complex.evaluate(symbol, 'asec');
+                }
+                return _.symfunction('asec', arguments);
             },
             acsc: function(symbol) {
-                return trig.asin(symbol.invert());
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.isConstant())
+                        return new Symbol(Math.acos(symbol.invert().valueOf()));
+                    if(symbol.isImaginary()) 
+                        return complex.evaluate(symbol, 'acsc');
+                }
+                return _.symfunction('acsc', arguments);
             },
             acot: function(symbol) {
                 var retval;
                 if(Settings.PARSE2NUMBER) {
-                    var k = _.parse('pi/2');
-                    if(symbol.equals(0))
-                        retval = k;
+                    if(symbol.isImaginary()) {
+                        retval = complex.evaluate(symbol, 'acot');
+                    }
                     else {
-                        if(symbol.lessThan(0))
-                            k.negate();
-                        retval = _.subtract(k, trig.atan(symbol));
+                        var k = _.parse('pi/2');
+                        if(symbol.equals(0))
+                            retval = k;
+                        else {
+                            if(symbol.lessThan(0))
+                                k.negate();
+                            retval = _.subtract(k, trig.atan(symbol));
+                        }
                     }
                 }
                 else 
@@ -4689,6 +4771,13 @@ var nerdamer = (function(imports) {
                 return a;
             return b;
         }
+        
+        function hyp(a, b) {
+            if(a.isConstant('all') && b.isConstant('all')) {
+                return sqrt(_.add(_.pow(a.clone(), new Symbol(2)), _.pow(b.clone(), new Symbol(2))));
+            }
+            return _.symfunction('hyp', arguments);
+        };
         /**
          * The square root function
          * @param {Symbol} symbol
@@ -4698,9 +4787,15 @@ var nerdamer = (function(imports) {
             if(symbol.fname === '' && symbol.power.equals(1))
                 symbol = symbol.args[0];
             
-            if(Settings.PARSE2NUMBER && symbol.isConstant() && !symbol.multiplier.lessThan(0)) 
-                return new Symbol(Math.sqrt(symbol.multiplier.toDecimal()));
-            
+            if(Settings.PARSE2NUMBER) {
+                if(symbol.isConstant() && !symbol.multiplier.lessThan(0)) {
+                    return new Symbol(Math.sqrt(symbol.multiplier.toDecimal()));
+                }
+                else if(symbol.isImaginary()) {
+                    return complex.sqrt(symbol);
+                }
+            } 
+
             var img, retval, 
                 isConstant = symbol.isConstant();
         
@@ -5227,6 +5322,15 @@ var nerdamer = (function(imports) {
             //deal with parenthesis
             if(symbol.group === FN && symbol.fname === '')
                 return _.expand(symbol.args[0]);
+            
+            //TODO - some test need to be verified in order to implement this
+            /*
+            if(symbol.group === FN) {
+                symbol.args[0] = _.expand(symbol.args[0]);
+                symbol.updateHash();
+                return symbol;
+            }
+            */
             
             if(!symbol.symbols) return symbol; //nothing to do
             
@@ -8074,4 +8178,4 @@ var nerdamer = (function(imports) {
 
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
-};                 
+};               
