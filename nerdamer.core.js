@@ -3274,6 +3274,25 @@ var nerdamer = (function(imports) {
                 d[1].negate();
                 return this.atan.apply(this, d);
             },
+            //Hyperbolic trig
+            cosh: function(r, i) {
+                var re, im;
+                re = _.parse(Math.cosh(r)*Math.cos(i));
+                im = _.parse(Math.sinh(r)*Math.sin(i));
+                return _.add(re, _.multiply(im, Symbol.imaginary()));
+            },
+            sinh: function(r, i) {
+                var re, im;
+                re = _.parse(Math.sinh(r)*Math.cos(i));
+                im = _.parse(Math.cosh(r)*Math.sin(i));
+                return _.add(re, _.multiply(im, Symbol.imaginary()));
+            },
+            tanh: function(r, i) {
+                var re, im;
+                re = _.parse(Math.sinh(2*r)/(Math.cos(2*i)+Math.cosh(2*r)));
+                im = _.parse(Math.sin(2*i)/(Math.cos(2*i)+Math.cosh(2*r)));
+                return _.subtract(re, _.multiply(im, Symbol.imaginary()));
+            },
             sqrt: function(symbol) {
                 var re, im, h, a, d;
                 re = symbol.realpart();
@@ -3666,28 +3685,39 @@ var nerdamer = (function(imports) {
             //container for hyperbolic trig function
             cosh: function(symbol) {
                 var retval;
-                if(Settings.PARSE2NUMBER)
-                    retval = _.parse(format('(e^({0})+1/e^({0}))/2', symbol));
-                else 
-                    retval = _.symfunction('cosh', arguments);
-                return retval;
+                if(Settings.PARSE2NUMBER) { 
+                    if(symbol.isConstant()) 
+                        return new Symbol(Math.cosh(symbol.valueOf()));
+                    if(symbol.isImaginary()) {
+                        return complex.evaluate(symbol, 'cosh');
+                    }
+                }
+                
+                return retval = _.symfunction('cosh', arguments);
             },
             sinh: function(symbol) {
                 var retval;
-                if(Settings.PARSE2NUMBER)
-                    retval = _.parse(format('(e^({0})-1/e^({0}))/2', symbol));
-                else 
-                    retval = _.symfunction('sinh', arguments);
-                return retval;
+                if(Settings.PARSE2NUMBER) { 
+                    if(symbol.isConstant()) 
+                        return new Symbol(Math.sinh(symbol.valueOf()));
+                    if(symbol.isImaginary()) {
+                        return complex.evaluate(symbol, 'sinh');
+                    }
+                }
+                
+                return retval = _.symfunction('sinh', arguments);
             },
             tanh: function(symbol) {
                 var retval;
-                if(Settings.PARSE2NUMBER) {
-                    retval = _.parse(format('sinh({0})/cosh({0})', symbol));
+                if(Settings.PARSE2NUMBER) { 
+                    if(symbol.isConstant()) 
+                        return new Symbol(Math.tanh(symbol.valueOf()));
+                    if(symbol.isImaginary()) {
+                        return complex.evaluate(symbol, 'tanh');
+                    }
                 }
-                else 
-                    retval = _.symfunction('tanh', arguments);
-                return retval;
+                
+                return retval = _.symfunction('tanh', arguments);
             },
             sech: function(symbol) {
                 var retval;

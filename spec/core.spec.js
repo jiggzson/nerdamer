@@ -1781,6 +1781,10 @@ describe('Nerdamer core', function () {
                 given: 'acot(3*i+a)',
                 expected: 'acot(3*i+a)'
             },
+            {
+                given: 'cosh(3*i+a)',
+                expected: 'cosh(3*i+a)'
+            },
             
             //NUMERIC
             {
@@ -1830,6 +1834,18 @@ describe('Nerdamer core', function () {
             {
                 given: 'acot(3*i+5)',
                 expected: '-0.08656905917945851*i+0.1471172825555938'
+            },
+            {
+                given: 'cosh(3*i+5)',
+                expected: '-73.46729221264526+10.471557674805572*i'
+            },
+            {
+                given: 'sinh(3*i+5)',
+                expected: '-73.46062169567367+10.472508533940392*i'
+            },
+            {
+                given: 'tan(3*i+5)',
+                expected: '0.00002536867620768396*i+0.9999128201513536'
             },
         ];
         
