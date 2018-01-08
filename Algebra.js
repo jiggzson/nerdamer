@@ -3325,7 +3325,7 @@ if((typeof module) !== 'undefined') {
         {
             name: 'sqcomp',
             visible: true,
-            numargs: 1,
+            numargs: [1,2],
             build: function() { 
                 var f = function(x, v) {
                     try {

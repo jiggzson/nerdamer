@@ -3207,6 +3207,34 @@ var nerdamer = (function(imports) {
                 pi: Math.PI
             };
             
+        var complex = {
+            prec: undefined,
+            cos: function(symbol) {
+                var r, i, re, im;
+                r = symbol.realpart();
+                i = symbol.imagpart();
+                re = _.parse(Math.cos(r)*Math.cosh(i));
+                im = _.parse(Math.sin(r)*Math.sinh(i));
+                return _.subtract(re, _.multiply(im, Symbol.imaginary()));
+            },
+            sin: function(symbol) {
+                var r, i, re, im;
+                r = symbol.realpart();
+                i = symbol.imagpart();
+                re = _.parse(Math.sin(r)*Math.cosh(i));
+                im = _.parse(Math.cos(r)*Math.sinh(i));
+                return _.subtract(re, _.multiply(im, Symbol.imaginary()));
+            },
+            tan: function(symbol) {
+                var r, i, re, im;
+                r = symbol.realpart();
+                i = symbol.imagpart();
+                re = _.parse(Math.sin(2*r)/(Math.cos(2*r)+Math.cosh(2*i)));
+                im = _.parse(Math.sinh(2*i)/(Math.cos(2*r)+Math.cosh(2*i)));
+                return _.subtract(re, _.multiply(im, Symbol.imaginary()));
+            }
+        };
+            
         var trig = this.Trig = {
             //container for trigonometric function
             cos: function(symbol) {
@@ -3218,8 +3246,9 @@ var nerdamer = (function(imports) {
                         return new Symbol(0);
                     if(symbol.isConstant()) 
                         return new Symbol(Math.cos(symbol.valueOf()));
-                    if(symbol.isImaginary()) 
-                        return evaluate(_.parse(format('(e^(i*({0}))+e^(-i*({0})))/2', symbol)));
+                    if(symbol.isImaginary()) {
+                        return complex.cos(symbol);
+                    }
                 }
                 if(symbol.equals(0))
                     return new Symbol(1);
@@ -3262,7 +3291,7 @@ var nerdamer = (function(imports) {
                     if(symbol.isConstant()) 
                         return new Symbol(Math.sin(symbol.valueOf()));
                     if(symbol.isImaginary()) 
-                        return evaluate(_.parse(format('(e^(i*({0}))-e^(-i*({0})))/(2*i)', symbol)));
+                        return complex.sin(symbol);
                 }
                 
                 if(symbol.equals(0))
@@ -3310,7 +3339,7 @@ var nerdamer = (function(imports) {
                     if(symbol.isConstant())
                         return new Symbol(Math.tan(symbol.valueOf()));
                     if(symbol.isImaginary()) 
-                        return evaluate(_.parse(format('sin({0})/cos({0})', symbol)));
+                        return complex.tan(symbol);
                 }
                 var retval, 
                     c = false,
@@ -6217,12 +6246,24 @@ var nerdamer = (function(imports) {
                             result = _.multiply(result, r);
                         }  
                     }
+                    else if(Settings.PARSE2NUMBER && b.isImaginary()) {
+                        //4^(i + 2) = e^(- (2 - 4 i) π n + (2 + i) log(4))
+                        var re, im, aa, a1, b1, c1;
+                        aa = a.clone().toLinear();
+                        re = b.realpart();
+                        im = b.imagpart();
+                        a1 = _.pow(aa.clone(), re);
+                        b1 = trig.cos(_.multiply(im.clone(), log(aa.clone())));
+                        c1 = _.multiply(trig.sin(_.multiply(im, log(aa))), Symbol.imaginary());
+                        result = _.multiply(a1, _.add(b1, c1));
+                        result = _.expand(_.parse(result));
+                    }
                     else { 
                         //b is a symbol
                         var neg_num = a.group === N && sign < 0,
                             num = testSQRT(new Symbol(neg_num ? m.num : Math.abs(m.num)).setPower(b.clone())),
                             den = testSQRT(new Symbol(m.den).setPower(b.clone()).invert());  
-                    
+
                         //eliminate imaginary if possible
                         if(a.imaginary) { 
                             if(bIsInt) {
@@ -8001,3 +8042,7 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };                 
+
+
+var x = nerdamer('tan(3*i+5)').evaluate();
+console.log(x.text())
