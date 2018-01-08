@@ -3185,7 +3185,7 @@ if((typeof module) !== 'undefined') {
             if(symbol.group !== CP) 
                 stop('Must be a polynomial!');
             //declare vars
-            var deg, a, b, c, d, coeffs, sign, br, sym;
+            var deg, a, b, c, d, e, coeffs, sign, br, sym, sqrt_a;
 
             br = core.Utils.inBrackets;
             //make a copy
@@ -3203,12 +3203,14 @@ if((typeof module) !== 'undefined') {
             b = _.divide(coeffs[1], new Symbol(2));
             //add the difference to the constant
             c = _.pow(b.clone(), new Symbol(2));
-            //calculate d
-            d = _.subtract(coeffs[0], c.clone());
             if(raw)
                 return [a, b, d];
+            sqrt_a = math.sqrt(a);
+            e = _.divide(math.sqrt(c), sqrt_a.clone());
+            //calculate d which is the constant
+            d = _.subtract(coeffs[0], _.pow(e.clone(), new Symbol(2)));
             //compute the square part
-            sym = _.parse(br(math.sqrt(a)+'*'+v+(sign < 0 ? '-' : '+')+math.sqrt(c)));
+            sym = _.parse(br(sqrt_a.clone()+'*'+v+(sign < 0 ? '-' : '+')+e));
             return {
                 a: sym,
                 c: d,
