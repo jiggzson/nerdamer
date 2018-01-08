@@ -3177,12 +3177,13 @@ if((typeof module) !== 'undefined') {
         sqComplete: function(symbol, v, raw) {
             if(!core.Utils.isSymbol(v))
                 v = _.parse(v);
-            var stop = function() {
-                throw new Error('Stopping');
+            var stop = function(msg) {
+                msg = msg || 'Stopping';
+                throw new Error(msg);
             };
             //if not CP then nothing to do
             if(symbol.group !== CP) 
-                stop();
+                stop('Must be a polynomial!');
             //declare vars
             var deg, a, b, c, d, coeffs, sign, br, sym;
 
@@ -3192,12 +3193,12 @@ if((typeof module) !== 'undefined') {
             deg = core.Algebra.degree(symbol, v); //get the degree of polynomial
             //must be in form ax^2 +/- bx +/- c
             if(!deg.equals(2))
-                stop();
+                stop('Cannot complete square for degree '+deg);
             //get the coeffs
             coeffs = core.Algebra.coeffs(symbol, v);
             a = coeffs[2];
             //store the sign
-            sign = coeffs[1].sign(); console.log(sign, symbol.toString())
+            sign = coeffs[1].sign(); 
             //divide the linear term by two and square it
             b = _.divide(coeffs[1], new Symbol(2));
             //add the difference to the constant
@@ -3207,7 +3208,7 @@ if((typeof module) !== 'undefined') {
             if(raw)
                 return [a, b, d];
             //compute the square part
-            sym = _.parse(br(a+'*'+v+(sign < 0 ? '-' : '+')+c));
+            sym = _.parse(br(math.sqrt(a)+'*'+v+(sign < 0 ? '-' : '+')+math.sqrt(c)));
             return {
                 a: sym,
                 c: d,
@@ -3318,6 +3319,24 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: [2, 3],
             build: function() { return __.line; }
+        },
+        {
+            name: 'sqcomp',
+            visible: true,
+            numargs: 1,
+            build: function() { 
+                var f = function(x, v) {
+                    try {
+                        v = v || variables(x)[0];
+                        var sq = __.sqComplete(x.clone(), v);
+                        return sq.f;
+                    }
+                    catch(e) {
+                        return x;
+                    }
+                };
+                return f;
+            }
         }
     ]);
     nerdamer.api();
