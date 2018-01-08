@@ -3232,6 +3232,30 @@ var nerdamer = (function(imports) {
                 re = _.parse(Math.sin(2*r)/(Math.cos(2*r)+Math.cosh(2*i)));
                 im = _.parse(Math.sinh(2*i)/(Math.cos(2*r)+Math.cosh(2*i)));
                 return _.subtract(re, _.multiply(im, Symbol.imaginary()));
+            },
+            sec: function(symbol) {
+                var t = complex.removeDen(complex.cos(symbol));
+                return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
+                //use rule (a-ib)/(a^2+b^2);
+            },
+            csc: function(symbol) {
+                var t = complex.removeDen(complex.sin(symbol));
+                return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
+                //use rule (a-ib)/(a^2+b^2);
+            },
+            cot: function(symbol) {
+                var t = complex.removeDen(complex.tan(symbol));
+                return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
+                //use rule (a-ib)/(a^2+b^2);
+            },
+            removeDen: function(symbol) {
+                var d, den, r, i, re, im;
+                r = symbol.realpart();
+                i = symbol.imagpart();
+                den = Math.pow(r, 2)+Math.pow(i, 2);
+                re = _.parse(r/den);
+                im = _.parse(i/den);
+                return [re, im];
             }
         };
             
@@ -3377,9 +3401,11 @@ var nerdamer = (function(imports) {
                 return retval;
             },
             sec: function(symbol) {
-                //let's be lazy
-                if(Settings.PARSE2NUMBER && symbol.isConstant()) {
-                    return new Symbol(Math2.sec(symbol.valueOf()));
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.isConstant())
+                        return new Symbol(Math2.sec(symbol.valueOf()));
+                    if(symbol.isImaginary()) 
+                        return complex.sec(symbol);
                 }
 
                 var retval, 
@@ -3417,9 +3443,13 @@ var nerdamer = (function(imports) {
                 return retval;
             },
             csc: function(symbol) {
-                if(Settings.PARSE2NUMBER && symbol.isConstant()) {
-                    return new Symbol(Math2.csc(symbol.valueOf()));
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.isConstant())
+                        return new Symbol(Math2.csc(symbol.valueOf()));
+                    if(symbol.isImaginary()) 
+                        return complex.csc(symbol);
                 }
+                
                 var retval, 
                     c = false,
                     q = getQuadrant(symbol.multiplier.toDecimal()),
@@ -3457,8 +3487,11 @@ var nerdamer = (function(imports) {
                 return retval;
             },
             cot: function(symbol) {
-                if(Settings.PARSE2NUMBER && symbol.isConstant()) {
-                    return new Symbol(Math2.cot(symbol.valueOf()));
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.isConstant())
+                        return new Symbol(Math2.cot(symbol.valueOf()));
+                    if(symbol.isImaginary()) 
+                        return complex.cot(symbol);
                 }
                 var retval, 
                     c = false,
@@ -8042,7 +8075,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };                 
-
-
-var x = nerdamer('tan(3*i+5)').evaluate();
-console.log(x.text())
