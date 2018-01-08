@@ -1230,12 +1230,28 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     return _.multiply(integral.sub(uv, v), bsqi);
                                 }
                                 else { 
-                                    var f = symbol.clone().toLinear();
                                     if(symbol.group !== CB && !symbol.power.lessThan(0)) {
                                         retval = __.integration.by_parts(symbol, dx, depth, opt);
                                     }
                                     else { 
-                                        retval = __.integration.partial_fraction(symbol, dx, depth, opt);
+                                        var f = symbol.clone().toLinear();
+                                        var factored = core.Algebra.Factor.factor(f);
+                                        var was_factored = factored.toString() !== f.toString();
+                                        if(core.Algebra.degree(f, _.parse(dx)).equals(2) && !was_factored) { 
+                                            try {
+                                                var f1, fx, u, sq;
+                                                sq = core.Algebra.sqComplete(f, dx);
+                                                u = core.Utils.getU(f);
+                                                f1 = sq.f.sub(sq.a, u);
+                                                fx = _.pow(f1, _.parse(symbol.power));
+                                                retval = __.integrate(fx, u).sub(u, sq.a);
+                                            }
+                                            catch(e) {
+                                                __.integration.stop();
+                                            }
+                                        }
+                                        else
+                                            retval = __.integration.partial_fraction(symbol, dx, depth, opt);
                                     }
                                 }
                             }

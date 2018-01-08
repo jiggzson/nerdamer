@@ -1816,7 +1816,7 @@ if((typeof module) !== 'undefined') {
             for(var i=0,l=coeffs.length; i<l; i++) 
                 if(typeof coeffs[i] === 'undefined')
                     coeffs[i] = new Symbol(0);
-            
+
             return coeffs;    
         },
         /**
@@ -3123,6 +3123,7 @@ if((typeof module) !== 'undefined') {
                 //assume the variable for univariate
                 v = _.parse(vars[0]);
             }
+
             //store the group
             var g = symbol.group;
             //we're going to trust the user and assume no EX. Calling isPoly 
@@ -3164,6 +3165,54 @@ if((typeof module) !== 'undefined') {
                 deg = _.parse(deg);
             //return the degree
             return deg;
+        },
+        /**
+         * Attempts to complete the square of a polynomial
+         * @param {type} symbol
+         * @param {type} v
+         * @param {type} raw
+         * @throws {Error} 
+         * @returns {Object|Symbol[]}
+         */
+        sqComplete: function(symbol, v, raw) {
+            if(!core.Utils.isSymbol(v))
+                v = _.parse(v);
+            var stop = function() {
+                throw new Error('Stopping');
+            };
+            //if not CP then nothing to do
+            if(symbol.group !== CP) 
+                stop();
+            //declare vars
+            var deg, a, b, c, d, coeffs, sign, br, sym;
+
+            br = core.Utils.inBrackets;
+            //make a copy
+            symbol = symbol.clone();
+            deg = core.Algebra.degree(symbol, v); //get the degree of polynomial
+            //must be in form ax^2 +/- bx +/- c
+            if(!deg.equals(2))
+                stop();
+            //get the coeffs
+            coeffs = core.Algebra.coeffs(symbol, v);
+            a = coeffs[2];
+            //store the sign
+            sign = coeffs[1].sign(); console.log(sign, symbol.toString())
+            //divide the linear term by two and square it
+            b = _.divide(coeffs[1], new Symbol(2));
+            //add the difference to the constant
+            c = _.pow(b.clone(), new Symbol(2));
+            //calculate d
+            d = _.subtract(coeffs[0], c.clone());
+            if(raw)
+                return [a, b, d];
+            //compute the square part
+            sym = _.parse(br(a+'*'+v+(sign < 0 ? '-' : '+')+c));
+            return {
+                a: sym,
+                c: d,
+                f: _.add(_.pow(sym.clone(), new Symbol(2)), d.clone())
+            };
         },
         Classes: {
             Polynomial: Polynomial,
