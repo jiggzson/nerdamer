@@ -506,6 +506,25 @@ describe('Nerdamer core', function () {
         }
     });
     
+    it('should convert from polar to rectangular', function () {
+        // given
+        var testCases = [
+            {
+                given: 'rectform(sqrt(34)*e^(i*atan(3/5)))',
+                expected: '3*i+5'
+            }, 
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given);
+            var value = parsed.evaluate().text('decimals');
+
+            // then
+            expect(value).toEqual(testCases[i].expected);
+        }
+    });
+    
     it('should compute powers', function () {
         // given
         var testCases = [

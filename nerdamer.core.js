@@ -3086,14 +3086,17 @@ var nerdamer = (function(imports) {
             else
                 retval = new Symbol(this.multiplier.den);
             
-            if(include_multiplier)
+            if(include_multiplier && this.group !== N)
                 retval = _.multiply(retval.invert(), new Symbol(this.multiplier.den));
             
             return retval;
         },
         getNum: function(include_multiplier) {
             var retval;
-            if(this.power.lessThan(0)) 
+            if(this.group === N) {
+                retval = _.parse(this.multiplier.num);
+            }
+            else if(this.power.lessThan(0)) 
                 retval = new Symbol(this.multiplier.num);
             else if(this.group === CB) {
                 var newSymbol = new Symbol(1);
@@ -3105,7 +3108,7 @@ var nerdamer = (function(imports) {
             else 
                 retval = this.clone();
             
-            if(include_multiplier)
+            if(include_multiplier && this.group !== N)
                 retval = _.multiply(retval, new Symbol(this.multiplier.num));
             
             return retval;
@@ -5152,12 +5155,33 @@ var nerdamer = (function(imports) {
         }
         
         /**
-         * Returns the rectangular form of a complex number
+         * Returns the rectangular form of a complex number. Does not work for symbolic coefficients
          * @param {Symbol} symbol
          * @returns {Symbol}
          */
         function rectform(symbol) {
-            
+            //TODO: e^((i*pi)/4)
+            var original = symbol.clone();
+            try {
+                var f, p, q, s, h, d, n;
+                f = decompose_fn(symbol, 'e', true);
+                p = _.divide(f.x.power, Symbol.imaginary());
+                q = evaluate(trig.tan(p));
+                s = _.pow(f.a, new Symbol(2));
+                d = q.getDenom(true);
+                n = q.getNum(true);
+                h = hyp(n, d);
+                //check 
+                if(h.equals(f.a)) {
+                    return _.add(d, _.multiply(Symbol.imaginary(), n));
+                }
+                else {
+                    return original;
+                }
+            }
+            catch(e){
+                return original;
+            }    
         }
 
         function symMinMax(f, args) {
