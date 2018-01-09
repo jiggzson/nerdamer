@@ -2581,6 +2581,10 @@ if((typeof module) !== 'undefined') {
                 args = arguments[0].elements;
             else args = core.Utils.arguments2Array(arguments);
             
+            //short-circuit early
+            if (args.length == 0) return new Symbol(1);
+            else if (args.length == 1) return args[0];
+            
             var appeared = [], evaluate = false;
             for(var i = 0; i < args.length; i++) {
                 if(args[i].group === FN && args[i].fname === 'gcd')
