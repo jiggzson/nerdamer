@@ -1915,7 +1915,45 @@ describe('Nerdamer core', function () {
             expect(result.toString()).toEqual(testCases[i].expected);
       }
     });
-
+    
+    /*
+    it('should correctly get the numerator', function() {
+        var testCases = [
+            {
+                given: '3/4*a',
+                expected: '3*a'
+            },
+            {
+                given: '8*a*b/(x*(x+1))',
+                expected: '(1+x)*x'
+            },
+        ];
+        
+        for (var i = 0; i < testCases.length; ++i) {
+            var result = nerdamer(testCases[i].given, null, 'numer').numerator().text();
+            expect(result.toString()).toEqual(testCases[i].expected);
+      }
+    });
+    
+    it('should correctly get the numerator', function() {
+        var testCases = [
+            {
+                given: '3/4*a',
+                expected: '4'
+            },
+            {
+                given: '8*a*b/(x*(x+1))',
+                expected: '8*a*b'
+            },
+        ];
+        
+        for (var i = 0; i < testCases.length; ++i) {
+            var result = nerdamer(testCases[i].given, null, 'numer').text();
+            expect(result.toString()).toEqual(testCases[i].expected);
+      }
+    });
+    */
+    
     describe('Further arithmetic test cases', function () {
         it('Batch 1', function () {
             // given

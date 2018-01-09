@@ -148,7 +148,7 @@ if((typeof module) !== 'undefined') {
                         symbol.toUnitMultiplier();
                         //get the numerator and denominator
                         num = symbol.getNum();
-                        den = symbol.getDenom().invert(null, true);
+                        den = symbol.getDenom().toUnitMultiplier();
                         //TODO: Make it so factor doesn't destroy pi
                         //num = core.Algebra.Factor.factor(symbol.getNum());
                         //den = core.Algebra.Factor.factor(symbol.getDenom().invert(null, true));
@@ -553,3 +553,6 @@ if((typeof module) !== 'undefined') {
     //link registered functions externally
     nerdamer.api();
 }());
+
+var x = nerdamer('ilt(a*6/(b*s^6),s,t)');
+console.log(x.toString())

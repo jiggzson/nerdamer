@@ -1753,6 +1753,15 @@ var nerdamer = (function(imports) {
         lte: function(value) {
             return this.lt(value) || this.eq(value);
         }
+        /*
+        //needs rationalize to be completed
+        numerator: function() {
+            return this.symbol.getNum();
+        },
+        denominator: function() {
+            return this.symbol.getDenom();
+        }
+        */
     };
     //Aliases
     Expression.prototype.toTeX = Expression.prototype.latex;
@@ -3073,44 +3082,49 @@ var nerdamer = (function(imports) {
          * Take x^-1+x^-2. If the symbol was to be mixed such as x+x^-2 then the symbol doesn't have have an exclusive
          * denominator and has to be found by looking at the actual symbols themselves.
          */
-        getDenom: function(include_multiplier) { 
-            var retval;
-            if(this.power.lessThan(0)) 
-                retval = this.clone();
-            else if(this.group === CB) {
-                retval = new Symbol(1);
-                for(var x in this.symbols) 
-                    if(this.symbols[x].power < 0) 
-                        retval = _.multiply(retval, this.symbols[x].clone());
+        getDenom: function() { 
+            var retval, symbol;
+            symbol = this.clone();
+            //e.g. 1/(x*(x+1))
+            if(this.group === CB && this.power.lessThan(0))
+                symbol = _.expand(symbol);
+            //if the symbol already is the denominator... DONE!!!
+            if(symbol.power.lessThan(0)) {
+                retval = symbol;
+                retval.power.negate();
+                if(!symbol.multiplier.den.equals(1))
+                    retval = _.multiply(new Symbol(symbol.multiplier.den), retval); //put back the coeff
+            }
+            else if(symbol.group === CB) {
+                retval = new Symbol(symbol.multiplier.den);
+                for(var x in symbol.symbols) 
+                    if(symbol.symbols[x].power < 0) 
+                        retval = _.multiply(retval, symbol.symbols[x].clone().invert());
             }
             else
-                retval = new Symbol(this.multiplier.den);
-            
-            if(include_multiplier && this.group !== N)
-                retval = _.multiply(retval.invert(), new Symbol(this.multiplier.den));
-            
+                retval = new Symbol(symbol.multiplier.den);
             return retval;
         },
-        getNum: function(include_multiplier) {
-            var retval;
-            if(this.group === N) {
-                retval = _.parse(this.multiplier.num);
+        getNum: function() {
+            var retval, symbol;
+            symbol = this.clone();
+            //e.g. 1/(x*(x+1))
+            if(symbol.group === CB && symbol.power.lessThan(0))
+                symbol = _.expand(symbol);
+            //if the symbol already is the denominator... DONE!!!
+            if(symbol.power.greaterThan(0) && symbol.group !== CB) {
+                retval = symbol;
+                if(!symbol.multiplier.num.equals(1))
+                    retval = _.multiply(new Symbol(symbol.multiplier.den), retval); //put back the coeff
             }
-            else if(this.power.lessThan(0)) 
-                retval = new Symbol(this.multiplier.num);
-            else if(this.group === CB) {
-                var newSymbol = new Symbol(1);
-                for(var x in this.symbols) 
-                    if(this.symbols[x].power > 0)
-                        newSymbol = _.multiply(newSymbol, this.symbols[x].clone());
-                retval = newSymbol;
+            else if(symbol.group === CB) {
+                retval = new Symbol(symbol.multiplier.num);
+                for(var x in symbol.symbols) 
+                    if(symbol.symbols[x].power > 0) 
+                        retval = _.multiply(retval, symbol.symbols[x].clone());
             }
-            else 
-                retval = this.clone();
-            
-            if(include_multiplier && this.group !== N)
-                retval = _.multiply(retval, new Symbol(this.multiplier.num));
-            
+            else
+                retval = new Symbol(symbol.multiplier.num);
             return retval;
         },
         toString: function() {
@@ -5169,7 +5183,7 @@ var nerdamer = (function(imports) {
                 q = evaluate(trig.tan(p));
                 s = _.pow(f.a, new Symbol(2));
                 d = q.getDenom(true);
-                n = q.getNum(true);
+                n = q.getNum();
                 h = hyp(n, d);
                 //check 
                 if(h.equals(f.a)) {
@@ -5562,7 +5576,10 @@ var nerdamer = (function(imports) {
                 }
                 else if(symbol.group === CB) { 
                     //check if the symbol has composites
-                    var hascomposites = false, sp = symbol.power;
+                    var hascomposites = false, 
+                        sp = symbol.power.clone(),
+                        sign = symbol.power.sign();
+                
                     for(var x in symbol.symbols) {
                         var sub = symbol.symbols[x];
                         if(sub.isComposite()) {
@@ -5635,8 +5652,14 @@ var nerdamer = (function(imports) {
                         var x = result.symbols[s];
                         finalResult = _.add(finalResult, expand(_.multiply(non_composites, x)));
                     }
-
-                    symbol = finalResult;
+                    
+                    //expand the power
+                    finalResult.power = finalResult.power.multiply(sp.abs());
+                    
+                    symbol = _.expand(finalResult);
+                    
+                    if(sign < 0)
+                        symbol.invert();
                 }
             }
             catch(e){ return original; }
@@ -6633,8 +6656,9 @@ var nerdamer = (function(imports) {
                         && result.power.contains(Settings.IMAGINARY)) {
                     //we have a match
                     var m1 = result.multiplier,
-                        m2 = result.power.multiplier; 
-                    result = new Symbol(even(m2) ? m1 : m1.negate());
+                        m2 = result.power.multiplier;
+                    result = new Symbol(even(m2.num) ? m1 : m1.negate());
+                    result = _.pow(result, new Symbol(m2.den).invert());
                 }
                 return result;
             }

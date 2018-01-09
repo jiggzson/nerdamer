@@ -334,11 +334,11 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(a/(x^2+b*x+a*x+a*b),x)', //uglier for but still correct
-                expected: '(((-a^(-1)*b+1)^(-1)*a^(-2)*b+a^(-1))*log(b+x)-(-a^(-1)*b+1)^(-1)*a^(-1)*log(a+x))*a'
+                expected: '(((-a^(-1)*b+1)^(-1)*a^(-1)*b+1)*a^(-1)*log(b+x)-(-a^(-1)*b+1)^(-1)*a^(-1)*log(a+x))*a'
             },
             {
                 given: 'integrate(log(a*x+b),x)',
-                expected: '-x+a^(-1)*b*log(a*x+b)+log(a*x+b)*x'
+                expected: '-(-a^(-2)*b*log(a*x+b)+a^(-1)*x)*a+log(a*x+b)*x'
             },
             {
                 given: 'integrate(x*log(x),x)',
