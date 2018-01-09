@@ -865,22 +865,22 @@ describe('Nerdamer core', function () {
                 {
                     given: 'sech(0.1)',
                     expected: 'sech(1/10)',
-                    expectedValue: '0.9950207489532263'
+                    expectedValue: '0.9950207489532266'
                 },
                 {
                     given: 'csch(0.1)',
                     expected: 'csch(1/10)',
-                    expectedValue: '9.983352757296105'
+                    expectedValue: '9.98335275729611'
                 },
                 {
                     given: 'tanh(0.1)',
                     expected: 'tanh(1/10)',
-                    expectedValue: '0.09966799462495585'
+                    expectedValue: '0.09966799462495582'
                 },
                 {
                     given: 'coth(0.1)',
                     expected: 'coth(1/10)',
-                    expectedValue: '10.033311132253987'
+                    expectedValue: '10.03331113225399'
                 },
                 {
                     given: 'acosh(0.1)',
@@ -1797,7 +1797,7 @@ describe('Nerdamer core', function () {
             },
             {
                 given: 'tan(3*i+5)',
-                expected: '-0.002708235836224119-1.0041647106948153*i'
+                expected: '-0.002708235836224119+1.0041647106948153*i'
             },
             {
                 given: 'sec(3*i+5)',
@@ -1844,8 +1844,20 @@ describe('Nerdamer core', function () {
                 expected: '-73.46062169567367+10.472508533940392*i'
             },
             {
-                given: 'tan(3*i+5)',
+                given: 'tanh(3*i+5)',
                 expected: '0.00002536867620768396*i+0.9999128201513536'
+            },
+            {
+                given: 'sech(3*i+5)',
+                expected: '-0.0019014661516951706*i-0.013340476530549645'
+            },
+            {
+                given: 'csch(3*i+5)',
+                expected: '-0.0019019704237010974*i-0.013341591397996653'
+            },
+            {
+                given: 'coth(3*i+5)',
+                expected: '0.000025373100044513725*i+1.000087186805897'
             },
         ];
         

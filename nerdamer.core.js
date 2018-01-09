@@ -1329,6 +1329,18 @@ var nerdamer = (function(imports) {
             return (y + 1 / y) / 2;
         };
         
+        Math.sech = Math.sech || function(x) {
+            return 1/Math.cosh(x);
+        };
+        
+        Math.csch = Math.csch || function(x) {
+            return 1/Math.sinh(x);
+        };
+        
+        Math.coth = Math.coth || function(x) {
+            return 1/Math.tanh(x);
+        };
+        
         Math.sinh = Math.sinh || function(x) {
             var y = Math.exp(x);
             return (y - 1 / y) / 2;
@@ -3225,7 +3237,7 @@ var nerdamer = (function(imports) {
                 var re, im;
                 re = _.parse(Math.sin(2*r)/(Math.cos(2*r)+Math.cosh(2*i)));
                 im = _.parse(Math.sinh(2*i)/(Math.cos(2*r)+Math.cosh(2*i)));
-                return _.subtract(re, _.multiply(im, Symbol.imaginary()));
+                return _.add(re, _.multiply(im, Symbol.imaginary()));
             },
             sec: function(r, i) {
                 var t = this.removeDen(this.cos(r, i));
@@ -3237,7 +3249,7 @@ var nerdamer = (function(imports) {
             },
             cot: function(r, i) {
                 var t = this.removeDen(this.tan(r, i));
-                return _.add(t[0], _.multiply(t[1], Symbol.imaginary()));
+                return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
             },
             acos: function(r, i) { 
                 var symbol, sq, a, b, c;
@@ -3292,6 +3304,18 @@ var nerdamer = (function(imports) {
                 re = _.parse(Math.sinh(2*r)/(Math.cos(2*i)+Math.cosh(2*r)));
                 im = _.parse(Math.sin(2*i)/(Math.cos(2*i)+Math.cosh(2*r)));
                 return _.subtract(re, _.multiply(im, Symbol.imaginary()));
+            },
+            sech: function(r, i) {
+                var t = this.removeDen(this.cosh(r, i));
+                return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
+            },
+            csch: function(r, i) {
+                var t = this.removeDen(this.sinh(r, i));
+                return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
+            },
+            coth: function(r, i) {
+                var t = this.removeDen(this.tanh(r, i));
+                return _.add(t[0], _.multiply(t[1], Symbol.imaginary()));
             },
             sqrt: function(symbol) {
                 var re, im, h, a, d;
@@ -3721,27 +3745,39 @@ var nerdamer = (function(imports) {
             },
             sech: function(symbol) {
                 var retval;
-                if(Settings.PARSE2NUMBER)
-                    retval = _.parse(format('1/cosh({0})', symbol));
-                else 
-                    retval = _.symfunction('sech', arguments);
-                return retval;
+                if(Settings.PARSE2NUMBER) { 
+                    if(symbol.isConstant()) 
+                        return new Symbol(Math.sech(symbol.valueOf()));
+                    if(symbol.isImaginary()) {
+                        return complex.evaluate(symbol, 'sech');
+                    }
+                }
+                
+                return retval = _.symfunction('sech', arguments);
             },
             csch: function(symbol) {
                 var retval;
-                if(Settings.PARSE2NUMBER)
-                    retval = _.parse(format('1/sinh({0})', symbol));
-                else 
-                    retval = _.symfunction('csch', arguments);
-                return retval;
+                if(Settings.PARSE2NUMBER) { 
+                    if(symbol.isConstant()) 
+                        return new Symbol(Math.csch(symbol.valueOf()));
+                    if(symbol.isImaginary()) {
+                        return complex.evaluate(symbol, 'csch');
+                    }
+                }
+                
+                return retval = _.symfunction('csch', arguments);
             },
             coth: function(symbol) {
                 var retval;
-                if(Settings.PARSE2NUMBER)
-                    retval = _.parse(format('1/tanh({0})', symbol));
-                else 
-                    retval = _.symfunction('coth', arguments);
-                return retval;
+                if(Settings.PARSE2NUMBER) { 
+                    if(symbol.isConstant()) 
+                        return new Symbol(Math.coth(symbol.valueOf()));
+                    if(symbol.isImaginary()) {
+                        return complex.evaluate(symbol, 'coth');
+                    }
+                }
+                
+                return retval = _.symfunction('coth', arguments);
             },
             acosh: function(symbol) {
                 var retval;
@@ -8208,4 +8244,4 @@ var nerdamer = (function(imports) {
 
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
-};               
+};
