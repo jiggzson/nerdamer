@@ -2693,7 +2693,8 @@ var nerdamer = (function(imports) {
          */
         negate: function() { 
             this.multiplier.negate();
-            if(this.group === CP || this.group === PL) this.distributeMultiplier();
+            if(this.group === CP || this.group === PL) 
+                this.distributeMultiplier();
             return this;
         },
         /**
@@ -3317,6 +3318,41 @@ var nerdamer = (function(imports) {
                 var t = this.removeDen(this.tanh(r, i));
                 return _.add(t[0], _.multiply(t[1], Symbol.imaginary()));
             },
+            acosh: function(r, i) {
+                var a, b, z;
+                z = this.fromArray([r, i]);
+                a = sqrt(_.add(z.clone(), new Symbol(1)));
+                b = sqrt(_.subtract(z.clone(), new Symbol(1)));
+                return _.expand(log(_.add(z, _.expand(_.multiply(a, b)))));
+            },
+            asinh: function(r, i) {
+                var a, z;
+                z = this.fromArray([r, i]);
+                a = sqrt(_.add(new Symbol(1), _.expand(_.pow(z.clone(), new Symbol(2)))));
+                return _.expand(log(_.add(z, a)));
+            },
+            atanh: function(r, i) {
+                var a, b, z;
+                z = this.fromArray([r, i]);
+                a = log(_.add(z.clone(), new Symbol(1)));
+                b = log(_.subtract(new Symbol(1), z));
+                return _.expand(_.divide(_.subtract(a, b), new Symbol(2)));
+            },
+            asech: function(r, i) {
+                var t = this.removeDen([r, i]);
+                t[1].negate();
+                return this.acosh.apply(this, t);
+            },
+            acsch: function(r, i) {
+                var t = this.removeDen([r, i]);
+                t[1].negate();
+                return this.asinh.apply(this, t);
+            },
+            acoth: function(r, i) {
+                var t = this.removeDen([r, i]);
+                t[1].negate();
+                return this.atanh.apply(this, t);
+            },
             sqrt: function(symbol) {
                 var re, im, h, a, d;
                 re = symbol.realpart();
@@ -3325,6 +3361,12 @@ var nerdamer = (function(imports) {
                 a = _.add(re.clone(), h);
                 d = sqrt(_.multiply(new Symbol(2), a.clone()));
                 return _.add(_.divide(a.clone(), d.clone()), _.multiply(_.divide(im, d), Symbol.imaginary()));
+            },
+            log: function(r, i) {
+                var re, im;
+                re = log(hyp(r, i));
+                im = _.parse(Math.atan2(i, r));
+                return _.add(re, _.multiply(Symbol.imaginary(), im));
             },
             removeDen: function(symbol) {
                 var den, r, i, re, im;
@@ -3346,9 +3388,25 @@ var nerdamer = (function(imports) {
                 return _.add(arr[0], _.multiply(Symbol.imaginary(), arr[1]));
             },
             evaluate: function(symbol, f) {
-                var re, im;
-                re = symbol.realpart();
-                im = symbol.imagpart();
+                var re, im, sign;
+                    
+                sign = symbol.power.sign();
+                //remove it from under the denominator
+                symbol.power = symbol.power.abs();
+                //expand
+                if(symbol.power.greaterThan(1))
+                    symbol = _.expand(symbol);
+                //remove the denominator
+                if(sign < 0) {
+                    var d = this.removeDen(symbol);
+                    re = d[0];
+                    im = d[1];
+                }
+                else {
+                    re = symbol.realpart();
+                    im = symbol.imagpart();
+                }
+
                 if(re.isConstant('all') && im.isConstant('all'))
                     return this[f].call(this, re, im);
                 return _.symfunction(f, [symbol]);
@@ -3781,7 +3839,9 @@ var nerdamer = (function(imports) {
             },
             acosh: function(symbol) {
                 var retval;
-                if(Settings.PARSE2NUMBER)
+                if(Settings.PARSE2NUMBER && symbol.isImaginary())
+                    retval = complex.evaluate(symbol, 'acosh');
+                else if(Settings.PARSE2NUMBER) 
                     retval = evaluate(_.parse(format('log(({0})+sqrt(({0})^2-1))', symbol.toString())));
                 else 
                     retval = _.symfunction('acosh', arguments);
@@ -3789,7 +3849,9 @@ var nerdamer = (function(imports) {
             },
             asinh: function(symbol) {
                 var retval;
-                if(Settings.PARSE2NUMBER)
+                if(Settings.PARSE2NUMBER && symbol.isImaginary())
+                    retval = complex.evaluate(symbol, 'asinh');
+                else if(Settings.PARSE2NUMBER)
                     retval = evaluate(_.parse(format('log(({0})+sqrt(({0})^2+1))', symbol.toString())));
                 else 
                     retval = _.symfunction('asinh', arguments);
@@ -3797,7 +3859,9 @@ var nerdamer = (function(imports) {
             },
             atanh: function(symbol) {
                 var retval;
-                if(Settings.PARSE2NUMBER)
+                if(Settings.PARSE2NUMBER && symbol.isImaginary())
+                    retval = complex.evaluate(symbol, 'atanh');
+                else if(Settings.PARSE2NUMBER)
                     retval = evaluate(_.parse(format('(1/2)*log((1+({0}))/(1-({0})))', symbol.toString())));
                 else 
                     retval = _.symfunction('atanh', arguments);
@@ -3805,7 +3869,9 @@ var nerdamer = (function(imports) {
             },
             asech: function(symbol) {
                 var retval;
-                if(Settings.PARSE2NUMBER)
+                if(Settings.PARSE2NUMBER && symbol.isImaginary())
+                    retval = complex.evaluate(symbol, 'asech');
+                else if(Settings.PARSE2NUMBER)
                     retval = evaluate(log(_.add(symbol.clone().invert(), sqrt(_.subtract(_.pow(symbol, new Symbol(-2)), new Symbol(1))))));
                 else 
                     retval = _.symfunction('asech', arguments);
@@ -3813,7 +3879,9 @@ var nerdamer = (function(imports) {
             },
             acsch: function(symbol) {
                 var retval;
-                if(Settings.PARSE2NUMBER)
+                if(Settings.PARSE2NUMBER && symbol.isImaginary())
+                    retval = complex.evaluate(symbol, 'acsch');
+                else if(Settings.PARSE2NUMBER)
                     retval = evaluate(_.parse(format('log((1+sqrt(1+({0})^2))/({0}))', symbol.toString())));
                 else 
                     retval = _.symfunction('acsch', arguments);
@@ -3821,7 +3889,9 @@ var nerdamer = (function(imports) {
             },
             acoth: function(symbol) {
                 var retval;
-                if(Settings.PARSE2NUMBER) {
+                if(Settings.PARSE2NUMBER && symbol.isImaginary())
+                    retval = complex.evaluate(symbol, 'acoth');
+                else if(Settings.PARSE2NUMBER) {
                     if(symbol.equals(1))
                         retval = Symbol.infinity();
                     else
@@ -5177,7 +5247,7 @@ var nerdamer = (function(imports) {
          */
         function log(symbol, base) { 
             var retval;
-
+            
             //log(0) is undefined so complain
             if(symbol.equals(0)) {
                 throw new UndefinedError('log(0) is undefined!');
@@ -5185,10 +5255,13 @@ var nerdamer = (function(imports) {
             
             //deal with imaginary values
             if(symbol.isImaginary()) {
+                return complex.evaluate(symbol, 'log');
+                /*
                 var a = format('log(sqrt(({0})^2+({1})^2))-({2})*atan2(({1}),({0}))', symbol.imagpart(), symbol.realpart(), Settings.IMAGINARY),
                     b = format('({0})*PI/2', Settings.IMAGINARY);
 
                 return _.add(_.parse(a), _.parse(b));
+                */
             }
             
             if(symbol.isConstant() && typeof base !== 'undefined' && base.isConstant()) {
