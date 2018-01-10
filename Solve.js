@@ -294,6 +294,7 @@ if((typeof module) !== 'undefined') {
     };
 
     /* in progress */
+    //solve(x^4+x+0.1, x)
     var quartic = function(e, d, c, b, a) { 
         var scope = {};
         core.Utils.arrayUnique(variables(a).concat(variables(b))
@@ -321,6 +322,32 @@ if((typeof module) !== 'undefined') {
         x3 = _.parse(format("-(({1})/(4*({0})))+({4})+(1/2)*sqrt(-4*({4})^2-2*({2})-(({3})/({4})))", a, b, p, q, S)); //a, b, p, q, S
         x4 = _.parse(format("-(({1})/(4*({0})))+({4})-(1/2)*sqrt(-4*({4})^2-2*({2})-(({3})/({4})))", a, b, p, q, S)); //a, b, p, q, S
         return [x1, x2, x3, x4];
+    };
+    
+    var csolve = function(symbol, solve_for) {
+        var f, p, pn, n, pf, r, theta, sr, sp, roots;
+        roots = [];
+        f = core.Utils.decompose_fn(symbol, solve_for, true);
+        if(f.x.group === S) {
+            pf = Symbol.toPolarFormArray(symbol);
+            p = _.parse(f.x.power);
+            pn = Number(p);
+            n = _.pow(_.divide(f.b.negate(), f.a), p.invert());
+            pf = Symbol.toPolarFormArray(n);
+            r = pf[0];
+            theta = pf[1];
+            sr = r.toString();
+            sp = p.toString();
+            var k, root, str;
+            for(var i=0; i<pn; i++) {
+                k = i;
+                //apply rule r^p*e^(i*(pi/4+2*k*pi/3));
+                str = format('({0})^({1})*e^(i*(pi/4+2*({2})*pi/3))', sr, sp, k);
+                root = _.parse(str);
+                roots.push(root);
+            }
+            return roots;
+        }
     };
     
     var polysolve = function(EQ, solve_for) {
@@ -709,9 +736,11 @@ if((typeof module) !== 'undefined') {
                         case 3:
                             add_to_result(cubic.apply(undefined, coeffs));
                             break;
-                        /*case 4:
+                        case 4:
                             add_to_result(quartic.apply(undefined, coeffs));
-                            break;*/
+                            break;
+                        default:
+                            add_to_result(csolve(eq, solve_for));
                     }
                 }
                 catch(e) { /*something went wrong. EXITING*/; } 

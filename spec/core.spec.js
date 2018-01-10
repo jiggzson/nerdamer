@@ -513,12 +513,53 @@ describe('Nerdamer core', function () {
                 given: 'rectform(sqrt(34)*e^(i*atan(3/5)))',
                 expected: '3*i+5'
             }, 
+            //PENDING:
+            //(-1)^(1/4)*sqrt(2)
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
             // when
             var parsed = nerdamer(testCases[i].given);
             var value = parsed.evaluate().text('decimals');
+
+            // then
+            expect(value).toEqual(testCases[i].expected);
+        }
+    });
+    
+    it('should convert from rectangular to polar', function () {
+        // given
+        var testCases = [
+            {
+                given: 'polarform(3*i+5)',
+                expected: 'e^(atan(3/5)*i)*sqrt(34)'
+            }, 
+            {
+                given: 'polarform(i-1)',
+                expected: '(-1)^(1/4)*sqrt(2)'
+            }, 
+            {
+                given: 'polarform(i+1)',
+                expected: 'e^(atan(1)*i)*sqrt(2)'
+            }, 
+            {
+                given: 'polarform(a*i+b*1)',
+                expected: 'e^(atan(a*b^(-1))*i)*hyp(b,a)'
+            }, 
+            {
+                given: 'polarform(3)',
+                expected: '3'
+            }, 
+            {
+                given: 'polarform(i)',
+                expected: 'i'
+            }, 
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given);
+            var value = parsed.toString();
 
             // then
             expect(value).toEqual(testCases[i].expected);
