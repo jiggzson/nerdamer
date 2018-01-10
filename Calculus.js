@@ -1856,7 +1856,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     retval = a;
                 else if(b.isInfinity)
                     retval = b;
-                //console.log(String(a), String(b))
                 return retval;
             }
             catch(e) {
