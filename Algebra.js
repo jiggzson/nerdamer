@@ -2619,7 +2619,7 @@ if((typeof module) !== 'undefined') {
                     aggregate = _.divide(__.gcd_(args[i].getNum(), aggregate.getNum()),
                         args[i].getDenom().equals(1) && aggregate.getDenom().equals(1) ?
                             new Symbol(1) :
-                            __.lcm(args[i].getDenom(), aggregate.getDenom()));
+                            __.gcd_(args[i].getDenom(), aggregate.getDenom()));
                 return aggregate;
             }
             else return _.symfunction('gcd', args);
