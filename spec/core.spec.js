@@ -859,12 +859,11 @@ describe('Nerdamer core', function () {
                     expected: '-4*cos(x)-z+2*y+6',
                     expectedValue: '13.61938441839943'
                 },
-                /* TODO jiggzson: Results in NaN
                 {
                     given: 'cos(x^2)*cos(x^2)^x',
                     expected: 'cos(x^2)^(1+x)',
-                    expectedValue: '0.02339774318212161*(-1)^3.1'
-                }*/
+                    expectedValue: '-0.023397743182121584*(-1)^2.1'
+                }
             ];
 
             for (var i = 0; i < testCases.length; ++i) {
@@ -953,18 +952,14 @@ describe('Nerdamer core', function () {
         it('should throw for wrong trigonometric arguments', function () {
             // given
             var testCases = [
-                'tan(pi/2)',
-                'sec(pi/2)',
-                'csc(pi)',
-                'csc(2*pi)',
-                'cot(pi)',
-                'cot(2*pi)'
+                'csch(0)',
+                'coth(0)'
             ];
 
             for (var i = 0; i < testCases.length; ++i) {
                 var threwError = false;
                 try {
-                    nerdamer(testCases[i]);
+                    nerdamer(testCases[i]).evaluate();
                 } catch (e) {
                     threwError = true;
                 }
@@ -976,96 +971,95 @@ describe('Nerdamer core', function () {
             // given
             var testCases = [
                 {
-                    given: 'cos(x)',
-                    expected: 'cos(x)',
-                    expectedValue: '-0.5048461045998576'
+                    given: 'cosh(x)',
+                    expected: 'cosh(x)',
+                    expectedValue: '4.144313170410316'
                 },
                 {
-                    given: 'sin(x)',
-                    expected: 'sin(x)',
-                    expectedValue: '0.8632093666488737'
+                    given: 'sinh(x)',
+                    expected: 'sinh(x)',
+                    expectedValue: '4.021856742157334'
                 },
                 {
-                    given: 'tan(x)',
-                    expected: 'tan(x)',
-                    expectedValue: '-1.7098465429045073'
+                    given: 'tanh(x)',
+                    expected: 'tanh(x)',
+                    expectedValue: '0.9704519366134539'
                 },
                 {
-                    given: 'y*tan(x)*tan(x)',
-                    expected: 'tan(x)^2*y',
-                    expectedValue: '9.647798160932235'
+                    given: 'y*tanh(x)*tanh(x)',
+                    expected: 'tanh(x)^2*y',
+                    expectedValue: '3.1078639722134502'
                 },
                 {
-                    given: '2*cos(x)+cos(x)',
-                    expected: '3*cos(x)',
-                    expectedValue: '-1.514538313799573'
+                    given: '2*cosh(x)+cosh(x)',
+                    expected: '3*cosh(x)',
+                    expectedValue: '12.43293951123095'
                 },
                 {
-                    given: '2*cos(x)+cos(x+8+5*x)',
-                    expected: '2*cos(x)+cos(6*x+8)',
-                    expectedValue: '-1.18837521422445'
+                    given: '2*cosh(x)+cosh(x+8+5*x)',
+                    expected: '2*cosh(x)+cosh(6*x+8)',
+                    expectedValue: '442014320.21428346'
                 },
                 {
-                    given: 'x^2+2*cos(x)+cos(x+8+5*x)+4*x^2',
-                    expected: '2*cos(x)+5*x^2+cos(6*x+8)',
-                    expectedValue: '20.86162478577555'
+                    given: 'x^2+2*cosh(x)+cosh(x+8+5*x)+4*x^2',
+                    expected: '2*cosh(x)+5*x^2+cosh(6*x+8)',
+                    expectedValue: '442014342.2642834'
                 },
                 {
-                    given: 'cos(x)*cos(x)',
-                    expected: 'cos(x)^2',
-                    expectedValue: '0.25486958932965037'
+                    given: 'cosh(x)*cosh(x)',
+                    expected: 'cosh(x)^2',
+                    expectedValue: '17.17533165443641'
                 },
                 {
-                    given: 'x^x*cos(x)*sin(x)/x',
-                    expected: 'cos(x)*sin(x)*x^(-1+x)',
-                    expectedValue: '-0.9856355924988681'
+                    given: 'x^x*cosh(x)*sinh(x)/x',
+                    expected: 'cosh(x)*sinh(x)*x^(-1+x)',
+                    expectedValue: '37.69818030329012'
                 },
                 {
-                    given: '2*cos(x)+5*cos(2*x)',
-                    expected: '2*cos(x)+5*cos(2*x)',
-                    expectedValue: '-3.460996315903212'
+                    given: '2*cosh(x)+5*cosh(2*x)',
+                    expected: '2*cosh(x)+5*cosh(2*x)',
+                    expectedValue: '175.04194288518468'
                 },
                 {
-                    given: '2*cos(x)*5*cos(2*x)',
-                    expected: '10*cos(2*x)*cos(x)',
-                    expectedValue: '2.4750626589177886'
+                    given: '2*cosh(x)*5*cosh(2*x)',
+                    expected: '10*cosh(2*x)*cosh(x)',
+                    expectedValue: '1382.155931928817'
                 },
                 {
-                    given: 'cos(x)+(x+x^2+x)',
-                    expected: '2*x+x^2+cos(x)',
-                    expectedValue: '8.105153895400143'
+                    given: 'cosh(x)+(x+x^2+x)',
+                    expected: '2*x+x^2+cosh(x)',
+                    expectedValue: '12.754313170410316'
                 },
                 {
-                    given: 'cos(x)+(x+x^2+7)',
-                    expected: '7+cos(x)+x+x^2',
-                    expectedValue: '13.005153895400143'
+                    given: 'cosh(x)+(x+x^2+7)',
+                    expected: '7+cosh(x)+x+x^2',
+                    expectedValue: '17.654313170410315'
                 },
                 {
-                    given: 'x/cos(x)*cos(x)',
+                    given: 'x/cosh(x)*cosh(x)',
                     expected: 'x',
                     expectedValue: '2.1'
                 },
                 {
-                    given: 'tan(x)*tan(x)',
-                    expected: 'tan(x)^2',
-                    expectedValue: '2.923575200282495'
+                    given: 'tanh(x)*tanh(x)',
+                    expected: 'tanh(x)^2',
+                    expectedValue: '0.9417769612768031'
                 },
                 {
-                    given: '2*(tan(x)+tan(2*x)+7)-6*tan(x)',
+                    given: '2*(tanh(x)+tanh(2*x)+7)-6*tanh(x)',
                     expected: '-4*tan(x)+14+2*tan(2*x)',
-                    expectedValue: '24.394945720635707'
+                    expectedValue: '12.11729298646525'
                 },
                 {
-                    given: '((3+y)*2-(cos(x)*4+z))',
+                    given: '((3+y)*2-(cosh(x)*4+z))',
                     expected: '-4*cos(x)-z+2*y+6',
-                    expectedValue: '13.61938441839943'
+                    expectedValue: '-4.977252681641266'
                 },
-                /* TODO jiggzson: Results in NaN
                 {
-                    given: 'cos(x^2)*cos(x^2)^x',
-                    expected: 'cos(x^2)^(1+x)',
-                    expectedValue: '0.02339774318212161*(-1)^3.1'
-                }*/
+                    given: 'cosh(x^2)*cosh(x^2)^x',
+                    expected: 'cosh(x^2)^(1+x)',
+                    expectedValue: '100982.42051309331'
+                }
             ];
 
             for (var i = 0; i < testCases.length; ++i) {
