@@ -5119,12 +5119,12 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         //TODO: this method needs serious optimization
-        function nthroot(num, p, prec, asbig) {
+        function nthroot(num, p, prec, asbig) { 
             if(typeof asbig === 'undefined') asbig = true;
             prec = prec || 25;
             if(!isSymbol(p))
                 p = _.parse(p);
-            if(isInt(num) && p.isConstant()) {
+            if(isInt(num) && p.isConstant()) { 
                 var sign = num.sign(),
                     x;
                 num = abs(num); //remove the sign
@@ -5136,7 +5136,7 @@ var nerdamer = (function(imports) {
                 }
                 else {
                     if(num < 18446744073709551616) //2^64
-                        x = Frac.create(Math.pow(num, p));
+                        x = Frac.create(Math.pow(num, 1/p));
                     else
                         x = Math2.nthroot(num, p);
                 }
