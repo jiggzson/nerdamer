@@ -957,13 +957,7 @@ describe('Nerdamer core', function () {
             ];
 
             for (var i = 0; i < testCases.length; ++i) {
-                var threwError = false;
-                try {
-                    nerdamer(testCases[i], undefined, 'numer');
-                } catch (e) {
-                    threwError = true;
-                }
-                expect(threwError).toBe(true);
+                expect(function(){ nerdamer(testCases[i]).evaluate() }).toThrow();
             }
         });
 
