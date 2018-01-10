@@ -959,7 +959,7 @@ describe('Nerdamer core', function () {
             for (var i = 0; i < testCases.length; ++i) {
                 var threwError = false;
                 try {
-                    nerdamer(testCases[i]);
+                    nerdamer(testCases[i]).evaluate();
                 } catch (e) {
                     threwError = true;
                 }
