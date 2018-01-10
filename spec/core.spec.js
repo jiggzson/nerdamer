@@ -862,7 +862,7 @@ describe('Nerdamer core', function () {
                 {
                     given: 'cos(x^2)*cos(x^2)^x',
                     expected: 'cos(x^2)^(1+x)',
-                    expectedValue: '0.023397743182121563*(-1)^2.1'
+                    expectedValue: '0.023397743182121563*(-1)^3.1'
                 }
             ];
 
