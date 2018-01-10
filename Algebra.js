@@ -1829,7 +1829,7 @@ if((typeof module) !== 'undefined') {
             for(var i=0,l=coeffs.length; i<l; i++) 
                 if(typeof coeffs[i] === 'undefined')
                     coeffs[i] = new Symbol(0);
-            
+
             return coeffs;    
         },
         /**
@@ -2759,9 +2759,18 @@ if((typeof module) !== 'undefined') {
          * @returns {Array}
          */
         divide: function(symbol1, symbol2) {
-            var result = __.div(symbol1, symbol2);
-            var remainder = _.divide(result[1], symbol2);
-            return _.add(result[0], remainder);
+            var result, remainder, factored, den;
+            factored = core.Algebra.Factor.factor(symbol1.clone());
+            den = factored.getDenom();
+            if(!den.isConstant('all')) {
+                symbol1 = _.expand(Symbol.unwrapPARENS(_.multiply(factored, den.clone())));
+            }
+            else
+                //reset the denominator since we're not dividing by it anymore
+                den = new Symbol(1); 
+            result = __.div(symbol1, symbol2);
+            remainder = _.divide(result[1], symbol2);
+            return _.divide(_.add(result[0], remainder), den);
         },
         div: function(symbol1, symbol2) {
             //division by constants
@@ -3123,7 +3132,7 @@ if((typeof module) !== 'undefined') {
                         dterms, max, M, c, powers, div, r, factors_vec, ks,
                         template, tfactors;
                     num = _.expand(symbol.getNum());
-                    den = symbol.getDenom(true);
+                    den = symbol.getDenom().toUnitMultiplier();
                     //move the entire multipier to the numerator
                     num.multiplier = symbol.multiplier;
                     //we only have a meaningful change if n factors > 1. This means that
@@ -3131,7 +3140,7 @@ if((typeof module) !== 'undefined') {
                     //collect the terms wrt the x
                     nterms = num.groupTerms(v);
                     //divide out wholes if top is larger
-                    if(__.degree(num, v) >= __.degree(den, v)) {
+                    if(Number(__.degree(num, v)) >= Number(__.degree(den, v))) {
                         div = __.div(num.clone(), _.expand(den.clone()));
                         r = div[0]; //remove the wholes
                         num = div[1]; //work with the remainder
@@ -3140,7 +3149,7 @@ if((typeof module) !== 'undefined') {
                     else
                         r = new Symbol(0);
                     
-                    if(__.degree(den, v) === 1) {
+                    if(Number(__.degree(den, v)) === 1) {
                         var q = _.divide(num, den);
                         if(asArray)
                             return [r, q];
@@ -3205,7 +3214,7 @@ if((typeof module) !== 'undefined') {
                     //done
                     return retval;
                 }
-                catch(e){console.log(e);};
+                catch(e){};
 
                 return symbol;
             }
@@ -3228,6 +3237,7 @@ if((typeof module) !== 'undefined') {
                 //assume the variable for univariate
                 v = _.parse(vars[0]);
             }
+
             //store the group
             var g = symbol.group;
             //we're going to trust the user and assume no EX. Calling isPoly 
@@ -3265,8 +3275,61 @@ if((typeof module) !== 'undefined') {
                     o.sd.unshift(deg);
                 return _.symfunction('max', o.sd);
             }
+            if(!core.Utils.isSymbol(deg))
+                deg = _.parse(deg);
             //return the degree
             return deg;
+        },
+        /**
+         * Attempts to complete the square of a polynomial
+         * @param {type} symbol
+         * @param {type} v
+         * @param {type} raw
+         * @throws {Error} 
+         * @returns {Object|Symbol[]}
+         */
+        sqComplete: function(symbol, v, raw) {
+            if(!core.Utils.isSymbol(v))
+                v = _.parse(v);
+            var stop = function(msg) {
+                msg = msg || 'Stopping';
+                throw new Error(msg);
+            };
+            //if not CP then nothing to do
+            if(symbol.group !== CP) 
+                stop('Must be a polynomial!');
+            //declare vars
+            var deg, a, b, c, d, e, coeffs, sign, br, sym, sqrt_a;
+
+            br = core.Utils.inBrackets;
+            //make a copy
+            symbol = symbol.clone();
+            deg = core.Algebra.degree(symbol, v); //get the degree of polynomial
+            //must be in form ax^2 +/- bx +/- c
+            if(!deg.equals(2))
+                stop('Cannot complete square for degree '+deg);
+            //get the coeffs
+            coeffs = core.Algebra.coeffs(symbol, v);
+            a = coeffs[2];
+            //store the sign
+            sign = coeffs[1].sign(); 
+            //divide the linear term by two and square it
+            b = _.divide(coeffs[1], new Symbol(2));
+            //add the difference to the constant
+            c = _.pow(b.clone(), new Symbol(2));
+            if(raw)
+                return [a, b, d];
+            sqrt_a = math.sqrt(a);
+            e = _.divide(math.sqrt(c), sqrt_a.clone());
+            //calculate d which is the constant
+            d = _.subtract(coeffs[0], _.pow(e.clone(), new Symbol(2)));
+            //compute the square part
+            sym = _.parse(br(sqrt_a.clone()+'*'+v+(sign < 0 ? '-' : '+')+e));
+            return {
+                a: sym,
+                c: d,
+                f: _.add(_.pow(sym.clone(), new Symbol(2)), d.clone())
+            };
         },
         Classes: {
             Polynomial: Polynomial,
@@ -3276,22 +3339,6 @@ if((typeof module) !== 'undefined') {
     };
 
     nerdamer.useAlgebraDiv = function() {
-        var divide = __.divideFn = _.divide;
-        var calls = 0; //keep track of how many calls were made
-        _.divide = function(a, b) {
-            calls++;
-            var ans;
-            if(calls === 1) //check if this is the first call. If it is use algebra divide
-                ans = core.Algebra.divide(a, b);
-            else //otherwise use parser divide
-                ans = divide(a, b);
-            calls = 0; //reset the number of calls back to none
-            return ans;
-        };
-    };
-    
-
-   nerdamer.useAlgebraDiv = function() {
         var divide = __.divideFn = _.divide;
         var calls = 0; //keep track of how many calls were made
         _.divide = function(a, b) {
@@ -3378,12 +3425,25 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: [2, 3],
             build: function() { return __.line; }
+        },
+        {
+            name: 'sqcomp',
+            visible: true,
+            numargs: [1,2],
+            build: function() { 
+                var f = function(x, v) {
+                    try {
+                        v = v || variables(x)[0];
+                        var sq = __.sqComplete(x.clone(), v);
+                        return sq.f;
+                    }
+                    catch(e) {
+                        return x;
+                    }
+                };
+                return f;
+            }
         }
     ]);
     nerdamer.api();
 })();
-
-//var x = nerdamer('partfrac((a*x+b)^(-1)*x, x)');
-////var x = nerdamer('div(x, a+b*x)');
-////
-//console.log(x.toString());

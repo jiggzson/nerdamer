@@ -39,9 +39,9 @@ if((typeof module) !== 'undefined') {
         }
     };
     // The search radius for the roots
-    core.Settings.solve_radius = 1000;
+    core.Settings.SOLVE_RADIUS = 1000;
     // The maximum number to fish for on each side of the zero
-    core.Settings.roots_per_side = 5;
+    core.Settings.ROOTS_PER_SIDE = 5;
     // Covert the number to multiples of pi if possible
     core.Settings.make_pi_conversions = true;
     
@@ -418,7 +418,7 @@ if((typeof module) !== 'undefined') {
                 last = f(start),
                 last_sign = last/Math.abs(last),
                 points = [],
-                rside = core.Settings.roots_per_side, // the max number of roots on right side
+                rside = core.Settings.ROOTS_PER_SIDE, // the max number of roots on right side
                 lside = rside*2+1; // the max number of roots on left side
             // check around the starting point
             points.push(Math.floor(start/2));
@@ -430,7 +430,7 @@ if((typeof module) !== 'undefined') {
             // Possible issue #1. If the step size exceeds the zeros then they'll be missed. Consider the case
             // where the function dips to negative and then back the positive with a step size of 0.1. The function
             // will miss the zeros because it will jump right over it. Think of a case where this can happen.
-            for(var i=start; i<core.Settings.solve_radius; i++){
+            for(var i=start; i<core.Settings.SOLVE_RADIUS; i++){
                 var val = f(i*0.1),
                     sign = val/Math.abs(val);
                 if(isNaN(val) || !isFinite(val) || points.length > rside)
@@ -442,7 +442,7 @@ if((typeof module) !== 'undefined') {
             }
             
             //check the other side
-            for(var i=start-1; i>-core.Settings.solve_radius; i--){
+            for(var i=start-1; i>-core.Settings.SOLVE_RADIUS; i--){
                 var val = f(i),
                     sign = val/Math.abs(val);
                 if(isNaN(val) || !isFinite(val) || points.length > lside)
