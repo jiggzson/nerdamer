@@ -553,6 +553,3 @@ if((typeof module) !== 'undefined') {
     //link registered functions externally
     nerdamer.api();
 }());
-
-var x = nerdamer('ilt(a*6/(b*s^6),s,t)');
-console.log(x.toString())

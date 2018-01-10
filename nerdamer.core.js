@@ -1752,16 +1752,14 @@ var nerdamer = (function(imports) {
         },
         lte: function(value) {
             return this.lt(value) || this.eq(value);
-        }
-        /*
-        //needs rationalize to be completed
+        },
+        
         numerator: function() {
-            return this.symbol.getNum();
+            return new Expression(this.symbol.getNum());
         },
         denominator: function() {
-            return this.symbol.getDenom();
+            return new Expression(this.symbol.getDenom());
         }
-        */
     };
     //Aliases
     Expression.prototype.toTeX = Expression.prototype.latex;

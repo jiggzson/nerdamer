@@ -1916,7 +1916,7 @@ describe('Nerdamer core', function () {
       }
     });
     
-    /*
+
     it('should correctly get the numerator', function() {
         var testCases = [
             {
@@ -1925,17 +1925,33 @@ describe('Nerdamer core', function () {
             },
             {
                 given: '8*a*b/(x*(x+1))',
-                expected: '(1+x)*x'
+                expected: '8*a*b'
+            },
+            {
+                given: 'x+1/x',
+                expected: 'x+x^(-1)'
+            },
+            {
+                given: 'a*b/x',
+                expected: 'a*b'
+            },
+            {
+                given: 'x^2/(2*x+2)',
+                expected: 'x^2'
+            },
+            {
+                given: '1/3*x^2/(2*x+2)',
+                expected: 'x^2'
             },
         ];
         
         for (var i = 0; i < testCases.length; ++i) {
-            var result = nerdamer(testCases[i].given, null, 'numer').numerator().text();
+            var result = nerdamer(testCases[i].given).numerator().text();
             expect(result.toString()).toEqual(testCases[i].expected);
       }
     });
     
-    it('should correctly get the numerator', function() {
+    it('should correctly get the denominator', function() {
         var testCases = [
             {
                 given: '3/4*a',
@@ -1943,16 +1959,32 @@ describe('Nerdamer core', function () {
             },
             {
                 given: '8*a*b/(x*(x+1))',
-                expected: '8*a*b'
+                expected: '(1+x)*x'
+            },
+            {
+                given: 'x+1/x',
+                expected: '1'
+            },
+            {
+                given: 'a*b/x',
+                expected: 'x'
+            },
+            {
+                given: 'x^2/(2*x+2)',
+                expected: '2+2*x'
+            },
+            {
+                given: '1/3*x^2/(2*x+2)',
+                expected: '3*(2+2*x)'
             },
         ];
         
         for (var i = 0; i < testCases.length; ++i) {
-            var result = nerdamer(testCases[i].given, null, 'numer').text();
+            var result = nerdamer(testCases[i].given).denominator().text();
             expect(result.toString()).toEqual(testCases[i].expected);
       }
     });
-    */
+
     
     describe('Further arithmetic test cases', function () {
         it('Batch 1', function () {
