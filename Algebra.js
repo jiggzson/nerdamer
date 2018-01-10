@@ -2616,7 +2616,10 @@ if((typeof module) !== 'undefined') {
                 var aggregate = args[0].distributeExponent();
                 for(var i = 1; i < args.length; i++)
                     //gcd_ cannot handle denominators correctly
-                    aggregate = _.divide(__.gcd_(args[i].getNum(), aggregate), __.gcd_(args[i].getDenom().invert().distributeExponent(), aggregate));
+                    aggregate = _.divide(__.gcd_(args[i].getNum(), aggregate.getNum()),
+                        args[i].getDenom().equals(1) && aggregate.getDenom().equals(1) ?
+                            new Symbol(1) :
+                            __.lcm(args[i].getDenom(), aggregate.getDenom()));
                 return aggregate;
             }
             else return _.symfunction('gcd', args);
