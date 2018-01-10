@@ -3155,12 +3155,13 @@ var nerdamer = (function(imports) {
             //e.g. 1/(x*(x+1))
             if(this.group === CB && this.power.lessThan(0))
                 symbol = _.expand(symbol);
+
             //if the symbol already is the denominator... DONE!!!
             if(symbol.power.lessThan(0)) {
-                retval = symbol;
+                var d = new Symbol(symbol.multiplier.den);
+                retval = symbol.toUnitMultiplier();
                 retval.power.negate();
-                if(!symbol.multiplier.den.equals(1))
-                    retval = _.multiply(new Symbol(symbol.multiplier.den), retval); //put back the coeff
+                retval = _.multiply(d, retval); //put back the coeff
             }
             else if(symbol.group === CB) {
                 retval = new Symbol(symbol.multiplier.den);
