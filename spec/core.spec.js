@@ -1943,6 +1943,10 @@ describe('Nerdamer core', function () {
                 given: '1/3*x^2/(2*x+2)',
                 expected: 'x^2'
             },
+            {
+                given: '2/a',
+                expected: '2'
+            },
         ];
         
         for (var i = 0; i < testCases.length; ++i) {
@@ -1976,6 +1980,10 @@ describe('Nerdamer core', function () {
             {
                 given: '1/3*x^2/(2*x+2)',
                 expected: '3*(2+2*x)'
+            },
+            {
+                given: '2/a',
+                expected: 'a'
             },
         ];
         

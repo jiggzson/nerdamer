@@ -3164,12 +3164,13 @@ var nerdamer = (function(imports) {
             //e.g. 1/(x*(x+1))
             if(this.group === CB && this.power.lessThan(0))
                 symbol = _.expand(symbol);
+
             //if the symbol already is the denominator... DONE!!!
             if(symbol.power.lessThan(0)) {
-                retval = symbol;
+                var d = new Symbol(symbol.multiplier.den);
+                retval = symbol.toUnitMultiplier();
                 retval.power.negate();
-                if(!symbol.multiplier.den.equals(1))
-                    retval = _.multiply(new Symbol(symbol.multiplier.den), retval); //put back the coeff
+                retval = _.multiply(d, retval); //put back the coeff
             }
             else if(symbol.group === CB) {
                 retval = new Symbol(symbol.multiplier.den);
@@ -5128,12 +5129,12 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         //TODO: this method needs serious optimization
-        function nthroot(num, p, prec, asbig) {
+        function nthroot(num, p, prec, asbig) { 
             if(typeof asbig === 'undefined') asbig = true;
             prec = prec || 25;
             if(!isSymbol(p))
                 p = _.parse(p);
-            if(isInt(num) && p.isConstant()) {
+            if(isInt(num) && p.isConstant()) { 
                 var sign = num.sign(),
                     x;
                 num = abs(num); //remove the sign
@@ -5145,7 +5146,7 @@ var nerdamer = (function(imports) {
                 }
                 else {
                     if(num < 18446744073709551616) //2^64
-                        x = Frac.create(Math.pow(num, p));
+                        x = Frac.create(Math.pow(num, 1/p));
                     else
                         x = Math2.nthroot(num, p);
                 }
