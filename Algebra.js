@@ -2654,9 +2654,18 @@ if((typeof module) !== 'undefined') {
          * @returns {Array}
          */
         divide: function(symbol1, symbol2) {
-            var result = __.div(symbol1, symbol2);
-            var remainder = _.divide(result[1], symbol2);
-            return _.add(result[0], remainder);
+            var result, remainder, factored, den;
+            factored = core.Algebra.Factor.factor(symbol1.clone());
+            den = factored.getDenom();
+            if(!den.isConstant('all')) {
+                symbol1 = _.expand(Symbol.unwrapPARENS(_.multiply(factored, den.clone())));
+            }
+            else
+                //reset the denominator since we're not dividing by it anymore
+                den = new Symbol(1); 
+            result = __.div(symbol1, symbol2);
+            remainder = _.divide(result[1], symbol2);
+            return _.divide(_.add(result[0], remainder), den);
         },
         div: function(symbol1, symbol2) {
             //division by constants

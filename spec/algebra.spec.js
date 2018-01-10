@@ -232,9 +232,14 @@ describe('Algebra', function () {
             {
                 given: 'div(b^2*y^2+2*a*b*y^2+a^2*y^2+2*b^2*x*y+4*a*b*x*y+2*a^2*x*y+b^2*x^2+2*a*b*x^2+a^2*x^2, 2*b*y^2+2*a*y^2+4*b*x*y+4*a*x*y+2*b*x^2+2*a*x^2)',
                 expected: '[(1/2)*a+(1/2)*b,0]'
-            }, {
+            }, 
+            {
                 given: 'div(2*a*b*x+2*a*b*y+a^2*x+a^2*y+b^2*x+b^2*y, x+y)',
                 expected: '[2*a*b+a^2+b^2,0]'
+            },
+            {
+                given: 'divide(a*b^(-1)+b^(-1)*c,a+c)',
+                expected: 'b^(-1)'
             }
         ];
 

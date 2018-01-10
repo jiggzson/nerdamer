@@ -1703,19 +1703,22 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         if(g2 === FN && g1 === CP) {
                                             var t = sym1; sym1 = sym2; sym2 = t; //swap
                                         }
-                                        var du, sym2_clone, p, q;
+                                        var du, sym2_clone, p, q, sa, sb;
                                         du = Symbol.unwrapSQRT(__.diff(sym1.clone(), dx), true);
                                         sym2_clone = Symbol.unwrapSQRT(sym2, true);
-                                        if(du.power.equals(sym2_clone.power)) {
+                                        if(du.power.equals(sym2_clone.power)) { 
                                             p = new Symbol(sym2.power);
-                                            q = core.Algebra.divide(du.toLinear(), sym2.clone().toLinear());
+                                            sa = du.clone().toLinear();
+                                            sb = sym2.clone().toLinear();
+                                            q = core.Algebra.divide(sa.toLinear(), sb);
                                             if(q.isConstant()) {
                                                 var nq = _.pow(q, p.negate());
                                                 retval = _.multiply(nq, __.integration.poly_integrate(sym1.clone()));
                                             }
                                         }
-                                        else
+                                        else {
                                             retval = __.integration.by_parts(symbol, dx, depth, opt);
+                                        }
                                     }
                                     else { 
                                         retval = __.integration.by_parts(symbol, dx, depth, opt);
