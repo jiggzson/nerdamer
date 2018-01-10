@@ -862,7 +862,7 @@ describe('Nerdamer core', function () {
                 {
                     given: 'cos(x^2)*cos(x^2)^x',
                     expected: 'cos(x^2)^(1+x)',
-                    expectedValue: '-0.023397743182121584*(-1)^2.1'
+                    expectedValue: '0.023397743182121584*(-1)^2.1'
                 }
             ];
 
@@ -973,7 +973,7 @@ describe('Nerdamer core', function () {
                 {
                     given: 'cosh(x)',
                     expected: 'cosh(x)',
-                    expectedValue: '4.144313170410316'
+                    expectedValue: '4.1443131704103155'
                 },
                 {
                     given: 'sinh(x)',
@@ -993,32 +993,32 @@ describe('Nerdamer core', function () {
                 {
                     given: '2*cosh(x)+cosh(x)',
                     expected: '3*cosh(x)',
-                    expectedValue: '12.43293951123095'
+                    expectedValue: '12.432939511230947'
                 },
                 {
                     given: '2*cosh(x)+cosh(x+8+5*x)',
                     expected: '2*cosh(x)+cosh(6*x+8)',
-                    expectedValue: '442014320.21428346'
+                    expectedValue: '442014320.214284'
                 },
                 {
                     given: 'x^2+2*cosh(x)+cosh(x+8+5*x)+4*x^2',
                     expected: '2*cosh(x)+5*x^2+cosh(6*x+8)',
-                    expectedValue: '442014342.2642834'
+                    expectedValue: '442014342.264284'
                 },
                 {
                     given: 'cosh(x)*cosh(x)',
                     expected: 'cosh(x)^2',
-                    expectedValue: '17.17533165443641'
+                    expectedValue: '17.175331654436402'
                 },
                 {
                     given: 'x^x*cosh(x)*sinh(x)/x',
                     expected: 'cosh(x)*sinh(x)*x^(-1+x)',
-                    expectedValue: '37.69818030329012'
+                    expectedValue: '37.698180303290115'
                 },
                 {
                     given: '2*cosh(x)+5*cosh(2*x)',
                     expected: '2*cosh(x)+5*cosh(2*x)',
-                    expectedValue: '175.04194288518468'
+                    expectedValue: '175.0419428851847'
                 },
                 {
                     given: '2*cosh(x)*5*cosh(2*x)',
@@ -1028,7 +1028,7 @@ describe('Nerdamer core', function () {
                 {
                     given: 'cosh(x)+(x+x^2+x)',
                     expected: '2*x+x^2+cosh(x)',
-                    expectedValue: '12.754313170410316'
+                    expectedValue: '12.754313170410315'
                 },
                 {
                     given: 'cosh(x)+(x+x^2+7)',
@@ -1047,18 +1047,18 @@ describe('Nerdamer core', function () {
                 },
                 {
                     given: '2*(tanh(x)+tanh(2*x)+7)-6*tanh(x)',
-                    expected: '-4*tan(x)+14+2*tan(2*x)',
-                    expectedValue: '12.11729298646525'
+                    expected: '-4*tanh(x)+14+2*tanh(2*x)',
+                    expectedValue: '12.117292986465252'
                 },
                 {
                     given: '((3+y)*2-(cosh(x)*4+z))',
-                    expected: '-4*cos(x)-z+2*y+6',
-                    expectedValue: '-4.977252681641266'
+                    expected: '-4*cosh(x)-z+2*y+6',
+                    expectedValue: '-4.9772526816412626'
                 },
                 {
                     given: 'cosh(x^2)*cosh(x^2)^x',
                     expected: 'cosh(x^2)^(1+x)',
-                    expectedValue: '100982.42051309331'
+                    expectedValue: '100982.42051309341'
                 }
             ];
 
