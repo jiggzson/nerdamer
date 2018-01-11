@@ -5373,9 +5373,9 @@ var nerdamer = (function(imports) {
          */
         function log(symbol, base) { 
             var retval;
-            
-            if(symbol.fname === SQRT && symbol.multiplier.equals(1))
-                return _.divide(symbol.clone(), new Symbol(2));
+            if(symbol.fname === SQRT && symbol.multiplier.equals(1)) {
+                return _.divide(log(symbol.args[0]), new Symbol(2));
+            }
             
             //log(0) is undefined so complain
             if(symbol.equals(0)) {
@@ -6743,7 +6743,7 @@ var nerdamer = (function(imports) {
                     }
                 }
                 //detect Euler's identity
-                else if(result.isE() && result.group === EX && result.power.contains('pi') 
+                else if(!Settings.IGNORE_E && result.isE() && result.group === EX && result.power.contains('pi') 
                         && result.power.contains(Settings.IMAGINARY)) {
                     //we have a match
                     var m1 = result.multiplier,

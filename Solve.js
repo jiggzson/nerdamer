@@ -324,30 +324,43 @@ if((typeof module) !== 'undefined') {
         return [x1, x2, x3, x4];
     };
     
+    var divnconsolve = function(symbol, solve_for) {
+        var sols = [];
+        //see if we can solve the factors
+        var factors = core.Algebra.Factor.factor(symbol);
+        if(factors.group === CB) {
+            factors.each(function(x) {
+                x = Symbol.unwrapPARENS(x);
+                sols = sols.concat(solve(x, solve_for));
+            });
+        }
+        return sols;
+    };
+    
     var csolve = function(symbol, solve_for) {
-        var f, p, pn, n, pf, r, theta, sr, sp, roots;
-        roots = [];
-        f = core.Utils.decompose_fn(symbol, solve_for, true);
-        if(f.x.group === S) {
-            pf = Symbol.toPolarFormArray(symbol);
-            p = _.parse(f.x.power);
-            pn = Number(p);
-            n = _.pow(_.divide(f.b.negate(), f.a), p.invert());
-            pf = Symbol.toPolarFormArray(n);
-            r = pf[0];
-            theta = pf[1];
-            sr = r.toString();
-            sp = p.toString();
-            var k, root, str;
-            for(var i=0; i<pn; i++) {
-                k = i;
-                //apply rule r^p*e^(i*(pi/4+2*k*pi/3));
-                str = format('({0})^({1})*e^(i*(pi/4+2*({2})*pi/3))', sr, sp, k);
-                root = _.parse(str);
-                roots.push(root);
+        return core.Utils.block('IGNORE_E', function() {
+            var f, p, pn, n, pf, r, theta, sr, sp, roots;
+            roots = [];
+            f = core.Utils.decompose_fn(symbol, solve_for, true);
+            if(f.x.group === S) {
+                p = _.parse(f.x.power);
+                pn = Number(p);
+                n = _.pow(_.divide(f.b.negate(), f.a), p.invert());
+                pf = Symbol.toPolarFormArray(n);
+                r = pf[0];
+                theta = pf[1];
+                sr = r.toString();
+                sp = p.toString();
+                var k, root, str;
+                for(var i=0; i<pn; i++) {
+                    k = i;
+                    str = format('({0})*e^(2*{1}*pi*{2}*{3})', sr, k, p, core.Settings.IMAGINARY);
+                    root = _.parse(str);
+                    roots.push(root);
+                }
             }
             return roots;
-        }
+        }, true);
     };
     
     var polysolve = function(EQ, solve_for) {
@@ -694,8 +707,18 @@ if((typeof module) !== 'undefined') {
                     }
                     else if(deg === 3)
                         add_to_result(cubic.apply(undefined, coeffs));
-                    else
-                        _A.proots(eq).map(add_to_result);
+                    else {
+                            
+                        if(core.Settings.USE_SYM_ROOTS) {
+                            var sym_roots = csolve(eq, solve_for);
+                            if(sym_roots.length > 0)
+                                add_to_result(sym_roots);
+                            else
+                                _A.proots(eq).map(add_to_result);
+                        }
+                        else 
+                            _A.proots(eq).map(add_to_result);
+                    }
                 }
             }
             else { 
@@ -741,6 +764,8 @@ if((typeof module) !== 'undefined') {
                             break;
                         default:
                             add_to_result(csolve(eq, solve_for));
+                            if(solutions.length === 0)
+                                add_to_result(divnconsolve(eq, solve_for));
                     }
                 }
                 catch(e) { /*something went wrong. EXITING*/; } 
