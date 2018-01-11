@@ -5140,7 +5140,8 @@ var nerdamer = (function(imports) {
          */
         //TODO: this method needs serious optimization
         function nthroot(num, p, prec, asbig) { 
-            if(typeof asbig === 'undefined') asbig = true;
+            if(typeof asbig === 'undefined') 
+                asbig = true;
             prec = prec || 25;
             if(!isSymbol(p))
                 p = _.parse(p);
@@ -5160,11 +5161,15 @@ var nerdamer = (function(imports) {
                     else
                         x = Math2.nthroot(num, p);
                 }
-                    
-                if(asbig)
-                    return new Symbol(x);
-                return new Symbol(x.toDecimal(prec));
+                if(isInt(x) || Settings.PARSE2NUMBER) {
+                    if(asbig)
+                        return new Symbol(x);
+                    return new Symbol(x.toDecimal(prec));
+                }
             }
+            
+            if(Number(p) === 2)
+                return _.sqrt(num);
             
             return _.symfunction('nthroot', arguments);
         }
@@ -6263,7 +6268,7 @@ var nerdamer = (function(imports) {
                 }
                 
 
-                if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P || g2 === FN)) && !(g1 === PL && g2 === CB)) {                     
+                if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P || g2 === FN)) && !(g1 === PL && g2 === CB)) {                   
                     var p1 = a.power,
                         p2 = b.power,
                         isSymbolP1 = isSymbol(p1),
@@ -6372,6 +6377,8 @@ var nerdamer = (function(imports) {
                 }
                 else {
                     result.multiplier = result.multiplier.multiply(m).multiply(sign);
+                    if(result.group === CP && result.isImaginary())
+                        result.distributeMultiplier();
                 }
 
 
@@ -6568,6 +6575,16 @@ var nerdamer = (function(imports) {
                     result = a.clone();
                 if(aIsConstant && bIsConstant && a.equals(0) && b.lessThan(0))
                     throw new UndefinedError('Division by zero is not allowed!');
+                
+                //compute imaginary numbers right away
+                if(Settings.PARSE2NUMBER && aIsConstant && bIsConstant && a.sign() < 0 && evenFraction(b)) {
+                    var k, re, im;
+                    k = Math.PI*b;
+                    re = new Symbol(Math.cos(k));
+                    im = _.multiply(Symbol.imaginary(), new Symbol(Math.sin(k)));
+                    return _.add(re, im);
+                }
+                
                 //take care of the symbolic part
                 result.toUnitMultiplier();
                 //simpifly sqrt

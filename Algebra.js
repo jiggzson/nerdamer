@@ -2525,16 +2525,6 @@ if((typeof module) !== 'undefined') {
                 symbol = __.Factor.sqdiff(symbol, factors);
                 //factors by fishing for zeroes
                 symbol = __.Factor.zeroes(symbol, factors);
-                //common group
-                symbol = __.Factor.mnxFactor(symbol, factors);
-                
-                return symbol;
-            },
-            //factoring using common groups
-            mnxFactor: function(symbol, factors) {
-                var terms = symbol.collectSymbols();
-                //build a matrix
-                var term_matrix = {};
                 
                 return symbol;
             }
@@ -3362,6 +3352,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var x = nerdamer('factor(a*x^6+x^4-11*a*x^3+4*x^3-11*x-44)');
-console.log(x.toString())

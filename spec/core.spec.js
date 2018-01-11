@@ -960,7 +960,7 @@ describe('Nerdamer core', function () {
                 {
                     given: 'atanh(-5)',
                     expected: 'atanh(-5)',
-                    expectedValue: '0.5*(-0.4054651081081645+3.141592653589793*i)'
+                    expectedValue: '-0.20273255405408225+1.5707963267948966*i'
                 },
                 {
                     given: 'asech(0.5)',
@@ -1278,7 +1278,7 @@ describe('Nerdamer core', function () {
             {
                 given: '(256*i)^(1/8)',
                 expected: '2*(-1)^(1/16)',
-                expectedValue: '2*(-1)^0.0625'
+                expectedValue: '0.39018064403225655*i+1.9615705608064609'
             },
             {
                 given: 'i/i',
@@ -1327,7 +1327,8 @@ describe('Nerdamer core', function () {
             expect(value).toEqual(testCases[i].expectedValue);
         }
     });
-
+    
+    
     it('should handle powers with results using i', function () {
         // given
         var testCases = [

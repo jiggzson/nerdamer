@@ -708,15 +708,12 @@ if((typeof module) !== 'undefined') {
                     else if(deg === 3)
                         add_to_result(cubic.apply(undefined, coeffs));
                     else {
-                            
-                        if(core.Settings.USE_SYM_ROOTS) {
-                            var sym_roots = csolve(eq, solve_for);
-                            if(sym_roots.length > 0)
-                                add_to_result(sym_roots);
-                            else
-                                _A.proots(eq).map(add_to_result);
-                        }
-                        else 
+                        var sym_roots = csolve(eq, solve_for); 
+                        if(sym_roots.length === 0)
+                            sym_roots = divnconsolve(eq, solve_for);
+                        if(sym_roots.length > 0)
+                            add_to_result(sym_roots);
+                        else
                             _A.proots(eq).map(add_to_result);
                     }
                 }
