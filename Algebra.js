@@ -2612,15 +2612,19 @@ if((typeof module) !== 'undefined') {
             //appeared.length is 0 when all arguments are group N
             if (evaluate || appeared.length === 0)
             {
-                //distribute exponent so that (a^-1*b^-1)^-1 => a*b
-                var aggregate = args[0].distributeExponent();
-                for(var i = 1; i < args.length; i++)
+                //TODO: distribute exponent so that (a^-1*b^-1)^-1 => a*b
+                if(args.every(function(symbol){return symbol.getDenom().equals(1)}))
+                {
+                    var aggregate = args[0];
+                    for(var i = 1; i < args.length; i++) aggregate = __.gcd_(args[i], aggregate);
+                    return aggregate;
+                }
+                else
+                {
                     //gcd_ cannot handle denominators correctly
-                    aggregate = _.divide(__.gcd_(args[i].getNum(), aggregate.getNum()),
-                        args[i].getDenom().equals(1) && aggregate.getDenom().equals(1) ?
-                            new Symbol(1) :
-                            __.gcd_(args[i].getDenom(), aggregate.getDenom()));
-                return aggregate;
+                    return _.divide(__.gcd.apply(null, args.map(function(symbol){symbol.getNum()})),
+                                    __.gcd.apply(null, args.map(function(symbol){symbol.getDenom()})));
+                }
             }
             else return _.symfunction('gcd', args);
         },
