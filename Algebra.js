@@ -2022,7 +2022,7 @@ if((typeof module) !== 'undefined') {
                     //if we don't have an integer then exit
                     if(!isInt(p))
                         exit();
-                    
+
                     //build the factor
                     for(var i=0; i<terms.length; i++) {
                         var t = terms[i];

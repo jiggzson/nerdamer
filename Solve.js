@@ -294,6 +294,7 @@ if((typeof module) !== 'undefined') {
     };
 
     /* in progress */
+    //solve(x^4+x+0.1, x)
     var quartic = function(e, d, c, b, a) { 
         var scope = {};
         core.Utils.arrayUnique(variables(a).concat(variables(b))
@@ -321,6 +322,45 @@ if((typeof module) !== 'undefined') {
         x3 = _.parse(format("-(({1})/(4*({0})))+({4})+(1/2)*sqrt(-4*({4})^2-2*({2})-(({3})/({4})))", a, b, p, q, S)); //a, b, p, q, S
         x4 = _.parse(format("-(({1})/(4*({0})))+({4})-(1/2)*sqrt(-4*({4})^2-2*({2})-(({3})/({4})))", a, b, p, q, S)); //a, b, p, q, S
         return [x1, x2, x3, x4];
+    };
+    
+    var divnconsolve = function(symbol, solve_for) {
+        var sols = [];
+        //see if we can solve the factors
+        var factors = core.Algebra.Factor.factor(symbol);
+        if(factors.group === CB) {
+            factors.each(function(x) {
+                x = Symbol.unwrapPARENS(x);
+                sols = sols.concat(solve(x, solve_for));
+            });
+        }
+        return sols;
+    };
+    
+    var csolve = function(symbol, solve_for) {
+        return core.Utils.block('IGNORE_E', function() {
+            var f, p, pn, n, pf, r, theta, sr, sp, roots;
+            roots = [];
+            f = core.Utils.decompose_fn(symbol, solve_for, true);
+            if(f.x.group === S) {
+                p = _.parse(f.x.power);
+                pn = Number(p);
+                n = _.pow(_.divide(f.b.negate(), f.a), p.invert());
+                pf = Symbol.toPolarFormArray(n);
+                r = pf[0];
+                theta = pf[1];
+                sr = r.toString();
+                sp = p.toString();
+                var k, root, str;
+                for(var i=0; i<pn; i++) {
+                    k = i;
+                    str = format('({0})*e^(2*{1}*pi*{2}*{3})', sr, k, p, core.Settings.IMAGINARY);
+                    root = _.parse(str);
+                    roots.push(root);
+                }
+            }
+            return roots;
+        }, true);
     };
     
     var polysolve = function(EQ, solve_for) {
@@ -667,8 +707,15 @@ if((typeof module) !== 'undefined') {
                     }
                     else if(deg === 3)
                         add_to_result(cubic.apply(undefined, coeffs));
-                    else
-                        _A.proots(eq).map(add_to_result);
+                    else {
+                        var sym_roots = csolve(eq, solve_for); 
+                        if(sym_roots.length === 0)
+                            sym_roots = divnconsolve(eq, solve_for);
+                        if(sym_roots.length > 0)
+                            add_to_result(sym_roots);
+                        else
+                            _A.proots(eq).map(add_to_result);
+                    }
                 }
             }
             else { 
@@ -709,9 +756,13 @@ if((typeof module) !== 'undefined') {
                         case 3:
                             add_to_result(cubic.apply(undefined, coeffs));
                             break;
-                        /*case 4:
+                        case 4:
                             add_to_result(quartic.apply(undefined, coeffs));
-                            break;*/
+                            break;
+                        default:
+                            add_to_result(csolve(eq, solve_for));
+                            if(solutions.length === 0)
+                                add_to_result(divnconsolve(eq, solve_for));
                     }
                 }
                 catch(e) { /*something went wrong. EXITING*/; } 

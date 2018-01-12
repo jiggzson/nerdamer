@@ -2148,6 +2148,27 @@ var nerdamer = (function(imports) {
         return symbol;
     };
     
+    Symbol.hyp = function(a, b) {
+        if(a.equals(0))
+            return b.clone();
+        if(b.equals(0))
+            return a.clone();
+        if(a.isConstant('all') && b.isConstant('all')) {
+            return _.sqrt(_.add(_.pow(a.clone(), new Symbol(2)), _.pow(b.clone(), new Symbol(2))));
+        }
+        return _.symfunction('hyp', arguments);
+    };
+    
+    //converts to polar form array
+    Symbol.toPolarFormArray = function(symbol) {
+        var re, im, r, theta;
+        re = symbol.realpart(); 
+        im = symbol.imagpart(); 
+        r = Symbol.hyp(re, im);
+        theta = re.equals(0) ? _.parse('pi/2') : _.trig.atan(_.divide(im, re));
+        return [r, theta];
+    };
+    
     //removes parentheses
     Symbol.unwrapPARENS = function(symbol) {
         if(symbol.fname === '') {
@@ -3451,14 +3472,14 @@ var nerdamer = (function(imports) {
                 var re, im, h, a, d;
                 re = symbol.realpart();
                 im = symbol.imagpart();
-                h = hyp(re, im);
+                h = Symbol.hyp(re, im);
                 a = _.add(re.clone(), h);
                 d = sqrt(_.multiply(new Symbol(2), a.clone()));
                 return _.add(_.divide(a.clone(), d.clone()), _.multiply(_.divide(im, d), Symbol.imaginary()));
             },
             log: function(r, i) {
                 var re, im;
-                re = log(hyp(r, i));
+                re = log(Symbol.hyp(r, i));
                 im = _.parse(Math.atan2(i, r));
                 return _.add(re, _.multiply(Symbol.imaginary(), im));
             },
@@ -3795,7 +3816,9 @@ var nerdamer = (function(imports) {
             },
             atan: function(symbol) {
                 var retval;
-                if(Settings.PARSE2NUMBER) {
+                if(symbol.equals(0))
+                    retval = new Symbol(0);
+                else if(Settings.PARSE2NUMBER) {
                     if(symbol.isConstant())
                         return new Symbol(Math.atan(symbol.valueOf()));
                     if(symbol.isImaginary()) 
@@ -3856,7 +3879,8 @@ var nerdamer = (function(imports) {
                 return _.symfunction('atan2', arguments);
             }
         };
-            
+        this.trig = trig;
+        
         var trigh = this.Trigh = {
             //container for hyperbolic trig function
             cosh: function(symbol) {
@@ -3999,6 +4023,7 @@ var nerdamer = (function(imports) {
                 return retval;
             }
         };
+        this.trigh = trigh;
         
         //list all the supported operators
         var operators = this.operators = {
@@ -5001,13 +5026,7 @@ var nerdamer = (function(imports) {
                 return a;
             return b;
         }
-        
-        function hyp(a, b) {
-            if(a.isConstant('all') && b.isConstant('all')) {
-                return sqrt(_.add(_.pow(a.clone(), new Symbol(2)), _.pow(b.clone(), new Symbol(2))));
-            }
-            return _.symfunction('hyp', arguments);
-        };
+
         /**
          * The square root function
          * @param {Symbol} symbol
@@ -5119,7 +5138,7 @@ var nerdamer = (function(imports) {
 
             return retval;
         }
-        
+        this.sqrt = sqrt;
         /**
          * 
          * @param {Symbol} num - the number being raised
@@ -5130,7 +5149,8 @@ var nerdamer = (function(imports) {
          */
         //TODO: this method needs serious optimization
         function nthroot(num, p, prec, asbig) { 
-            if(typeof asbig === 'undefined') asbig = true;
+            if(typeof asbig === 'undefined') 
+                asbig = true;
             prec = prec || 25;
             if(!isSymbol(p))
                 p = _.parse(p);
@@ -5150,11 +5170,15 @@ var nerdamer = (function(imports) {
                     else
                         x = Math2.nthroot(num, p);
                 }
-                    
-                if(asbig)
-                    return new Symbol(x);
-                return new Symbol(x.toDecimal(prec));
+                if(isInt(x) || Settings.PARSE2NUMBER) {
+                    if(asbig)
+                        return new Symbol(x);
+                    return new Symbol(x.toDecimal(prec));
+                }
             }
+            
+            if(Number(p) === 2)
+                return _.sqrt(num);
             
             return _.symfunction('nthroot', arguments);
         }
@@ -5238,11 +5262,12 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         function polarform(symbol) {
-            var re = symbol.realpart(); 
-            var im = symbol.imagpart(); 
-            var k = sqrt(_.add(_.pow(re, new Symbol(2)), _.pow(im, new Symbol(2))));
-            var e = _.parse(format('e^({0}*atan(({1})/({2})))', Settings.IMAGINARY, im, re));
-            return _.multiply(k, e);
+            var p, r, e, theta, re, im;
+            p = Symbol.toPolarFormArray(symbol);
+            theta = p[1];
+            r = p[0];
+            e = _.parse(format('e^({0}*({1}))', Settings.IMAGINARY, theta));
+            return _.multiply(r, e);
         }
         
         /**
@@ -5261,7 +5286,7 @@ var nerdamer = (function(imports) {
                 s = _.pow(f.a, new Symbol(2));
                 d = q.getDenom(true);
                 n = q.getNum();
-                h = hyp(n, d);
+                h = Symbol.hyp(n, d);
                 //check 
                 if(h.equals(f.a)) {
                     return _.add(d, _.multiply(Symbol.imaginary(), n));
@@ -5362,6 +5387,9 @@ var nerdamer = (function(imports) {
          */
         function log(symbol, base) { 
             var retval;
+            if(symbol.fname === SQRT && symbol.multiplier.equals(1)) {
+                return _.divide(log(symbol.args[0]), new Symbol(2));
+            }
             
             //log(0) is undefined so complain
             if(symbol.equals(0)) {
@@ -6249,7 +6277,7 @@ var nerdamer = (function(imports) {
                 }
                 
 
-                if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P || g2 === FN)) && !(g1 === PL && g2 === CB)) {                     
+                if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P || g2 === FN)) && !(g1 === PL && g2 === CB)) {                   
                     var p1 = a.power,
                         p2 = b.power,
                         isSymbolP1 = isSymbol(p1),
@@ -6358,6 +6386,8 @@ var nerdamer = (function(imports) {
                 }
                 else {
                     result.multiplier = result.multiplier.multiply(m).multiply(sign);
+                    if(result.group === CP && result.isImaginary())
+                        result.distributeMultiplier();
                 }
 
 
@@ -6554,6 +6584,16 @@ var nerdamer = (function(imports) {
                     result = a.clone();
                 if(aIsConstant && bIsConstant && a.equals(0) && b.lessThan(0))
                     throw new UndefinedError('Division by zero is not allowed!');
+                
+                //compute imaginary numbers right away
+                if(Settings.PARSE2NUMBER && aIsConstant && bIsConstant && a.sign() < 0 && evenFraction(b)) {
+                    var k, re, im;
+                    k = Math.PI*b;
+                    re = new Symbol(Math.cos(k));
+                    im = _.multiply(Symbol.imaginary(), new Symbol(Math.sin(k)));
+                    return _.add(re, im);
+                }
+                
                 //take care of the symbolic part
                 result.toUnitMultiplier();
                 //simpifly sqrt
@@ -6729,7 +6769,7 @@ var nerdamer = (function(imports) {
                     }
                 }
                 //detect Euler's identity
-                else if(result.isE() && result.group === EX && result.power.contains('pi') 
+                else if(!Settings.IGNORE_E && result.isE() && result.group === EX && result.power.contains('pi') 
                         && result.power.contains(Settings.IMAGINARY)) {
                     //we have a match
                     var m1 = result.multiplier,
