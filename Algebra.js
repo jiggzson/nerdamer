@@ -487,7 +487,7 @@ if((typeof module) !== 'undefined') {
          */
         equalsNumber: function(x) { 
             this.trim();
-            return this.coeffs.length === 1 && this.coeffs[0].toDecimal() === x;
+            return this.coeffs.length === 1 && this.coeffs[0].toDecimal() === String(x);
         },
         toString: function() {
             return this.toSymbol().toString();

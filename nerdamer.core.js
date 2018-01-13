@@ -7,7 +7,7 @@
 
 var nerdamer = (function(imports) { 
     "use strict";
-
+var cc = 0;
     var version = '0.7.16',
 
         _ = new Parser(), //nerdamer's parser
@@ -70,7 +70,9 @@ var nerdamer = (function(imports) {
             //Cached items
             CACHE: {},
             //Print out warnings or not
-            SILENCE_WARNINGS: false
+            SILENCE_WARNINGS: false,
+            //Precision
+            PRECISION: 40
         },
         
         //Container for custom operators
@@ -1836,20 +1838,26 @@ var nerdamer = (function(imports) {
     function Frac(n) { 
         if(n instanceof Frac) return n;
         if(n === undefined) return this;
-        if(isInt(n)) { 
-            try {
-                this.num = bigInt(n);
-                this.den = bigInt(1);
+        try {
+            if(isInt(n)) { 
+                try {
+                    this.num = bigInt(n);
+                    this.den = bigInt(1);
+                }
+                catch(e) {
+                    return Frac.simple(n);
+                }
             }
-            catch(e) {
-                return Frac.simple(n);
+            else {
+                var frac = Fraction.convert(n);
+                this.num = new bigInt(frac[0]);
+                this.den = new bigInt(frac[1]);
             }
         }
-        else {
-            var frac = Fraction.convert(n);
-            this.num = new bigInt(frac[0]);
-            this.den = new bigInt(frac[1]);
+        catch(e) {
+            return Frac.simple(n);
         }
+            
     }
     //safe to use with negative numbers or other types
     Frac.create = function(n) {
@@ -1878,7 +1886,7 @@ var nerdamer = (function(imports) {
     };
     
     Frac.simple =  function(n) {
-        var nstr = String(n),
+        var nstr = String(scientificToDecimal(n)),
             m_dc = nstr.split('.'),
             num = m_dc.join(''),
             den = 1,
@@ -1952,13 +1960,15 @@ var nerdamer = (function(imports) {
             m.den = new bigInt(this.den);
             return m;
         },
-        toDecimal: function(prec) {
-            if(prec || Settings.precision) { 
+        toDecimal: function(prec) { 
+            if(prec || Settings.PRECISION) { 
                 var sign = this.num.isNegative() ? '-' : '';
-                if(this.num.equals(this.den))
+                if(this.num.equals(this.den)) {
                     return '1';
+                }
                 //go plus one for rounding
-                prec = prec+1 || 19;
+                prec = prec || Settings.PRECISION;
+                prec++;
                 var narr = [], 
                     n = this.num.abs(),
                     d = this.den;
@@ -1972,8 +1982,9 @@ var nerdamer = (function(imports) {
                     n = r.times(10); //shift one dec place
                 }
                 var whole = narr.shift();
-                if(narr.length === 0)
-                    return whole.toString();
+                if(narr.length === 0) { 
+                    return sign+whole.toString();
+                }
 
                 if(i === prec) {
                     var lt = [];
@@ -2073,9 +2084,12 @@ var nerdamer = (function(imports) {
     function Symbol(obj) { 
         var isInfinity = obj === 'Infinity';
         //this enables the class to be instantiated without the new operator
-        if(!(this instanceof Symbol)) { return new Symbol(obj); };
+        if(!(this instanceof Symbol)) { 
+            return new Symbol(obj); 
+        };
         //define numeric symbols
-        if(!isNaN(obj) && !isInfinity) { 
+        if(!isNaN(obj) && !isInfinity && isFinite(obj)) { 
+            
             this.group = N;
             this.value = CONST_HASH; 
             this.multiplier = new Frac(obj);
@@ -3969,8 +3983,9 @@ var nerdamer = (function(imports) {
                 var retval;
                 if(Settings.PARSE2NUMBER && symbol.isImaginary())
                     retval = complex.evaluate(symbol, 'atanh');
-                else if(Settings.PARSE2NUMBER)
+                else if(Settings.PARSE2NUMBER) { 
                     retval = evaluate(_.parse(format('(1/2)*log((1+({0}))/(1-({0})))', symbol.toString())));
+                }
                 else 
                     retval = _.symfunction('atanh', arguments);
                 return retval;
@@ -4974,12 +4989,15 @@ var nerdamer = (function(imports) {
         function factorial(symbol) {
             var retval;
             if(Settings.PARSE2NUMBER && symbol.isConstant()) {
-                if(isInt(symbol)) 
+                if(isInt(symbol)) {
                     retval = Math2.bigfactorial(symbol);
-                else
-                    retval = Math2.gamma(symbol.multiplier.toDecimal()+1);
+                }
+                else {
+                    retval = Math2.gamma(symbol.multiplier.add(new Frac(1)).toDecimal());
+                }
                 
-                return bigConvert(retval);
+                retval = bigConvert(retval);
+                return retval;
             }
             return _.symfunction(FACTORIAL, [symbol]);
         };
@@ -5955,7 +5973,8 @@ var nerdamer = (function(imports) {
                 if(b.multiplier.equals(0)) return a;
 
                 if(a.isConstant() && b.isConstant() && Settings.PARSE2NUMBER) {
-                    return new Symbol(a.multiplier.add(b.multiplier).valueOf());
+                    var result =  new Symbol(a.multiplier.add(b.multiplier).toDecimal(Settings.PRECISION));
+                    return result;
                 }
 
                 var g1 = a.group,
@@ -6215,7 +6234,8 @@ var nerdamer = (function(imports) {
                 }
                 //the quickies
                 if(a.isConstant() && b.isConstant() && Settings.PARSE2NUMBER) {
-                    return new Symbol(a.multiplier.multiply(b.multiplier).valueOf());
+                    var retval = new Symbol(a.multiplier.multiply(b.multiplier).toDecimal());
+                    return retval;
                 }
 
                 //don't waste time
