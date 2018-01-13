@@ -397,7 +397,8 @@ if((typeof module) !== 'undefined') {
         //unwrap the vector since what we want are the elements
         if(eqns instanceof core.Vector)
             eqns = eqns.elements;
-        solve_for = solve_for || 'x'; //assumes x by default
+        solve_for = solve_for === 'undefined' ? 'x' : solve_for; //assumes x by default
+
         //If it's an array then solve it as a system of equations
         if(isArray(eqns)) {
             return sys_solve.apply(undefined, arguments);
@@ -860,7 +861,7 @@ if((typeof module) !== 'undefined') {
         {
             name: 'solve',
             parent: 'Solve',
-            numargs: 2,
+            numargs: [1,2],
             visible: true,
             build: function(){ return core.Solve.solve; }
         },

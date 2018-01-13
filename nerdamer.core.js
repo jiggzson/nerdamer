@@ -1132,7 +1132,7 @@ var nerdamer = (function(imports) {
                 return x % y;
             },
             /**
-             * 
+             * https://github.com/scijs/integrate-adaptive-simpson
              * @param {Function} f - the function being integrated
              * @param {Number} l - lower bound
              * @param {Number} u - upper bound
@@ -3188,19 +3188,19 @@ var nerdamer = (function(imports) {
 
             //if the symbol already is the denominator... DONE!!!
             if(symbol.power.lessThan(0)) {
-                var d = new Symbol(symbol.multiplier.den);
+                var d = _.parse(symbol.multiplier.den);
                 retval = symbol.toUnitMultiplier();
                 retval.power.negate();
                 retval = _.multiply(d, retval); //put back the coeff
             }
             else if(symbol.group === CB) {
-                retval = new Symbol(symbol.multiplier.den);
+                retval = _.parse(symbol.multiplier.den);
                 for(var x in symbol.symbols) 
                     if(symbol.symbols[x].power < 0) 
                         retval = _.multiply(retval, symbol.symbols[x].clone().invert());
             }
             else
-                retval = new Symbol(symbol.multiplier.den);
+                retval = _.parse(symbol.multiplier.den);
             return retval;
         },
         getNum: function() {
@@ -3213,16 +3213,16 @@ var nerdamer = (function(imports) {
             if(symbol.power.greaterThan(0) && symbol.group !== CB) {
                 retval = symbol;
                 if(!symbol.multiplier.num.equals(1))
-                    retval = _.multiply(new Symbol(symbol.multiplier.den), retval); //put back the coeff
+                    retval = _.multiply(_.parse(symbol.multiplier.den), retval); //put back the coeff
             }
             else if(symbol.group === CB) {
-                retval = new Symbol(symbol.multiplier.num);
+                retval = _.parse(symbol.multiplier.num);
                 for(var x in symbol.symbols) 
                     if(symbol.symbols[x].power > 0) 
                         retval = _.multiply(retval, symbol.symbols[x].clone());
             }
             else
-                retval = new Symbol(symbol.multiplier.num);
+                retval = _.parse(symbol.multiplier.num);
             return retval;
         },
         toString: function() {
