@@ -2721,7 +2721,7 @@ var nerdamer = (function(imports) {
             this.setPower(new Frac(1));
             return this;
         },
-        each: function(fn, deep, restrictToGroup) {
+        each: function(fn, deep) {
             if(!this.symbols) {
                 fn.call(this, this, this.value);
             }
@@ -3202,9 +3202,8 @@ var nerdamer = (function(imports) {
                 symbol = _.expand(symbol);
             //if the symbol already is the denominator... DONE!!!
             if(symbol.power.greaterThan(0) && symbol.group !== CB) {
-                retval = symbol;
-                if(!symbol.multiplier.num.equals(1))
-                    retval = _.multiply(_.parse(symbol.multiplier.den), retval); //put back the coeff
+                retval = _.parse(symbol.multiplier.num);
+                retval = _.multiply(retval, symbol.toUnitMultiplier()); 
             }
             else if(symbol.group === CB) {
                 retval = _.parse(symbol.multiplier.num);
