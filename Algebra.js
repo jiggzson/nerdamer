@@ -2622,8 +2622,8 @@ if((typeof module) !== 'undefined') {
                 else
                 {
                     //gcd_ cannot handle denominators correctly
-                    return _.divide(__.gcd.apply(null, args.map(function(symbol){symbol.getNum()})),
-                                    __.gcd.apply(null, args.map(function(symbol){symbol.getDenom()})));
+                    return _.divide(__.gcd.apply(null, args.map(function(symbol){return symbol.getNum()})),
+                                    __.gcd.apply(null, args.map(function(symbol){return symbol.getDenom()})));
                 }
             }
             else return _.symfunction('gcd', args);
