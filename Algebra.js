@@ -2623,7 +2623,7 @@ if((typeof module) !== 'undefined') {
                 {
                     //gcd_ cannot handle denominators correctly
                     return _.divide(__.gcd.apply(null, args.map(function(symbol){return symbol.getNum()})),
-                                    __.gcd.apply(null, args.map(function(symbol){return symbol.getDenom()})));
+                                    __.lcm.apply(null, args.map(function(symbol){return symbol.getDenom()})));
                 }
             }
             else return _.symfunction('gcd', args);
