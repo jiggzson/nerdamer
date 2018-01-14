@@ -889,6 +889,29 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+    csch: {
+        type: 'internal',
+        usage: 'csch(x)',
+        full_name: 'hyperbolic cosecant',
+        description: 'Returns the hyperbolic cosecant of a number',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('csch(pi/2)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('csch(x)')", 
+            "console.log(t.toString());",
+            "var u = nerdamer('csch(pi/4)')", 
+            "console.log(u.toString());",
+            "var v = nerdamer('csch(pi)')",
+            "console.log(v);"
+        ],
+        returns: 'Expression'
+    },
     cot: {
         type: 'internal',
         usage: 'cot(x)',
@@ -910,6 +933,32 @@ FUNCTIONS = {
             "var u = nerdamer('cot(pi/4)')", 
             "console.log(u.toString());",
             "var v = nerdamer('cot(pi)')",
+            "console.log(v.toString());"
+        ],
+        errors: [
+            "Throws exception for multiples of pi"
+        ],
+        returns: 'Expression'
+    },
+    coth: {
+        type: 'internal',
+        usage: 'coth(x)',
+        full_name: 'hyperbolic cotangent',
+        description: 'Returns the hyperbolic cotangent of a number',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('coth(pi/2)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('coth(x)')", 
+            "console.log(t.toString());",
+            "var u = nerdamer('coth(pi/4)')", 
+            "console.log(u.toString());",
+            "var v = nerdamer('coth(pi)')",
             "console.log(v.toString());"
         ],
         errors: [
@@ -1013,9 +1062,30 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+    asech: {
+        type: 'internal',
+        usage: 'asech(x)',
+        full_name: 'inverse hyperbolic secant',
+        description: 'Returns the inverse of sech. ',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('asech(11)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('asech(-21)')", 
+            "console.log(t.toString());",
+            "t = nerdamer('asech(i-21)').evaluate()", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
     acsc: {
         type: 'internal',
-        usage: 'asec(x)',
+        usage: 'acsc(x)',
         full_name: 'arccosecant',
         description: 'Returns the inverse of csc in radians. ',
         parameters: {
@@ -1028,6 +1098,27 @@ FUNCTIONS = {
             "var r = nerdamer('acsc(81)');", 
             "console.log(r.toString());",
             "var t = nerdamer('acsc(1)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    acsch: {
+        type: 'internal',
+        usage: 'acsch(x)',
+        full_name: 'inverse hyperbolic cosecant',
+        description: 'Returns the inverse of csch. ',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('acsch(81)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('acsch(1)')", 
+            "console.log(t.toString());",
+            "t = nerdamer('acsch(i+1)').evaluate()", 
             "console.log(t.toString());"
         ],
         returns: 'Expression'
@@ -1047,6 +1138,27 @@ FUNCTIONS = {
             "var r = nerdamer('acot(0)');", 
             "console.log(r.toString());",
             "var t = nerdamer('acot(-1)')", 
+            "console.log(t.toString());",
+            "t = nerdamer('acot(i-1)').evaluate()", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    acoth: {
+        type: 'internal',
+        usage: 'acoth(x)',
+        full_name: 'inverse hyperbolic cotangent',
+        description: 'Returns the inverse of coth. ',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('acoth(0.1)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('acoth(-i+8)').evaluate()", 
             "console.log(t.toString());"
         ],
         returns: 'Expression'
@@ -1085,6 +1197,25 @@ FUNCTIONS = {
             "var r = nerdamer('atan(0)');", 
             "console.log(r.text());",
             "var t = nerdamer('atan(-1)').evaluate()", 
+            "console.log(t.text());"
+        ],
+        returns: 'Expression'
+    },
+    atan2: {
+        type: 'internal',
+        usage: 'atan2(x, y)',
+        full_name: 'arctangent 2',
+        description: 'Returns the four-quadrant inverse of tangent.',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('atan2(0, 1)').evaluate();", 
+            "console.log(r.text());",
+            "var t = nerdamer('atan2(-1, 2)').evaluate()", 
             "console.log(t.text());"
         ],
         returns: 'Expression'
@@ -1337,13 +1468,32 @@ FUNCTIONS = {
 //            }
 //        },
 //        examples: [
-//            "var r = nerdamer('acsc(81)');", 
+//            "var r = nerdamer('arg(81)');", 
 //            "console.log(r.toString());",
-//            "var t = nerdamer('acsc(1)')", 
+//            "var t = nerdamer('arg(5+i)')", 
 //            "console.log(t.toString());"
 //        ],
 //        returns: 'Expression'
 //    },
+    conjugate: {
+        type: 'internal',
+        usage: 'conjugate(x)',
+        full_name: 'conjugate',
+        description: 'Returns the conjugate of a complex number. ',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('conjugate(81)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('conjugate(5+i)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
     Ci: {
         type: 'internal',
         usage: 'Ci(number)',
@@ -2360,7 +2510,9 @@ FUNCTIONS = {
         examples: [
             "var x = nerdamer('defint(e^(cos(x)), 1, 2)');",
             "console.log(x.text());",
-            "var y = nerdamer('defint(x^2+2*x+1, 0, 10)');",
+            "var y = nerdamer('defint(x^2+2*x+1,0, 10)');",
+            "console.log(y.text());",
+            "var y = nerdamer('defint(log(2cos(x/2)),-π,π,x)');",
             "console.log(y.text());"
         ],
         returns: 'Expression'

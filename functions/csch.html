@@ -91,14 +91,14 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>defint</h1>
+                    <h1>csch</h1>
                     <hr>
-                    <h3 class="text-capitalize">definite integral</h3>
+                    <h3 class="text-capitalize">hyperbolic cosecant</h3>
                     <div>
-                        Attempts to compute the definite integral of the expression. Assumes that function is continuous over interval when integrating numerically.
+                        Returns the hyperbolic cosecant of a number
                     </div>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("defint(expression_or_vector, from, to, dx)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("csch(x)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -106,27 +106,9 @@
                             <tr>
     <td>
         <span class="parameter-type">expression </span>
-        <span class="parameter-name">expression_or_vector </span>
+        <span class="parameter-name">x </span>
     </td>
     <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
-</tr><tr>
-    <td>
-        <span class="parameter-type">expression </span>
-        <span class="parameter-name">dx </span>
-    </td>
-    <td><span class="parameter-description">The variable with respect to which integrate. Optional with univariate expression.</span></td>
-</tr><tr>
-    <td>
-        <span class="parameter-type">expression </span>
-        <span class="parameter-name">from </span>
-    </td>
-    <td><span class="parameter-description">The lower limit of integration</span></td>
-</tr><tr>
-    <td>
-        <span class="parameter-type">expression </span>
-        <span class="parameter-name">to </span>
-    </td>
-    <td><span class="parameter-description">The upper limit of integration</span></td>
 </tr>
                         </table>
                     </div>
@@ -134,12 +116,14 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('defint(e^(cos(x)), 1, 2)');
-console.log(x.text());
-var y = nerdamer('defint(x^2+2*x+1,0, 10)');
-console.log(y.text());
-var y = nerdamer('defint(log(2cos(x/2)),-π,π,x)');
-console.log(y.text());</code></pre>
+                    <pre><code class="javascript">var r = nerdamer('csch(pi/2)');
+console.log(r.toString());
+var t = nerdamer('csch(x)')
+console.log(t.toString());
+var u = nerdamer('csch(pi/4)')
+console.log(u.toString());
+var v = nerdamer('csch(pi)')
+console.log(v);</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -191,12 +175,14 @@ console.log(y.text());</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('defint(e^(cos(x)), 1, 2)');
-oprint(x.text());
-var y = nerdamer('defint(x^2+2*x+1,0, 10)');
-oprint(y.text());
-var y = nerdamer('defint(log(2cos(x/2)),-π,π,x)');
-oprint(y.text());
+                var r = nerdamer('csch(pi/2)');
+oprint(r.toString());
+var t = nerdamer('csch(x)')
+oprint(t.toString());
+var u = nerdamer('csch(pi/4)')
+oprint(u.toString());
+var v = nerdamer('csch(pi)')
+oprint(v);
             }
             catch(e) {
                 oprint(e.toString());
