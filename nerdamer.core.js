@@ -1210,7 +1210,7 @@ var cc = 0;
                     }
 
                     if (state.nanEncountered) {
-                        warn('integrate-adaptive-simpson: Warning: NaN encountered. Halting early.');
+                        throw new UndefinedError('Function does not converge over interval!');
                     }
 
                     return result;
@@ -5260,7 +5260,7 @@ var cc = 0;
             var re = symbol.realpart(); 
             var im = symbol.imagpart(); 
             if(re.isConstant() && im.isConstant())
-                return Math.atan2(im, re);
+                return new Symbol(Math.atan2(im, re));
             return _.symfunction('atan2', [im, re]);
         }
         

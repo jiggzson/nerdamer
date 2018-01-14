@@ -3027,7 +3027,7 @@ if((typeof module) !== 'undefined') {
                         dterms, max, M, c, powers, div, r, factors_vec, ks,
                         template, tfactors;
                     num = _.expand(symbol.getNum());
-                    den = symbol.getDenom().toUnitMultiplier();
+                    den = _.expand(symbol.getDenom().toUnitMultiplier());
                     //move the entire multipier to the numerator
                     num.multiplier = symbol.multiplier;
                     //we only have a meaningful change if n factors > 1. This means that
