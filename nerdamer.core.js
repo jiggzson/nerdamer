@@ -173,7 +173,7 @@ var cc = 0;
          * @param {String} typ - The type of symbols that's being validated
          * @throws {Exception} - Throws an exception on fail
          */
-        validateName = Utils.validateName = function(name, typ) {
+        validateName = Utils.validateName = function(name, typ) { 
             typ = typ || 'variable';
             if(Settings.ALLOW_CHARS.indexOf(name) !== -1)
                 return;
@@ -4179,7 +4179,7 @@ var cc = 0;
             }
             err('The function '+fname+' is undefined!');
         };
-        
+
         var allNumbers = function(args) {
             for(var i=0; i<args.length; i++)
                 if(args[i].group !== N)
@@ -6596,13 +6596,37 @@ var cc = 0;
                     throw new UndefinedError('Division by zero is not allowed!');
                 
                 //compute imaginary numbers right away
-                if(Settings.PARSE2NUMBER && aIsConstant && bIsConstant && a.sign() < 0 && evenFraction(b)) {
+                if(Settings.PARSE2NUMBER && aIsConstant && bIsConstant && a.sign() < 0 && evenFraction(b)) { 
                     var k, re, im;
                     k = Math.PI*b;
                     re = new Symbol(Math.cos(k));
                     im = _.multiply(Symbol.imaginary(), new Symbol(Math.sin(k)));
                     return _.add(re, im);
                 }
+                
+                //imaginary number under negative nthroot or to the n
+                /*
+                if(a.isImaginary() && bIsConstant && b.multiplier.num.abs().equals(1) && !b.multiplier.den.equals(1)) { 
+                    var sign = b.sign();
+                    b = abs(b);
+                    var p, re, im, theta, n, ai, bi, di, ei, ii, th;
+                    p = Symbol.toPolarFormArray(a);
+                    theta = _.multiply(b.clone(), arg(a));
+                    di = _.pow(p[0], b);
+                    ai = _.trig.cos(theta.clone());
+                    bi = _.trig.sin(theta);
+                        
+                    if(sign < 0) {
+                        re = _.divide(ai, di.clone());
+                        im = _.divide(bi, di);
+                    }
+                    else {
+                        re = _.multiply(ai, di.clone());
+                        im = _.multiply(bi, di);
+                    }
+                    return _.add(re, _.multiply(im, Symbol.imaginary()));
+                }
+                */
                 
                 //take care of the symbolic part
                 result.toUnitMultiplier();
