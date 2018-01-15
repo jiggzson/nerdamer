@@ -2751,7 +2751,7 @@ if((typeof module) !== 'undefined') {
                 //start with new Symbol(1) so that prev.clone() which makes unnessesary clones can be avoided
             })(arguments,arguments.length-1).map(function(x){return x.reduce(function(prev,curr){return _.multiply(prev,curr.clone())},new Symbol(1))});
              
-            var aggregate = [], evaluate = false;
+            var appeared = [], evaluate = false;
             for(var i = 0; i < args.length; i++) {
                 if(args[i].group === FN && args[i].fname === 'lcm')
                 {
