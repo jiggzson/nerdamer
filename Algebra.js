@@ -2751,34 +2751,11 @@ if((typeof module) !== 'undefined') {
                 //start with new Symbol(1) so that prev.clone() which makes unnessesary clones can be avoided
             })(arguments,arguments.length-1).map(function(x){return x.reduce(function(prev,curr){return _.multiply(prev,curr.clone())},new Symbol(1))});
              
-            var appeared = [], evaluate = false;
-            for(var i = 0; i < args.length; i++) {
-                if(args[i].group === FN && args[i].fname === 'lcm')
-                {
-                    //compress lcm(a,lcm(b,c)) into lcm(a,b,c)
-                    args = args.concat(arguments[i].args);
-                    //do not keep lcm in args
-                    args.splice(i, 1);
-                }
-                else
-                {
-                    //Look if there are any common variables such that
-                    //lcm(a,b) => lcm(a,b); lcm(a,a) => a
-                    var vars = variables(args[i]);
-                    if(core.Utils.haveIntersection(vars, appeared))
-                    {
-                        //Ok, there are common variables
-                        evaluate = true;
-                        break;
-                    }
-                    else appeared = appeared.concat(vars);
-                }
-            }
-            //don't eat the gcd term if all variables in arguments do not intersect
-            if(evaluate)
-                var denom = __.gcd.apply(null, denom_args);
+            //don't eat the gcd term if all arguments are symbols
+            if(args.every(function(x){return core.Utils.isVariableSymbol(x)}))
+                var denom = _.symfunction('gcd', arrayUnique(denom_args));
             else
-                var denom = _.symfunction('gcd', denom_args);
+                var denom = __.gcd.apply(null, denom_args);
             
             //divide product of all arguments by gcd of complementary terms
             return _.divide(numer, denom);
