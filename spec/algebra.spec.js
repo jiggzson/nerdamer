@@ -97,7 +97,7 @@ describe('Algebra', function () {
             {
                 given:'1/a, 1/b, 1/c',
                 expected_gcd: 'gcd(a^(-1),b^(-1),c^(-1))',
-                expected_lcm: 'a^(-1)*b^(-1)*c^(-1)*gcd(a^(-1)*b^(-1),a^(-1)*c^(-1),b^(-1)*c^(-1))^(-1)'
+                expected_lcm: '1'
             },
             {
                 given:'2^x, 6^x',
