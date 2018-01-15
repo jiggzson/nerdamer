@@ -2654,7 +2654,7 @@ if((typeof module) !== 'undefined') {
 		
             if(a.group === CB || b.group === CB) {
                 var q = _.divide(a.clone(), b.clone()); //get the quotient
-                var t = _.multiply(b.clone(), q.getDenom());//multiply by the denominator
+                var t = _.multiply(b.clone(), q.getDenom().invert());//multiply by the denominator
                 //if they have a common factor then the result will not equal one 
                 if(!t.equals(1))
                     return t;
