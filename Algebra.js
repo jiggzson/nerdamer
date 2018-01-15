@@ -2753,7 +2753,7 @@ if((typeof module) !== 'undefined') {
              
             //don't eat the gcd term if all arguments are symbols
             if(args.every(function(x){return core.Utils.isVariableSymbol(x)}))
-                var denom = _.symfunction('gcd', arrayUnique(denom_args));
+                var denom = _.symfunction('gcd', core.Utils.arrayUnique(denom_args));
             else
                 var denom = __.gcd.apply(null, denom_args);
             
