@@ -4037,7 +4037,7 @@ var nerdamer = (function(imports) {
                     return _.symfunction(DOUBLEFACTORIAL, [e]); //wrap it in a factorial function
                 }),
                 '!' : new Operator('!', 'factorial', 5, false, false, true, function(e) {
-                    return _.symfunction(FACTORIAL, [e]); //wrap it in a factorial function
+                    return factorial(e); //wrap it in a factorial function
                 }),  
                 //done with crazy fix
                 '*' : new Operator('*', 'multiply', 4, true, false),
@@ -4985,7 +4985,7 @@ var nerdamer = (function(imports) {
          * @param {Symbol} symbol
          * @return {Symbol}
          */
-        function factorial(symbol) {
+        function factorial(symbol) { 
             var retval;
             if(Settings.PARSE2NUMBER && symbol.isConstant()) {
                 if(isInt(symbol)) {
@@ -4998,6 +4998,8 @@ var nerdamer = (function(imports) {
                 retval = bigConvert(retval);
                 return retval;
             }
+            else if(symbol.equals(1/2))
+                return _.parse('sqrt(pi)/2');
             return _.symfunction(FACTORIAL, [symbol]);
         };
         /**
@@ -6609,10 +6611,10 @@ var nerdamer = (function(imports) {
                     re = a.realpart();
                     im = a.imagpart();
                     if(re.isConstant('all') && im.isConstant('all')) {
-                        theta = Math.atan2(im, re)*b;
-                        r = Math.pow(Math.sqrt(re*re+im*im), b);
-                        nre = new Symbol(Math.cos(theta)*r);
-                        nim = new Symbol(Math.sin(theta)*r);
+                        theta = new Symbol(Math.atan2(im, re)*b);
+                        r = _.pow(Symbol.hyp(re, im), b); 
+                        nre = _.multiply(r.clone(), _.trig.cos(theta.clone()));
+                        nim = _.multiply(r, _.trig.sin(theta));
                         return _.add(nre, _.multiply(Symbol.imaginary(), nim));
                     }
                 }
@@ -8528,3 +8530,6 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+var x = nerdamer('(1/2)!');
+console.log(x.text())
