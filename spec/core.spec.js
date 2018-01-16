@@ -544,7 +544,7 @@ describe('Nerdamer core', function () {
             }, 
             {
                 given: 'polarform(a*i+b*1)',
-                expected: 'e^(atan(a*b^(-1))*i)*hyp(b,a)'
+                expected: 'e^(atan(a*b^(-1))*i)*sqrt(a^2+b^2)'
             }, 
             {
                 given: 'polarform(3)',
