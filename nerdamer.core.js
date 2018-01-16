@@ -5,9 +5,11 @@
  * Source : https://github.com/jiggzson/nerdamer
  */
 
+/* global trig, trigh */
+
 var nerdamer = (function(imports) { 
     "use strict";
-var cc = 0;
+
     var version = '0.7.16',
 
         _ = new Parser(), //nerdamer's parser
@@ -2158,10 +2160,7 @@ var cc = 0;
             return b.clone();
         if(b.equals(0))
             return a.clone();
-        if(a.isConstant('all') && b.isConstant('all')) {
-            return _.sqrt(_.add(_.pow(a.clone(), new Symbol(2)), _.pow(b.clone(), new Symbol(2))));
-        }
-        return _.symfunction('hyp', arguments);
+        return _.sqrt(_.add(_.pow(a.clone(), new Symbol(2)), _.pow(b.clone(), new Symbol(2))));
     };
     
     //converts to polar form array

@@ -343,12 +343,12 @@ if((typeof module) !== 'undefined') {
         return sols;
     };
     
-    var csolve = function(symbol, solve_for) {
+    var csolve = function(symbol, solve_for) { 
         return core.Utils.block('IGNORE_E', function() {
             var f, p, pn, n, pf, r, theta, sr, sp, roots;
             roots = [];
             f = core.Utils.decompose_fn(symbol, solve_for, true);
-            if(f.x.group === S) {
+            if(f.x.group === S) { 
                 p = _.parse(f.x.power);
                 pn = Number(p);
                 n = _.pow(_.divide(f.b.negate(), f.a), p.invert());
@@ -358,7 +358,7 @@ if((typeof module) !== 'undefined') {
                 sr = r.toString();
                 sp = p.toString();
                 var k, root, str;
-                for(var i=0; i<pn; i++) {
+                for(var i=0; i<pn; i++) { 
                     k = i;
                     str = format('({0})*e^(2*{1}*pi*{2}*{3})', sr, k, p, core.Settings.IMAGINARY);
                     root = _.parse(str);
