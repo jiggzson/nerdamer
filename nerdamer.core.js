@@ -5269,7 +5269,7 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         function polarform(symbol) {
-            var p, r, e, theta, re, im;
+            var p, r, e, theta;
             p = Symbol.toPolarFormArray(symbol);
             theta = p[1];
             r = p[0];
@@ -6604,6 +6604,18 @@ var nerdamer = (function(imports) {
                 }
                 
                 //imaginary number under negative nthroot or to the n
+                if(Settings.PARSE2NUMBER && a.isImaginary() && bIsConstant) { 
+                    var re, im, r, theta, nre, nim;
+                    re = a.realpart();
+                    im = a.imagpart();
+                    if(re.isConstant('all') && im.isConstant('all')) {
+                        theta = Math.atan2(im, re)*b;
+                        r = Math.pow(Math.sqrt(re*re+im*im), b);
+                        nre = new Symbol(Math.cos(theta)*r);
+                        nim = new Symbol(Math.sin(theta)*r);
+                        return _.add(nre, _.multiply(Symbol.imaginary(), nim));
+                    }
+                }
                 /*
                 if(a.isImaginary() && bIsConstant && b.multiplier.num.abs().equals(1) && !b.multiplier.den.equals(1)) { 
                     var sign = b.sign();
