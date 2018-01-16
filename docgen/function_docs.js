@@ -2730,6 +2730,34 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+    Extra__ilt: {
+        type: 'internal',
+        usage: 'ilt(expression, s, t)',
+        full_name: 'inverse Laplace',
+        description: 'Attempts to calculate the inverse Laplace transform of an expression. Currently computes transforms of most common expressions.'+
+                ' Throws and error if no transform could be calculated. [under development]',
+        parameters: {
+            expression: {
+                type: 'expression',
+                description: "The expression to be transformed"
+            },
+            s: {
+                type: 'variable',
+                description: 'The transformation variable'
+            },
+            t: {
+                type: 'variable',
+                description: "The time variable"
+            }
+        },
+        examples: [
+            "var x = nerdamer('ilt(factorial(6)*s^(-7),s, t)').evaluate();",
+            "console.log(x.toString());",
+            "var y = nerdamer('ilt((1+s^2)^(-1)*s, s, t)').evaluate();",
+            "console.log(y.toString());",
+        ],
+        returns: 'Expression'
+    },
     Extra__mean: {
         type: 'internal',
         usage: 'mean(... args)',

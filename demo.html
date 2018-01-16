@@ -129,11 +129,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="text-right">
+<!--                <div class="text-right">
                     <a href="javascript:void(0)" id="input-switch"><small>Use visual editor</small></a>
-                </div>
+                </div>-->
                 
                 <div id="nerdamer-demo">
+                    
                     <div id="demo-input" class="demo-input" style="display: none;"></div>
                     <!--<input id="text-input" class="demo-input" type="text" placeholder="Text editor. Enter expression here"/>-->
                     <textarea id="codemirror"></textarea>
@@ -200,7 +201,7 @@
                 </ul>     
                 <h3>Demo Credits</h3>
                 <ul class="credits">
-                    <li><a href="http://daniel3735928559.github.io/guppy/" id="guppy-link">Visual editing by Guppy.js</a></li>
+                    <!--<li><a href="http://daniel3735928559.github.io/guppy/" id="guppy-link">Visual editing by Guppy.js</a></li>-->
                     <li><a href="http://mauriciopoppe.github.io/function-plot/">Plotting with Function-plot.js</a></li>
                     <li><a href="http://codemirror.net/">Text input with CodeMirror</a></li>
                 </ul>
@@ -229,7 +230,7 @@
     <!--<script src="./plugins/c3/c3.min.js"></script>-->
     <script src="./plugins/function-plot/function-plot.min.js"></script>
     <script>
-        var USE_GUPPY = true;
+        var USE_GUPPY = false;
 
         $(function() {
             var textInput = $('#text-input'),
@@ -311,7 +312,6 @@
           editor.setSize(undefined, 75);
 
     $('.CodeMirror').addClass('demo-input').attr('id', 'text-input');
-    
     </script>
 </body>
 

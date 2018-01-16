@@ -231,8 +231,6 @@
         //set the value for the input
         function setInputValue(value) {
             clear();
-            //remove expand
-            value = value.replace(/(^expand\()(.+)(\)$)/i,'$2');
             
             if(USE_GUPPY) {
                 guppy.import_text(value);
@@ -348,6 +346,8 @@
                 }
                 else {
                     try {
+                        //store the user expression so modifications don't get added
+                        var user_expression = expression;
                         //wrap the expression in expand if expand is checked
                         if(expandIsChecked())
                             expression = 'expand('+expression+')';
@@ -363,7 +363,7 @@
                         }
                         LaTeX = evaluated.toTeX(decimal);
                         //add the LaTeX to the panel
-                        addToPanel(LaTeX, expression, output);   
+                        addToPanel(LaTeX, user_expression, output);   
                         clear();
                     }
                     catch(e){

@@ -1,8 +1,14 @@
 .demo-input {
     width: 100%;
-    padding: 20px;
     border: 1px solid #CCC;
     margin-bottom: 10px;
+}
+.CodeMirror-line {
+    padding: 20px !important;
+}
+.CodeMirror-cursor {
+    height: 30px !important;
+    margin-top: 15px !important
 }
 .collapse-a, .collapse-a:active, .collapse-a:hover, collapse-a:visited {
     color: #800 !important;
