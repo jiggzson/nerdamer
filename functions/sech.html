@@ -91,14 +91,14 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>conjugate</h1>
+                    <h1>sech</h1>
                     <hr>
-                    <h3 class="text-capitalize">conjugate</h3>
+                    <h3 class="text-capitalize">hyperbolic secant</h3>
                     <div>
-                        Returns the conjugate of a complex number. 
+                        This function will return the hyperbolic secant
                     </div>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("conjugate(z)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("sech(x)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -106,7 +106,7 @@
                             <tr>
     <td>
         <span class="parameter-type">expression </span>
-        <span class="parameter-name">z </span>
+        <span class="parameter-name">x </span>
     </td>
     <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
 </tr>
@@ -116,10 +116,12 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var r = nerdamer('conjugate(81)');
+                    <pre><code class="javascript">var r = nerdamer('sech(pi)').evaluate();
 console.log(r.toString());
-var t = nerdamer('conjugate(5+i)')
-console.log(t.toString());</code></pre>
+var t = nerdamer('sech(x)')
+console.log(t.toString());
+var u = nerdamer('sech(pi/4)').evaluate()
+console.log(u.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -171,10 +173,12 @@ console.log(t.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var r = nerdamer('conjugate(81)');
+                var r = nerdamer('sech(pi)').evaluate();
 oprint(r.toString());
-var t = nerdamer('conjugate(5+i)')
+var t = nerdamer('sech(x)')
 oprint(t.toString());
+var u = nerdamer('sech(pi/4)').evaluate()
+oprint(u.toString());
             }
             catch(e) {
                 oprint(e.toString());

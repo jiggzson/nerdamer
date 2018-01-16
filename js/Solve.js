@@ -39,9 +39,9 @@ if((typeof module) !== 'undefined') {
         }
     };
     // The search radius for the roots
-    core.Settings.solve_radius = 1000;
+    core.Settings.SOLVE_RADIUS = 1000;
     // The maximum number to fish for on each side of the zero
-    core.Settings.roots_per_side = 5;
+    core.Settings.ROOTS_PER_SIDE = 5;
     // Covert the number to multiples of pi if possible
     core.Settings.make_pi_conversions = true;
     
@@ -145,7 +145,6 @@ if((typeof module) !== 'undefined') {
         return new Equation(a, b);
     };
     // A utility function to parse an expression to left hand side when working with strings
-
     var toLHS = function(eqn) { 
         //If it's an equation then call its toLHS function instead
         if(eqn instanceof Equation)
@@ -155,6 +154,14 @@ if((typeof module) !== 'undefined') {
         var e1 = _.parse(es[0]), e2 = _.parse(es[1]);
         return removeDenom(e1, e2);
     };
+    //Loops through an array and attempts to fails a test. Stops if manages to fail.
+    var checkAll = core.Utils.checkAll = function(args, test) {
+        for(var i=0; i<args.length; i++)
+            if(test(args[i]))
+                return false;
+        return true;
+    };
+    
     // Solves a system of equations
     var sys_solve = function(eqns, var_array) {
         //check if a var_array was specified
@@ -259,7 +266,6 @@ if((typeof module) !== 'undefined') {
         var retval = _.divide(_[plus_or_minus](b.clone().negate(), det),_.multiply(new Symbol(2), a.clone()));
         return retval;
     };
-    
     //http://math.stackexchange.com/questions/61725/is-there-a-systematic-way-of-solving-cubic-equations
     var cubic = function(d_o, c_o, b_o, a_o) { 
         //convert everything to text
@@ -294,6 +300,7 @@ if((typeof module) !== 'undefined') {
     };
 
     /* in progress */
+    //solve(x^4+x+0.1, x)
     var quartic = function(e, d, c, b, a) { 
         var scope = {};
         core.Utils.arrayUnique(variables(a).concat(variables(b))
@@ -321,6 +328,45 @@ if((typeof module) !== 'undefined') {
         x3 = _.parse(format("-(({1})/(4*({0})))+({4})+(1/2)*sqrt(-4*({4})^2-2*({2})-(({3})/({4})))", a, b, p, q, S)); //a, b, p, q, S
         x4 = _.parse(format("-(({1})/(4*({0})))+({4})-(1/2)*sqrt(-4*({4})^2-2*({2})-(({3})/({4})))", a, b, p, q, S)); //a, b, p, q, S
         return [x1, x2, x3, x4];
+    };
+    
+    var divnconsolve = function(symbol, solve_for) {
+        var sols = [];
+        //see if we can solve the factors
+        var factors = core.Algebra.Factor.factor(symbol);
+        if(factors.group === CB) {
+            factors.each(function(x) {
+                x = Symbol.unwrapPARENS(x);
+                sols = sols.concat(solve(x, solve_for));
+            });
+        }
+        return sols;
+    };
+    
+    var csolve = function(symbol, solve_for) { 
+        return core.Utils.block('IGNORE_E', function() {
+            var f, p, pn, n, pf, r, theta, sr, sp, roots;
+            roots = [];
+            f = core.Utils.decompose_fn(symbol, solve_for, true);
+            if(f.x.group === S) { 
+                p = _.parse(f.x.power);
+                pn = Number(p);
+                n = _.pow(_.divide(f.b.negate(), f.a), p.invert());
+                pf = Symbol.toPolarFormArray(n);
+                r = pf[0];
+                theta = pf[1];
+                sr = r.toString();
+                sp = p.toString();
+                var k, root, str;
+                for(var i=0; i<pn; i++) { 
+                    k = i;
+                    str = format('({0})*e^(2*{1}*pi*{2}*{3})', sr, k, p, core.Settings.IMAGINARY);
+                    root = _.parse(str);
+                    roots.push(root);
+                }
+            }
+            return roots;
+        }, true);
     };
     
     var polysolve = function(EQ, solve_for) {
@@ -418,7 +464,7 @@ if((typeof module) !== 'undefined') {
                 last = f(start),
                 last_sign = last/Math.abs(last),
                 points = [],
-                rside = core.Settings.roots_per_side, // the max number of roots on right side
+                rside = core.Settings.ROOTS_PER_SIDE, // the max number of roots on right side
                 lside = rside*2+1; // the max number of roots on left side
             // check around the starting point
             points.push(Math.floor(start/2));
@@ -430,7 +476,7 @@ if((typeof module) !== 'undefined') {
             // Possible issue #1. If the step size exceeds the zeros then they'll be missed. Consider the case
             // where the function dips to negative and then back the positive with a step size of 0.1. The function
             // will miss the zeros because it will jump right over it. Think of a case where this can happen.
-            for(var i=start; i<core.Settings.solve_radius; i++){
+            for(var i=start; i<core.Settings.SOLVE_RADIUS; i++){
                 var val = f(i*0.1),
                     sign = val/Math.abs(val);
                 if(isNaN(val) || !isFinite(val) || points.length > rside)
@@ -442,7 +488,7 @@ if((typeof module) !== 'undefined') {
             }
             
             //check the other side
-            for(var i=start-1; i>-core.Settings.solve_radius; i--){
+            for(var i=start-1; i>-core.Settings.SOLVE_RADIUS; i--){
                 var val = f(i),
                     sign = val/Math.abs(val);
                 if(isNaN(val) || !isFinite(val) || points.length > lside)
@@ -655,20 +701,48 @@ if((typeof module) !== 'undefined') {
         if(numvars === 1) { 
             if(eq.isPoly(true)) { 
                 var coeffs = core.Utils.getCoeffs(eq, solve_for),
-                    deg = coeffs.length - 1;
+                    deg = coeffs.length - 1,
+                    was_calculated = false;
                 if(vars[0] === solve_for) {
-                    //we can solve algebraically for degrees 1, 2, 3. The remainder we switch to Jenkins-
-                    if(deg === 1) 
-                        add_to_result(_.divide(coeffs[0], coeffs[1].negate()));
-                    else if(deg === 2) {
-                        add_to_result(_.expand(quad.apply(undefined, coeffs)));
-                        coeffs.push('-');
-                        add_to_result(_.expand(quad.apply(undefined, coeffs)));
+                    //check to see if all the coefficients are constant
+                    if(checkAll(coeffs, function(x) {
+                        return x.group !== core.groups.N;
+                    })) {
+                        var roots = core.Algebra.proots(eq);
+                        //if all the roots are integers then return those
+                        if(checkAll(roots, function(x) {
+                            return !core.Utils.isInt(x);
+                        })) {
+                            //roots have been calculates
+                            was_calculated = true;
+                            roots.map(function(x) {
+                                add_to_result(new Symbol(x));
+                            });
+                        }
                     }
-                    else if(deg === 3)
-                        add_to_result(cubic.apply(undefined, coeffs));
-                    else
-                        _A.proots(eq).map(add_to_result);
+                    
+                    if(!was_calculated) {
+                        //we can solve algebraically for degrees 1, 2, 3. The remainder we switch to Jenkins-
+                        if(deg === 1) 
+                            add_to_result(_.divide(coeffs[0], coeffs[1].negate()));
+                        else if(deg === 2) { 
+                            add_to_result(_.expand(quad.apply(undefined, coeffs)));
+                            coeffs.push('-');
+                            add_to_result(_.expand(quad.apply(undefined, coeffs)));
+                        }
+                        else if(deg === 3)
+                            add_to_result(cubic.apply(undefined, coeffs));
+                        else {
+                            var sym_roots = csolve(eq, solve_for); 
+                            if(sym_roots.length === 0)
+                                sym_roots = divnconsolve(eq, solve_for);
+                            if(sym_roots.length > 0)
+                                add_to_result(sym_roots);
+                            else
+                                _A.proots(eq).map(add_to_result);
+                        }
+                    }
+                            
                 }
             }
             else { 
@@ -709,9 +783,13 @@ if((typeof module) !== 'undefined') {
                         case 3:
                             add_to_result(cubic.apply(undefined, coeffs));
                             break;
-                        /*case 4:
+                        case 4:
                             add_to_result(quartic.apply(undefined, coeffs));
-                            break;*/
+                            break;
+                        default:
+                            add_to_result(csolve(eq, solve_for));
+                            if(solutions.length === 0)
+                                add_to_result(divnconsolve(eq, solve_for));
                     }
                 }
                 catch(e) { /*something went wrong. EXITING*/; } 

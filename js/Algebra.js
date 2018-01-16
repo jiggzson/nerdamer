@@ -487,7 +487,7 @@ if((typeof module) !== 'undefined') {
          */
         equalsNumber: function(x) { 
             this.trim();
-            return this.coeffs.length === 1 && this.coeffs[0].toDecimal() === x;
+            return this.coeffs.length === 1 && this.coeffs[0].toDecimal() === String(x);
         },
         toString: function() {
             return this.toSymbol().toString();
@@ -2009,7 +2009,7 @@ if((typeof module) !== 'undefined') {
                     //if we don't have an integer then exit
                     if(!isInt(p))
                         exit();
-                    
+
                     //build the factor
                     for(var i=0; i<terms.length; i++) {
                         var t = terms[i];
@@ -2654,9 +2654,18 @@ if((typeof module) !== 'undefined') {
          * @returns {Array}
          */
         divide: function(symbol1, symbol2) {
-            var result = __.div(symbol1, symbol2);
-            var remainder = _.divide(result[1], symbol2);
-            return _.add(result[0], remainder);
+            var result, remainder, factored, den;
+            factored = core.Algebra.Factor.factor(symbol1.clone());
+            den = factored.getDenom();
+            if(!den.isConstant('all')) {
+                symbol1 = _.expand(Symbol.unwrapPARENS(_.multiply(factored, den.clone())));
+            }
+            else
+                //reset the denominator since we're not dividing by it anymore
+                den = new Symbol(1); 
+            result = __.div(symbol1, symbol2);
+            remainder = _.divide(result[1], symbol2);
+            return _.divide(_.add(result[0], remainder), den);
         },
         div: function(symbol1, symbol2) {
             //division by constants
@@ -3018,7 +3027,7 @@ if((typeof module) !== 'undefined') {
                         dterms, max, M, c, powers, div, r, factors_vec, ks,
                         template, tfactors;
                     num = _.expand(symbol.getNum());
-                    den = symbol.getDenom(true);
+                    den = _.expand(symbol.getDenom().toUnitMultiplier());
                     //move the entire multipier to the numerator
                     num.multiplier = symbol.multiplier;
                     //we only have a meaningful change if n factors > 1. This means that
@@ -3343,8 +3352,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var x = nerdamer('sqcomp(9*x^2-18*x+17)');
-console.log(x.toString());
-var y = nerdamer('sqcomp(a*x^2+b*x-11*c, x)');
-console.log(y.toString());

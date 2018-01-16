@@ -91,22 +91,22 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>conjugate</h1>
+                    <h1>sort</h1>
                     <hr>
-                    <h3 class="text-capitalize">conjugate</h3>
+                    <h3 class="text-capitalize">sort</h3>
                     <div>
-                        Returns the conjugate of a complex number. 
+                        Returns the sorted coefficients of a polynomial. If given a vector it will be sorted alphabetically.
                     </div>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("conjugate(z)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("sort(x)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
                         <table class="table table-responsive table-condensed">
                             <tr>
     <td>
-        <span class="parameter-type">expression </span>
-        <span class="parameter-name">z </span>
+        <span class="parameter-type">expression/polynomial </span>
+        <span class="parameter-name">x </span>
     </td>
     <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
 </tr>
@@ -116,10 +116,10 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var r = nerdamer('conjugate(81)');
-console.log(r.toString());
-var t = nerdamer('conjugate(5+i)')
-console.log(t.toString());</code></pre>
+                    <pre><code class="javascript">var x = nerdamer('sort((a*x^2+9*x-1))');
+console.log(x.toString());
+var y = nerdamer('sort([b, d, 1])');
+console.log(y.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -171,10 +171,10 @@ console.log(t.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var r = nerdamer('conjugate(81)');
-oprint(r.toString());
-var t = nerdamer('conjugate(5+i)')
-oprint(t.toString());
+                var x = nerdamer('sort((a*x^2+9*x-1))');
+oprint(x.toString());
+var y = nerdamer('sort([b, d, 1])');
+oprint(y.toString());
             }
             catch(e) {
                 oprint(e.toString());

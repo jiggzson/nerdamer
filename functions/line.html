@@ -91,24 +91,30 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>conjugate</h1>
+                    <h1>line</h1>
                     <hr>
-                    <h3 class="text-capitalize">conjugate</h3>
+                    <h3 class="text-capitalize">sort</h3>
                     <div>
-                        Returns the conjugate of a complex number. 
+                        Computes the equation of a straight line given two points
                     </div>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("conjugate(z)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("line(p1, p2)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
                         <table class="table table-responsive table-condensed">
                             <tr>
     <td>
-        <span class="parameter-type">expression </span>
-        <span class="parameter-name">z </span>
+        <span class="parameter-type">vector </span>
+        <span class="parameter-name">p1 </span>
     </td>
-    <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
+    <td><span class="parameter-description">A vector in form of [x, y]</span></td>
+</tr><tr>
+    <td>
+        <span class="parameter-type">vector </span>
+        <span class="parameter-name">p2 </span>
+    </td>
+    <td><span class="parameter-description">A vector in form of [x, y]</span></td>
 </tr>
                         </table>
                     </div>
@@ -116,10 +122,10 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var r = nerdamer('conjugate(81)');
-console.log(r.toString());
-var t = nerdamer('conjugate(5+i)')
-console.log(t.toString());</code></pre>
+                    <pre><code class="javascript">var x = nerdamer('line([-1,-4], [3,11])');
+console.log(x.toString());
+var y = nerdamer('line([1,2], [3,4])');
+console.log(y.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -171,10 +177,10 @@ console.log(t.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var r = nerdamer('conjugate(81)');
-oprint(r.toString());
-var t = nerdamer('conjugate(5+i)')
-oprint(t.toString());
+                var x = nerdamer('line([-1,-4], [3,11])');
+oprint(x.toString());
+var y = nerdamer('line([1,2], [3,4])');
+oprint(y.toString());
             }
             catch(e) {
                 oprint(e.toString());

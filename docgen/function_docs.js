@@ -861,6 +861,27 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+    sech: {
+        type: 'internal',
+        usage: 'sech(x)',
+        full_name: 'hyperbolic secant',
+        description: 'This function will return the hyperbolic secant',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('sech(pi)').evaluate();", 
+            "console.log(r.toString());",
+            "var t = nerdamer('sech(x)')", 
+            "console.log(t.toString());",
+            "var u = nerdamer('sech(pi/4)').evaluate()", 
+            "console.log(u.toString());"
+        ],
+        returns: 'Expression'
+    },
     csc: {
         type: 'internal',
         usage: 'csc(x)',
@@ -1018,7 +1039,6 @@ FUNCTIONS = {
         examples: [
             "var r = nerdamer('acosh(0)');", 
             "console.log(r.text());",
-            "//TODO imaginary numbers for acosh",
             "var t = nerdamer('acosh(-1)').evaluate()", 
             "console.log(t.text());"
         ],
@@ -1456,32 +1476,32 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
-//    arg: {
-//        type: 'internal',
-//        usage: 'arg(x)',
-//        full_name: 'argument',
-//        description: 'Returns the argument of a complex number. ',
-//        parameters: {
-//            x: {
-//                type: 'expression',
-//                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
-//            }
-//        },
-//        examples: [
-//            "var r = nerdamer('arg(81)');", 
-//            "console.log(r.toString());",
-//            "var t = nerdamer('arg(5+i)')", 
-//            "console.log(t.toString());"
-//        ],
-//        returns: 'Expression'
-//    },
+    arg: {
+        type: 'internal',
+        usage: 'arg(z)',
+        full_name: 'argument',
+        description: 'Returns the argument of a complex number. ',
+        parameters: {
+            z: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('arg(81)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('arg(5+i)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
     conjugate: {
         type: 'internal',
-        usage: 'conjugate(x)',
+        usage: 'conjugate(z)',
         full_name: 'conjugate',
         description: 'Returns the conjugate of a complex number. ',
         parameters: {
-            x: {
+            z: {
                 type: 'expression',
                 description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
             }
@@ -1490,6 +1510,82 @@ FUNCTIONS = {
             "var r = nerdamer('conjugate(81)');", 
             "console.log(r.toString());",
             "var t = nerdamer('conjugate(5+i)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    imagpart: {
+        type: 'internal',
+        usage: 'imagpart(z)',
+        full_name: 'imaginary part',
+        description: 'Returns the imaginary of a complex number. ',
+        parameters: {
+            z: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('imagpart(81+5*b*i)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('imagpart(5+i)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    realpart: {
+        type: 'internal',
+        usage: 'realpart(z)',
+        full_name: 'realpart part',
+        description: 'Returns the realpart of a complex number. ',
+        parameters: {
+            z: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('realpart(b*x+x*c*i)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('realpart(5+i)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    polarform: {
+        type: 'internal',
+        usage: 'polarform(z)',
+        full_name: 'polar form',
+        description: 'converts imaginary number from rectangular form to polar form.',
+        parameters: {
+            z: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('polarform(b*x+x*c*i)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('polarform(5+i)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    rectform: {
+        type: 'internal',
+        usage: 'rectform(z)',
+        full_name: 'rectangular form',
+        description: 'converts imaginary number from polar form to rectangular form. [Under development]',
+        parameters: {
+            z: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('rectform(e^(atan(1/5)*i)*sqrt(26))');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('rectform(e^(atan(-1/26)*i)*sqrt(677))')", 
             "console.log(t.toString());"
         ],
         returns: 'Expression'
@@ -1698,6 +1794,31 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+    nthroot: {
+        type: 'internal',
+        usage: 'nthroot(x, y)',
+        full_name: 'nth root',
+        description: 'Calculates the nth root of a number.',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            },
+            y: {
+                type: 'expression|integer',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('nthroot(125, 3)');",
+            "console.log(x.toString());",
+            "x = nerdamer('nthroot(-27, 3)');",
+            "console.log(x.toString());",
+            "x = nerdamer('nthroot(a, 2)');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
     log: {
         type: 'internal',
         usage: 'log(x)',
@@ -1756,6 +1877,67 @@ FUNCTIONS = {
             "console.log(x.toString());"
         ],
         returns: 'Expression'
+    },
+    sort: {
+        type: 'internal',
+        usage: 'sort(x)',
+        full_name: 'sort',
+        description: 'Returns the sorted coefficients of a polynomial. If given a vector it will be sorted alphabetically.',
+        parameters: {
+            x: {
+                type: 'expression/polynomial',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sort((a*x^2+9*x-1))');",
+            "console.log(x.toString());",
+            "var y = nerdamer('sort([b, d, 1])');",
+            "console.log(y.toString());"
+        ],
+        returns: 'Vector'
+    },
+    line: {
+        type: 'internal',
+        usage: 'line(p1, p2)',
+        full_name: 'sort',
+        description: 'Computes the equation of a straight line given two points',
+        parameters: {
+            p1: {
+                type: 'vector',
+                description: "A vector in form of [x, y]"
+            },
+            p2: {
+                type: 'vector',
+                description: "A vector in form of [x, y]"
+            }
+        },
+        examples: [
+            "var x = nerdamer('line([-1,-4], [3,11])');",
+            "console.log(x.toString());",
+            "var y = nerdamer('line([1,2], [3,4])');",
+            "console.log(y.toString());"
+        ],
+        returns: 'Vector'
+    },
+    deg: {
+        type: 'internal',
+        usage: 'deg(p)',
+        full_name: 'sort',
+        description: 'Returns the degree of the polynomial. Specify the variable to use in multivariate polynomials.',
+        parameters: {
+            p: {
+                type: 'Expression/polynomial',
+                description: "A polynomial"
+            }
+        },
+        examples: [
+            "var x = nerdamer('deg(x^2+2*x+1)');",
+            "console.log(x.toString());",
+            "var y = nerdamer('deg(a*x^7+2*x+1,x)');",
+            "console.log(y.toString());"
+        ],
+        returns: 'Expression/Integer'
     },
     abs: {
         type: 'internal',

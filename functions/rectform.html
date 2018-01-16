@@ -91,14 +91,14 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>conjugate</h1>
+                    <h1>rectform</h1>
                     <hr>
-                    <h3 class="text-capitalize">conjugate</h3>
+                    <h3 class="text-capitalize">rectangular form</h3>
                     <div>
-                        Returns the conjugate of a complex number. 
+                        converts imaginary number from polar form to rectangular form. [Under development]
                     </div>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("conjugate(z)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("rectform(z)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -116,9 +116,9 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var r = nerdamer('conjugate(81)');
+                    <pre><code class="javascript">var r = nerdamer('rectform(e^(atan(1/5)*i)*sqrt(26))');
 console.log(r.toString());
-var t = nerdamer('conjugate(5+i)')
+var t = nerdamer('rectform(e^(atan(-1/26)*i)*sqrt(677))')
 console.log(t.toString());</code></pre>
                 </div>
                 OUTPUT:
@@ -171,9 +171,9 @@ console.log(t.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var r = nerdamer('conjugate(81)');
+                var r = nerdamer('rectform(e^(atan(1/5)*i)*sqrt(26))');
 oprint(r.toString());
-var t = nerdamer('conjugate(5+i)')
+var t = nerdamer('rectform(e^(atan(-1/26)*i)*sqrt(677))')
 oprint(t.toString());
             }
             catch(e) {
