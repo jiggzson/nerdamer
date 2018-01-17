@@ -573,6 +573,257 @@ FUNCTIONS = {
         ],
         returns: 'String'
     },
+    Expression__add: {
+        type: 'Expression',
+        usage: 'nerdamer(x).add(y)',
+        full_name: 'add',
+        description: 'Adds two expressions.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('x+1').add('x');",
+            "console.log(x.toString());",
+            "var x = nerdamer(0.1).add(0.2);",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    Expression__subtract: {
+        type: 'Expression',
+        usage: 'nerdamer(x).subtract(y)',
+        full_name: 'subtract',
+        description: 'Subtracts two expressions.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('x+1').subtract('x');",
+            "console.log(x.toString());",
+            "var x = nerdamer(0.1).subtract(0.2);",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    Expression__multiply: {
+        type: 'Expression',
+        usage: 'nerdamer(x).multiply(y)',
+        full_name: 'multiply',
+        description: 'Multiplies two expressions.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var a = nerdamer('x');",
+            "var x = nerdamer('x+1').multiply(a);",
+            "console.log(x.toString());",
+            "var x = nerdamer(0.1).multiply(0.2);",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    Expression__divide: {
+        type: 'Expression',
+        usage: 'nerdamer(x).divide(y)',
+        full_name: 'divide',
+        description: 'Divides one expression by another.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('x^2+x').divide('x').expand();",
+            "console.log(x.toString());",
+            "var x = nerdamer(0.1).multiply(0.2);",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    Expression__pow: {
+        type: 'Expression',
+        usage: 'nerdamer(x).pow(y)',
+        full_name: 'power',
+        description: 'Raises one expression to another.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('x^2+x').pow('x');",
+            "console.log(x.toString());",
+            "var x = nerdamer(5).multiply(2);",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    Expression__eq: {
+        type: 'Expression',
+        usage: 'nerdamer(x).eq(y)',
+        full_name: 'equals',
+        description: 'Checks for equality of two expressions.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sqrt(2)').eq('2^(1/2)');",
+            "console.log(x.toString());",
+            "var x = nerdamer(5).eq(2);",
+            "console.log(x.toString());",
+            "var x = nerdamer('a+1').eq('a+1');",
+            "console.log(x.toString());",
+            "var x = nerdamer('Infinity').eq('Infinity');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Boolean'
+    },
+    Expression__gt: {
+        type: 'Expression',
+        usage: 'nerdamer(x).gt(y)',
+        full_name: 'greater than',
+        description: 'Checks if one expression is greater than other.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sqrt(2)').gt('2^(1/2)');",
+            "console.log(x.toString());",
+            "var x = nerdamer(5).gt(2);",
+            "console.log(x.toString());",
+            "var x = nerdamer('a+1').gt('a+1');",
+            "console.log(x.toString());",
+            "var x = nerdamer('Infinity').gt('Infinity');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Boolean'
+    },
+    Expression__gte: {
+        type: 'Expression',
+        usage: 'nerdamer(x).gte(y)',
+        full_name: 'greater than or equals',
+        description: 'Checks if one expression is greater than, or equal to, other.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sqrt(2)').gte('2^(1/2)');",
+            "console.log(x.toString());",
+            "var x = nerdamer(5).gte(2);",
+            "console.log(x.toString());",
+            "var x = nerdamer('a+1').gte('a+1');",
+            "console.log(x.toString());",
+            "var x = nerdamer('Infinity').gte('Infinity');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Boolean'
+    },
+    Expression__lte: {
+        type: 'Expression',
+        usage: 'nerdamer(x).lte(y)',
+        full_name: 'less than or equals',
+        description: 'Checks if one expression is less than, or equal to, other.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sqrt(2)').lte('2^(1/2)');",
+            "console.log(x.toString());",
+            "var x = nerdamer(5).lte(2);",
+            "console.log(x.toString());",
+            "var x = nerdamer('a+1').lte('a+1');",
+            "console.log(x.toString());",
+            "var x = nerdamer('Infinity').lte('Infinity');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Boolean'
+    },
+    Expression__lt: {
+        type: 'Expression',
+        usage: 'nerdamer(x).lt(y)',
+        full_name: 'less than or equals',
+        description: 'Checks if one expression is less than other.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sqrt(2)').lt('2^(1/2)');",
+            "console.log(x.toString());",
+            "var x = nerdamer(5).lt(2);",
+            "console.log(x.toString());",
+            "var x = nerdamer('a').lt('a+1');",
+            "console.log(x.toString());",
+            "var x = nerdamer('Infinity').lt('Infinity');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Boolean'
+    },
     Expression__toTeX: {
         type: 'Expression',
         usage: 'nerdamer.toTeX',
@@ -1962,25 +2213,6 @@ FUNCTIONS = {
         ],
         returns: 'Vector'
     },
-    deg: {
-        type: 'internal',
-        usage: 'deg(p)',
-        full_name: 'sort',
-        description: 'Returns the degree of the polynomial. Specify the variable to use in multivariate polynomials.',
-        parameters: {
-            p: {
-                type: 'Expression/polynomial',
-                description: "A polynomial"
-            }
-        },
-        examples: [
-            "var x = nerdamer('deg(x^2+2*x+1)');",
-            "console.log(x.toString());",
-            "var y = nerdamer('deg(a*x^7+2*x+1,x)');",
-            "console.log(y.toString());"
-        ],
-        returns: 'Expression/Integer'
-    },
     abs: {
         type: 'internal',
         usage: 'abs(x)',
@@ -2402,6 +2634,25 @@ FUNCTIONS = {
             "console.log(x.toString());"
         ],
         returns: 'Matrix'
+    },
+    deg: {
+        type: 'internal',
+        usage: 'deg(p)',
+        full_name: 'sort',
+        description: 'Returns the degree of the polynomial. Specify the variable to use in multivariate polynomials.',
+        parameters: {
+            p: {
+                type: 'Expression/polynomial',
+                description: "A polynomial"
+            }
+        },
+        examples: [
+            "var x = nerdamer('deg(x^2+2*x+1)');",
+            "console.log(x.toString());",
+            "var y = nerdamer('deg(a*x^7+2*x+1,x)');",
+            "console.log(y.toString());"
+        ],
+        returns: 'Expression/Integer'
     },
     Algebra__roots: {
         type: 'internal',
