@@ -2622,8 +2622,8 @@ if((typeof module) !== 'undefined') {
                 else
                 {
                     //gcd_ cannot handle denominators correctly
-                    return _.divide(__.gcd.apply(null, args.map(function(symbol){symbol.getNum()})),
-                                    __.gcd.apply(null, args.map(function(symbol){symbol.getDenom()})));
+                    return _.divide(__.gcd.apply(null, args.map(function(symbol){return symbol.getNum()})),
+                                    __.lcm.apply(null, args.map(function(symbol){return symbol.getDenom()})));
                 }
             }
             else return _.symfunction('gcd', args);
@@ -2654,7 +2654,7 @@ if((typeof module) !== 'undefined') {
 		
             if(a.group === CB || b.group === CB) {
                 var q = _.divide(a.clone(), b.clone()); //get the quotient
-                var t = _.multiply(b.clone(), q.getDenom());//multiply by the denominator
+                var t = _.multiply(b.clone(), q.getDenom().invert());//multiply by the denominator
                 //if they have a common factor then the result will not equal one 
                 if(!t.equals(1))
                     return t;
@@ -2718,8 +2718,9 @@ if((typeof module) !== 'undefined') {
             var args;
             if(arguments.length === 1)
                 if (arguments[0] instanceof core.Vector) args = arguments[0].elements;
-                else _.error('gcd expects either 1 vector or 2 or more arguments');
+                else _.error('lcm expects either 1 vector or 2 or more arguments');
             else args = core.Utils.arguments2Array(arguments);
+
             //product of all arguments
             //start with new Symbol(1) so that prev.clone() which makes unnessesary clones can be avoided
             var numer = args.reduce(function(prev,curr){return _.multiply(prev, curr.clone())}, new Symbol(1));
@@ -2749,13 +2750,13 @@ if((typeof module) !== 'undefined') {
                 return results; 
                 //start with new Symbol(1) so that prev.clone() which makes unnessesary clones can be avoided
             })(arguments,arguments.length-1).map(function(x){return x.reduce(function(prev,curr){return _.multiply(prev,curr.clone())},new Symbol(1))});
-            
+             
             //don't eat the gcd term if all arguments are symbols
             if(args.every(function(x){return core.Utils.isVariableSymbol(x)}))
-                var denom = _.symfunction('gcd', denom_args);
+                var denom = _.symfunction('gcd', core.Utils.arrayUnique(denom_args));
             else
                 var denom = __.gcd.apply(null, denom_args);
-                
+            
             //divide product of all arguments by gcd of complementary terms
             return _.divide(numer, denom);
         },
