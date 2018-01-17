@@ -682,6 +682,48 @@ FUNCTIONS = {
         ],
         returns: 'String[]'
     },
+    Expression__denominator: {
+        type: 'Expression',
+        usage: 'nerdamer(expression).denominator()',
+        full_name: 'denominator',
+        description: 'Get a list of the denominator of a polynomial',
+        parameters: {
+            none: {
+                type: '',
+                description: "This function takes no arguments."
+            }
+        },
+        examples: [
+            "var e = nerdamer('(x^2+1)/(x-1)');",
+            "var denominator = e.denominator().toString();",
+            "console.log(denominator);",
+            "e = nerdamer('2/5');",
+            "denominator = e.denominator().toString();",
+            "console.log(denominator);"
+        ],
+        returns: 'Expression'
+    },
+    Expression__numerator: {
+        type: 'Expression',
+        usage: 'nerdamer(expression).numerator()',
+        full_name: 'numerator',
+        description: 'Get a list of the numerator of a polynomial',
+        parameters: {
+            none: {
+                type: '',
+                description: "This function takes no arguments."
+            }
+        },
+        examples: [
+            "var e = nerdamer('(x^2+1)/(x-1)');",
+            "var numerator = e.numerator().toString();",
+            "console.log(numerator);",
+            "e = nerdamer('2/5');",
+            "numerator = e.numerator().toString();",
+            "console.log(numerator);"
+        ],
+        returns: 'Expression'
+    },
     cosh: {
         type: 'internal',
         usage: 'cosh(x)',

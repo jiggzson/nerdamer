@@ -8530,6 +8530,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-var x = nerdamer('(1/2)!');
-console.log(x.text())

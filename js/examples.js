@@ -136,4 +136,5 @@ $(function() {
     }
     
     $('#calculating').hide();
+    $('.stats').show();
 });
