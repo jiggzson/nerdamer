@@ -117,7 +117,7 @@ describe('calculus', function () {
             {
                 given: 'ilt((5*(sin(1)*s+3*cos(1)))/(s^2+9),s, t)',
                 expected: '5*cos(1)*sin(3*t)+5*cos(3*t)*sin(1)'
-            },
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

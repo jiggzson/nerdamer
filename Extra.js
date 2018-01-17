@@ -24,6 +24,7 @@ if((typeof module) !== 'undefined') {
         CB = core.groups.CB,
         FN = core.groups.FN;
     core.Settings.Laplace_integration_depth = 40;
+
     
     Symbol.prototype.findFunction = function(fname) {
         //this is what we're looking for
@@ -148,7 +149,7 @@ if((typeof module) !== 'undefined') {
                         symbol.toUnitMultiplier();
                         //get the numerator and denominator
                         num = symbol.getNum();
-                        den = symbol.getDenom().invert(null, true);
+                        den = symbol.getDenom().toUnitMultiplier();
                         //TODO: Make it so factor doesn't destroy pi
                         //num = core.Algebra.Factor.factor(symbol.getNum());
                         //den = core.Algebra.Factor.factor(symbol.getDenom().invert(null, true));

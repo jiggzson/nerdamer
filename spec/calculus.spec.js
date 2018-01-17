@@ -173,15 +173,59 @@ describe('calculus', function () {
             {
                 given: 'sum(sqrt(x)*sin(x), x, 0, 10)',
                 expected: '775334583/372372283'
+            },
+            {
+                given: 'sum(e^(-x^2*π/9),x,1,100)',
+                expected: '633863423979/633863423978'
+            },
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given).evaluate();
+
+            // then
+            expect(parsed.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
+    it('should calculate the definite integral correctly', function () {
+        //I don't really care to read warnings
+        nerdamer.set('SILENCE_WARNINGS', true);
+        // given
+        var testCases = [
+            {
+                given: 'defint(cos(x),1,2,x)',
+                expected: '0.06782644201778515'
+            },
+            {
+                given: 'defint(cos(x),1,2,x)',
+                expected: '0.06782644201778515'
+            },
+            {
+                given: 'defint(cos(x^x),1,2,x)',
+                expected: '-0.27113666621'
+            },
+            {
+                given: 'defint(cos(x^log(sin(x))),2,3,x)',
+                expected: '0.805604089074'
+            },
+            {
+                given: 'defint(log(2*cos(x/2)),-π,π,x)',
+                expected: '0'
+            },
+            {
+                given: 'defint(log(cos(x/2)),-π,π,x)',
+                expected: '-4.355172180607'
             }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
             // when
-            var parsed = nerdamer(testCases[i].given);
+            var parsed = nerdamer(testCases[i].given, null, 'numer');
 
             // then
-            expect(parsed.toString()).toEqual(testCases[i].expected);
+            expect(parsed.text()).toEqual(testCases[i].expected);
         }
     });
     
@@ -334,11 +378,11 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(a/(x^2+b*x+a*x+a*b),x)', //uglier for but still correct
-                expected: '(((-a^(-1)*b+1)^(-1)*a^(-2)*b+a^(-1))*log(b+x)-(-a^(-1)*b+1)^(-1)*a^(-1)*log(a+x))*a'
+                expected: '(((-a^(-1)*b+1)^(-1)*a^(-1)*b+1)*a^(-1)*log(b+x)-(-a^(-1)*b+1)^(-1)*a^(-1)*log(a+x))*a'
             },
             {
                 given: 'integrate(log(a*x+b),x)',
-                expected: '-x+a^(-1)*b*log(a*x+b)+log(a*x+b)*x'
+                expected: '-(-a^(-2)*b*log(a*x+b)+a^(-1)*x)*a+log(a*x+b)*x'
             },
             {
                 given: 'integrate(x*log(x),x)',
