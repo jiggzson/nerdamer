@@ -173,12 +173,16 @@ describe('calculus', function () {
             {
                 given: 'sum(sqrt(x)*sin(x), x, 0, 10)',
                 expected: '775334583/372372283'
-            }
+            },
+            {
+                given: 'sum(e^(-x^2*π/9),x,1,100)',
+                expected: '633863423979/633863423978'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
             // when
-            var parsed = nerdamer(testCases[i].given);
+            var parsed = nerdamer(testCases[i].given).evaluate();
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);

@@ -260,7 +260,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
             index = index.value;
             var retval;
-            var symbolic_sum = function() {
+
+            if(core.Utils.isNumericSymbol(start) && core.Utils.isNumericSymbol(end)) {
+                start = start.multiplier;
+                end = end.multiplier;
+
                 var f = fn.text(),
                     subs = {'~': true}, //lock subs. Is this even being used?
                 retval = new core.Symbol(0);
@@ -272,37 +276,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 }
                 
                 return retval;
-            };
-            if(core.Utils.isNumericSymbol(start) && core.Utils.isNumericSymbol(end)) {
-                start = start.multiplier;
-                end = end.multiplier;
-
-                var variables = core.Utils.variables(fn);
-                if(variables.length === 1 && index === variables[0]) { 
-                    try {
-                        var f = core.Utils.build(fn),
-                            ans;
-                        retval = 0;
-                        for(var i=start; i<=end; i++) {
-                            ans = f.call(undefined, i);
-                            //check if the value is NaN to guard against ruining the rest of the answer. Issue #285
-                            if(isNaN(ans)) { 
-                                var known_obj = {};
-                                known_obj[variables[0]] = i;
-                                ans = Number(core.Utils.evaluate(_.parse(fn.toString(), known_obj)));
-                            }
-
-                            retval += ans;
-                        }
-                        retval = new Symbol(retval);
-                    }
-                    catch(e) {
-                        retval = symbolic_sum();
-                    }   
-                }
-                else {
-                    retval = symbolic_sum();
-                }
             }
             else {
                 retval = _.symfunction('sum',arguments);

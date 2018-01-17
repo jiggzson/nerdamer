@@ -3,7 +3,7 @@
 var nerdamer = require('../nerdamer.core.js');
 
 describe('Nerdamer core', function () {
-
+    //, x=2.1, y=3.3, z=1, a=7.42
     var values = {
         x: 2.1,
         y: 3.3,
@@ -430,7 +430,7 @@ describe('Nerdamer core', function () {
             {
                 given: 'expand((x*y)^x+(x*y)^2)',
                 expected: '(x*y)^x+x^2*y^2',
-                expectedValue: '106.30761744975752'
+                expectedValue: '106.3076174497575'
             },
             {
                 given: 'expand((3*x+4*y)^4)',
@@ -544,7 +544,7 @@ describe('Nerdamer core', function () {
             }, 
             {
                 given: 'polarform(a*i+b*1)',
-                expected: 'e^(atan(a*b^(-1))*i)*hyp(b,a)'
+                expected: 'e^(atan(a*b^(-1))*i)*sqrt(a^2+b^2)'
             }, 
             {
                 given: 'polarform(3)',
@@ -638,7 +638,7 @@ describe('Nerdamer core', function () {
            {
                given: '3*(1+x!*x!)!',
                expected: '3*factorial(1+factorial(x)^2)',
-               expectedValue: '1573.20414881726'
+               expectedValue: '1573.2041488172601'
            }
        ];
 
@@ -893,7 +893,7 @@ describe('Nerdamer core', function () {
                 {
                     given: '2*(tan(x)+tan(2*x)+7)-6*tan(x)',
                     expected: '-4*tan(x)+14+2*tan(2*x)',
-                    expectedValue: '24.394945720635707'
+                    expectedValue: '24.39494572063571'
                 },
                 {
                     given: '((3+y)*2-(cos(x)*4+z))',
@@ -1044,7 +1044,7 @@ describe('Nerdamer core', function () {
                 {
                     given: 'x^2+2*cosh(x)+cosh(x+8+5*x)+4*x^2',
                     expected: '2*cosh(x)+5*x^2+cosh(6*x+8)',
-                    expectedValue: '442014342.264284'
+                    expectedValue: '442014342.26428396'
                 },
                 {
                     given: 'cosh(x)*cosh(x)',
@@ -1156,7 +1156,7 @@ describe('Nerdamer core', function () {
             {
                 given: 'sqrt((5/2)*x^10)',
                 expected: 'abs(x)*sqrt(2)^(-1)*sqrt(5)*x^4',
-                expectedValue: '64.57530677085668'
+                expectedValue: '64.5753067708567'
             },
             {
                 given: '(sqrt((5/2)*x^10))*-sqrt(2)',
@@ -1242,7 +1242,7 @@ describe('Nerdamer core', function () {
             {
                 given: '74689676.31109099*sqrt(5578547747455547)',
                 expected: '(824947474856/11045)*sqrt(5578547747455547)',
-                expectedValue: '5578547747455546'
+                expectedValue: '5578547747455547'
             }
         ];
 
@@ -1942,8 +1942,8 @@ describe('Nerdamer core', function () {
             },
             {
                 given: 'acoth(3*i+5)',
-                expected: '-0.08992674989623915*i+0.1469466662255296'
-            },
+                expected: '-0.08992674989623915*i+0.14694666622552965'
+            }
         ];
         
         for (var i = 0; i < testCases.length; ++i) {
@@ -2193,7 +2193,7 @@ describe('Nerdamer core', function () {
                 {
                     given: '2*x^2+3*x+y+y^2',
                     expected: '2*x^2+3*x+y+y^2',
-                    expectedValue: '29.309999999999995'
+                    expectedValue: '29.31'
                 },
                 {
                     given: '(y+y^2)^6+y',
@@ -2308,7 +2308,7 @@ describe('Nerdamer core', function () {
                 {
                     given: '(z+z^2)^x*(x+y^2+1)',
                     expected: '(1+x+y^2)*(z+z^2)^x',
-                    expectedValue: '59.97644296353096'
+                    expectedValue: '59.976442963530964'
                 },
                 {
                     given: '(x+1)/(x+1)',
