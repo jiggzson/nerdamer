@@ -231,9 +231,9 @@
         //set the value for the input
         function setInputValue(value) {
             clear();
-            console.log(value)
+            
             if(USE_GUPPY) {
-                guppy.engine.insert_string(value);
+                guppy.import_text(value);
                 guppy.activate();
             }
             else {
@@ -346,6 +346,8 @@
                 }
                 else {
                     try {
+                        //store the user expression so modifications don't get added
+                        var user_expression = expression;
                         //wrap the expression in expand if expand is checked
                         if(expandIsChecked())
                             expression = 'expand('+expression+')';
@@ -361,7 +363,7 @@
                         }
                         LaTeX = evaluated.toTeX(decimal);
                         //add the LaTeX to the panel
-                        addToPanel(LaTeX, expression, output);   
+                        addToPanel(LaTeX, user_expression, output);   
                         clear();
                     }
                     catch(e){

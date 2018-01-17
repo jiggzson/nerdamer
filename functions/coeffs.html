@@ -95,7 +95,7 @@
                     <hr>
                     <h3 class="text-capitalize">coefficients</h3>
                     <div>
-                        Get the coefficients of a polynomial. The coefficients will be placed in the index of their power. So constants are in the 0th place, x^2 would be in the 2nd place, etc. Throws an error if expression is not a polynomial. Holes will be filled with zeroes
+                        Get the coefficients of a polynomial. The coefficients will be placed in the index of their power. So constants are in the 0th place, x^2 would be in the 2nd place, etc. Throws an error if expression is not a polynomial. Holes will be filled with zeroes. Coeffs returns a vector so the methods vecget and vecset can be used to access it's elements.
                     </div>
                     <hr>
                     <h4>Usage: <span class="usage-example">nerdamer("coeffs(polynomial, x)")</span></h4>
@@ -130,7 +130,9 @@ coeffs.each(function(e, i) {
 var poly = nerdamer('a*x^2+b*x+c+x');
 coeffs = nerdamer.coeffs(poly, 'x');
 console.log(coeffs.toString());
-coeffs = nerdamer.coeffs('a*x+b/x^2', 'x');</code></pre>
+coeffs = nerdamer.coeffs('a*x+b/x^2', 'x');
+var p = nerdamer('vecget(coeffs(7*x^2+3*x+11, x), 2)');
+console.log(p.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -191,6 +193,8 @@ var poly = nerdamer('a*x^2+b*x+c+x');
 coeffs = nerdamer.coeffs(poly, 'x');
 oprint(coeffs.toString());
 coeffs = nerdamer.coeffs('a*x+b/x^2', 'x');
+var p = nerdamer('vecget(coeffs(7*x^2+3*x+11, x), 2)');
+oprint(p.toString());
             }
             catch(e) {
                 oprint(e.toString());

@@ -93,12 +93,12 @@
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
                     <h1>acot</h1>
                     <hr>
-                    <h3 class="text-capitalize">hyperbolic arccotangent</h3>
+                    <h3 class="text-capitalize">arccotangent</h3>
                     <div>
-                        Returns the inverse of hyperbolic cot in radians. 
+                        Returns the inverse of cot in radians. 
                     </div>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("acoth(x)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("acot(x)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -116,9 +116,11 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var r = nerdamer('acoth(0)');
+                    <pre><code class="javascript">var r = nerdamer('acot(0)');
 console.log(r.toString());
-var t = nerdamer('acot(e)').evaluate()
+var t = nerdamer('acot(-1)')
+console.log(t.toString());
+t = nerdamer('acot(i-1)').evaluate()
 console.log(t.toString());</code></pre>
                 </div>
                 OUTPUT:
@@ -171,9 +173,11 @@ console.log(t.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var r = nerdamer('acoth(0)');
+                var r = nerdamer('acot(0)');
 oprint(r.toString());
-var t = nerdamer('acot(e)').evaluate()
+var t = nerdamer('acot(-1)')
+oprint(t.toString());
+t = nerdamer('acot(i-1)').evaluate()
 oprint(t.toString());
             }
             catch(e) {

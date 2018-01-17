@@ -136,7 +136,9 @@
                 <div>
                     <pre><code class="javascript">var x = nerdamer('defint(e^(cos(x)), 1, 2)');
 console.log(x.text());
-var y = nerdamer('defint(x^2+2*x+1, 0, 10)');
+var y = nerdamer('defint(x^2+2*x+1,0, 10)');
+console.log(y.text());
+var y = nerdamer('defint(log(2cos(x/2)),-π,π,x)');
 console.log(y.text());</code></pre>
                 </div>
                 OUTPUT:
@@ -191,7 +193,9 @@ console.log(y.text());</code></pre>
             try {
                 var x = nerdamer('defint(e^(cos(x)), 1, 2)');
 oprint(x.text());
-var y = nerdamer('defint(x^2+2*x+1, 0, 10)');
+var y = nerdamer('defint(x^2+2*x+1,0, 10)');
+oprint(y.text());
+var y = nerdamer('defint(log(2cos(x/2)),-π,π,x)');
 oprint(y.text());
             }
             catch(e) {

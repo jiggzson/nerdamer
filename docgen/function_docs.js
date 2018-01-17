@@ -401,7 +401,7 @@ FUNCTIONS = {
             },
             value: {
                 type: 'VARIES',
-                description: "The value to set the setting to."
+                description: "The value to set the setting to. Pass in an object for multiple settings."
             }
         },
         examples: [
@@ -573,6 +573,257 @@ FUNCTIONS = {
         ],
         returns: 'String'
     },
+    Expression__add: {
+        type: 'Expression',
+        usage: 'nerdamer(x).add(y)',
+        full_name: 'add',
+        description: 'Adds two expressions.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('x+1').add('x');",
+            "console.log(x.toString());",
+            "var x = nerdamer(0.1).add(0.2);",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    Expression__subtract: {
+        type: 'Expression',
+        usage: 'nerdamer(x).subtract(y)',
+        full_name: 'subtract',
+        description: 'Subtracts two expressions.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('x+1').subtract('x');",
+            "console.log(x.toString());",
+            "var x = nerdamer(0.1).subtract(0.2);",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    Expression__multiply: {
+        type: 'Expression',
+        usage: 'nerdamer(x).multiply(y)',
+        full_name: 'multiply',
+        description: 'Multiplies two expressions.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var a = nerdamer('x');",
+            "var x = nerdamer('x+1').multiply(a);",
+            "console.log(x.toString());",
+            "var x = nerdamer(0.1).multiply(0.2);",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    Expression__divide: {
+        type: 'Expression',
+        usage: 'nerdamer(x).divide(y)',
+        full_name: 'divide',
+        description: 'Divides one expression by another.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('x^2+x').divide('x').expand();",
+            "console.log(x.toString());",
+            "var x = nerdamer(0.1).multiply(0.2);",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    Expression__pow: {
+        type: 'Expression',
+        usage: 'nerdamer(x).pow(y)',
+        full_name: 'power',
+        description: 'Raises one expression to another.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('x^2+x').pow('x');",
+            "console.log(x.toString());",
+            "var x = nerdamer(5).multiply(2);",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    Expression__eq: {
+        type: 'Expression',
+        usage: 'nerdamer(x).eq(y)',
+        full_name: 'equals',
+        description: 'Checks for equality of two expressions.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sqrt(2)').eq('2^(1/2)');",
+            "console.log(x.toString());",
+            "var x = nerdamer(5).eq(2);",
+            "console.log(x.toString());",
+            "var x = nerdamer('a+1').eq('a+1');",
+            "console.log(x.toString());",
+            "var x = nerdamer('Infinity').eq('Infinity');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Boolean'
+    },
+    Expression__gt: {
+        type: 'Expression',
+        usage: 'nerdamer(x).gt(y)',
+        full_name: 'greater than',
+        description: 'Checks if one expression is greater than other.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sqrt(2)').gt('2^(1/2)');",
+            "console.log(x.toString());",
+            "var x = nerdamer(5).gt(2);",
+            "console.log(x.toString());",
+            "var x = nerdamer('a+1').gt('a+1');",
+            "console.log(x.toString());",
+            "var x = nerdamer('Infinity').gt('Infinity');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Boolean'
+    },
+    Expression__gte: {
+        type: 'Expression',
+        usage: 'nerdamer(x).gte(y)',
+        full_name: 'greater than or equals',
+        description: 'Checks if one expression is greater than, or equal to, other.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sqrt(2)').gte('2^(1/2)');",
+            "console.log(x.toString());",
+            "var x = nerdamer(5).gte(2);",
+            "console.log(x.toString());",
+            "var x = nerdamer('a+1').gte('a+1');",
+            "console.log(x.toString());",
+            "var x = nerdamer('Infinity').gte('Infinity');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Boolean'
+    },
+    Expression__lte: {
+        type: 'Expression',
+        usage: 'nerdamer(x).lte(y)',
+        full_name: 'less than or equals',
+        description: 'Checks if one expression is less than, or equal to, other.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sqrt(2)').lte('2^(1/2)');",
+            "console.log(x.toString());",
+            "var x = nerdamer(5).lte(2);",
+            "console.log(x.toString());",
+            "var x = nerdamer('a+1').lte('a+1');",
+            "console.log(x.toString());",
+            "var x = nerdamer('Infinity').lte('Infinity');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Boolean'
+    },
+    Expression__lt: {
+        type: 'Expression',
+        usage: 'nerdamer(x).lt(y)',
+        full_name: 'less than or equals',
+        description: 'Checks if one expression is less than other.',
+        parameters: {
+            x: {
+                type: 'String',
+                description: "Expression 1"
+            },
+            y: {
+                type: 'String',
+                description: "Expression 2"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sqrt(2)').lt('2^(1/2)');",
+            "console.log(x.toString());",
+            "var x = nerdamer(5).lt(2);",
+            "console.log(x.toString());",
+            "var x = nerdamer('a').lt('a+1');",
+            "console.log(x.toString());",
+            "var x = nerdamer('Infinity').lt('Infinity');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Boolean'
+    },
     Expression__toTeX: {
         type: 'Expression',
         usage: 'nerdamer.toTeX',
@@ -681,6 +932,48 @@ FUNCTIONS = {
             "console.log(variables);"
         ],
         returns: 'String[]'
+    },
+    Expression__denominator: {
+        type: 'Expression',
+        usage: 'nerdamer(expression).denominator()',
+        full_name: 'denominator',
+        description: 'Get a list of the denominator of a polynomial',
+        parameters: {
+            none: {
+                type: '',
+                description: "This function takes no arguments."
+            }
+        },
+        examples: [
+            "var e = nerdamer('(x^2+1)/(x-1)');",
+            "var denominator = e.denominator().toString();",
+            "console.log(denominator);",
+            "e = nerdamer('2/5');",
+            "denominator = e.denominator().toString();",
+            "console.log(denominator);"
+        ],
+        returns: 'Expression'
+    },
+    Expression__numerator: {
+        type: 'Expression',
+        usage: 'nerdamer(expression).numerator()',
+        full_name: 'numerator',
+        description: 'Get a list of the numerator of a polynomial',
+        parameters: {
+            none: {
+                type: '',
+                description: "This function takes no arguments."
+            }
+        },
+        examples: [
+            "var e = nerdamer('(x^2+1)/(x-1)');",
+            "var numerator = e.numerator().toString();",
+            "console.log(numerator);",
+            "e = nerdamer('2/5');",
+            "numerator = e.numerator().toString();",
+            "console.log(numerator);"
+        ],
+        returns: 'Expression'
     },
     cosh: {
         type: 'internal',
@@ -861,6 +1154,27 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+    sech: {
+        type: 'internal',
+        usage: 'sech(x)',
+        full_name: 'hyperbolic secant',
+        description: 'This function will return the hyperbolic secant',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('sech(pi)').evaluate();", 
+            "console.log(r.toString());",
+            "var t = nerdamer('sech(x)')", 
+            "console.log(t.toString());",
+            "var u = nerdamer('sech(pi/4)').evaluate()", 
+            "console.log(u.toString());"
+        ],
+        returns: 'Expression'
+    },
     csc: {
         type: 'internal',
         usage: 'csc(x)',
@@ -889,6 +1203,29 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+    csch: {
+        type: 'internal',
+        usage: 'csch(x)',
+        full_name: 'hyperbolic cosecant',
+        description: 'Returns the hyperbolic cosecant of a number',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('csch(pi/2)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('csch(x)')", 
+            "console.log(t.toString());",
+            "var u = nerdamer('csch(pi/4)')", 
+            "console.log(u.toString());",
+            "var v = nerdamer('csch(pi)')",
+            "console.log(v);"
+        ],
+        returns: 'Expression'
+    },
     cot: {
         type: 'internal',
         usage: 'cot(x)',
@@ -910,6 +1247,32 @@ FUNCTIONS = {
             "var u = nerdamer('cot(pi/4)')", 
             "console.log(u.toString());",
             "var v = nerdamer('cot(pi)')",
+            "console.log(v.toString());"
+        ],
+        errors: [
+            "Throws exception for multiples of pi"
+        ],
+        returns: 'Expression'
+    },
+    coth: {
+        type: 'internal',
+        usage: 'coth(x)',
+        full_name: 'hyperbolic cotangent',
+        description: 'Returns the hyperbolic cotangent of a number',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('coth(pi/2)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('coth(x)')", 
+            "console.log(t.toString());",
+            "var u = nerdamer('coth(pi/4)')", 
+            "console.log(u.toString());",
+            "var v = nerdamer('coth(pi)')",
             "console.log(v.toString());"
         ],
         errors: [
@@ -969,7 +1332,6 @@ FUNCTIONS = {
         examples: [
             "var r = nerdamer('acosh(0)');", 
             "console.log(r.text());",
-            "//TODO imaginary numbers for acosh",
             "var t = nerdamer('acosh(-1)').evaluate()", 
             "console.log(t.text());"
         ],
@@ -1013,9 +1375,30 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+    asech: {
+        type: 'internal',
+        usage: 'asech(x)',
+        full_name: 'inverse hyperbolic secant',
+        description: 'Returns the inverse of sech. ',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('asech(11)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('asech(-21)')", 
+            "console.log(t.toString());",
+            "t = nerdamer('asech(i-21)').evaluate()", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
     acsc: {
         type: 'internal',
-        usage: 'asec(x)',
+        usage: 'acsc(x)',
         full_name: 'arccosecant',
         description: 'Returns the inverse of csc in radians. ',
         parameters: {
@@ -1028,6 +1411,27 @@ FUNCTIONS = {
             "var r = nerdamer('acsc(81)');", 
             "console.log(r.toString());",
             "var t = nerdamer('acsc(1)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    acsch: {
+        type: 'internal',
+        usage: 'acsch(x)',
+        full_name: 'inverse hyperbolic cosecant',
+        description: 'Returns the inverse of csch. ',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('acsch(81)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('acsch(1)')", 
+            "console.log(t.toString());",
+            "t = nerdamer('acsch(i+1)').evaluate()", 
             "console.log(t.toString());"
         ],
         returns: 'Expression'
@@ -1047,6 +1451,27 @@ FUNCTIONS = {
             "var r = nerdamer('acot(0)');", 
             "console.log(r.toString());",
             "var t = nerdamer('acot(-1)')", 
+            "console.log(t.toString());",
+            "t = nerdamer('acot(i-1)').evaluate()", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    acoth: {
+        type: 'internal',
+        usage: 'acoth(x)',
+        full_name: 'inverse hyperbolic cotangent',
+        description: 'Returns the inverse of coth. ',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('acoth(0.1)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('acoth(-i+8)').evaluate()", 
             "console.log(t.toString());"
         ],
         returns: 'Expression'
@@ -1070,25 +1495,6 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
-    acot: {
-        type: 'internal',
-        usage: 'acoth(x)',
-        full_name: 'hyperbolic arccotangent',
-        description: 'Returns the inverse of hyperbolic cot in radians. ',
-        parameters: {
-            x: {
-                type: 'expression',
-                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
-            }
-        },
-        examples: [
-            "var r = nerdamer('acoth(0)');", 
-            "console.log(r.toString());",
-            "var t = nerdamer('acot(e)').evaluate()", 
-            "console.log(t.toString());"
-        ],
-        returns: 'Expression'
-    },
     atan: {
         type: 'internal',
         usage: 'atan(x)',
@@ -1104,6 +1510,25 @@ FUNCTIONS = {
             "var r = nerdamer('atan(0)');", 
             "console.log(r.text());",
             "var t = nerdamer('atan(-1)').evaluate()", 
+            "console.log(t.text());"
+        ],
+        returns: 'Expression'
+    },
+    atan2: {
+        type: 'internal',
+        usage: 'atan2(x, y)',
+        full_name: 'arctangent 2',
+        description: 'Returns the four-quadrant inverse of tangent.',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('atan2(0, 1)').evaluate();", 
+            "console.log(r.text());",
+            "var t = nerdamer('atan2(-1, 2)').evaluate()", 
             "console.log(t.text());"
         ],
         returns: 'Expression'
@@ -1344,25 +1769,120 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
-//    arg: {
-//        type: 'internal',
-//        usage: 'arg(x)',
-//        full_name: 'argument',
-//        description: 'Returns the argument of a complex number. ',
-//        parameters: {
-//            x: {
-//                type: 'expression',
-//                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
-//            }
-//        },
-//        examples: [
-//            "var r = nerdamer('acsc(81)');", 
-//            "console.log(r.toString());",
-//            "var t = nerdamer('acsc(1)')", 
-//            "console.log(t.toString());"
-//        ],
-//        returns: 'Expression'
-//    },
+    arg: {
+        type: 'internal',
+        usage: 'arg(z)',
+        full_name: 'argument',
+        description: 'Returns the argument of a complex number. ',
+        parameters: {
+            z: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('arg(81)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('arg(5+i)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    conjugate: {
+        type: 'internal',
+        usage: 'conjugate(z)',
+        full_name: 'conjugate',
+        description: 'Returns the conjugate of a complex number. ',
+        parameters: {
+            z: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('conjugate(81)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('conjugate(5+i)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    imagpart: {
+        type: 'internal',
+        usage: 'imagpart(z)',
+        full_name: 'imaginary part',
+        description: 'Returns the imaginary of a complex number. ',
+        parameters: {
+            z: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('imagpart(81+5*b*i)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('imagpart(5+i)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    realpart: {
+        type: 'internal',
+        usage: 'realpart(z)',
+        full_name: 'realpart part',
+        description: 'Returns the realpart of a complex number. ',
+        parameters: {
+            z: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('realpart(b*x+x*c*i)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('realpart(5+i)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    polarform: {
+        type: 'internal',
+        usage: 'polarform(z)',
+        full_name: 'polar form',
+        description: 'converts imaginary number from rectangular form to polar form.',
+        parameters: {
+            z: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('polarform(b*x+x*c*i)');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('polarform(5+i)')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
+    rectform: {
+        type: 'internal',
+        usage: 'rectform(z)',
+        full_name: 'rectangular form',
+        description: 'converts imaginary number from polar form to rectangular form. [Under development]',
+        parameters: {
+            z: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var r = nerdamer('rectform(e^(atan(1/5)*i)*sqrt(26))');", 
+            "console.log(r.toString());",
+            "var t = nerdamer('rectform(e^(atan(-1/26)*i)*sqrt(677))')", 
+            "console.log(t.toString());"
+        ],
+        returns: 'Expression'
+    },
     Ci: {
         type: 'internal',
         usage: 'Ci(number)',
@@ -1567,6 +2087,31 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+    nthroot: {
+        type: 'internal',
+        usage: 'nthroot(x, y)',
+        full_name: 'nth root',
+        description: 'Calculates the nth root of a number.',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            },
+            y: {
+                type: 'expression|integer',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('nthroot(125, 3)');",
+            "console.log(x.toString());",
+            "x = nerdamer('nthroot(-27, 3)');",
+            "console.log(x.toString());",
+            "x = nerdamer('nthroot(a, 2)');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
     log: {
         type: 'internal',
         usage: 'log(x)',
@@ -1625,6 +2170,48 @@ FUNCTIONS = {
             "console.log(x.toString());"
         ],
         returns: 'Expression'
+    },
+    sort: {
+        type: 'internal',
+        usage: 'sort(x)',
+        full_name: 'sort',
+        description: 'Returns the sorted coefficients of a polynomial. If given a vector it will be sorted alphabetically.',
+        parameters: {
+            x: {
+                type: 'expression/polynomial',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('sort((a*x^2+9*x-1))');",
+            "console.log(x.toString());",
+            "var y = nerdamer('sort([b, d, 1])');",
+            "console.log(y.toString());"
+        ],
+        returns: 'Vector'
+    },
+    line: {
+        type: 'internal',
+        usage: 'line(p1, p2)',
+        full_name: 'sort',
+        description: 'Computes the equation of a straight line given two points',
+        parameters: {
+            p1: {
+                type: 'vector',
+                description: "A vector in form of [x, y]"
+            },
+            p2: {
+                type: 'vector',
+                description: "A vector in form of [x, y]"
+            }
+        },
+        examples: [
+            "var x = nerdamer('line([-1,-4], [3,11])');",
+            "console.log(x.toString());",
+            "var y = nerdamer('line([1,2], [3,4])');",
+            "console.log(y.toString());"
+        ],
+        returns: 'Vector'
     },
     abs: {
         type: 'internal',
@@ -1889,6 +2476,102 @@ FUNCTIONS = {
         ],
         returns: 'Matrix'
     },
+    matgetcol: {
+        type: 'internal',
+        usage: 'matgetcol(M, i)',
+        full_name: 'matrix get column',
+        description: 'Gets a column of a matrix. Returns a new vector.',
+        parameters: {
+            M: {
+                type: 'expression',
+                description: "a matrix from which the column is being retrieved."
+            },
+            i: {
+                type: 'expression',
+                description: "the zero based column index"
+            }
+        },
+        examples: [
+            "nerdamer.setVar('M', 'matrix([x,y],[a,b])');",
+            "var x = nerdamer('matgetcol(M, 0)');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Matrix'
+    },
+    matgetrow: {
+        type: 'internal',
+        usage: 'matgetrow(M, i)',
+        full_name: 'matrix get row',
+        description: 'Gets a row of a matrix. Returns a new vector.',
+        parameters: {
+            M: {
+                type: 'expression',
+                description: "a matrix from which the row is being retrieved."
+            },
+            i: {
+                type: 'expression',
+                description: "the zero based row index"
+            }
+        },
+        examples: [
+            "nerdamer.setVar('M', 'matrix([x,y],[a,b])');",
+            "var x = nerdamer('matgetrowl(M, 0)');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Matrix'
+    },
+    matsetcol: {
+        type: 'internal',
+        usage: 'matsetcol(M, i, col)',
+        full_name: 'matrix set column',
+        description: 'Sets a column of a matrix. Returns a new matrix.',
+        parameters: {
+            M: {
+                type: 'expression',
+                description: "a matrix for which the column is being set."
+            },
+            i: {
+                type: 'expression',
+                description: "the zero based column index"
+            },
+            col: {
+                type: 'vector',
+                description: 'the vector representation of the column'
+            }
+        },
+        examples: [
+            "nerdamer.setVar('M', 'matrix([x,y],[a,b])');",
+            "var M2 = nerdamer('matsetcol(M, 0, [[1],[2]])');",
+            "console.log(M2.toString());"
+        ],
+        returns: 'Matrix'
+    },
+    matsetrow: {
+        type: 'internal',
+        usage: 'matsetrow(M, i, row)',
+        full_name: 'matrix set row',
+        description: 'Sets a row of a matrix. Returns a new matrix.',
+        parameters: {
+            M: {
+                type: 'expression',
+                description: "a matrix for which the row is being set."
+            },
+            i: {
+                type: 'expression',
+                description: "the zero based row index"
+            },
+            row: {
+                type: 'vector',
+                description: 'the vector representation of the row'
+            }
+        },
+        examples: [
+            "nerdamer.setVar('M', 'matrix([x,y],[a,b])');",
+            "var M2 = nerdamer('matsetrow(M, 0, [1, 2])');",
+            "console.log(M2.toString());"
+        ],
+        returns: 'Matrix'
+    },
     transpose: {
         type: 'internal',
         usage: 'transpose(M)',
@@ -1952,6 +2635,25 @@ FUNCTIONS = {
         ],
         returns: 'Matrix'
     },
+    deg: {
+        type: 'internal',
+        usage: 'deg(p)',
+        full_name: 'sort',
+        description: 'Returns the degree of the polynomial. Specify the variable to use in multivariate polynomials.',
+        parameters: {
+            p: {
+                type: 'Expression/polynomial',
+                description: "A polynomial"
+            }
+        },
+        examples: [
+            "var x = nerdamer('deg(x^2+2*x+1)');",
+            "console.log(x.toString());",
+            "var y = nerdamer('deg(a*x^7+2*x+1,x)');",
+            "console.log(y.toString());"
+        ],
+        returns: 'Expression/Integer'
+    },
     Algebra__roots: {
         type: 'internal',
         usage: 'roots(x)',
@@ -1977,7 +2679,8 @@ FUNCTIONS = {
         full_name: 'coefficients',
         description: 'Get the coefficients of a polynomial. The coefficients will be placed in the index of their power.'+
                 ' So constants are in the 0th place, x^2 would be in the 2nd place, etc. Throws an error if expression is'+
-                ' not a polynomial. Holes will be filled with zeroes',
+                ' not a polynomial. Holes will be filled with zeroes. Coeffs returns a vector so the methods vecget and vecset '+
+                'can be used to access it\'s elements.',
         parameters: {
             polynomial: {
                 type: 'expression',
@@ -1997,7 +2700,55 @@ FUNCTIONS = {
             "var poly = nerdamer('a*x^2+b*x+c+x');",
             "coeffs = nerdamer.coeffs(poly, 'x');",
             "console.log(coeffs.toString());",
-            "coeffs = nerdamer.coeffs('a*x+b/x^2', 'x');"
+            "coeffs = nerdamer.coeffs('a*x+b/x^2', 'x');",
+            "var p = nerdamer('vecget(coeffs(7*x^2+3*x+11, x), 2)');",
+            "console.log(p.toString());"
+        ],
+        returns: 'Vector'
+    },
+    Algebra__sqcomp: {
+        type: 'internal',
+        usage: 'sqcomp(polynomial, x)',
+        full_name: 'complete the square',
+        description: 'Attempts to rewrite to polynomial to complete the square.',
+        parameters: {
+            polynomial: {
+                type: 'expression',
+                description: "The polynomial for which is to be rewritten."
+            },
+            x: {
+                type: 'expression',
+                description: "The variable to use. Will automatically assume the variable for univariate polynomials."
+            }
+        },
+        examples: [
+            "var x = nerdamer('sqcomp(9*x^2-18*x+17)');",
+            "console.log(x.toString());",
+            "var y = nerdamer('sqcomp(a*x^2+b*x-11*c, x)');",
+            "console.log(y.toString());"
+        ],
+        returns: 'Vector'
+    },
+    Algebra__partfrac: {
+        type: 'internal',
+        usage: 'partfrac(expression, x)',
+        full_name: 'partial fractions',
+        description: 'Performs partial fraction decomposition',
+        parameters: {
+            expression: {
+                type: 'expression',
+                description: "The expression for which the partrial fractions are to be found."
+            },
+            x: {
+                type: 'expression',
+                description: "The variable for which the partial fractions are to be found."
+            }
+        },
+        examples: [
+            "var x = nerdamer('partfrac((x^2+a)/(x*(x-1)^3), x)');",
+            "console.log(x.toString())",
+            "var y = nerdamer('partfrac(1/(x^6+x^5),x)');",
+            "console.log(y.toString());"
         ],
         returns: 'Vector'
     },
@@ -2234,7 +2985,9 @@ FUNCTIONS = {
         examples: [
             "var x = nerdamer('defint(e^(cos(x)), 1, 2)');",
             "console.log(x.text());",
-            "var y = nerdamer('defint(x^2+2*x+1, 0, 10)');",
+            "var y = nerdamer('defint(x^2+2*x+1,0, 10)');",
+            "console.log(y.text());",
+            "var y = nerdamer('defint(log(2cos(x/2)),-π,π,x)');",
             "console.log(y.text());"
         ],
         returns: 'Expression'
@@ -2267,6 +3020,34 @@ FUNCTIONS = {
             "console.log(x.toString())",
             "x = nerdamer.laplace('cos(w*t)*t', 't', 'x');",
             "console.log(x.toString())"
+        ],
+        returns: 'Expression'
+    },
+    Extra__ilt: {
+        type: 'internal',
+        usage: 'ilt(expression, s, t)',
+        full_name: 'inverse Laplace',
+        description: 'Attempts to calculate the inverse Laplace transform of an expression. Currently computes transforms of most common expressions.'+
+                ' Throws and error if no transform could be calculated. [under development]',
+        parameters: {
+            expression: {
+                type: 'expression',
+                description: "The expression to be transformed"
+            },
+            s: {
+                type: 'variable',
+                description: 'The transformation variable'
+            },
+            t: {
+                type: 'variable',
+                description: "The time variable"
+            }
+        },
+        examples: [
+            "var x = nerdamer('ilt(factorial(6)*s^(-7),s, t)').evaluate();",
+            "console.log(x.toString());",
+            "var y = nerdamer('ilt((1+s^2)^(-1)*s, s, t)').evaluate();",
+            "console.log(y.toString());",
         ],
         returns: 'Expression'
     },
