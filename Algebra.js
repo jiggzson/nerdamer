@@ -844,6 +844,19 @@ if((typeof module) !== 'undefined') {
         var sum = 0, l = arr.length;
         for(var i=0; i<l; i++) sum += arr[i];
         return sum;
+    };    
+    /**
+     * Determines if 2 arrays have intersecting elements.
+     * @param {Array} a
+     * @param {Array} b
+     * @returns {Boolean} True if a and b have intersecting elements.
+     */
+    core.Utils.haveIntersection = function(a, b) {
+        var t;
+        if (b.length > a.length) t = b, b = a, a = t; // indexOf to loop over shorter
+        return a.some(function (e) {
+            return b.indexOf(e) > -1;
+        });
     };
     /**
      * Substitutes out functions as variables so they can be used in regular algorithms
@@ -2562,46 +2575,100 @@ if((typeof module) !== 'undefined') {
             else if(g === S && e.power === 1) status = true;
             return status;
         },
-        gcd: function() { 
-            var args = [].slice.call(arguments),
-                b = args.pop(),
-                a = args.pop();
-            //keep calling gcd on remainder because gcd(a, b, c) = gcd(gcd(a,b), c)
-            if(args.length > 0) {
-                args.push(__.gcd(a, b));
-                return __.gcd.apply(__, args);
-            }
-            if(a.group === S && b.group === S && a.value !== b.value
-                    || a.group === EX 
-                    || b.group === EX)
-                return _.symfunction('gcd', arguments);
+        gcd: function() {
+            var args;
+            if(arguments.length === 1 && arguments[0] instanceof core.Vector)
+                args = arguments[0].elements;
+            else args = core.Utils.arguments2Array(arguments);
             
-            if(a.group === CB || b.group === CB) {
-                var q = _.divide(a.clone(), b.clone()); //get the quotient
-                var t = _.multiply(b.clone(), q.getDenom());//multiply by the denominator
-                //if they have a common factor then the result will not equal one 
-                if(!t.equals(1))
-                    return t;
+            //short-circuit early
+            if (args.length == 0) return new Symbol(1);
+            else if (args.length == 1) return args[0];
+            
+            var appeared = [], evaluate = false;
+            for(var i = 0; i < args.length; i++) {
+                if(args[i].group === FN && args[i].fname === 'gcd')
+                {
+                    //compress gcd(a,gcd(b,c)) into gcd(a,b,c)
+                    args = args.concat(arguments[i].args);
+                    //do not keep gcd in args
+                    args.splice(i, 1);
+                }
+                else
+                {
+                    //Look if there are any common variables such that
+                    //gcd(a,b) => gcd(a,b); gcd(a,a) => a
+                    var vars = variables(args[i]);
+                    if(core.Utils.haveIntersection(vars, appeared))
+                    {
+                        //Ok, there are common variables
+                        evaluate = true;
+                        break;
+                    }
+                    else appeared = appeared.concat(vars);
+                }
             }
+            
+            //appeared.length is 0 when all arguments are group N
+            if (evaluate || appeared.length === 0)
+            {
+                //TODO: distribute exponent so that (a^-1*b^-1)^-1 => a*b
+                if(args.every(function(symbol){return symbol.getDenom().equals(1)}))
+                {
+                    var aggregate = args[0];
+                    for(var i = 1; i < args.length; i++) aggregate = __.gcd_(args[i], aggregate);
+                    return aggregate;
+                }
+                else
+                {
+                    //gcd_ cannot handle denominators correctly
+                    return _.divide(__.gcd.apply(null, args.map(function(symbol){return symbol.getNum()})),
+                                    __.lcm.apply(null, args.map(function(symbol){return symbol.getDenom()})));
+                }
+            }
+            else return _.symfunction('gcd', args);
+        },
+        gcd_: function(a, b) { 
             if(a.group === FN || a.group === P)
                 a = core.Utils.block('PARSE2NUMBER', function() {
                    return _.parse(a); 
                 });
+		
             if(b.group === FN)
                 b = core.Utils.block('PARSE2NUMBER', function() {
                    return _.parse(b); 
                 });
+		
             if(a.isConstant() && b.isConstant()) { 
                 // return core.Math2.QGCD(new Frac(+a), new Frac(+b));
                 return new Symbol(core.Math2.QGCD(new Frac(+a), new Frac(+b)));
             }
+		
             var den = _.multiply(a.getDenom() || new Symbol(1), b.getDenom() || new Symbol(1)).invert();
             a = _.multiply(a.clone(), den.clone());
             b = _.multiply(b.clone(), den.clone());
+		
             //feels counter intuitive but it works. Issue #123 (nerdamer("gcd(x+y,(x+y)^2)"))
             a = _.expand(a);
             b = _.expand(b);
+		
+            if(a.group === CB || b.group === CB) {
+                var q = _.divide(a.clone(), b.clone()); //get the quotient
+                var t = _.multiply(b.clone(), q.getDenom().invert());//multiply by the denominator
+                //if they have a common factor then the result will not equal one 
+                if(!t.equals(1))
+                    return t;
+            }
             
+            //just take the gcd of each component when either of them is in group EX
+            if(a.group === EX || b.group === EX)
+            {
+                var gcd_m = new Symbol(core.Math2.GCD(a.multiplier, b.multiplier));
+                var gcd_v = __.gcd_(a.value === CONST_HASH ? new Symbol(1) : _.parse(a.value), b.value === CONST_HASH ? new Symbol(1) : _.parse(b.value));
+                var gcd_p = __.gcd_(_.parse(a.power), _.parse(b.power));
+                return _.multiply(gcd_m, _.pow(gcd_v, gcd_p));
+            }
+            		  
             if(a.length < b.length) { //swap'm
                 var t = a; a = b; b = t;
             }
@@ -2644,8 +2711,54 @@ if((typeof module) !== 'undefined') {
                 return _.divide(a, den);
             }
         },
-        lcm: function(a, b) {
-            return _.divide(_.multiply(a.clone(), b.clone()), __.gcd(a.clone(), b.clone()));
+        lcm: function() { 
+            //https://math.stackexchange.com/a/319310
+            //generalization of the 2-variable formula of lcm
+            
+            var args;
+            if(arguments.length === 1)
+                if (arguments[0] instanceof core.Vector) args = arguments[0].elements;
+                else _.error('lcm expects either 1 vector or 2 or more arguments');
+            else args = core.Utils.arguments2Array(arguments);
+
+            //product of all arguments
+            //start with new Symbol(1) so that prev.clone() which makes unnessesary clones can be avoided
+            var numer = args.reduce(function(prev,curr){return _.multiply(prev, curr.clone())}, new Symbol(1));
+            
+            //gcd of complementary terms
+            var denom_args = 
+                //https://stackoverflow.com/a/18223072
+                //take all complementary terms, e.g.
+                //[a,b,c] => [a*b, b*c, a*c]
+                //[a,b,c,d] => [a*b*c, a*b*d, a*c*d, b*c*d]
+                (function(input, size) {
+                    var results = [], result, mask, i, total = Math.pow(2, input.length);
+                    for (mask = size; mask < total; mask++) {
+                        result = [];
+                        i = input.length - 1;
+
+                        do {
+                            if ((mask & (1 << i)) !== 0) {
+                                result.push(input[i]);
+                            }
+                        } while (i--);
+
+                        if (result.length == size) {
+                        results.push(result);
+                    }
+                }
+                return results; 
+                //start with new Symbol(1) so that prev.clone() which makes unnessesary clones can be avoided
+            })(arguments,arguments.length-1).map(function(x){return x.reduce(function(prev,curr){return _.multiply(prev,curr.clone())},new Symbol(1))});
+             
+            //don't eat the gcd term if all arguments are symbols
+            if(args.every(function(x){return core.Utils.isVariableSymbol(x)}))
+                var denom = _.symfunction('gcd', core.Utils.arrayUnique(denom_args));
+            else
+                var denom = __.gcd.apply(null, denom_args);
+            
+            //divide product of all arguments by gcd of complementary terms
+            return _.divide(numer, denom);
         },
         /**
          * Divides one expression by another
@@ -3248,22 +3361,6 @@ if((typeof module) !== 'undefined') {
         };
     };
     
-
-   nerdamer.useAlgebraDiv = function() {
-        var divide = __.divideFn = _.divide;
-        var calls = 0; //keep track of how many calls were made
-        _.divide = function(a, b) {
-            calls++;
-            var ans;
-            if(calls === 1) //check if this is the first call. If it is use algebra divide
-                ans = core.Algebra.divide(a, b);
-            else //otherwise use parser divide
-                ans = divide(a, b);
-            calls = 0; //reset the number of calls back to none
-            return ans;
-        };
-    };
-    
     nerdamer.useParserDiv = function() {
         if(__.divideFn)
             _.divide = __.divideFn;
@@ -3280,8 +3377,14 @@ if((typeof module) !== 'undefined') {
         {
             name: 'gcd',
             visible: true,
-            numargs: -1,
+            numargs: [1, ],
             build: function() { return __.gcd; }
+        },
+        {
+            name: 'lcm',
+            visible: true,
+            numargs: [1, ],
+            build: function() { return __.lcm; }
         },
         {
             name: 'roots',

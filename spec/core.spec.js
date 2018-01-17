@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 var nerdamer = require('../nerdamer.core.js');
 
