@@ -24,6 +24,7 @@ if((typeof module) !== 'undefined') {
         CB = core.groups.CB,
         FN = core.groups.FN;
     core.Settings.Laplace_integration_depth = 40;
+
     
     Symbol.prototype.findFunction = function(fname) {
         //this is what we're looking for

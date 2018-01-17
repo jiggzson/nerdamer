@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Author : Martin Donk
  * Website : http://www.nerdamer.com
  * Email : martin.r.donk@gmail.com
@@ -339,12 +339,21 @@ var nerdamer = (function(imports) {
         },
         
         /**
+         * Checks to see if a symbol is in group N
          * @param {Symbol} symbol
          */
         isNumericSymbol = Utils.isNumericSymbol = function(symbol) {
             return symbol.group === N;
         },
 
+        /**
+         * Checks to see if a symbol is a variable with no multiplier nor power
+         * @param {Symbol} symbol
+         */
+        isVariableSymbol = Utils.isVariableSymbol = function(symbol) {
+            return symbol.group === S && symbol.multiplier.equals(1) && symbol.power.equals(1);
+        },
+        
         /**
          * Checks to see if the object provided is an Array
          * @param {Object} arr
@@ -720,7 +729,7 @@ var nerdamer = (function(imports) {
         },
 
         /**
-         * Converts function arguments to an array. I had hopes for this function :(
+         * Converts function arguments to an array. Now used by gcd and lcm in Algebra.js :)
          * @param {Object} obj - arguments obj
          */
         arguments2Array = Utils.arguments2Array = function(obj) {
@@ -5368,17 +5377,21 @@ var nerdamer = (function(imports) {
         }
         
         function sort(symbol, opt) {
-            opt = opt ? opt.toString() : 'asc';
+            opt = opt ? opt.toString() : 'asc'; 
             var getval = function(e) {
+                if(e.group === N)
+                    return e.multiplier;
                 if(e.group === FN) {
                     if(e.fname === '')
                         return getval(e.args[0]);
                     return e.fname;
                 }
+                if(e.group === S)
+                    return e.power;
                 
                 return e.value;
             };
-            var symbols = symbol.collectSymbols();
+            var symbols = isVector(symbol) ? symbol.elements : symbol.collectSymbols();
             return new Vector(symbols.sort(function(a, b) {
                 var aval = getval(a),
                     bval = getval(b);

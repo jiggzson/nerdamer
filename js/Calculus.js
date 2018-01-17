@@ -1,4 +1,4 @@
-/*
+﻿/*
 * Author : Martin Donk
 * Website : http://www.nerdamer.com
 * Email : martin.r.donk@gmail.com
