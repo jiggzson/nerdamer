@@ -63,10 +63,11 @@ var nerdamer = (function(imports) {
             POWER_OPERATOR: '^',
             //The variable validation regex
             //VALIDATION_REGEX: /^[a-z_][a-z\d\_]*$/i
-            VALIDATION_REGEX: /^[a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ][a-z\d\_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ]*$/i,
+            VALIDATION_REGEX: /^[a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ∞][0-9a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ]*$/i,
             //Aliases
             ALIASES: {
-                'π': 'pi'
+                'π': 'pi',
+                '∞': 'Infinity'
             },
             POSITIVE_MULTIPLIERS: false,
             //Cached items
