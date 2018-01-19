@@ -2100,8 +2100,7 @@ var nerdamer = (function(imports) {
             return new Symbol(obj); 
         };
         //define numeric symbols
-        if(!isNaN(obj) && !isInfinity && isFinite(obj)) { 
-            
+        if(/^(\-?\+?\d+)\.?\d*e?\-?\+?\d*/i.test(obj)) { 
             this.group = N;
             this.value = CONST_HASH; 
             this.multiplier = new Frac(obj);
@@ -2471,10 +2470,29 @@ var nerdamer = (function(imports) {
                 });
             }
             else if(this.isComposite()) {
-                retval = new Symbol(0);
-                this.each(function(x) { 
-                    retval = _.add(retval, x.sub(a, b));
-                });
+                if(a.isComposite() && this.isComposite() && this.isLinear() && a.isLinear()) { 
+                    var find = function(stack, needle) {
+                        for(var x in stack.symbols) {
+                            var sym = stack.symbols[x];
+                            //if the symbol equals the needle or it's within the sub-symbols we're done
+                            if(sym.isComposite() && find(sym, needle) || sym.equals(needle))
+                                return true;
+                        }
+                        return false;
+                    };
+                    //go fish
+                    for(var x in a.symbols) {
+                        if(!find(this, a.symbols[x]))
+                            return this.clone();
+                    }
+                    retval = _.add(_.subtract(this.clone(), a), b);
+                }
+                else {
+                    retval = new Symbol(0);
+                    this.each(function(x) { 
+                        retval = _.add(retval, x.sub(a, b));
+                    });
+                }
             }
             else if(this.group === EX) {
                 // the parsed value could be a function so parse and sub
