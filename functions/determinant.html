@@ -91,36 +91,24 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>ilt</h1>
+                    <h1>determinant</h1>
                     <hr>
-                    <h3 class="text-capitalize">inverse Laplace <span style="color: red">(Under development)</span></h3>
+                    <h3 class="text-capitalize">Matrix determinant</h3>
                     <div>
-                        Attempts to calculate the inverse Laplace transform of an expression. Currently computes transforms of most common expressions. Throws and error if no transform could be calculated. This is still being developed so please report any issues.
+                        Computes the determinant of a matrix
                     </div>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("ilt(expression, s, t)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("determinant(M)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
                         <table class="table table-responsive table-condensed">
                             <tr>
     <td>
-        <span class="parameter-type">expression </span>
-        <span class="parameter-name">expression </span>
+        <span class="parameter-type">Matrix </span>
+        <span class="parameter-name">M </span>
     </td>
-    <td><span class="parameter-description">The expression to be transformed</span></td>
-</tr><tr>
-    <td>
-        <span class="parameter-type">variable </span>
-        <span class="parameter-name">s </span>
-    </td>
-    <td><span class="parameter-description">The transformation variable</span></td>
-</tr><tr>
-    <td>
-        <span class="parameter-type">variable </span>
-        <span class="parameter-name">t </span>
-    </td>
-    <td><span class="parameter-description">The time variable</span></td>
+    <td><span class="parameter-description">The matrix for which the determinant is to be calculated.</span></td>
 </tr>
                         </table>
                     </div>
@@ -128,10 +116,9 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('ilt(factorial(6)*s^(-7),s, t)').evaluate();
-console.log(x.toString());
-var y = nerdamer('ilt((1+s^2)^(-1)*s, s, t)').evaluate();
-console.log(y.toString());</code></pre>
+                    <pre><code class="javascript">nerdamer.setVar('M', 'matrix([4,5],[1,7])');
+x = nerdamer('determinant(M)');
+console.log(x.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -183,10 +170,9 @@ console.log(y.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('ilt(factorial(6)*s^(-7),s, t)').evaluate();
+                nerdamer.setVar('M', 'matrix([4,5],[1,7])');
+x = nerdamer('determinant(M)');
 oprint(x.toString());
-var y = nerdamer('ilt((1+s^2)^(-1)*s, s, t)').evaluate();
-oprint(y.toString());
             }
             catch(e) {
                 oprint(e.toString());

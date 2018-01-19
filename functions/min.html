@@ -119,6 +119,10 @@
                     <pre><code class="javascript">var x = nerdamer('min(5, 2, 11)').evaluate();
 console.log(x.toString());
 x = nerdamer('min(x*x, y, z)');
+console.log(x.toString());
+//Instruct nerdamer to return symbolic min and max
+nerdamer.set('SYMBOLIC_MIN_MAX', true);
+x = nerdamer('min(sqrt(2), pi)');
 console.log(x.toString());</code></pre>
                 </div>
                 OUTPUT:
@@ -174,6 +178,10 @@ console.log(x.toString());</code></pre>
                 var x = nerdamer('min(5, 2, 11)').evaluate();
 oprint(x.toString());
 x = nerdamer('min(x*x, y, z)');
+oprint(x.toString());
+//Instruct nerdamer to return symbolic min and max
+nerdamer.set('SYMBOLIC_MIN_MAX', true);
+x = nerdamer('min(sqrt(2), pi)');
 oprint(x.toString());
             }
             catch(e) {

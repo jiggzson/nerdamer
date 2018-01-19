@@ -371,6 +371,16 @@ FUNCTIONS = {
                                 <td>Forces evaluation to a number for functions and variables</td>\n\
                             </tr>\n\
                             <tr>\n\
+                                <td>SOLVE_RADIUS</td>\n\
+                                <td>1000</td>\n\
+                                <td>The distance around a suspected root within which nerdamer searches for a root numerically.</td>\n\
+                            </tr>\n\
+                            <tr>\n\
+                                <td>ROOTS_PER_SIDE</td>\n\
+                                <td>5</td>\n\
+                                <td>When numerically searching for roots nerdamer stops if either this number is satisfied or the distance is exceeded.</td>\n\
+                            </tr>\n\
+                            <tr>\n\
                                 <td>SYMBOLIC_MIN_MAX</td>\n\
                                 <td>false</td>\n\
                                 <td>The library returns a symbolic min or max e.g. <strong>min(sqrt(2), sqrt(3))</strong> returns <strong>sqrt(2)</strong></td>\n\
@@ -1565,6 +1575,10 @@ FUNCTIONS = {
             "var x = nerdamer('min(5, 2, 11)').evaluate();",
             "console.log(x.toString());",
             "x = nerdamer('min(x*x, y, z)');",
+            "console.log(x.toString());",
+            "//Instruct nerdamer to return symbolic min and max",
+            "nerdamer.set('SYMBOLIC_MIN_MAX', true);",
+            "x = nerdamer('min(sqrt(2), pi)');",
             "console.log(x.toString());"
         ],
         returns: 'Expression'
@@ -1584,6 +1598,10 @@ FUNCTIONS = {
             "var x = nerdamer('max(5, 2, 11)').evaluate();",
             "console.log(x.toString());",
             "x = nerdamer('max(x*x, y, z)');",
+            "console.log(x.toString());",
+            "//Instruct nerdamer to return symbolic min and max",
+            "nerdamer.set('SYMBOLIC_MIN_MAX', true);",
+            "x = nerdamer('max(sqrt(2), pi)');",
             "console.log(x.toString());"
         ],
         returns: 'Expression'
@@ -1867,8 +1885,8 @@ FUNCTIONS = {
     rectform: {
         type: 'internal',
         usage: 'rectform(z)',
-        full_name: 'rectangular form',
-        description: 'converts imaginary number from polar form to rectangular form. [Under development]',
+        full_name: 'rectangular form  <span style="color: red">(Under development)</span>',
+        description: 'converts imaginary number from polar form to rectangular form. This is still being developed so please report any issues.',
         parameters: {
             z: {
                 type: 'expression',
@@ -2370,6 +2388,24 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+    determinant: {
+        type: 'internal',
+        usage: 'determinant(M)',
+        full_name: 'Matrix determinant',
+        description: 'Computes the determinant of a matrix',
+        parameters: {
+            M: {
+                type: 'Matrix',
+                description: "The matrix for which the determinant is to be calculated."
+            }
+        },
+        examples: [
+            "nerdamer.setVar('M', 'matrix([4,5],[1,7])');",
+            "x = nerdamer('determinant(M)');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
     invert: {
         type: 'internal',
         usage: 'invert(M)',
@@ -2515,7 +2551,7 @@ FUNCTIONS = {
         },
         examples: [
             "nerdamer.setVar('M', 'matrix([x,y],[a,b])');",
-            "var x = nerdamer('matgetrowl(M, 0)');",
+            "var x = nerdamer('matgetrow(M, 0)');",
             "console.log(x.toString());"
         ],
         returns: 'Matrix'
@@ -2833,6 +2869,25 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+    Algebra__lcm: {
+        type: 'internal',
+        usage: 'lcm(x)',
+        full_name: 'Least Common Multiple',
+        description: 'Gets the LCM of 2 polynomials',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('lcm(x^2+2*x+1, x^2+6*x+5)');",
+            "console.log(x.toString())",
+            "var y = nerdamer('lcm(3, 21)');",
+            "console.log(y.toString());"
+        ],
+        returns: 'Expression'
+    },
     Calculus__sum: {
         type: 'internal',
         usage: 'sum(expression, index, lower, upper)',
@@ -3026,9 +3081,9 @@ FUNCTIONS = {
     Extra__ilt: {
         type: 'internal',
         usage: 'ilt(expression, s, t)',
-        full_name: 'inverse Laplace',
+        full_name: 'inverse Laplace <span style="color: red">(Under development)</span>',
         description: 'Attempts to calculate the inverse Laplace transform of an expression. Currently computes transforms of most common expressions.'+
-                ' Throws and error if no transform could be calculated. [under development]',
+                ' Throws and error if no transform could be calculated. This is still being developed so please report any issues.',
         parameters: {
             expression: {
                 type: 'expression',
