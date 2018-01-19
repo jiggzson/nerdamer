@@ -91,14 +91,14 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>ilt</h1>
+                    <h1>lcm</h1>
                     <hr>
-                    <h3 class="text-capitalize">inverse Laplace <span style="color: red">(Under development)</span></h3>
+                    <h3 class="text-capitalize">Least Common Multiple</h3>
                     <div>
-                        Attempts to calculate the inverse Laplace transform of an expression. Currently computes transforms of most common expressions. Throws and error if no transform could be calculated. This is still being developed so please report any issues.
+                        Gets the LCM of 2 polynomials
                     </div>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("ilt(expression, s, t)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("lcm(x)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -106,21 +106,9 @@
                             <tr>
     <td>
         <span class="parameter-type">expression </span>
-        <span class="parameter-name">expression </span>
+        <span class="parameter-name">x </span>
     </td>
-    <td><span class="parameter-description">The expression to be transformed</span></td>
-</tr><tr>
-    <td>
-        <span class="parameter-type">variable </span>
-        <span class="parameter-name">s </span>
-    </td>
-    <td><span class="parameter-description">The transformation variable</span></td>
-</tr><tr>
-    <td>
-        <span class="parameter-type">variable </span>
-        <span class="parameter-name">t </span>
-    </td>
-    <td><span class="parameter-description">The time variable</span></td>
+    <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
 </tr>
                         </table>
                     </div>
@@ -128,9 +116,9 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('ilt(factorial(6)*s^(-7),s, t)').evaluate();
-console.log(x.toString());
-var y = nerdamer('ilt((1+s^2)^(-1)*s, s, t)').evaluate();
+                    <pre><code class="javascript">var x = nerdamer('lcm(x^2+2*x+1, x^2+6*x+5)');
+console.log(x.toString())
+var y = nerdamer('lcm(3, 21)');
 console.log(y.toString());</code></pre>
                 </div>
                 OUTPUT:
@@ -183,9 +171,9 @@ console.log(y.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('ilt(factorial(6)*s^(-7),s, t)').evaluate();
-oprint(x.toString());
-var y = nerdamer('ilt((1+s^2)^(-1)*s, s, t)').evaluate();
+                var x = nerdamer('lcm(x^2+2*x+1, x^2+6*x+5)');
+oprint(x.toString())
+var y = nerdamer('lcm(3, 21)');
 oprint(y.toString());
             }
             catch(e) {
