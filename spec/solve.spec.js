@@ -171,4 +171,8 @@ describe('Solve', function () {
         expect(nerdamer('x=1').text("fractions")).toEqual('x=1');
         expect(nerdamer.solveEquations("x+1=2", "x").toString()).toEqual('1');
     });
+    
+    it('parse equations correctly', function () {
+        expect(nerdamer("-(a+1)=(a+3)^2").toString()).toEqual('-1-a=(3+a)^2');
+    });
 });

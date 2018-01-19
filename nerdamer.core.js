@@ -4086,7 +4086,7 @@ var nerdamer = (function(imports) {
                 '!!+' : new Operator('!!+', 'dfactadd', 3, true, true, false),
                 '!-' : new Operator('!-', 'factsub', 3, true, true, false),
                 '!!-' : new Operator('!!-', 'dfactsub', 3, true, true, false),
-                '=' : new Operator('=', 'equals', 2, false, false),
+                '=' : new Operator('=', 'equals', 2, true, false),
                 '==' : new Operator('==', 'eq', 1, false, false),
                 '<' : new Operator('<', 'lt', 1, false, false),
                 '<=' : new Operator('<=', 'lte', 1, false, false),
@@ -6615,10 +6615,14 @@ var nerdamer = (function(imports) {
                 }
                     
                 var aIsZero = a.equals(0);
-                if(aIsZero && b.equals(0)) err('0^0 is undefined!');
+                var bIsZero = b.equals(0);
+                if(aIsZero && bIsZero) err('0^0 is undefined!');
                 //return 0 right away if possible
                 if(aIsZero && b.isConstant() && b.multiplier.greaterThan(0))
                     return new Symbol(0);
+                
+                if(bIsZero)
+                    return new Symbol(1);
                 
                 var bIsConstant = b.isConstant(),
                     aIsConstant = a.isConstant(), 
