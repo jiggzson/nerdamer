@@ -124,8 +124,11 @@
                 <div>
                     <pre><code class="javascript">var x = nerdamer('x^2+x').divide('x').expand();
 console.log(x.toString());
-var x = nerdamer(0.1).multiply(0.2);
-console.log(x.toString());</code></pre>
+x = nerdamer(0.1).multiply(0.2);
+console.log(x.toString());
+var a = nerdamer('(x+a)(y+b)');
+var b = nerdamer('2(y+b)');
+console.log(a.divide(b).toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -179,8 +182,11 @@ console.log(x.toString());</code></pre>
             try {
                 var x = nerdamer('x^2+x').divide('x').expand();
 oprint(x.toString());
-var x = nerdamer(0.1).multiply(0.2);
+x = nerdamer(0.1).multiply(0.2);
 oprint(x.toString());
+var a = nerdamer('(x+a)(y+b)');
+var b = nerdamer('2(y+b)');
+oprint(a.divide(b).toString());
             }
             catch(e) {
                 oprint(e.toString());

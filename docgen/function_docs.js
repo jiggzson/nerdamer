@@ -671,8 +671,11 @@ FUNCTIONS = {
         examples: [
             "var x = nerdamer('x^2+x').divide('x').expand();",
             "console.log(x.toString());",
-            "var x = nerdamer(0.1).multiply(0.2);",
-            "console.log(x.toString());"
+            "x = nerdamer(0.1).multiply(0.2);",
+            "console.log(x.toString());",
+            "var a = nerdamer('(x+a)(y+b)');",
+            "var b = nerdamer('2(y+b)');",
+            "console.log(a.divide(b).toString());"
         ],
         returns: 'Expression'
     },
@@ -694,7 +697,7 @@ FUNCTIONS = {
         examples: [
             "var x = nerdamer('x^2+x').pow('x');",
             "console.log(x.toString());",
-            "var x = nerdamer(5).multiply(2);",
+            "var x = nerdamer(5).pow(2);",
             "console.log(x.toString());"
         ],
         returns: 'Expression'
@@ -2803,7 +2806,9 @@ FUNCTIONS = {
             "var x = nerdamer('factor(x^2-3*x-10)');",
             "console.log(x.toString())",
             "var y = nerdamer('factor(-b*z-a*z+b^3+a*b^2+a*b+a^2)');",
-            "console.log(y.toString());"
+            "console.log(y.toString());",
+            "var z = nerdamer('factor(sin(x)^6+3*cos(x)^2*sin(x)^4+3*cos(x)^4*sin(x)^2+cos(x)^6)');",
+            "console.log(z.toString());",
         ],
         returns: 'Expression'
     },
@@ -3145,8 +3150,8 @@ FUNCTIONS = {
             "console.log(x.toString());",
             "x = nerdamer('mode([4,2,5,4])').evaluate();",
             "console.log(x.toString());",
-            "x = nerdamer.mode('x', 'r+1', '21', 'tan(x)', 'r+1');",
-            "console.log(x.toString());",
+//            "x = nerdamer('mode(x, r+1, 21, tan(x), r+1)');",
+//            "console.log(x.toString());",
             "x = nerdamer.mode('11', '12', '13', '14').evaluate();",
             "console.log(x.toString());"
         ],

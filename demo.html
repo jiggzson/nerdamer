@@ -295,7 +295,7 @@
         var supported = nerdamer.supported().sort(),
             l = supported.length,
             supportlist = $('#supported-functions');
-        var excluded = ['IF', 'setEquation'];
+        var excluded = ['sort', 'setEquation', 'IF'];
         for(var i=0; i<supported.length; i++) {
             var name = supported[i];
             if(excluded.indexOf(name) === -1)
