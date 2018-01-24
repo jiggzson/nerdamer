@@ -343,6 +343,10 @@ describe('Algebra', function () {
                 expected: '[6*x+7,-19-22*x]'
             },
             {
+                given: 'div(2(x+1)^5+1,x+2)',
+                expected: '[2+2*x^4+4*x+6*x^3+8*x^2,-1]'
+            },
+            {
                 given: 'divide(a*b^(-1)+b^(-1)*c,a+c)',
                 expected: 'b^(-1)'
             }
