@@ -2788,6 +2788,9 @@ if((typeof module) !== 'undefined') {
                 });
                 return [symbol1, new Symbol(0)];
             }
+            //so that factorized symbols don't affect the result
+	    symbol1 = _.expand(symbol1);
+	    symbol2 = _.expand(symbol2);
             //special case. May need revisiting
             if(symbol1.group === S && symbol2.group === CP) { 
                 var x = symbol1.value;
