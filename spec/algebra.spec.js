@@ -447,6 +447,10 @@ describe('Algebra', function () {
             {
                 given: 'factor(sqrt(4*x^2*y+4*x^2))',
                 expected: '(2)*(abs(x))*(sqrt(1+y))'
+            },
+            {
+                given: 'factor(x^3-1/2x^2-13/2x-3)',
+                expected: '(-3+x)*(1+2*x)*(1/2)*(2+x)'
             }
         ];
 
