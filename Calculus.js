@@ -927,10 +927,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         }
                     }
                     else if(symbol.isComposite() && symbol.isLinear()) { 
+                        var m = _.parse(symbol.multiplier);
+                        symbol.toUnitMultiplier();
                         retval = new Symbol(0);
                         symbol.each(function(x) {
                             retval = _.add(retval, __.integrate(x, dx, depth));
                         });
+                        retval = _.multiply(m, retval);
                     }
                     else if(g === CP) { 
                         if(symbol.power.greaterThan(1))
