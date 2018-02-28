@@ -1488,12 +1488,25 @@ var nerdamer = (function(imports) {
             opt = asHash ? undefined : option;
         
         function mixedFrac(str) {
+            //only convert if mixed fractions are preferred
             if(asMixed)
             {
-                for(var frac in /^-?\d+(?:\/\d+)?$/.exec(str)
-                var parts = str.split('/');
-                var divmod = new bigInt(parts[0]).divmod(new bigInt(parts[1]));
-                return divmod.quotient.toString() + '+' + divmod.remainder.toString() + '/' + parts[1];
+                //verify that the string is actually a fraction
+                var frac = /^-?\d+(?:\/\d+)?$/.exec(str);
+                if(frac.length == 0) return str;
+                
+                //split the fraction into the numerator and denominator
+                var parts = frac[0].split('/');
+                var numer = new bigInt(parts[0]);
+                var denom = new bigInt(parts[1]);
+                if(denom.equals(0)) denom = new bigInt(1);
+                
+                //return the quotient plus the remainder
+                var divmod = numer.divmod(denom);
+                var quotient = divmod.quotient;
+                var remainder = divmod.remainder;
+                var operator = parts[0][0] === '-' || quotient.equals(0) || remainder.equals(0) ? '' : '+';
+                return (quotient.equals(0) ? '' : quotient.toString()) + operator + (remainder.equals(0) ? '' : (remainder.toString() + '/' + parts[1]));
             }
             else return str;
         }
@@ -8580,4 +8593,18 @@ if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
 
-document.writeln(nerdamer("1/3a").text("recurring"));
+document.writeln(nerdamer("6").text("mixed"));
+document.writeln(nerdamer("-5").text("mixed"));
+document.writeln(nerdamer("1/1").text("mixed"));
+document.writeln(nerdamer("1/5").text("mixed"));
+document.writeln(nerdamer("-1/5").text("mixed"));
+document.writeln(nerdamer("1/-5").text("mixed"));
+document.writeln(nerdamer("6/5").text("mixed"));
+document.writeln(nerdamer("-6/5").text("mixed"));
+document.writeln(nerdamer("6/5a").text("mixed"));
+document.writeln(nerdamer("a/5").text("mixed"));
+document.writeln(nerdamer("1/a").text("mixed"));
+document.writeln(nerdamer("(2x)/(3y)").text("mixed"));
+document.writeln(nerdamer("(3x)/(2y)").text("mixed"));
+document.writeln(nerdamer("(2x)/(-3y)").text("mixed"));
+document.writeln(nerdamer("(3x)/(-2y)").text("mixed"));
