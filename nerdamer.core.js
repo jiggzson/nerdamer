@@ -8592,19 +8592,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-document.writeln(nerdamer("6").text("mixed"));
-document.writeln(nerdamer("-5").text("mixed"));
-document.writeln(nerdamer("1/1").text("mixed"));
-document.writeln(nerdamer("1/5").text("mixed"));
-document.writeln(nerdamer("-1/5").text("mixed"));
-document.writeln(nerdamer("1/-5").text("mixed"));
-document.writeln(nerdamer("6/5").text("mixed"));
-document.writeln(nerdamer("-6/5").text("mixed"));
-document.writeln(nerdamer("6/5a").text("mixed"));
-document.writeln(nerdamer("a/5").text("mixed"));
-document.writeln(nerdamer("1/a").text("mixed"));
-document.writeln(nerdamer("(2x)/(3y)").text("mixed"));
-document.writeln(nerdamer("(3x)/(2y)").text("mixed"));
-document.writeln(nerdamer("(2x)/(-3y)").text("mixed"));
-document.writeln(nerdamer("(3x)/(-2y)").text("mixed"));
