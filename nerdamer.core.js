@@ -1,3 +1,4 @@
+<script>
 /*
  * Author : Martin Donk
  * Website : http://www.nerdamer.com
@@ -1483,32 +1484,43 @@ var nerdamer = (function(imports) {
      */
     function text(obj, option, useGroup) { 
         var asHash = option === 'hash',
-            asDecimal = option === 'decimals' || option === 'decimal',
-            asMixed = option === 'mixed',
-            opt = asHash ? undefined : option;
+            opt = asHash ? undefined : option,
+            //need to wrap numbers in brackets?
+            wrapNumbers = false;
         
-        function mixedFrac(str) {
-            //only convert if mixed fractions are preferred
-            if(asMixed)
+        function toString(obj) {
+            switch(option)
             {
-                //verify that the string is actually a fraction
-                var frac = /^-?\d+(?:\/\d+)?$/.exec(str);
-                if(frac.length == 0) return str;
+                case 'decimals':
+                case 'decimal':
+                    return obj.valueOf();
+                case 'recurring':
+                    
+                case 'mixed':
+                    wrapNumbers = true;
                 
-                //split the fraction into the numerator and denominator
-                var parts = frac[0].split('/');
-                var numer = new bigInt(parts[0]);
-                var denom = new bigInt(parts[1]);
-                if(denom.equals(0)) denom = new bigInt(1);
-                
-                //return the quotient plus the remainder
-                var divmod = numer.divmod(denom);
-                var quotient = divmod.quotient;
-                var remainder = divmod.remainder;
-                var operator = parts[0][0] === '-' || quotient.equals(0) || remainder.equals(0) ? '' : '+';
-                return (quotient.equals(0) ? '' : quotient.toString()) + operator + (remainder.equals(0) ? '' : (remainder.toString() + '/' + parts[1]));
+                    var str = obj.toString();
+                    //verify that the string is actually a fraction
+                    var frac = /^-?\d+(?:\/\d+)?$/.exec(str);
+                    if(frac.length == 0) return str;
+                    
+                    //split the fraction into the numerator and denominator
+                    var parts = frac[0].split('/');
+                    var numer = new bigInt(parts[0]);
+                    var denom = new bigInt(parts[1]);
+                    if(denom.equals(0)) denom = new bigInt(1);
+                    
+                    //return the quotient plus the remainder
+                    var divmod = numer.divmod(denom);
+                    var quotient = divmod.quotient;
+                    var remainder = divmod.remainder;
+                    var operator = parts[0][0] === '-' || quotient.equals(0) || remainder.equals(0) ? '' : '+';
+                    return (quotient.equals(0) ? '' : quotient.toString()) + operator + (remainder.equals(0) ? '' : (remainder.toString() + '/' + parts[1]));
+                default:
+                    wrapNumbers = true;
+                    
+                    return obj.toString();
             }
-            else return str;
         }
         
         //if the object is a symbol
@@ -1521,7 +1533,7 @@ var nerdamer = (function(imports) {
             //if the value is to be used as a hash then the power and multiplier need to be suppressed
             if(!asHash) { 
                 //use asDecimal to get the object back as a decimal
-                var om = asDecimal ? obj.multiplier.valueOf() : mixedFrac(obj.multiplier.toString());
+                var om = toString(obj.multiplier);
                 if(om == '-1') {
                     sign = '-';
                     om = '1';
@@ -1529,7 +1541,7 @@ var nerdamer = (function(imports) {
                 //only add the multiplier if it's not 1
                 if(om != '1') multiplier = om;
                 //use asDecimal to get the object back as a decimal
-                var p = obj.power ? (asDecimal ? obj.power.valueOf() : mixedFrac(obj.power.toString())) : '';
+                var p = obj.power ? toString(obj.power) : '';
                 //only add the multiplier 
                 if(p != '1') {
                     //is it a symbol
@@ -1546,7 +1558,7 @@ var nerdamer = (function(imports) {
                 case N:
                     multiplier = '';
                     //if it's numerical then all we need is the multiplier
-                    value = obj.multiplier == '-1' ? '1' : asDecimal ? obj.valueOf() : mixedFrac(obj.multiplier.toString());
+                    value = obj.multiplier == '-1' ? '1' : toString(obj.multiplier);
                     power = '';
                     break;
                 case PL:
@@ -1597,7 +1609,7 @@ var nerdamer = (function(imports) {
             }
             //wrap the power since / is less than ^
             //TODO: introduce method call isSimple
-            if(power && !isInt(power) && group !== EX && !asDecimal) { power = inBrackets(power); }
+            if(power && !isInt(power) && group !== EX && wrapNumbers) { power = inBrackets(power); }
 
             //the following groups are held together by plus or minus. They can be raised to a power or multiplied
             //by a multiplier and have to be in brackets to preserve the order of precedence
@@ -1610,7 +1622,7 @@ var nerdamer = (function(imports) {
             }
             
             var c = sign+multiplier;
-            if(multiplier && !isInt(multiplier) && !asDecimal) c = inBrackets(c);
+            if(multiplier && !isInt(multiplier) && wrapNumbers) c = inBrackets(c);
             
             if(power < 0) power = inBrackets(power);
             if(multiplier) c = c + '*';
@@ -8592,3 +8604,6 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+document.writeln(nerdamer('4/3a^(2/3)').text('recurring'));
+</script>
