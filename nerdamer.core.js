@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Author : Martin Donk
  * Website : http://www.nerdamer.com
  * Email : martin.r.donk@gmail.com
@@ -1484,7 +1484,33 @@ var nerdamer = (function(imports) {
     function text(obj, option, useGroup) { 
         var asHash = option === 'hash',
             asDecimal = option === 'decimals' || option === 'decimal',
+            asMixed = option === 'mixed',
             opt = asHash ? undefined : option;
+        
+        function mixedFrac(str) {
+            //only convert if mixed fractions are preferred
+            if(asMixed)
+            {
+                //verify that the string is actually a fraction
+                var frac = /^-?\d+(?:\/\d+)?$/.exec(str);
+                if(frac.length == 0) return str;
+                
+                //split the fraction into the numerator and denominator
+                var parts = frac[0].split('/');
+                var numer = new bigInt(parts[0]);
+                var denom = new bigInt(parts[1]);
+                if(denom.equals(0)) denom = new bigInt(1);
+                
+                //return the quotient plus the remainder
+                var divmod = numer.divmod(denom);
+                var quotient = divmod.quotient;
+                var remainder = divmod.remainder;
+                var operator = parts[0][0] === '-' || quotient.equals(0) || remainder.equals(0) ? '' : '+';
+                return (quotient.equals(0) ? '' : quotient.toString()) + operator + (remainder.equals(0) ? '' : (remainder.toString() + '/' + parts[1]));
+            }
+            else return str;
+        }
+        
         //if the object is a symbol
         if(isSymbol(obj)) { 
             var multiplier = '', 
@@ -1495,7 +1521,7 @@ var nerdamer = (function(imports) {
             //if the value is to be used as a hash then the power and multiplier need to be suppressed
             if(!asHash) { 
                 //use asDecimal to get the object back as a decimal
-                var om = asDecimal ? obj.multiplier.valueOf() : obj.multiplier.toString();
+                var om = asDecimal ? obj.multiplier.valueOf() : mixedFrac(obj.multiplier.toString());
                 if(om == '-1') {
                     sign = '-';
                     om = '1';
@@ -1503,7 +1529,7 @@ var nerdamer = (function(imports) {
                 //only add the multiplier if it's not 1
                 if(om != '1') multiplier = om;
                 //use asDecimal to get the object back as a decimal
-                var p = obj.power ? (asDecimal ? obj.power.valueOf() : obj.power.toString()) : '';
+                var p = obj.power ? (asDecimal ? obj.power.valueOf() : mixedFrac(obj.power.toString())) : '';
                 //only add the multiplier 
                 if(p != '1') {
                     //is it a symbol
@@ -1520,7 +1546,7 @@ var nerdamer = (function(imports) {
                 case N:
                     multiplier = '';
                     //if it's numerical then all we need is the multiplier
-                    value = obj.multiplier == '-1' ? '1' : asDecimal ? obj.valueOf() : obj.multiplier.toString();
+                    value = obj.multiplier == '-1' ? '1' : asDecimal ? obj.valueOf() : mixedFrac(obj.multiplier.toString());
                     power = '';
                     break;
                 case PL:
