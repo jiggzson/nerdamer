@@ -1494,8 +1494,19 @@ var nerdamer = (function(imports) {
                 case 'decimal':
                     return obj.valueOf();
                 case 'recurring':
-                    //https://softwareengineering.stackexchange.com/questions/192070/what-is-a-efficient-way-to-find-repeating-decimal#comment743574_192081
-                    divide(m, n):
+                    var str = obj.toString();
+                    //verify that the string is actually a fraction
+                    var frac = /^-?\d+(?:\/\d+)?$/.exec(str);
+                    if(frac.length == 0) return str;
+                    
+                    //split the fraction into the numerator and denominator
+                    var parts = frac[0].split('/');
+                    var m = Number(parts[0]);
+                    var n = Number(parts[1]);
+                    if(n === 0) n = Number(1);
+                    
+                                        /*
+def divide(m, n):
     quotient, c = str(m // n) + ".", 10 * (m % n)
     while c and c < n:
         c *= 10
@@ -1514,8 +1525,29 @@ var nerdamer = (function(imports) {
         digits += str(q)
         i += 1
         c = 10 * r
-                    
-                    return k, z / d;
+        
+print divide(2,3)*/
+
+                    //https://softwareengineering.stackexchange.com/questions/192070/what-is-a-efficient-way-to-find-repeating-decimal#comment743574_192081
+                    var quotient = Math.floor(m / n).toString() + ".", c = 10 * (m % n);
+                    while(c && c < n) {
+                        c *= 10;
+                        quotient += "0";
+                    }
+                    var digits = "", passed = [], i = 0;
+                    while(true) {
+                        if(passed.indexOf(c) > -1) {
+                            var prefix = digits.slice(0, passed[c]),
+                                cycle = digits.slice(passed[c]),
+                                result = quotient + prefix + "(" + cycle + ")";
+                            return result.replace("(0)", "").replace(/\.$/, ".");
+                        }
+                        var q = Math.floor(c / n), r = c % n;
+                        passed[c] = i;
+                        digits += q.toString();
+                        i += 1;
+                        c = 10 * r;
+                    }
                 case 'mixed':
                     wrapNumbers = true;
                 
