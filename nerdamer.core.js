@@ -1484,7 +1484,8 @@ var nerdamer = (function(imports) {
     function text(obj, option, useGroup) { 
         var asHash = option === 'hash',
             //need to wrap numbers in brackets?
-            wrapNumbers = false;
+            wrapNumbers = false,
+            opt = asHash ? undefined : option;
         
         function toString(obj) {
             switch(option)
