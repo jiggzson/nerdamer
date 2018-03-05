@@ -1503,7 +1503,7 @@ var nerdamer = (function(imports) {
                     var parts = frac[0].split('/');
                     var m = Number(parts[0]);
                     var n = Number(parts[1]);
-                    if(n === 0) n = Number(1);
+                    if(!n) n = Number(1);
 
                     //https://softwareengineering.stackexchange.com/questions/192070/what-is-a-efficient-way-to-find-repeating-decimal#comment743574_192081
                     /*//Python 2.7 code:
