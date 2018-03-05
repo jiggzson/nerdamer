@@ -1539,9 +1539,8 @@ print divide(2,3)
                         if(typeof passed[c] !== 'undefined') {
                             var prefix = digits.slice(0, passed[c]),
                                 cycle = digits.slice(passed[c]),
-                                result = quotient + prefix + "(" + cycle + ")";
-                            return result.replace("(0)", "").replace(/\.$/, "")
-                                         .replace(/\((.+)\)/, "'$1'");
+                                result = quotient + prefix + "'" + cycle + "'";
+                            return result.replace("'0'", "").replace(/\.$/, "");
                         }
                         var q = Math.floor(c / n), r = c - q * n;
                         passed[c] = i;
