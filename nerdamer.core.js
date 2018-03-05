@@ -1,4 +1,3 @@
-<script>
 /*
  * Author : Martin Donk
  * Website : http://www.nerdamer.com
@@ -1541,7 +1540,8 @@ print divide(2,3)
                             var prefix = digits.slice(0, passed[c]),
                                 cycle = digits.slice(passed[c]),
                                 result = quotient + prefix + "(" + cycle + ")";
-                            return result.replace("(0)", "").replace(/\.$/, "");
+                            return result.replace("(0)", "").replace(/\.$/, "")
+                                         .replace(/\((.+)\)/, "'$1'");
                         }
                         var q = Math.floor(c / n), r = c - q * n;
                         passed[c] = i;
@@ -8657,6 +8657,3 @@ print divide(2,3)
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-document.writeln(nerdamer('4/3a^(2/3)').text('recurring'));
-</script>
