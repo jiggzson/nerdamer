@@ -1504,8 +1504,9 @@ var nerdamer = (function(imports) {
                     var m = Number(parts[0]);
                     var n = Number(parts[1]);
                     if(n === 0) n = Number(1);
-                    
-                                        /*
+
+                    //https://softwareengineering.stackexchange.com/questions/192070/what-is-a-efficient-way-to-find-repeating-decimal#comment743574_192081
+                    /*//Python 2.7 code:
 def divide(m, n):
     quotient, c = str(m // n) + ".", 10 * (m % n)
     while c and c < n:
@@ -1526,23 +1527,23 @@ def divide(m, n):
         i += 1
         c = 10 * r
         
-print divide(2,3)*/
-
-                    //https://softwareengineering.stackexchange.com/questions/192070/what-is-a-efficient-way-to-find-repeating-decimal#comment743574_192081
-                    var quotient = Math.floor(m / n).toString() + ".", c = 10 * (m % n);
+print divide(2,3)
+*/
+                    var quotient = Math.floor(m / n), c = 10 * (m - quotient * n);
+                    quotient = quotient.toString() + ".";
                     while(c && c < n) {
                         c *= 10;
                         quotient += "0";
                     }
                     var digits = "", passed = [], i = 0;
                     while(true) {
-                        if(passed.indexOf(c) > -1) {
+                        if(typeof passed[c] !== 'undefined') {
                             var prefix = digits.slice(0, passed[c]),
                                 cycle = digits.slice(passed[c]),
                                 result = quotient + prefix + "(" + cycle + ")";
-                            return result.replace("(0)", "").replace(/\.$/, ".");
+                            return result.replace("(0)", "").replace(/\.$/, "");
                         }
-                        var q = Math.floor(c / n), r = c % n;
+                        var q = Math.floor(c / n), r = c - q * n;
                         passed[c] = i;
                         digits += q.toString();
                         i += 1;
