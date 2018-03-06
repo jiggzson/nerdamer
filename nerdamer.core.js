@@ -1504,34 +1504,13 @@ var nerdamer = (function(imports) {
                     
                     //split the fraction into the numerator and denominator
                     var parts = frac[0].split('/');
+                    var negative = false;
                     var m = Number(parts[0]);
+                    if(m < 0) { m = -m; negative = true; }
                     var n = Number(parts[1]);
                     if(!n) n = 1;
 
                     //https://softwareengineering.stackexchange.com/questions/192070/what-is-a-efficient-way-to-find-repeating-decimal#comment743574_192081
-                    /*//Python 2.7 code:
-def divide(m, n):
-    quotient, c = str(m // n) + ".", 10 * (m % n)
-    while c and c < n:
-        c *= 10
-        quotient += "0"
-    digits = ""
-    passed = {}
-    i = 0
-    while True:
-        if c in passed:
-            prefix = digits[:passed[c]]
-            cycle = digits[passed[c]:]
-            result = quotient + prefix + "(" + cycle + ")"
-            return result.replace("(0)", "").rstrip(".")
-        q, r = c // n, c % n
-        passed[c] = i
-        digits += str(q)
-        i += 1
-        c = 10 * r
-        
-print divide(2,3)
-*/
                     var quotient = Math.floor(m / n), c = 10 * (m - quotient * n);
                     quotient = quotient.toString() + ".";
                     while(c && c < n) {
@@ -1544,7 +1523,7 @@ print divide(2,3)
                             var prefix = digits.slice(0, passed[c]),
                                 cycle = digits.slice(passed[c]),
                                 result = quotient + prefix + "'" + cycle + "'";
-                            return result.replace("'0'", "").replace(/\.$/, "");
+                            return (negative ? "-" : "") + result.replace("'0'", "").replace(/\.$/, "");
                         }
                         var q = Math.floor(c / n), r = c - q * n;
                         passed[c] = i;
