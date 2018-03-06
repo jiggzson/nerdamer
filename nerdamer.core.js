@@ -1494,6 +1494,8 @@ var nerdamer = (function(imports) {
                 case 'decimal':
                     return obj.valueOf();
                 case 'recurring':
+                    wrapNumbers = true;
+                    
                     var str = obj.toString();
                     //verify that the string is actually a fraction
                     var frac = /^-?\d+(?:\/\d+)?$/.exec(str);
