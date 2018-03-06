@@ -1483,8 +1483,8 @@ var nerdamer = (function(imports) {
      */
     function text(obj, option, useGroup) { 
         var asHash = option === 'hash',
-            //need to wrap numbers in brackets?
-            wrapNumbers = false,
+            //whether to wrap numbers in brackets
+            wrapCondition = undefined,
             opt = asHash ? undefined : option;
         
         function toString(obj) {
@@ -1492,9 +1492,10 @@ var nerdamer = (function(imports) {
             {
                 case 'decimals':
                 case 'decimal':
+                    wrapCondition = wrapCondition || function(str) { return false; };
                     return obj.valueOf();
                 case 'recurring':
-                    wrapNumbers = true;
+                    wrapCondition = wrapCondition || function(str) { return str.indexOf("'") !== -1; };
                     
                     var str = obj.toString();
                     //verify that the string is actually a fraction
@@ -1552,7 +1553,7 @@ print divide(2,3)
                         c = 10 * r;
                     }
                 case 'mixed':
-                    wrapNumbers = true;
+                    wrapCondition = wrapCondition || function(str) { return str.indexOf('/') !== -1; };
                 
                     var str = obj.toString();
                     //verify that the string is actually a fraction
@@ -1572,7 +1573,7 @@ print divide(2,3)
                     var operator = parts[0][0] === '-' || quotient.equals(0) || remainder.equals(0) ? '' : '+';
                     return (quotient.equals(0) ? '' : quotient.toString()) + operator + (remainder.equals(0) ? '' : (remainder.toString() + '/' + parts[1]));
                 default:
-                    wrapNumbers = true;
+                    wrapCondition = wrapCondition || function(str) { return str.indexOf('/') !== -1; };
                     
                     return obj.toString();
             }
@@ -1647,7 +1648,7 @@ print divide(2,3)
                     break;
             }
             
-            if(group === FN && asDecimal) { 
+            if(group === FN) { 
                 value = obj.fname+inBrackets(obj.args.map(function(symbol) {
                     return text(symbol, opt);
                 }).join(','));
@@ -1664,7 +1665,7 @@ print divide(2,3)
             }
             //wrap the power since / is less than ^
             //TODO: introduce method call isSimple
-            if(power && !isInt(power) && group !== EX && wrapNumbers) { power = inBrackets(power); }
+            if(power && group !== EX && wrapCondition(power)) { power = inBrackets(power); }
 
             //the following groups are held together by plus or minus. They can be raised to a power or multiplied
             //by a multiplier and have to be in brackets to preserve the order of precedence
@@ -1677,7 +1678,7 @@ print divide(2,3)
             }
             
             var c = sign+multiplier;
-            if(multiplier && !isInt(multiplier) && wrapNumbers) c = inBrackets(c);
+            if(multiplier && wrapCondition(multiplier)) c = inBrackets(c);
             
             if(power < 0) power = inBrackets(power);
             if(multiplier) c = c + '*';
