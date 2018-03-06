@@ -3,204 +3,130 @@
 var nerdamer = require('../nerdamer.core.js');
 
 describe('The text function', function () {
+    // given
+    var testCases = [
+       {
+           given: '6',
+           expected_mixed: '6',
+           expected_recurring: "6"
+       },
+       {
+           given: '-5',
+           expected_mixed: '-5',
+           expected_recurring: "-5"
+       },
+       {
+           given: '1/1',
+           expected_mixed: '1',
+           expected_recurring: "1"
+       },
+       {
+           given: '1/5',
+           expected_mixed: '1/5',
+           expected_recurring: "0.2"
+       },
+       {
+           given: '-1/5',
+           expected_mixed: '-1/5',
+           expected_recurring: "-0.2"
+       },
+       {
+           given: '1/-5',
+           expected_mixed: '-1/5',
+           expected_recurring: "-0.2"
+       },
+       {
+           given: '6/5',
+           expected_mixed: '1+1/5',
+           expected_recurring: "1.2"
+       },
+       {
+           given: '-6/5',
+           expected_mixed: '-1-1/5',
+           expected_recurring: "-1.2"
+       },
+       {
+           given: '6/5a',
+           expected_mixed: '(1+1/5)*a',
+           expected_recurring: "1.2*a"
+       },
+       {
+           given: 'a/5',
+           expected_mixed: '(1/5)*a',
+           expected_recurring: "0.2*a"
+       },
+       {
+           given: '1/a',
+           expected_mixed: 'a^(-1)',
+           expected_recurring: "a^(-1)"
+       },
+       {
+           given: '(2x)/(3y)',
+           expected_mixed: '(2/3)*x*y^(-1)',
+           expected_recurring: "(0.'6')*x*y^(-1)"
+       },
+       {
+           given: '(3x)/(2y)',
+           expected_mixed: '(1+1/2)*x*y^(-1)',
+           expected_recurring: "1.5*x*y^(-1)"
+       },
+       {
+           given: '(2x)/(-3y)',
+           expected_mixed: '(-2/3)*x*y^(-1)',
+           expected_recurring: "(-0.'6')*x*y^(-1)"
+       },
+       {
+           given: '(3x)/(-2y)',
+           expected_mixed: '(-1-1/2)*x*y^(-1)',
+           expected_recurring: "-1.5*x*y^(-1)"
+       },
+       {
+           given: '(10/-8)a^(-9/6)',
+           expected_mixed: '(-1-1/4)*a^(-1-1/2)',
+           expected_recurring: "-1.25*x*y^(-1)"
+       },
+       {
+           given: '1/2+3/4',
+           expected_mixed: '1+1/4',
+           expected_recurring: "1.25"
+       },
+       {
+           given: '2/3+4/7',
+           expected_mixed: '1+5/21',
+           expected_recurring: "1.'238095'"
+       },
+       {
+           given: '100-46/47-98/43-67/44',
+           expected_mixed: '95+19517/88924',
+           expected_recurring: "95.21'947955557554765867482344473932796545364580990508749044127569610004048400881651747559713913004363276505780216814358328460258198011785344788808420673833835634924204939049075615132022850973865323197337051864513517160721515001574378120642346273222077279474607530025639872250461067878188115694300751203274706490936080248301920741307183662453330934280959021186631280644145562502811389501147046916467995141918942017902928343304394764068193063739822770005847690162385857586253429895191399397238090954073141109261841572578831361612163195537762583779407134181998110746255229184472133507264630470963969232153299446718546174261166839098556070352210876703702037695110431379605056002878862849174576042463227025324996626332598623543700238405829697269578516485988034726283118168323512212675992982771805136970896495884125770320723314290855112230668885790112905402366065404165354684899464711438981602267104493724978633439791282443434843236921416040663937744590886599793081732715577346'"
+       },
+       {
+           given: '1+2-2/3+3/4-4/5+5/6-6/7+7/8-8/9+9/10-10/11',
+           expected_mixed: '2+6557/27720',
+           expected_recurring: "2.236'544011'"
+       },
+       {
+           given: '20*30/46',
+           expected_mixed: '13+1/23',
+           expected_recurring: "13.0'4347826086956521739130'"
+       }
+    ];
+    
     it('should give mixed fractions correctly', function () {
-        // given
-        var testCases = [
-            {
-                given: '6',
-                expected: '6'
-            },
-            {
-                given: '-5',
-                expected: '-5'
-            },
-            {
-                given: '1/1',
-                expected: '1'
-            },
-            {
-                given: '1/5',
-                expected: '1/5'
-            },
-            {
-                given: '-1/5',
-                expected: '-1/5'
-            },
-            {
-                given: '1/-5',
-                expected: '-1/5'
-            },
-            {
-                given: '6/5',
-                expected: '1+1/5'
-            },
-            {
-                given: '-6/5',
-                expected: '-1-1/5'
-            },
-            {
-                given: '6/5a',
-                expected: '(1+1/5)*a'
-            },
-            {
-                given: 'a/5',
-                expected: '(1/5)*a'
-            },
-            {
-                given: '1/a',
-                expected: 'a^(-1)'
-            },
-            {
-                given: '1/1',
-                expected: '1'
-            },
-            {
-                given: '(2x)/(3y)',
-                expected: '(2/3)*x*y^(-1)'
-            },
-            {
-                given: '(3x)/(2y)',
-                expected: '(1+1/2)*x*y^(-1)'
-            },
-            {
-                given: '(2x)/(-3y)',
-                expected: '(-2/3)*x*y^(-1)'
-            },
-            {
-                given: '(3x)/(-2y)',
-                expected: '(-1-1/2)*x*y^(-1)'
-            },
-            {
-                given: '(10/-8)a^(-9/6)',
-                expected: '(-1-1/4)*a^(-1-1/2)'
-            },
-            {
-                given: '1/2+3/4',
-                expected: '1+1/4'
-            },
-            {
-                given: '2/3+4/7',
-                expected: '1+5/21'
-            },
-            {
-                given: '100-46/47-98/43-67/44',
-                expected: '95+19517/88924'
-            },
-            {
-                given: '1+2-2/3+3/4-4/5+5/6-6/7+7/8-8/9+9/10-10/11',
-                expected: '2+6557/27720'
-            },
-            {
-                given: '20*30/46',
-                expected: '13+1/23'
-            },
-        ];
         for (var i = 0; i < testCases.length; ++i) {
             // when
             var text = nerdamer(testCases[i].given).text('mixed');
             // then
-            expect(text).toEqual(testCases[i].expected);
+            expect(text).toEqual(testCases[i].expected_mixed);
         }
     });
     
-    it('should give mixed fractions correctly', function () {
-        // given
-        var testCases = [
-            {
-                given: '6',
-                expected: '6'
-            },
-            {
-                given: '-5',
-                expected: '-5'
-            },
-            {
-                given: '1/1',
-                expected: '1'
-            },
-            {
-                given: '1/5',
-                expected: '0.2'
-            },
-            {
-                given: '-1/5',
-                expected: '-0.2'
-            },
-            {
-                given: '1/-5',
-                expected: '-0.2'
-            },
-            {
-                given: '6/5',
-                expected: '1.2'
-            },
-            {
-                given: '-6/5',
-                expected: '-1.2'
-            },
-            {
-                given: '6/5a',
-                expected: '1.2*a'
-            },
-            {
-                given: 'a/5',
-                expected: '0.2*a'
-            },
-            {
-                given: '1/a',
-                expected: 'a^(-1)'
-            },
-            {
-                given: '1/1',
-                expected: '1'
-            },
-            {
-                given: '(2x)/(3y)',
-                expected: '0.'6'*x*y^(-1)'
-            },
-            {
-                given: '(3x)/(2y)',
-                expected: '1.5*x*y^(-1)'
-            },
-            {
-                given: '(2x)/(-3y)',
-                expected: '-0.'6'*x*y^(-1)'
-            },
-            {
-                given: '(3x)/(-2y)',
-                expected: '-1.5*x*y^(-1)'
-            },
-            {
-                given: '(10/-8)a^(-9/6)',
-                expected: '-1.25*a^-1.5'
-            },
-            {
-                given: '1/2+3/4',
-                expected: '1.25'
-            },
-            {
-                given: '2/3+4/7',
-                expected: '1.'238095''
-            },
-            {
-                given: '100-46/47-98/43-67/44',
-                expected: '95+19517/88924'
-                /*9 4 7 9 5 5 5 5 7 5 5 4 7 6 5 8 6 7 4 8 2 3 4 4 4 7 3 9 3 2 7 9 6 5 4 5 3 6 4 5 8 0 9 9 0 5 0 8 7 4 9 0 4 4 1 2 7 5 6 9 6 1 0 0 0 4 0 4 8 4 0 0 8 8 1 6 5 1 7 4 7 5 5 9 7 1 3 9 1 3 0 0 4 3 6 3 2 7 6 5 0 5 7 8 0 2 1 6 8 1 4 3 5 8 3 2 8 4 6 0 2 5 8 1 9 8 0 1 1 7 8 5 3 4 4 7 8 8 8 0 8 4 2 0 6 7 3 8 3 3 8 3 5 6 3 4 9 2 4 2 0 4 9 3 9 0 4 9 0 7 5 6 1 5 1 3 2 0 2 2 8 5 0 9 7 3 8 6 5 3 2 3 1 9 7 3 3 7 0 5 1 8 6 4 5 1 3 5 1 7 1 6 0 7 2 1 5 1 5 0 0 1 5 7 4 3 7 8 1 2 0 6 4 2 3 4 6 2 7 3 2 2 2 0 7 7 2 7 9 4 7 4 6 0 7 5 3 0 0 2 5 6 3 9 8 7 2 2 5 0 4 6 1 0 6 7 8 7 8 1 8 8 1 1 5 6 9 4 3 0 0 7 5 1 2 0 3 2 7 4 7 0 6 4 9 0 9 3 6 0 8 0 2 4 8 3 0 1 9 2 0 7 4 1 3 0 7 1 8 3 6 6 2 4 5 3 3 3 0 9 3 4 2 8 0 9 5 9 0 2 1 1 8 6 6 3 1 2 8 0 6 4 4 1 4 5 5 6 2 5 0 2 8 1 1 3 8 9 5 0 1 1 4 7 0 4 6 9 1 6 4 6 7 9 9 5 1 4 1 9 1 8 9 4 2 0 1 7 9 0 2 9 2 8 3 4 3 3 0 4 3 9 4 7 6 4 0 6 8 1 9 3 0 6 3 7 3 9 8 2 2 7 7 0 0 0 5 8 4 7 6 9 0 1 6 2 3 8 5 8 5 7 5 8 6 2 5 3 4 2 9 8 9 5 1 9 1 3 9 9 3 9 7 2 3 8 0 9 0 9 5 4 0 7 3 1 4 1 1 0 9 2 6 1 8 4 1 5 7 2 5 7 8 8 3 1 3 6 1 6 1 2 1 6 3 1 9 5 5 3 7 7 6 2 5 8 3 7 7 9 4 0 7 1 3 4 1 8 1 9 9 8 1 1 0 7 4 6 2 5 5 2 2 9 1 8 4 4 7 2 1 3 3 5 0 7 2 6 4 6 3 0 4 7 0 9 6 3 9 6 9 2 3 2 1 5 3 2 9 9 4 4 6 7 1 8 5 4 6 1 7 4 2 6 1 1 6 6 8 3 9 0 9 8 5 5 6 0 7 0 3 5 2 2 1 0 8 7 6 7 0 3 7 0 2 0 3 7 6 9 5 1 1 0 4 3 1 3 7 9 6 0 5 0 5 6 0 0 2 8 7 8 8 6 2 8 4 9 1 7 4 5 7 6 0 4 2 4 6 3 2 2 7 0 2 5 3 2 4 9 9 6 6 2 6 3 3 2 5 9 8 6 2 3 5 4 3 7 0 0 2 3 8 4 0 5 8 2 9 6 9 7 2 6 9 5 7 8 5 1 6 4 8 5 9 8 8 0 3 4 7 2 6 2 8 3 1 1 8 1 6 8 3 2 3 5 1 2 2 1 2 6 7 5 9 9 2 9 8 2 7 7 1 8 0 5 1 3 6 9 7 0 8 9 6 4 9 5 8 8 4 1 2 5 7 7 0 3 2 0 7 2 3 3 1 4 2 9 0 8 5 5 1 1 2 2 3 0 6 6 8 8 8 5 7 9 0 1 1 2 9 0 5 4 0 2 3 6 6 0 6 5 4 0 4 1 6 5 3 5 4 6 8 4 8 9 9 4 6 4 7 1 1 4 3 8 9 8 1 6 0 2 2 6 7 1 0 4 4 9 3 7 2 4 9 7 8 6 3 3 4 3 9 7 9 1 2 8 2 4 4 3 4 3 4 8 4 3 2 3 6 9 2 1 4 1 6 0 4 0 6 6 3 9 3 7 7 4 4 5 9 0 8 8 6 5 9 9 7 9 3 0 8 1 7 3 2 7 1 5 5 7 7 3 4 6*/
-            },
-            {
-                given: '1+2-2/3+3/4-4/5+5/6-6/7+7/8-8/9+9/10-10/11',
-                expected: '2+6557/27720'
-            },
-            {
-                given: '20*30/46',
-                expected: '13+1/23'
-            },
-        ];
+    it('should give recurring decimals correctly', function () {
         for (var i = 0; i < testCases.length; ++i) {
             // when
-            var text = nerdamer(testCases[i].given).text('mixed');
+            var text = nerdamer(testCases[i].given).text('recurring');
             // then
-            expect(text).toEqual(testCases[i].expected);
+            expect(text).toEqual(testCases[i].expected_recurring);
         }
     });
 });
