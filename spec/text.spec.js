@@ -83,7 +83,7 @@ describe('The text function', function () {
        {
            given: '(10/-8)a^(-9/6)',
            expected_mixed: '(-1-1/4)*a^(-1-1/2)',
-           expected_recurring: "-1.25*x*y^(-1)"
+           expected_recurring: "-1.25*x*y^(-1.5)"
        },
        {
            given: '1/2+3/4',
