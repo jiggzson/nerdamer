@@ -3634,7 +3634,7 @@ var nerdamer = (function(imports) {
             
         var trig = this.Trig = {
             //container for trigonometric function
-            cos: function(symbol) {
+            cos: function(symbol) { 
                 if(symbol.equals('pi') && symbol.multiplier.den.equals(2))
                     return new Symbol(0);
                 
@@ -5160,9 +5160,17 @@ var nerdamer = (function(imports) {
         
             if(symbol.group === CB && symbol.isLinear()) {
                 var m = sqrt(Symbol(symbol.multiplier));
-                for(var s in symbol.symbols) {
+                for(var s in symbol.symbols) { 
                     var x = symbol.symbols[s];
-                    m = _.multiply(m, sqrt(x));
+                    var is_inv = false;
+                    if(x.power.lessThan(0)) {
+                        x.power.abs();
+                        is_inv = true;
+                    }
+                    var sqrtx = sqrt(x);
+                    if(is_inv)
+                        sqrtx.invert();
+                    m = _.multiply(m, sqrtx);
                 }
 
                 retval = m;
@@ -6716,15 +6724,16 @@ var nerdamer = (function(imports) {
                 
                 //imaginary number under negative nthroot or to the n
                 if(Settings.PARSE2NUMBER && a.isImaginary() && bIsConstant) { 
-                    var re, im, r, theta, nre, nim;
+                    var re, im, r, theta, nre, nim, retval;
                     re = a.realpart();
                     im = a.imagpart();
                     if(re.isConstant('all') && im.isConstant('all')) {
-                        theta = new Symbol(Math.atan2(im, re)*b);
+                        theta = new Symbol(trig.atan2(im, re)*b);
                         r = _.pow(Symbol.hyp(re, im), b); 
                         nre = _.multiply(r.clone(), _.trig.cos(theta.clone()));
                         nim = _.multiply(r, _.trig.sin(theta));
-                        return _.add(nre, _.multiply(Symbol.imaginary(), nim));
+                        retval = _.add(nre, _.multiply(Symbol.imaginary(), nim));
+                        return retval;
                     }
                 }
                 /*
