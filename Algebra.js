@@ -2126,7 +2126,7 @@ if((typeof module) !== 'undefined') {
                                 if(!x.multiplier.equals(1)) all_unit = false;
                             });       
                             if(all_S && all_unit) 
-                                return _.pow(symbol, _.parse(p));
+                                return _.pow(_.parse(symbol, core.Utils.getFunctionsSubs(map)), _.parse(p));
                         }
                         //factor the coefficients
                         symbol = __.Factor.coeffFactor(symbol, factors);
