@@ -118,6 +118,41 @@ describe('Nerdamer core', function () {
         }
     });
     
+    it('should calculate sinc correctly', function () {
+        // given
+        var testCases = [
+            {
+                given: 'sinc(x)',
+                expected: 'sinc(x)',
+                eval: false
+            }, 
+            {
+                given: 'sinc(0)',
+                expected: '1',
+                eval: true
+            }, 
+            {
+                given: 'sinc(9)',
+                expected: '23287849/508568891',
+                eval: true
+            }, 
+            {
+                given: 'sinc(x-a)-sin(x-a)/(x-a)',
+                expected: '0',
+                eval: true
+            }
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            var testCase = testCases[i];
+            // when
+            var parsed = testCase.eval ? nerdamer(testCase.given).evaluate() : nerdamer(testCase.given);
+
+            // then
+            expect(parsed.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
     it('should perform simple arithmetic', function () {
         // given
         var testCases = [
