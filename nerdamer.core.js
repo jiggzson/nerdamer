@@ -4137,7 +4137,7 @@ var nerdamer = (function(imports) {
                 'acosh'             : [ trigh.acosh, 1],
                 'atanh'             : [ trigh.atanh, 1],
                 'log10'             : [ , 1],
-                'exp'               : [ , 1],
+                'exp'               : [ exp, 1],
                 'min'               : [ min ,-1],
                 'max'               : [ max,-1],
                 'erf'               : [ , 1],
@@ -5069,6 +5069,11 @@ var nerdamer = (function(imports) {
             return b;
         }
         
+        /**
+         * A symbolic extension for sinc
+         * @param {Symbol} symbol
+         * @returns {Symbol}
+         */
         function sinc(symbol) {
             if(Settings.PARSE2NUMBER) {
                 if(symbol.isConstant()) {
@@ -5077,6 +5082,16 @@ var nerdamer = (function(imports) {
                 return _.parse(format('sin({0})/({0})', symbol));
             }
             return _.symfunction('sinc', [symbol]);
+        }
+        
+        /**
+         * A symbolic extension for exp. This will auto-convert all instances of exp(x) to e^x.
+         * Thanks @ Happypig375
+         * @param {Symbol} symbol
+         * @returns {Symbol}
+         */
+        function exp(symbol) {
+            return _.parse(format('e^({0})', symbol));
         }
 
         /**
