@@ -958,7 +958,47 @@ describe('Nerdamer core', function () {
                 expect(value).toEqual(testCases[i].expectedValue);
             }
         });
+        
+        it('should cancel inverses correctly', function () {
+            // given
+            var testCases = [
+                {
+                    given: 'cos(x)*sec(x)',
+                    expected: '1'
+                }, 
+                {
+                    given: 'sin(x)*csc(x)',
+                    expected: '1'
+                }, 
+                {
+                    given: 'tan(x)*cot(x)',
+                    expected: '1'
+                }, 
+                {
+                    given: 'cosh(x)*sech(x)',
+                    expected: '1'
+                }, 
+                {
+                    given: 'sinh(x)*csch(x)',
+                    expected: '1'
+                }, 
+                {
+                    given: 'tanh(x)*coth(x)',
+                    expected: '1'
+                }
+
+            ];
+
+            for (var i = 0; i < testCases.length; ++i) {
+                // when
+                var parsed = nerdamer(testCases[i].given).evaluate();
+
+                // then
+                expect(parsed.toString()).toEqual(testCases[i].expected);
+            }
+        });
     });
+    
     describe('hyperbolic trigonometric functions', function () {
         it('should be computed properly', function () {
             // given

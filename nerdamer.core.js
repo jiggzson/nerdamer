@@ -3709,6 +3709,7 @@ var nerdamer = (function(imports) {
                         return new Symbol(Math2.sec(symbol.valueOf()));
                     if(symbol.isImaginary()) 
                         return complex.evaluate(symbol, 'sec');
+                    return _.parse(format('1/cos({0})', symbol));
                 }
 
                 var retval, 
@@ -3751,6 +3752,7 @@ var nerdamer = (function(imports) {
                         return new Symbol(Math2.csc(symbol.valueOf()));
                     if(symbol.isImaginary()) 
                         return complex.evaluate(symbol, 'csc');
+                    return _.parse(format('1/sin({0})', symbol));
                 }
                 
                 var retval, 
@@ -3795,6 +3797,7 @@ var nerdamer = (function(imports) {
                         return new Symbol(Math2.cot(symbol.valueOf()));
                     if(symbol.isImaginary()) 
                         return complex.evaluate(symbol, 'cot');
+                    return _.parse(format('1/tan({0})', symbol));
                 }
                 var retval, 
                     c = false,
@@ -3961,6 +3964,7 @@ var nerdamer = (function(imports) {
                     if(symbol.isImaginary()) {
                         return complex.evaluate(symbol, 'sech');
                     }
+                    return _.parse(format('1/cosh({0})', symbol));
                 }
                 
                 return retval = _.symfunction('sech', arguments);
@@ -3973,6 +3977,7 @@ var nerdamer = (function(imports) {
                     if(symbol.isImaginary()) {
                         return complex.evaluate(symbol, 'csch');
                     }
+                    return _.parse(format('1/sinh({0})', symbol));
                 }
                 
                 return retval = _.symfunction('csch', arguments);
@@ -3985,6 +3990,7 @@ var nerdamer = (function(imports) {
                     if(symbol.isImaginary()) {
                         return complex.evaluate(symbol, 'coth');
                     }
+                    return _.parse(format('1/tanh({0})', symbol));
                 }
                 
                 return retval = _.symfunction('coth', arguments);
