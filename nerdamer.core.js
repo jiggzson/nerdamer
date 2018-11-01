@@ -4808,7 +4808,7 @@ var nerdamer = (function(imports) {
                             f = func_stack.pop(), //grab the matching function
                             r;
                         //is it a function?
-                        if(f in functions) {
+                        if(f in functions) { 
                             r = _.symfunction(f, o); 
                             r.isConversion = true;
                         }
@@ -4909,12 +4909,12 @@ var nerdamer = (function(imports) {
                                 dx = this.toTeX(chunks[1]);
                             f = '\\int ' + expr + '\\, d' + dx;
                         }
-                        else if (fname === 'defint') {
+                        else if (fname === 'defint') { 
                             var chunks = chunkAtCommas(e.args),
                                 expr = LaTeX.braces(this.toTeX(chunks[0])),
-                                dx = this.toTeX(chunks[1]),
-                                lb = this.toTeX(chunks[2]),
-                                ub = this.toTeX(chunks[3]);
+                                dx = this.toTeX(chunks[3]),
+                                lb = this.toTeX(chunks[1]),
+                                ub = this.toTeX(chunks[2]);
                             f = '\\int\\limits_{'+lb+'}^{'+ub+'} '+expr+'\\, d'+dx;
 
                         }
