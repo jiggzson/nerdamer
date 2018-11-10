@@ -1,3 +1,5 @@
+/* global expect */
+
 'use strict';
 
 var nerdamer = require('../nerdamer.core.js');

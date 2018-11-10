@@ -31,7 +31,7 @@ if((typeof module) !== 'undefined') {
         isArray = core.Utils.isArray;
     //version solve
     core.Solve = {
-        version: '1.2.5',
+        version: '1.2.6',
         solve: function(eq, variable) {
             var solution = solve(eq, String(variable));
             return new core.Vector(solution);
@@ -71,6 +71,7 @@ if((typeof module) !== 'undefined') {
         this.RHS = rhs; //right and side
     };
     
+    //UTILS ##!!
     var removeDenom = function(a, b) { 
         //swap the groups
         if(b.group === CP && b.group !== CP) {
@@ -293,9 +294,12 @@ if((typeof module) !== 'undefined') {
             '-(b/(3*a))+(C*(1+i*sqrt(3)))/(6*a)+((1-i*sqrt(3))*(b^2-3*a*c))/(6*a*C)'.replace(/i/g, core.Settings.IMAGINARY),
             '-(b/(3*a))+(C*(1-i*sqrt(3)))/(6*a)+((1+i*sqrt(3))*(b^2-3*a*c))/(6*a*C)'.replace(/i/g, core.Settings.IMAGINARY)
         ];
+        
+        
 
         return xs.map(function(e, i) { 
-            return _.parse(e, { a: a_o.clone(), b: b_o.clone(), c: c_o.clone(), d: d_o.clone(), C: C.clone()});
+            var o = { a: a_o.clone(), b: b_o.clone(), c: c_o.clone(), d: d_o.clone(), C: C.clone()};
+            return _.parse(e, o);
         });
     };
 
@@ -329,7 +333,7 @@ if((typeof module) !== 'undefined') {
         x4 = _.parse(format("-(({1})/(4*({0})))+({4})-(1/2)*sqrt(-4*({4})^2-2*({2})-(({3})/({4})))", a, b, p, q, S)); //a, b, p, q, S
         return [x1, x2, x3, x4];
     };
-    
+    //solve by divide and conquer
     var divnconsolve = function(symbol, solve_for) {
         var sols = [];
         //see if we can solve the factors
@@ -382,6 +386,73 @@ if((typeof module) !== 'undefined') {
         return new core.Vector(solutions);
     };
     
+    var get_points = function(symbol) {  
+        var f = build(symbol);
+        var start = Math.round(f(0)),
+            last = f(start),
+            last_sign = last/Math.abs(last),
+            points = [],
+            rside = core.Settings.ROOTS_PER_SIDE, // the max number of roots on right side
+            lside = rside*2+1; // the max number of roots on left side
+        // check around the starting point
+        points.push(Math.floor(start/2));
+        //adjust for log. A good starting point to include for log is 0.1
+        symbol.each(function(x) {
+            if(x.containsFunction('log'))
+                points.push(0.1);
+        });
+        // Possible issue #1. If the step size exceeds the zeros then they'll be missed. Consider the case
+        // where the function dips to negative and then back the positive with a step size of 0.1. The function
+        // will miss the zeros because it will jump right over it. Think of a case where this can happen.
+        for(var i=start; i<core.Settings.SOLVE_RADIUS; i++){
+            var val = f(i*0.1),
+                sign = val/Math.abs(val);
+            if(isNaN(val) || !isFinite(val) || points.length > rside)
+                break;
+            //compare the signs. The have to be different if they cross a zero
+            if(sign !== last_sign)
+                points.push((i-1)/2); //take note of the possible zero location
+            last_sign = sign;
+        }
+
+        //check the other side
+        for(var i=start-1; i>-core.Settings.SOLVE_RADIUS; i--){
+            var val = f(i),
+                sign = val/Math.abs(val);
+            if(isNaN(val) || !isFinite(val) || points.length > lside)
+                break;
+            //compare the signs. The have to be different if they cross a zero
+            if(sign !== last_sign)
+                points.push((i-1)/2); //take note of the possible zero location
+            last_sign = sign;
+        }
+        return points;
+    };  
+    //Newton's iteration
+    var Newton = function(point, f, fp) { 
+        var maxiter = 200,
+            iter = 0;
+        //first try the point itself. If it's zero viola. We're done
+        var x0 = point, x;
+        do {
+            var fx0 = f(x0); //store the result of the function
+            //if the value is zero then we're done because 0 - (0/d f(x0)) = 0
+            if(x0 === 0 && fx0 === 0) {
+                x = 0;
+                break;
+            }
+            iter++;
+            if(iter > maxiter)
+                return; //naximum iterations reached
+
+            x = x0 - fx0/fp(x0);
+            var e = Math.abs(x - x0);
+            x0 = x;
+        }
+        while(e > Number.EPSILON)
+
+        return x;
+    };
     /*
      * 
      * @param {String[]|String|Equation} eqns
@@ -457,74 +528,8 @@ if((typeof module) !== 'undefined') {
             };
         //gets points around which to solve. It does that because it builds on the principle that if
         //the sign changes over an interval then there must be a zero on that interval
-        var get_points = function(symbol) {
-            
-            var f = build(symbol);
-            var start = Math.round(f(0)),
-                last = f(start),
-                last_sign = last/Math.abs(last),
-                points = [],
-                rside = core.Settings.ROOTS_PER_SIDE, // the max number of roots on right side
-                lside = rside*2+1; // the max number of roots on left side
-            // check around the starting point
-            points.push(Math.floor(start/2));
-            //adjust for log. A good starting point to include for log is 0.1
-            symbol.each(function(x) {
-                if(x.containsFunction('log'))
-                    points.push(0.1);
-            });
-            // Possible issue #1. If the step size exceeds the zeros then they'll be missed. Consider the case
-            // where the function dips to negative and then back the positive with a step size of 0.1. The function
-            // will miss the zeros because it will jump right over it. Think of a case where this can happen.
-            for(var i=start; i<core.Settings.SOLVE_RADIUS; i++){
-                var val = f(i*0.1),
-                    sign = val/Math.abs(val);
-                if(isNaN(val) || !isFinite(val) || points.length > rside)
-                    break;
-                //compare the signs. The have to be different if they cross a zero
-                if(sign !== last_sign)
-                    points.push((i-1)/2); //take note of the possible zero location
-                last_sign = sign;
-            }
-            
-            //check the other side
-            for(var i=start-1; i>-core.Settings.SOLVE_RADIUS; i--){
-                var val = f(i),
-                    sign = val/Math.abs(val);
-                if(isNaN(val) || !isFinite(val) || points.length > lside)
-                    break;
-                //compare the signs. The have to be different if they cross a zero
-                if(sign !== last_sign)
-                    points.push((i-1)/2); //take note of the possible zero location
-                last_sign = sign;
-            }
-            return points;
-        };   
-        //Newton's iteration
-        var Newton = function(point, f, fp) { 
-            var maxiter = 200,
-                iter = 0;
-            //first try the point itself. If it's zero viola. We're done
-            var x0 = point, x;
-            do {
-                var fx0 = f(x0); //store the result of the function
-                //if the value is zero then we're done because 0 - (0/d f(x0)) = 0
-                if(x0 === 0 && fx0 === 0) {
-                    x = 0;
-                    break;
-                }
-                iter++;
-                if(iter > maxiter)
-                    return; //naximum iterations reached
-                
-                x = x0 - fx0/fp(x0);
-                var e = Math.abs(x - x0);
-                x0 = x;
-            }
-            while(e > Number.EPSILON)
-
-            return x;
-        };
+        
+        
         var attempt_Newton = function(symbol) { 
             var has_trig = symbol.hasTrig();
             // we get all the points where a possible zero might exist

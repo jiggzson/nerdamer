@@ -10,13 +10,14 @@
 var nerdamer = (function(imports) { 
     "use strict";
 
-    var version = '0.7.17',
+    var version = '0.8.0',
 
         _ = new Parser(), //nerdamer's parser
         //import bigInt
         bigInt = imports.bigInt,
         
         Groups = {},
+        
         
         //container of pregenerated primes
         PRIMES = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,107,109,113
@@ -35,9 +36,11 @@ var nerdamer = (function(imports) {
             1933,1949,1951,1973,1979,1987,1993,1997,1999,2003,2011,2017,2027,2029,2039,2053,2063,2069,2081,2083],
         //this is the class which holds the utilities which are exported to the core
         //All utility functions which are to be made available to the core should be added to this object
-        Utils = {},
+//        Utils = {},
         
-        //Settings
+        //SETTINGS ##!!
+        CUSTOM_OPERATORS = {},
+        
         Settings = {
             //the max number up to which to cache primes. Making this too high causes performance issues
             init_primes: 1000,
@@ -75,42 +78,60 @@ var nerdamer = (function(imports) {
             //Print out warnings or not
             SILENCE_WARNINGS: false,
             //Precision
-            PRECISION: 40
-        },
+            PRECISION: 40,
+            //function mappings
+            VECTOR: 'vector',
+            PARENTHESIS: 'parens',
+            SQRT: 'sqrt',
+            ABS: 'abs',
+            FACTORIAL: 'factorial',
+            DOUBLEFACTORIAL: 'dfactorial',
+            //reference pi and e
+            LONG_PI: '3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214'+
+                    '808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196',
+            LONG_E: '2.718281828459045235360287471352662497757247093699959574966967627724076630353547594571382178525166427427466'+
+                    '39193200305992181741359662904357290033429526059563073813232862794349076323382988075319525101901',
+            PI: Math.PI,
+            E: Math.E
+        };
         
-        //Container for custom operators
-        CUSTOM_OPERATORS = {
+        (function() {
+            Settings.CACHE.roots = {};
+            var x = 40, 
+                y = 40;
+            for(var i=2; i<=x; i++) {
+                for(var j=2; j<=y; j++) {
+                    var nthpow = bigInt(i).pow(j);
+                    Settings.CACHE.roots[nthpow+'-'+j] = i;
+                }
+            }
+        })();
 
-        },
-        
         //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
         //The groups that help with organizing during parsing. Note that for FN is still a function even 
         //when it's raised to a symbol, which typically results in an EX
-        N   = Groups.N  = 1, // A number
-        P   = Groups.P  = 2, // A number with a rational power e.g. 2^(3/5). 
-        S   = Groups.S  = 3, // A single variable e.g. x. 
-        EX  = Groups.EX = 4, // An exponential
-        FN  = Groups.FN = 5, // A function
-        PL  = Groups.PL = 6, // A symbol/expression having same name with different powers e.g. 1/x + x^2
-        CB  = Groups.CB = 7, // A symbol/expression composed of one or more variables through multiplication e.g. x*y
-        CP  = Groups.CP = 8, // A symbol/expression composed of one variable and any other symbol or number x+1 or x+y
-        
-        CONST_HASH = Settings.CONST_HASH = '#',
+        var N   = Groups.N  = 1, // A number
+            P   = Groups.P  = 2, // A number with a rational power e.g. 2^(3/5). 
+            S   = Groups.S  = 3, // A single variable e.g. x. 
+            EX  = Groups.EX = 4, // An exponential
+            FN  = Groups.FN = 5, // A function
+            PL  = Groups.PL = 6, // A symbol/expression having same name with different powers e.g. 1/x + x^2
+            CB  = Groups.CB = 7, // A symbol/expression composed of one or more variables through multiplication e.g. x*y
+            CP  = Groups.CP = 8; // A symbol/expression composed of one variable and any other symbol or number x+1 or x+y
+
+        var CONST_HASH = Settings.CONST_HASH = '#',
         
         //GLOBALS
         
-        PARENTHESIS = Settings.PARENTHESIS = 'parens',
+        PARENTHESIS = Settings.PARENTHESIS,
 
-        //the function which represent vector
-        VECTOR = Settings.VECTOR = 'vector',
-
-        SQRT = Settings.SQRT = 'sqrt',
+        SQRT = Settings.SQRT,
         
-        ABS = Settings.ABS = 'abs',
+        ABS = Settings.ABS,
         
-        FACTORIAL = Settings.FACTORIAL = 'factorial',
+        FACTORIAL = Settings.FACTORIAL,
         
-        DOUBLEFACTORIAL = Settings.DOUBLEFACTORIAL = 'dfactorial',
+        DOUBLEFACTORIAL = Settings.DOUBLEFACTORIAL,
 
         //the storage container "memory" for parsed expressions
         EXPRESSIONS = [],
@@ -121,14 +142,29 @@ var nerdamer = (function(imports) {
         //the container used to store all the reserved functions
         RESERVED = [],
 
-        WARNINGS = [],
+        WARNINGS = [];
         
+        /**
+         * Use this when errors are suppressible
+         * @
+         * @param {String} msg
+         */
+        var err = function(msg, ErrorObj) {
+            if(!Settings.suppress_errors) {
+                if(ErrorObj)
+                    throw new ErrorObj(msg);
+                else
+                    throw new Error(msg);
+            }
+        };
+        
+        //UTILS ##!!
         /**
          * Checks to see if value is one of nerdamer's reserved names
          * @param {String} value
          * @return boolean
          */
-        isReserved = Utils.isReserved = function(value) { 
+        var isReserved = function(value) { 
             return RESERVED.indexOf(value) !== -1;
         },
         
@@ -137,7 +173,7 @@ var nerdamer = (function(imports) {
          * @param {Symbol[]} arr
          * @returns {bool}
          */
-        allSame = Utils.allSame = function(arr) {
+        allSame = function(arr) {
             var last = arr[0];
             for(var i=1, l=arr.length; i<l; i++) 
                 if(!arr[i].equals(last))
@@ -146,23 +182,10 @@ var nerdamer = (function(imports) {
         },
 
         /**
-         * Use this when errors are suppressible
-         * @param {String} msg
-         */
-        err = function(msg, ErrorObj) {
-            if(!Settings.suppress_errors) {
-                if(ErrorObj)
-                    throw new ErrorObj(msg);
-                else
-                    throw new Error(msg);
-            }
-        },
-        
-        /**
          * Used to pass warnings or low severity errors about the library
          * @param msg
          */
-        warn = Utils.warn = function(msg) {
+        warn = function(msg) {
             WARNINGS.push(msg);
             if(!Settings.SILENCE_WARNINGS && console && console.warn) {
                 console.warn(msg);
@@ -176,7 +199,7 @@ var nerdamer = (function(imports) {
          * @param {String} typ - The type of symbols that's being validated
          * @throws {Exception} - Throws an exception on fail
          */
-        validateName = Utils.validateName = function(name, typ) { 
+        validateName = function(name, typ) { 
             typ = typ || 'variable';
             if(Settings.ALLOW_CHARS.indexOf(name) !== -1)
                 return;
@@ -185,37 +208,8 @@ var nerdamer = (function(imports) {
                 throw new Error(name+' is not a valid '+typ+' name');
             }
         },
-        /**
-         * Finds intersection of two arrays
-         * @param {array} a
-         * @param {Array} b
-         * @param {Array} compare_fn
-         * @returns {Array}
-         */
-        intersection = Utils.intersection = function(a, b, compare_fn) {
-            var c = [];
-            if(a.length > b.length) {
-                var t = a; a = b; b = t;
-            }
-            b = b.slice();
-            var l = a.length, l2 = b.length;
-            for(var i=0; i<l; i++) {
-                var item = a[i];
-                for(var j=0; j<l2; j++) {
-                    var item2 = b[j];
-                    if(item2 === undefined) continue;
-                    var equals = compare_fn ? compare_fn(item, item2) : item === item2;
-                    if(equals) {
-                        b[j] = undefined;
-                        c.push(item);
-                        continue;
-                    }
-                }
-            }
-            return c;
-        },
         //convert number from scientific format to decimal format
-        scientificToDecimal = Utils.scientificToDecimal = function(num) {
+        scientificToDecimal = function(num) {
             //if the number is in scientific notation remove it
             if(/\d+\.?\d*e[\+\-]*\d+/i.test(num)) {
                 var zero = '0',
@@ -240,7 +234,7 @@ var nerdamer = (function(imports) {
          * Checks if number is a prime number
          * @param {Number} n - the number to be checked
          */
-        isPrime  = Utils.isPrime = function(n) {
+        isPrime  = function(n) {
             var q = Math.floor(Math.sqrt(n));
             for (var i = 2; i <= q; i++) {
                 if (n % i === 0) return false;
@@ -253,7 +247,7 @@ var nerdamer = (function(imports) {
          * @param {Number|Symbol} num
          * @returns {boolean}
          */
-        isFraction = Utils.isFraction = function(num) {
+        isFraction = function(num) {
             if(isSymbol(num)) return isFraction(num.multiplier.toDecimal());
             return (num % 1 !== 0);
         },
@@ -262,7 +256,7 @@ var nerdamer = (function(imports) {
          * Checks to see if the object provided is a Symbol
          * @param {Object} obj
          */
-        isSymbol = Utils.isSymbol = function(obj) {
+        isSymbol = function(obj) {
             return (obj instanceof Symbol);
         },
         
@@ -270,7 +264,7 @@ var nerdamer = (function(imports) {
          * Checks to see if the object provided is an Expression
          * @param {Object} obj
          */
-        isExpression = Utils.isExpression = function(obj) {
+        isExpression = function(obj) {
             return (obj instanceof Expression);
         },
         
@@ -283,7 +277,7 @@ var nerdamer = (function(imports) {
          * @returns {undefined}
          * @throws {Error} for expontentials
          */
-        separate = Utils.separate = function(symbol, o) {
+        separate = function(symbol, o) {
             symbol = _.expand(symbol);
             o = o || {};
             var insert = function(key, sym) {
@@ -312,7 +306,7 @@ var nerdamer = (function(imports) {
         },
         
         //fills holes in an array with zero symbol
-        fillHoles = Utils.fillHoles = function(arr, n) {
+        fillHoles = function(arr, n) {
             n = n || arr.length;
             for(var i=0; i<n; i++) {
                 var sym = arr[i];
@@ -327,7 +321,7 @@ var nerdamer = (function(imports) {
          * Checks to see if the object provided is a Vector
          * @param {Object} obj
          */
-        isVector = Utils.isVector = function(obj) {
+        isVector = function(obj) {
             return (obj instanceof Vector);
         },
         
@@ -335,7 +329,7 @@ var nerdamer = (function(imports) {
          * Checks to see if the object provided is a Matrix
          * @param {Object} obj
          */
-        isMatrix = Utils.isMatrix = function(obj) {
+        isMatrix = function(obj) {
             return (obj instanceof Matrix);
         },
         
@@ -343,7 +337,7 @@ var nerdamer = (function(imports) {
          * Checks to see if a symbol is in group N
          * @param {Symbol} symbol
          */
-        isNumericSymbol = Utils.isNumericSymbol = function(symbol) {
+        isNumericSymbol = function(symbol) {
             return symbol.group === N;
         },
 
@@ -351,7 +345,7 @@ var nerdamer = (function(imports) {
          * Checks to see if a symbol is a variable with no multiplier nor power
          * @param {Symbol} symbol
          */
-        isVariableSymbol = Utils.isVariableSymbol = function(symbol) {
+        isVariableSymbol = function(symbol) {
             return symbol.group === S && symbol.multiplier.equals(1) && symbol.power.equals(1);
         },
         
@@ -359,7 +353,7 @@ var nerdamer = (function(imports) {
          * Checks to see if the object provided is an Array
          * @param {Object} arr
          */
-        isArray = Utils.isArray = function(arr) {
+        isArray = function(arr) {
             return arr instanceof Array;
         },
 
@@ -367,7 +361,7 @@ var nerdamer = (function(imports) {
          * Checks to see if a number is an integer
          * @param {Number} num
          */
-        isInt = Utils.isInt = function(num) {
+        isInt = function(num) {
             return num % 1 === 0;
         },
 
@@ -375,7 +369,7 @@ var nerdamer = (function(imports) {
          * @param {Number|Symbol} obj
          * @returns {boolean}
          */
-        isNegative = Utils.isNegative = function(obj) {
+        isNegative = function(obj) {
             if( isSymbol(obj) ) {
                 obj = obj.multiplier;
             }
@@ -386,7 +380,7 @@ var nerdamer = (function(imports) {
          * @param {String} str
          * @returns {String} - returns a formatted string surrounded by brackets
          */
-        inBrackets = Utils.inBrackets = function(str) {
+        inBrackets = function(str) {
             return '('+str+')';
         },
         
@@ -398,7 +392,7 @@ var nerdamer = (function(imports) {
          * @param {String} with_str - The replacement string
          * @returns {String} - A formatted string
          */
-        stringReplace = Utils.stringReplace = function(str, from, to, with_str) {
+        stringReplace = function(str, from, to, with_str) {
             return str.substr(0, from)+with_str+str.substr(to, str.length);
         },
         
@@ -407,7 +401,7 @@ var nerdamer = (function(imports) {
          * @param {Object} obj
          * @returns {boolean}
          */
-        customType = Utils.customType = function(obj) {
+        customType = function(obj) {
             return obj !== undefined && obj.custom;
         },
         
@@ -417,7 +411,7 @@ var nerdamer = (function(imports) {
          * @param {Number} b
          * @returns {boolean}
          */
-        sameSign = Utils.sameSign = function(a, b) {
+        sameSign = function(a, b) {
             return (a < 0) === (b < 0);
         },
         
@@ -426,7 +420,7 @@ var nerdamer = (function(imports) {
          * @example format('{0} nice, {0} sweet')
          * //returns 'something nice, something sweet'
          */
-        format = Utils.format = function() {
+        format = function() {
             var args = [].slice.call(arguments),
                 str = args.shift();
                 var new_str = str.replace(/{(\d+)}/g, function(match, index) {
@@ -442,7 +436,7 @@ var nerdamer = (function(imports) {
          * @param {Object} obj
          * @returns {Array}
          */
-        keys = Utils.keys = Object.keys,
+        keys = Object.keys,
 
         /**
          * Returns the first encountered item in an object. Items do not have a fixed order in objects 
@@ -450,7 +444,7 @@ var nerdamer = (function(imports) {
          * @param {Object} obj
          * @returns {*}
          */
-        firstObject = Utils.firstObject = function(obj, key) {
+        firstObject = function(obj, key) {
             for( var x in obj ) 
                 break;
             if(key)
@@ -465,7 +459,7 @@ var nerdamer = (function(imports) {
          * @param {String[]} vars - an optional array of variables to use
          * @returns {bool}
          */
-        compare = Utils.compare = function(sym1, sym2, vars) {
+        compare = function(sym1, sym2, vars) {
             var n = 5; //a random number between 1 and 5 is good enough
             var scope = {}; // scope object with random numbers generated using vars
             var comparison;
@@ -482,7 +476,7 @@ var nerdamer = (function(imports) {
          * @param {Array} arr
          * @returns {Number} 
          */
-        arrayMax = Utils.arrayMax = function(arr) {
+        arrayMax = function(arr) {
             return Math.max.apply(undefined, arr);
         },
 
@@ -491,7 +485,7 @@ var nerdamer = (function(imports) {
          * @param {Array} arr
          * @returns {Number} 
          */
-        arrayMin = Utils.arrayMin = function(arr) {
+        arrayMin = function(arr) {
             return Math.min.apply(undefined, arr);
         },
         
@@ -500,13 +494,13 @@ var nerdamer = (function(imports) {
          * @param {Array} arr
          * @returns {Array}
          */
-        arrayClone = Utils.arrayClone = function(arr) {
+        arrayClone = function(arr) {
             var new_array = [], l = arr.length;
             for(var i=0; i<l; i++) new_array[i] = arr[i].clone();
             return new_array;
         },
         
-        comboSort = Utils.comboSort = function(a, b) {
+        comboSort = function(a, b) {
             var l = a.length,
                 combined = []; //the linker
             for(var i=0; i<a.length; i++) {
@@ -527,7 +521,7 @@ var nerdamer = (function(imports) {
             return [na, nb];
         },
         
-        decompose_fn = Utils.decompose_fn = function(fn, wrt, as_obj) { 
+        decompose_fn = function(fn, wrt, as_obj) { 
             var ax, a, x, b;
             if(fn.group === CP) {
                 var t = _.expand(fn.clone()).stripVar(wrt); 
@@ -553,7 +547,7 @@ var nerdamer = (function(imports) {
          * @param {Number} x
          * @param {Number} s
          */
-        _round = Utils.round = function(x, s) { 
+        nround = function(x, s) { 
             s = typeof s === 'undefined' ? 14 : s;
             return Math.round( x*Math.pow( 10,s ) )/Math.pow( 10,s );
         },
@@ -567,7 +561,7 @@ var nerdamer = (function(imports) {
          * automatically. In the future this will be a Collector object.
          * @returns {String[]} - An array containing variable names
          */
-        variables = Utils.variables = function(obj, poly, vars) { 
+        variables = function(obj, poly, vars) { 
             vars = vars || {
                 c: [],
                 add: function(value) {
@@ -604,7 +598,7 @@ var nerdamer = (function(imports) {
             return vars.c.sort();
         },
         
-        getU = Utils.getU = function(symbol) {
+        getU = function(symbol) {
             //start with u
             var u = 'u', //start with u
                 v = u, //init with u
@@ -624,7 +618,7 @@ var nerdamer = (function(imports) {
             return v;
         },
         
-        clearU = Utils.clearU = function(u) {
+        clearU = function(u) {
             var indx = RESERVED.indexOf(u);
             if(indx !== -1)
                 RESERVED[indx] = undefined;
@@ -635,7 +629,7 @@ var nerdamer = (function(imports) {
          * @param {Object|Array} obj
          * @param {Function} fn 
          */
-        each = Utils.each = function(obj, fn) {
+        each = function(obj, fn) {
             if(isArray(obj)) {
                 var l = obj.length;
                 for(var i=0; i<l; i++) fn.call(obj, i);
@@ -650,7 +644,7 @@ var nerdamer = (function(imports) {
          * @param {Number} num
          * @returns {boolean}
          */
-        even = Utils.even = function(num) {
+        even = function(num) {
             return num % 2 === 0;
         },
         
@@ -659,7 +653,7 @@ var nerdamer = (function(imports) {
          * @param {Number} num
          * @returns {boolean}
          */
-        evenFraction = Utils.evenFraction = function(num) {
+        evenFraction = function(num) {
             return 1/( num % 1) % 2 === 0;
         },
         
@@ -667,7 +661,7 @@ var nerdamer = (function(imports) {
          * Strips duplicates out of an array
          * @param {Array} arr
          */
-        arrayUnique = Utils.arrayUnique = function(arr) {
+        arrayUnique = function(arr) {
             var l = arr.length, a = [];
             for(var i=0; i<l; i++) {
                 var item = arr[i];
@@ -680,7 +674,7 @@ var nerdamer = (function(imports) {
          * Reserves the names in an object so they cannot be used as function names
          * @param {Object} obj
          */
-        reserveNames = Utils.reserveNames = function(obj) {
+        reserveNames = function(obj) {
             var add = function(item) {
                 if(RESERVED.indexOf(item) === -1) RESERVED.push(item);
             };
@@ -699,7 +693,7 @@ var nerdamer = (function(imports) {
          * @param {Object|Array} obj
          * @param {Integer} indexOrKey
          */
-        remove = Utils.remove = function( obj, indexOrKey ) {
+        remove = function( obj, indexOrKey ) {
             var result;
             if( isArray(obj) ) {
                 result =  obj.splice(indexOrKey, 1)[0];
@@ -721,23 +715,33 @@ var nerdamer = (function(imports) {
          * @param {boolean} opt - The value of the setting in the block
          * @param {String} obj - The obj of interest. Usually a Symbol but could be any object
          */
-        block = Utils.block = function(setting, f, opt, obj) {
+        block = function(setting, f, opt, obj) {
             var current_setting = Settings[setting];
             Settings[setting] = opt === undefined ? true : !! opt;
             var retval = f.call(obj);
             Settings[setting] = current_setting;
             return retval;
         },
-
+        
+         //provide a mechanism for accessing functions directly
+        //Not yet complete!!! Some functions will return undefined. This can maybe 
+        //just remove the function object at some point when all functions are eventually
+        //housed in the global function object.
+        importFunctions = function() {
+            var o = {};
+            for(var x in _.functions)
+                o[x] = _.functions[x][0];
+            return o;
+        },
         /**
          * Converts function arguments to an array. Now used by gcd and lcm in Algebra.js :)
          * @param {Object} obj - arguments obj
          */
-        arguments2Array = Utils.arguments2Array = function(obj) {
+        arguments2Array = function(obj) {
             return [].slice.call(obj);
         },
         
-        getCoeffs = Utils.getCoeffs = function(symbol, wrt) {
+        getCoeffs = function(symbol, wrt) {
             var coeffs = [];
             //we loop through the symbols and stick them in their respective 
             //containers e.g. y*x^2 goes to index 2
@@ -766,61 +770,12 @@ var nerdamer = (function(imports) {
             return coeffs;
         },
         
-        /**
-         * Using a regex to get between brackets can be a bit tricky. This functions makes it more abstract 
-         * to fetch between brackets within a string from any given index. If the starting index is a bracket 
-         * then it will fail. returns [matched_string, first_bracket_index, end_bracket_index]
-         * @param {Char} ob - open bracket
-         * @param {Char} cb - close bracket
-         * @param {String} str - The string being read
-         * @param {Integer} start - Where in the string to start
-         * @returns {Array}
-         */
-        betweenBrackets = function(ob, cb, str, start) {
-            start = start || 0;
-            var l = str.length,
-                open = 0, fb;
-            for(var i=start; i<l; i++) {
-                var ch = str.charAt(i); //get the character at this position
-
-                if(ch === ob) { //if an open bracket was found
-                    if(fb === undefined) fb = i+1;//mark the first bracket found
-                    open++; //mark a new open bracket
-                }
-                if(ch === cb) { //if a close bracket was found
-                    open--; //close a bracket
-                    if(open === 0 && fb !== undefined) {
-                        var nb = i;
-                        return [str.substring(fb, nb), fb, nb];
-                    }
-                }
-            }
-            
-            return [];
-        },
-        
-        /**
-         * A helper function to make substitutions
-         * @param {Object} subs
-         */
-        format_subs = function(subs) {
-            for(var x in subs) subs[x] = _.parse(subs[x].toString());
-            return subs;
-        },
-        generatePrimes = Utils.generatePrimes = function(upto) {
-            //get the last prime in the array
-            var last_prime = PRIMES[PRIMES.length-1] || 2; 
-            //no need to check if we've already encountered the number. Just check the cache.
-            for(var i=last_prime; i<upto; i++) {
-                if(isPrime(i)) PRIMES.push(i);
-            }
-        },
-        evaluate = Utils.evaluate = function (symbol) {
+        evaluate = function (symbol) {
             return block('PARSE2NUMBER', function() {
                 return _.parse(symbol);
             }, true);
         },
-        convertToVector = Utils.convertToVector = function(x) {
+        convertToVector = function(x) {
             if(isArray(x)) {
                 var vector = new Vector([]);
                 for(var i=0; i<x.length; i++) 
@@ -832,10 +787,20 @@ var nerdamer = (function(imports) {
                 return _.parse(x);
             return x;
         },
+        
+        generatePrimes = function(upto) {
+            //get the last prime in the array
+            var last_prime = PRIMES[PRIMES.length-1] || 2; 
+            //no need to check if we've already encountered the number. Just check the cache.
+            for(var i=last_prime; i<upto; i++) {
+                if(isPrime(i)) PRIMES.push(i);
+            }
+        };
+        
         //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
         //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the 
         //functions within are pretty self-explanatory.
-        Math2 = {
+        var Math2 = {
             csc: function(x) { return 1/Math.sin(x); },
             sec: function(x) { return 1/Math.cos(x); },
             cot: function(x) { return 1/Math.tan(x); },
@@ -1228,7 +1193,7 @@ var nerdamer = (function(imports) {
                     return result;
                 }
                 
-                return Utils.round(integrate(f, a, b, tol, maxdepth), 12);
+                return nround(integrate(f, a, b, tol, maxdepth), 12);
             },
             //https://en.wikipedia.org/wiki/Trigonometric_integral
             //CosineIntegral
@@ -1385,18 +1350,7 @@ var nerdamer = (function(imports) {
         //link the Math2 object to Settings.FUNCTION_MODULES
         Settings.FUNCTION_MODULES.push(Math2);
 
-        var cacheRoots = function() {
-            Settings.CACHE.roots = {};
-            var x = 40, 
-                y = 40;
-            for(var i=2; i<=x; i++) {
-                for(var j=2; j<=y; j++) {
-                    var nthpow = bigInt(i).pow(j);
-                    Settings.CACHE.roots[nthpow+'-'+j] = i;
-                }
-            }
-        };
-        cacheRoots();
+        
         //polyfills
         //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/
         Math.sign = Math.sign || function(x) { 
@@ -1479,6 +1433,7 @@ var nerdamer = (function(imports) {
      * 
      * @param {Object} obj
      * @param {String} option get is as a hash 
+     * @param {int} useGroup
      * @returns {String}
      */
     function text(obj, option, useGroup) { 
@@ -1603,7 +1558,10 @@ var nerdamer = (function(imports) {
             var l = obj.elements.length,
                 c = [];
             for(var i=0; i<l; i++) c.push(obj.elements[i].text(option));
-            return '['+c.join(',')+']';
+            var s = '['+c.join(',')+']';
+            if(obj.getter)
+                s = s+'['+text(obj.getter)+']';
+            return s;
         }
         else {
             try {
@@ -1612,23 +1570,8 @@ var nerdamer = (function(imports) {
             catch(e) { return ''; }
         }
     }
-    
-    Utils.text = text;
+
     /* END GLOBAL FUNCTIONS */
-    
-    /**** CLASSES *****/
-    /**
-     * The Collector is used to find unique values within objects
-     * @param {Function} extra_conditions - A function which performs a check on the values and returns a boolean
-     * @returns {Collector}
-     */
-    function Collector(extra_conditions) {
-        this.c = [];
-        this.add = function(value) {
-            var condition_true = extra_conditions ? extra_conditions(value) : true;
-            if(this.c.indexOf(value) === -1 && condition_true) this.c.push(value);
-        };
-    }
     
     /** 
      * This is what nerdamer returns. It's sort of a wrapper around the symbol class and 
@@ -3355,20 +3298,78 @@ var nerdamer = (function(imports) {
     }
     MaximumIterationsReached.prototype = Object.create(Error.prototype);
     
+    function Slice(upper, lower) {
+        this.start = upper;
+        this.end = lower;
+    };
+    Slice.prototype.isConstant = function() {
+        return this.start.isConstant() && this.end.isConstant();
+    };
+    Slice.prototype.text = function() {
+        return text(this.start)+':'+text(this.end);
+    };
+    /**
+     * Class used to collect arguments for functions
+     * @returns {Parser.Collection}
+     */
+    function Collection() {
+        this.elements = [];
+    }
+    Collection.prototype.append = function(e) {
+        this.elements.push(e);
+    };
+    Collection.prototype.getItems = function() {
+        return this.elements;
+    };
+    Collection.prototype.toString = function() { 
+        return _.pretty_print(this.elements);
+    };
+    Collection.create = function(e) {
+        var collection = new Collection();
+        if(e)
+            collection.append(e);
+        return collection;
+    };
+    
+    
+    
     //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
         //we want the underscore to point to this parser not the global nerdamer parser.
-        var _ = this, 
-            bin = {},
-            constants = this.constants = {
-                PI: Math.PI,
-                E:  Math.E
-            },
-            subs = {
-                e:  Math.E,
-                pi: Math.PI
-            };
-            
+        var _ = this;
+        var bin = {};
+        
+        //CLASSES ##!!
+        function Token(node, node_type, column) {
+            this.type = node_type;
+            this.value = node;
+            if(column !== undefined)
+                this.column = column+1;
+            if(node_type === Token.OPERATOR) {
+                //copy everything over from the operator
+                var operator = operators[node];
+                for(var x in operator) 
+                    this[x] = operator[x];
+
+            }
+            else if(node_type === Token.FUNCTION) {
+                this.precedence = Token.MAX_PRECEDENCE; //leave enough roon
+                this.leftAssoc = false;
+            }
+        }
+        Token.prototype.toString = function() {
+            return this.value;
+        };
+        Token.prototype.toString = function() {
+            if(this.is_prefix)
+                return '`'+this.value;
+            return this.value;
+        };
+        //some constants
+        Token.OPERATOR = 'OPERATOR';
+        Token.VARIABLE_OR_LITERAL = 'VARIABLE_OR_LITERAL';
+        Token.FUNCTION = 'FUNCTION';
+        Token.MAX_PRECEDENCE = 999;
         var complex = {
             prec: undefined,
             cos: function(r, i) {
@@ -3569,7 +3570,7 @@ var nerdamer = (function(imports) {
                     return new Symbol(0);
                 
                 if(Settings.PARSE2NUMBER) { 
-                    if(symbol.equals(new Symbol(Math.PI/2)))
+                    if(symbol.equals(new Symbol(Settings.PI/2)))
                         return new Symbol(0);
                     if(symbol.isConstant()) 
                         return new Symbol(Math.cos(symbol.valueOf()));
@@ -4067,56 +4068,203 @@ var nerdamer = (function(imports) {
         this.trigh = trigh;
         
         //list all the supported operators
-        var operators = this.operators = {
-                '^' : new Operator('^', 'pow', 6, false, false),
-                '**' : new Operator('**', 'pow', 6, false, false),
-                '!!' : new Operator('!!', 'dfactorial',5, false, false, true, function(e) {
-                    return _.symfunction(DOUBLEFACTORIAL, [e]); //wrap it in a factorial function
-                }),
-                '!' : new Operator('!', 'factorial', 5, false, false, true, function(e) {
+        var operators = {
+            '!!': {
+                precedence: 7,
+                operator: '!!',
+                action: 'dfactorial',
+                prefix: false,
+                postfix: true,
+                leftAssoc: true,
+                operation: function(e) {
+                    return _.symfunction(Settings.DOUBLEFACTORIAL, [e]); //wrap it in a factorial function
+                }
+            },
+            '!': {
+                precedence: 7,
+                operator: '!',
+                action: 'factorial',
+                prefix: false,
+                postfix: true,
+                leftAssoc: true,
+                operation: function(e) {
                     return factorial(e); //wrap it in a factorial function
-                }),  
-                //done with crazy fix
-                '*' : new Operator('*', 'multiply', 4, true, false),
-                '/' : new Operator('/', 'divide', 4, true, false),
-                '%' : new Operator('%', 'percent', 4, true, false, true, function(e) {
-                    return _.percent(e);
-                }),
-                '%+' : new Operator('%+', 'percent_add', 2, true, false),
-                '%-' : new Operator('%-', 'percent_subtract', 3, true, false),
-                '+' : new Operator('+', 'add', 3, true, true, false, function(e) {
-                    return e;
-                }),
-                '-' : new Operator('-', 'subtract', 3, true, true, false, function(e) {
-                    return e.negate();
-                }),
-                //begin crazy fix ... :( TODO!!! revisit
-                '!+' : new Operator('!+', 'factadd', 3, true, true, false),
-                '!!+' : new Operator('!!+', 'dfactadd', 3, true, true, false),
-                '!-' : new Operator('!-', 'factsub', 3, true, true, false),
-                '!!-' : new Operator('!!-', 'dfactsub', 3, true, true, false),
-                '=' : new Operator('=', 'equals', 2, true, false),
-                '==' : new Operator('==', 'eq', 1, false, false),
-                '<' : new Operator('<', 'lt', 1, false, false),
-                '<=' : new Operator('<=', 'lte', 1, false, false),
-                '>' : new Operator('>', 'gt', 1, false, false),
-                '>=' : new Operator('>=', 'gte', 1, false, false),
-                ',' : new Operator(',', 'comma', 0, true, false)
+                }
             },
-            //list of supported brackets
-            brackets = {
-                '(': new Bracket('(', 0, true, null, 'round'),
-                ')': new Bracket(')', 0, false, null, 'round'),
-                '[': new Bracket('[', 1, true, function() {
-                    var f = new Symbol('vector');
-                    f.is_function = true;
-                    return f;
-                }, 'square'),
-                ']': new Bracket(']', 1, false, null, 'square')
+            '^': {
+                precedence: 6,
+                operator: '^',
+                action: 'pow',
+                prefix: false,
+                postfix: false,
+                leftAssoc: true
             },
+            '**': {
+                precedence: 6,
+                operator: '**',
+                action: 'pow',
+                prefix: false,
+                postfix: false,
+                leftAssoc: true
+            },
+            '%': {
+                precedence: 4,
+                operator: '%',
+                action: 'percent',
+                prefix: false,
+                postfix: true,
+                leftAssoc: true,
+                overloaded: true,
+                overloadAction: 'mod',
+                operation: function(x){ return _.divide(x, new Symbol(100)); }
+            },
+            '*': {
+                precedence: 4,
+                operator: '*',
+                action: 'multiply',
+                prefix: false,
+                postfix: false,
+                leftAssoc: false
+            },
+            '/': {
+                precedence: 4,
+                operator: '/',
+                action: 'divide',
+                prefix: false,
+                postfix: false,
+                leftAssoc: false
+            },
+            '+': {
+                precedence: 3,
+                operator: '+',
+                action: 'add',
+                prefix: true,
+                postfix: false,
+                leftAssoc: false,
+                operation: function(x) { return x; }
+            },
+            '-': {
+                precedence: 3,
+                operator: '-',
+                action: 'subtract',
+                prefix: true,
+                postfix: false,
+                leftAssoc: false,
+                operation: function(x) { return x.negate();}
+            },
+            '=': {
+                precedence: 2,
+                operator: '=',
+                action: 'equals',
+                prefix: false,
+                postfix: false,
+                leftAssoc: false
+            },
+            '==': {
+                precedence: 1,
+                operator: '==',
+                action: 'eq',
+                prefix: false,
+                postfix: false,
+                leftAssoc: false
+            },
+            '<': {
+                precedence: 1,
+                operator: '<',
+                action: 'lt',
+                prefix: false,
+                postfix: false,
+                leftAssoc: false
+            },
+            '<=': {
+                precedence: 1,
+                operator: '<=',
+                action: 'lte',
+                prefix: false,
+                postfix: false,
+                leftAssoc: false
+            },
+            '>': {
+                precedence: 1,
+                operator: '>',
+                action: 'gt',
+                prefix: false,
+                postfix: false,
+                leftAssoc: false
+            },
+            '=>': {
+                precedence: 1,
+                operator: '=>',
+                action: 'gte',
+                prefix: false,
+                postfix: false,
+                leftAssoc: false
+            },
+            'in': {
+                precedence: 1,
+                operator: ',',
+                action: 'in',
+                prefix: false,
+                postfix: false,
+                leftAssoc: false
+            },
+            ',': {
+                precedence: 0,
+                operator: ',',
+                action: 'comma',
+                prefix: false,
+                postfix: false,
+                leftAssoc: false
+            },
+            ':': {
+                precedence: 0,
+                operator: ',',
+                action: 'assign',
+                prefix: false,
+                postfix: false,
+                leftAssoc: false,
+                vectorFn: 'slice'
+            },
+            ':=': {
+                precedence: 0,
+                operator: ',',
+                action: 'function_assign',
+                prefix: false,
+                postfix: false,
+                leftAssoc: false
+            }
+        };
+
+        var brackets = {
+            '(': {
+                type: 'round',
+                id: 1,
+                is_open: true,
+                is_close: false
+            },
+            ')': {
+                type: 'round',
+                id: 2,
+                is_open: false,
+                is_close: true
+            },
+            '[': {
+                type: 'square',
+                id: 3,
+                is_open: true,
+                is_close: false,
+                maps_to: 'vector'
+            },
+            ']': {
+                type: 'square',
+                id: 4,
+                is_open: false,
+                is_close: true
+            }
+        };
             // Supported functions.
             // Format: function_name: [mapped_function, number_of_parameters]
-            functions = this.functions = {
+        var functions = this.functions = {
                 'cos'               : [ trig.cos, 1],
                 'sin'               : [ trig.sin, 1],
                 'tan'               : [ trig.tan, 1],
@@ -4365,101 +4513,19 @@ var nerdamer = (function(imports) {
             return new RegExp('(['+ostr+'])\\s+(['+ostr+'])');
         })();
         
-        /*
-         * This method parses the tree
-         * @param {String[]} rpn
-         * @returns {Symbol}
-         */
-        this.parseTree = function(rpn, subs) { 
-            var q = []; // The container for parsed values
-            var l = rpn.length;
-            // begin parsing
-            for(var i=0; i<l; i++) {
-                var e = rpn[i];
-                if(e.is_prefix_operator || e.is_postfix) { 
-                    q.push(e.operation(q.pop()));
-                    continue;
-                }
-                if(e.is_operator) {
-                    var b = q.pop(),
-                        a = q.pop();
-                    if(isArray(b)) //misread function
-                        _.error('Unrecognized function "'+a.value+'"');
-                    if(typeof a === 'undefined' && !e.is_postfix)
-                        _.error(e+' is not a valid postfix opertor');
-                    q.push(this[e.fn](a, b));
-                }
-                else if(e.value in functions) { 
-                    q.push(_.callfunction(e.value, q.pop()));
-                }
-                else { 
-                    // Blank denotes a beginning of a scope with a prefix operator so all we have to do is 
-                    // convert it to a zero
-                    if(e === '') {
-                        q.push(new Symbol(0));
-                    }
-                    else {
-                        var unsubbed = e;
-                        // make substitutions
-                        //first sub in aliases
-                        if(e in Settings.ALIASES)
-                            e = _.parse(Settings.ALIASES[e]);
-                        //constants take higher priority
-                        if(e in constants)
-                            e = new Symbol(constants[e]);
-                        //next subs
-                        else if(e in subs) {
-                            e = subs[e].clone();
-                        }
-                        else if(e in VARS) {
-                            e = VARS[e].clone();
-                        }
-                        e.unsubbed = unsubbed;
-                        q.push(e);
-                    }
-                }
-            }
-            
-            return q[0] || new Symbol(0);
-        };
-        
-        /**
-         * This is the method that triggers the parsing of the string. It generates a parse tree but processes 
-         * it right away. The operator functions are called when their respective operators are reached. For instance
-         * + with cause this.add to be called with the left and right hand values. It works by walking along each 
-         * character of the string and placing the operators on the stack and values on the output. When an operator
-         * having a lower order than the last is reached then the stack is processed from the last operator on the 
-         * stack.
-         * @param {String} expression_string
-         * @param {Object} substitutions
-         * @returns {Symbol}
-         */
-        this.parse = function(expression_string, substitutions, tree) { 
-            //prepare the substitutions
-            if(substitutions) {
-                for(var x in substitutions)
-                    substitutions[x] = _.parse(substitutions[x]);
-                subs = substitutions;
-            }
-            else
-                subs = {};
-
-            //link e and pi
-            if(Settings.PARSE2NUMBER) {
-                subs.e = new Symbol(Math.E);
-                subs.pi = new Symbol(Math.PI);
-            }
-
+        var prepare_expression = function(e) {
             /*
              * Since variables cannot start with a number, the assumption is made that when this occurs the
              * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for 
              * a side-by-side close and open parenthesis
              */
-            var e = String(expression_string), match;
+            e = String(e);
+            
+            var match;
             
             //add support for spaces between variables
             while(true) { 
-                match = this.operator_filter_regex.exec(e);
+                match = _.operator_filter_regex.exec(e);
                 if(!match)
                     break;
                 try {
@@ -4516,329 +4582,551 @@ var nerdamer = (function(imports) {
                 if(e_org === e) 
                     break;
             }
-            var l = e.length, //the length of the string
-                output = [], //the output array. This is what's returned
-                stack = [], //the operator stack
-                last_pos = 0, //the location of last operator encountered
-                open_brackets = [0, 0], //a counter for the open brackets
-                prefix_cache = [],
-                new_scope = true; //signal if we're in a new scope or not
-            // This method gets and inserts the token on output as the name implies
-            var get_and_insert_token = function(to_pos) {
-                if(to_pos !== last_pos) { 
-                    token = new Symbol(e.substring(last_pos, to_pos)); 
-                    output.push(token);
-                    //once we find out first token we are no longer in a new scope so flip
-                    //the flag
-                    new_scope = false; 
-                }
-            };  
-            
-            var verify_prefix_operator = function(operator) {
-                if(!operator.is_prefix)
-                    err(operator+' is not a valid prefix operator');
-            };
-            
-            var resolve_prefix = function(prefix1, prefix2) {
-                if(!prefix2)
-                    return prefix1;
-                if(prefix1.val === prefix2.val)
-                    return new Prefix(operators['+']);
-                return new Prefix(operators['-']);
-            };
-            
-            var insert_prefix = function(prefix) {
-                var sl = stack.length;
-                if(sl && stack[sl-1].is_prefix_operator) 
-                    stack.push(resolve_prefix(prefix, stack.pop()));
-                stack.push(prefix);   
-            };
-            
-            var collapse_prefix_cache = function(to_output) {
-                if(prefix_cache.length) {
-                    var prefix = prefix_cache.pop();
-                    while(prefix_cache.length)
-                        prefix = resolve_prefix(prefix, prefix_cache.pop());
-                    if(to_output)
-                        output.push(prefix);
-                    else
-                        stack.push(prefix);
-                }
-            };
-            
-            /*
-             * We define the operator as anything that performs any form of operation. A bracket as any object that defines
-             * a scope and a token as anything in between two operators. This enables us to have variables of more than one letter.
-             * This function is a modified version of the Shunting-Yard algorithm to enable variable names, and compound operators.
-             * operators are defined in the operator object. We walk the string and check every character. If an operator is encountered
-             * then we mark it's location. We find the next operator and get the token between. 
-             */
-            var token, operator, start = 0, i=0;
-            // start the generation of the tree
-            for(var i=start; i<l; i++) {
-                //the character
-                var ch = e.charAt(i); 
-                if(ch in operators) { 
-                    // We previously defined the token to be the anything between two operators and since we an operator
-                    //we can grab the token
-                    get_and_insert_token(i); 
-                    //mark the current position
-                    var c = i; 
-                    /*
-                     * In order to support compound operators we assume that the following might be operator as well. We keep walking the string
-                     * until we encounter a character which is no longer an operator. We define that entire sub-string an operator
-                     */
-                    while(e.charAt(i+1) in operators)
-                        i++;
-
-                    var end_operator = i+1;
-                    //the probable operator will be the difference between c and i;
-                    var pr_operator = e.substring(c, end_operator); 
-                    /* 
-                     * We now have to see if this operator is actually an operator or a combination of an operator and prefix operators 
-                     * e.g. 3*-+-8 or x^-3. To determine this we knock off an operator one at a time until we find the matching operator.
-                     * For instance if we have an operator -= and we get -=-- we knock of a minus from the back until we reach -= which will 
-                     * register as a defined operator since we defined it as such
-                     */
-                    while(!(pr_operator in operators)) { 
-                        var l2 = pr_operator.length,
-                            end = l2-1,
-                            prefix = operators[pr_operator.charAt(end)];
-                        pr_operator = pr_operator.substring(0, end);
-                        //make sure it's not a postfix operator that we're dealing with
-                        try {
-                            //verify that it's not a prefix operator
-                            verify_prefix_operator(prefix);
-                            //add the prefix to the stack
-                            prefix_cache.push(new Prefix(prefix)); 
-                        }
-                        catch(e) {
-                            //check if we're dealing with postfix operators. 
-                            //Rule: compound postfix operators must be a composition of postfix operators
-                            var prl = pr_operator.length, o;
-                            for(var j=0; j<prl; j++) {
-                                o = operators[pr_operator.charAt(j)];
-                                if(!o|| o && !o.is_postfix)
-                                    err(e.message);
-                            }
-
-                            //at this point we know that we have only postfix operators but they are parsed left to right
-                            var rem = '';
-                            do {
-                                if(pr_operator === '')
-                                    break; //we're done since the entire operator has been consumed
-                                if(pr_operator in operators) {
-                                    output.push(operators[pr_operator]);
-                                    pr_operator = rem;
-                                    rem = '';
-                                }
-                                else {
-                                    var end = pr_operator.length-1;
-                                    rem += pr_operator.charAt(end);
-                                    pr_operator = pr_operator.substring(0, end);
-                                } 
-                            }
-                            while(true)
-                            //the actual operator is now the one we assumed to be a prefix earlier. I need to really
-                            //pick better variable names :-/
-                            pr_operator = prefix.val;
-                            break;
-                        }
-                    }
-                    // we now have the operator
-                    operator = operators[pr_operator];
-                    
-                    // we mark where we find the last operator so we know where the next token begins
-                    last_pos = end_operator; 
-                    while(true) { 
-                        var sl = stack.length,
-                            los = stack[sl-1];
-                        //skip prefix 
-                        while(los !== undefined && los.is_prefix_operator)  {
-                            los = stack[--sl-1];
-                        }
-                            
-                        if(sl === 0 || !(operator.left_assoc && operator.precedence <= los.precedence 
-                            || !operator.left_assoc && operator.precedence < los.precedence))
-                            break; //nothing to do
-                        output.push(stack.pop());
-                    }
-
-                    // If we're in a new scope then we're dealing with a prefix operator
-                    if(new_scope) { 
-                        /*
-                         * There is literally no way to differentiate between a malformed expression and a properly formed one if there is no gap left 
-                         * at the beginning of the scope. This is best illustrated. Take the expression 3+7- in RPN it becomes 3,7,+,-
-                         * Take the expression -3+7 in RPN this become 3,7,+,- as well. The difference is that we tag the minus as
-                         * a prefix in the properly formed expression. Problem solved! But wait. Imagine we have no gaps at the beginning
-                         * of the scope let's say -(3+7). With no gaps this again becomes 3,7,+,- with no way to differentiate
-                         * between -3+7 and -(3+7) unless the second one is written as 3,7,+, ,- where the gap denotes the end of the scope
-                         */ 
-                        verify_prefix_operator(operator);
-                        var prefix = new Prefix(operator); 
-                        //collapse the prefix cache
-                        while(prefix_cache.length)
-                            prefix = resolve_prefix(prefix, prefix_cache.pop());
-                        insert_prefix(prefix);
-                    }
-                    else { 
-                        //if there's already a prefix on the stack then bring it down
-                        var sl = stack.length;
-                        if(sl && stack[sl-1].is_prefix_operator && operator.left_assoc) 
-                            //it's safe to move the prefix to output since it's at the beginning of a scope
-                            output.push(stack.pop());
-
-                        stack.push(operator);
-                        //resolve the prefixes
-                        collapse_prefix_cache();
-                    }
-                        
-                }
-                else if(ch in brackets) {
-                    var bracket = brackets[ch]; 
-                    if(bracket.open) { 
-                        //mark a bracket as being opened
-                        open_brackets[bracket.bracket_id]++;
-                        //check if we're dealing with a function
-                        if(last_pos !== i) {
-                            var f = new Symbol(e.substring(last_pos, i));
-                            // assume it's a function. Since a string is just an object, why not use it
-                            f.is_function = true;
-                            stack.push(f);
-                        }   
-                        if(bracket.fn)
-                            stack.push(bracket.fn());
-                        // We're in a new scope so signal so
-                        new_scope = true;
-                        stack.push(bracket);
-                        //get all the prefixes at the beginning of the scope
-                        last_pos = i+1; //move past the bracket
-                    }
-                    else {
-                        //close the open bracket
-                        open_brackets[bracket.bracket_id]--;
-                        // We proceed to pop the entire stack to output this this signals the end of a scope. The first thing is to get the 
-                        // the prefixes and then the token at the end of this scope.
-                        // get the token
-                        get_and_insert_token(i);
-                        // And then keep popping the stack until we reach a bracket
-                        while(true) {
-                            var entry = stack.pop();
-                            if(entry === undefined)
-                                err("Missing open bracket for bracket '"+bracket+"'!");
-                            //we found the matching bracket so our search is over
-                            if(entry.bracket_id === bracket.bracket_id)
-                                break; // We discard the closing bracket
-                            else 
-                                output.push(entry);
-                        }
-                        
-                        var sl = stack.length;
-                        //move the function to output
-                        if(sl && stack[sl-1].is_function)
-                            output.push(stack.pop());
-                        
-                        last_pos = i+1; //move past the bracket
-                    }
-                }
-            }
-            
-            //get the last token at the end of the string
-            get_and_insert_token(l);
-            //collapse the stack to output
-            while(stack.length)
-                output.push(stack.pop());
-
-            //check parity
-            for(var i=0; i<open_brackets.length; i++) 
-                if(open_brackets[i] > 0) {
-                    var brkt;
-                    for(bracket in brackets)
-                        if(brackets[bracket].bracket_id === i && !brackets[bracket].open)
-                            brkt = brackets[bracket];
-                    err('Missing close bracket. Expected "'+brkt+'"!');
-                }
-                   
-            if(tree)
-                return output;
-            
-            return this.parseTree(output, subs);
-
+            return e;
         };
-        
-        /**
-         * Reads a string into an array of Symbols and operators
-         * @param {Symbol} symbol
-         * @returns {Array}
-         */
-        this.toObject = function(expression_string) {
-            var output = [[]], //the first one is the parent
-                e = expression_string.split(' ').join(''), //remove spaces
-                func_stack = [],
-                lp = 0,
-                target = output[0],
-                token;
-            var push = function(token) {
-                if(token !== '')
-                    target.push(new Symbol(token));
+        //delay setting of constants until Settings is ready
+        this.initConstants = function() {
+            this.CONSTANTS = {
+                E: new Symbol(Settings.E),
+                PI: new Symbol(Settings.PI)
             };
-            //start the conversion
-            for(var i=0, l=e.length; i<l; i++) { 
-                var ch = e.charAt(i);
+        };
+        this.pretty_print = function(o) {
+            if(Array.isArray(o)) {
+                var s = o.map(x=>_.pretty_print(x)).join(', ');
+                if(o.type === 'vector')
+                    return 'vector<'+s+'>';
+                return '('+s+')';
+            }
+            return o.toString();
+        };
+        this.tokenize = function(e) {
+            //cast to String
+            e = String(e);
+             //remove multiple white spaces and spaces at beginning and end of string
+            e = e.trim().replace(/\s+/g, ' ');
+            //remove spaces before and after brackets
+            for(var x in brackets) {
+                var regex = new RegExp(brackets[x].is_close ? '\\s+\\'+x : '\\'+x+'\\s+', 'g');
+                e = e.replace(regex,x);
+            }
+
+            var col = 0; //the column position
+            var L = e.length; //expression length
+            var lpos = 0; //marks beginning of next token
+            var tokens = []; //the tokens container
+            var scopes = [tokens]; //initiate with the tokens as the highest scope
+            var target = scopes[0]; //the target to which the tokens are added. This can swing up or down
+            var depth = 0;
+            var open_brackets = [];
+            var HAS_SPACE = false; //marks if an open space character was found
+            /**
+             * Adds a scope to tokens
+             * @param {String} scope_type 
+             * @param {int} column 
+             * @returns {undefined}
+             */
+            var addScope = function(scope_type, column) {
+                var new_scope = []; //create a new scope
+                if(scope_type !== undefined) {
+                    new_scope.type = scope_type;
+                }
+                new_scope.column = column; //mark the column of the scope
+                scopes.push(new_scope); //add it to the list of scopes
+                target.push(new_scope); //add it to the tokens list since now it's a scope
+                target = new_scope; //point to it
+                depth++; //go down one in scope
+            };
+            /**
+             * Goes up in scope by one
+             * @returns {undefined}
+             */
+            var goUp = function() {
+                scopes.pop(); //remove the scope from the scopes stack
+                target = scopes[--depth]; //point the above scope
+            };
+            /**
+             * Extracts all the operators from the expression string starting at postion start_at
+             * @param {int} start_at
+             * @returns {String}
+             */
+            var get_operator_str = function(start_at) { 
+                start_at = start_at !== undefined ? start_at : col;
+                //mark the end of the operator as the start since we're just going
+                //to be walking along the string
+                var end = start_at+1;
+                //just keep moving along
+                while(e.charAt(end++) in operators) {}
+                //remember that we started at one position ahead. The beginning operator is what triggered
+                //this function to be called in the first place. String.CharAt is zero based so we now
+                //have to correct two places. The initial increment + the extra++ at the end of end during
+                //the last iteration.
+                return e.substring(start_at, end-1);
+            };
+            /**
+             * Breaks operator up in to several different operators as defined in operators
+             * @param {String} operator_str
+             * @returns {String[]}
+             */
+            var chunkify = function(operator_str) {
+                var start = col-operator_str.length; //start of operator
+                var _operators = [];
+                var operator = operator_str.charAt(0);
+                //grab the largest possible chunks but start at 2 since we already know
+                //that the first character is an operator
+
+                for(var i=1, L=operator_str.length; i<L; i++) {
+                    var ch = operator_str.charAt(i); 
+                    var o = operator+ch;
+                    //since the operator now is undefined then the last operator 
+                    //was the largest possible combination.
+                    if(!(o in operators)) {
+                        _operators.push(new Token(operator, Token.OPERATOR, start+i));
+                        operator = ch; 
+                    }
+                    else
+                        operator = o;//now the operator is the larger chunk
+                }
+                //add the last operator
+                _operators.push(new Token(operator, Token.OPERATOR, start+i));
+                return _operators;
+            };
+
+            /**
+             * Is used to add a token to the tokens array. Makes sure that no empty token is added
+             * @param {int} at
+             * @param {String} token
+             * @returns {undefined}
+             */
+            var add_token = function(at, token) {
+                //grab the token if we're not supplied one
+                if(token === undefined)
+                    token = e.substring(lpos, at);
+                //only add it if it's not an empty string
+                if(token !== '')
+                    target.push(new Token(token, Token.VARIABLE_OR_LITERAL, lpos));
+            };
+            /**
+             * Adds a function to the output
+             * @param {String} f
+             * @returns {undefined}
+             */
+            var add_function = function(f) {
+                target.push(new Token(f, Token.FUNCTION, lpos));
+            };
+            /**
+             * Tokens are found between operators so this marks the location of where the last token was found
+             * @param {int} position
+             * @returns {undefined}
+             */
+            var set_last_position = function(position) {
+                lpos = position + 1;
+            };
+            /**
+             * When a operator is found and added, especially a combo operator, then the column location
+             * has to be adjusted to the end of the operator
+             * @returns {undefined}
+             */
+            var adjust_column_position = function() {
+                lpos = lpos+operator_str.length-2;
+                col = lpos-1;
+            };
+            for(; col<L; col++) {
+                var ch = e.charAt(col);
                 if(ch in operators) {
-                    token = e.substring(lp, i);
-                    push(token);
-                    target.push(ch);
-                    lp = i+1;
+                    add_token(col);
+                    //if we're in a new scope then go up by one but if the space 
+                    //is right befor an operator then it makes no sense to go up in scope
+                    //consider sin -x. The last position = current position at the minus sign
+                    //this means that we're going for sin(x) -x which is wrong
+                    if(HAS_SPACE && lpos < col) {
+                        HAS_SPACE = false;
+                        goUp();
+                    }
+                    //mark the last position that a 
+                    set_last_position(col+1, true);
+                    var operator_str = get_operator_str(col);
+
+                    adjust_column_position();
+                    target.push.apply(target, chunkify(operator_str));
                 }
                 else if(ch in brackets) { 
                     var bracket = brackets[ch];
-                    if(bracket.open) {
-                        //we may be dealing with a function so make 
-                        func_stack.push(e.substring(lp, i));
-                        target = []; //start a new scope
-                        output.push(target); //add it to the chain
-                        lp = i+1;    
+
+                    if(bracket.is_open) {
+                        //mark the bracket
+                        open_brackets.push([bracket, lpos]);
+                        var f = e.substring(lpos, col);
+                        if(f in functions) {
+                            add_function(f);
+                        }
+                        else if(f !== '') {
+                            //assume multiplication
+                            //TODO: Add the multiplication to stack
+                            target.push(new Token(f, Token.VARIABLE_OR_LITERAL, lpos));
+                        }
+                        //go down one in scope
+                        addScope(bracket.maps_to, col);
+                    }
+                    else if(bracket.is_close) {
+                        //get the matching bracket
+                        var pair = open_brackets.pop();
+                        //throw errors accordingly
+                        //missing open bracket
+                        if(!pair) 
+                            throw new Error('Missing open bracket for bracket at: '+(col+1));
+                        //incorrect pair
+                        else if(pair[0].id !== bracket.id-1)
+                            throw new Error('Parity error');
+
+                        add_token(col);
+                        goUp();
+                    }
+                    set_last_position(col, bracket);
+                }
+                else if(ch === ' ') {
+                    if(HAS_SPACE) {
+                        var temp_token = e.substring(lpos, col);
+                        if(temp_token in operators) {
+                            target.push(new Token(temp_token, Token.OPERATOR, col));
+                        }
+                        else {
+                            add_token(undefined, temp_token);
+                            //we're at the closing space
+                            goUp(); //go up in scope if we're at a space
+                        }
+                        HAS_SPACE = false; //remove the space
                     }
                     else {
-                        //we have a close bracket
-                        token = e.substring(lp, i); //grab the token
-                        push(token);
-                        var o = output.pop(), //close the scope
-                            f = func_stack.pop(), //grab the matching function
-                            r;
-                        //is it a function?
-                        if(f in functions) { 
-                            r = _.symfunction(f, o); 
-                            r.isConversion = true;
+
+                        //we're at the closing space
+                        //check if it's a function
+                        var f = e.substring(lpos, col);
+                        if(f in functions) {
+                            //there's no need to go up in scope if the next character is an operator
+                            HAS_SPACE = true; //mark that a space was found
+                            add_function(f);
+                            addScope();
                         }
-                        else if(f === '') {
-                            r = o;
-                            r.type = bracket.type;
+                        else {
+                            add_token(undefined, f);
                         }
-                        else 
-                            r = f;
-                        //point to the correct target
-                        target = output[output.length-1];
-                        target.push(r);
-                        lp = i+1; 
                     }
+                    set_last_position(col); //mark this location    
+                }
+            }
+            //check that all brackets were closed
+            if(open_brackets.length) {
+                var b = open_brackets.pop();
+                throw new Error('Missing closed bracket for bracket at '+(b[1]+1));
+            }
+            //add the last token
+            add_token(col);
+            return tokens;
+        };
+        this.toRPN = function(tokens) { 
+            var fn = tokens.type;
+            var l = tokens.length, i;
+            var output = [];
+            var stack = [];
+            var prefixes = [];
+            var collapse = function(target, destination) {
+                while(target.length)
+                    destination.push(target.pop());
+            };
+            //mark all the prefixes and add them to the stack
+            for(i=0; i<l; i++) {
+                var token = tokens[i];
+                if(token.type !== Token.OPERATOR)
+                    break;
+                if(!token.prefix)
+                    throw new Error('Not a prefix operator');
+                token.is_prefix = true;
+                stack.push(token);
+            }
+            //begin with remaining tokens
+            for(; i<l; i++) {
+                var e = tokens[i];
+                if(e.type === Token.OPERATOR) { 
+                    var operator = e;
+                    //if the stack is not empty
+                    while(stack.length) {
+                        var last = stack[stack.length-1];
+                        //if (there is an operator at the top of the operator stack with greater precedence)
+                        //or (the operator at the top of the operator stack has equal precedence and is left associative)) ~ wikipedia
+                        //the !prefixes.length makes sure that the operator on stack isn't prematurely taken fromt he stack.
+                        if(!(last.precedence > operator.precedence || !operator.leftAssoc && last.precedence === operator.precedence)) 
+                            break;
+                        output.push(stack.pop());
+                    }
+                    //create the option for the operator being overloaded
+                    if(operator.overloaded) {
+                        var next = tokens[i+1];
+                        //if it's followed by a number or variable then we assume it's not a postfix operator
+                        if(next && next.type === Token.VARIABLE_OR_LITERAL) {
+                            operator.postfix = false;
+                            //override the original function with the overload function
+                            operator.action = operator.overloadAction;
+                        }
+                    }
+
+                    //change the behavior of the operator if it's a vector and we've been asked to do so
+                    if((fn === 'vector' || fn === 'set') && 'vectorFn' in operator) 
+                        operator.action = operator.vectorFn;
+
+
+                    //if the operator is a postfix operator then we're ready to go since it belongs
+                    //to the preceding token. However the output cannot be empty. It must have either
+                    //an operator or a variable/literal
+                    if(operator.postfix) { 
+                        var previous = tokens[i-1];
+                        if(!previous)
+                            throw new Error("Unexpected prefix operator '"+e.value+"'! at "+e.column);
+                        else if(previous.type === Token.OPERATOR) {
+                            //a postfix can only be followed by a postfix
+                            if(!previous.postfix)
+                                throw new Error("Unexpected prefix operator '"+previous.value+"'! at "+previous.column);
+                        }
+                    }
+                    else {
+                        //we must be at an infix so point the operator this
+                        do {
+                            //the first one is an infix operator all others have to be prefix operators so jump to the end
+                            var next = tokens[i+1]; //take a look ahead
+                            var next_is_operator = next ? next.type === Token.OPERATOR : false; //check if it's an operator
+                            if(next_is_operator) {
+                                //if it's not a prefix operator then it not in the right place
+                                if(!next.prefix) {
+                                    throw new Error('A prefix operator was expected at '+next.column);
+                                }
+                                //mark it as a confirmed prefix
+                                next.is_prefix = true;
+                                //add it to the prefixes
+                                prefixes.push(next);
+                                i++;
+                            }
+                        }
+                        while(next_is_operator)  
+                    }
+
+                    //if it's a prefix it should be on a special stack called prefixes
+                    //we do this to hold on to prefixes because of left associative operators.
+                    //they belong to the variable/literal but if placed on either the stack
+                    //or output there's no way of knowing this. I might be wrong so I welcome 
+                    //any discussion about this.
+
+                    if(operator.is_prefix) //ADD ALL EXCEPTIONS FOR ADDING TO PREFIX STACK HERE. !!!
+                        prefixes.push(operator);
+                    else
+                        stack.push(operator);
+                    //move the prefixes to the stack
+                    while(prefixes.length) {
+                        if(operator.leftAssoc || !operator.leftAssoc && prefixes[prefixes.length-1].precedence >= operator.precedence) //revisit for commas
+                            stack.push(prefixes.pop());       
+                        else
+                            break;
+                    }
+                }
+                else if(e.type === Token.VARIABLE_OR_LITERAL) {
+                    //move prefixes to stack at beginning of scope
+                    if(output.length === 0) 
+                        collapse(prefixes, stack);
+                    //done with token
+                    output.push(e);
+                    var last_on_stack = stack[stack.length-1];
+                    //then move all the prefixes to the output
+                    if(!last_on_stack || !last_on_stack.leftAssoc)
+                        collapse(prefixes, output);
+                }
+                else if(e.type === Token.FUNCTION) {
+                    stack.push(e);
+                }
+                //if it's an additonal scope then put that into RPN form
+                if(Array.isArray(e)) { 
+                    output.push(this.toRPN(e));
+                    if(e.type)
+                        output.push(new Token(e.type, Token.FUNCTION, e.column)); //since it's hidden it needs no column
+
+                }
+            }
+            //collapse the remainder of the stack and prefixes to output
+            collapse(stack, output);
+            collapse(prefixes, output);
+
+            return output;
+        };
+        this.parseRPN = function(rpn, substitutions) {
+            //default substitutions
+            substitutions = substitutions || {};
+            //prepare the substitutions.
+            //we first parse them out as-is
+            for(var x in substitutions) 
+                substitutions[x] = _.parse(substitutions[x], {});
+            //Although technically constants,
+            //pi and e are only available when evaluating the expression so add to the subs.
+            //Doing this avoids rounding errors 
+            //link e and pi
+            if(Settings.PARSE2NUMBER) {
+                //use the value provided if the individual for some strange reason prefers this.
+                //one reason could be to sub e but not pi or vice versa
+                if(!('e' in substitutions))
+                    substitutions.e = new Symbol(Settings.E);
+                if((!('pi' in substitutions)))
+                    substitutions.pi = new Symbol(Settings.PI);
+            }
+            
+            var Q = [];
+            for(var i=0, l=rpn.length; i<l; i++) {
+                var e = rpn[i];
+                //Arrays indicate a new scope so parse that out
+                if(Array.isArray(e)) {
+                    e = this.parseRPN(e, substitutions);
+                }
+                if(e.type === Token.OPERATOR) {
+                    if(e.is_prefix || e.postfix) 
+                        //resolve the operation assocated with the prefix
+                        Q.push(e.operation(Q.pop())); 
+                    else {
+                        var b = Q.pop();
+                        var a = Q.pop();
+                        Q.push(_[e.action](a, b));
+                    }
+                }
+                else if(e.type === Token.FUNCTION) {
+                    var args = Q.pop();
+                    if(!(args instanceof Collection))
+                        args = Collection.create(args);
+                    //the return value may be a vector. If it is then we check
+                    //Q to see if there's another vector on the stack. If it is then
+                    //we check if has elements. If it does then we know that we're dealing
+                    //with an "getter" object and return the requested values
+                    var ret = _.callfunction(e.value, args.getItems()); //call the function. This is the _.callfunction method in nerdamer
+                    var last = Q[Q.length-1];
+                    var next = rpn[i+1];
+                    var next_is_comma = next && next.type === Token.OPERATOR && next.value === ',';
+                    
+                    if(!next_is_comma && ret instanceof Vector && last && last.elements && !(last instanceof Collection)) {
+                        //remove the item from the queue
+                        var item = Q.pop();
+                        
+                        var getter = ret.elements[0]; 
+                        //check if it's symbolic. If so put it back
+                        if(!getter.isConstant()) {
+                            item.getter = getter;
+                            Q.push(item);
+                        }
+                        else if(getter instanceof Slice) {
+                            //if it's a Slice return the slice
+                            Q.push(Vector.fromArray(item.elements.slice(getter.start, getter.end)));
+                        }
+                        else {
+                            var index = Number(getter);
+                            var il = item.elements.length;
+                            //support for negative indices
+                            if(index < 0) 
+                                index = il + index;
+                            if(isNaN(index))
+                                //type error
+                                throw new Error('The value of the index must be know in order to return element. Symbolic indices are not supported! '+(e.column+1));
+                            else if(index < 0 || index >= il) //index should no longer be negative since it's been reset above
+                                //range error
+                                throw new Error('Index out of range '+(e.column+1));
+                            Q.push(item.elements[index]);
+                        }
+                    }
+                    else {
+                        Q.push(ret);
+                    }
+                }
+                else {
+                    var subbed;
+                    var v = e.value;
+                    
+                    if(v in Settings.ALIASES) 
+                        e = _.parse(Settings.ALIASES[e]);
+                    //wrap it in a symbol if need be
+                    else if(e.type === Token.VARIABLE_OR_LITERAL)
+                        e = new Symbol(v);
+                    
+                    //make substitutions
+                    //Always constants first. This avoids the being overridden
+                    if(v in _.CONSTANTS) {
+                        subbed = e;
+                        e = new Symbol(_.CONSTANTS[v]);
+                    }
+                    //next substitutions. This allows declared variable to be overridden
+                    //check if the values match to avoid erasing the multiplier. 
+                    //Example:/e = 3*a. substutiting a for a will wipe out the multiplier.
+                    else if(v in substitutions && v !== substitutions[v].value) {
+                        subbed = e;
+                        e = substitutions[v].clone();
+                    }
+                    //next declare variables
+                    else if(v in VARS) {
+                        subbed = e;
+                        e = VARS[v].clone();
+                    }
+                    //make notation of what it was before
+                    if(subbed)
+                        e.subbed = subbed;
+                    
+                    Q.push(e);
                 }
             }
             
-            push(e.substring(lp, i)); //insert the last token
-
-            return output[0];
+            return Q[0];
+        };
+        /**
+         * This is the method that triggers the parsing of the string. It generates a parse tree but processes 
+         * it right away. The operator functions are called when their respective operators are reached. For instance
+         * + with cause this.add to be called with the left and right hand values. It works by walking along each 
+         * character of the string and placing the operators on the stack and values on the output. When an operator
+         * having a lower order than the last is reached then the stack is processed from the last operator on the 
+         * stack.
+         * @param {String} e
+         * @param {Object} substitutions
+         * @returns {Symbol}
+         */
+        this.parse = function(e, substitutions) {
+            e = prepare_expression(e);
+            substitutions = substitutions || {};
+            //three passes but easier to debug
+            var tokens = this.tokenize(e);
+            var rpn = this.toRPN(tokens);
+            return this.parseRPN(rpn, substitutions);
         };
         
-        var getDx = function(arr) {
-            var dx = [], e;
-            for(var i=0, l=arr.length; i<l; i++) {
-                e = arr.pop();
-                if(e === ',')
-                    return dx;
-                dx.push(e);
+        /**
+         * TODO: Switch to Parser.tokenize for this method
+         * Reads a string into an array of Symbols and operators
+         * @param {String} expression_string
+         * @returns {Array}
+         */
+        this.toObject = function(expression_string) {   
+            var objectify = function(tokens) {
+                var output = [];
+                for(var i=0,l=tokens.length; i<l; i++) {
+                    var token = tokens[i];
+                    var v = token.value;
+                    if(token.type === Token.VARIABLE_OR_LITERAL) {
+                        output.push(new Symbol(v));
+                    }
+                    else if(token.type === Token.FUNCTION) {
+                        //jump ahead since the next object are the arguments
+                        i++;
+                        //create a symbolic function and stick it on output
+                        var f = _.symfunction(v, objectify(tokens[i]));
+                        f.isConversion = true;
+                        output.push(f);
+                    }
+                    else if(token.type === Token.OPERATOR) { 
+                        output.push(v)
+                    }
+                }
+
+                return output;
             }
+            return objectify(_.tokenize(expression_string));
         };
 
         var chunkAtCommas = function(arr){
@@ -4882,7 +5170,6 @@ var nerdamer = (function(imports) {
                 obj = nobj;
             }
 
-            
             for(var i=0, l=obj.length; i<l; i++) {
                 var e = obj[i];
                 //convert * to cdot
@@ -5348,7 +5635,7 @@ var nerdamer = (function(imports) {
          * @param {Symbol} symbol
          * @returns {Symbol}
          */
-        function rectform(symbol) {
+        function rectform(symbol) { 
             //TODO: e^((i*pi)/4)
             var original = symbol.clone();
             try {
@@ -5559,7 +5846,7 @@ var nerdamer = (function(imports) {
                     exp = e[1];
                 }
                 //round the number to the requested precision
-                retval = new Symbol(Utils.round(v, Number(s||0)));
+                retval = new Symbol(nround(v, Number(s||0)));
                 //if there's a exponent then put it back
                 return _.multiply(retval, _.pow(new Symbol(10), new Symbol(exp || 0)))
             }
@@ -5854,7 +6141,9 @@ var nerdamer = (function(imports) {
         }
         
         function vecget(vector, index) {
-            return vector.elements[index];
+            if(index.isConstant() && isInt(index))
+                return vector.elements[index];
+            return _.symfunction('vecget', arguments);
         }
         
         function vecset(vector, index, value) {
@@ -6914,15 +7203,22 @@ var nerdamer = (function(imports) {
         };
         
         //gets called when the parser finds the , operator. 
-        this.comma = function(a, b) { 
-            var aIsArray = (a instanceof Array),
-                bIsArray = (b instanceof Array),
-                aHasSubArray = (aIsArray && a[0] instanceof Array);
-
-            if ( (aIsArray && aHasSubArray) || (aIsArray && !bIsArray) ) a.push(b);
-            else a = [a,b];
+        //Commas return a Collector object which roughly an array
+        this.comma = function(a, b) {
+            if(!(a instanceof Collection)) 
+                a = Collection.create(a);
+            a.append(b);
             return a;
         };
+        
+        this.mod = function(a, b) {
+            return mod(a, b);
+        };
+
+        this.slice = function(a, b) {
+            return new Slice(a, b);
+        };
+
         
         //the equality setter
         this.equals = function(a, b) {
@@ -7560,7 +7856,9 @@ var nerdamer = (function(imports) {
                 //Rule: all items within the vector must have a clone method.
                 V.elements.push(this.elements[i].clone());
             }
-            
+            if(this.getter) {
+                V.getter = this.getter.clone();
+            }
             return V;
         },
 
@@ -8059,12 +8357,13 @@ var nerdamer = (function(imports) {
 
     /* FINALIZE */
     var finalize = function() {
-        reserveNames(_.constants);
+        reserveNames(_.CONSTANTS);
         reserveNames(_.functions);
+        _.initConstants();
         //generatePrimes(Settings.init_primes);//generate the firs 100 primes
     };
     
-    var build = Utils.build = function(symbol, arg_array) { 
+    var build = function(symbol, arg_array) { 
         symbol = block('PARSE2NUMBER', function() {
             return _.parse(symbol);
         }, true);
@@ -8159,7 +8458,67 @@ var nerdamer = (function(imports) {
     
     finalize(); //final preparations
     /* END FINALIZE */
-
+    /**
+     * 
+     * @param {String} expression the expression to be evaluated
+     * @param {Object} subs the object containing the variable values
+     * @param {Integer} location a specific location in the equation list to 
+     * insert the evaluated expression
+     * @param {String} option additional options
+     * @returns {Expression} 
+     */
+    var Utils = {
+        allSame: allSame,
+        arguments2Array: arguments2Array,
+        arrayClone: arrayClone,
+        arrayMax: arrayMax,
+        arrayMin: arrayMin,
+        arrayUnique: arrayUnique,
+        block: block,
+        build: build,
+        clearU: clearU,
+        comboSort: comboSort,
+        compare: compare,
+        convertToVector: convertToVector,
+        customType: customType,
+        decompose_fn: decompose_fn,
+        each: each,
+        evaluate: evaluate,
+        even: even,
+        evenFraction: evenFraction,
+        fillHoles: fillHoles,
+        firstObject: firstObject,
+        format: format,
+        generatePrimes: generatePrimes,
+        getCoeffs: getCoeffs,
+        getU: getU,
+        importFunctions: importFunctions,
+        inBrackets: inBrackets,
+        isArray: isArray,
+        isExpression: isExpression,
+        isFraction: isFraction,
+        isInt: isInt,
+        isMatrix: isMatrix,
+        isNegative: isNegative,
+        isNumericSymbol: isNumericSymbol,
+        isPrime: isPrime,
+        isReserved: isReserved,
+        isSymbol: isSymbol,
+        isVariableSymbol: isVariableSymbol,
+        isVector: isVector,
+        keys: keys,
+        remove: remove,
+        reserveNames: reserveNames,
+        round: nround,
+        sameSign: sameSign,
+        scientificToDecimal: scientificToDecimal,
+        separate: separate,
+        stringReplace: stringReplace,
+        text: text,
+        validateName: validateName,
+        variables: variables,
+        warn: warn
+    };
     /* BUILD CORE */
     //This contains all the parts of nerdamer and enables nerdamer's internal functions
     //to be used.
@@ -8188,17 +8547,7 @@ var nerdamer = (function(imports) {
             MaximumIterationsReached: MaximumIterationsReached
         }
     };
-    
-    //provide a mechanism for accessing functions directly
-    //Not yet complete!!! Some functions will return undefined. This can maybe 
-    //just remove the function object at some point when all functions are eventually
-    //housed in the global function object.
-    C.Utils.importFunctions = function() {
-        var o = {};
-        for(var x in _.functions)
-            o[x] = _.functions[x][0];
-        return o;
-    };
+
     //TODO: fix 
     if(!_.error)
         _.error = err;
@@ -8206,15 +8555,7 @@ var nerdamer = (function(imports) {
 
     
     /* EXPORTS */
-    /**
-     * 
-     * @param {String} expression the expression to be evaluated
-     * @param {Object} subs the object containing the variable values
-     * @param {Integer} location a specific location in the equation list to 
-     * insert the evaluated expression
-     * @param {String} option additional options
-     * @returns {Expression} 
-     */
+    
     
     var libExports = function(expression, subs, option, location) { 
         //is the user declaring a function?
@@ -8289,11 +8630,11 @@ var nerdamer = (function(imports) {
         if(!isReserved(constant)) {
             //fix for issue #127
             if(value === 'delete' || value === '') {
-                delete _.constants[constant];
+                delete _.CONSTANTS[constant];
             }
             else {
                 if(isNaN(value)) throw new Error('Constant must be a number!');
-                _.constants[constant] =  value;
+                _.CONSTANTS[constant] =  value;
             }
         }    
         return this;
@@ -8467,7 +8808,7 @@ var nerdamer = (function(imports) {
     libExports.setVar = function(v, val) {
         validateName(v);
         //check if it's not already a constant
-        if(v in _.constants)
+        if(v in _.CONSTANTS)
             err('Cannot set value for constant '+v);
         if(val === 'delete' || val === '') 
             delete VARS[v];
@@ -8607,3 +8948,12 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+//DONE: functions, vectors, matrices
+//substitutions, , , 
+//move all classes together outside of parser
+//move utilities for parser in own file
+//move VARS to Parser
+//
+//console.log(nerdamer('-C/(3*a)', {a:"a"}).toString())
+var x = nerdamer.convertToLaTeX('realpart(ab)');
+console.log(x)
