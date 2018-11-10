@@ -3114,9 +3114,13 @@ if((typeof module) !== 'undefined') {
                             factors_vec.push(d);
                         }
                     }
+                    /*
+                    Possible bug.
+                    Removed: causes 1/(20+24*x+4*x^2) to result in (-1/64)*(5+x)^(-1)+(1/64)*(1+x)^(-1)
                     else if(factor.isConstant('all')) {
                         m = _.multiply(m, factor);
                     }
+                    */
                     else {
                         //get the degree of the factor so we tack it on tot he factor. This should probably be an array
                         //but for now we note it on the symbol
@@ -3134,7 +3138,7 @@ if((typeof module) !== 'undefined') {
                 });
                 return [f_array, factors_vec, degrees];
             },
-            partfrac: function(symbol, v, asArray) {
+            partfrac: function(symbol, v, as_array) { 
                 var vars = variables(symbol);
                 v = v || _.parse(vars[0]); //make wrt optional and assume first variable
                 try {
@@ -3161,7 +3165,7 @@ if((typeof module) !== 'undefined') {
                     
                     if(Number(__.degree(den, v)) === 1) {
                         var q = _.divide(num, den);
-                        if(asArray)
+                        if(as_array)
                             return [r, q];
                         return _.add(r, q);
                     }
@@ -3195,7 +3199,6 @@ if((typeof module) !== 'undefined') {
                             ks.push(k.clone());
                         }
                     });
-
                     //get the max power
                     max = core.Utils.arrayMax(powers);
 
@@ -3212,10 +3215,10 @@ if((typeof module) !== 'undefined') {
                     //the results are backwards to reverse it
                     //partials.elements.reverse();
                     //convert it all back
-                    var retval = asArray ? [r] : r;
+                    var retval = as_array ? [r] : r;
                     partials.each(function(e, i) {
                         var term = _.multiply(ks[i],_.divide(e, factors[i]));
-                        if(asArray)
+                        if(as_array)
                             retval.push(term);
                         else 
                             retval = _.add(retval, term);

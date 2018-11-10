@@ -63,8 +63,9 @@ describe('calculus', function () {
                 expected: '-2*(-s+a)^(-3)'
             },
             {
+                //NOTE: this unit test was incorrect before. I don't know how this was missed.
                 given: 'laplace(sinh(t)*e^t, t, s)',
-                expected: '(1/2)*(-s+2)^(-1)+(1/2)*s^(-1)'
+                expected: '(-1/2)*(-s+2)^(-1)+(-1/2)*s^(-1)'
             }
         ];
 

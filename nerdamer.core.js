@@ -5996,10 +5996,7 @@ var nerdamer = (function(imports) {
             
             var original = symbol.clone(); 
             try {
-                var p = symbol.power,
-                    m = symbol.multiplier,
-                    pn = Number(p);
-                
+
                 if(!symbol.symbols) 
                     return symbol;
 
@@ -6008,9 +6005,13 @@ var nerdamer = (function(imports) {
                     var x = symbol.symbols[s];
                     symbol.symbols[s] = expand(x);
                 }
+
                 symbol = _.parse(symbol);
 
-                if(isInt(pn) && pn > 0 && symbol.isComposite()) { 
+                var p = symbol.power,
+                    m = symbol.multiplier.clone(),
+                    pn = Number(p);
+                if(isInt(pn) && pn > 0 && symbol.isComposite()) {                
                     var f = new Symbol(0);
                     //we loop through the f and make sure that it's fully expanded
                     for(var x in symbol.symbols) {
