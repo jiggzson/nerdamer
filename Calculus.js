@@ -1,3 +1,5 @@
+/* global module */
+
 ﻿/*
 * Author : Martin Donk
 * Website : http://www.nerdamer.com

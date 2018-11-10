@@ -5,14 +5,15 @@
  * Source : https://github.com/jiggzson/nerdamer
  */
 
-/* global trig, trigh */
-
+/* global trig, trigh, Infinity, define */
+//intro ========================================================================
 var nerdamer = (function(imports) { 
     "use strict";
 
-//version ==================================================================== 
+//version ====================================================================== 
     var version = '0.8.0';
 
+//inits ========================================================================
     var  _ = new Parser(); //nerdamer's parser
         
     //import bigInt
@@ -155,6 +156,18 @@ var nerdamer = (function(imports) {
     };
         
 //Utils ======================================================================== 
+    var customError = function(name) {
+        var E = function(message){
+            this.name = name;
+            this.message = message !== undefined ? message : '';
+            var error = new Error(this.message);
+            error.name = this.name;
+            this.stack = error.stack;
+        }; //create an empty error
+        E.prototype = Object.create(Error.prototype);
+        return E;
+    };
+
     /**
      * Checks to see if value is one of nerdamer's reserved names
      * @param {String} value
@@ -267,7 +280,53 @@ var nerdamer = (function(imports) {
     var isExpression = function(obj) {
         return (obj instanceof Expression);
     };
+    
+    /**
+     * This method traverses the symbol structure and grabs all the variables in a symbol. The variable
+     * names are then returned in alphabetical order.
+     * @param {Symbol} obj
+     * @param {Boolean} poly 
+     * @param {Object} vars - An object containing the variables. Do not pass this in as it generated 
+     * automatically. In the future this will be a Collector object.
+     * @returns {String[]} - An array containing variable names
+     */
+    var variables = function(obj, poly, vars) { 
+        vars = vars || {
+            c: [],
+            add: function(value) {
+                if(this.c.indexOf(value) === -1 && isNaN(value)) this.c.push(value);
+            }
+        };
 
+        if(isSymbol(obj)) { 
+            var group = obj.group,
+                prevgroup = obj.previousGroup;
+            if(group === EX) variables(obj.power, poly, vars);
+
+            if(group === CP || group === CB || prevgroup === CP || prevgroup === CB) {
+                for(var x in obj.symbols) variables(obj.symbols[x], poly, vars);
+            }
+            else if(group === S || prevgroup === S) { 
+                //very crude needs fixing. TODO
+                if(!(obj.value === 'e' || obj.value === 'pi'))
+                    vars.add(obj.value);
+            }
+            else if(group === PL || prevgroup === PL) {
+                variables(firstObject(obj.symbols), poly, vars);
+            }
+            else if(group === EX) { 
+                if(!isNaN(obj.value)) vars.add(obj.value);
+                variables(obj.power, poly, vars);
+            }
+            else if(group === FN && !poly) { 
+                for(var i=0; i<obj.args.length; i++) {
+                    variables(obj.args[i], poly, vars);
+                }
+            }
+        }
+        return vars.c.sort();
+    };
+    
     /**
      * Separates out the variables into terms of variabls. 
      * e.g. x+y+x*y+sqrt(2)+pi returns 
@@ -569,52 +628,6 @@ var nerdamer = (function(imports) {
         return Math.round( x*Math.pow( 10,s ) )/Math.pow( 10,s );
     };
 
-    /**
-     * This method traverses the symbol structure and grabs all the variables in a symbol. The variable
-     * names are then returned in alphabetical order.
-     * @param {Symbol} obj
-     * @param {Boolean} poly 
-     * @param {Object} vars - An object containing the variables. Do not pass this in as it generated 
-     * automatically. In the future this will be a Collector object.
-     * @returns {String[]} - An array containing variable names
-     */
-    var variables = function(obj, poly, vars) { 
-        vars = vars || {
-            c: [],
-            add: function(value) {
-                if(this.c.indexOf(value) === -1 && isNaN(value)) this.c.push(value);
-            }
-        };
-
-        if(isSymbol(obj)) { 
-            var group = obj.group,
-                prevgroup = obj.previousGroup;
-            if(group === EX) variables(obj.power, poly, vars);
-
-            if(group === CP || group === CB || prevgroup === CP || prevgroup === CB) {
-                for(var x in obj.symbols) variables(obj.symbols[x], poly, vars);
-            }
-            else if(group === S || prevgroup === S) { 
-                //very crude needs fixing. TODO
-                if(!(obj.value === 'e' || obj.value === 'pi'))
-                    vars.add(obj.value);
-            }
-            else if(group === PL || prevgroup === PL) {
-                variables(firstObject(obj.symbols), poly, vars);
-            }
-            else if(group === EX) { 
-                if(!isNaN(obj.value)) vars.add(obj.value);
-                variables(obj.power, poly, vars);
-            }
-            else if(group === FN && !poly) { 
-                for(var i=0; i<obj.args.length; i++) {
-                    variables(obj.args[i], poly, vars);
-                }
-            }
-        }
-        return vars.c.sort();
-    };
-    
     /**
      * Is used for u-substitution. Gets a suitable u for substitution. If for
      * instance a is used in the symbol then it keeps going down the line until
@@ -3271,30 +3284,20 @@ var nerdamer = (function(imports) {
         }
     };  
     
-//Errors =======================================================================
-    //custom errors
-    //thrown if trying to divide by zero
-    function DivisionByZero(msg){
-        this.message = msg || "";
-    }
-    DivisionByZero.prototype = Object.create(Error.prototype);
-    //thrown in parser 
-    function ParseError(msg){
-        this.message = msg || "";
-    }
-    ParseError.prototype = Object.create(Error.prototype);
-    //thrown for undefined errors
-    function UndefinedError(msg){
-        this.message = msg || "";
-    }
-    UndefinedError.prototype = Object.create(Error.prototype);
-    //thrown for maximum iteration error
-    function MaximumIterationsReached(msg){
-        this.message = msg || "";
-    }
-    MaximumIterationsReached.prototype = Object.create(Error.prototype);
+//Exceptions ===================================================================
+    var DivisionByZero = customError('DivisionByZero');
+    var ParseError = customError('ParseError');
+    var UndefinedError = customError('UndefinedError');
+    var MaximumIterationsReached = customError('MaximumIterationsReached');
     
-        
+    var exceptions = {
+        DivisionByZero: DivisionByZero,
+        ParseError: ParseError,
+        UndefinedError: UndefinedError,
+        MaximumIterationsReached: MaximumIterationsReached
+    };
+    
+//Parser =======================================================================     
     //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
         //Point to the local parser instead of the global one
@@ -4508,6 +4511,23 @@ var nerdamer = (function(imports) {
             //have an operator on one end
             return new RegExp('(['+ostr+'])\\s+(['+ostr+'])');
         })();
+        
+        /**
+         * Replaces nerdamer.setOperator
+         * @param {object} operator
+         */
+        this.setOperator = function(operator) {
+            operators[operator.operator] = operator;
+        };
+        
+        /**
+         * Returns the list of operators. Caution! Can break parser!
+         * @returns {object}
+         */
+        this.getOperators = function() {
+            //will replace this with some cloning action in the future
+            return operators;
+        };
         
         var prepare_expression = function(e) {
             /*
@@ -8451,6 +8471,7 @@ var nerdamer = (function(imports) {
         comboSort: comboSort,
         compare: compare,
         convertToVector: convertToVector,
+        customError: customError,
         customType: customType,
         decompose_fn: decompose_fn,
         each: each,
@@ -8510,12 +8531,7 @@ var nerdamer = (function(imports) {
         Settings: Settings,
         err: err,
         bigInt: bigInt,
-        exceptions: {
-            DivisionByZero: DivisionByZero,
-            ParseError: ParseError,
-            UndefinedError: UndefinedError, 
-            MaximumIterationsReached: MaximumIterationsReached
-        }
+        exceptions: exceptions
     };
     
 //libExports ===================================================================  
@@ -8901,22 +8917,10 @@ var nerdamer = (function(imports) {
         _.functions[name] = [fn.call(undefined, existing[0], C), new_num_args];
     };
     
-    //helper function to set and operator
-    //Operator('^', 'pow', 6, false, false),
-    //function Operator(val, fn, precedence, left_assoc, is_prefix, is_postfix, operation) 
-    libExports.setOperator = function(symbol, name, precendence, left_assoc, is_prefix, is_postfix, fn) {
-        _.operators[symbol] = new Operator(symbol, name, precendence, left_assoc, is_prefix, is_postfix, fn);
-        _.name = name; //make the parser aware of this  new function
-        CUSTOM_OPERATORS[name] = symbol; //let nerdamer know how to display it
-    };
-    
-    libExports.getOperator = function(symbol) {
-        return _.operators[symbol];
-    };
-    
     libExports.api();
 
     return libExports; //Done
+//imports ======================================================================
 })({
     //https://github.com/peterolson/BigInteger.js
     bigInt: (function(){

@@ -6,6 +6,8 @@
 * Source : https://github.com/jiggzson/nerdamer
 */
 
+/* global module */
+
 if((typeof module) !== 'undefined') {
     nerdamer = require('./nerdamer.core.js');
     require('./Calculus.js');
