@@ -35,7 +35,7 @@ if((typeof module) !== 'undefined') {
         Symbol = core.Symbol,
         CONST_HASH = core.Settings.CONST_HASH,
         math = core.Utils.importFunctions();
-
+        
     //*************** CLASSES ***************//
     /**
     * Converts a symbol into an equivalent polynomial arrays of 
@@ -52,7 +52,7 @@ if((typeof module) !== 'undefined') {
         else if(!isNaN(symbol)) { 
             order = order || 0;
             if(variable === undefined) 
-                throw new Error('Polynomial expects a variable name when creating using order');
+                throw new core.exceptions.InvalidVariableNameError('Polynomial expects a variable name when creating using order');
             this.coeffs = [];
             this.coeffs[order] = symbol;
             this.fill(symbol);
@@ -69,7 +69,7 @@ if((typeof module) !== 'undefined') {
      */
     Polynomial.fromArray = function(arr, variable) {
         if(typeof variable === 'undefined') 
-            throw new Error('A variable name must be specified when creating polynomial from array');
+            throw new core.exceptions.InvalidVariableNameError('A variable name must be specified when creating polynomial from array');
         var p = new Polynomial();
         p.coeffs = arr;
         p.variable = variable;
@@ -109,7 +109,7 @@ if((typeof module) !== 'undefined') {
          */
         parse: function(symbol, c) { 
             this.variable = variables(symbol)[0]; 
-            if(!symbol.isPoly()) throw new Error('Polynomial Expected! Received '+core.Utils.text(symbol));
+            if(!symbol.isPoly()) throw core.exceptions.NerdamerTypeError('Polynomial Expected! Received '+core.Utils.text(symbol));
             c = c || [];
             if(!symbol.power.absEquals(1)) symbol = _.expand(symbol);
 
@@ -119,7 +119,7 @@ if((typeof module) !== 'undefined') {
                 for(var x in symbol.symbols) { 
                     var sub = symbol.symbols[x],
                         p = sub.power; 
-                    if(core.Utils.isSymbol(p)) throw new Error('power cannot be a Symbol');
+                    if(core.Utils.isSymbol(p)) throw new core.exceptions.NerdamerTypeError('power cannot be a Symbol');
 
                     p = sub.group === N ? 0 : p.toDecimal();
                     if(sub.symbols){ 
@@ -980,7 +980,7 @@ if((typeof module) !== 'undefined') {
                 return get_roots(rarr, powers, max);
             }
             else {
-                throw new Error('Cannot calculate roots. Symbol must be a polynomial!');
+                throw new core.exceptions.NerdamerTypeError('Cannot calculate roots. Symbol must be a polynomial!');
             }
 
             function calcroots(rarr, powers, max){	
@@ -993,7 +993,7 @@ if((typeof module) !== 'undefined') {
                 rarr.unshift(max);
 
                 if (max > MAXDEGREE){
-                    throw new Error("This utility accepts polynomials of degree up to " + MAXDEGREE + ". ");
+                    throw new core.exceptions.ValueLimitExceededError("This utility accepts polynomials of degree up to " + MAXDEGREE + ". ");
                 }
 
                 var zeroi = [],   // Vector of imaginary components of roots
@@ -1957,7 +1957,7 @@ if((typeof module) !== 'undefined') {
             },
             zeroes: function(symbol, factors) {
                 var exit = function() {
-                    throw new Error('Exiting');
+                    throw new core.exceptions.ValueLimitExceededError('Exiting');
                 };
                 try {
                     var vars, term, sum, p, e;
@@ -3304,7 +3304,7 @@ if((typeof module) !== 'undefined') {
                 v = _.parse(v);
             var stop = function(msg) {
                 msg = msg || 'Stopping';
-                throw new Error(msg);
+                throw new core.exceptions.ValueLimitExceededError(msg);
             };
             //if not CP then nothing to do
             if(!symbol.isPoly()) 

@@ -206,7 +206,7 @@ var nerdamer = (function(imports) {
      * can have any number of underscores, letters, and numbers thereafter."
      * @param name The name of the symbol being checked
      * @param {String} typ - The type of symbols that's being validated
-     * @throws {Exception} - Throws an exception on fail
+     * @throws {Exception}  - Throws an exception on fail
      */
     var validateName = function(name, typ) { 
         typ = typ || 'variable';
@@ -214,7 +214,7 @@ var nerdamer = (function(imports) {
             return;
         var regex = Settings.VALIDATION_REGEX;
         if(!(regex.test(name)) ) {
-            throw new Error(name+' is not a valid '+typ+' name');
+            throw new InvalidVariableNameError(name+' is not a valid '+typ+' name');
         }
     };
     
@@ -861,7 +861,50 @@ var nerdamer = (function(imports) {
             if(isPrime(i)) PRIMES.push(i);
         }
     };
-      
+
+    
+//Exceptions ===================================================================
+    //Is thrown for division by zero
+    var DivisionByZero = customError('DivisionByZero');
+    //Is throw if an error occured during parsing
+    var ParseError = customError('ParseError');
+    //Is thrown if the expression results in undefined
+    var UndefinedError = customError('UndefinedError');
+    //Is throw if a function exceeds x amount of iterations
+    var MaximumIterationsReached = customError('MaximumIterationsReached');
+    //Is thrown if the parser receives an incorrect type
+    var NerdamerTypeError = customError('NerdamerTypeError');
+    //Is thrown if bracket parity is not correct
+    var ParityError = customError('ParityError');
+    //Is thrown if an unexpectd or incorrect operator is encountered
+    var OperatorError = customError('OperatorError');
+    //Is thrown if an index is out of range.
+    var OutOfRangeError = customError('OutOfRangeError');
+    //Is thrown if dimensions are incorrect. Mostly for matrices
+    var DimensionError = customError('DimensionError');
+    //Is thrown if variable name violates naming rule
+    var InvalidVariableNameError = customError('InvalidVariableNameError');
+    //Is thrown if the limits of the library are exceeded for a function
+    //This can be that the function become unstable passed a value
+    var ValueLimitExceededError = customError('ValueLimitExceededError');
+    //Is throw if the value is an incorrect LH or RH value
+    var NerdamerValueError = customError('NerdamerValueError');
+
+    var exceptions = {
+        DivisionByZero: DivisionByZero,
+        ParseError: ParseError,
+        UndefinedError: UndefinedError,
+        MaximumIterationsReached: MaximumIterationsReached,
+        NerdamerTypeError: NerdamerTypeError,
+        ParityError: ParityError,
+        OperatorError: OperatorError,
+        OutOfRangeError: OutOfRangeError,
+        DimensionError: DimensionError,
+        InvalidVariableNameError: InvalidVariableNameError,
+        ValueLimitExceededError: ValueLimitExceededError,
+        NerdamerValueError: NerdamerValueError
+    };
+    
 //Math2 ======================================================================== 
     //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
     //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the 
@@ -963,7 +1006,7 @@ var nerdamer = (function(imports) {
         //the factorial function but using the big library instead
         factorial: function(x) {
             if(x < 0)
-                throw new Error('factorial not defined for negative numbers');
+                throw new UndefinedError('factorial not defined for negative numbers');
             var retval=1;
             for (var i = 2; i <= x; i++) retval = retval * i;
             return retval;
@@ -2433,7 +2476,7 @@ var nerdamer = (function(imports) {
                 });
             }
             else if(this.contains(v)){
-                throw new Error('Cannot convert to array! Exiting');
+                throw new NerdamerTypeError('Cannot convert to array! Exiting');
             }
             else {
                 arr.add(this.clone(), 0); //it's just a constant wrt to v
@@ -3287,20 +3330,7 @@ var nerdamer = (function(imports) {
             return this.text();
         }
     };  
-    
-//Exceptions ===================================================================
-    var DivisionByZero = customError('DivisionByZero');
-    var ParseError = customError('ParseError');
-    var UndefinedError = customError('UndefinedError');
-    var MaximumIterationsReached = customError('MaximumIterationsReached');
-    
-    var exceptions = {
-        DivisionByZero: DivisionByZero,
-        ParseError: ParseError,
-        UndefinedError: UndefinedError,
-        MaximumIterationsReached: MaximumIterationsReached
-    };
-    
+  
 //Parser =======================================================================     
     //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser(){
@@ -4793,10 +4823,10 @@ var nerdamer = (function(imports) {
                         //throw errors accordingly
                         //missing open bracket
                         if(!pair) 
-                            throw new Error('Missing open bracket for bracket at: '+(col+1));
+                            throw new ParityError('Missing open bracket for bracket at: '+(col+1));
                         //incorrect pair
                         else if(pair[0].id !== bracket.id-1)
-                            throw new Error('Parity error');
+                            throw new ParityError('Parity error');
 
                         add_token(col);
                         goUp();
@@ -4837,7 +4867,7 @@ var nerdamer = (function(imports) {
             //check that all brackets were closed
             if(open_brackets.length) {
                 var b = open_brackets.pop();
-                throw new Error('Missing closed bracket for bracket at '+(b[1]+1));
+                throw new ParityError('Missing closed bracket for bracket at '+(b[1]+1));
             }
             //add the last token
             add_token(col);
@@ -4859,7 +4889,7 @@ var nerdamer = (function(imports) {
                 if(token.type !== Token.OPERATOR)
                     break;
                 if(!token.prefix)
-                    throw new Error('Not a prefix operator');
+                    throw new OperatorError('Not a prefix operator');
                 token.is_prefix = true;
                 stack.push(token);
             }
@@ -4900,11 +4930,11 @@ var nerdamer = (function(imports) {
                     if(operator.postfix) { 
                         var previous = tokens[i-1];
                         if(!previous)
-                            throw new Error("Unexpected prefix operator '"+e.value+"'! at "+e.column);
+                            throw new OperatorError("Unexpected prefix operator '"+e.value+"'! at "+e.column);
                         else if(previous.type === Token.OPERATOR) {
                             //a postfix can only be followed by a postfix
                             if(!previous.postfix)
-                                throw new Error("Unexpected prefix operator '"+previous.value+"'! at "+previous.column);
+                                throw new OperatorError("Unexpected prefix operator '"+previous.value+"'! at "+previous.column);
                         }
                     }
                     else {
@@ -4916,7 +4946,7 @@ var nerdamer = (function(imports) {
                             if(next_is_operator) {
                                 //if it's not a prefix operator then it not in the right place
                                 if(!next.prefix) {
-                                    throw new Error('A prefix operator was expected at '+next.column);
+                                    throw new OperatorError('A prefix operator was expected at '+next.column);
                                 }
                                 //mark it as a confirmed prefix
                                 next.is_prefix = true;
@@ -5044,12 +5074,10 @@ var nerdamer = (function(imports) {
                             //support for negative indices
                             if(index < 0) 
                                 index = il + index;
-                            if(isNaN(index))
-                                //type error
-                                throw new Error('The value of the index must be know in order to return element. Symbolic indices are not supported! '+(e.column+1));
-                            else if(index < 0 || index >= il) //index should no longer be negative since it's been reset above
+                            //it it's still out of bounds
+                            if(index < 0 || index >= il) //index should no longer be negative since it's been reset above
                                 //range error
-                                throw new Error('Index out of range '+(e.column+1));
+                                throw new OutOfRangeError('Index out of range '+(e.column+1));
                             Q.push(item.elements[index]);
                         }
                     }
@@ -6210,7 +6238,7 @@ var nerdamer = (function(imports) {
         
         function matsetrow(matrix, i, x) {
             if(matrix.elements[i].length !== x.elements.length)
-                throw new Error('Matrix row must match row dimensions!');
+                throw new DimensionError('Matrix row must match row dimensions!');
             var M = matrix.clone();
             M.elements[i] = x.clone().elements;
             return M;
@@ -6230,7 +6258,7 @@ var nerdamer = (function(imports) {
         function matsetcol(matrix, j, col) {
             j = Number(j);
             if(matrix.rows() !== col.elements.length)
-                throw new Error('Matrix columns must match number of columns!');
+                throw new DimensionError('Matrix columns must match number of columns!');
             col.each(function(x, i) {
                matrix.set(i-1, j, x.elements[0].clone());
             });
@@ -8666,7 +8694,7 @@ var nerdamer = (function(imports) {
                 delete _.CONSTANTS[constant];
             }
             else {
-                if(isNaN(value)) throw new Error('Constant must be a number!');
+                if(isNaN(value)) throw new NerdamerTypeError('Constant must be a number!');
                 _.CONSTANTS[constant] =  value;
             }
         }    
@@ -8969,3 +8997,6 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+
+var x = nerdamer('')

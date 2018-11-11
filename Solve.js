@@ -31,6 +31,7 @@ if((typeof module) !== 'undefined') {
         CP = core.groups.CP,
         FN = core.groups.FN,
         isArray = core.Utils.isArray;
+        
     //version solve
     core.Solve = {
         version: '1.2.6',
@@ -68,7 +69,7 @@ if((typeof module) !== 'undefined') {
      */
     function Equation(lhs, rhs) {
         if(rhs.isConstant() && lhs.isConstant() && !lhs.equals(rhs) || lhs.equals(core.Settings.IMAGINARY) || rhs.equals(core.Settings.IMAGINARY))
-            throw new Error(lhs.toString()+' does not equal '+rhs.toString());
+            throw new core.exceptions.NerdamerValueError(lhs.toString()+' does not equal '+rhs.toString());
         this.LHS = lhs; //left hand side
         this.RHS = rhs; //right and side
     };

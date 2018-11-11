@@ -259,7 +259,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         version: '1.4.5',
 
         sum: function(fn, index, start, end) {
-            if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
+            if(!(index.group === core.groups.S)) throw new core.exceptions.NerdamerTypeError('Index must be symbol. '+text(index)+' provided');
             index = index.value;
             var retval;
             if(core.Utils.isNumericSymbol(start) && core.Utils.isNumericSymbol(end)) {
@@ -286,7 +286,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             return retval;
         },
         product: function(fn, index, start, end) {
-            if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
+            if(!(index.group === core.groups.S)) throw new core.exceptions.NerdamerTypeError('Index must be symbol. '+text(index)+' provided');
             index = index.value;
             var retval;
             if(core.Utils.isNumericSymbol(start) && core.Utils.isNumericSymbol(end)) {
