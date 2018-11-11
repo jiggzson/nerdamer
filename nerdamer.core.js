@@ -6656,8 +6656,16 @@ var nerdamer = (function(imports) {
                 if(a.isInfinity || b.isInfinity) { 
                     if(a.equals(0) || b.equals(0))
                         throw new UndefinedError(a+'*'+b+' is undefined!');
-                    if(b.power.lessThan(0))
-                        throw new UndefinedError('Infinity/Infinity is not defined!');
+                    //x/infinity
+                    if(b.power.lessThan(0)) {
+                        if(!a.isInfinity) {
+                            return new Symbol(0);
+                        }
+                        else {
+                            throw new UndefinedError('Infinity/Infinity is not defined!');
+                        }
+                    }
+                        
                     var sign = a.multiplier.multiply(b.multiplier).sign(),
                         inf = Symbol.infinity();
                     if(a.isConstant() || b.isConstant() || (a.isInfinity && b.isInfinity)) {
@@ -8997,6 +9005,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-
-var x = nerdamer('')
