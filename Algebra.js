@@ -3309,7 +3309,7 @@ if((typeof module) !== 'undefined') {
                 throw new Error(msg);
             };
             //if not CP then nothing to do
-            if(symbol.group !== CP) 
+            if(!symbol.isPoly()) 
                 stop('Must be a polynomial!');
             //declare vars
             var deg, a, b, c, d, e, coeffs, sign, br, sym, sqrt_a;
