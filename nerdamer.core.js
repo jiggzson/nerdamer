@@ -5450,6 +5450,13 @@ var nerdamer = (function(imports) {
                 retval = symbol;
             }
             else { 
+                //Related to issue #401. Since sqrt(a)*sqrt(b^-1) relates in issues, we'll change the form
+                //to sqrt(a)*sqrt(b)^1 for better simplification
+                //the sign of the power
+                var sign = symbol.power.sign();
+                //remove the sign
+                symbol.power = symbol.power.abs();
+                
                 //if the symbols is imagary then we place in the imaginary part. We'll return it 
                 //as a product
                 if(isConstant && symbol.multiplier.lessThan(0)) {
@@ -5510,6 +5517,10 @@ var nerdamer = (function(imports) {
                 if(m) retval = _.multiply(m, retval);
 
                 if(img) retval = _.multiply(img, retval);
+                
+                //put back the sign that was removed earlier
+                if(sign < 0)
+                    retval.power.negate();
             }
 
             return retval;
@@ -6979,11 +6990,11 @@ var nerdamer = (function(imports) {
                 }
                 
                 //imaginary number under negative nthroot or to the n
-                if(Settings.PARSE2NUMBER && a.isImaginary() && bIsConstant) { 
+                if(Settings.PARSE2NUMBER && a.isImaginary() && bIsConstant && isInt(b) && !b.lessThan(0)) { 
                     var re, im, r, theta, nre, nim;
                     re = a.realpart();
                     im = a.imagpart();
-                    if(re.isConstant('all') && im.isConstant('all')) {
+                    if(re.isConstant('all') && im.isConstant('all')) { 
                         theta = new Symbol(Math.atan2(im, re)*b);
                         r = _.pow(Symbol.hyp(re, im), b); 
                         nre = _.multiply(r.clone(), _.trig.cos(theta.clone()));
