@@ -861,6 +861,30 @@ var nerdamer = (function(imports) {
             if(isPrime(i)) PRIMES.push(i);
         }
     };
+    /**
+     * Checks to see if all arguments are numbers
+     * @param {object} args
+     */
+    var allNumbers = function(args) {
+        for(var i=0; i<args.length; i++)
+            if(args[i].group !== N)
+                return false;
+        return true;
+    };
+    /*
+     * Checks if all arguments aren't just all number but if they
+     * are constants as well e.g. pi, e.
+     * @param {object} args 
+     */
+    var allConstants = function(args) {
+        for(var i=0; i<args.length; i++) {
+            if(args[i].isPi() || args[i].isE())
+                continue;
+            if(!args[i].isConstant(true))
+                return false;
+        }       
+        return true;
+    };
 
     
 //Exceptions ===================================================================
@@ -2828,6 +2852,9 @@ var nerdamer = (function(imports) {
             //add back the flag to track if this symbol is a conversion symbol
             if(this.isConversion)
                 clone.isConversion = this.isConversion;
+            
+            if(this.isUnit) 
+                clone.isUnit = this.isUnit;
 
             return clone;
         },
@@ -3411,8 +3438,10 @@ var nerdamer = (function(imports) {
         Token.OPERATOR = 'OPERATOR';
         Token.VARIABLE_OR_LITERAL = 'VARIABLE_OR_LITERAL';
         Token.FUNCTION = 'FUNCTION';
+        Token.UNIT = 'UNIT';
         Token.MAX_PRECEDENCE = 999;
 //Parser.modules ===============================================================
+        //object for functions which handle complex number
         var complex = {
             prec: undefined,
             cos: function(r, i) {
@@ -3605,7 +3634,8 @@ var nerdamer = (function(imports) {
                 return _.symfunction(f, [symbol]);
             }
         };
-        var trig = this.Trig = {
+        //object for functions which handle trig
+        var trig = this.trig = {
             //container for trigonometric function
             cos: function(symbol) {
                 if(symbol.equals('pi') && symbol.multiplier.den.equals(2))
@@ -3959,9 +3989,8 @@ var nerdamer = (function(imports) {
                 return _.symfunction('atan2', arguments);
             }
         };
-        this.trig = trig;
-        
-        var trigh = this.Trigh = {
+        //object for functions which handle hyperbolic trig
+        var trigh = this.trigh = {
             //container for hyperbolic trig function
             cosh: function(symbol) {
                 var retval;
@@ -4107,8 +4136,8 @@ var nerdamer = (function(imports) {
                 return retval;
             }
         };
-        this.trigh = trigh;
-        
+        //list of supported units
+        this.units = {};
         //list all the supported operators
         var operators = {
             '!!': {
@@ -4276,7 +4305,7 @@ var nerdamer = (function(imports) {
                 leftAssoc: false
             }
         };
-
+        //brackets
         var brackets = {
             '(': {
                 type: 'round',
@@ -4304,8 +4333,8 @@ var nerdamer = (function(imports) {
                 is_close: true
             }
         };
-            // Supported functions.
-            // Format: function_name: [mapped_function, number_of_parameters]
+        // Supported functions.
+        // Format: function_name: [mapped_function, number_of_parameters]
         var functions = this.functions = {
                 'cos'               : [ trig.cos, 1],
                 'sin'               : [ trig.sin, 1],
@@ -4391,9 +4420,8 @@ var nerdamer = (function(imports) {
                 'rectform'          : [ rectform, 1],
                 'sort'              : [ sort, [1, 2]],
             };
-
+        //error handler
         this.error = err;
-        
         //this function is used to comb through the function modules and find a function given its name
         var findFunction = function(fname) {
             var fmodules = Settings.FUNCTION_MODULES,
@@ -4406,24 +4434,6 @@ var nerdamer = (function(imports) {
             err('The function '+fname+' is undefined!');
         };
 
-        var allNumbers = function(args) {
-            for(var i=0; i<args.length; i++)
-                if(args[i].group !== N)
-                    return false;
-            return true;
-        };
-        
-        var allConstants = function(args) {
-            for(var i=0; i<args.length; i++) {
-                if(args[i].isPi() || args[i].isE())
-                    continue;
-                if(!args[i].isConstant(true))
-                    return false;
-            }
-                    
-            return true;
-        };
-        
         /**
          * This method gives the ability to override operators with new methods.
          * @param {String} which
@@ -4778,7 +4788,9 @@ var nerdamer = (function(imports) {
                 if(token === undefined)
                     token = e.substring(lpos, at);
                 //only add it if it's not an empty string
-                if(token !== '')
+                if(token in _.units) 
+                    target.push(new Token(token, Token.UNIT, lpos));
+                else if(token !== '')
                     target.push(new Token(token, Token.VARIABLE_OR_LITERAL, lpos));
             };
             /**
@@ -5021,6 +5033,10 @@ var nerdamer = (function(imports) {
                 else if(e.type === Token.FUNCTION) {
                     stack.push(e);
                 }
+                else if(e.type === Token.UNIT) {
+                    //if it's a unit it belongs on the stack since it's tied to the previous token
+                    output.push(e);
+                }
                 //if it's an additonal scope then put that into RPN form
                 if(Array.isArray(e)) { 
                     output.push(this.toRPN(e));
@@ -5125,6 +5141,10 @@ var nerdamer = (function(imports) {
                     //wrap it in a symbol if need be
                     else if(e.type === Token.VARIABLE_OR_LITERAL)
                         e = new Symbol(v);
+                    else if(e.type === Token.UNIT) {
+                        e = new Symbol(v);
+                        e.isUnit = true;
+                    }
                     
                     //make substitutions
                     //Always constants first. This avoids the being overridden
@@ -6384,7 +6404,6 @@ var nerdamer = (function(imports) {
         this.nthroot = nthroot;
         
 //Parser.methods ===============================================================
-    
         this.addPreprocessor = function(name, action, order, shift_cells) {
             var names = preprocessors.names;
             var actions = preprocessors.actions;
@@ -6450,6 +6469,10 @@ var nerdamer = (function(imports) {
                 bIsSymbol = isSymbol(b);
             //we're dealing with two symbols
             if(aIsSymbol && bIsSymbol) { 
+                //forward the adding of symbols with units to the Unit module
+                if(a.unit || b.unit) {
+                    return _.Unit.add(a, b);
+                }
                 //handle Infinity
                 //https://www.encyclopediaofmath.org/index.php/Infinity
                 if(a.isInfinity || b.isInfinity) {
@@ -6667,6 +6690,9 @@ var nerdamer = (function(imports) {
                 bIsSymbol = isSymbol(b), t;
             
             if(aIsSymbol && bIsSymbol) {
+                if(a.unit || b.unit) {
+                    return _.Unit.subtract(a, b);
+                }
                 return this.add(a, b.negate());
             }
             else {
@@ -6718,6 +6744,17 @@ var nerdamer = (function(imports) {
                 bIsSymbol = isSymbol(b);
         
             if(aIsSymbol && bIsSymbol) {
+                //if it has a unit then add it and return it right away.
+                if(b.isUnit) {
+                    var result = a.clone();
+                    a.unit = b;
+                    return result;
+                }
+                //if it has units then just forward that problem to the unit module
+                if(a.unit || b.unit) {
+                    return _.Unit.multiply(a, b);
+                }
+                
                 //handle Infinty
                 if(a.isInfinity || b.isInfinity) { 
                     if(a.equals(0) || b.equals(0))
@@ -6737,6 +6774,7 @@ var nerdamer = (function(imports) {
                     if(a.isConstant() || b.isConstant() || (a.isInfinity && b.isInfinity)) {
                         if(sign < 0)
                             inf.negate();
+
                         return inf;
                     }
                 }
@@ -6747,12 +6785,18 @@ var nerdamer = (function(imports) {
                 }
 
                 //don't waste time
-                if(a.isOne()) return b.clone();
-                if(b.isOne()) return a.clone();
+                if(a.isOne()) {
+                    return b.clone();
+                }
+                if(b.isOne()) {
+                    return a.clone();
+                }
 
-                if(a.multiplier.equals(0) || b.multiplier.equals(0)) return new Symbol(0);
+                if(a.multiplier.equals(0) || b.multiplier.equals(0)) 
+                    return new Symbol(0);
 
-                if(b.group > a.group && !(b.group === CP)) return this.multiply(b, a);
+                if(b.group > a.group && !(b.group === CP)) 
+                    return this.multiply(b, a);
                 //correction for PL/CB dilemma
                 if(a.group === CB && b.group === PL && a.value === b.value) { 
                     var t = a; a = b; b = t;//swap
@@ -6816,10 +6860,12 @@ var nerdamer = (function(imports) {
                         ): (g1 === N /*don't add powers for N*/? p1 : p1.add(p2));
 
                         //eliminate zero power values and convert them to numbers
-                        if(result.power.equals(0)) result = result.convert(N);
+                        if(result.power.equals(0)) 
+                            result = result.convert(N);
 
                         //properly convert to EX
-                        if(toEX) result.convert(EX);
+                        if(toEX) 
+                            result.convert(EX);
 
                         //take care of imaginaries
                         if(a.imaginary && b.imaginary) { 
@@ -6979,6 +7025,10 @@ var nerdamer = (function(imports) {
                 bIsSymbol = isSymbol(b);
         
             if(aIsSymbol && bIsSymbol) {
+                //forward to Unit division
+                if(a.unit || b.unit) {
+                    return _.Unit.divide(a, b);
+                }
                 var result;
                 if(b.equals(0)) 
                     throw new DivisionByZero('Division by zero not allowed!');
@@ -7057,6 +7107,10 @@ var nerdamer = (function(imports) {
             var aIsSymbol = isSymbol(a),
                 bIsSymbol = isSymbol(b);
             if(aIsSymbol && bIsSymbol) {  
+                //it has units then it's the Unit module's problem
+                if(a.unit || b.unit) {
+                    return _.Unit.pow(a, b);
+                }
                 //handle infinity
                 if(a.isInfinity || b.isInfinity) {
                     if(a.isInfinity && b.isInfinity)
