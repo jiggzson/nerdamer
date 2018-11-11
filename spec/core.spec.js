@@ -734,12 +734,16 @@ describe('Nerdamer core', function () {
                 expected: '3*i',
                 expectedValue: '3*i'
             },
-            /* TODO jiggzson: Results in NaN
+            {
+                given: 'sqrt(a/x)',
+                expected: 'sqrt(a)*sqrt(x)^(-1)',
+                expectedValue: '1.8797162906495577'
+            },
             {
                 given: 'sqrt(-x)',
                 expected: 'sqrt(-x)',
-                expectedValue: '1.44913767*i'
-            },*/
+                expectedValue: '1.449137674618944*i'
+            },
             {
                 given: 'sqrt(-x)*sqrt(-x)',
                 expected: '-x',

@@ -5412,8 +5412,10 @@ var nerdamer = (function(imports) {
             if(symbol.fname === '' && symbol.power.equals(1))
                 symbol = symbol.args[0];
             
+            var is_negative = symbol.multiplier.sign() < 0;
+            
             if(Settings.PARSE2NUMBER) {
-                if(symbol.isConstant() && !symbol.multiplier.lessThan(0)) {
+                if(symbol.isConstant() && !is_negative) {
                     return new Symbol(Math.sqrt(symbol.multiplier.toDecimal()));
                 }
                 else if(symbol.isImaginary()) {
@@ -5459,7 +5461,7 @@ var nerdamer = (function(imports) {
                 
                 //if the symbols is imagary then we place in the imaginary part. We'll return it 
                 //as a product
-                if(isConstant && symbol.multiplier.lessThan(0)) {
+                if(isConstant && symbol.multiplier.lessThan(0)) { 
                     img = Symbol.imaginary();
                     symbol.multiplier = symbol.multiplier.abs();
                 }
@@ -5522,7 +5524,9 @@ var nerdamer = (function(imports) {
                 if(sign < 0)
                     retval.power.negate();
             }
-
+            
+            if(is_negative && Settings.PARSE2NUMBER)
+                return _.parse(retval);
             return retval;
         }
         

@@ -1777,7 +1777,7 @@ if((typeof module) !== 'undefined') {
         coeffs: function(symbol, wrt, coeffs) {
             wrt = String(wrt); 
             symbol = _.expand(symbol);
-            coeffs = coeffs || [];
+            coeffs = coeffs || [new Symbol(0)];
             //we cannot get coeffs for group EX
             if(symbol.group === EX && symbol.contains(wrt, true))
                 _.error('Unable to get coefficients using expression '+symbol.toString());
@@ -1793,7 +1793,6 @@ if((typeof module) !== 'undefined') {
                         coeff = _.add(e, coeff);
                     coeffs[i] = coeff; //transfer it all over
                 }
-                    
             }
             else { 
                 if(!wrt)
@@ -1801,11 +1800,10 @@ if((typeof module) !== 'undefined') {
                 //if the variable isn't part of this polynomial then we're looking at x^0
                 
                 if(vars.indexOf(wrt) === -1) {
-                    coeffs[0] = symbol;
+                    coeffs[0] = _.add(symbol, coeffs[0]);
                 }
-                    
                 else {
-                    coeffs = coeffs || [];
+                    coeffs = coeffs || [new Symbol(0)];
                     var coeff;
                     if(symbol.group === CB) {
                         var s = symbol.symbols[wrt];
@@ -3460,3 +3458,6 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer('coeffs(x+A+1,x)');
+console.log(x.toString())
