@@ -154,6 +154,14 @@ describe('calculus', function () {
             {
                 given: 'mode(a,a,b,c,a,b,d)',
                 expected: 'a'
+            },
+            {
+                given: 'mode(x, r+1, 21, tan(x), r+1)',
+                expected: '1+r'
+            },
+            {
+                given: 'mode(x, r+1, 21, tan(x), r+1, x)',
+                expected: 'mode(1+r,x)'
             }
         ];
 

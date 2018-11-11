@@ -3458,6 +3458,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var x = nerdamer('coeffs(x+A+1,x)');
-console.log(x.toString())

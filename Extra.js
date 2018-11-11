@@ -20,6 +20,8 @@ if((typeof module) !== 'undefined') {
         Symbol = core.Symbol,
         format = core.Utils.format,
         isVector = core.Utils.isVector,
+        isArray = core.Utils.isArray,
+        Vector = core.Vector,
         S = core.groups.S,
         EX = core.groups.EX,
         CP = core.groups.CP,
@@ -396,47 +398,40 @@ if((typeof module) !== 'undefined') {
                 if(isVector(args[0]))
                     return __.Statistics.mode.apply(this, args[0].elements);
                 
-                var map = __.Statistics.frequencyMap(args),
-                    max = [],
-                    c = 0, //number of iterations
-                    s = 0, //variable to measure if all values had equal frequency
-                    fv,
-                    matches = []; //keep track if others with the same frequency
-                
+                var map = __.Statistics.frequencyMap(args);
+
                 //the mode of 1 item is that item as per issue #310 (verified by Happypig375). 
                 if(core.Utils.keys(map).length === 1)
-                    return args[0];
+                    retval = args[0];
+                else {
+                    //invert by arraning them according to their frequency
+                    var inverse = {};
+                    for(var x in map) {
+                        var freq = map[x];
+                        //check if it's in the inverse already
+                        if(!(freq in inverse)) 
+                            inverse[freq] = x;
+                        else {
+                            var e = inverse[freq];
+                            //if it's already an array then just add it
+                            if(isArray(e)) 
+                                e.push(x);
+                            //convert it to and array
+                            else
+                                inverse[freq] = [x, inverse[freq]];
+                        }
+                    }
+                    //the keys now represent the maxes. We want the max of those keys
+                    var max = inverse[Math.max.apply(null, core.Utils.keys(inverse))];
+                    //check it's an array. If it is then map over the results and convert 
+                    //them to Symbol
+                    if(isArray(max)) {
+                        retval = _.symfunction('mode', max.sort());
+                    }
+                    else
+                        retval = _.parse(max);
+                }
                 
-                for(var x in map) {
-                    var e = map[x],
-                        first_iter = c === 0;;
-                    if(first_iter)
-                        fv = e;
-                    
-                    if(first_iter || e > max[1]) { //if no max or this is greater
-                        max[0] = x;
-                        max[1] = e;
-                    }
-                    //keep track if another max was found matching this frequency. We do this by adding it to matches
-                    else if(e === max[1]) {
-                        matches.push(x);
-                    }
-                    //starts with itself and then increments each time another max equals this number
-                    if(e === fv)
-                        s++;
-                        
-                    c++;
-                }
-
-                //check if s and c are equal then no max was found so return a sym function
-                if(matches.length > 0) { //most common values returned as per #319
-                    matches.push(max[0]);
-                    retval = _.symfunction('mode', matches.sort());
-                }
-                else if(s === c)
-                    retval = _.symfunction('mode', args);
-                else
-                    retval = _.parse(max[0]);
                 return retval;
             }, 
             gVariance: function(k, args) {
