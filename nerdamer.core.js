@@ -1560,16 +1560,16 @@ var nerdamer = (function(imports) {
             if(!asHash) { 
                 //use asDecimal to get the object back as a decimal
                 var om = asDecimal ? obj.multiplier.valueOf() : obj.multiplier.toString();
-                if(om == '-1') {
+                if(Number(om) === -1) {
                     sign = '-';
                     om = '1';
                 }
                 //only add the multiplier if it's not 1
-                if(om != '1') multiplier = om;
+                if(Number(om) !== 1) multiplier = om;
                 //use asDecimal to get the object back as a decimal
                 var p = obj.power ? (asDecimal ? obj.power.valueOf() : obj.power.toString()) : '';
                 //only add the multiplier 
-                if(p != '1') {
+                if(String(p) !== '1') {
                     //is it a symbol
                     if(isSymbol(p)) {
                         power = text(p, opt);
@@ -1639,27 +1639,33 @@ var nerdamer = (function(imports) {
 
             //the following groups are held together by plus or minus. They can be raised to a power or multiplied
             //by a multiplier and have to be in brackets to preserve the order of precedence
-            if(((group === CP || group === PL) && (multiplier && multiplier != '1' || sign === '-')) 
-                    || ((group === CB || group === CP || group === PL) && (power && power != '1'))
-                    || !asHash && group === P && value == -1
+            if(((group === CP || group === PL) && (multiplier && Number(multiplier) !== 1 || sign === '-')) 
+                    || ((group === CB || group === CP || group === PL) && (power && Number(power) !== 1))
+                    || !asHash && group === P && Number(value) === -1
                     || obj.fname === PARENTHESIS) { 
                 
                 value = inBrackets(value);
             }
             
             var c = sign+multiplier;
-            if(multiplier && !isInt(multiplier) && !asDecimal) c = inBrackets(c);
+            if(multiplier && !isInt(multiplier) && !asDecimal) 
+                c = inBrackets(c);
             
-            if(power < 0) power = inBrackets(power);
-            if(multiplier) c = c + '*';
-            if(power) power = Settings.POWER_OPERATOR + power;
+            if(power < 0) 
+                power = inBrackets(power);
+            if(multiplier) 
+                c = c + '*';
+            if(power) 
+                power = Settings.POWER_OPERATOR + power;
 
             //this needs serious rethinking. Must fix
-            if(group === EX && value.charAt(0) === '-') value = inBrackets(value);
+            if(group === EX && value.charAt(0) === '-') 
+                value = inBrackets(value);
             
             var cv = c+value;
             
-            if(obj.parens) cv = inBrackets(cv);
+            if(obj.parens) 
+                cv = inBrackets(cv);
 
             return cv+power;
         }
@@ -2318,6 +2324,7 @@ var nerdamer = (function(imports) {
         },
         /**
          * Checks to see if two functions are of equal value
+         * @param {Symbol} symbol
          */
         equals: function(symbol) { 
             if(!isSymbol(symbol)) 
@@ -2355,6 +2362,7 @@ var nerdamer = (function(imports) {
          * rather a custom grouping method, this has to be
          * reinserted in order to make use of most algorithms. This function
          * checks if the symbol meets the criteria of a polynomial.
+         * @param {bool} multivariate
          * @returns {boolean}
          */
         isPoly: function(multivariate) { 
@@ -3337,6 +3345,7 @@ var nerdamer = (function(imports) {
         //Point to the local parser instead of the global one
         var _ = this;
         var bin = {};
+        var preprocessors = {names:[], actions:[]};
         
 //Parser.classes ===============================================================
         function Slice(upper, lower) {
@@ -4479,6 +4488,7 @@ var nerdamer = (function(imports) {
          * function using symfunction.
          * @param {String} fn_name
          * @param {Array} args
+         * @param {int} allowed_args
          * @returns {Symbol}
          */
         this.callfunction = function(fn_name, args, allowed_args) { 
@@ -4561,7 +4571,11 @@ var nerdamer = (function(imports) {
             //will replace this with some cloning action in the future
             return operators;
         };
-        
+        /*
+         * Preforms preprocessing on the string. Useful for making early modification before 
+         * sending to the parser
+         * @param {String} e
+         */
         var prepare_expression = function(e) {
             /*
              * Since variables cannot start with a number, the assumption is made that when this occurs the
@@ -4569,9 +4583,11 @@ var nerdamer = (function(imports) {
              * a side-by-side close and open parenthesis
              */
             e = String(e);
-            
+            //apply preprocessors
+            for(var i=0; i<preprocessors.actions.length; i++)
+                e = preprocessors.actions[i].call(this, e);
+
             var match;
-            
             //add support for spaces between variables
             while(true) { 
                 match = _.operator_filter_regex.exec(e);
@@ -4640,6 +4656,11 @@ var nerdamer = (function(imports) {
                 PI: new Symbol(Settings.PI)
             };
         };
+        /*
+         * Debugging method used to better visualize vector and arrays
+         * @param {object} o
+         * @returns {String}
+         */
         this.pretty_print = function(o) {
             if(Array.isArray(o)) {
                 var s = o.map(x=>_.pretty_print(x)).join(', ');
@@ -4649,6 +4670,11 @@ var nerdamer = (function(imports) {
             }
             return o.toString();
         };
+        /*
+         * Tokneizes the string
+         * @param {String} e
+         * @returns {Token[]}
+         */
         this.tokenize = function(e) {
             //cast to String
             e = String(e);
@@ -4873,6 +4899,11 @@ var nerdamer = (function(imports) {
             add_token(col);
             return tokens;
         };
+        /*
+         * Puts token array in Reverse Polish Notation
+         * @param {Token[]} tokens
+         * @returns {Token[]}
+         */
         this.toRPN = function(tokens) { 
             var fn = tokens.type;
             var l = tokens.length, i;
@@ -5142,7 +5173,6 @@ var nerdamer = (function(imports) {
             var rpn = this.toRPN(tokens);
             return this.parseRPN(rpn, substitutions);
         };
-        
         /**
          * TODO: Switch to Parser.tokenize for this method
          * Reads a string into an array of Symbols and operators
@@ -5175,7 +5205,7 @@ var nerdamer = (function(imports) {
             }
             return objectify(_.tokenize(expression_string));
         };
-
+        //helper method for toTeX
         var chunkAtCommas = function(arr){
             var j, k = 0, chunks = [[]];
             for (var j = 0, l=arr.length; j<l; j++){
@@ -5188,14 +5218,18 @@ var nerdamer = (function(imports) {
             }
             return chunks;
         };
-        
+        //helper method for toTeX
         var rem_brackets = function(str) {
             return str.replace(/^\\left\((.+)\\right\)$/g, function(str, a) {
                 if(a) return a;
                 return str;
             });
         };
-        
+        /*
+         * Convert expression or object to LaTeX
+         * @param {String} expression_or_obj
+         * @returns {String}
+         */
         this.toTeX = function(expression_or_obj) { 
             var obj = typeof expression_or_obj === 'string' ? this.toObject(expression_or_obj) : expression_or_obj,
                 TeX = [];
@@ -5317,7 +5351,7 @@ var nerdamer = (function(imports) {
             return TeX.join(' ');
         };
 
-        /////////// ********** FUNCTIONS ********** ///////////
+//Parser.functions ==============================================================
         /* Although parens is not a "real" function it is important in some cases when the 
          * symbol must carry parenthesis. Once set you don't have to worry about it anymore
          * as the parser will get rid of it at the first opportunity
@@ -6348,22 +6382,54 @@ var nerdamer = (function(imports) {
         this.clean = clean;
         this.sqrt = sqrt;
         this.nthroot = nthroot;
+        
+//Parser.methods ===============================================================
+    
+        this.addPreprocessor = function(name, action, order, shift_cells) {
+            var names = preprocessors.names;
+            var actions = preprocessors.actions;
+            if((typeof action !== 'function')) //the person probably forgot to specify a name
+                throw new PreprocessorError('Incorrect parameters. Function expected!');
+            if(!order) {
+                names.push(name);
+                actions.push(action);
+            }
+            else{
+                if(shift_cells) {
+                    names.splice(order, 0, name);
+                    actions.splice(order, 0, action);
+                }
+                else {
+                    names[order] = name;
+                    actions[order] = action;
+                }
+            }
+        };
 
-        //extended functions. Because functions like log aren't directly 
-        //stored in an object, it's difficult to find out about them unless you know of them 
-        //outside of the library. This serves as registry. That's all.
-        this.ext = {
-            log: log,
-            sqrt: sqrt,
-            abs: abs,
-            vector: vector,
-            matrix: matrix,
-            parens: parens,
-            determinant: determinant,
-            dot: dot,
-            invert: invert,
-            transpose: transpose
-        };   
+        this.getPreprocessors = function() {
+            var preprocessors = {};
+            for(var i=0, l=preprocessors.names.length; i<l; i++) {
+                var name = preprocessors.names[i];
+                preprocessors[name] = {
+                    order: i,
+                    action: preprocessors.actions[i]
+                };
+            }
+            return preprocessors;
+        };
+
+        this.removePreprocessor = function(name, shift_cells) {
+            var i = preprocessors.names.indexOf(name);
+            if(shift_cells) {
+                remove(preprocessors.names, i);
+                remove(preprocessors.actions, i);
+            }
+            else {
+                preprocessors.names[i] = undefined;
+                preprocessors.actions[i] = undefined;
+            }
+        };
+
         //The loader for functions which are not part of Math2
         this.mapped_function = function() { 
             var subs = {},
@@ -7343,19 +7409,6 @@ var nerdamer = (function(imports) {
         this.dfactorial = function(a) {
             return this.symfunction(DOUBLEFACTORIAL, [a]);
         };
-        //wacky fix for factorial with prefixes
-        this.factadd = function(a, b) {
-            return _.add(this.symfunction(FACTORIAL, [a]), b);
-        };
-        this.dfactadd = function(a, b) {
-            return _.add(this.symfunction(DOUBLEFACTORIAL, [a]), b);
-        };
-        this.factsub = function(a, b) {
-            return _.subtract(this.symfunction(FACTORIAL, [a]), b);
-        };
-        this.dfactsub = function(a, b) {
-            return _.subtract(this.symfunction(DOUBLEFACTORIAL, [a]), b);
-        };
     };
     
     /* "STATIC" */
@@ -7786,9 +7839,9 @@ var nerdamer = (function(imports) {
             var mn = m[0], md = m[1], vn = v[0], vd = v[1];
             //filters
             //if the top has a variable but the numerator is one drop it
-            if(vn && mn == 1) mn = '';
+            if(vn && Number(mn) === 1) mn = '';
             //if denominator is 1 drop it always
-            if(md == 1) md = ''; 
+            if(Number(md) === 1) md = ''; 
             //prepare the top portion but check that it's not already bracketed. If it is then leave out the cdot
             var top = this.join(mn, vn, !isBracketed(vn) ? this.dot : '');
 
@@ -7826,7 +7879,7 @@ var nerdamer = (function(imports) {
         /**
          * formats the fractions accordingly.
          * @param {Frac} f
-         * @param {bool} make_1_blank - let's the function know to return blank for denominators == 1
+         * @param {bool} is_pow
          */ 
         formatFrac: function(f, is_pow) { 
             var n = f.num.toString(), 
