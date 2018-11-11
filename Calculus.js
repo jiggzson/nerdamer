@@ -256,28 +256,28 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     
     var __ = core.Calculus = {
 
-        version: '1.4.4',
+        version: '1.4.5',
 
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
             index = index.value;
             var retval;
-
             if(core.Utils.isNumericSymbol(start) && core.Utils.isNumericSymbol(end)) {
-                start = start.multiplier;
-                end = end.multiplier;
+                var modifier = end - start < 200 ? '' : 'PARSE2NUMBER';
+                start = Number(start);
+                end = Number(end);
+                retval = core.Utils.block(modifier, function() {
+                    var f = fn.text(),
+                        subs = {'~': true}, //lock subs. Is this even being used?
+                    retval = new core.Symbol(0);
 
-                var f = fn.text(),
-                    subs = {'~': true}, //lock subs. Is this even being used?
-                retval = new core.Symbol(0);
-
-                for(var i=start; i<=end; i++) {
-                    subs[index] = new Symbol(i); 
-                    var ans = _.parse(f, subs);
-                    retval = _.add(retval, ans);
-                }
-                
-                return retval;
+                    for(var i=start; i<=end; i++) {
+                        subs[index] = new Symbol(i); 
+                        var ans = _.parse(f, subs);
+                        retval = _.add(retval, ans);
+                    }
+                    return retval;
+                });
             }
             else {
                 retval = _.symfunction('sum',arguments);
@@ -290,17 +290,21 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             index = index.value;
             var retval;
             if(core.Utils.isNumericSymbol(start) && core.Utils.isNumericSymbol(end)) {
-                start = start.multiplier;
-                end = end.multiplier;
+                var modifier = end - start < 200 ? '' : 'PARSE2NUMBER';
+                retval = core.Utils.block(modifier, function() {
+                    start = Number(start);
+                    end = Number(end.multiplier);
 
-                var f = fn.text(),
-                    subs = {},
-                    retval = new core.Symbol(1);
+                    var f = fn.text(),
+                        subs = {},
+                        retval = new core.Symbol(1);
 
-                for(var i=start; i<=end; i++) {
-                    subs[index] = new Symbol(i); 
-                    retval = _.multiply(retval, _.parse(f, subs));
-                }
+                    for(var i=start; i<=end; i++) {
+                        subs[index] = new Symbol(i); 
+                        retval = _.multiply(retval, _.parse(f, subs));
+                    }
+                    return retval;
+                });
             }
             else {
                 retval = _.symfunction('product', arguments);
