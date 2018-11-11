@@ -1623,7 +1623,10 @@ var nerdamer = (function(imports) {
         else if(isVector(obj)) { 
             var l = obj.elements.length,
                 c = [];
-            for(var i=0; i<l; i++) c.push(obj.elements[i].text(option));
+            for(var i=0; i<l; i++) {
+                
+                c.push(obj.elements[i].text(option));
+            }
             var s = '['+c.join(',')+']';
             if(obj.getter)
                 s = s+'['+text(obj.getter)+']';
@@ -1718,6 +1721,7 @@ var nerdamer = (function(imports) {
          */
         evaluate: function() {
             var first_arg = arguments[0], expression, idx = 1;
+            //Enable getting of expressions using the % so for example %1 should get the first expression
             if(typeof first_arg === 'string') {
                 expression = (first_arg.charAt(0) === '%') ? Expression.getExpression(first_arg.substr(1)).text() : first_arg;
             }
@@ -4486,14 +4490,13 @@ var nerdamer = (function(imports) {
                 fn = findFunction(fn_name); 
                 if(Settings.PARSE2NUMBER && allNumbers(args)) 
                     retval = bigConvert(fn.apply(fn, args));
-                else
+                else 
                     retval = _.symfunction(fn_name, args);
             }
             else { 
                 //Remember assumption 2. The function is defined so it MUST handle all aspects including numeric values
                 retval = fn.apply(fn_settings[2], args);
             }
-
             return retval;
         };
         /**
@@ -5329,6 +5332,22 @@ var nerdamer = (function(imports) {
          */
         function factorial(symbol) { 
             var retval;
+             if(isVector(symbol)) {
+                var V = new Vector();
+                symbol.each(function(x, i) {
+                    //i start at one.
+                    V.set(i-1, factorial(x));
+                });
+                return V;
+            }
+            if(isMatrix(symbol)) { 
+                var M = new Matrix();
+                symbol.each(function(x, i, j) { 
+                    //i start at one.
+                    M.set(i, j, factorial(x));
+                });
+                return M;
+            }
             if(Settings.PARSE2NUMBER && symbol.isConstant()) {
                 if(isInt(symbol)) {
                     retval = Math2.bigfactorial(symbol);
@@ -7838,7 +7857,9 @@ var nerdamer = (function(imports) {
         },
         
         set: function(i, val) {
-            this.elements[i] = new Symbol(val);
+            if(!isSymbol(val))
+                val = new Symbol(val);
+            this.elements[i] = val;
         },
         
         // Returns the number of elements the vector has
@@ -8345,7 +8366,7 @@ var nerdamer = (function(imports) {
             return 'matrix'+inBrackets(s.join(','));
         },
         text: function() {
-            return 'matrix('+this.toString('')+')';
+            return 'matrix('+this.elements.toString('')+')';
         },
         latex: function(option) {
             var cols = this.cols(), elements = this.elements; 
