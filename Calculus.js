@@ -185,6 +185,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         return _.parse(format('(sin(({0})+({1}))-sin(({0})-({1})))/2', a, b));
     },
     cosAsinAtransform = core.Utils.cosAsinAtranform = function(symbol1, symbol2) {
+        //TODO: temporary fix for integrate(e^x*sin(x)*cos(x)^2).
+        //we technically know how to do this transform but more is needed for correct output
+        if(Number(symbol2.power) !== 1)
+            return _.multiply(symbol1, symbol2);
         var a;
         a = symbol1.args[0];
         return _.parse(format('(sin(2*({0})))/2', a));
@@ -205,23 +209,21 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 if(fname === COS && map[SIN]) { 
                     if(map[SIN].args[0].toString() !== symbol.args[0].toString()) {
                         t = cosAsinBtransform(symbol, map[SIN]);
-                        delete map[SIN];
                     }
                     else{
                         t = cosAsinAtransform(symbol, map[SIN]);
-                        delete map[SIN];
                     }
+                    delete map[SIN];
                     retval = _.multiply(retval, t);
                 }
-                else if(fname === SIN && map[COS]) {
+                else if(fname === SIN && map[COS]) { 
                     if(map[COS].args[0].toString() !== symbol.args[0].toString()) {
                         t = cosAsinBtransform(symbol, map[COS]);
-                        delete map[COS];
                     }
                     else {
                         t = cosAsinAtransform(symbol, map[COS]);
-                        delete map[COS];
                     }
+                    delete map[COS];
                     retval = _.multiply(retval, t);
                 }
                 else if(fname === SIN && map[SIN]) {
