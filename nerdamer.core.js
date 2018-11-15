@@ -523,7 +523,7 @@ var nerdamer = (function(imports) {
      * @param {String[]} vars - an optional array of variables to use
      * @returns {bool}
      */
-   var compare = function(sym1, sym2, vars) {
+    var compare = function(sym1, sym2, vars) {
         var n = 5; //a random number between 1 and 5 is good enough
         var scope = {}; // scope object with random numbers generated using vars
         var comparison;
@@ -533,6 +533,27 @@ var nerdamer = (function(imports) {
             comparison = _.parse(sym1, scope).equals(_.parse(sym2, scope));
         });
         return comparison;
+    };
+    
+    /**
+     * Is used to set a user defined function using the function assign operator
+     * @param {String} name
+     * @param {String[]} params_array
+     * @param {String} body
+     * @returns {Boolean}
+     */
+    var setFunction = function(name, params_array, body) {
+        validateName(name);
+        if(!isReserved(name)) {
+            params_array = params_array || variables(_.parse(body));
+            _.functions[name] = [_.mapped_function, params_array.length, {
+                    name: name,
+                    params: params_array,
+                    body: body
+            }];
+            return body;
+        }
+        return null;
     };
 
     /**
@@ -4302,7 +4323,7 @@ var nerdamer = (function(imports) {
                 action: 'function_assign',
                 prefix: false,
                 postfix: false,
-                leftAssoc: false
+                leftAssoc: true
             }
         };
         //brackets
@@ -5171,7 +5192,7 @@ var nerdamer = (function(imports) {
                     Q.push(e);
                 }
             }
-            
+
             return Q[0];
         };
         /**
@@ -6742,7 +6763,11 @@ var nerdamer = (function(imports) {
         this.multiply = function(a, b) { 
             var aIsSymbol = isSymbol(a),
                 bIsSymbol = isSymbol(b);
-        
+            //we're dealing with function assignment here
+            if(aIsSymbol && b instanceof Collection) {
+                b.elements.push(a);
+                return b;
+            }
             if(aIsSymbol && bIsSymbol) {
                 //if it has a unit then add it and return it right away.
                 if(b.isUnit) {
@@ -7430,6 +7455,23 @@ var nerdamer = (function(imports) {
         //percent
         this.percent = function(a) {
             return _.divide(a, new Symbol(100));
+        };
+        //set variable
+        this.assign = function(a, b) {
+            if(a instanceof Collection && b instanceof Collection) {
+                a.elements.map(function(x, i) {
+                    return _.assign(x, b.elements[i]);
+                });
+                return Vector.fromArray(b.elements);
+            }
+            if(a.group !== S) 
+                throw new NerdamerValueError('Cannot complete operation. Incorrect LH value for '+a);
+            VARS[a.value] = b;
+            return b;
+        };
+        this.function_assign = function(a, b) {
+            var f = a.elements.pop();
+            return setFunction(f, a.elements, b);
         };
         //function to quickly convert bools to Symbols
         var bool2Symbol = function(x) {
@@ -8833,19 +8875,7 @@ var nerdamer = (function(imports) {
      * @returns {Boolean} returns true if succeeded and falls on fail
      * @example nerdamer.setFunction('f',['x'], 'x^2+2');
      */
-    libExports.setFunction = function(name, params_array, body) {
-        validateName(name);
-        if(!isReserved(name)) {
-            params_array = params_array || variables(_.parse(body));
-            _.functions[name] = [_.mapped_function, params_array.length, {
-                    name: name,
-                    params: params_array,
-                    body: body
-            }];
-            return true;
-        }
-        return false;
-    };
+    libExports.setFunction = setFunction;
     
     /**
      * 
