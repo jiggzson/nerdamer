@@ -1,3 +1,5 @@
+/* global expect */
+
 'use strict';
 
 var nerdamer = require('../nerdamer.core.js');
@@ -135,8 +137,8 @@ describe('TeX features', function () {
                 decimalTeX: 'x^{2}+2 \\cdot x+y^{2}+y+6'
             }, {
                 given: '(-1*(x-1))',
-                TeX: '-\\left(x-1\\right)',
-                decimalTeX: '-\\left(x-1\\right)'
+                TeX: '-x+1',
+                decimalTeX: '-x+1'
             }, {
                 given: 'x!',
                 TeX: 'x!',
@@ -180,7 +182,7 @@ describe('TeX features', function () {
                 given: 'nthroot(a,b)',
                 TeX: '\\sqrt[b]{a}',
                 decimalTeX: '\\sqrt[b]{a}'
-            },
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

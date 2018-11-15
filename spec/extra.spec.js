@@ -1,3 +1,5 @@
+/* global expect */
+
 'use strict';
 
 var nerdamer = require('../nerdamer.core.js');
@@ -61,8 +63,9 @@ describe('calculus', function () {
                 expected: '-2*(-s+a)^(-3)'
             },
             {
+                //NOTE: this unit test was incorrect before. I don't know how this was missed.
                 given: 'laplace(sinh(t)*e^t, t, s)',
-                expected: '(1/2)*(-s+2)^(-1)+(1/2)*s^(-1)'
+                expected: '(-1/2)*(-s+2)^(-1)+(-1/2)*s^(-1)'
             }
         ];
 
@@ -151,6 +154,14 @@ describe('calculus', function () {
             {
                 given: 'mode(a,a,b,c,a,b,d)',
                 expected: 'a'
+            },
+            {
+                given: 'mode(x, r+1, 21, tan(x), r+1)',
+                expected: '1+r'
+            },
+            {
+                given: 'mode(x, r+1, 21, tan(x), r+1, x)',
+                expected: 'mode(1+r,x)'
             }
         ];
 
