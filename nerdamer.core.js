@@ -4015,6 +4015,7 @@ var nerdamer = (function(imports) {
                         return new Symbol(Math.atan(symbol.valueOf()));
                     if(symbol.isImaginary()) 
                         return complex.evaluate(symbol, 'atan');
+                    return _.symfunction('atan', arguments);
                 }
                 else if(symbol.equals(-1))
                     retval = _.parse('-pi/4');
