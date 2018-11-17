@@ -3490,7 +3490,12 @@ var nerdamer = (function(imports) {
                 collection.append(e);
             return collection;
         };
-
+        
+        this.classes = {
+            Collection: Collection,
+            Slice: Slice
+        };
+        
         function Token(node, node_type, column) {
             this.type = node_type;
             this.value = node;
@@ -7675,6 +7680,8 @@ var nerdamer = (function(imports) {
             if(symbol.clone) {
                 symbol = symbol.clone(); //leave original as-is
             }
+            if(symbol instanceof _.classes.Collection) 
+                symbol =  symbol.elements;
             
             if(isArray(symbol)) { 
                 var LaTeXArray = [];

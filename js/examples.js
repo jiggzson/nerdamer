@@ -85,7 +85,7 @@ var examples = [
     'dot([1,2,3],[5,6,7])',
     'dot([a, x, 1],[b, y, 2])',
     'imatrix(3)',
-    'determinant(matrix[7,1],[11,2])',
+    'determinant(matrix([7,1],[11,2]))',
     'sqcomp(x^2-10*x+26)',
     'line([-1,2], [4, 12])',
     'invert(matrix([a^2, b], [b^2, 4]))*matrix([3],[4])',
