@@ -3409,15 +3409,30 @@ if((typeof module) !== 'undefined') {
             return symbol;
         },
         simplify: function(symbol) {
+            //nothing more to do
+            if(symbol.isConstant() || symbol.group === core.groups.S)
+                return symbol;
             var simplified;
             symbol = symbol.clone(); //make a copy
+            ////1. Try cos(x)^2+sin(x)^2
+            simplified = __.trigSimp(symbol);
             //first go for the "cheapest" simplification which may eliminate 
             //your problems right away. factor -> evaluate. Remember
             //that there's no need to expand since factor already does that
-            simplified = evaluate(__.Factor.factor(symbol));
+            simplified = __.Factor.factor(simplified);
             //If the simplfied is a sum then we can make a few more simplifications
-            //1. Try cos(x)^2+sin(x)^2
-            simplified = __.trigSimp(evaluate(simplified));
+            //e.g. simplify(1/(x-1)+1/(1-x)) as per issue #431
+            if(simplified.group === core.groups.CP && simplified.isLinear()) {
+                var m = simplified.multiplier.clone();
+                simplified.toUnitMultiplier();
+                var r = new Symbol(0);
+                simplified.each(function(x) {
+                    var s = __.simplify(x);
+                    r = _.add(r, s);
+                });
+                r.multiplier = r.multiplier.multiply(m);
+                simplified = r;
+            }
             
             return evaluate(simplified);
         },

@@ -670,21 +670,32 @@ describe('Algebra', function () {
         var testCases = [
             {
                 given: 'simplify(1/2*sin(x^2)^2+cos(x^2)^2)',
-                expected: '(1/2)*cos(x^2)^2+1/2'
+                expected: '(1/2)*(1+cos(x^2)^2)'
             }, 
             {
                 given: 'simplify(0.75*sin(x^2)^2+cos(x^2)^2)',
-                expected: '(3/4)*cos(x^2)^2+1/2'
+                expected: '(1/4)*(2+3*cos(x^2)^2)'
             }, 
             {
                 given: 'simplify(cos(x)^2+sin(x)^2+cos(x)-tan(x)-1+sin(x^2)^2+cos(x^2)^2)',
-                expected: '-tan(x)+1+cos(x)'
+                expected: '-(-1-cos(x)+tan(x))'
             },
             {
                 given: 'simplify((x^2+4*x-45)/(x^2+x-30))',
                 expected: '(6+x)^(-1)*(9+x)'
+            },
+            {
+                given: 'simplify(1/(x-1)+1/(1-x))',
+                expected: '0'
+            },
+            {
+                given: 'simplify((x-1)/(1-x))',
+                expected: '-1'
+            },
+            {
+                given: 'simplify((x^2+2*x+1)/(x+1))',
+                expected: '1+x'
             }
-            
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
