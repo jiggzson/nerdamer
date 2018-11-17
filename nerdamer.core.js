@@ -11,7 +11,7 @@ var nerdamer = (function(imports) {
     "use strict";
 
 //version ====================================================================== 
-    var version = '0.8.1';
+    var version = '0.8.2';
 
 //inits ========================================================================
     var  _ = new Parser(); //nerdamer's parser
@@ -3490,7 +3490,12 @@ var nerdamer = (function(imports) {
                 collection.append(e);
             return collection;
         };
-
+        
+        this.classes = {
+            Collection: Collection,
+            Slice: Slice
+        };
+        
         function Token(node, node_type, column) {
             this.type = node_type;
             this.value = node;
@@ -7675,6 +7680,8 @@ var nerdamer = (function(imports) {
             if(symbol.clone) {
                 symbol = symbol.clone(); //leave original as-is
             }
+            if(symbol instanceof _.classes.Collection) 
+                symbol =  symbol.elements;
             
             if(isArray(symbol)) { 
                 var LaTeXArray = [];
