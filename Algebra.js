@@ -34,8 +34,8 @@ if((typeof module) !== 'undefined') {
         isInt = core.Utils.isInt,
         Symbol = core.Symbol,
         CONST_HASH = core.Settings.CONST_HASH,
-        math = core.Utils.importFunctions();
-        
+        math = core.Utils.importFunctions(),
+        evaluate = core.Utils.evaluate;
     //*************** CLASSES ***************//
     /**
     * Converts a symbol into an equivalent polynomial arrays of 
@@ -2114,7 +2114,7 @@ if((typeof module) !== 'undefined') {
                             factors.pFactor = symbol.power.toString();
                             symbol.toLinear();
                         } 
-
+                        
                         var vars = variables(symbol),
                             multiVar = vars.length > 1;
 
@@ -2148,7 +2148,6 @@ if((typeof module) !== 'undefined') {
 
                         factors.add(_.pow(symbol, _.parse(p)));
                         //last minute clean up
-                        factors.clean();
                         return factors.toSymbol();
                     }
                     
@@ -2477,6 +2476,7 @@ if((typeof module) !== 'undefined') {
                         l = vars.length, n = symbols.length;
                     //take all the variables in the symbol and organize by variable name
                     //e.g. a^2+a^2+b*a -> {a: {a^3, a^2, b*a}, b: {b*a}}
+                    
                     for(var i=0; i<l; i++) {
                         var v = vars[i];
                         sorted[v] = new Symbol(0);
@@ -2512,17 +2512,23 @@ if((typeof module) !== 'undefined') {
                             symbol = d[1];
                             //we don't want to just flip the sign. If the remainder is -1 then we accomplished nothing
                             //and we just return the symbol;
+                            //If r equals zero then there's nothing left to do so we're done
                             if(r.equals(-1))
                                 return symbol;
-                            
+
                             var factor = divided[0]; 
                             if(symbol.equals(factor)) {
                                 var rem = __.Factor.reduce(factor, factors);
+                                
                                 if(!symbol.equals(rem)) 
                                     return __.Factor.mfactor(rem, factors);
                             }
-                            else 
+                            else {
                                 factors.add(factor); 
+                                //if the remainder of the symbol is zero then we're done. TODO: Rethink this logic a bit.
+                                if(symbol.equals(0))
+                                    return r;
+                            }
                             
                             if(r.isConstant('all')) { 
                                 factors.add(r);
@@ -2532,6 +2538,7 @@ if((typeof module) !== 'undefined') {
                             return __.Factor.mfactor(r, factors);
                         }
                     }
+                    
                 }
                 
                 //difference of squares factorization
@@ -3345,6 +3352,75 @@ if((typeof module) !== 'undefined') {
                 f: _.add(_.pow(sym.clone(), new Symbol(2)), d.clone())
             };
         },
+        trigSimp: function(symbol, map) {
+            symbol = symbol.clone();
+            map = map || {};
+            //create the map
+            symbol.each(function(x) {
+                if(x.group === FN) {
+                    var key = x.args.toString();
+                    var entry = map[key];
+                    entry ? entry.push(x) : map[key] = [x];
+                }
+            }, true);
+            
+            //1. try simplify cos(x)^2+sin(x)^2
+            
+            for(var x in map) {
+                var sin, cos;
+                map[x].map(function(s, i) {
+                    //fish out sin(x)^2 and cos(x)^2
+                    if(s.power.equals(2) && !s.multiplier.isNegative()) {
+                        if(s.fname === 'cos')
+                            cos = s;
+                        else if(s.fname === 'sin')
+                            sin = s;
+                    }
+                });
+                //if we have sin and cos then we can simplify
+                if(sin && cos) {
+                    //add them together and divide by two since each contributes half
+                    var m = cos.multiplier.add(sin.multiplier);
+                    //get the remainder which may be there if they're not equal and divide it back to get wholes
+                    var r = m.mod(new core.Frac(m.greaterThan(new core.Frac(2)) ? 2 : 1));
+                    //get the whole
+                    var w = m.subtract(r).divide(new core.Frac(2));
+                    //r belongs to the greater of the two
+                    if(cos.multiplier.greaterThan(sin.multiplier)) {
+                        sin.power = new core.Frac(0);
+                        sin.multiplier = w;
+                        cos.multiplier = r;
+                    }
+                    else if(sin.multiplier.greaterThan(cos.multiplier)) {
+                        cos.power = new core.Frac(0);
+                        cos.multiplier = w;
+                        sin.multiplier = r;
+                    }
+                    else {
+                        //doesn't matter which but we'll throw the bone to cos
+                        cos.multiplier = w;
+                        cos.power = new core.Frac(0);
+                        sin.multiplier = new core.Frac(0);
+                    }
+                }
+            }
+            
+                
+            return symbol;
+        },
+        simplify: function(symbol) {
+            var simplified;
+            symbol = symbol.clone(); //make a copy
+            //first go for the "cheapest" simplification which may eliminate 
+            //your problems right away. factor -> evaluate. Remember
+            //that there's no need to expand since factor already does that
+            simplified = evaluate(__.Factor.factor(symbol));
+            //If the simplfied is a sum then we can make a few more simplifications
+            //1. Try cos(x)^2+sin(x)^2
+            simplified = __.trigSimp(evaluate(simplified));
+            
+            return evaluate(simplified);
+        },
         Classes: {
             Polynomial: Polynomial,
             Factors: Factors,
@@ -3379,6 +3455,12 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: 1,
             build: function() { return __.Factor.factor; }
+        },
+        {
+            name: 'simplify',
+            visible: true,
+            numargs: 1,
+            build: function() { return __.simplify; }
         },
         {
             name: 'gcd',
@@ -3461,6 +3543,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-
-

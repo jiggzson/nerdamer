@@ -11,7 +11,7 @@ var nerdamer = (function(imports) {
     "use strict";
 
 //version ====================================================================== 
-    var version = '0.8.0';
+    var version = '0.8.1';
 
 //inits ========================================================================
     var  _ = new Parser(); //nerdamer's parser
@@ -6360,19 +6360,28 @@ var nerdamer = (function(imports) {
         }
         
         function vecset(vector, index, value) {
+            if(!index.isConstant)
+                return _.symfunction('vecset', arguments);
             vector.elements[index] = value;
             return vector;
         }
         
         function matget(matrix, i, j) {
-            return matrix.elements[i][j];
+            if(i.isConstant() && j.isConstant())
+                return matrix.elements[i][j];
+            return _.symfunction('matget', arguments);
         }
         
         function matgetrow(matrix, i) {
-            return new Matrix(matrix.elements[i]);
+            if(i.isConstant())
+                return new Matrix(matrix.elements[i]);
+            return _.symfunction('matgetrow', arguments);
         }
         
         function matsetrow(matrix, i, x) {
+            //handle symbolics
+            if(!i.isConstant())
+                return _.symfunction('matsetrow', arguments);
             if(matrix.elements[i].length !== x.elements.length)
                 throw new DimensionError('Matrix row must match row dimensions!');
             var M = matrix.clone();
@@ -6381,6 +6390,9 @@ var nerdamer = (function(imports) {
         }
         
         function matgetcol(matrix, col_index) {
+            //handle symbolics
+            if(!col_index.isConstant())
+                return _.symfunction('matgetcol', arguments);
             col_index = Number(col_index);
             var M = Matrix.fromArray([]);
             matrix.each(function(x, i, j) {
@@ -6392,6 +6404,9 @@ var nerdamer = (function(imports) {
         }
         
         function matsetcol(matrix, j, col) {
+            //handle symbolics
+            if(!j.isConstant())
+                return _.symfunction('matsetcol', arguments);
             j = Number(j);
             if(matrix.rows() !== col.elements.length)
                 throw new DimensionError('Matrix columns must match number of columns!');

@@ -664,4 +664,35 @@ describe('Algebra', function () {
             expect(result.toString()).toEqual(testCases[i].expected);
         }
     });
+    
+    it('should simplify correctly', function () {
+        // given
+        var testCases = [
+            {
+                given: 'simplify(1/2*sin(x^2)^2+cos(x^2)^2)',
+                expected: '(1/2)*cos(x^2)^2+1/2'
+            }, 
+            {
+                given: 'simplify(0.75*sin(x^2)^2+cos(x^2)^2)',
+                expected: '(3/4)*cos(x^2)^2+1/2'
+            }, 
+            {
+                given: 'simplify(cos(x)^2+sin(x)^2+cos(x)-tan(x)-1+sin(x^2)^2+cos(x^2)^2)',
+                expected: '-tan(x)+1+cos(x)'
+            },
+            {
+                given: 'simplify((x^2+4*x-45)/(x^2+x-30))',
+                expected: '(6+x)^(-1)*(9+x)'
+            }
+            
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var result = nerdamer(testCases[i].given);
+
+            // then
+            expect(result.toString()).toEqual(testCases[i].expected);
+        }
+    });
 });
