@@ -1,3 +1,5 @@
+/* global module */
+
 ﻿/*
 * Author : Martin Donk
 * Website : http://www.nerdamer.com
@@ -183,6 +185,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         return _.parse(format('(sin(({0})+({1}))-sin(({0})-({1})))/2', a, b));
     },
     cosAsinAtransform = core.Utils.cosAsinAtranform = function(symbol1, symbol2) {
+        //TODO: temporary fix for integrate(e^x*sin(x)*cos(x)^2).
+        //we technically know how to do this transform but more is needed for correct output
+        if(Number(symbol2.power) !== 1)
+            return _.multiply(symbol1, symbol2);
         var a;
         a = symbol1.args[0];
         return _.parse(format('(sin(2*({0})))/2', a));
@@ -203,23 +209,21 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 if(fname === COS && map[SIN]) { 
                     if(map[SIN].args[0].toString() !== symbol.args[0].toString()) {
                         t = cosAsinBtransform(symbol, map[SIN]);
-                        delete map[SIN];
                     }
                     else{
                         t = cosAsinAtransform(symbol, map[SIN]);
-                        delete map[SIN];
                     }
+                    delete map[SIN];
                     retval = _.multiply(retval, t);
                 }
-                else if(fname === SIN && map[COS]) {
+                else if(fname === SIN && map[COS]) { 
                     if(map[COS].args[0].toString() !== symbol.args[0].toString()) {
                         t = cosAsinBtransform(symbol, map[COS]);
-                        delete map[COS];
                     }
                     else {
                         t = cosAsinAtransform(symbol, map[COS]);
-                        delete map[COS];
                     }
+                    delete map[COS];
                     retval = _.multiply(retval, t);
                 }
                 else if(fname === SIN && map[SIN]) {
@@ -254,28 +258,28 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     
     var __ = core.Calculus = {
 
-        version: '1.4.4',
+        version: '1.4.5',
 
         sum: function(fn, index, start, end) {
-            if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
+            if(!(index.group === core.groups.S)) throw new core.exceptions.NerdamerTypeError('Index must be symbol. '+text(index)+' provided');
             index = index.value;
             var retval;
-
             if(core.Utils.isNumericSymbol(start) && core.Utils.isNumericSymbol(end)) {
-                start = start.multiplier;
-                end = end.multiplier;
+                var modifier = end - start < 200 ? '' : 'PARSE2NUMBER';
+                start = Number(start);
+                end = Number(end);
+                retval = core.Utils.block(modifier, function() {
+                    var f = fn.text(),
+                        subs = {'~': true}, //lock subs. Is this even being used?
+                    retval = new core.Symbol(0);
 
-                var f = fn.text(),
-                    subs = {'~': true}, //lock subs. Is this even being used?
-                retval = new core.Symbol(0);
-
-                for(var i=start; i<=end; i++) {
-                    subs[index] = new Symbol(i); 
-                    var ans = _.parse(f, subs);
-                    retval = _.add(retval, ans);
-                }
-                
-                return retval;
+                    for(var i=start; i<=end; i++) {
+                        subs[index] = new Symbol(i); 
+                        var ans = _.parse(f, subs);
+                        retval = _.add(retval, ans);
+                    }
+                    return retval;
+                });
             }
             else {
                 retval = _.symfunction('sum',arguments);
@@ -284,21 +288,25 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             return retval;
         },
         product: function(fn, index, start, end) {
-            if(!(index.group === core.groups.S)) throw new Error('Index must be symbol. '+text(index)+' provided');
+            if(!(index.group === core.groups.S)) throw new core.exceptions.NerdamerTypeError('Index must be symbol. '+text(index)+' provided');
             index = index.value;
             var retval;
             if(core.Utils.isNumericSymbol(start) && core.Utils.isNumericSymbol(end)) {
-                start = start.multiplier;
-                end = end.multiplier;
+                var modifier = end - start < 200 ? '' : 'PARSE2NUMBER';
+                retval = core.Utils.block(modifier, function() {
+                    start = Number(start);
+                    end = Number(end.multiplier);
 
-                var f = fn.text(),
-                    subs = {},
-                    retval = new core.Symbol(1);
+                    var f = fn.text(),
+                        subs = {},
+                        retval = new core.Symbol(1);
 
-                for(var i=start; i<=end; i++) {
-                    subs[index] = new Symbol(i); 
-                    retval = _.multiply(retval, _.parse(f, subs));
-                }
+                    for(var i=start; i<=end; i++) {
+                        subs[index] = new Symbol(i); 
+                        retval = _.multiply(retval, _.parse(f, subs));
+                    }
+                    return retval;
+                });
             }
             else {
                 retval = _.symfunction('product', arguments);
@@ -927,10 +935,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         }
                     }
                     else if(symbol.isComposite() && symbol.isLinear()) { 
+                        var m = _.parse(symbol.multiplier);
+                        symbol.toUnitMultiplier();
                         retval = new Symbol(0);
                         symbol.each(function(x) {
                             retval = _.add(retval, __.integrate(x, dx, depth));
                         });
+                        retval = _.multiply(m, retval);
                     }
                     else if(g === CP) { 
                         if(symbol.power.greaterThan(1))

@@ -6,6 +6,8 @@
 * Source : https://github.com/jiggzson/nerdamer
 */
 
+/* global module */
+
 if((typeof module) !== 'undefined') {
     nerdamer = require('./nerdamer.core.js');
     require('./Calculus.js');
@@ -32,8 +34,8 @@ if((typeof module) !== 'undefined') {
         isInt = core.Utils.isInt,
         Symbol = core.Symbol,
         CONST_HASH = core.Settings.CONST_HASH,
-        math = core.Utils.importFunctions();
-
+        math = core.Utils.importFunctions(),
+        evaluate = core.Utils.evaluate;
     //*************** CLASSES ***************//
     /**
     * Converts a symbol into an equivalent polynomial arrays of 
@@ -50,7 +52,7 @@ if((typeof module) !== 'undefined') {
         else if(!isNaN(symbol)) { 
             order = order || 0;
             if(variable === undefined) 
-                throw new Error('Polynomial expects a variable name when creating using order');
+                throw new core.exceptions.InvalidVariableNameError('Polynomial expects a variable name when creating using order');
             this.coeffs = [];
             this.coeffs[order] = symbol;
             this.fill(symbol);
@@ -67,7 +69,7 @@ if((typeof module) !== 'undefined') {
      */
     Polynomial.fromArray = function(arr, variable) {
         if(typeof variable === 'undefined') 
-            throw new Error('A variable name must be specified when creating polynomial from array');
+            throw new core.exceptions.InvalidVariableNameError('A variable name must be specified when creating polynomial from array');
         var p = new Polynomial();
         p.coeffs = arr;
         p.variable = variable;
@@ -107,7 +109,7 @@ if((typeof module) !== 'undefined') {
          */
         parse: function(symbol, c) { 
             this.variable = variables(symbol)[0]; 
-            if(!symbol.isPoly()) throw new Error('Polynomial Expected! Received '+core.Utils.text(symbol));
+            if(!symbol.isPoly()) throw core.exceptions.NerdamerTypeError('Polynomial Expected! Received '+core.Utils.text(symbol));
             c = c || [];
             if(!symbol.power.absEquals(1)) symbol = _.expand(symbol);
 
@@ -117,7 +119,7 @@ if((typeof module) !== 'undefined') {
                 for(var x in symbol.symbols) { 
                     var sub = symbol.symbols[x],
                         p = sub.power; 
-                    if(core.Utils.isSymbol(p)) throw new Error('power cannot be a Symbol');
+                    if(core.Utils.isSymbol(p)) throw new core.exceptions.NerdamerTypeError('power cannot be a Symbol');
 
                     p = sub.group === N ? 0 : p.toDecimal();
                     if(sub.symbols){ 
@@ -978,7 +980,7 @@ if((typeof module) !== 'undefined') {
                 return get_roots(rarr, powers, max);
             }
             else {
-                throw new Error('Cannot calculate roots. Symbol must be a polynomial!');
+                throw new core.exceptions.NerdamerTypeError('Cannot calculate roots. Symbol must be a polynomial!');
             }
 
             function calcroots(rarr, powers, max){	
@@ -991,7 +993,7 @@ if((typeof module) !== 'undefined') {
                 rarr.unshift(max);
 
                 if (max > MAXDEGREE){
-                    throw new Error("This utility accepts polynomials of degree up to " + MAXDEGREE + ". ");
+                    throw new core.exceptions.ValueLimitExceededError("This utility accepts polynomials of degree up to " + MAXDEGREE + ". ");
                 }
 
                 var zeroi = [],   // Vector of imaginary components of roots
@@ -1775,7 +1777,7 @@ if((typeof module) !== 'undefined') {
         coeffs: function(symbol, wrt, coeffs) {
             wrt = String(wrt); 
             symbol = _.expand(symbol);
-            coeffs = coeffs || [];
+            coeffs = coeffs || [new Symbol(0)];
             //we cannot get coeffs for group EX
             if(symbol.group === EX && symbol.contains(wrt, true))
                 _.error('Unable to get coefficients using expression '+symbol.toString());
@@ -1791,7 +1793,6 @@ if((typeof module) !== 'undefined') {
                         coeff = _.add(e, coeff);
                     coeffs[i] = coeff; //transfer it all over
                 }
-                    
             }
             else { 
                 if(!wrt)
@@ -1799,11 +1800,10 @@ if((typeof module) !== 'undefined') {
                 //if the variable isn't part of this polynomial then we're looking at x^0
                 
                 if(vars.indexOf(wrt) === -1) {
-                    coeffs[0] = symbol;
+                    coeffs[0] = _.add(symbol, coeffs[0]);
                 }
-                    
                 else {
-                    coeffs = coeffs || [];
+                    coeffs = coeffs || [new Symbol(0)];
                     var coeff;
                     if(symbol.group === CB) {
                         var s = symbol.symbols[wrt];
@@ -1957,7 +1957,7 @@ if((typeof module) !== 'undefined') {
             },
             zeroes: function(symbol, factors) {
                 var exit = function() {
-                    throw new Error('Exiting');
+                    throw new core.exceptions.ValueLimitExceededError('Exiting');
                 };
                 try {
                     var vars, term, sum, p, e;
@@ -2114,7 +2114,7 @@ if((typeof module) !== 'undefined') {
                             factors.pFactor = symbol.power.toString();
                             symbol.toLinear();
                         } 
-
+                        
                         var vars = variables(symbol),
                             multiVar = vars.length > 1;
 
@@ -2126,7 +2126,7 @@ if((typeof module) !== 'undefined') {
                                 if(!x.multiplier.equals(1)) all_unit = false;
                             });       
                             if(all_S && all_unit) 
-                                return _.pow(symbol, _.parse(p));
+                                return _.pow(_.parse(symbol, core.Utils.getFunctionsSubs(map)), _.parse(p));
                         }
                         //factor the coefficients
                         symbol = __.Factor.coeffFactor(symbol, factors);
@@ -2148,7 +2148,6 @@ if((typeof module) !== 'undefined') {
 
                         factors.add(_.pow(symbol, _.parse(p)));
                         //last minute clean up
-                        factors.clean();
                         return factors.toSymbol();
                     }
                     
@@ -2477,6 +2476,7 @@ if((typeof module) !== 'undefined') {
                         l = vars.length, n = symbols.length;
                     //take all the variables in the symbol and organize by variable name
                     //e.g. a^2+a^2+b*a -> {a: {a^3, a^2, b*a}, b: {b*a}}
+                    
                     for(var i=0; i<l; i++) {
                         var v = vars[i];
                         sorted[v] = new Symbol(0);
@@ -2512,17 +2512,23 @@ if((typeof module) !== 'undefined') {
                             symbol = d[1];
                             //we don't want to just flip the sign. If the remainder is -1 then we accomplished nothing
                             //and we just return the symbol;
+                            //If r equals zero then there's nothing left to do so we're done
                             if(r.equals(-1))
                                 return symbol;
-                            
+
                             var factor = divided[0]; 
                             if(symbol.equals(factor)) {
                                 var rem = __.Factor.reduce(factor, factors);
+                                
                                 if(!symbol.equals(rem)) 
                                     return __.Factor.mfactor(rem, factors);
                             }
-                            else 
+                            else {
                                 factors.add(factor); 
+                                //if the remainder of the symbol is zero then we're done. TODO: Rethink this logic a bit.
+                                if(symbol.equals(0))
+                                    return r;
+                            }
                             
                             if(r.isConstant('all')) { 
                                 factors.add(r);
@@ -2532,6 +2538,7 @@ if((typeof module) !== 'undefined') {
                             return __.Factor.mfactor(r, factors);
                         }
                     }
+                    
                 }
                 
                 //difference of squares factorization
@@ -2788,6 +2795,9 @@ if((typeof module) !== 'undefined') {
                 });
                 return [symbol1, new Symbol(0)];
             }
+            //so that factorized symbols don't affect the result
+	    symbol1 = _.expand(symbol1);
+	    symbol2 = _.expand(symbol2);
             //special case. May need revisiting
             if(symbol1.group === S && symbol2.group === CP) { 
                 var x = symbol1.value;
@@ -3112,9 +3122,13 @@ if((typeof module) !== 'undefined') {
                             factors_vec.push(d);
                         }
                     }
+                    /*
+                    Possible bug.
+                    Removed: causes 1/(20+24*x+4*x^2) to result in (-1/64)*(5+x)^(-1)+(1/64)*(1+x)^(-1)
                     else if(factor.isConstant('all')) {
                         m = _.multiply(m, factor);
                     }
+                    */
                     else {
                         //get the degree of the factor so we tack it on tot he factor. This should probably be an array
                         //but for now we note it on the symbol
@@ -3132,7 +3146,7 @@ if((typeof module) !== 'undefined') {
                 });
                 return [f_array, factors_vec, degrees];
             },
-            partfrac: function(symbol, v, asArray) {
+            partfrac: function(symbol, v, as_array) { 
                 var vars = variables(symbol);
                 v = v || _.parse(vars[0]); //make wrt optional and assume first variable
                 try {
@@ -3159,7 +3173,7 @@ if((typeof module) !== 'undefined') {
                     
                     if(Number(__.degree(den, v)) === 1) {
                         var q = _.divide(num, den);
-                        if(asArray)
+                        if(as_array)
                             return [r, q];
                         return _.add(r, q);
                     }
@@ -3193,7 +3207,6 @@ if((typeof module) !== 'undefined') {
                             ks.push(k.clone());
                         }
                     });
-
                     //get the max power
                     max = core.Utils.arrayMax(powers);
 
@@ -3210,10 +3223,10 @@ if((typeof module) !== 'undefined') {
                     //the results are backwards to reverse it
                     //partials.elements.reverse();
                     //convert it all back
-                    var retval = asArray ? [r] : r;
+                    var retval = as_array ? [r] : r;
                     partials.each(function(e, i) {
                         var term = _.multiply(ks[i],_.divide(e, factors[i]));
-                        if(asArray)
+                        if(as_array)
                             retval.push(term);
                         else 
                             retval = _.add(retval, term);
@@ -3301,10 +3314,10 @@ if((typeof module) !== 'undefined') {
                 v = _.parse(v);
             var stop = function(msg) {
                 msg = msg || 'Stopping';
-                throw new Error(msg);
+                throw new core.exceptions.ValueLimitExceededError(msg);
             };
             //if not CP then nothing to do
-            if(symbol.group !== CP) 
+            if(!symbol.isPoly()) 
                 stop('Must be a polynomial!');
             //declare vars
             var deg, a, b, c, d, e, coeffs, sign, br, sym, sqrt_a;
@@ -3338,6 +3351,75 @@ if((typeof module) !== 'undefined') {
                 c: d,
                 f: _.add(_.pow(sym.clone(), new Symbol(2)), d.clone())
             };
+        },
+        trigSimp: function(symbol, map) {
+            symbol = symbol.clone();
+            map = map || {};
+            //create the map
+            symbol.each(function(x) {
+                if(x.group === FN) {
+                    var key = x.args.toString();
+                    var entry = map[key];
+                    entry ? entry.push(x) : map[key] = [x];
+                }
+            }, true);
+            
+            //1. try simplify cos(x)^2+sin(x)^2
+            
+            for(var x in map) {
+                var sin, cos;
+                map[x].map(function(s, i) {
+                    //fish out sin(x)^2 and cos(x)^2
+                    if(s.power.equals(2) && !s.multiplier.isNegative()) {
+                        if(s.fname === 'cos')
+                            cos = s;
+                        else if(s.fname === 'sin')
+                            sin = s;
+                    }
+                });
+                //if we have sin and cos then we can simplify
+                if(sin && cos) {
+                    //add them together and divide by two since each contributes half
+                    var m = cos.multiplier.add(sin.multiplier);
+                    //get the remainder which may be there if they're not equal and divide it back to get wholes
+                    var r = m.mod(new core.Frac(m.greaterThan(new core.Frac(2)) ? 2 : 1));
+                    //get the whole
+                    var w = m.subtract(r).divide(new core.Frac(2));
+                    //r belongs to the greater of the two
+                    if(cos.multiplier.greaterThan(sin.multiplier)) {
+                        sin.power = new core.Frac(0);
+                        sin.multiplier = w;
+                        cos.multiplier = r;
+                    }
+                    else if(sin.multiplier.greaterThan(cos.multiplier)) {
+                        cos.power = new core.Frac(0);
+                        cos.multiplier = w;
+                        sin.multiplier = r;
+                    }
+                    else {
+                        //doesn't matter which but we'll throw the bone to cos
+                        cos.multiplier = w;
+                        cos.power = new core.Frac(0);
+                        sin.multiplier = new core.Frac(0);
+                    }
+                }
+            }
+            
+                
+            return symbol;
+        },
+        simplify: function(symbol) {
+            var simplified;
+            symbol = symbol.clone(); //make a copy
+            //first go for the "cheapest" simplification which may eliminate 
+            //your problems right away. factor -> evaluate. Remember
+            //that there's no need to expand since factor already does that
+            simplified = evaluate(__.Factor.factor(symbol));
+            //If the simplfied is a sum then we can make a few more simplifications
+            //1. Try cos(x)^2+sin(x)^2
+            simplified = __.trigSimp(evaluate(simplified));
+            
+            return evaluate(simplified);
         },
         Classes: {
             Polynomial: Polynomial,
@@ -3373,6 +3455,12 @@ if((typeof module) !== 'undefined') {
             visible: true,
             numargs: 1,
             build: function() { return __.Factor.factor; }
+        },
+        {
+            name: 'simplify',
+            visible: true,
+            numargs: 1,
+            build: function() { return __.simplify; }
         },
         {
             name: 'gcd',
