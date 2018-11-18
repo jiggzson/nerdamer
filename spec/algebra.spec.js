@@ -695,6 +695,10 @@ describe('Algebra', function () {
             {
                 given: 'simplify((x^2+2*x+1)/(x+1))',
                 expected: '1+x'
+            },
+            {
+                given: 'simplify(n!/(n+1)!)',
+                expected: '(1+n)^(-1)*n'
             }
         ];
 

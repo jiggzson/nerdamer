@@ -6942,16 +6942,26 @@ var nerdamer = (function(imports) {
                 b = b.clone().toUnitMultiplier(true);
                 
                 //further simplification of sqrt
-                if(g1 === FN && g2 === FN && a.fname === SQRT && b.fname === SQRT && a.isLinear() && b.isLinear()) {
+                if(g1 === FN && g2 === FN) {
                     var u = a.args[0].clone();
                     var v = b.args[0].clone();
-                    var q = _.divide(u, v).invert();
-                    if(q.gt(1) && isInt(q)) {
-                        //b contains a factor a which can be moved to a
-                        result = _.multiply(a.args[0].clone(), sqrt(q.clone()));
-                        b = new Symbol(1);
+                    if(a.fname === SQRT && b.fname === SQRT && a.isLinear() && b.isLinear()) {
+                        
+                        var q = _.divide(u, v).invert();
+                        if(q.gt(1) && isInt(q)) {
+                            //b contains a factor a which can be moved to a
+                            result = _.multiply(a.args[0].clone(), sqrt(q.clone()));
+                            b = new Symbol(1);
+                        }
+                    }
+                    if(a.fname === FACTORIAL && b.fname === FACTORIAL) {
+                        if(a.power.equals(1) && b.power.equals(-1) && _.subtract(v.clone(), u.clone()).equals(1)) {
+                            result = _.divide(u, v);
+                            b = new Symbol(1);
+                        }
                     }
                 }
+                    
                 
                 //if both are PL then their hashes have to match
                 if(v1 === v2 && g1 === PL && g1 === g2) {

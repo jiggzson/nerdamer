@@ -2099,7 +2099,8 @@ if((typeof module) !== 'undefined') {
                     }
 
                     var p = symbol.power.clone();
-                    if(isInt(p)) { 
+                    
+                    if(isInt(p) && !(p.lessThan(0) && symbol.group === FN)) { 
                         symbol.toLinear();
                         factors = factors || new Factors();
                         var map = {};
@@ -2109,6 +2110,7 @@ if((typeof module) !== 'undefined') {
                                 return _.parse(factor, core.Utils.getFunctionsSubs(map));
                             };
                         }
+
                         //strip the power
                         if(!symbol.isLinear()) {
                             factors.pFactor = symbol.power.toString();
@@ -3416,10 +3418,12 @@ if((typeof module) !== 'undefined') {
             symbol = symbol.clone(); //make a copy
             ////1. Try cos(x)^2+sin(x)^2
             simplified = __.trigSimp(symbol);
+            
             //first go for the "cheapest" simplification which may eliminate 
             //your problems right away. factor -> evaluate. Remember
             //that there's no need to expand since factor already does that
             simplified = __.Factor.factor(simplified);
+            
             //If the simplfied is a sum then we can make a few more simplifications
             //e.g. simplify(1/(x-1)+1/(1-x)) as per issue #431
             if(simplified.group === core.groups.CP && simplified.isLinear()) {
