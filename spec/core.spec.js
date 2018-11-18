@@ -742,7 +742,7 @@ describe('Nerdamer core', function () {
             {
                 given: 'sqrt(-x)',
                 expected: 'sqrt(-x)',
-                expectedValue: '1.449137674618944*i'
+                expectedValue: '1.4491376746189437*i'
             },
             {
                 given: 'sqrt(-x)*sqrt(-x)',

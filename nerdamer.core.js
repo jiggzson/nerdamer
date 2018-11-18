@@ -5679,15 +5679,25 @@ var nerdamer = (function(imports) {
                     m = _.multiply(_.symfunction(SQRT, [new Symbol(q)]), new Symbol(tw));
                 }
                 else {
-                    var n = symbol.multiplier.num.toString(),
-                        d = symbol.multiplier.den.toString(),
-                        sqrtN = Math.sqrt(n),
-                        sqrtD = Math.sqrt(d);
-                
-                    m = _.multiply(
-                            n === '1' ? new Symbol(1) : isInt(sqrtN) ? new Symbol(sqrtN) : _.symfunction(SQRT, [new Symbol(n)]), 
-                            d === '1' ? new Symbol(1) : isInt(sqrtD) ? new Symbol(sqrtD).invert() : _.symfunction(SQRT, [new Symbol(d)]).invert()
-                    );
+                    //reduce the numerator and denominator using prime factorization
+                    var c = [new Symbol(symbol.multiplier.num), new Symbol(symbol.multiplier.den)];
+                    var r = [new Symbol(1), new Symbol(1)];
+                    var sq = [new Symbol(1), new Symbol(1)];
+                    for(var i=0; i<2; i++) {
+                        var n = c[i];
+                        //get the prime factors and loop through each. 
+                        pfactor(n).each(function(x) {
+                            x = Symbol.unwrapPARENS(x);
+                            var b = x.clone().toLinear();
+                            var p = Number(x.power);
+                            //We'll consider it safe to use the native Number since 2^1000 is already a pretty huge number
+                            var rem = p%2; //get the remainder. This will be 1 if 3 since sqrt(n^2) = n where n is positive
+                            var w = (p-rem)/2; //get the whole numbers of n/2
+                            r[i] = _.multiply(r[i], _.pow(b, new Symbol(w)));
+                            sq[i] = _.multiply(sq[i], sqrt(_.pow(b, new Symbol(rem))));
+                        })
+                    }
+                    m = _.divide(_.multiply(r[0], sq[0]), _.multiply(r[1], sq[1]));
                 }
 
                 
