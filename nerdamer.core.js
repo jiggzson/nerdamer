@@ -6194,8 +6194,9 @@ var nerdamer = (function(imports) {
          */
         function expand(symbol) { 
             //deal with parenthesis
-            if(symbol.group === FN && symbol.fname === '')
+            if(symbol.group === FN && symbol.fname === '') {
                 return _.expand(symbol.args[0]);
+            }
             
             //TODO - some test need to be verified in order to implement this
             /*
@@ -6225,7 +6226,7 @@ var nerdamer = (function(imports) {
                 var p = symbol.power,
                     m = symbol.multiplier.clone(),
                     pn = Number(p);
-                if(isInt(pn) && pn > 0 && symbol.isComposite()) {                
+                if(isInt(pn) && pn > 0 && symbol.isComposite()) {             
                     var f = new Symbol(0);
                     //we loop through the f and make sure that it's fully expanded
                     for(var x in symbol.symbols) {
@@ -6296,7 +6297,7 @@ var nerdamer = (function(imports) {
 
                     //I'm going to be super lazy here and take the easy way out. TODO: do this without re-parsing
                     symbol = _.parse(symbol.text());
-
+                   
                     if(!hascomposites) 
                         return symbol; //nothing to do here
 
@@ -6307,6 +6308,7 @@ var nerdamer = (function(imports) {
                     //sort them out
                     for(var s in symbol.symbols) {
                         var x = symbol.symbols[s];
+                        
                         if(x.group === EX)
                             continue;
                         if(x.isComposite()) {
@@ -6326,31 +6328,28 @@ var nerdamer = (function(imports) {
                         }
                         else non_composites = _.multiply(non_composites, x);
                     }
-                    //multiply out the remainder
-                    var l = composites.length;
-                        //grab the first symbol since we'll loop over that one to begin
-                    result = composites[0];
-                    for(var i=1; i<l; i++) {
+                    
+                    //grab the first symbol since we'll loop over that one to begin
+                    result = composites.pop();
+                    
+                    while(composites.length) {
+                        var s = composites.pop();
                         var t = new Symbol(0);
-                        var s = composites[i];
-                        for(var s1 in result.symbols) {
-                            var x = result.symbols[s1];
-                            for(var s2 in s.symbols) {
-                                var y = s.symbols[s2];
-                                var temp = _.multiply(x.clone(),y.clone());
-                                t = _.add(t, temp);
-                            }
-                        }
+                        result.each(function(x) {
+                            s.each(function(y) {
+                                var prod = _.multiply(x.clone(), y.clone());
+                                t = _.add(t, prod);
+                            });
+                        });
+                        
                         result = t;
                     }
 
                     var finalResult = new Symbol(0);
                     //put back the multiplier
-                    for(var s in result.symbols) {
-                        var x = result.symbols[s];
+                    result.each(function(x) {
                         finalResult = _.add(finalResult, expand(_.multiply(non_composites, x)));
-                    }
-                    
+                    });                  
                     //expand the power
                     finalResult.power = finalResult.power.multiply(sp.abs());
                     
@@ -6934,13 +6933,25 @@ var nerdamer = (function(imports) {
                 
                 var v1 = a.value,
                     v2 = b.value,
-                    sign = new Frac(a.multiplier.lessThan(0) ? -1 : 1),
+                    sign = new Frac(a.sign()),
                     //since P is just a morphed version of N we need to see if they relate
                     ONN = (g1 === P && g2 === N && b.multiplier.equals(a.value)),
                     //don't multiply the multiplier of b since that's equal to the value of a
                     m = ONN ? new Frac(1).multiply(a.multiplier).abs() : a.multiplier.multiply(b.multiplier).abs(),
                     result = a.clone().toUnitMultiplier();
                 b = b.clone().toUnitMultiplier(true);
+                
+                //further simplification of sqrt
+                if(g1 === FN && g2 === FN && a.fname === SQRT && b.fname === SQRT && a.isLinear() && b.isLinear()) {
+                    var u = a.args[0].clone();
+                    var v = b.args[0].clone();
+                    var q = _.divide(u, v).invert();
+                    if(q.gt(1) && isInt(q)) {
+                        //b contains a factor a which can be moved to a
+                        result = _.multiply(a.args[0].clone(), sqrt(q.clone()));
+                        b = new Symbol(1);
+                    }
+                }
                 
                 //if both are PL then their hashes have to match
                 if(v1 === v2 && g1 === PL && g1 === g2) {
@@ -6955,8 +6966,7 @@ var nerdamer = (function(imports) {
                     v1 = text(a, 'hash', EX);
                 }
                 
-
-                if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P || g2 === FN)) && !(g1 === PL && g2 === CB)) {                   
+                if((v1 === v2 || ONN) && !(g1 === PL && (g2 === S || g2 === P || g2 === FN)) && !(g1 === PL && g2 === CB)) {      
                     var p1 = a.power,
                         p2 = b.power,
                         isSymbolP1 = isSymbol(p1),
@@ -7013,7 +7023,7 @@ var nerdamer = (function(imports) {
                         result.combine(b);
                     }
                 }
-                else {
+                else { 
                     //the multiplier was already handled so nothing left to do
                     if(g1 !== N) { 
                         if(g1 === CB) {
@@ -7061,9 +7071,14 @@ var nerdamer = (function(imports) {
                 //reduce square root
                 var ps = result.power.toString(); 
                 if(even(ps) && result.fname === SQRT) { 
+                    //grab the sign of the symbol
+                    sign = sign * result.sign();
                     var p = result.power;
                     result = result.args[0]; 
                     result = _.multiply(new Symbol(m), _.pow(result, new Symbol(p.divide(new Frac(2)))));
+                    //flip it back to the correct sign
+                    if(sign < 0)
+                        result.negate()
                 }
                 else {
                     result.multiplier = result.multiplier.multiply(m).multiply(sign);
@@ -7071,10 +7086,13 @@ var nerdamer = (function(imports) {
                         result.distributeMultiplier();
                 }
 
-
                 //back convert group P to a simpler group N if possible
                 if(result.group === P && isInt(result.power.toDecimal())) result = result.convert(N);
-
+                
+//                //put back the sign
+//                if(sign < 0)
+//                    result.negate();
+                
                 return result;
             }
             else {
