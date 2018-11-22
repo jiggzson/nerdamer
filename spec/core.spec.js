@@ -742,7 +742,7 @@ describe('Nerdamer core', function () {
             {
                 given: 'sqrt(-x)',
                 expected: 'sqrt(-x)',
-                expectedValue: '1.449137674618944*i'
+                expectedValue: '1.4491376746189437*i'
             },
             {
                 given: 'sqrt(-x)*sqrt(-x)',
@@ -821,6 +821,28 @@ describe('Nerdamer core', function () {
             expect(value).toEqual(testCases[i].expectedValue);
         }
     });
+    it('expand square roots', function () {
+        // given
+        var testCases = [
+            {
+                given: '(sqrt(7)+3sqrt(2))*(sqrt(7)-3sqrt(2))',
+                expected: '-11'
+            },
+            {
+                given: 'sqrt(33)*sqrt(11)',
+                expected: '11*sqrt(3)'
+            },
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given).expand();
+
+            // then
+            expect(parsed.toString()).toEqual(testCases[i].expected);
+        }
+    });
+    
     it('should support the imaginary number i', function () {
         // given
         var testCases = [

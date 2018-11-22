@@ -9,7 +9,7 @@
 /* global module */
 
 if((typeof module) !== 'undefined') {
-    nerdamer = require('./nerdamer.core.js');
+    var nerdamer = require('./nerdamer.core.js');
     require('./Calculus.js');
 }
 
@@ -1804,7 +1804,6 @@ if((typeof module) !== 'undefined') {
                 }
                 else {
                     coeffs = coeffs || [new Symbol(0)];
-                    var coeff;
                     if(symbol.group === CB) {
                         var s = symbol.symbols[wrt];
                         if(!s)
@@ -2099,7 +2098,8 @@ if((typeof module) !== 'undefined') {
                     }
 
                     var p = symbol.power.clone();
-                    if(isInt(p)) { 
+                    
+                    if(isInt(p) && !(p.lessThan(0) && symbol.group === FN)) { 
                         symbol.toLinear();
                         factors = factors || new Factors();
                         var map = {};
@@ -2109,6 +2109,7 @@ if((typeof module) !== 'undefined') {
                                 return _.parse(factor, core.Utils.getFunctionsSubs(map));
                             };
                         }
+
                         //strip the power
                         if(!symbol.isLinear()) {
                             factors.pFactor = symbol.power.toString();
@@ -2338,12 +2339,14 @@ if((typeof module) !== 'undefined') {
                                         poly = __.Factor.search(poly, factors);
                                     return poly;
                                 }
-                                if(!factor_found && lc_is_neg)
-                                    factor_found = check(-x, y, nfactors[i], cp); //check a negative lc
-                                else if(!factor_found && cnst_is_neg)
-                                    factor_found = check(x, -y, nfactors[i], cp); //check a negative constant
-                                else if(!factor_found && lc_is_neg && cnst_is_neg)
-                                    factor_found = check(-x, -y, nfactors[i], cp);
+                                else if(!factor_found) {
+                                    if(lc_is_neg && cnst_is_neg)
+                                        factor_found = check(-x, -y, nfactors[i], cp);
+                                    else if(lc_is_neg) 
+                                        factor_found = check(-x, y, nfactors[i], cp); //check a negative lc
+                                    else if(cnst_is_neg) 
+                                        factor_found = check(x, -y, nfactors[i], cp); //check a negative constant
+                                }
                             }
                         }
                     }
@@ -2951,7 +2954,6 @@ if((typeof module) !== 'undefined') {
                     };
 
                     var try_better_lead_var = function(s1, s2, lead_var) {
-                        return lead_var;
                         var checked = [];
                         for(var i=0; i<s1.length; i++) { 
                             var t = s1[i];
@@ -3409,15 +3411,32 @@ if((typeof module) !== 'undefined') {
             return symbol;
         },
         simplify: function(symbol) {
+            //nothing more to do
+            if(symbol.isConstant() || symbol.group === core.groups.S)
+                return symbol;
             var simplified;
             symbol = symbol.clone(); //make a copy
+            ////1. Try cos(x)^2+sin(x)^2
+            simplified = __.trigSimp(symbol);
+            
             //first go for the "cheapest" simplification which may eliminate 
             //your problems right away. factor -> evaluate. Remember
             //that there's no need to expand since factor already does that
-            simplified = evaluate(__.Factor.factor(symbol));
+            simplified = __.Factor.factor(simplified);
+            
             //If the simplfied is a sum then we can make a few more simplifications
-            //1. Try cos(x)^2+sin(x)^2
-            simplified = __.trigSimp(evaluate(simplified));
+            //e.g. simplify(1/(x-1)+1/(1-x)) as per issue #431
+            if(simplified.group === core.groups.CP && simplified.isLinear()) {
+                var m = simplified.multiplier.clone();
+                simplified.toUnitMultiplier();
+                var r = new Symbol(0);
+                simplified.each(function(x) {
+                    var s = __.simplify(x);
+                    r = _.add(r, s);
+                });
+                r.multiplier = r.multiplier.multiply(m);
+                simplified = r;
+            }
             
             return evaluate(simplified);
         },
