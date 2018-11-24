@@ -7,7 +7,7 @@
 /* global module */
 
 if((typeof module) !== 'undefined') {
-    nerdamer = require('./nerdamer.core.js');
+    var nerdamer = require('./nerdamer.core.js');
     require('./Calculus.js');
     require('./Algebra.js');
 }
@@ -899,7 +899,11 @@ if((typeof module) !== 'undefined') {
             build: function(){ 
                 return solve; //comment out to return a vector
                 /*
+<<<<<<< HEAD
                 return function() {
+=======
+                 return function() {
+>>>>>>> origin/dev
                     return core.Utils.convertToVector(solve.apply(null, arguments));
                 };
                 */

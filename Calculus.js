@@ -1,6 +1,6 @@
 /* global module */
 
-﻿/*
+/*
 * Author : Martin Donk
 * Website : http://www.nerdamer.com
 * Email : martin.r.donk@gmail.com
@@ -546,7 +546,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     b = symbol.clone();
                     b.toLinear();
                     b.toUnitMultiplier();
-                    symbol = _.multiply(polydiff( symbol.clone(), d ), derive(b));  
+                    symbol = _.multiply(polydiff(symbol.clone()), derive(b));  
                 }
                 else if( g === CP || g === PL ) { 
                     var result = new Symbol(0);
@@ -626,7 +626,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     if(Q) 
                         return _.multiply(Q, do_fn_sub(b.fname, arg));
                 }
-                else if(g1 === FN && g1 === FN) {
+                else if(g1 === FN && g2 === FN) {
                     Q = try_combo(a.clone(), b.clone());
                     if(Q)
                         return _.multiply(__.integration.poly_integrate(b), Q);

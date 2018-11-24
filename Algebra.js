@@ -9,7 +9,7 @@
 /* global module */
 
 if((typeof module) !== 'undefined') {
-    nerdamer = require('./nerdamer.core.js');
+    var nerdamer = require('./nerdamer.core.js');
     require('./Calculus.js');
 }
 
@@ -1804,7 +1804,6 @@ if((typeof module) !== 'undefined') {
                 }
                 else {
                     coeffs = coeffs || [new Symbol(0)];
-                    var coeff;
                     if(symbol.group === CB) {
                         var s = symbol.symbols[wrt];
                         if(!s)
@@ -2340,12 +2339,14 @@ if((typeof module) !== 'undefined') {
                                         poly = __.Factor.search(poly, factors);
                                     return poly;
                                 }
-                                if(!factor_found && lc_is_neg)
-                                    factor_found = check(-x, y, nfactors[i], cp); //check a negative lc
-                                else if(!factor_found && cnst_is_neg)
-                                    factor_found = check(x, -y, nfactors[i], cp); //check a negative constant
-                                else if(!factor_found && lc_is_neg && cnst_is_neg)
-                                    factor_found = check(-x, -y, nfactors[i], cp);
+                                else if(!factor_found) {
+                                    if(lc_is_neg && cnst_is_neg)
+                                        factor_found = check(-x, -y, nfactors[i], cp);
+                                    else if(lc_is_neg) 
+                                        factor_found = check(-x, y, nfactors[i], cp); //check a negative lc
+                                    else if(cnst_is_neg) 
+                                        factor_found = check(x, -y, nfactors[i], cp); //check a negative constant
+                                }
                             }
                         }
                     }
@@ -2953,7 +2954,6 @@ if((typeof module) !== 'undefined') {
                     };
 
                     var try_better_lead_var = function(s1, s2, lead_var) {
-                        return lead_var;
                         var checked = [];
                         for(var i=0; i<s1.length; i++) { 
                             var t = s1[i];

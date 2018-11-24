@@ -11,7 +11,7 @@ var nerdamer = (function(imports) {
     "use strict";
 
 //version ====================================================================== 
-    var version = '0.8.2';
+    var version = '0.8.3';
 
 //inits ========================================================================
     var  _ = new Parser(); //nerdamer's parser
@@ -1015,7 +1015,7 @@ var nerdamer = (function(imports) {
 
                 var x = C[0];
                 for (var i = 1; i < g + 2; i++)
-                x += C[i] / (z + i);
+                    x += C[i] / (z + i);
 
                 var t = z + g + 0.5;
                 return Math.sqrt(2 * Math.PI) * Math.pow(t, (z + 0.5)) * Math.exp(-t) * x;
@@ -2515,8 +2515,10 @@ var nerdamer = (function(imports) {
             else 
                 return false;
             
+            /*
             //all tests must have passed so we must be dealing with a polynomial
             return true;
+            */
         },
         //removes the requested variable from the symbol and returns the remainder
         stripVar: function(x) {
@@ -2877,8 +2879,7 @@ var nerdamer = (function(imports) {
                     this.power = p;
             }
             else {
-                var isIntP = false,
-                    isSymbolic = false;
+                var isSymbolic = false;
                 if(isSymbol(p)) {
                     if(p.group === N) {
                         //p should be the multiplier instead
@@ -2889,7 +2890,7 @@ var nerdamer = (function(imports) {
                         isSymbolic = true;
                     }
                 }
-                var group = isSymbolic ? EX : !isIntP ? P : null;
+                var group = isSymbolic ? EX : P;
                 this.power = p; 
                 if(this.group === N && group) this.convert(group, retainSign);
             }
@@ -4919,7 +4920,7 @@ var nerdamer = (function(imports) {
                         goUp();
                     }
                     //mark the last position that a 
-                    set_last_position(col+1, true);
+                    set_last_position(col+1);
                     var operator_str = get_operator_str(col);
 
                     adjust_column_position();
@@ -4957,7 +4958,7 @@ var nerdamer = (function(imports) {
                         add_token(col);
                         goUp();
                     }
-                    set_last_position(col, bracket);
+                    set_last_position(col);
                 }
                 else if(ch === ' ') {
                     if(HAS_SPACE) {
@@ -5405,7 +5406,7 @@ var nerdamer = (function(imports) {
                                         vars.push(chunks[0][j].value);
                                     }
                                 }
-                                vars = vars.sort();
+                                vars.sort();
                                 dx = vars.length > 0 ? ('\\frac{d}{d ' + vars[0] + '}') : '\\frac{d}{d x}';
                             }
                             /* If two arguments, we have expression and variable, we assume n = 1 */ 
@@ -6652,7 +6653,7 @@ var nerdamer = (function(imports) {
 
                 var PN = g1 === P && g2 === N,
                     PNEQ = a.value === b.multiplier.toString(),
-                    valEQ = (v1 === v2 || h1 === h2 && !h1 === undefined || (PN && PNEQ));
+                    valEQ = (v1 === v2 || h1 === h2 && h1 !== undefined || (PN && PNEQ));
 
                 //equal values, equal powers
                 if(valEQ && powEQ && g1 ===  g2) { 
@@ -7776,7 +7777,7 @@ var nerdamer = (function(imports) {
 
                 if(decimal) {
                     var m = String(symbol.multiplier.toDecimal());
-                    if(String(m) === '1' && !decimal) m = '';
+                    //if(String(m) === '1' && !decimal) m = '';
                     m_array = [m, ''];
                 }
                 else {
@@ -8894,7 +8895,7 @@ var nerdamer = (function(imports) {
         if(fndec) 
             return nerdamer.setFunction(fndec[1], fndec[2].split(','), fndec[3]);
 
-        var variable, fn, args;
+        //var variable, fn, args;
         //convert any expression passed in to a string
         if(expression instanceof Expression) expression = expression.toString();
 
@@ -8911,8 +8912,10 @@ var nerdamer = (function(imports) {
         if(location) { EXPRESSIONS[location-1] = e; }
         else { EXPRESSIONS.push(e);}
         
+        /*
         if(variable) libExports.setVar(variable, e);
         if(fn) libExports.setFunction(fn, args, e);
+        */
         
         return new Expression(e);
     };
