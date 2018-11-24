@@ -1255,6 +1255,11 @@ var nerdamer = (function(imports) {
         mod: function(x, y) {
             return x % y;
         },
+        //http://mathworld.wolfram.com/IntegerPart.html
+        integer_part: function(x) {
+            var sign = Math.sign(x);
+            return sign*Math.floor(Math.abs(x));
+        },
         /**
          * https://github.com/scijs/integrate-adaptive-simpson
          * @param {Function} f - the function being integrated
@@ -4508,6 +4513,7 @@ var nerdamer = (function(imports) {
                 'polarform'         : [ polarform, 1],
                 'rectform'          : [ rectform, 1],
                 'sort'              : [ sort, [1, 2]],
+                'integer_part'      : [, 1]
             };
         //error handler
         this.error = err;
