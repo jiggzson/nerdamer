@@ -143,12 +143,7 @@ describe('Solve', function () {
             },
             {
                 given: ['x+y=a', 'x-y=b', 'z+y=c'],
-                expected: 'x,-0.5*a-0.5*b,y,-0.5*a+0.5*b,z,-0.5*b-c+0.5*a',
-                variables: ['x', 'y', 'z']
-            },
-            {
-                given: ['x+y=a', 'x-y=b', 'z+y=c'],
-                expected: 'x,-0.5*a-0.5*b,y,-0.5*a+0.5*b,z,-0.5*b-c+0.5*a',
+                expected: 'x,0.5*a+0.5*b,y,-0.5*b+0.5*a,z,-0.5*a+0.5*b+c',
                 variables: ['x', 'y', 'z']
             },
             {
