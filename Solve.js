@@ -255,9 +255,20 @@ if((typeof module) !== 'undefined') {
         // Use M^-1*c to solve system
         m = m.invert();
         var result = m.multiply(c);
-        var solutions = [];
+        //correct the sign as per issue #410
+        if(core.Utils.isArray(var_array))
+            result.each(function(x) {
+                return x.negate();
+            });
+        var solutions = core.Settings.SOLUTIONS_AS_OBJECT ? {} : [];
         result.each(function(e, idx) { 
-            solutions.push([vars[idx], (expand_result ? _.expand(e) : e).valueOf()]); 
+            var solution = (expand_result ? _.expand(e) : e).valueOf();
+            var variable = vars[idx];
+            if(core.Settings.SOLUTIONS_AS_OBJECT) {
+                solutions[variable] = solution;
+            }
+            else
+                solutions.push([variable, solution]); 
         });
         //done
         return solutions;
@@ -887,9 +898,11 @@ if((typeof module) !== 'undefined') {
             visible: true,
             build: function(){ 
                 return solve; //comment out to return a vector
+                /*
                 return function() {
                     return core.Utils.convertToVector(solve.apply(null, arguments));
                 };
+                */
             }
         },
         {
