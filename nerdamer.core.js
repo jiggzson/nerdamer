@@ -2495,7 +2495,7 @@ var nerdamer = (function(imports) {
                 for(var x in this.symbols) {
                     var sym = this.symbols[x];
                     //sqrt(x)
-                    if(sym.group === FN && sym.fname === SQRT && !sym.args[0].isConstant())
+                    if(sym.group === FN && !sym.args[0].isConstant())
                         return false;
                     if(!sym.contains(v) && !sym.isConstant(true))
                         return false;
