@@ -1057,19 +1057,27 @@ var nerdamer = (function(imports) {
             return retval;
         },
         //double factorial
+        //http://mathworld.wolfram.com/DoubleFactorial.html
         dfactorial: function(x) {
-            var even = x % 2 === 0;
-            // If x = even then n = x/2 else n = (x-1)/2
-            var n = even ? x/2 : (x+1)/2; 
-            //the return value
-            var r = new Frac(1);
-            //start the loop
-            if(even)
-                for(var i=1; i<=n; i++)
-                    r = r.multiply(new Frac(2).multiply(new Frac(i)));
-            else
-                for(var i=1; i<=n; i++)
-                    r = r.multiply(new Frac(2).multiply(new Frac(i)).subtract(new Frac(1)));
+            if(isInt(x)) {
+                var even = x % 2 === 0;
+                // If x = even then n = x/2 else n = (x-1)/2
+                var n = even ? x/2 : (x+1)/2; 
+                //the return value
+                var r = new Frac(1);
+                //start the loop
+                if(even)
+                    for(var i=1; i<=n; i++)
+                        r = r.multiply(new Frac(2).multiply(new Frac(i)));
+                else
+                    for(var i=1; i<=n; i++)
+                        r = r.multiply(new Frac(2).multiply(new Frac(i)).subtract(new Frac(1)));
+            }
+            else {
+                //Not yet extended to bigNum
+                r = Math.pow(2, (1+2*x-Math.cos(Math.PI*x))/4)*Math.pow(Math.PI, (Math.cos(Math.PI*x)-1)/4)*Math2.gamma(1+x/2);
+            }
+                
             //done
             return r;
         },
@@ -1411,6 +1419,10 @@ var nerdamer = (function(imports) {
                 return (Math.cosh(t)-1)/t;
             };
             return Math.log(x)+g+Math2.num_integrate(f, 0.002, x, dx);
+        },
+        //the log integral
+        Li: function(x) {
+            return Math2.Ei(_.parse(Math.log(x)));
         },
         //the gamma incomplete function
         gamma_incomplete: function(n, x) {
@@ -4473,6 +4485,7 @@ var nerdamer = (function(imports) {
                 'Ei'                : [ , 1],
                 'Shi'               : [ , 1],
                 'Chi'               : [ , 1],
+                'Li'                : [ , 1],
                 'fib'               : [ , 1],
                 'fact'              : [factorial, 1],
                 'factorial'         : [factorial, 1],
