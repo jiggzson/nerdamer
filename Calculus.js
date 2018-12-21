@@ -924,8 +924,15 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 else
                                     __.integration.stop();
                             }
-                            if(symbol.isE()) {
-                                retval = symbol;
+                            if(symbol.isE()) { 
+                                if(a.isLinear())
+                                    retval = symbol;
+                                else {
+                                    if(a.isE() && a.power.group === S && a.power.power.equals(1))
+                                        retval = _.multiply(_.symfunction('Ei', [symbol.power.clone()]), symbol.power);
+                                    else
+                                        __.integration.stop();
+                                }
                             }
                             else {
                                 var d = _.symfunction(LOG, [_.parse(symbol.value)]);

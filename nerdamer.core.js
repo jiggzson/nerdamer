@@ -1422,7 +1422,7 @@ var nerdamer = (function(imports) {
         },
         //the log integral
         Li: function(x) {
-            return Math2.Ei(_.parse(Math.log(x)));
+            return Math2.Ei(Math2.bigLog(x));
         },
         //the gamma incomplete function
         gamma_incomplete: function(n, x) {
