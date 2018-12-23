@@ -509,6 +509,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             var arg = symbol.args[0];
                             symbol = _.parse('e^('+arg+')/('+arg+')');
                             break;
+                        case 'Li':
+                            var arg = symbol.args[0];
+                            symbol = _.parse('1/log('+arg+')');
+                            break;
                         case 'erf':
                             symbol = _.parse('(2*e^(-('+symbol.args[0]+')^2))/sqrt(pi)');
                             break;
@@ -710,8 +714,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         result = _.add(result, __.integrate(x, dx, depth, opt));
                     });
                 }
-                else
+                else {
                     result = _.add(result, __.integrate(partial_fractions, dx, depth, opt));
+                }
                 return result;
             },
             get_udv: function(symbol) { 
@@ -971,7 +976,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 ax = decomp[2],
                                 a = decomp[0],
                                 x = decomp[1]; 
-                            if(p === -1 && x.group !== PL) { 
+                            if(p === -1 && x.group !== PL && x.power.equals(2)) { 
                                 //we can now check for atan
                                 if(x.group === S && x.power.equals(2)) { //then we have atan
                                     //abs is redundants since the sign appears in both denom and num.
@@ -1272,7 +1277,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     else if(g === PL) {
                         retval = __.integration.partial_fraction(symbol, dx, depth);
                     }
-                    else if(g === CB) { 
+                    else if(g === CB) {
                         //separate the coefficient since all we care about are symbols containing dx
                         var coeff = symbol.stripVar(dx); 
                         //now get only those that apply
@@ -1280,10 +1285,15 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         //if we only have one symbol left then let's not waste time. Just pull the integral
                         //and let the chips fall where they may
                         if(cfsymbol.group !== CB) {
-                            if(cfsymbol.equals(1)) {
+                            if(cfsymbol.equals(1)) { 
                                 return __.integrate(_.expand(symbol), dx, depth);
                             }
                             
+                            //only factor for multivariate which are polynomials
+                            if(cfsymbol.clone().toLinear().isPoly(true) && core.Utils.variables(cfsymbol).length > 1) {
+                                cfsymbol = core.Algebra.Factor.factor(cfsymbol);
+                            }
+  
                             retval = __.integrate(cfsymbol, dx, depth);
                         }
                         else { 
@@ -1311,6 +1321,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     retval = __.integration.u_substitution(symbols, dx);
                                 }
                                 catch(e){/* failed :`(*/; }   
+                                
                                 if(!retval) { 
                                     //no success with u substitution so let's try known combinations
                                     //are they two functions
@@ -1609,19 +1620,28 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 retval = __.integrate(U2, dx, 0);
                                             }
                                             else if(sym2.power.greaterThan(x.power) || sym2.power.equals(x.power)) { 
+                                                
                                                 //factor out coefficients
                                                 var factors = new core.Algebra.Classes.Factors();
                                                 sym1 = core.Algebra.Factor.coeffFactor(sym1.invert(), factors);
-                                                retval = new Symbol(0);
-                                                core.Algebra.divide(sym2, sym1).each(function(t) {
-                                                    retval = _.add(retval, __.integrate(t, dx, depth));
-                                                });
-                                                //put back the factors
-                                                factors.each(function(factor) {
-                                                    retval = _.divide(retval, factor);
-                                                });
-                                                
-                                                retval = _.expand(retval);
+                                                var div = core.Algebra.divide(sym2, sym1);
+                                                //it assumed that the result will be of group CB
+                                                if(div.group !== CB) {
+                                                    retval = new Symbol(0);
+                                                    div.each(function(t) {
+                                                        retval = _.add(retval, __.integrate(t, dx, depth));
+                                                    });
+                                                    //put back the factors
+                                                    factors.each(function(factor) {
+                                                        retval = _.divide(retval, factor);
+                                                    });
+
+                                                    retval = _.expand(retval);
+                                                }
+                                                else {
+                                                    //try something else
+                                                    retval = __.integration.by_parts(symbol, dx, depth, opt);
+                                                }
                                             }
                                             else 
                                                 retval = __.integration.partial_fraction(symbol, dx, depth);
@@ -1673,10 +1693,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 //swap
                                                 var t = sym1; sym1 = sym2; sym2 = t;
                                             }
-
-                                            sym1.each(function(x) {
-                                               retval = _.add(retval, __.integrate(_.multiply(x, sym2.clone()), dx, depth));
-                                            });
+                                            if(p1 === -1 && p2 === -1) {
+                                                retval = __.integration.partial_fraction(symbol, dx);
+                                            }
+                                            else {
+                                                sym1.each(function(x) {
+                                                    var k = _.multiply(x, sym2.clone());
+                                                    var integral = __.integrate(k, dx, depth);
+                                                    retval = _.add(retval, integral);
+                                                });
+                                            }
                                         }
                                     }
                                     else if(g1 === CP && symbols[0].power.greaterThan(0)) {

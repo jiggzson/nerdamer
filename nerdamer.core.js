@@ -1424,6 +1424,24 @@ var nerdamer = (function(imports) {
         Li: function(x) {
             return Math2.Ei(Math2.bigLog(x));
         },
+        /*
+        S: function(x) {
+            x = new Frac(x);
+            var n = 30;
+            var r = new Frac(0);
+            for(var i=0; i<n; i++) {
+                var f = Math2.bigfactorial(2*i+1);
+                var s = new Frac(Math.pow(-1, i));
+                var k = new Frac(4*i+3);
+                var p = Math2.bigpow(x, k);
+                console.log(f.toString(), s.toString(), k.toString(), p.toString(), x.toString())
+                var ans = s.multiply(p.divide(f.multiply(k)));
+                console.log(ans.toString())
+                r = r.add(ans);
+            }
+            return r;
+        },
+        */
         //the gamma incomplete function
         gamma_incomplete: function(n, x) {
             var t = n-1,

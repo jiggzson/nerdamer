@@ -482,11 +482,13 @@ if((typeof module) !== 'undefined') {
             if(eqns.isZero())
                 return [new Symbol(0)];
             //if the lhs = x then we're done
-            if(eqns.LHS.equals(solve_for))
+            if(eqns.LHS.equals(solve_for) && !eqns.RHS.contains(solve_for)) {
                 return [eqns.RHS];
+            }
             //if the rhs = x then we're done
-            if(eqns.RHS.equals(solve_for))
+            if(eqns.RHS.equals(solve_for) && !eqns.LHS.contains(solve_for)) {
                 return [eqns.LHS];
+            }
         }
         //unwrap the vector since what we want are the elements
         if(eqns instanceof core.Vector)
@@ -935,3 +937,6 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+//var x = nerdamer.solve('x^2+1=x', 'x');
+//console.log(x.toString())
