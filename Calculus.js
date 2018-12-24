@@ -1881,6 +1881,20 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             catch(e) {
                 return _.symfunction('limit', arguments);
             }   
+        },
+        Fresnel: {
+            S: function(x) {
+                if(x.isConstant(true)) {
+                    return __.defint(_.parse('sin(pi*x^2/2)'), Symbol(0), x, 'x');
+                }
+                return _.symfunction('S', arguments);
+            },
+            C: function(x) {
+                if(x.isConstant(true)) {
+                    return __.defint(_.parse('cos(pi*x^2/2)'), Symbol(0), x, 'x');
+                }
+                return _.symfunction('S', arguments);
+            }
         }
     };
     
@@ -1914,6 +1928,18 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             visible: true,
             numargs: [3, 4],
             build: function() { return __.defint; }
+        },
+        {
+            name: 'S',
+            visible: true,
+            numargs: 1,
+            build: function() { return __.Fresnel.S; }
+        },
+        {
+            name: 'C',
+            visible: true,
+            numargs: 1,
+            build: function() { return __.Fresnel.C; }
         },
         {
             name: 'limit',
