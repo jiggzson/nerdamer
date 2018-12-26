@@ -1818,20 +1818,19 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }, false);
         },
         defint: function(symbol, from, to, dx) {
-            var get_value = function(integral, limit, tries) {
-                tries = tries || 0;
-                if(tries > 10)
-                    throw new Error('Unable to calculate '+integral);
-                //try to evaluate the integral at the given limit
+            var get_value = function(integral, vars, point) {
                 try {
-                    
-                    return _.parse(integral, limit);
+                    return _.parse(integral, vars);
                 }
                 catch(e) {
-                    var k = core.Utils.keys(limit);
                     //it failed for some reason so let's try a little off from that limit
-                    if(integral.containsFunction('log') && k.length === 1 && limit[k[0]].isConstant(true)) {
-                        return new Symbol(0);
+                    if(integral.containsFunction('log') && point.isConstant(true)) {
+                        var sign = point.sign();
+                        point.multiplier.abs();
+                        var f = point.lte(0) ? 'add' : 'subtract'; //shift according to where we are
+                        point = _.multiply(new Symbol(sign), _[f](point, new Symbol(0.000000000000001)));
+                        vars[dx] = point;
+                        return _.parse(integral, vars);
                     }
                     //pass along the error
                     throw e;
@@ -1848,8 +1847,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     a, b;
                 upper[dx] = to;
                 lower[dx] = from;
-                a = get_value(integral, upper);  
-                b = get_value(integral, lower);
+                a = get_value(integral, upper, to, 1);  
+                b = get_value(integral, lower, from, 2);
                 retval = _.subtract(a, b);
             }
             else if(vars.length === 1 && from.isConstant() && to.isConstant()) {

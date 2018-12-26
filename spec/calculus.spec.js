@@ -219,6 +219,10 @@ describe('calculus', function () {
             {
                 given: 'defint(log(cos(x/2)),-π,π,x)',
                 expected: '-4.355172180607'
+            },
+            {
+                given: 'defint(log(x+1), -1, 1, x)',
+                expected: '-0.6137056388800689'
             }
         ];
 
