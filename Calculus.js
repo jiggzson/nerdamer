@@ -1818,6 +1818,25 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }, false);
         },
         defint: function(symbol, from, to, dx) {
+            var get_value = function(integral, limit, tries) {
+                tries = tries || 0;
+                if(tries > 10)
+                    throw new Error('Unable to calculate '+integral);
+                //try to evaluate the integral at the given limit
+                try {
+                    
+                    return _.parse(integral, limit);
+                }
+                catch(e) {
+                    var k = core.Utils.keys(limit);
+                    //it failed for some reason so let's try a little off from that limit
+                    if(integral.containsFunction('log') && k.length === 1 && limit[k[0]].isConstant(true)) {
+                        return new Symbol(0);
+                    }
+                    //pass along the error
+                    throw e;
+                }
+            };
             var vars = core.Utils.variables(symbol),
                 integral = __.integrate(symbol, dx),
                 retval;
@@ -1829,8 +1848,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     a, b;
                 upper[dx] = to;
                 lower[dx] = from;
-                a = _.parse(integral, upper);
-                b = _.parse(integral, lower);
+                a = get_value(integral, upper);  
+                b = get_value(integral, lower);
                 retval = _.subtract(a, b);
             }
             else if(vars.length === 1 && from.isConstant() && to.isConstant()) {
