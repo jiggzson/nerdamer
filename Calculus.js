@@ -430,9 +430,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         case ATAN:
                             symbol = _.parse('(1+('+text(symbol.args[0])+')^2)^(-1)');
                             break;
-                        case 'acot':
-                            symbol = _.parse('-1/(('+symbol.args[0]+')^2+1)');
-                            break;
                         case ABS: 
                             m = symbol.multiplier.clone(); 
                             symbol.toUnitMultiplier();
@@ -488,6 +485,25 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         case 'acsch':
                             var arg = String(symbol.args[0]);
                             symbol = _.parse('-1/(sqrt(1/('+arg+')^2+1)*('+arg+')^2)');
+                            break;
+                        case ASEC:
+                            var arg = String(symbol.args[0]);
+                            symbol = _.parse('1/(sqrt(1-1/('+arg+')^2)*('+arg+')^2)');
+                            break;
+                        case ACSC:
+                            var arg = String(symbol.args[0]);
+                            symbol = _.parse('-1/(sqrt(1-1/('+arg+')^2)*('+arg+')^2)');
+                            break;
+                        case ACOT:
+                            symbol = _.parse('-1/(('+symbol.args[0]+')^2+1)');
+                            break;
+                        case 'S':
+                            var arg = String(symbol.args[0]);
+                            symbol = _.parse('sin((pi*('+arg+')^2)/2)');
+                            break;
+                        case 'C':
+                            var arg = String(symbol.args[0]);
+                            symbol = _.parse('cos((pi*('+arg+')^2)/2)');
                             break;
                         case 'Si':
                             var arg = symbol.args[0];
@@ -1282,6 +1298,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         var coeff = symbol.stripVar(dx); 
                         //now get only those that apply
                         var cfsymbol = _.divide(symbol.clone(), coeff.clone()); //a coeff free symbol
+                        //peform a correction for stripVar. This is a serious TODO!
+                        if(coeff.contains(dx)) {
+                            cfsymbol = _.multiply(cfsymbol, coeff);
+                            coeff = new Symbol(1);
+                        }
                         //if we only have one symbol left then let's not waste time. Just pull the integral
                         //and let the chips fall where they may
                         if(cfsymbol.group !== CB) {
@@ -1315,7 +1336,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             });
                             //generate an image for 
                             var l = symbols.length;
-                            if(l === 2) { 
+                            if(l === 2) {
                                 //try u substitution
                                 try {
                                     retval = __.integration.u_substitution(symbols, dx);
@@ -1654,7 +1675,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                     //using the above definition
                                                     a = dc[3], x = dc[1], b = dc[0], bx = dc[2];
                                                 if(x.power.equals(2) && b.lessThan(0)) { //if n is even && b is negative
-                                                    
                                                     //make a equal 1 so we can do a trig sub
                                                     if(!a.equals(1)) { //divide a out of everything
                                                         //move a to the coeff
@@ -1670,9 +1690,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                         //but remember that u = asin(sqrt(b)*a*x)
                                                         retval = integral.sub(u, _.symfunction(ASIN, [_.multiply(new Symbol(dx), c)]));
                                                 }
+                                                else {
+                                                    retval = __.integration.partial_fraction(symbol, dx, depth, opt);
+                                                }
                                             }
-                                            else if(f_is_linear)
+                                            else if(f_is_linear) {
                                                 retval = __.integration.partial_fraction(symbol, dx, depth);
+                                            }
                                         }
 
                                     }
@@ -1893,7 +1917,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 if(x.isConstant(true)) {
                     return __.defint(_.parse('cos(pi*x^2/2)'), Symbol(0), x, 'x');
                 }
-                return _.symfunction('S', arguments);
+                return _.symfunction('C', arguments);
             }
         }
     };

@@ -2572,7 +2572,14 @@ var nerdamer = (function(imports) {
             else if(this.group === FN && this.contains(x)) {
                 retval = new Symbol(this.multiplier);
             }
-            else retval = this.clone();
+            else 
+                //wth? This should technically be the multiplier. 
+                //Unfortunately this method wasn't very well thought out :`(.   
+                //should be: retval = new Symbol(this.multiplier);
+                //use: ((1+x^2)*sqrt(-1+x^2))^(-1) for correction.
+                //this will break a bunch of unit tests so be ready to for the long haul
+                retval = this.clone();
+    
             
             return retval;
         },
