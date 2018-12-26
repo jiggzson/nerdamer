@@ -1211,6 +1211,22 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         case EXP:
                                             retval = __.integrate(_.parse(format('e^({0})', arg)), dx, depth);
                                             break;
+                                        case 'S':
+                                            var arg = symbol.args[0].clone(),
+                                                dc = __.integration.decompose_arg(arg, dx),
+                                                x_ = dc[1],
+                                                a_ = dc[0];
+                                            var b_ = dc[3];
+                                            retval = _.parse(format('(cos((1/2)*pi*(({1})+({0})*({2}))^2)+pi*(({1})+({0})*({2}))*S(({1})+({0})*({2})))/(({0})*pi)', a_, b_, x));
+                                            break;
+                                        case 'C':
+                                            var arg = symbol.args[0].clone(),
+                                                dc = __.integration.decompose_arg(arg, dx),
+                                                x_ = dc[1],
+                                                a_ = dc[0];
+                                            var b_ = dc[3];
+                                            retval = _.parse(format('(pi*(({1})+({0})*({2}))*C(({1})+({0})*({2}))-sin((1/2)*pi*(({1})+({0})*({2}))^2))/(({0})*pi)', a_, b_, x_));
+                                            break;
                                         case 'erf':
                                             var arg = symbol.args[0].clone(),
                                                 dc = __.integration.decompose_arg(arg, dx),
