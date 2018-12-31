@@ -52,7 +52,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         ACOT = 'acot',
         SINH = 'sinh',   
         COSH = 'cosh',
-        TANH = 'tanh';
+        TANH = 'tanh',
+        CSCH = 'csch',
+        SECH = 'sech',
+        COTH = 'coth',
+        ASECH = 'asech',
+        ACSCH = 'acsch',
+        ACOTH = 'acoth';
         
         
     //custom errors
@@ -168,7 +174,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     };
     
     core.Utils.in_htrig = function(x) {
-        var trig_fns = ['sinh', 'cosh', 'tanh'];
+        var trig_fns = [SINH, COSH, TANH, ACSCH, ASECH, ACOTH];
         return trig_fns.indexOf(x) !== -1;
     };
     
@@ -453,16 +459,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             //sinh -> cosh
                             symbol.fname = 'cosh';
                             break;
-                        case 'tanh':
+                        case TANH:
                             //tanh -> sech^2
-                            symbol.fname = 'sech';
+                            symbol.fname = SECH;
                             symbol.power = new Frac(2);
                             break;
-                        case 'sech': 
+                        case SECH: 
                             // Use a clone if this gives errors
                             symbol = qdiff(symbol, '-tanh');
                             break;
-                        case 'csch': 
+                        case CSCH: 
                             var arg = String(symbol.args[0]);
                             return _.parse('-coth('+arg+')*csch('+arg+')');
                             break;
@@ -475,14 +481,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         case 'atanh':
                             symbol = _.parse('(1-('+text(symbol.args[0])+')^2)^(-1)');
                             break;
-                        case 'asech':
+                        case ASECH:
                             var arg = String(symbol.args[0]);
                             symbol = _.parse('-1/(sqrt(1/('+arg+')^2-1)*('+arg+')^2)');
                             break;
-                        case 'acoth':
+                        case ACOTH:
                             symbol = _.parse('-1/(('+symbol.args[0]+')^2-1)');
                             break;
-                        case 'acsch':
+                        case ACSCH:
                             var arg = String(symbol.args[0]);
                             symbol = _.parse('-1/(sqrt(1/('+arg+')^2+1)*('+arg+')^2)');
                             break;
@@ -1211,6 +1217,34 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         case ASEC:
                                             retval = __.integration.by_parts(symbol, dx, depth, opt);
                                             break;
+                                        case ACSC:
+                                            retval = __.integration.by_parts(symbol, dx, depth, opt);
+                                            break;
+                                        case ACOT:
+                                            retval = __.integration.by_parts(symbol, dx, depth, opt);
+                                            break;
+                                        //inverse htrig
+                                        case ASECH:
+                                            retval = __.integration.by_parts(symbol, dx, depth, opt);
+                                            break;
+                                        case ACSCH:
+                                            retval = __.integration.by_parts(symbol, dx, depth, opt);
+                                            break;
+                                        case ACOTH:
+                                            retval = __.integration.by_parts(symbol, dx, depth, opt);
+                                            break;
+                                        //end inverse htrig
+                                        //htrigh
+                                        case SECH:
+                                            retval = _.parse(format('atan(sinh({0}))', arg));
+                                            break;
+                                        case CSCH:
+                                            retval = _.parse(format('-log(tanh(({0})/2))', arg));
+                                            break;
+                                        case COTH:
+                                            retval = _.parse(format('log(sinh({0}))', arg));
+                                            break;
+                                        //end htrig
                                         case EXP:
                                             retval = __.integrate(_.parse(format('e^({0})', arg)), dx, depth);
                                             break;
