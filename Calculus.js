@@ -1208,6 +1208,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         case TANH:
                                             retval = _.parse(format('log(cosh({0}))', arg));
                                             break;
+                                        case ASEC:
+                                            retval = __.integration.by_parts(symbol, dx, depth, opt);
+                                            break;
                                         case EXP:
                                             retval = __.integrate(_.parse(format('e^({0})', arg)), dx, depth);
                                             break;
@@ -1351,19 +1354,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 return unwrapped;
                             });
                             var l = symbols.length;
-                            if(symbol.power < 0) {
+                            if(symbol.power < 0) { 
                                 if(l === 2) {
-                                    var sym1 = symbols[0],
-                                        sym2 = symbols[1];
-                                    if(sym1.power.equals(1/2) && sym2.power.equals(2)) {
-                                        //apply transformation to see if it matches asin(x)
-                                        var f = _.sqrt(_.expand(_.divide(_.pow(symbol, new Symbol(2)).invert(), _.pow(new Symbol(dx), new Symbol(2))).negate())).invert();
-                                        //pull the integral
-                                        var integral = _.parse(__.integrate(f, dx, depth, opt).sub(dx, format('sqrt(1-1/({0})^2)', dx)));
-                                        //if no integral... Yaay. We're done.
-                                        if(!integral.hasIntegral())
-                                            retval = integral;
-                                    }
+                                    return __.integrate(_.expand(symbol), dx, depth, opt);
                                 }
                             }
                             //otherwise the denominator is one lumped together symbol 
@@ -1619,8 +1612,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 var a = decomp[0].negate(),
                                                     x = decomp[1],
                                                     b = decomp[3],
-                                                    p = Number(sym2.power);
-                                                if(isInt(p) && core.Utils.even(p) && x.power.equals(2)) {
+                                                    p1 = Number(sym1.power),
+                                                    p2 = Number(sym2.power);
+                                                if(isInt(p2) && core.Utils.even(p2) && x.power.equals(2)) {
                                                     //if the substitution 
                                                     var c = _.divide(_.multiply(_.pow(b.clone(), new Symbol(2)), 
                                                         _.symfunction(SQRT, [_.divide(b.clone(), a.clone())])), 
@@ -1632,6 +1626,26 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                     var bksub = _.parse(ASIN+'('+SQRT+'('+a+'/'+b+')*'+dx+')');
                                                     retval = _.multiply(c, integral.sub(new Symbol('u'), bksub));
                                                 }   
+                                                else if(p1 === -1/2) {
+                                                    var u_transform = function(f, u) {
+                                                        var integral = _.parse(__.integrate(f, dx, depth, opt).sub(dx, format(u, dx)));
+                                                        if(!integral.hasIntegral())
+                                                            return integral;
+                                                    }
+                                                    if(p2 === -1) {
+                                                        retval = u_transform(
+                                                                _.expand(_.expand(_.pow(_.multiply(sym1.invert(), sym2.invert()), new Symbol(2)))).invert(),
+                                                                'sqrt(1-1/({0})^2)'
+                                                        );
+                                                    }
+                                                    else if(p2 === -2) {
+                                                        //apply transformation to see if it matches asin(x)
+                                                        retval = u_transform(
+                                                                _.sqrt(_.expand(_.divide(_.pow(symbol, new Symbol(2)).invert(), _.pow(new Symbol(dx), new Symbol(2))).negate())).invert(),
+                                                                'sqrt(1-1/({0})^2)'
+                                                        );
+                                                    }
+                                                }
                                             }
                                             else if(sym1.power.equals(-1) && sym2.isLinear() && f_is_linear) { 
                                                 retval = __.integration.partial_fraction(symbol, dx, depth);

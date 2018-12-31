@@ -614,6 +614,14 @@ describe('calculus', function () {
                 given: 'integrate(atan(x)/(2+2*x^2),x)',
                 expected: '(1/4)*atan(x)^2'
             },
+            {
+                given: 'integrate(1/(sqrt(1-1/x^2)*x^2), x)',
+                expected: 'asin(sqrt(-x^(-2)+1))'
+            },
+            {
+                given: 'integrate(1/(sqrt(1-1/x^2)*x), x)',
+                expected: '-atan(-i*sqrt(-x^(-2)+1))*i'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
