@@ -937,6 +937,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-//var x = nerdamer.solve('x^2+1=x', 'x');
-//console.log(x.toString())

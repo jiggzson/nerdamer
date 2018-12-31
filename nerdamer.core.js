@@ -846,10 +846,11 @@ var nerdamer = (function(imports) {
     /**
      * As the name states. It forces evaluation of the expression 
      * @param {Symbol} symbol
+     * @param {Symbol} o
      */
-    var evaluate = function (symbol) {
+    var evaluate = function (symbol, o) {
         return block('PARSE2NUMBER', function() {
-            return _.parse(symbol);
+            return _.parse(symbol, o);
         }, true);
     };
     
