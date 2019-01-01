@@ -721,7 +721,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             //If we're just spinning wheels we want to stop. This is why we 
             //wrap integration in a try catch block and call this to stop.
             stop: function(msg) {
-                msg = msg || 'Stopping!';
+                msg = msg || 'Unable to compute integral!';
+                core.Utils.warn(msg);
                 throw new NoIntegralFound(msg);
             },
             partial_fraction: function(input, dx, depth, opt) { 
@@ -1942,68 +1943,204 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 retval = _.symfunction('defint', [symbol, from , to, dx]);
             return retval;
         },
-        limit: function(symbol, x, c) {
-            //used to evaluate function at limit
-            var evaluate = function(symbol) {
-                try {
-                    return _.parse(symbol.sub(x, c));
-                }
-                catch(e) {
-                    if(e instanceof core.exceptions.UndefinedError)
-                        return undefined;
-                    throw new Error('Stopping!');
-                }
-            };
-            
-            try {
-                var a, b, num, den, retval, safety, f, g;
-                num = symbol.getNum();
-                den = symbol.getDenom();
-                a = evaluate(num);
-                b = evaluate(den);
-                safety = 10;
-                //Make a copy of the numerator and denominator
-                f = num;
-                g = den;
-                
-                var iter = 0; //Guard against infinite loops
-                //indeterminate. Apply L'Hospital's rule
-                while(typeof a === 'undefined' && typeof b === 'undefined' 
-                        || a.equals(0) && b.equals(0) || a.isInfinty && b.isInfinity) {
-                    if(iter > safety) { 
-                        //we're not going anywhere so one last hail mary
-                        var subs = {};
-                        subs[x] = c;
-                        try {
-                            return core.Utils.block('PARSE2NUMBER', function() {
-                                return _.parse(symbol, subs);
-                            }, true);
-                        }
-                        catch(e){
-                            throw core.exceptions.MaximumIterationsReached();
-                        }    
-                    }
-
+        limitDivision: function(f, g, x, lim) {
+            var retval;
+            do {
+                var lim1 = __.limit(f, x, lim);
+                var lim2 = __.limit(g, x, lim);
+                //if it's in indeterminate form apply L'Hospital's rule
+                var indeterminate = (lim1.isInfinity && lim2.isInfinity || lim1.equals(0) && lim2.equals(0));
+                //pull the derivatives
+                if(indeterminate) {
                     f = __.diff(f, x);
                     g = __.diff(g, x);
-                    a = evaluate(f.clone());
-                    b = evaluate(g.clone());
+                }
+            }
+            while(indeterminate)  
+            if(lim1.isInfinity && lim2.equals(0))
+                retval = lim1;
+            else if(lim1.equals(0) && lim2.isInfinity)
+                retval = lim1;
+            else if(lim1.isInfinity) {
+                retval = lim1;
+            }
+            else if(lim2.isInfinity){
+                retval = 0;
+            }
+            else {
+                retval = _.divide(lim1, lim2);
+            }
+            return retval;
+        },
+        limit: function(symbol, x, lim) { 
+            var get_subbed = function(n) {
+                var v;
+                try {
+                    v = n.sub(x, lim);
+                }
+                catch(e) {
+                    if(e instanceof core.exceptions.UndefinedError && num.group === EX) {
+                        //we're dealing with n^0. We'll deal with that in a special manner. Let's try
+                        //it a different way using properties of logarithms
+                        var p = num.power.clone();
+                        num.toLinear();
+                        var rp = __.limit(_.multiply(p, _.symfunction('log', [num])), x, lim);
+                        v = _.pow(new Symbol('e'), rp);
+//                        console.log(v.toString())
+                        v = v.sub(x, lim);
+//                        //try again 
+//                        try {
+//                            
+//                        }
+//                        catch(e2) {
+//                            if(e2 instanceof core.exceptions.UndefinedError && lim.equals(0)) {
+//                                //https://homepages.math.uic.edu/~rmlowman/math165/LectureNotes/L4-W2L1speciallimits.pdf
+//                                console.log(p.toString())
+//                            }
+//                        }
+                    }
+                }
+                
+                return v;
+            }
+            //used to evaluate function at limit
+            var evaluate = core.Utils.evaluate;
+            //evaluate the symbol. If it's a constant then we're done
+            var symbol_value = evaluate(symbol);
+            if(symbol_value.isConstant())
+                return symbol;
+            //otherwise
+            try {
+                var a, b, num, den, retval, f, g, m;
+                num = symbol.getNum();
+                den = symbol.getDenom();
+                a = get_subbed(num);
+                b = get_subbed(den);
+ 
+                //create a point
+                var point = {};
+                point[x] = lim;
+                //do we already know the limit? If so then why waste time
+                try {
+                    var lim_ = _.parse(symbol, point);
+                    if(lim_.isConstant(true))
+                        return lim_;
+                }
+                catch(e){};
+                //by now either a is a constant, b is a constant, or neither is a constant
+                if(b.isConstant(true)) {
+                    //b is the multiplier
+                    m = b.invert();
                     
-                    iter++;
+                    if(a.group === FN && a.args.length === 1) {
+                        //if the argument is a constant then that's the limit
+                        var arg = evaluate(a.args[0], point);
+                        //if the argument still contains a possible limit then apply squeeze theorem
+                        if(arg.contains(x))
+                            arg = __.limit(arg, x, lim);
+
+                        //lookup log
+                        if(a.fname === LOG) {
+                            switch(arg.toString()) {
+                                //lim -> 0
+                                case '0':
+                                    retval = Symbol.infinity().negate();
+                                    break;
+                                case 'Infinity':
+                                    retval = Symbol.infinity();
+                                    break;
+                                case '-Infinity':
+                                    retval = Symbol.infinity();
+                                    break;
+                            }
+                        }
+                        else if((a.fname === COS || a.fname === SIN) && lim.isInfinity) {
+                            retval = _.parse('[-1, 1]');
+                        }
+                        else if((a.fname === TAN)) {
+                            var s_arg = a.args[0];
+                            var n = s_arg.getNum();
+                            var d = s_arg.getDenom();
+                            var pi = n.toUnitMultiplier();
+                            if(lim.isInfinity || pi.equals('pi') && d.equals(2)) {
+                                retval = _.parse('[-Infinity, Infinity]');
+                            }
+                        }
+                    }
+                    else if(a.group === CB) { 
+                        if(!a.isLinear()) {
+                            a = _.expand(a);
+                        }
+                        var lim1, lim2, lim_;
+                        //loop through all the symbols
+                        //thus => lim f*g*h = lim (f*g)*h = (lim f*g)*(lim h)
+                        var limits = a.collectSymbols();
+                        var f = limits.pop();
+                        //calculate the first limit so we can keep going down the list
+                        lim1 = evaluate(__.limit(f, x, lim));
+                        //reduces all the limits one at a time
+                        while(limits.length) {
+                            var g = limits.pop();
+                            
+                            //get the limit of g
+                            lim2 = evaluate(__.limit(g, x, lim));
+                            //if the limit is in indeterminate form aplly L'Hospital by inverting g and then f/(1/g)
+                            if(lim1.isInfinity && lim2.equals(0) || lim1.equals(0) && lim2.isInfinity) { 
+                                lim1 = __.limitDivision(f, g, x, lim);
+                            }
+                            else {console.log(lim1.toString(), lim2.toString(), f.toString(), g.toString())
+                                //lim f*g = (lim f)*(lim g)
+                                lim1 = _.multiply(lim1, lim2);
+                                //let f*g equal f and h equal g 
+                                f = _.multiply(f, g);
+                            }
+                        }
+                        //Done, lim1 is the limit we're looking for     
+                        retval = lim1;
+                    }
+                    else if(a.isInfinity)
+                        retval = a;
+                    else if(b.isInfinity)
+                        retval = b;
+                    else {
+                        //the limit is at that point
+                        retval = _.parse(a, point);
+                    }
                 }
-                if(a.isConstant(true) || b.isConstant(true)) {
-                    if(b.equals(0))
-                        retval = Symbol.infinity();
-                    else
-                        retval = _.divide(a, b);
+                else if(a.isConstant(true)) {
+                    //put back the multiplier
+                    m = a;
+                    //get the limit it that point
+                    var e = _.parse(b, point);
+                    switch(e.toString()) {
+                        //lim a/0
+                        case '0':
+                            retval = _.parse('[-Infinity, Infinity]')
+                            break;
+                        case 'Infinity':
+                            retval = new Symbol(0);
+                            break;
+                        case '-Infinity':
+                            retval = new Symbol(0);
+                            break;
+                        default:
+                            retval = e.invert();
+                    }
                 }
-                else if(a.isInfinity)
-                    retval = a;
-                else if(b.isInfinity)
-                    retval = b;
+                //if nothing was found the return the undetermined limit. This
+                //technically should never happen so this is a big red flag
+                if(!retval) {
+                    var warning = 'No limit found';
+                    core.Utils.warn(warning);
+                    throw new Error(warning);
+                }
+                
+                //put back the multiplier
+                retval = _.multiply(retval, m);
+                
                 return retval;
             }
-            catch(e) {
+            catch(e) {console.log(e)
                 return _.symfunction('limit', arguments);
             }   
         },
@@ -2068,8 +2205,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         },
         {
             name: 'limit',
-            visible: false,
-            numargs: 3,
+            visible: true,
+            numargs: [3, 4],
             build: function() { return __.limit; }
         }
     ]);

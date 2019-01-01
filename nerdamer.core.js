@@ -196,7 +196,7 @@ var nerdamer = (function(imports) {
      */
     var warn = function(msg) {
         WARNINGS.push(msg);
-        if(!Settings.SILENCE_WARNINGS && console && console.warn) {
+        if(Settings.SHOW_WARNINGS && console && console.warn) {
             console.warn(msg);
         }
     };
@@ -2760,7 +2760,7 @@ var nerdamer = (function(imports) {
                 return true;
             if(check_all && this.group === FN) {
                 for(var i=0; i<this.args.length; i++) {
-                    if(!this.args[i].isConstant())
+                    if(!this.args[i].isConstant(check_all))
                         return false;
                 }
                 return true;
@@ -3461,12 +3461,16 @@ var nerdamer = (function(imports) {
             }
             else if(symbol.group === CB) {
                 retval = _.parse(symbol.multiplier.num);
-                for(var x in symbol.symbols) 
-                    if(symbol.symbols[x].power > 0) 
-                        retval = _.multiply(retval, symbol.symbols[x].clone());
+                symbol.each(function(x) {
+                    if(x.power > 0 || x.group === EX && x.power.multiplier > 0) {
+                        retval = _.multiply(retval, x.clone());
+                    }
+                });
             }
-            else
+            else {
+                
                 retval = _.parse(symbol.multiplier.num);
+            }
             return retval;
         },
         toString: function() {
@@ -7316,7 +7320,8 @@ var nerdamer = (function(imports) {
                     
                 var aIsZero = a.equals(0);
                 var bIsZero = b.equals(0);
-                if(aIsZero && bIsZero) err('0^0 is undefined!');
+                if(aIsZero && bIsZero) 
+                    throw new UndefinedError('0^0 is undefined!');
                 //return 0 right away if possible
                 if(aIsZero && b.isConstant() && b.multiplier.greaterThan(0))
                     return new Symbol(0);
