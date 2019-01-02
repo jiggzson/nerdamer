@@ -2259,10 +2259,14 @@ var nerdamer = (function(imports) {
         },
         invert: function() { 
             var t = this.den;
-            var isnegative = this.num.isNegative();
-            this.den = this.num.abs();
-            this.num = t;
-            if(isnegative) this.num = this.num.multiply(-1);
+            //why invert 0/1? It'll become 1/0 and that's a lie.
+            if(!this.num.equals(0)) {
+                var isnegative = this.num.isNegative();
+                this.den = this.num.abs();
+                this.num = t;
+                if(isnegative) this.num = this.num.multiply(-1);
+            }
+                
             return this;
         },
         isOne: function() {
@@ -2338,10 +2342,14 @@ var nerdamer = (function(imports) {
     };
     /**
      * Return nerdamer's representation of Infinity
+     * @param {int} negative -1 to return negative infinity 
      * @returns {Symbol} 
      */
-    Symbol.infinity = function() {
-        return new Symbol('Infinity');
+    Symbol.infinity = function(negative) {
+        var v = new Symbol('Infinity');
+        if(negative === -1)
+            v.negate();
+        return v;
     }; 
     Symbol.shell = function(group, value) { 
         var symbol = new Symbol(value);

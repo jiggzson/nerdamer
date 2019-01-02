@@ -1986,18 +1986,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         num.toLinear();
                         var rp = __.limit(_.multiply(p, _.symfunction('log', [num])), x, lim);
                         v = _.pow(new Symbol('e'), rp);
-//                        console.log(v.toString())
                         v = v.sub(x, lim);
-//                        //try again 
-//                        try {
-//                            
-//                        }
-//                        catch(e2) {
-//                            if(e2 instanceof core.exceptions.UndefinedError && lim.equals(0)) {
-//                                //https://homepages.math.uic.edu/~rmlowman/math165/LectureNotes/L4-W2L1speciallimits.pdf
-//                                console.log(p.toString())
-//                            }
-//                        }
                     }
                 }
                 
@@ -2027,10 +2016,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         return lim_;
                 }
                 catch(e){};
+
                 //by now either a is a constant, b is a constant, or neither is a constant
-                if(b.isConstant(true)) {
+                if(den.isConstant(true)) {
                     //b is the multiplier
-                    m = b.invert();
+                    m = b.clone().invert();
                     
                     if(a.group === FN && a.args.length === 1) {
                         //if the argument is a constant then that's the limit
@@ -2088,7 +2078,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             if(lim1.isInfinity && lim2.equals(0) || lim1.equals(0) && lim2.isInfinity) { 
                                 lim1 = __.limitDivision(f, g, x, lim);
                             }
-                            else {console.log(lim1.toString(), lim2.toString(), f.toString(), g.toString())
+                            else {
                                 //lim f*g = (lim f)*(lim g)
                                 lim1 = _.multiply(lim1, lim2);
                                 //let f*g equal f and h equal g 
@@ -2103,28 +2093,43 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     else if(b.isInfinity)
                         retval = b;
                     else {
-                        //the limit is at that point
-                        retval = _.parse(a, point);
+                        //deal with 1/x^2
+                        if(den.group === S && b.equals(0)) {
+                            //remember that b is constant which just makes the limit n/0
+                            retval = core.Utils.even(den.power) ? Symbol.infinity() : _.parse('[-Infinity, Infinity]');
+                            m = a;
+                        }
+                        else
+                            //the limit is at that point
+                            retval = _.parse(a, point);
                     }
                 }
                 else if(a.isConstant(true)) {
-                    //put back the multiplier
+                    //store the multiplier
                     m = a;
-                    //get the limit it that point
-                    var e = _.parse(b, point);
-                    switch(e.toString()) {
-                        //lim a/0
-                        case '0':
-                            retval = _.parse('[-Infinity, Infinity]')
-                            break;
-                        case 'Infinity':
-                            retval = new Symbol(0);
-                            break;
-                        case '-Infinity':
-                            retval = new Symbol(0);
-                            break;
-                        default:
-                            retval = e.invert();
+                    var x_ = x.toString();
+                    if(den.contains(x_) && num.contains(x_)) {
+                        retval = __.limitDivision(num, den, x, lim);
+                        //the multiplier should now point to the actual symbol multiplier
+                        m = _.parse(symbol.multiplier);
+                    }
+                    else {
+                        //get the limit it that point
+                        var e = _.parse(b, point);
+                        switch(e.toString()) {
+                            //lim a/0
+                            case '0':
+                                retval = _.parse('[-Infinity, Infinity]');
+                                break;
+                            case 'Infinity':
+                                retval = new Symbol(0);
+                                break;
+                            case '-Infinity':
+                                retval = new Symbol(0);
+                                break;
+                            default:
+                                retval = e.invert();
+                        }
                     }
                 }
                 //if nothing was found the return the undetermined limit. This
@@ -2140,7 +2145,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 
                 return retval;
             }
-            catch(e) {console.log(e)
+            catch(e) {
+                console.log(e)
                 return _.symfunction('limit', arguments);
             }   
         },
