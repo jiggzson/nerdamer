@@ -3019,9 +3019,13 @@ var nerdamer = (function(imports) {
          * which aren't check by default.
          * @example var s = _.parse('x+y+z'); s.contains('y');
          * //returns true
+         * @param {any} variable 
+         * @param {boolean} all 
          * @returns {boolean}
          */
         contains: function(variable, all) { 
+            //contains expects a string
+            variable = String(variable);
             var g = this.group; 
             if(this.value === variable)
                 return true;
