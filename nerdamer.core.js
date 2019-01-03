@@ -3464,8 +3464,7 @@ var nerdamer = (function(imports) {
                 symbol = _.expand(symbol);
             //if the symbol already is the denominator... DONE!!!
             if(symbol.power.greaterThan(0) && symbol.group !== CB) {
-                retval = _.parse(symbol.multiplier.num);
-                retval = _.multiply(retval, symbol.toUnitMultiplier()); 
+                retval = _.multiply(_.parse(symbol.multiplier.num), symbol.toUnitMultiplier()); 
             }
             else if(symbol.group === CB) {
                 retval = _.parse(symbol.multiplier.num);
@@ -3476,7 +3475,6 @@ var nerdamer = (function(imports) {
                 });
             }
             else {
-                
                 retval = _.parse(symbol.multiplier.num);
             }
             return retval;

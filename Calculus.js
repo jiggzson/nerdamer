@@ -1943,13 +1943,34 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 retval = _.symfunction('defint', [symbol, from , to, dx]);
             return retval;
         },
-        limitDivision: function(f, g, x, lim) {
+        limitDiverges: function() {
+            return _.parse('[-Infinity, Infinity]');
+        },
+        limitDivision: function(f, g, x, lim) { 
+            var isInfinity = function(L) {
+                if(core.Utils.isVector(L)) {
+                    for(var i=0; i<L.elements.length; i++)
+                        if(!L.elements[i].isInfinity)
+                            return false;
+                    return true;
+                }
+                return L.isInfinity;     
+            };
+            
+            var equals = function(L, v) {
+                if(core.Utils.isVector(L)) {
+                    return false;
+                }
+                return L.equals(v);
+            };
+            
             var retval;
             do {
                 var lim1 = __.limit(f, x, lim);
                 var lim2 = __.limit(g, x, lim);
+                
                 //if it's in indeterminate form apply L'Hospital's rule
-                var indeterminate = (lim1.isInfinity && lim2.isInfinity || lim1.equals(0) && lim2.equals(0));
+                var indeterminate = (isInfinity(lim1) && isInfinity(lim2) || equals(lim1, 0) && equals(lim2, 0));
                 //pull the derivatives
                 if(indeterminate) {
                     f = __.diff(f, x);
@@ -1965,33 +1986,44 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 retval = lim1;
             }
             else if(lim2.isInfinity){
-                retval = 0;
+                retval = new Symbol(0);
             }
             else {
-                retval = _.divide(lim1, lim2);
+                //n/0 is still possible since we only checked for 0/0
+                if(lim2.equals(0))
+                    retval = __.limitDiverges();
+                else
+                    retval = _.divide(lim1, lim2);
             }
             return retval;
         },
+        rewriteToLog: function(symbol) {
+            var p = symbol.power.clone();
+            symbol.toLinear();
+            return _.pow(new Symbol('e'), _.multiply(p, _.symfunction('log', [symbol])));
+        },
         limit: function(symbol, x, lim) { 
+            //limits of constants are known. No need to waste time
+            if(symbol.isConstant(true))
+                return symbol;
+
+            //returns non-convergent limit
+            var divergent = __.limitDiverges;
+            
             var get_subbed = function(n) {
                 var v;
+                if(n.group === EX) {
+                    n = __.rewriteToLog(n);
+                }
                 try {
                     v = n.sub(x, lim);
                 }
                 catch(e) {
-                    if(e instanceof core.exceptions.UndefinedError && num.group === EX) {
-                        //we're dealing with n^0. We'll deal with that in a special manner. Let's try
-                        //it a different way using properties of logarithms
-                        var p = num.power.clone();
-                        num.toLinear();
-                        var rp = __.limit(_.multiply(p, _.symfunction('log', [num])), x, lim);
-                        v = _.pow(new Symbol('e'), rp);
-                        v = v.sub(x, lim);
-                    }
+                    v = n;
                 }
                 
                 return v;
-            }
+            };
             //used to evaluate function at limit
             var evaluate = core.Utils.evaluate;
             //evaluate the symbol. If it's a constant then we're done
@@ -2005,18 +2037,19 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 den = symbol.getDenom();
                 a = get_subbed(num);
                 b = get_subbed(den);
- 
+                
                 //create a point
                 var point = {};
                 point[x] = lim;
                 //do we already know the limit? If so then why waste time
                 try {
                     var lim_ = _.parse(symbol, point);
-                    if(lim_.isConstant(true))
+                    if(lim_.isConstant(true) && lim_.isLinear()) {
                         return lim_;
+                    }
                 }
                 catch(e){};
-
+                
                 //by now either a is a constant, b is a constant, or neither is a constant
                 if(den.isConstant(true)) {
                     //b is the multiplier
@@ -2030,7 +2063,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             arg = __.limit(arg, x, lim);
 
                         //lookup log
-                        if(a.fname === LOG) {
+                        if(a.fname === LOG) { 
                             switch(arg.toString()) {
                                 //lim -> 0
                                 case '0':
@@ -2053,30 +2086,51 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             var d = s_arg.getDenom();
                             var pi = n.toUnitMultiplier();
                             if(lim.isInfinity || pi.equals('pi') && d.equals(2)) {
-                                retval = _.parse('[-Infinity, Infinity]');
+                                retval = divergent();
                             }
                         }
+                    }
+                    else if(a.group === EX) {
+                        var pow_lim = __.limit(a.power, x, lim);
+                    }
+                    else if(a.isComposite()) {
+                        var p = _.parse(symbol.power);
+                        symbol.toLinear();
+                        //Apply lim f+g = (lim f)+(lim g)
+                        retval = new Symbol(0);
+                        symbol.each(function(sym) {
+                            //If the addition of the limits is undefined then the limit diverges so return -infinity to infinity
+                            try {
+                                retval = _.add(retval, __.limit(sym, x, lim));
+                            }
+                            catch(e) {
+                                if(e instanceof core.exceptions.UndefinedError) {
+                                    retval = divergent();
+                                }
+                            }
+                        });
+                        //put the power back
+                        retval = _.pow(retval, p);
                     }
                     else if(a.group === CB) { 
                         if(!a.isLinear()) {
                             a = _.expand(a);
                         }
-                        var lim1, lim2, lim_;
+                        var lim1, lim2;
                         //loop through all the symbols
                         //thus => lim f*g*h = lim (f*g)*h = (lim f*g)*(lim h)
-                        var limits = a.collectSymbols();
-                        var f = limits.pop();
+                        var symbols = num.collectSymbols();
+                        var f = symbols.pop();
                         //calculate the first limit so we can keep going down the list
                         lim1 = evaluate(__.limit(f, x, lim));
                         //reduces all the limits one at a time
-                        while(limits.length) {
-                            var g = limits.pop();
-                            
+                        while(symbols.length) {
+                            var g = symbols.pop();
                             //get the limit of g
                             lim2 = evaluate(__.limit(g, x, lim));
                             //if the limit is in indeterminate form aplly L'Hospital by inverting g and then f/(1/g)
                             if(lim1.isInfinity && lim2.equals(0) || lim1.equals(0) && lim2.isInfinity) { 
-                                lim1 = __.limitDivision(f, g, x, lim);
+                                lim1 = __.limitDivision(f, g.invert(), x, lim);
                             }
                             else {
                                 //lim f*g = (lim f)*(lim g)
@@ -2096,12 +2150,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         //deal with 1/x^2
                         if(den.group === S && b.equals(0)) {
                             //remember that b is constant which just makes the limit n/0
-                            retval = core.Utils.even(den.power) ? Symbol.infinity() : _.parse('[-Infinity, Infinity]');
+                            retval = core.Utils.even(den.power) ? Symbol.infinity() : divergent();
                             m = a;
                         }
-                        else
+                        else {
                             //the limit is at that point
                             retval = _.parse(a, point);
+                        }
                     }
                 }
                 else if(a.isConstant(true)) {
@@ -2116,10 +2171,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     else {
                         //get the limit it that point
                         var e = _.parse(b, point);
-                        switch(e.toString()) {
+                        var v = evaluate(e);
+                        switch(v.toString()) {
                             //lim a/0
                             case '0':
-                                retval = _.parse('[-Infinity, Infinity]');
+                                retval = divergent();
                                 break;
                             case 'Infinity':
                                 retval = new Symbol(0);
@@ -2132,6 +2188,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         }
                     }
                 }
+                else if(a.isInfinity && b.isInfinity) {
+                    //apply L'Hospital
+                    retval = __.limitDivision(__.diff(num, x), __.diff(den, x), x, lim);
+                }
+                
                 //if nothing was found the return the undetermined limit. This
                 //technically should never happen so this is a big red flag
                 if(!retval) {
@@ -2141,7 +2202,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 }
                 
                 //put back the multiplier
-                retval = _.multiply(retval, m);
+                if(m)
+                    retval = _.multiply(retval, m);
                 
                 return retval;
             }
@@ -2219,3 +2281,4 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     //link registered functions externally
     nerdamer.api();
 })();
+
