@@ -1908,17 +1908,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     return _.parse(integral, vars);
                 }
                 catch(e) {
-                    //it failed for some reason so let's try a little off from that limit
-                    if(integral.containsFunction('log') && point.isConstant(true)) {
-                        var sign = point.sign();
-                        point.multiplier.abs();
-                        var f = point.lte(0) ? 'add' : 'subtract'; //shift according to where we are
-                        point = _.multiply(new Symbol(sign), _[f](point, new Symbol(0.000000000000001)));
-                        vars[dx] = point;
-                        return _.parse(integral, vars);
-                    }
-                    //pass along the error
-                    throw e;
+                    //it failed for some reason so return the limit
+                    return __.Limit.limit(integral, dx, point);
                 }
             };
             var vars = core.Utils.variables(symbol),
@@ -1932,8 +1923,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     a, b;
                 upper[dx] = to;
                 lower[dx] = from;
-                a = get_value(integral, upper, to, 1);  
-                b = get_value(integral, lower, from, 2);
+                a = get_value(integral, upper, to, dx);  
+                b = get_value(integral, lower, from, dx);
                 retval = _.subtract(a, b);
             }
             else if(vars.length === 1 && from.isConstant() && to.isConstant()) {
@@ -1971,23 +1962,19 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 };
 
                 var retval;
-                var c = 1;
                 do {
                     var lim1 = evaluate(__.Limit.limit(f, x, lim));
                     var lim2 = evaluate(__.Limit.limit(g, x, lim));
-//                    console.log(f.toString(), g.toString(), lim1.toString(), lim2.toString(), lim.toString(), c)
                     //if it's in indeterminate form apply L'Hospital's rule
                     var indeterminate = isInfinity(lim1) && isInfinity(lim2) || equals(lim1, 0) && equals(lim2, 0);
                     //pull the derivatives
                     if(indeterminate) {
-                        var ft = __.diff(f, x);
-                        var gt = __.diff(_.parse(g), x);
+                        var ft = __.diff(f.clone(), x);
+                        var gt = __.diff(g.clone(), x);
                         var t_symbol = _.expand(_.divide(ft, gt));
                         f = t_symbol.getNum();
                         g = t_symbol.getDenom();
-//                        console.log(f.toString(), g.toString())
                     }
-                    c++;
                 }
                 while(indeterminate)  
                     
@@ -2012,6 +1999,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     else
                         retval = _.divide(lim1, lim2);
                 }
+                
                 return retval;
             },
             rewriteToLog: function(symbol) {
@@ -2052,13 +2040,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 return true; //It is
             },
             limit: function(symbol, x, lim) {
+                //store the multiplier
+                var m = _.parse(symbol.multiplier);
+                //strip the multiplier
+                symbol.toUnitMultiplier();
                 try {
                     //https://en.wikipedia.org/wiki/List_of_limits
                     var retval;
-                    //store the multiplier
-                    var m = _.parse(symbol.multiplier);
-                    //strip the multiplier
-                    symbol.toUnitMultiplier();
                     //we try the simplest option first where c is some limit
                     //lim a as x->c = a where c 
                     if(symbol.isConstant(true)) {
@@ -2086,9 +2074,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             if(den.isConstant(true)) {
                                 //We still don't have a limit so we generate tests.
                                 if(symbol.group === EX) {
-//                                    console.log(symbol.toString())
                                     var symbol_ = __.Limit.rewriteToLog(symbol.clone());
-//                                    console.log(symbol_.toString())
+
                                     //get the base
                                     var pow = symbol_.power.clone();
                                     var base = symbol_.clone().toLinear();
@@ -2099,32 +2086,38 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 else if(symbol.group === FN && symbol.args.length === 1 ) {
                                     //Squeeze theorem lim f(g(x)) = lim f(lim g))
                                     var arg = __.Limit.limit(symbol.args[0], x, lim);
-                                    //if the limit converges. We'll deal with non-convergent ones later
-                                    if(__.Limit.isConvergent(arg)) {
-                                        if(symbol.fname === LOG) { 
-                                            switch(arg.toString()) {
-                                                //lim -> 0
-                                                case '0':
-                                                    retval = Symbol.infinity().negate();
-                                                    break;
-                                                case 'Infinity':
-                                                    retval = Symbol.infinity();
-                                                    break;
-                                                case '-Infinity':
-                                                    retval = Symbol.infinity();
-                                                    break;
+                                    //if the argument is constant then we're done
+                                    if(arg.isConstant(true)) {
+                                        retval = _.symfunction(symbol.fname, [arg]);
+                                    }
+                                    else {
+                                        //if the limit converges. We'll deal with non-convergent ones later
+                                        if(__.Limit.isConvergent(arg)) {
+                                            if(symbol.fname === LOG) { 
+                                                switch(arg.toString()) {
+                                                    //lim -> 0
+                                                    case '0':
+                                                        retval = Symbol.infinity().negate();
+                                                        break;
+                                                    case 'Infinity':
+                                                        retval = Symbol.infinity();
+                                                        break;
+                                                    case '-Infinity':
+                                                        retval = Symbol.infinity();
+                                                        break;
+                                                }
                                             }
-                                        }
-                                        else if((symbol.fname === COS || symbol.fname === SIN) && lim.isInfinity) {
-                                            retval = __.Limit.interval(-1, 1);
-                                        }
-                                        else if((symbol.fname === TAN)) {
-                                            var s_arg = symbol.args[0];
-                                            var n = s_arg.getNum();
-                                            var d = s_arg.getDenom();
-                                            var pi = n.toUnitMultiplier();
-                                            if(lim.isInfinity || pi.equals('pi') && d.equals(2)) {
-                                                retval = divergent();
+                                            else if((symbol.fname === COS || symbol.fname === SIN) && lim.isInfinity) {
+                                                retval = __.Limit.interval(-1, 1);
+                                            }
+                                            else if((symbol.fname === TAN)) {
+                                                var s_arg = symbol.args[0];
+                                                var n = s_arg.getNum();
+                                                var d = s_arg.getDenom();
+                                                var pi = n.toUnitMultiplier();
+                                                if(lim.isInfinity || pi.equals('pi') && d.equals(2)) {
+                                                    retval = divergent();
+                                                }
                                             }
                                         }
                                     }
@@ -2170,10 +2163,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         if((lim1.isInfinity || !__.Limit.isConvergent(lim1) && lim2.equals(0) || lim1.equals(0) && __.Limit.isConvergent(lim2))) { 
                                             //invert the symbol
                                             g.invert();
-//                                            console.log(f.toString(), g.toString(), __.Limit.isConvergent(lim1), __.Limit.isConvergent(lim2), lim1.toString(), lim2.toString() )
-
                                             lim1 = __.Limit.divide(f, g, x, lim, 'from divide');
-//                                            console.log(lim1.toString(), lim2.toString())
                                         }
                                         else {
                                             //lim f*g = (lim f)*(lim g)
@@ -2215,7 +2205,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         retval = _.symfunction('limit', arguments); 
                 }
                 catch(e) {
-                    console.log(e)
                     //if all else fails return the symbolic function
                     retval = _.symfunction('limit', arguments); 
                 }
