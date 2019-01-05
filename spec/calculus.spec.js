@@ -620,7 +620,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(1/(sqrt(1-1/x^2)*x), x)',
-                expected: '-atan(-i*sqrt(-x^(-2)+1))*i'
+                expected: '(-1/2)*log(1+sqrt(-x^(-2)+1))+(1/2)*log(-1+sqrt(-x^(-2)+1))'
             },
         ];
 

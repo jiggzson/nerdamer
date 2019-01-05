@@ -473,6 +473,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             var arg = String(symbol.args[0]);
                             return _.parse('-coth('+arg+')*csch('+arg+')');
                             break;
+                        case COTH: 
+                            var arg = String(symbol.args[0]);
+                            return _.parse('-csch('+arg+')^2');
+                            break;
                         case 'asinh':
                             symbol = _.parse('(sqrt(1+('+text(symbol.args[0])+')^2))^(-1)');
                             break;
@@ -1001,8 +1005,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 a = decomp[0],
                                 x = decomp[1]; 
                             if(p === -1 && x.group !== PL && x.power.equals(2)) { 
+                                var b_is_positive = isInt(b) ? b > 0 : true;
                                 //we can now check for atan
-                                if(x.group === S && x.power.equals(2)) { //then we have atan
+                                if(x.group === S && x.power.equals(2) && b_is_positive) { 
+                                    ////then we have atan
                                     //abs is redundants since the sign appears in both denom and num.
                                     var unwrapAbs = function(s) {
                                         var result = new Symbol(1);
@@ -1241,7 +1247,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             retval = _.parse(format('atan(sinh({0}))', arg));
                                             break;
                                         case CSCH:
-                                            retval = _.parse(format('-log(tanh(({0})/2))', arg));
+                                            retval = _.parse(format('log(tanh(({0})/2))', arg));
                                             break;
                                         case COTH:
                                             retval = _.parse(format('log(sinh({0}))', arg));
