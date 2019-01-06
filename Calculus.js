@@ -162,7 +162,32 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     core.Expression.prototype.hasIntegral = function() {
         return this.symbol.hasIntegral();
     };
+    /**
+     * Attempts to rewrite a symbol under one common denominator
+     * @param {Symbol} symbol 
+     */
+    core.Utils.toCommonDenominator = function(symbol) {
+        //transform x/a+x -> (ax+x)/a
+        if(symbol.isComposite() && symbol.isLinear()) {
+            var m = new Symbol(symbol.multiplier);
+            var denominator = new Symbol(1);
+            var numerator = new Symbol(0);
+            symbol.each(function(x) {
+                denominator = _.multiply(denominator, x.getDenom());
+            }, true);
 
+            //remove the denomitor in each term
+            symbol.each(function(x) {
+                var num = x.getNum();
+                var den = x.getDenom();
+                var factor = _.multiply(num, _.divide(denominator.clone(), den));
+                numerator = _.add(numerator, factor);
+            });
+            var retval = _.multiply(m, core.Algebra.divide(_.expand(numerator), _.expand(denominator)));
+            return retval;
+        }
+        return symbol;
+    };
     //A function to check if a function name is an inverse trig function
     core.Utils.in_inverse_trig = function(x) {
         var inv_trig_fns = [ASIN, ACOS, ATAN,   ACSC, ASEC, ACOT];
@@ -1950,6 +1975,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 return __.Limit.interval('-Infinity', 'Infinity');
             },
             divide: function(f, g, x, lim) { 
+                var fin = f.clone(), gin = g.clone();
                 var isInfinity = function(L) {
                     if(core.Utils.isVector(L)) {
                         for(var i=0; i<L.elements.length; i++)
@@ -2005,7 +2031,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     else
                         retval = _.divide(lim1, lim2);
                 }
-                
                 return retval;
             },
             rewriteToLog: function(symbol) {
@@ -2081,7 +2106,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 //We still don't have a limit so we generate tests.
                                 if(symbol.group === EX) {
                                     var symbol_ = __.Limit.rewriteToLog(symbol.clone());
-
                                     //get the base
                                     var pow = symbol_.power.clone();
                                     var base = symbol_.clone().toLinear();
@@ -2090,11 +2114,25 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     retval = _.pow(lim_base, lim_pow);
                                 }
                                 else if(symbol.group === FN && symbol.args.length === 1 ) {
+                                    
                                     //Squeeze theorem lim f(g(x)) = lim f(lim g))
                                     var arg = __.Limit.limit(symbol.args[0], x, lim);
                                     //if the argument is constant then we're done
                                     if(arg.isConstant(true)) {
-                                        retval = _.symfunction(symbol.fname, [arg]);
+                                        var evaluates;
+                                        //double check that it evaluates
+                                        var trial = _.symfunction(symbol.fname, [arg]);
+                                        //trial evaluation
+                                        try {
+                                            evaluate(trial);
+                                            evaluates = true;
+                                        }
+                                        catch(e) {
+                                            evaluates = false;
+                                        }
+                                    }
+                                    if(evaluates) {
+                                        retval = trial;
                                     }
                                     else {
                                         //if the limit converges. We'll deal with non-convergent ones later
@@ -2146,42 +2184,49 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     }
                                 }
                                 else if(symbol.group === CB) {
-                                    if(!symbol.isLinear())
-                                        symbol = _.expand(symbol);
-                                    var lim1, lim2;
-                                    //loop through all the symbols
-                                    //thus => lim f*g*h = lim (f*g)*h = (lim f*g)*(lim h)
-                                    //symbols of lower groups are generally easier to differentiatee so get them to the right by first sorting
-                                    var symbols = symbol.collectSymbols().sort(function(a, b) {
-                                        return a.group - b.group;
-                                    });
-                                    var f = symbols.pop();
-                                    //calculate the first limit so we can keep going down the list
-                                    lim1 = evaluate(__.Limit.limit(f, x, lim));
-                                    //reduces all the limits one at a time
-                                    while(symbols.length) {
-                                        //get the second limit
-                                        var g = symbols.pop();
-                                        //get the limit of g
-                                        lim2 = evaluate(__.Limit.limit(g, x, lim));
-                                        
-                                        //if the limit is in indeterminate form aplly L'Hospital by inverting g and then f/(1/g)
-                                        if((lim1.isInfinity || !__.Limit.isConvergent(lim1) && lim2.equals(0) || lim1.equals(0) && __.Limit.isConvergent(lim2))) { 
-                                            //invert the symbol
-                                            g.invert();
-                                            lim1 = __.Limit.divide(f, g, x, lim, 'from divide');
-                                        }
-                                        else {
-                                            //lim f*g = (lim f)*(lim g)
-                                            lim1 = _.multiply(lim1, lim2);
-                                            //let f*g equal f and h equal g 
-                                            f = _.multiply(f, g);
-                                        }
+                                    symbol = _.expand(symbol);
+                                    //if the group no longer is CB then feed it back to this function
+                                    if(symbol.group !== CB) {
+                                        retval = __.Limit.limit(symbol, x, lim);
                                     }
-                                    //Done, lim1 is the limit we're looking for     
-                                    retval = lim1;
+                                    else {
+                                        var lim1, lim2;
+                                        //loop through all the symbols
+                                        //thus => lim f*g*h = lim (f*g)*h = (lim f*g)*(lim h)
+                                        //symbols of lower groups are generally easier to differentiatee so get them to the right by first sorting
+                                        var symbols = symbol.collectSymbols().sort(function(a, b) {
+                                            return a.group - b.group;
+                                        });
+                                        var f = symbols.pop();
+                                        //calculate the first limit so we can keep going down the list
+                                        lim1 = evaluate(__.Limit.limit(f, x, lim));
+                                        //reduces all the limits one at a time
+                                        while(symbols.length) {
+                                            //get the second limit
+                                            var g = symbols.pop();
+                                            //get the limit of g
+                                            lim2 = evaluate(__.Limit.limit(g, x, lim));
+
+                                            //if the limit is in indeterminate form aplly L'Hospital by inverting g and then f/(1/g)
+                                            if((lim1.isInfinity || !__.Limit.isConvergent(lim1) && lim2.equals(0) || lim1.equals(0) && __.Limit.isConvergent(lim2))) { 
+                                                //invert the symbol
+                                                g.invert();
+                                                lim1 = __.Limit.divide(f, g, x, lim);
+                                            }
+                                            else {
+                                                //lim f*g = (lim f)*(lim g)
+                                                lim1 = _.multiply(lim1, lim2);
+                                                //let f*g equal f and h equal g 
+                                                f = _.multiply(f, g);
+                                            }
+                                        }
+                                        //Done, lim1 is the limit we're looking for     
+                                        retval = lim1;
+                                    }
                                 }
                                 else if(symbol.isComposite()) { 
+                                    var original = symbol.clone();
+                                    var _lim;
                                     if(!symbol.isLinear())
                                         symbol = _.expand(symbol);
                                     //Apply lim f+g = (lim f)+(lim g)
@@ -2189,12 +2234,21 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     symbol.each(function(sym) {
                                         //If the addition of the limits is undefined then the limit diverges so return -infinity to infinity
                                         try {
-                                            retval = _.add(retval, __.Limit.limit(sym, x, lim));
+                                            _lim = __.Limit.limit(sym, x, lim);
+                                            
                                         }
                                         catch(e) {
-                                            if(e instanceof core.exceptions.UndefinedError) {
-                                                retval = divergent();
-                                            }
+                                            _lim = __.Limit.diverges();
+                                        }
+                                        
+                                        try {
+                                            retval = _.add(retval, _lim);
+                                        }
+                                        catch(e) {
+                                            //rewrite the function to have a common denominator. 
+                                            //TODO: This is soooo slow at the moment.
+                                            symbol = core.Utils.toCommonDenominator(original);
+                                            retval = __.Limit.limit(symbol, x, lim);
                                         }
                                     });
                                 } 

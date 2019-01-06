@@ -223,6 +223,10 @@ describe('calculus', function () {
             {
                 given: 'defint(log(x+1), -1, 1, x)',
                 expected: '-0.6137056388801095'
+            },
+            {
+                given: 'defint(log(x), 0, 1, x)',
+                expected: '-1'
             }
         ];
 
