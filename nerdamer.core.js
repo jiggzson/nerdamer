@@ -5608,8 +5608,26 @@ var nerdamer = (function(imports) {
                 retval = bigConvert(retval);
                 return retval;
             }
-            else if(symbol.equals(1/2))
-                return _.parse('sqrt(pi)/2');
+            else if(symbol.isConstant()){
+                var den = symbol.getDenom();
+                if(den.equals(2)) {
+                    var num = symbol.getNum();
+                    var a, b, c, n;
+                    
+                    if(!symbol.multiplier.isNegative()) {
+                        n = _.add(num, new Symbol(1)).multiplier.divide(new Frac(2));
+                        a = Math2.bigfactorial(new Frac(2).multiply(n));
+                        b = _.pow(new Symbol(4), new Symbol(n)).multiplier.multiply(Math2.bigfactorial(n));
+                    }
+                    else {
+                        n = _.subtract(num.negate(), new Symbol(1)).multiplier.divide(new Frac(2));
+                        a = _.pow(new Symbol(-4), new Symbol(n)).multiplier.multiply(Math2.bigfactorial(n));
+                        b = Math2.bigfactorial(new Frac(2).multiply(n));
+                    }
+                    c = a.divide(b);
+                    return _.multiply(_.parse('sqrt(pi)'), new Symbol(c));
+                }
+            }
             return _.symfunction(FACTORIAL, [symbol]);
         };
         /**

@@ -676,6 +676,43 @@ describe('Nerdamer core', function () {
             expect(value).toEqual(testCases[i].expectedValue);
         }
     });   
+    it('should compute symbolic factorials', function () {
+        // given
+       var testCases = [
+           {
+               given: '(-1/2)!',
+               expected: 'sqrt(pi)'
+           },
+           {
+               given: '(-7/2)!',
+               expected: '(-8/15)*sqrt(pi)'
+           },
+           {
+               given: '(-9/2)!',
+               expected: '(16/105)*sqrt(pi)'
+           },
+           {
+               given: '(9/2)!',
+               expected: '(945/32)*sqrt(pi)'
+           },
+           {
+               given: '(7/2)!',
+               expected: '(105/16)*sqrt(pi)'
+           },
+           {
+               given: '(1/2)!',
+               expected: '(1/2)*sqrt(pi)'
+           }
+       ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given);
+
+            // then
+            expect(parsed.toString()).toEqual(testCases[i].expected);
+        }
+    });   
     it('should handle square roots', function () {
         // given
         var testCases = [
