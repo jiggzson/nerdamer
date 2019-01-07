@@ -1934,6 +1934,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }, false);
         },
         defint: function(symbol, from, to, dx) {
+            dx = dx || 'x'; //make x the default variable of integration
             var get_value = function(integral, vars, point) {
                 try {
                     return _.parse(integral, vars);
