@@ -2106,13 +2106,26 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             if(den.isConstant(true)) {
                                 //We still don't have a limit so we generate tests.
                                 if(symbol.group === EX) {
-                                    var symbol_ = __.Limit.rewriteToLog(symbol.clone());
-                                    //get the base
-                                    var pow = symbol_.power.clone();
-                                    var base = symbol_.clone().toLinear();
-                                    var lim_base = __.Limit.limit(base, x, lim);
-                                    var lim_pow = __.Limit.limit(pow, x, lim);
-                                    retval = _.pow(lim_base, lim_pow);
+                                    //https://en.wikipedia.org/wiki/List_of_limits
+                                    //Speed boost for exponentials by detecting patterns
+                                    var f = symbol.clone().toLinear();
+                                    var p = symbol.power.clone();
+                                    var _num = f.getNum();
+                                    var _den = f.getDenom();
+                                    var fn = core.Utils.decompose_fn(_den, x, true);
+                                    //start detection of pattern (x/(x+1))^x
+                                    if(_num.group === S && _num.multiplier.isOne() && fn.ax.group === S && fn.b.isConstant(true) && fn.a.isOne() && fn.b.isConstant(true)) {
+                                        retval = _.parse(format('(1/e^({0}))', fn.b));
+                                    }
+                                    else {
+                                        var symbol_ = __.Limit.rewriteToLog(symbol.clone());
+                                        //get the base
+                                        var pow = symbol_.power.clone();
+                                        var base = symbol_.clone().toLinear();
+                                        var lim_base = __.Limit.limit(base, x, lim);
+                                        var lim_pow = __.Limit.limit(pow, x, lim);
+                                        retval = _.pow(lim_base, lim_pow);
+                                    }
                                 }
                                 else if(symbol.group === FN && symbol.args.length === 1 ) {
                                     

@@ -619,6 +619,7 @@ var nerdamer = (function(imports) {
      * @param {bool} as_obj
      */
     var decompose_fn = function(fn, wrt, as_obj) { 
+        wrt = String(wrt); //convert to string
         var ax, a, x, b;
         if(fn.group === CP) {
             var t = _.expand(fn.clone()).stripVar(wrt); 
