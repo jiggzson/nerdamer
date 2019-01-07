@@ -1518,6 +1518,39 @@ var nerdamer = (function(imports) {
             while(dk.abs().gte(e))
 
             return xk;
+        },
+        //https://gist.github.com/jiggzson/0c5b33cbcd7b52b36132b1e96573285f
+        //Just the square root function but big :)
+        sqrt: function(n) {
+            if(!(n instanceof Frac))
+                n = new Frac(n);
+            var xn, d, ld, same_delta;
+            var c = 0; //counter
+            var done = false; 
+            var delta = new Frac(1e-20);
+            xn = n.divide(new Frac(2));
+            var safety = 1000;
+            do {
+                //break if we're not converging
+                if(c > safety)
+                    throw new Error('Unable to calculate square root for '+n);
+                xn = xn.add(n.divide(xn)).divide(new Frac(2));
+                xn = new Frac(xn.decimal(30));
+                //get the difference from the true square
+                d = n.subtract(xn.multiply(xn));
+                //if the square of the calculated number is close enough to the number
+                //we're getting the square root or the last delta was the same as the new delta
+                //then we're done
+                same_delta = ld ? ld.equals(d) : false;
+                if(d.clone().abs().lessThan(delta) || same_delta)
+                    done = true;
+                //store the calculated delta
+                ld = d; 
+                c++; //increase the counter
+            }
+            while(!done)
+
+            return xn;
         }
     };
     //link the Math2 object to Settings.FUNCTION_MODULES
@@ -2175,43 +2208,46 @@ var nerdamer = (function(imports) {
             m.den = new bigInt(this.den);
             return m;
         },
+        decimal: function(prec) {
+            var sign = this.num.isNegative() ? '-' : '';
+            if(this.num.equals(this.den)) {
+                return '1';
+            }
+            //go plus one for rounding
+            prec = prec || Settings.PRECISION;
+            prec++;
+            var narr = [], 
+                n = this.num.abs(),
+                d = this.den;
+            for(var i=0; i<prec; i++) {
+                var w = n.divide(d), //divide out whole
+                    r = n.subtract(w.multiply(d)); //get remainder
+
+                narr.push(w);    
+                if(r.equals(0))
+                        break;
+                n = r.times(10); //shift one dec place
+            }
+            var whole = narr.shift();
+            if(narr.length === 0) { 
+                return sign+whole.toString();
+            }
+
+            if(i === prec) {
+                var lt = [];
+                //get the last two so we can round it
+                for(var i=0; i<2; i++)
+                    lt.unshift(narr.pop());
+                //put the last digit back by rounding the last two
+                narr.push(Math.round(lt.join('.')));
+            }
+
+            var dec = whole.toString()+'.'+narr.join('');
+            return sign+dec;
+        },
         toDecimal: function(prec) { 
             if(prec || Settings.PRECISION) { 
-                var sign = this.num.isNegative() ? '-' : '';
-                if(this.num.equals(this.den)) {
-                    return '1';
-                }
-                //go plus one for rounding
-                prec = prec || Settings.PRECISION;
-                prec++;
-                var narr = [], 
-                    n = this.num.abs(),
-                    d = this.den;
-                for(var i=0; i<prec; i++) {
-                    var w = n.divide(d), //divide out whole
-                        r = n.subtract(w.multiply(d)); //get remainder
-
-                    narr.push(w);    
-                    if(r.equals(0))
-                            break;
-                    n = r.times(10); //shift one dec place
-                }
-                var whole = narr.shift();
-                if(narr.length === 0) { 
-                    return sign+whole.toString();
-                }
-
-                if(i === prec) {
-                    var lt = [];
-                    //get the last two so we can round it
-                    for(var i=0; i<2; i++)
-                        lt.unshift(narr.pop());
-                    //put the last digit back by rounding the last two
-                    narr.push(Math.round(lt.join('.')));
-                }
-
-                var dec = whole.toString()+'.'+narr.join('');
-                return sign+dec;
+                return this.decimal(prec);
             }
             else
                 return this.num/this.den;

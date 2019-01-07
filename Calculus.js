@@ -2031,6 +2031,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     else
                         retval = _.divide(lim1, lim2);
                 }
+                
                 return retval;
             },
             rewriteToLog: function(symbol) {
@@ -2206,7 +2207,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             var g = symbols.pop();
                                             //get the limit of g
                                             lim2 = evaluate(__.Limit.limit(g, x, lim));
-
                                             //if the limit is in indeterminate form aplly L'Hospital by inverting g and then f/(1/g)
                                             if((lim1.isInfinity || !__.Limit.isConvergent(lim1) && lim2.equals(0) || lim1.equals(0) && __.Limit.isConvergent(lim2))) { 
                                                 //invert the symbol
