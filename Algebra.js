@@ -2100,6 +2100,7 @@ if((typeof module) !== 'undefined') {
                     var p = symbol.power.clone();
                     
                     if(isInt(p) && !(p.lessThan(0) && symbol.group === FN)) { 
+                        var sign = p.sign();
                         symbol.toLinear();
                         factors = factors || new Factors();
                         var map = {};
@@ -2130,10 +2131,22 @@ if((typeof module) !== 'undefined') {
                                 return _.pow(_.parse(symbol, core.Utils.getFunctionsSubs(map)), _.parse(p));
                         }
                         //factor the coefficients
-                        symbol = __.Factor.coeffFactor(symbol, factors);
+                        var coeff_factors = new Factors();
+                        symbol = __.Factor.coeffFactor(symbol, coeff_factors);
+                        coeff_factors.each(function(x) {
+                            if(sign < 0)
+                                x.invert();
+                            factors.add(x);
+                        });
                         //factor the power
-                        symbol = __.Factor.powerFactor(symbol, factors);       
-                        if(vars.length === 1) { 
+                        var power_factors = new Factors();
+                        symbol = __.Factor.powerFactor(symbol, power_factors);  
+                        power_factors.each(function(x) {
+                            if(sign < 0)
+                                x.invert();
+                            factors.add(x);
+                        });
+                        if(!multiVar) { 
                             symbol = __.Factor.squareFree(symbol, factors);
                             var t_factors = new Factors();
                             symbol = __.Factor.trialAndError(symbol, t_factors);
@@ -2143,6 +2156,11 @@ if((typeof module) !== 'undefined') {
                         }
                         else {
                             symbol = __.Factor.mfactor(symbol, factors);
+                            //put back the sign of power
+                            factors.each(function(x) {
+                                if(sign < 0)
+                                    x.power.negate();
+                            });
                         }
                         
                         symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));

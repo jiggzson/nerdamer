@@ -196,7 +196,7 @@ var nerdamer = (function(imports) {
      */
     var warn = function(msg) {
         WARNINGS.push(msg);
-        if(!Settings.SILENCE_WARNINGS && console && console.warn) {
+        if(Settings.SHOW_WARNINGS && console && console.warn) {
             console.warn(msg);
         }
     };
@@ -619,6 +619,7 @@ var nerdamer = (function(imports) {
      * @param {bool} as_obj
      */
     var decompose_fn = function(fn, wrt, as_obj) { 
+        wrt = String(wrt); //convert to string
         var ax, a, x, b;
         if(fn.group === CP) {
             var t = _.expand(fn.clone()).stripVar(wrt); 
@@ -846,10 +847,11 @@ var nerdamer = (function(imports) {
     /**
      * As the name states. It forces evaluation of the expression 
      * @param {Symbol} symbol
+     * @param {Symbol} o
      */
-    var evaluate = function (symbol) {
+    var evaluate = function (symbol, o) {
         return block('PARSE2NUMBER', function() {
-            return _.parse(symbol);
+            return _.parse(symbol, o);
         }, true);
     };
     
@@ -974,6 +976,70 @@ var nerdamer = (function(imports) {
                 );
             return x >= 0 ? result : -result;
         },
+        /*
+         * Reverses continued fraction calculation
+         * @param {obj} contd
+         * @returns {Number}
+         */
+        fromContinued: function(contd) {
+            var arr = contd.fractions.slice();
+            var e = 1/arr.pop();
+            for(var i=0, l=arr.length; i<l; i++) {
+                e = 1/(arr.pop()+e);
+            }
+            return contd.sign*(contd.whole+e);
+        },
+        /*
+         * Calculates continued fractions
+         * @param {Number} n
+         * @param {Number} x The number of places
+         * @returns {Number}
+         */
+        continuedFraction: function(n, x) {
+            x = x || 20;
+            var sign = Math.sign(n); //store the sign
+            var absn = Math.abs(n); //get the absolute value of the number
+            var whole = Math.floor(absn); //get the whole
+            var ni = absn-whole; //subtract the whole
+            var c = 0; //the counter to keep track of iterations
+            var done = false;
+            var epsilon = 1e-14;
+            var max = 1e7;
+            var e, w;
+            var retval = {
+                whole: whole,
+                sign: sign,
+                fractions: []
+            };
+            //start calculating
+            while(!done && ni !== 0) {
+                //invert and get the whole
+                e = 1/ni;
+                w = Math.floor(e);
+                if(w > max) {
+                    //this signals that we may have already gone too far
+                    var d = Math2.fromContinued(retval)-n;
+                    if(d <= Number.EPSILON) 
+                        break;
+                }
+                //add to result
+                retval.fractions.push(w);
+                //move the ni to the decimal
+                ni = e-w;
+                //ni should always be a decimal. If we have a whole number then we're in the rounding errors
+                if(ni <= epsilon || c >= x-1)
+                    done = true;
+                c++;
+            }
+            //cleanup 1/(n+1/1) = 1/(n+1) so just move the last digit one over if it's one
+            var idx = retval.fractions.length-1;
+            if(retval.fractions[idx] === 1) {
+                retval.fractions.pop();
+                //increase the last one by one
+                retval.fractions[--idx]++;
+            }
+            return retval;
+        },
         bigpow: function(n, p) { 
             if(!(n instanceof Frac))
                 n = Frac.create(n);
@@ -1057,19 +1123,27 @@ var nerdamer = (function(imports) {
             return retval;
         },
         //double factorial
+        //http://mathworld.wolfram.com/DoubleFactorial.html
         dfactorial: function(x) {
-            var even = x % 2 === 0;
-            // If x = even then n = x/2 else n = (x-1)/2
-            var n = even ? x/2 : (x+1)/2; 
-            //the return value
-            var r = new Frac(1);
-            //start the loop
-            if(even)
-                for(var i=1; i<=n; i++)
-                    r = r.multiply(new Frac(2).multiply(new Frac(i)));
-            else
-                for(var i=1; i<=n; i++)
-                    r = r.multiply(new Frac(2).multiply(new Frac(i)).subtract(new Frac(1)));
+            if(isInt(x)) {
+                var even = x % 2 === 0;
+                // If x = even then n = x/2 else n = (x-1)/2
+                var n = even ? x/2 : (x+1)/2; 
+                //the return value
+                var r = new Frac(1);
+                //start the loop
+                if(even)
+                    for(var i=1; i<=n; i++)
+                        r = r.multiply(new Frac(2).multiply(new Frac(i)));
+                else
+                    for(var i=1; i<=n; i++)
+                        r = r.multiply(new Frac(2).multiply(new Frac(i)).subtract(new Frac(1)));
+            }
+            else {
+                //Not yet extended to bigNum
+                r = Math.pow(2, (1+2*x-Math.cos(Math.PI*x))/4)*Math.pow(Math.PI, (Math.cos(Math.PI*x)-1)/4)*Math2.gamma(1+x/2);
+            }
+                
             //done
             return r;
         },
@@ -1255,6 +1329,11 @@ var nerdamer = (function(imports) {
         mod: function(x, y) {
             return x % y;
         },
+        //http://mathworld.wolfram.com/IntegerPart.html
+        integer_part: function(x) {
+            var sign = Math.sign(x);
+            return sign*Math.floor(Math.abs(x));
+        },
         /**
          * https://github.com/scijs/integrate-adaptive-simpson
          * @param {Function} f - the function being integrated
@@ -1407,6 +1486,10 @@ var nerdamer = (function(imports) {
             };
             return Math.log(x)+g+Math2.num_integrate(f, 0.002, x, dx);
         },
+        //the log integral
+        Li: function(x) {
+            return Math2.Ei(Math2.bigLog(x));
+        },
         //the gamma incomplete function
         gamma_incomplete: function(n, x) {
             var t = n-1,
@@ -1500,6 +1583,39 @@ var nerdamer = (function(imports) {
             while(dk.abs().gte(e))
 
             return xk;
+        },
+        //https://gist.github.com/jiggzson/0c5b33cbcd7b52b36132b1e96573285f
+        //Just the square root function but big :)
+        sqrt: function(n) {
+            if(!(n instanceof Frac))
+                n = new Frac(n);
+            var xn, d, ld, same_delta;
+            var c = 0; //counter
+            var done = false; 
+            var delta = new Frac(1e-20);
+            xn = n.divide(new Frac(2));
+            var safety = 1000;
+            do {
+                //break if we're not converging
+                if(c > safety)
+                    throw new Error('Unable to calculate square root for '+n);
+                xn = xn.add(n.divide(xn)).divide(new Frac(2));
+                xn = new Frac(xn.decimal(30));
+                //get the difference from the true square
+                d = n.subtract(xn.multiply(xn));
+                //if the square of the calculated number is close enough to the number
+                //we're getting the square root or the last delta was the same as the new delta
+                //then we're done
+                same_delta = ld ? ld.equals(d) : false;
+                if(d.clone().abs().lessThan(delta) || same_delta)
+                    done = true;
+                //store the calculated delta
+                ld = d; 
+                c++; //increase the counter
+            }
+            while(!done)
+
+            return xn;
         }
     };
     //link the Math2 object to Settings.FUNCTION_MODULES
@@ -2157,43 +2273,46 @@ var nerdamer = (function(imports) {
             m.den = new bigInt(this.den);
             return m;
         },
+        decimal: function(prec) {
+            var sign = this.num.isNegative() ? '-' : '';
+            if(this.num.equals(this.den)) {
+                return '1';
+            }
+            //go plus one for rounding
+            prec = prec || Settings.PRECISION;
+            prec++;
+            var narr = [], 
+                n = this.num.abs(),
+                d = this.den;
+            for(var i=0; i<prec; i++) {
+                var w = n.divide(d), //divide out whole
+                    r = n.subtract(w.multiply(d)); //get remainder
+
+                narr.push(w);    
+                if(r.equals(0))
+                        break;
+                n = r.times(10); //shift one dec place
+            }
+            var whole = narr.shift();
+            if(narr.length === 0) { 
+                return sign+whole.toString();
+            }
+
+            if(i === prec) {
+                var lt = [];
+                //get the last two so we can round it
+                for(var i=0; i<2; i++)
+                    lt.unshift(narr.pop());
+                //put the last digit back by rounding the last two
+                narr.push(Math.round(lt.join('.')));
+            }
+
+            var dec = whole.toString()+'.'+narr.join('');
+            return sign+dec;
+        },
         toDecimal: function(prec) { 
             if(prec || Settings.PRECISION) { 
-                var sign = this.num.isNegative() ? '-' : '';
-                if(this.num.equals(this.den)) {
-                    return '1';
-                }
-                //go plus one for rounding
-                prec = prec || Settings.PRECISION;
-                prec++;
-                var narr = [], 
-                    n = this.num.abs(),
-                    d = this.den;
-                for(var i=0; i<prec; i++) {
-                    var w = n.divide(d), //divide out whole
-                        r = n.subtract(w.multiply(d)); //get remainder
-
-                    narr.push(w);    
-                    if(r.equals(0))
-                            break;
-                    n = r.times(10); //shift one dec place
-                }
-                var whole = narr.shift();
-                if(narr.length === 0) { 
-                    return sign+whole.toString();
-                }
-
-                if(i === prec) {
-                    var lt = [];
-                    //get the last two so we can round it
-                    for(var i=0; i<2; i++)
-                        lt.unshift(narr.pop());
-                    //put the last digit back by rounding the last two
-                    narr.push(Math.round(lt.join('.')));
-                }
-
-                var dec = whole.toString()+'.'+narr.join('');
-                return sign+dec;
+                return this.decimal(prec);
             }
             else
                 return this.num/this.den;
@@ -2241,10 +2360,14 @@ var nerdamer = (function(imports) {
         },
         invert: function() { 
             var t = this.den;
-            var isnegative = this.num.isNegative();
-            this.den = this.num.abs();
-            this.num = t;
-            if(isnegative) this.num = this.num.multiply(-1);
+            //why invert 0/1? It'll become 1/0 and that's a lie.
+            if(!this.num.equals(0)) {
+                var isnegative = this.num.isNegative();
+                this.den = this.num.abs();
+                this.num = t;
+                if(isnegative) this.num = this.num.multiply(-1);
+            }
+                
             return this;
         },
         isOne: function() {
@@ -2320,10 +2443,14 @@ var nerdamer = (function(imports) {
     };
     /**
      * Return nerdamer's representation of Infinity
+     * @param {int} negative -1 to return negative infinity 
      * @returns {Symbol} 
      */
-    Symbol.infinity = function() {
-        return new Symbol('Infinity');
+    Symbol.infinity = function(negative) {
+        var v = new Symbol('Infinity');
+        if(negative === -1)
+            v.negate();
+        return v;
     }; 
     Symbol.shell = function(group, value) { 
         var symbol = new Symbol(value);
@@ -2490,7 +2617,7 @@ var nerdamer = (function(imports) {
                 for(var x in this.symbols) {
                     var sym = this.symbols[x];
                     //sqrt(x)
-                    if(sym.group === FN && sym.fname === SQRT && !sym.args[0].isConstant())
+                    if(sym.group === FN && !sym.args[0].isConstant())
                         return false;
                     if(!sym.contains(v) && !sym.isConstant(true))
                         return false;
@@ -2555,7 +2682,14 @@ var nerdamer = (function(imports) {
             else if(this.group === FN && this.contains(x)) {
                 retval = new Symbol(this.multiplier);
             }
-            else retval = this.clone();
+            else 
+                //wth? This should technically be the multiplier. 
+                //Unfortunately this method wasn't very well thought out :`(.   
+                //should be: retval = new Symbol(this.multiplier);
+                //use: ((1+x^2)*sqrt(-1+x^2))^(-1) for correction.
+                //this will break a bunch of unit tests so be ready to for the long haul
+                retval = this.clone();
+    
             
             return retval;
         },
@@ -2735,7 +2869,7 @@ var nerdamer = (function(imports) {
                 return true;
             if(check_all && this.group === FN) {
                 for(var i=0; i<this.args.length; i++) {
-                    if(!this.args[i].isConstant())
+                    if(!this.args[i].isConstant(check_all))
                         return false;
                 }
                 return true;
@@ -2986,9 +3120,13 @@ var nerdamer = (function(imports) {
          * which aren't check by default.
          * @example var s = _.parse('x+y+z'); s.contains('y');
          * //returns true
+         * @param {any} variable 
+         * @param {boolean} all 
          * @returns {boolean}
          */
         contains: function(variable, all) { 
+            //contains expects a string
+            variable = String(variable);
             var g = this.group; 
             if(this.value === variable)
                 return true;
@@ -3431,17 +3569,19 @@ var nerdamer = (function(imports) {
                 symbol = _.expand(symbol);
             //if the symbol already is the denominator... DONE!!!
             if(symbol.power.greaterThan(0) && symbol.group !== CB) {
-                retval = _.parse(symbol.multiplier.num);
-                retval = _.multiply(retval, symbol.toUnitMultiplier()); 
+                retval = _.multiply(_.parse(symbol.multiplier.num), symbol.toUnitMultiplier()); 
             }
             else if(symbol.group === CB) {
                 retval = _.parse(symbol.multiplier.num);
-                for(var x in symbol.symbols) 
-                    if(symbol.symbols[x].power > 0) 
-                        retval = _.multiply(retval, symbol.symbols[x].clone());
+                symbol.each(function(x) {
+                    if(x.power > 0 || x.group === EX && x.power.multiplier > 0) {
+                        retval = _.multiply(retval, x.clone());
+                    }
+                });
             }
-            else
+            else {
                 retval = _.parse(symbol.multiplier.num);
+            }
             return retval;
         },
         toString: function() {
@@ -4468,9 +4608,11 @@ var nerdamer = (function(imports) {
                 'Ei'                : [ , 1],
                 'Shi'               : [ , 1],
                 'Chi'               : [ , 1],
+                'Li'                : [ , 1],
                 'fib'               : [ , 1],
                 'fact'              : [factorial, 1],
                 'factorial'         : [factorial, 1],
+                'continued_fraction': [continued_fraction, [1,2]],
                 'dfactorial'        : [ , 1],
                 'gamma_incomplete'  : [ , [1, 2]],
                 'round'             : [ round, [1, 2]],
@@ -4508,6 +4650,7 @@ var nerdamer = (function(imports) {
                 'polarform'         : [ polarform, 1],
                 'rectform'          : [ rectform, 1],
                 'sort'              : [ sort, [1, 2]],
+                'integer_part'      : [, 1]
             };
         //error handler
         this.error = err;
@@ -4657,9 +4800,28 @@ var nerdamer = (function(imports) {
         /**
          * Replaces nerdamer.setOperator
          * @param {object} operator
+         * @param {boolean} shift         
          */
-        this.setOperator = function(operator) {
-            operators[operator.operator] = operator;
+        this.setOperator = function(operator, shift) {
+            var name = operator.operator; //take the name to be the symbol
+            operators[name] = operator;
+            //make the parser aware of the operator
+            _[name] = operator.operation;
+            //make the action available to the parser if infix
+            if(!(operator.prefix || operator.postif)) {
+                operator.action = name;
+            }
+            //if this operator is exclusive then all successive operators should be shifted
+            if(shift === 'over' || shift === 'under') {
+                var precedence = operator.precedence;
+                
+                for(var x in operators) {
+                    var o = operators[x];
+                    var condition = shift === 'over' ? o.precedence >= precedence : o.precedence > precedence;
+                    if(condition)
+                        o.precedence++;
+                };
+            }
         };
         
         /**
@@ -5306,12 +5468,15 @@ var nerdamer = (function(imports) {
                         output.push(f);
                     }
                     else if(token.type === Token.OPERATOR) { 
-                        output.push(v)
+                        output.push(v);
+                    }
+                    else {
+                        output.push(token);
                     }
                 }
 
                 return output;
-            }
+            };
             return objectify(_.tokenize(expression_string));
         };
         //helper method for toTeX
@@ -5337,14 +5502,17 @@ var nerdamer = (function(imports) {
         /*
          * Convert expression or object to LaTeX
          * @param {String} expression_or_obj
+         * @param {object} opt
          * @returns {String}
          */
-        this.toTeX = function(expression_or_obj) { 
+        this.toTeX = function(expression_or_obj, opt) { 
+            opt = opt || {};
             var obj = typeof expression_or_obj === 'string' ? this.toObject(expression_or_obj) : expression_or_obj,
-                TeX = [];
+                TeX = [],
+                cdot = typeof opt.cdot === 'undefined' ? '\\cdot' : opt.cdot; //set omit cdot to true by default
 
             if(isArray(obj)) { 
-                var nobj = [], a, b, c;
+                var nobj = [], a, b;
                 //first handle ^
                 for(var i=0; i<obj.length; i++) {
                     a = obj[i];
@@ -5363,8 +5531,9 @@ var nerdamer = (function(imports) {
             for(var i=0, l=obj.length; i<l; i++) {
                 var e = obj[i];
                 //convert * to cdot
-                if(e === '*')
-                    e = '\\cdot';
+                if(e === '*') {
+                    e = cdot;
+                }
                 
                 if(isSymbol(e)) {
                     if(e.group === FN) {
@@ -5497,7 +5666,7 @@ var nerdamer = (function(imports) {
             return _.symfunction(ABS, [symbol]);
         }
         /**
-         * The factorial functions
+         * The factorial function
          * @param {Symbol} symbol
          * @return {Symbol}
          */
@@ -5530,9 +5699,45 @@ var nerdamer = (function(imports) {
                 retval = bigConvert(retval);
                 return retval;
             }
-            else if(symbol.equals(1/2))
-                return _.parse('sqrt(pi)/2');
+            else if(symbol.isConstant()){
+                var den = symbol.getDenom();
+                if(den.equals(2)) {
+                    var num = symbol.getNum();
+                    var a, b, c, n;
+                    
+                    if(!symbol.multiplier.isNegative()) {
+                        n = _.add(num, new Symbol(1)).multiplier.divide(new Frac(2));
+                        a = Math2.bigfactorial(new Frac(2).multiply(n));
+                        b = _.pow(new Symbol(4), new Symbol(n)).multiplier.multiply(Math2.bigfactorial(n));
+                    }
+                    else {
+                        n = _.subtract(num.negate(), new Symbol(1)).multiplier.divide(new Frac(2));
+                        a = _.pow(new Symbol(-4), new Symbol(n)).multiplier.multiply(Math2.bigfactorial(n));
+                        b = Math2.bigfactorial(new Frac(2).multiply(n));
+                    }
+                    c = a.divide(b);
+                    return _.multiply(_.parse('sqrt(pi)'), new Symbol(c));
+                }
+            }
             return _.symfunction(FACTORIAL, [symbol]);
+        };
+        /**
+         * Returns the continued fraction of a number
+         * @param {Symbol} symbol
+         * @param {Symbol} n
+         * @returns {Symbol}
+         */
+        function continued_fraction(symbol, n) {
+            var _symbol = evaluate(symbol);
+            if(_symbol.isConstant()) {
+                var cf = Math2.continuedFraction(symbol, n);
+                //convert the fractions array to a new Vector
+                var fractions = Vector.fromArray(cf.fractions.map(function(x) {
+                    return new Symbol(x);
+                }));
+                return Vector.fromArray([new Symbol(cf.sign), new Symbol(cf.whole), fractions]);
+            }
+            return _.symfunction('continued_fraction', arguments);
         };
         /**
          * The mod function
@@ -5696,7 +5901,7 @@ var nerdamer = (function(imports) {
                             var w = (p-rem)/2; //get the whole numbers of n/2
                             r[i] = _.multiply(r[i], _.pow(b, new Symbol(w)));
                             sq[i] = _.multiply(sq[i], sqrt(_.pow(b, new Symbol(rem))));
-                        })
+                        });
                     }
                     m = _.divide(_.multiply(r[0], sq[0]), _.multiply(r[1], sq[1]));
                 }
@@ -7289,7 +7494,8 @@ var nerdamer = (function(imports) {
                     
                 var aIsZero = a.equals(0);
                 var bIsZero = b.equals(0);
-                if(aIsZero && bIsZero) err('0^0 is undefined!');
+                if(aIsZero && bIsZero) 
+                    throw new UndefinedError('0^0 is undefined!');
                 //return 0 right away if possible
                 if(aIsZero && b.isConstant() && b.multiplier.greaterThan(0))
                     return new Symbol(0);
@@ -7681,7 +7887,7 @@ var nerdamer = (function(imports) {
          * @param {number} dec
          * @returns {Array} - an array containing the denominator and the numerator
          */
-        fullConversion: function( dec ) {
+        fullConversion: function(dec) {
             var done = false;
             //you can adjust the epsilon to a larger number if you don't need very high precision
             var n1 = 0, d1 = 1, n2 = 1, d2 = 0, n = 0, q = dec, epsilon = 1e-16;
@@ -8931,10 +9137,11 @@ var nerdamer = (function(imports) {
     /**
      * Generates LaTeX from expression string
      * @param {String} e
+     * @param {object} opt
      * @returns {String}
      */
-    libExports.convertToLaTeX = function(e) {
-        return _.toTeX(e);
+    libExports.convertToLaTeX = function(e, opt) {
+        return _.toTeX(e, opt);
     };
     
     /**
@@ -9250,6 +9457,10 @@ var nerdamer = (function(imports) {
         var existing = _.functions[name];
         var new_num_args = typeof num_args === 'undefined' ? existing[1]: num_args;
         _.functions[name] = [fn.call(undefined, existing[0], C), new_num_args];
+    };
+    
+    libExports.setOperator = function(operator, shift) { 
+        _.setOperator(operator, shift);
     };
     
     libExports.api();

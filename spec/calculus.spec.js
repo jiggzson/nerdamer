@@ -219,6 +219,14 @@ describe('calculus', function () {
             {
                 given: 'defint(log(cos(x/2)),-π,π,x)',
                 expected: '-4.355172180607'
+            },
+            {
+                given: 'defint(log(x+1), -1, 1, x)',
+                expected: '-0.6137056388801095'
+            },
+            {
+                given: 'defint(log(x), 0, 1, x)',
+                expected: '-1'
             }
         ];
 
@@ -609,6 +617,14 @@ describe('calculus', function () {
             {
                 given: 'integrate(atan(x)/(2+2*x^2),x)',
                 expected: '(1/4)*atan(x)^2'
+            },
+            {
+                given: 'integrate(1/(sqrt(1-1/x^2)*x^2), x)',
+                expected: 'asin(sqrt(-x^(-2)+1))'
+            },
+            {
+                given: 'integrate(1/(sqrt(1-1/x^2)*x), x)',
+                expected: '(-1/2)*log(1+sqrt(-x^(-2)+1))+(1/2)*log(-1+sqrt(-x^(-2)+1))'
             },
         ];
 
