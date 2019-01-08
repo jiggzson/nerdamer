@@ -976,6 +976,70 @@ var nerdamer = (function(imports) {
                 );
             return x >= 0 ? result : -result;
         },
+        /*
+         * Reverses continued fraction calculation
+         * @param {obj} contd
+         * @returns {Number}
+         */
+        fromContinued: function(contd) {
+            var arr = contd.fractions.slice();
+            var e = 1/arr.pop();
+            for(var i=0, l=arr.length; i<l; i++) {
+                e = 1/(arr.pop()+e);
+            }
+            return contd.sign*(contd.whole+e);
+        },
+        /*
+         * Calculates continued fractions
+         * @param {Number} n
+         * @param {Number} x The number of places
+         * @returns {Number}
+         */
+        continuedFraction: function(n, x) {
+            x = x || 20;
+            var sign = Math.sign(n); //store the sign
+            var absn = Math.abs(n); //get the absolute value of the number
+            var whole = Math.floor(absn); //get the whole
+            var ni = absn-whole; //subtract the whole
+            var c = 0; //the counter to keep track of iterations
+            var done = false;
+            var epsilon = 1e-14;
+            var max = 1e7;
+            var e, w;
+            var retval = {
+                whole: whole,
+                sign: sign,
+                fractions: []
+            };
+            //start calculating
+            while(!done && ni !== 0) {
+                //invert and get the whole
+                e = 1/ni;
+                w = Math.floor(e);
+                if(w > max) {
+                    //this signals that we may have already gone too far
+                    var d = Math2.fromContinued(retval)-n;
+                    if(d <= Number.EPSILON) 
+                        break;
+                }
+                //add to result
+                retval.fractions.push(w);
+                //move the ni to the decimal
+                ni = e-w;
+                //ni should always be a decimal. If we have a whole number then we're in the rounding errors
+                if(ni <= epsilon || c >= x-1)
+                    done = true;
+                c++;
+            }
+            //cleanup 1/(n+1/1) = 1/(n+1) so just move the last digit one over if it's one
+            var idx = retval.fractions.length-1;
+            if(retval.fractions[idx] === 1) {
+                retval.fractions.pop();
+                //increase the last one by one
+                retval.fractions[--idx]++;
+            }
+            return retval;
+        },
         bigpow: function(n, p) { 
             if(!(n instanceof Frac))
                 n = Frac.create(n);
@@ -4548,6 +4612,7 @@ var nerdamer = (function(imports) {
                 'fib'               : [ , 1],
                 'fact'              : [factorial, 1],
                 'factorial'         : [factorial, 1],
+                'continued_fraction': [continued_fraction, [1,2]],
                 'dfactorial'        : [ , 1],
                 'gamma_incomplete'  : [ , [1, 2]],
                 'round'             : [ round, [1, 2]],
@@ -5575,7 +5640,7 @@ var nerdamer = (function(imports) {
             return _.symfunction(ABS, [symbol]);
         }
         /**
-         * The factorial functions
+         * The factorial function
          * @param {Symbol} symbol
          * @return {Symbol}
          */
@@ -5629,6 +5694,24 @@ var nerdamer = (function(imports) {
                 }
             }
             return _.symfunction(FACTORIAL, [symbol]);
+        };
+        /**
+         * Returns the continued fraction of a number
+         * @param {Symbol} symbol
+         * @param {Symbol} n
+         * @returns {Symbol}
+         */
+        function continued_fraction(symbol, n) {
+            var _symbol = evaluate(symbol);
+            if(_symbol.isConstant()) {
+                var cf = Math2.continuedFraction(symbol, n);
+                //convert the fractions array to a new Vector
+                var fractions = Vector.fromArray(cf.fractions.map(function(x) {
+                    return new Symbol(x);
+                }));
+                return Vector.fromArray([new Symbol(cf.sign), new Symbol(cf.whole), fractions]);
+            }
+            return _.symfunction('continued_fraction', arguments);
         };
         /**
          * The mod function
@@ -5792,7 +5875,7 @@ var nerdamer = (function(imports) {
                             var w = (p-rem)/2; //get the whole numbers of n/2
                             r[i] = _.multiply(r[i], _.pow(b, new Symbol(w)));
                             sq[i] = _.multiply(sq[i], sqrt(_.pow(b, new Symbol(rem))));
-                        })
+                        });
                     }
                     m = _.divide(_.multiply(r[0], sq[0]), _.multiply(r[1], sq[1]));
                 }
@@ -7778,7 +7861,7 @@ var nerdamer = (function(imports) {
          * @param {number} dec
          * @returns {Array} - an array containing the denominator and the numerator
          */
-        fullConversion: function( dec ) {
+        fullConversion: function(dec) {
             var done = false;
             //you can adjust the epsilon to a larger number if you don't need very high precision
             var n1 = 0, d1 = 1, n2 = 1, d2 = 0, n = 0, q = dec, epsilon = 1e-16;

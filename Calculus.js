@@ -18,6 +18,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     var core = nerdamer.getCore(),
         _ = core.PARSER,
         Frac = core.Frac,
+        Settings = core.Settings,
         isSymbol = core.Utils.isSymbol,
         FN = core.groups.FN,
         Symbol = core.Symbol,
@@ -2177,6 +2178,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 if(lim.isInfinity || pi.equals('pi') && d.equals(2)) {
                                                     retval = divergent();
                                                 }
+                                            }
+                                            else if(symbol.fname === Settings.FACTORIAL) {
+                                                if(arg.isInfinity)
+                                                    return Symbol.infinity();
                                             }
                                         }
                                     }

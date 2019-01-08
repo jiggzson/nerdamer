@@ -1161,6 +1161,27 @@ describe('Nerdamer core', function () {
             expect(value).toEqual(testCases[i].expected);
         }
     });
+    it('should support continued fractions', function () {
+        // given
+        var testCases = [
+            {
+                given: 'continued_fraction(2.145474, 11)',
+                expected: '[1,2,[6,1,6,1,16,8,2,1,3,2]]'
+            },
+            {
+                given: 'continued_fraction(-6/7)',
+                expected: '[-1,0,[1,6]]'
+            }
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            // when
+            var parsed = nerdamer(testCases[i].given);
+
+            // then
+            expect(parsed.toString()).toEqual(testCases[i].expected);
+        }
+    });
     /** #35 #76: Support multiple minus signs and brackets */
     it('should support prefix operator with parantheses', function () {
       // given
