@@ -4800,9 +4800,28 @@ var nerdamer = (function(imports) {
         /**
          * Replaces nerdamer.setOperator
          * @param {object} operator
+         * @param {boolean} shift         
          */
-        this.setOperator = function(operator) {
-            operators[operator.operator] = operator;
+        this.setOperator = function(operator, shift) {
+            var name = operator.operator; //take the name to be the symbol
+            operators[name] = operator;
+            //make the parser aware of the operator
+            _[name] = operator.operation;
+            //make the action available to the parser if infix
+            if(!(operator.prefix || operator.postif)) {
+                operator.action = name;
+            }
+            //if this operator is exclusive then all successive operators should be shifted
+            if(shift === 'over' || shift === 'under') {
+                var precedence = operator.precedence;
+                
+                for(var x in operators) {
+                    var o = operators[x];
+                    var condition = shift === 'over' ? o.precedence >= precedence : o.precedence > precedence;
+                    if(condition)
+                        o.precedence++;
+                };
+            }
         };
         
         /**
@@ -9440,6 +9459,10 @@ var nerdamer = (function(imports) {
         _.functions[name] = [fn.call(undefined, existing[0], C), new_num_args];
     };
     
+    libExports.setOperator = function(operator, shift) { 
+        _.setOperator(operator, shift);
+    };
+    
     libExports.api();
 
     return libExports; //Done
@@ -9455,4 +9478,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-

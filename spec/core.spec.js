@@ -319,6 +319,21 @@ describe('Nerdamer core', function () {
         for(var i=0; i<formulas.length; i++)
             expect(function (){ nerdamer(formulas[i]) }).toThrowError();
     });   
+    it('should set postfix operators correctly', function () {
+        var core = nerdamer.getCore();
+        var _ = core.PARSER;
+        var Symbol = core.Symbol;
+        nerdamer.setOperator({
+            precedence: 4,
+            operator: '°',
+            postfix: true,
+            operation: function(x){ 
+                return _.divide(_.multiply(x, new Symbol('pi')), new Symbol(180)); 
+            }
+        });
+        
+        expect(nerdamer('x+1°+π+x').toString()).toEqual('(181/180)*pi+2*x');
+    });  
     it('should correctly calculate Infinity', function () {
         // given
         var testCases = [
