@@ -5449,12 +5449,15 @@ var nerdamer = (function(imports) {
                         output.push(f);
                     }
                     else if(token.type === Token.OPERATOR) { 
-                        output.push(v)
+                        output.push(v);
+                    }
+                    else {
+                        output.push(token);
                     }
                 }
 
                 return output;
-            }
+            };
             return objectify(_.tokenize(expression_string));
         };
         //helper method for toTeX
@@ -5480,14 +5483,18 @@ var nerdamer = (function(imports) {
         /*
          * Convert expression or object to LaTeX
          * @param {String} expression_or_obj
+         * @param {object} opt
          * @returns {String}
          */
-        this.toTeX = function(expression_or_obj) { 
+        this.toTeX = function(expression_or_obj, opt) { 
+            opt = opt || {};
             var obj = typeof expression_or_obj === 'string' ? this.toObject(expression_or_obj) : expression_or_obj,
-                TeX = [];
+                TeX = [],
+                omit_cdot = !!opt.omitCdot,
+                space = opt.space || ''; //set omit cdot to true by default
 
             if(isArray(obj)) { 
-                var nobj = [], a, b, c;
+                var nobj = [], a, b;
                 //first handle ^
                 for(var i=0; i<obj.length; i++) {
                     a = obj[i];
@@ -5506,8 +5513,9 @@ var nerdamer = (function(imports) {
             for(var i=0, l=obj.length; i<l; i++) {
                 var e = obj[i];
                 //convert * to cdot
-                if(e === '*')
-                    e = '\\cdot';
+                if(e === '*') {
+                    e = omit_cdot ? space : '\\cdot';
+                }
                 
                 if(isSymbol(e)) {
                     if(e.group === FN) {
@@ -9111,10 +9119,11 @@ var nerdamer = (function(imports) {
     /**
      * Generates LaTeX from expression string
      * @param {String} e
+     * @param {object} opt
      * @returns {String}
      */
-    libExports.convertToLaTeX = function(e) {
-        return _.toTeX(e);
+    libExports.convertToLaTeX = function(e, opt) {
+        return _.toTeX(e, opt);
     };
     
     /**
