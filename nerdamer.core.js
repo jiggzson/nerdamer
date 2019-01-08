@@ -5490,8 +5490,7 @@ var nerdamer = (function(imports) {
             opt = opt || {};
             var obj = typeof expression_or_obj === 'string' ? this.toObject(expression_or_obj) : expression_or_obj,
                 TeX = [],
-                omit_cdot = !!opt.omitCdot,
-                cdot = opt.cdot || ''; //set omit cdot to true by default
+                cdot = typeof opt.cdot === 'undefined' ? '\\cdot' : opt.cdot; //set omit cdot to true by default
 
             if(isArray(obj)) { 
                 var nobj = [], a, b;
@@ -5514,7 +5513,7 @@ var nerdamer = (function(imports) {
                 var e = obj[i];
                 //convert * to cdot
                 if(e === '*') {
-                    e = omit_cdot ? cdot : '\\cdot';
+                    e = cdot;
                 }
                 
                 if(isSymbol(e)) {
