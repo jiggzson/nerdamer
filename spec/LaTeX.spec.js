@@ -279,7 +279,7 @@ describe('TeX features', function () {
         },
         {
           given: '2*(sqrt(3)+sqrt(2))',
-          expected: '2 \\cdot \\left(sqrt \\left(3\\right) + sqrt \\left(2\\right)\\right)'
+          expected: '2 \\cdot \\left(\\sqrt{3} + \\sqrt{2}\\right)'
         }
       ];
 

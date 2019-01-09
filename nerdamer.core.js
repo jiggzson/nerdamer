@@ -11,7 +11,7 @@ var nerdamer = (function(imports) {
     "use strict";
 
 //version ====================================================================== 
-    var version = '0.8.3';
+    var version = '0.8.4';
 
 //inits ========================================================================
     var  _ = new Parser(); //nerdamer's parser
@@ -5471,7 +5471,7 @@ var nerdamer = (function(imports) {
                         output.push(v);
                     }
                     else {
-                        output.push(token);
+                        output.push(objectify(token));
                     }
                 }
 
@@ -5616,7 +5616,7 @@ var nerdamer = (function(imports) {
                     else
                         TeX.push(LaTeX.latex(e));
                 }
-                else if(isArray(e)) { 
+                else if(isArray(e)) {
                     TeX.push(LaTeX.brackets(this.toTeX(e)));
                 }
                 else {
@@ -5730,7 +5730,7 @@ var nerdamer = (function(imports) {
         function continued_fraction(symbol, n) {
             var _symbol = evaluate(symbol);
             if(_symbol.isConstant()) {
-                var cf = Math2.continuedFraction(symbol, n);
+                var cf = Math2.continuedFraction(_symbol, n);
                 //convert the fractions array to a new Vector
                 var fractions = Vector.fromArray(cf.fractions.map(function(x) {
                     return new Symbol(x);

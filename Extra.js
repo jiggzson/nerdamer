@@ -15,6 +15,8 @@ if((typeof module) !== 'undefined') {
 }
 
 (function(){
+    "use strict";
+    
     var core = nerdamer.getCore(),
         _ = core.PARSER,
         Symbol = core.Symbol,

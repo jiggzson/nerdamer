@@ -1186,6 +1186,10 @@ describe('Nerdamer core', function () {
             {
                 given: 'continued_fraction(-6/7)',
                 expected: '[-1,0,[1,6]]'
+            },
+            {
+                given: 'continued_fraction(sqrt(2), 5)',
+                expected: '[1,1,[2,2,2,2,2]]'
             }
         ];
 
