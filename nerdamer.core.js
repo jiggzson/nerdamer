@@ -3631,12 +3631,7 @@ var nerdamer = (function(imports) {
                 collection.append(e);
             return collection;
         };
-        
-        this.classes = {
-            Collection: Collection,
-            Slice: Slice
-        };
-        
+
         function Token(node, node_type, column) {
             this.type = node_type;
             this.value = node;
@@ -3668,6 +3663,12 @@ var nerdamer = (function(imports) {
         Token.FUNCTION = 'FUNCTION';
         Token.UNIT = 'UNIT';
         Token.MAX_PRECEDENCE = 999;
+        //create link to classes
+        this.classes = {
+            Collection: Collection,
+            Slice: Slice,
+            Token: Token
+        };
 //Parser.modules ===============================================================
         //object for functions which handle complex number
         var complex = {
@@ -5458,53 +5459,6 @@ var nerdamer = (function(imports) {
 
             return Q[0];
         };
-        /*
-         * Parses tokens from LaTeX string. Does not do any error checking
-         * @param {Tokens[]} rpn
-         * @returns {String}
-         */
-        this.parseFromLaTeX = function(rpn) { 
-            var bracket_type = rpn.type || 'round';
-            var retval = '';
-            
-            var strip_bracket = function(x) {
-                return x;
-                return  x.slice(1, -1);
-            };
-            for(var i=0, l=rpn.length; i<l; i++) {
-                var e = rpn[i];
-                //Arrays indicate a new scope so parse that out
-                if(Array.isArray(e)) {
-                    retval += this.parseFromLaTeX(e);
-                }
-                else {
-                    var v = e.value;
-                    if(v === '\\' || v === 'left' || v === 'right') //skip slashes
-                        continue;
-                    if(v === 'frac') {
-                        //get the numeratorn and denominator and advance by one each time
-                        var num = strip_bracket(this.parseFromLaTeX(rpn[++i]));
-                        var den = strip_bracket(this.parseFromLaTeX(rpn[++i]));
-                        retval += inBrackets(num+'/'+den);
-                    }
-                    else if(v === 'cdot') {
-                        retval += '*';
-                    }
-                    else if(v === 'mathrm') {
-                        retval += strip_bracket(this.parseFromLaTeX(rpn[++i]));
-                    }
-                    else {
-                        retval += v;
-                    }
-                }
-            }
-     
-            //wrap the whole thing in a bracket
-            if((bracket_type === 'round' || bracket_type === 'object'))
-                retval = inBrackets(retval);
-            //done
-            return retval;
-        };
         /**
          * This is the method that triggers the parsing of the string. It generates a parse tree but processes 
          * it right away. The operator functions are called when their respective operators are reached. For instance
@@ -5615,7 +5569,7 @@ var nerdamer = (function(imports) {
                     e = cdot;
                 }
                 
-                if(isSymbol(e)) {
+                if(isSymbol(e)) { 
                     if(e.group === FN) {
                         var fname = e.fname, f;
 
@@ -5684,6 +5638,14 @@ var nerdamer = (function(imports) {
                             f = (fname==='sum'?'\\sum_':'\\prod_')+LaTeX.braces(this.toTeX(argSplit[1])+' = '+this.toTeX(argSplit[2]));
                             f += '^'+LaTeX.braces(this.toTeX(argSplit[3])) + LaTeX.braces(this.toTeX(argSplit[0]));
                         }
+                        else if(fname === 'limit') {
+                            var args = chunkAtCommas(e.args).map(function(x) {
+                                if(Array.isArray(x))
+                                    return _.toTeX(x.join(''));
+                                return _.toTeX(String(x));
+                            });
+                            f = '\\lim_'+LaTeX.braces(args[1]+'\\to '+args[2])+' '+LaTeX.braces(args[0]);
+                        }
                         else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL) 
                             f = this.toTeX(e.args) + (fname === FACTORIAL ? '!' : '!!');
                         else  { 
@@ -5706,6 +5668,7 @@ var nerdamer = (function(imports) {
                         TeX.push(e);
                 }
             }
+            
             return TeX.join(' ');
         };
 
@@ -8412,6 +8375,133 @@ var nerdamer = (function(imports) {
             };
             var bracket = bracketTypes[typ];
             return '\\left'+bracket[0]+e+'\\right'+bracket[1];
+        },
+        filterTokens: function(tokens) { 
+            var Token = _.classes.Token;
+            var filtered = []; 
+            var i, l;
+            
+            var append = function(x, f) {
+                f.push(new Token(',', Token.OPERATOR));
+                f.push(x);
+            };
+            /**
+             * Advance by n places and get the next operators. 
+             */
+            var advance_and_get = function(n) {
+                n = n || 1; //the number of places to advance
+                i += n;
+                return LaTeX.filterTokens(tokens[i]);
+            };
+            filtered.type = tokens.type; //tranfer over the type
+            for(i=0, l=tokens.length; i<l; i++) {
+                var token = tokens[i];
+                if(Array.isArray(token))
+                    filtered.push(this.filterTokens(token));
+                else {
+                    var v = token.value;
+                    //skip all the following as the offer us no new information
+                    if(v === '\\' || v === 'left' || v === 'right')
+                            continue;
+
+                    //start reorganizing different functions
+                    if(v === 'int') {
+                        var f, dx;
+                        
+                        //check if it's a definite integral
+                        var two_off = tokens[i+2];
+                        //check if it's a definite integral
+                        var is_defint = two_off && two_off.value === 'limits_';
+                        //get the limits if defint
+                        if(is_defint) {
+                            filtered.push(new Token('defint', Token.FUNCTION));
+                            i+=2; //move passed the limits
+                            var l1 = advance_and_get(1);
+                            var l2 = advance_and_get(2);
+                            f = [];
+                            //collect the remainder until you get to dx since that's the function
+                            for(var j=i+1; j<l; j++) {
+                                var e = tokens[j];
+                                if(e.value && e.value.match(/^d.+$/)) {
+                                    dx = [e];
+                                    //move i to j
+                                    i = j;
+                                    break;
+                                }
+                                f.push(e);
+                            }
+                            f = LaTeX.filterTokens(f);
+                            //append the limits
+                            append([l1], f);
+                            append([l2], f);
+                            
+                        }
+                        else {
+                            filtered.push(new Token('integrate', Token.FUNCTION));
+                            f = advance_and_get();
+                            dx = advance_and_get();
+                        }
+                            
+                        //strip the d from the dx
+                        dx[0].value = dx[0].value.substring(1);
+                        //add the comma
+                        append(dx, f);
+                        filtered.push(f);
+                    }
+                    else{
+                        //make substitutions
+                        if(token.value === 'infty')
+                            token.value = 'Infinity';
+                        filtered.push(token);
+                    }
+                }
+                    
+            }
+            return filtered;
+        },
+        /*
+         * Parses tokens from LaTeX string. Does not do any error checking
+         * @param {Tokens[]} rpn
+         * @returns {String}
+         */
+        parse: function(raw_tokens) { 
+            var bracket_type = raw_tokens.type || 'round';
+            var retval = '';
+            var tokens = this.filterTokens(raw_tokens);
+            for(var i=0, l=tokens.length; i<l; i++) {
+                var e = tokens[i];
+                //Arrays indicate a new scope so parse that out
+                if(Array.isArray(e)) {
+                    retval += this.parse(e);
+                }
+                else {
+                    var v = e.value;
+                    if(v === '\\' || v === 'left' || v === 'right') //skip slashes
+                        continue;
+                    if(v === 'frac') {
+                        //get the numeratorn and denominator and advance by one each time
+                        var num = this.parse(tokens[++i]);
+                        var den = this.parse(tokens[++i]);
+                        retval += inBrackets(num+'/'+den);
+                    }
+                    else if(v === 'cdot') {
+                        retval += '*';
+                    }
+                    else if(v === 'mathrm') {
+                        //parse and remove the brackets
+                        retval += this.parse(tokens[++i]).slice(1, -1);
+                    }
+                    else {
+                        retval += v;
+                    }
+                }
+            }
+     
+            //wrap the whole thing in a bracket
+            if((bracket_type === 'round' || bracket_type === 'object'))
+                retval = inBrackets(retval);
+            //done
+            return retval;
         }
     };
 //Vector =======================================================================    
@@ -9230,7 +9320,8 @@ var nerdamer = (function(imports) {
      * @returns {String}
      */
     libExports.convertFromLaTeX = function(e) {
-        return _.parse(_.parseFromLaTeX(_.tokenize(e)));
+        var txt = LaTeX.parse(_.tokenize(e));
+        return new Expression(_.parse(txt));
     };
     
     /**
