@@ -4369,6 +4369,17 @@ var nerdamer = (function(imports) {
         this.units = {};
         //list all the supported operators
         var operators = {
+            '\\': {
+                precedence: 8,
+                operator: '\\',
+                action: 'slash',
+                prefix: true,
+                postfix: false,
+                leftAssoc: true,
+                operation: function(e) {
+                    return e; //bypass the slash
+                }
+            },
             '!!': {
                 precedence: 7,
                 operator: '!!',
@@ -4558,6 +4569,19 @@ var nerdamer = (function(imports) {
             ']': {
                 type: 'square',
                 id: 4,
+                is_open: false,
+                is_close: true
+            },
+            '{': {
+                type: 'curly',
+                id: 5,
+                is_open: true,
+                is_close: false,
+                maps_to: 'object'
+            },
+            '}': {
+                type: 'curly',
+                id: 6,
                 is_open: false,
                 is_close: true
             }
@@ -5146,6 +5170,9 @@ var nerdamer = (function(imports) {
                             add_function(f);
                             addScope();
                         }
+                        else if(f in operators) {
+                            target.push(new Token(f, Token.OPERATOR, col));
+                        }
                         else {
                             add_token(undefined, f);
                         }
@@ -5302,6 +5329,12 @@ var nerdamer = (function(imports) {
 
             return output;
         };
+        /*
+         * Parses the tokens  
+         * @param {Tokens[]} rpn
+         * @param {object} substitutions
+         * @returns {Symbol}
+         */
         this.parseRPN = function(rpn, substitutions) {
             //default substitutions
             substitutions = substitutions || {};
@@ -5424,6 +5457,53 @@ var nerdamer = (function(imports) {
             }
 
             return Q[0];
+        };
+        /*
+         * Parses tokens from LaTeX string. Does not do any error checking
+         * @param {Tokens[]} rpn
+         * @returns {String}
+         */
+        this.parseFromLaTeX = function(rpn) { 
+            var bracket_type = rpn.type || 'round';
+            var retval = '';
+            
+            var strip_bracket = function(x) {
+                return x;
+                return  x.slice(1, -1);
+            };
+            for(var i=0, l=rpn.length; i<l; i++) {
+                var e = rpn[i];
+                //Arrays indicate a new scope so parse that out
+                if(Array.isArray(e)) {
+                    retval += this.parseFromLaTeX(e);
+                }
+                else {
+                    var v = e.value;
+                    if(v === '\\' || v === 'left' || v === 'right') //skip slashes
+                        continue;
+                    if(v === 'frac') {
+                        //get the numeratorn and denominator and advance by one each time
+                        var num = strip_bracket(this.parseFromLaTeX(rpn[++i]));
+                        var den = strip_bracket(this.parseFromLaTeX(rpn[++i]));
+                        retval += inBrackets(num+'/'+den);
+                    }
+                    else if(v === 'cdot') {
+                        retval += '*';
+                    }
+                    else if(v === 'mathrm') {
+                        retval += strip_bracket(this.parseFromLaTeX(rpn[++i]));
+                    }
+                    else {
+                        retval += v;
+                    }
+                }
+            }
+     
+            //wrap the whole thing in a bracket
+            if((bracket_type === 'round' || bracket_type === 'object'))
+                retval = inBrackets(retval);
+            //done
+            return retval;
         };
         /**
          * This is the method that triggers the parsing of the string. It generates a parse tree but processes 
@@ -9142,6 +9222,15 @@ var nerdamer = (function(imports) {
      */
     libExports.convertToLaTeX = function(e, opt) {
         return _.toTeX(e, opt);
+    };
+    
+    /**
+     * Converts latex to text - Very very very basic at the moment
+     * @param {String} e
+     * @returns {String}
+     */
+    libExports.convertFromLaTeX = function(e) {
+        return _.parse(_.parseFromLaTeX(_.tokenize(e)));
     };
     
     /**
