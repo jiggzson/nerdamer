@@ -5459,6 +5459,78 @@ var nerdamer = (function(imports) {
 
             return Q[0];
         };
+        
+        function Node(token) {
+            this.type = token.type;
+            this.value = token.value;
+            //the incoming token may already be a Node type
+            this.left = token.left;
+            this.right = token.right;
+        }
+        
+        Node.prototype.toString = function() {
+            var left = this.left ? this.left.toString()+'---' : '';
+            var right = this.right ? '---'+this.right.toString() : '';
+            return left+'('+this.value+')'+right;
+        };
+        
+        Node.prototype.toHTML = function(depth, indent) {
+            depth = depth || 0;
+            indent = typeof indent === 'undefined' ? 4 : indent;
+            var tab = function(n) {
+                return ' '.repeat(indent*n);
+            };
+            var html = '';
+            var left = this.left ? tab(depth+1)+'<li>\n'+this.left.toHTML(depth+2, indent)+tab(depth+1)+'</li> \n': '';
+            var right = this.right ? tab(depth+1)+'<li>\n'+this.right.toHTML(depth+2, indent)+tab(depth+1)+'</li>\n': '';
+            var html = tab(depth)+'<div class="'+this.type.toLowerCase()+'"><span>'+this.value+'</span></div>'+tab(depth)+'\n';
+            if(left || right) {
+                html += tab(depth)+'<ul>\n'+left+right+tab(depth)+'</ul>\n';
+            }
+            html += '';
+            return html;
+        };
+        
+        this.tree = function(tokens) {
+            var Q = [];
+            for(var i=0; i<tokens.length; i++) {
+                var e = tokens[i];
+                //Arrays indicate a new scope so parse that out
+                if(Array.isArray(e)) {
+                    e = this.tree(e);
+                    //if it's a comma then it's just arguments
+                    Q.push(e);
+                    continue;
+                }
+                if(e.type === Token.OPERATOR) {
+                    if(e.is_prefix || e.postfix) {
+                        //prefixes go to the left, postfix to the right
+                        var location = e.is_prefix ? 'left' : 'right';
+                        var last = Q.pop();
+                        e = new Node(e);
+                        e[location] = last;
+                        Q.push(e);
+                    }
+                    else {
+                        e = new Node(e);
+                        e.right = Q.pop();
+                        e.left = Q.pop();
+                        Q.push(e);
+                    }
+                }
+                else if(e.type === Token.FUNCTION) {
+                    e = new Node(e);
+                    var args = Q.pop();
+                    e.right = args;
+                    Q.push(e);
+                }
+                else {       
+                    Q.push(new Node(e));
+                }
+            }
+            
+            return Q[0];
+        };
         /**
          * This is the method that triggers the parsing of the string. It generates a parse tree but processes 
          * it right away. The operator functions are called when their respective operators are reached. For instance
@@ -9643,6 +9715,22 @@ var nerdamer = (function(imports) {
         _.setOperator(operator, shift);
     };
     
+    libExports.tree = function(expression) {
+        return _.tree(_.toRPN(_.tokenize(expression)));
+    };
+    
+    libExports.htmlTree = function(expression, indent) {
+        var tree = this.tree(expression);
+        
+        return '<div class="tree">\n'+
+               '    <ul>\n'+
+               '        <li>\n'+
+                            tree.toHTML(3, indent)+'\n'+
+               '        </li>\n'+
+               '    </ul>\n'+
+               '</div>';
+    };
+    
     libExports.api();
 
     return libExports; //Done
@@ -9658,3 +9746,6 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+var x = nerdamer.tree('max(a, b)');
+console.log(x.toString())
