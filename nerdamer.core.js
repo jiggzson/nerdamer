@@ -8537,6 +8537,7 @@ var nerdamer = (function(imports) {
          * @returns {String}
          */
         parse: function(raw_tokens) { 
+            console.log(_.pretty_print(raw_tokens));
             var bracket_type = raw_tokens.type || 'round';
             var retval = '';
             var tokens = this.filterTokens(raw_tokens);
@@ -9746,6 +9747,3 @@ var nerdamer = (function(imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-var x = nerdamer.tree('max(a, b)');
-console.log(x.toString())
