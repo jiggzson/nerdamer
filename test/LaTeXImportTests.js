@@ -248,14 +248,6 @@ describe('Basic Operators', () => {
     });
 })
 
-describe('Alternative Function', () => {
-    context('Triganometry', () => {
-        it('sin', () => {
-            assert.equal('', nerdamer.convertFromLaTeX('\\sin \\pi/2').toTeX());
-        });
-    });
-});
-
 describe('Matricies', () => {
 
 });
