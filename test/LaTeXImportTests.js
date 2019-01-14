@@ -66,7 +66,7 @@ describe('Nerdamer supported functions', () => {
             assert.equal("\\sqrt[3]{5}", nerdamer.convertFromLaTeX('\\sqrt[3]{5}').toTeX());
         });
         it('nth root', () => {
-            assert.equal("\\sqrt[n]{2", nerdamer.convertFromLaTeX('\\sqrt[n]{2}').toTeX());
+            assert.equal("\\sqrt[n]{2}", nerdamer.convertFromLaTeX('\\sqrt[n]{2}').toTeX());
         });
         it('nth root of 2^n', () => {
             assert.equal("2", nerdamer.convertFromLaTeX('\\sqrt[n]{2^n}').toTeX());
