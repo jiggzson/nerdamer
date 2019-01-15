@@ -8531,6 +8531,16 @@ var nerdamer = (function(imports) {
                         //make substitutions
                         if(token.value === 'infty')
                             token.value = 'Infinity';
+                        // add slash info (if applicable)
+                        if (typeof token.command === 'undefined' &&
+                        i>0 && ['VARIABLE_OR_LITERAL', 'FUNCTION'].includes(token.type)) {
+                            if (tokens[i-1].type === 'OPERATOR' && tokens[i-1].value === '\\') {
+                                token.command = true;
+                            } else {
+                                token.command = false;
+                            }
+                        }
+
                         filtered.push(token);
                     }
                 }
