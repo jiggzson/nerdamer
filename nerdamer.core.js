@@ -4438,6 +4438,14 @@ var nerdamer = (function(imports) {
                 postfix: false,
                 leftAssoc: false
             },
+            'times': {
+                precedence: 4,
+                operator: 'times',
+                action: 'multiply',
+                prefix: false,
+                postfix: false,
+                leftAssoc: false
+            },
             '/': {
                 precedence: 4,
                 operator: '/',
@@ -4449,6 +4457,15 @@ var nerdamer = (function(imports) {
             '+': {
                 precedence: 3,
                 operator: '+',
+                action: 'add',
+                prefix: true,
+                postfix: false,
+                leftAssoc: false,
+                operation: function(x) { return x; }
+            },
+            'plus': {
+                precedence: 3,
+                operator: 'plus',
                 action: 'add',
                 prefix: true,
                 postfix: false,
@@ -4514,7 +4531,7 @@ var nerdamer = (function(imports) {
             },
             'in': {
                 precedence: 1,
-                operator: ',',
+                operator: 'in',
                 action: 'in',
                 prefix: false,
                 postfix: false,
@@ -4891,7 +4908,7 @@ var nerdamer = (function(imports) {
                 }
             }
 
-            e = e.split(' ').join('')//strip empty spaces
+            e = e.split(' ').join(' ')//strip empty spaces
             //replace scientific numbers
             .replace(/\d+\.*\d*e\+?\-?\d+/gi, function(x) {
                 return scientificToDecimal(x);
@@ -4905,8 +4922,14 @@ var nerdamer = (function(imports) {
                     first = str.charAt(start),
                     before = '',
                     d = '*';
-                if(!first.match(/[\+\-\/\*]/)) before = str.charAt(start-1);
-                if(before.match(/[a-z]/i)) d = '';
+                if(group2 in operators) {
+                    d = ' ';
+                }
+                else {
+                    if(!first.match(/[\+\-\/\*]/)) before = str.charAt(start-1);
+                    if(before.match(/[a-z]/i)) d = '';
+                }
+                    
                 return group1+d+group2;
             })
             .replace(/([a-z0-9_]+)/gi, function(match, a) {
@@ -4966,6 +4989,7 @@ var nerdamer = (function(imports) {
             e = String(e);
              //remove multiple white spaces and spaces at beginning and end of string
             e = e.trim().replace(/\s+/g, ' ');
+            
             //remove spaces before and after brackets
             for(var x in brackets) {
                 var regex = new RegExp(brackets[x].is_close ? '\\s+\\'+x : '\\'+x+'\\s+', 'g');
@@ -4981,6 +5005,15 @@ var nerdamer = (function(imports) {
             var depth = 0;
             var open_brackets = [];
             var HAS_SPACE = false; //marks if an open space character was found
+            //gets the next space
+            var next_space = function(from) {
+                for(var i=from; i<L; i++) {
+                    if(e.charAt(i) === ' ')
+                        return i;
+                }
+                
+                return L; //assume the end of the string instead
+            };
             /**
              * Adds a scope to tokens
              * @param {String} scope_type 
@@ -5094,6 +5127,7 @@ var nerdamer = (function(imports) {
                 lpos = lpos+operator_str.length-2;
                 col = lpos-1;
             };
+            
             for(; col<L; col++) {
                 var ch = e.charAt(col);
                 if(ch in operators) {
@@ -5165,6 +5199,8 @@ var nerdamer = (function(imports) {
                         //we're at the closing space
                         //check if it's a function
                         var f = e.substring(lpos, col);
+                        //if it matches a number then we treat it as a coefficient
+                        
                         if(f in functions) {
                             //there's no need to go up in scope if the next character is an operator
                             HAS_SPACE = true; //mark that a space was found
@@ -5176,6 +5212,16 @@ var nerdamer = (function(imports) {
                         }
                         else {
                             add_token(undefined, f);
+                        }
+                        //space can mean multiplication so add the symbol if the is encountered
+                        if(/\d+|\d+\.?\d*e[\+\-]*\d+/i.test(f)) {
+                            var next = e.charAt(col+1);
+                            var next_is_operator = next in operators;
+                            var ns = next_space(col+1);
+                            var next_word = e.substring(col+1, ns);
+                            //the next can either be a prefix operator or no operator
+                            if((next_is_operator && operators[next].prefix) || !(next_is_operator || next_word in operators))
+                                target.push(new Token('*', Token.OPERATOR, col));
                         }
                     }
                     set_last_position(col); //mark this location    
@@ -5337,6 +5383,7 @@ var nerdamer = (function(imports) {
          * @returns {Symbol}
          */
         this.parseRPN = function(rpn, substitutions) {
+            
             //default substitutions
             substitutions = substitutions || {};
             //prepare the substitutions.
@@ -5522,6 +5569,18 @@ var nerdamer = (function(imports) {
                     e = new Node(e);
                     var args = Q.pop();
                     e.right = args;
+                    if(forTeX && e.value === 'object') {
+                        //check if Q has a value
+                        var last = Q[Q.length-1];
+                        if(last) {
+                            while(last.right) {
+                                last = last.right;
+                            }
+                            last.right = e;
+                            continue;
+                        }
+                    }
+                        
                     Q.push(e);
                 }
                 else {       
@@ -8031,6 +8090,28 @@ var nerdamer = (function(imports) {
     
     //The latex generator
     var LaTeX = {
+        parser: (function() {
+            //create a parser and strip it from everything except the items that you need
+            var keep = ['classes', 'setOperator', 'getOperators', 'tokenize', 'toRPN', 'tree', 'units'];
+            var parser = new Parser();
+            for(var x in parser) {
+                if(keep.indexOf(x) === -1)
+                    delete parser[x];
+            }
+            //declare the operators
+            parser.setOperator({
+                precedence: 8,
+                operator: '\\',
+                action: 'slash',
+                prefix: true,
+                postfix: false,
+                leftAssoc: true,
+                operation: function(e) {
+                    return e; //bypass the slash
+                }
+            });
+            return parser;
+        })(),
         space: '~',
         dot: ' \\cdot ',
         //grab a list of supported functions but remove the excluded ones found in exclFN
@@ -8543,8 +8624,8 @@ var nerdamer = (function(imports) {
          * @param {Tokens[]} rpn
          * @returns {String}
          */
-        parse: function(raw_tokens) { 
-            console.log(_.pretty_print(raw_tokens));
+        parse: function(expression) { 
+            var raw_tokens = LaTeX.parser.tokenize(expression);
             var bracket_type = raw_tokens.type || 'round';
             var retval = '';
             var tokens = this.filterTokens(raw_tokens);
@@ -9400,7 +9481,7 @@ var nerdamer = (function(imports) {
      * @returns {String}
      */
     libExports.convertFromLaTeX = function(e) {
-        var txt = LaTeX.parse(_.tokenize(e));
+        var txt = LaTeX.parse(e);
         return new Expression(_.parse(txt));
     };
     
