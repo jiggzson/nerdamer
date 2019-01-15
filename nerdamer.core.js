@@ -8168,7 +8168,14 @@ var nerdamer = (function(imports) {
             Sigma:      '\\Sigma',
             Phi:        '\\Phi',
             Psi:        '\\Psi',
-            Omega:      '\\Omega'
+            Omega:      '\\Omega',
+            Upsilon:    '\\Upsilon',
+            vartheta:   '\\vartheta',
+            varpi:      '\\varpi',
+            varphi:     '\\varphi',
+            varrho:     '\\varrho',
+            varepsilon: '\\varepsilon',
+            varsigma:   '\\varsigma'
         },
         //get the raw value of the symbol as an array
         value: function(symbol, inverted, option, negative) { 
