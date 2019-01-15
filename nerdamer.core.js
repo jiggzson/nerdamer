@@ -8557,7 +8557,7 @@ var nerdamer = (function(imports) {
                         var den = this.parse(tokens[++i]);
                         retval += inBrackets(num+'/'+den);
                     }
-                    else if(v === 'cdot') {
+                    else if(v === 'cdot' || v === 'times') {
                         retval += '*';
                     }
                     else if(v === 'mathrm') {
