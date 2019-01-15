@@ -4370,17 +4370,6 @@ var nerdamer = (function(imports) {
         this.units = {};
         //list all the supported operators
         var operators = {
-            '\\': {
-                precedence: 8,
-                operator: '\\',
-                action: 'slash',
-                prefix: true,
-                postfix: false,
-                leftAssoc: true,
-                operation: function(e) {
-                    return e; //bypass the slash
-                }
-            },
             '!!': {
                 precedence: 7,
                 operator: '!!',
@@ -4433,14 +4422,6 @@ var nerdamer = (function(imports) {
             '*': {
                 precedence: 4,
                 operator: '*',
-                action: 'multiply',
-                prefix: false,
-                postfix: false,
-                leftAssoc: false
-            },
-            'times': {
-                precedence: 4,
-                operator: 'times',
                 action: 'multiply',
                 prefix: false,
                 postfix: false,
@@ -4874,6 +4855,10 @@ var nerdamer = (function(imports) {
             //will replace this with some cloning action in the future
             return operators;
         };
+        
+        this.getBrackets = function() {
+            return brackets;
+        };
         /*
          * Preforms preprocessing on the string. Useful for making early modification before 
          * sending to the parser
@@ -5175,7 +5160,6 @@ var nerdamer = (function(imports) {
                         //incorrect pair
                         else if(pair[0].id !== bracket.id-1)
                             throw new ParityError('Parity error');
-
                         add_token(col);
                         goUp();
                     }
@@ -8092,7 +8076,7 @@ var nerdamer = (function(imports) {
     var LaTeX = {
         parser: (function() {
             //create a parser and strip it from everything except the items that you need
-            var keep = ['classes', 'setOperator', 'getOperators', 'tokenize', 'toRPN', 'tree', 'units'];
+            var keep = ['classes', 'setOperator', 'getOperators', 'getBrackets', 'tokenize', 'toRPN', 'tree', 'units'];
             var parser = new Parser();
             for(var x in parser) {
                 if(keep.indexOf(x) === -1)
@@ -8110,6 +8094,20 @@ var nerdamer = (function(imports) {
                     return e; //bypass the slash
                 }
             });
+            parser.setOperator({
+                precedence: 8,
+                operator: '\\,',
+                action: 'slash_comma',
+                prefix: true,
+                postfix: false,
+                leftAssoc: true,
+                operation: function(e) {
+                    return e; //bypass the slash
+                }
+            });
+            //have braces not map to anything. We want them to be return as-is
+            var brackets = parser.getBrackets();
+            brackets['{'].maps_to = undefined;
             return parser;
         })(),
         space: '~',
