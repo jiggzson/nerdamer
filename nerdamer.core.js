@@ -8503,6 +8503,23 @@ var nerdamer = (function(imports) {
             var filtered = [];
             var i, l;
 
+            const sylisticCommands = [
+                'left',
+                'right',
+                'big',
+                'bigg',
+                'Big',
+                'Bigg',
+                ',',
+                '!',
+                '>',
+                ':',
+                ';',
+                'enspace',
+                'quad',
+                'qquad'
+            ]
+
             var append = function(x, f) {
                 f.push(new Token(',', Token.OPERATOR));
                 f.push(x);
@@ -8523,7 +8540,7 @@ var nerdamer = (function(imports) {
                 else {
                     var v = token.value;
                     //skip all the following as the offer us no new information
-                    if(v === '\\' || v === 'left' || v === 'right')
+                    if(v === '\\' || sylisticCommands.includes(v))
                             continue;
 
                     //start reorganizing different functions
@@ -8607,11 +8624,11 @@ var nerdamer = (function(imports) {
                 if(Array.isArray(e)) {
                     retval += this.parse(e);
                 }
-                else {
+                else if (e.command) {
                     var v = e.value;
                     if(v === '\\' || v === 'left' || v === 'right') //skip slashes
                         continue;
-                    if(v === 'frac') {
+                    if(v === 'frac' | v === 'dfrac' || v === 'sfrac') {
                         //get the numeratorn and denominator and advance by one each time
                         var num = this.parse(tokens[++i]);
                         var den = this.parse(tokens[++i]);
@@ -8620,6 +8637,9 @@ var nerdamer = (function(imports) {
                     else if(v === 'cdot' || v === 'times') {
                         retval += '*';
                     }
+                    else if (v === 'div') {
+                        retval += '/';
+                    }
                     else if(v === 'mathrm') {
                         //parse and remove the brackets
                         retval += this.parse(tokens[++i]).slice(1, -1);
@@ -8627,6 +8647,8 @@ var nerdamer = (function(imports) {
                     else {
                         retval += v;
                     }
+                } else {
+                    retval += e.value;
                 }
             }
 
