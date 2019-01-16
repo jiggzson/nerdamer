@@ -8523,7 +8523,9 @@ var nerdamer = (function(imports) {
                 ';',
                 'enspace',
                 'quad',
-                'qquad'
+                'qquad',
+                'displaystyle',
+                'limits'
             ]
 
             var append = function(x, f) {
