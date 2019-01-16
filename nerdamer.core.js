@@ -4599,6 +4599,9 @@ var nerdamer = (function(imports) {
                 'acos'              : [ trig.acos, 1],
                 'asin'              : [ trig.asin, 1],
                 'atan'              : [ trig.atan, 1],
+                'arccos'            : [ trig.acos, 1],
+                'arcsin'            : [ trig.asin, 1],
+                'arctan'            : [ trig.atan, 1],
                 'asec'              : [ trig.asec, 1],
                 'acsc'              : [ trig.acsc, 1],
                 'acot'              : [ trig.acot, 1],
@@ -8262,6 +8265,9 @@ var nerdamer = (function(imports) {
                 }
                 else if(fname === PARENTHESIS) {
                     v[index] = this.brackets(input.join(','), 'parens');
+                }
+                else if (['asin', 'acos', 'atan'].includes(fname)) {
+                    v[index] = '\\arc'+fname.replace(/^a/, '')+this.brackets(input[0]);
                 }
                 else if(fname === 'limit') {
                     v[index] = ' \\lim\\limits_{'+input[1]+' \\to '+input[2]+'} '+input[0];
