@@ -8477,7 +8477,6 @@ var nerdamer = (function(imports) {
                 'qquad'
             ]
 
->>>>>>> e93bd42... Revamp ignored latex command structure, and add more cases
             var append = function(x, f) {
                 f.push(new Token(',', Token.OPERATOR));
                 f.push(x);
