@@ -8459,9 +8459,6 @@ var nerdamer = (function(imports) {
             var Token = _.classes.Token;
             var filtered = []; 
             var i, l;
-<<<<<<< HEAD
-            
-=======
 
             const sylisticCommands = [
                 'left',
