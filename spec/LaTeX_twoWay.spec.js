@@ -6,293 +6,309 @@ var nerdamer = require('../all.js');
 // var run = utils.run;
 
 // Because I don't like typing lots and lots, fttt (from tex to tex) = nerdamer convert from latex to tex
+const ft = (s) => nerdamer.convertFromLaTeX(s);
 const fttt = (s) => nerdamer.convertFromLaTeX(s).toTeX();
 
 describe('Potential Catch-Cases', () => {
     it('Multiply with \\operator', () => {
-        expect(fttt('2 \\times 2')).toEqual('4');
-        expect(fttt('2 \\div 2')).toEqual('1');
-        expect(fttt('\\log e')).toEqual('1');
+        expect(nerdamer.convertFromLaTeX('2 \\times 2').toTeX()).toEqual('4');
+        expect(nerdamer.convertFromLaTeX('2 \\div 2').toTeX()).toEqual('1');
+        expect(nerdamer.convertFromLaTeX('\\log e').toTeX()).toEqual('1');
     });
     it('But not just operator', () => {
-        expect(fttt('2 times 2')).not.toEqual('4');
-        // expect(fttt('2 div 2')).not.toEqual('1');
-        expect(fttt('log e')).not.toEqual('1');
+        expect(nerdamer.convertFromLaTeX('2 times 2').toTeX()).not.toEqual('4');
+        expect(nerdamer.convertFromLaTeX('2 div 2').toTeX()).not.toEqual('1');
+        expect(nerdamer.convertFromLaTeX('log e').toTeX()).not.toEqual('1');
     });
 });
 
 describe('Nerdamer function equivilents', () => {
     describe('Triganometry', () => {
         it('sin, cos, tan', () => {
-            expect(fttt('\\sin(x)')).toEqual('\\sin\\left(x\\right)');
-            expect(fttt('\\cos(x)')).toEqual('\\cos\\left(x\\right)');
-            expect(fttt('\\tan(x)')).toEqual('\\tan\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\sin(x)').toTeX()).toEqual('\\sin\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\cos(x)').toTeX()).toEqual('\\cos\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\tan(x)').toTeX()).toEqual('\\tan\\left(x\\right)');
         });
 
         it('cot, sec, csc', () => {
-            expect(fttt('\\cot(x)')).toEqual('\\cot\\left(x\\right)');
-            expect(fttt('\\sec(x)')).toEqual('\\sec\\left(x\\right)');
-            expect(fttt('\\csc(x)')).toEqual('\\csc\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\cot(x)').toTeX()).toEqual('\\cot\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\sec(x)').toTeX()).toEqual('\\sec\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\csc(x)').toTeX()).toEqual('\\csc\\left(x\\right)');
         });
         it('arcsin, arccos, arctan', () => {
-            expect(fttt('\\arcsin(x)')).toEqual('\\arcsin\\left(x\\right)');
-            expect(fttt('\\arccos(x)')).toEqual('\\arccos\\left(x\\right)');
-            expect(fttt('\\arctan(x)')).toEqual('\\arctan\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\arcsin(x)').toTeX()).toEqual('\\arcsin\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\arccos(x)').toTeX()).toEqual('\\arccos\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\arctan(x)').toTeX()).toEqual('\\arctan\\left(x\\right)');
         });
         it('sinh, cosh, tanh', () => {
-            expect(fttt('\\sinh(x)')).toEqual('\\sinh\\left(x\\right)');
-            expect(fttt('\\cosh(x)')).toEqual('\\cosh\\left(x\\right)');
-            expect(fttt('\\tanh(x)')).toEqual('\\tanh\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\sinh(x)').toTeX()).toEqual('\\sinh\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\cosh(x)').toTeX()).toEqual('\\cosh\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\tanh(x)').toTeX()).toEqual('\\tanh\\left(x\\right)');
         });
         it('coth', () => {
-            expect(fttt('\\coth(x)')).toEqual('\\coth\\left(x\\right)');
-            // expect(fttt('\\sech(x)')).toEqual('\\sech\\left(x\\right)');
-            // expect(fttt('\\csch(x)')).toEqual('\\csch\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\coth(x)').toTeX()).toEqual('\\coth\\left(x\\right)');
+            // expect(nerdamer.convertFromLaTeX('\\sech(x)').toTeX()).toEqual('\\sech\\left(x\\right)');
+            // expect(nerdamer.convertFromLaTeX('\\csch(x)').toTeX()).toEqual('\\csch\\left(x\\right)');
         });
         it('sin of pi/2', () => {
-            expect(fttt('\\sin(\\pi/2)')).toEqual("1");
+            expect(nerdamer.convertFromLaTeX('\\sin(\\pi/2)').toTeX()).toEqual("1");
         });
         it('sin of 90deg', () => {
-            expect(fttt('\\sin(90\\deg)')).toEqual("1");
+            expect(nerdamer.convertFromLaTeX('\\sin(90\\deg)').toTeX()).toEqual("1");
         });
     });
     describe('Logs', () => {
         it('log(a)', () => {
-            expect(fttt('\\log(a)')).toEqual("\\log\\left(a\\right)");
+            expect(nerdamer.convertFromLaTeX('\\log(a)').toTeX()).toEqual("\\log\\left(a\\right)");
         });
         it('log a', () => {
-            expect(fttt('\\log a')).toEqual("\\log\\left(a\\right)");
+            expect(nerdamer.convertFromLaTeX('\\log a').toTeX()).toEqual("\\log\\left(a\\right)");
         });
         it('ln', () => {
-            expect(fttt('\\ln(a)')).toEqual("\\ln\\left(a\\right")
-            expect(fttt('\\ln(e)')).toEqual("1");
+            expect(nerdamer.convertFromLaTeX('\\ln(a)').toTeX()).toEqual("\\ln\\left(a\\right")
+            expect(nerdamer.convertFromLaTeX('\\ln(e)').toTeX()).toEqual("1");
         });
         it('log_2', () => {
-            expect(fttt('\\log_2(a)')).toEqual("\\log_{2}\\left(a\\right)");
-            expect(fttt('\\log_2(2)')).toEqual("1");
+            expect(nerdamer.convertFromLaTeX('\\log_2(a)').toTeX()).toEqual("\\log_{2}\\left(a\\right)");
+            expect(nerdamer.convertFromLaTeX('\\log_2(2)').toTeX()).toEqual("1");
         });
         it('log_{10}', () => {
-            expect(fttt('\\log_{10}(a)')).toEqual("\\log_{10}\\left(a\\right)");
-            expect(fttt('\\log_{10}(10)')).toEqual("1");
+            expect(nerdamer.convertFromLaTeX('\\log_{10}(a)').toTeX()).toEqual("\\log_{10}\\left(a\\right)");
+            expect(nerdamer.convertFromLaTeX('\\log_{10}(10)').toTeX()).toEqual("1");
         });
     });
     describe('Roots', () => {
         it('square root', () => {
-            expect(fttt('\\sqrt{4}')).toEqual("2");
-            expect(fttt('\\sqrt{5}')).toEqual("\\sqrt{5}");
+            expect(nerdamer.convertFromLaTeX('\\sqrt{4}').toTeX()).toEqual("2");
+            expect(nerdamer.convertFromLaTeX('\\sqrt{5}').toTeX()).toEqual("\\sqrt{5}");
         });
         it('cube root', () => {
-            expect(fttt('\\sqrt[3]{8}')).toEqual("2");
-            expect(fttt('\\sqrt[3]{5}')).toEqual("\\sqrt[3]{5}");
+            expect(nerdamer.convertFromLaTeX('\\sqrt[3]{8}').toTeX()).toEqual("2");
+            expect(nerdamer.convertFromLaTeX('\\sqrt[3]{5}').toTeX()).toEqual("\\sqrt[3]{5}");
         });
         it('nth root', () => {
-            expect(fttt('\\sqrt[n]{2}')).toEqual("\\sqrt[n]{2}");
+            expect(nerdamer.convertFromLaTeX('\\sqrt[n]{2}').toTeX()).toEqual("\\sqrt[n]{2}");
         });
         it('nth root of 2^n', () => {
-            expect(fttt('\\sqrt[n]{2^n}')).toEqual("2");
+            expect(nerdamer.convertFromLaTeX('\\sqrt[n]{2^n}').toTeX()).toEqual("2");
         });
     });
     it('Greek letters', () => {
-        expect(fttt('\\alpha')).toEqual('\\alpha');
-        expect(fttt('\\theta')).toEqual('\\theta');
-        expect(fttt('\\tau')).toEqual('\\tau');
-        expect(fttt('\\beta')).toEqual('\\beta');
-        expect(fttt('\\pi')).toEqual('\\pi');
-        expect(fttt('\\upsilon')).toEqual('\\upsilon');
-        expect(fttt('\\gamma')).toEqual('\\gamma');
-        expect(fttt('\\gamma')).toEqual('\\gamma');
-        expect(fttt('\\phi')).toEqual('\\phi');
-        expect(fttt('\\delta')).toEqual('\\delta');
-        expect(fttt('\\kappa')).toEqual('\\kappa');
-        expect(fttt('\\rho')).toEqual('\\rho');
-        expect(fttt('\\epsilon')).toEqual('\\epsilon');
-        expect(fttt('\\lambda')).toEqual('\\lambda');
-        expect(fttt('\\chi')).toEqual('\\chi');
-        expect(fttt('\\mu')).toEqual('\\mu');
-        expect(fttt('\\sigma')).toEqual('\\sigma');
-        expect(fttt('\\psi')).toEqual('\\psi');
-        expect(fttt('\\zeta')).toEqual('\\zeta');
-        expect(fttt('\\nu')).toEqual('\\nu');
-        expect(fttt('\\omega')).toEqual('\\omega');
-        expect(fttt('\\eta')).toEqual('\\eta');
-        expect(fttt('\\xi')).toEqual('\\xi');
-        expect(fttt('\\Gamma')).toEqual('\\Gamma');
-        expect(fttt('\\Lambda')).toEqual('\\Lambda');
-        expect(fttt('\\Sigma')).toEqual('\\Sigma');
-        expect(fttt('\\Psi')).toEqual('\\Psi');
-        expect(fttt('\\Delta')).toEqual('\\Delta');
-        expect(fttt('\\Xi')).toEqual('\\Xi');
-        expect(fttt('\\Upsilon')).toEqual('\\Upsilon');
-        expect(fttt('\\Omega')).toEqual('\\Omega');
-        expect(fttt('\\Theta')).toEqual('\\Theta');
-        expect(fttt('\\Pi')).toEqual('\\Pi');
-        expect(fttt('\\Phi')).toEqual('\\Phi');
+        expect(nerdamer.convertFromLaTeX('\\alpha').toTeX()).toEqual('\\alpha');
+        expect(nerdamer.convertFromLaTeX('\\theta').toTeX()).toEqual('\\theta');
+        expect(nerdamer.convertFromLaTeX('\\tau').toTeX()).toEqual('\\tau');
+        expect(nerdamer.convertFromLaTeX('\\beta').toTeX()).toEqual('\\beta');
+        expect(nerdamer.convertFromLaTeX('\\pi').toTeX()).toEqual('\\pi');
+        expect(nerdamer.convertFromLaTeX('\\upsilon').toTeX()).toEqual('\\upsilon');
+        expect(nerdamer.convertFromLaTeX('\\gamma').toTeX()).toEqual('\\gamma');
+        expect(nerdamer.convertFromLaTeX('\\gamma').toTeX()).toEqual('\\gamma');
+        expect(nerdamer.convertFromLaTeX('\\phi').toTeX()).toEqual('\\phi');
+        expect(nerdamer.convertFromLaTeX('\\delta').toTeX()).toEqual('\\delta');
+        expect(nerdamer.convertFromLaTeX('\\kappa').toTeX()).toEqual('\\kappa');
+        expect(nerdamer.convertFromLaTeX('\\rho').toTeX()).toEqual('\\rho');
+        expect(nerdamer.convertFromLaTeX('\\epsilon').toTeX()).toEqual('\\epsilon');
+        expect(nerdamer.convertFromLaTeX('\\lambda').toTeX()).toEqual('\\lambda');
+        expect(nerdamer.convertFromLaTeX('\\chi').toTeX()).toEqual('\\chi');
+        expect(nerdamer.convertFromLaTeX('\\mu').toTeX()).toEqual('\\mu');
+        expect(nerdamer.convertFromLaTeX('\\sigma').toTeX()).toEqual('\\sigma');
+        expect(nerdamer.convertFromLaTeX('\\psi').toTeX()).toEqual('\\psi');
+        expect(nerdamer.convertFromLaTeX('\\zeta').toTeX()).toEqual('\\zeta');
+        expect(nerdamer.convertFromLaTeX('\\nu').toTeX()).toEqual('\\nu');
+        expect(nerdamer.convertFromLaTeX('\\omega').toTeX()).toEqual('\\omega');
+        expect(nerdamer.convertFromLaTeX('\\eta').toTeX()).toEqual('\\eta');
+        expect(nerdamer.convertFromLaTeX('\\xi').toTeX()).toEqual('\\xi');
+        expect(nerdamer.convertFromLaTeX('\\Gamma').toTeX()).toEqual('\\Gamma');
+        expect(nerdamer.convertFromLaTeX('\\Lambda').toTeX()).toEqual('\\Lambda');
+        expect(nerdamer.convertFromLaTeX('\\Sigma').toTeX()).toEqual('\\Sigma');
+        expect(nerdamer.convertFromLaTeX('\\Psi').toTeX()).toEqual('\\Psi');
+        expect(nerdamer.convertFromLaTeX('\\Delta').toTeX()).toEqual('\\Delta');
+        expect(nerdamer.convertFromLaTeX('\\Xi').toTeX()).toEqual('\\Xi');
+        expect(nerdamer.convertFromLaTeX('\\Upsilon').toTeX()).toEqual('\\Upsilon');
+        expect(nerdamer.convertFromLaTeX('\\Omega').toTeX()).toEqual('\\Omega');
+        expect(nerdamer.convertFromLaTeX('\\Theta').toTeX()).toEqual('\\Theta');
+        expect(nerdamer.convertFromLaTeX('\\Pi').toTeX()).toEqual('\\Pi');
+        expect(nerdamer.convertFromLaTeX('\\Phi').toTeX()).toEqual('\\Phi');
     });
     it('Greek letter variants', () => {
-        expect(fttt('\\vartheta')).toEqual('\\vartheta');
-        expect(fttt('\\varpi')).toEqual('\\varpi');
-        expect(fttt('\\varphi')).toEqual('\\varphi');
-        expect(fttt('\\varrho')).toEqual('\\varrho');
-        expect(fttt('\\varepsilon')).toEqual('\\varepsilon');
-        expect(fttt('\\varsigma')).toEqual('\\varsigma');
+        expect(nerdamer.convertFromLaTeX('\\vartheta').toTeX()).toEqual('\\vartheta');
+        expect(nerdamer.convertFromLaTeX('\\varpi').toTeX()).toEqual('\\varpi');
+        expect(nerdamer.convertFromLaTeX('\\varphi').toTeX()).toEqual('\\varphi');
+        expect(nerdamer.convertFromLaTeX('\\varrho').toTeX()).toEqual('\\varrho');
+        expect(nerdamer.convertFromLaTeX('\\varepsilon').toTeX()).toEqual('\\varepsilon');
+        expect(nerdamer.convertFromLaTeX('\\varsigma').toTeX()).toEqual('\\varsigma');
     });
 
     it('Other Symbols', () => {
-        expect(fttt('\\arg')).toEqual('\\arg');
-        expect(fttt('\\deg')).toEqual('\\deg');
-        expect(fttt('\\det')).toEqual('\\det');
-        expect(fttt('\\dim')).toEqual('\\dim');
-        expect(fttt('\\exp')).toEqual('\\exp');
-        expect(fttt('\\gcd')).toEqual('\\gcd');
-        expect(fttt('\\hom')).toEqual('\\hom');
-        expect(fttt('\\inf')).toEqual('\\inf');
-        expect(fttt('\\ker')).toEqual('\\ker');
-        expect(fttt('\\lg')).toEqual('\\lg');
-        expect(fttt('\\lim')).toEqual('\\lim');
-        expect(fttt('\\liminf')).toEqual('\\liminf');
-        expect(fttt('\\limsup')).toEqual('\\limsup');
-        expect(fttt('\\max')).toEqual('\\max');
-        expect(fttt('\\min')).toEqual('\\min');
-        expect(fttt('\\Pr')).toEqual('\\Pr');
-        expect(fttt('\\sup')).toEqual('\\sup');
+        expect(nerdamer.convertFromLaTeX('\\arg').toTeX()).toEqual('\\arg');
+        expect(nerdamer.convertFromLaTeX('\\deg').toTeX()).toEqual('\\deg');
+        expect(nerdamer.convertFromLaTeX('\\det').toTeX()).toEqual('\\det');
+        expect(nerdamer.convertFromLaTeX('\\dim').toTeX()).toEqual('\\dim');
+        expect(nerdamer.convertFromLaTeX('\\exp').toTeX()).toEqual('\\exp');
+        expect(nerdamer.convertFromLaTeX('\\gcd').toTeX()).toEqual('\\gcd');
+        expect(nerdamer.convertFromLaTeX('\\hom').toTeX()).toEqual('\\hom');
+        expect(nerdamer.convertFromLaTeX('\\inf').toTeX()).toEqual('\\inf');
+        expect(nerdamer.convertFromLaTeX('\\ker').toTeX()).toEqual('\\ker');
+        expect(nerdamer.convertFromLaTeX('\\lg').toTeX()).toEqual('\\lg');
+        expect(nerdamer.convertFromLaTeX('\\lim').toTeX()).toEqual('\\lim');
+        expect(nerdamer.convertFromLaTeX('\\liminf').toTeX()).toEqual('\\liminf');
+        expect(nerdamer.convertFromLaTeX('\\limsup').toTeX()).toEqual('\\limsup');
+        expect(nerdamer.convertFromLaTeX('\\max').toTeX()).toEqual('\\max');
+        expect(nerdamer.convertFromLaTeX('\\min').toTeX()).toEqual('\\min');
+        expect(nerdamer.convertFromLaTeX('\\Pr').toTeX()).toEqual('\\Pr');
+        expect(nerdamer.convertFromLaTeX('\\sup').toTeX()).toEqual('\\sup');
     });
 });
 
 describe('Basic Operators', () => {
     describe('Basic Operations', () => {
         it('Addition', () => {
-            expect(fttt('2 + 2')).toEqual('4');
+            expect(nerdamer.convertFromLaTeX('2 + 2').toTeX()).toEqual('4');
         });
         it('Subtraction', () => {
-            expect(fttt('3 - 1')).toEqual('2');
-            expect(fttt('1 - -1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('3 - 1').toTeX()).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 - -1').toTeX()).toEqual('2');
         });
         describe('Multiplication', () => {
             it('\\cdot', () => {
-                expect(fttt('2 \\cdot 3')).toEqual('6');
+                expect(nerdamer.convertFromLaTeX('2 \\cdot 3').toTeX()).toEqual('6');
             });
             it('\\times', () => {
-                expect(fttt('2 \\times 3')).toEqual('6');
+                expect(nerdamer.convertFromLaTeX('2 \\times 3').toTeX()).toEqual('6');
             });
             it('Implicit Multiplication', () => {
-                expect(fttt('3(4)')).toEqual('12');
+                expect(nerdamer.convertFromLaTeX('3(4)').toTeX()).toEqual('12');
             });
         });
         describe('Division', () => {
             it('\\frac', () => {
-                expect(fttt('\\frac{6}{2}')).toEqual('3');
+                expect(nerdamer.convertFromLaTeX('\\frac{6}{2}').toTeX()).toEqual('3');
             });
             it('Division Symbol', () => {
-                expect(fttt('6 \\div 2')).toEqual('3');
+                expect(nerdamer.convertFromLaTeX('6 \\div 2').toTeX()).toEqual('3');
             });
             it('Slash', () => {
-                expect(fttt('6/3')).toEqual('2');
+                expect(nerdamer.convertFromLaTeX('6/3').toTeX()).toEqual('2');
             });
             it('Nested fractions', () => {
-                expect(fttt('\\frac{\\frac{\\frac{7}{4}}{2\\frac{7}{3}}}{\\frac{6}{16}}')).toEqual('1');
+                expect(nerdamer.convertFromLaTeX('\\frac{\\frac{\\frac{7}{4}}{2\\frac{7}{3}}}{\\frac{6}{16}}').toTeX()).toEqual('1');
             });
             it('Display Fraction', () => {
-                expect(fttt('\\dfrac{6}{2}')).toEqual('3');
+                expect(nerdamer.convertFromLaTeX('\\dfrac{6}{2}').toTeX()).toEqual('3');
             });
         });
         it('Exponents', () => {
-            expect(fttt('2^3')).toEqual('8');
-            expect(fttt('2^{3}')).toEqual('8');
-            expect(fttt('{2}^{3}')).toEqual('8');
+            expect(nerdamer.convertFromLaTeX('2^3').toTeX()).toEqual('8');
+            expect(nerdamer.convertFromLaTeX('2^{3}').toTeX()).toEqual('8');
+            expect(nerdamer.convertFromLaTeX('{2}^{3}').toTeX()).toEqual('8');
         });
+    });
+
+    describe('floor, ceil, round', () => {
+    it('flooring', () => {
+        expect(nerdamer.convertFromLaTeX('\\lfloor 2.1 \\rfloor').toTeX()).toEqual('2');
+    });
     });
 
     describe('Brackets', () => {
         describe('Parenthesies', () => {
             it('Simple Brackets', () => {
-                expect(fttt('2(1+1)')).toEqual('4');
+                expect(nerdamer.convertFromLaTeX('2(1+1)').toTeX()).toEqual('4');
             });
             it('\\left and \\right', () => {
-                expect(fttt('2 \\left(1+1\\right)')).toEqual('4');
+                expect(nerdamer.convertFromLaTeX('2 \\left(1+1\\right)').toTeX()).toEqual('4');
+            });
+            it('Wrapped in {}', () => {
+                expect(nerdamer.convertFromLaTeX('{(1+2)}^{(1+1)}').toTeX()).toEqual('9');
             });
             it('\\big', () => {
-                expect(fttt('2 \\big(1+1\\big)')).toEqual('4');
+                expect(nerdamer.convertFromLaTeX('2 \\big(1+1\\big)').toTeX()).toEqual('4');
             });
             it('\\bigg', () => {
-                expect(fttt('2 \\bigg(1+1\\bigg)')).toEqual('4');
+                expect(nerdamer.convertFromLaTeX('2 \\bigg(1+1\\bigg)').toTeX()).toEqual('4');
             });
             it('\\Big', () => {
-                expect(fttt('2 \\Big(1+1\\Big)')).toEqual('4');
+                expect(nerdamer.convertFromLaTeX('2 \\Big(1+1\\Big)').toTeX()).toEqual('4');
             });
             it('\\Bigg', () => {
-                expect(fttt('2 \\Bigg(1+1\\Bigg)')).toEqual('4');
+                expect(nerdamer.convertFromLaTeX('2 \\Bigg(1+1\\Bigg)').toTeX()).toEqual('4');
             });
         });
         // describe('Square Brackets', () => {
         //     it('Simple Brackets', () => {
-        //         expect(fttt('2[1+1]')).toEqual('4');
+        //         expect(nerdamer.convertFromLaTeX('2[1+1]').toTeX()).toEqual('4');
         //     });
         //     it('\\left and \\right', () => {
-        //         expect(fttt('2 \\left[1+1\\right]')).toEqual('4');
+        //         expect(nerdamer.convertFromLaTeX('2 \\left[1+1\\right]').toTeX()).toEqual('4');
         //     });
         //     it('\\big', () => {
-        //         expect(fttt('2 \\big[1+1\\big]')).toEqual('4');
+        //         expect(nerdamer.convertFromLaTeX('2 \\big[1+1\\big]').toTeX()).toEqual('4');
         //     });
         //     it('\\bigg', () => {
-        //         expect(fttt('2 \\bigg[1+1\\bigg]')).toEqual('4');
+        //         expect(nerdamer.convertFromLaTeX('2 \\bigg[1+1\\bigg]').toTeX()).toEqual('4');
         //     });
         //     it('\\Big', () => {
-        //         expect(fttt('2 \\Big[1+1\\Big]')).toEqual('4');
+        //         expect(nerdamer.convertFromLaTeX('2 \\Big[1+1\\Big]').toTeX()).toEqual('4');
         //     });
         //     it('\\Bigg', () => {
-        //         expect(fttt('2 \\Bigg[1+1\\Bigg]')).toEqual('4');
+        //         expect(nerdamer.convertFromLaTeX('2 \\Bigg[1+1\\Bigg]').toTeX()).toEqual('4');
         //     });
         // });
     });
 
     describe('Spaces', () => {
         it('thinspace', () => {
-            expect(fttt('1 \\, + \\, 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 \\, + \\, 1').toTeX()).toEqual('2');
         });
         it('negative thinspace', () => {
-            expect(fttt('1 \\! + \\! 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 \\! + \\! 1').toTeX()).toEqual('2');
         });
         it('medium mu skip', () => {
-            expect(fttt('1 \\> + \\> 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 \\> + \\> 1').toTeX()).toEqual('2');
         });
         it('medium mu skip 2', () => {
-            expect(fttt('1 \\: + \\: 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 \\: + \\: 1').toTeX()).toEqual('2');
         });
         it('thick mu skip', () => {
-            expect(fttt('1 \\; + \\; 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 \\; + \\; 1').toTeX()).toEqual('2');
         });
         it('en space', () => {
-            expect(fttt('1 \\enspace + \\enspace 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 \\enspace + \\enspace 1').toTeX()).toEqual('2');
         });
         it('quad', () => {
-            expect(fttt('1 \\quad + \\quad 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 \\quad + \\quad 1').toTeX()).toEqual('2');
         });
         it('qquad', () => {
-            expect(fttt('1 \\qquad + \\qquad 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 \\qquad + \\qquad 1').toTeX()).toEqual('2');
         });
         it('control space', () => {
-            expect(fttt('1 \\ + \\ 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 \\ + \\ 1').toTeX()).toEqual('2');
         });
         it('non-breaking space', () => {
-            expect(fttt('1 ~ + ~ 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 ~ + ~ 1').toTeX()).toEqual('2');
         });
         it('hspace', () => {
-            expect(fttt('1 \\hspace{1cm} + \\hspace{2en} 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 \\hspace{1cm} + \\hspace{2en} 1').toTeX()).toEqual('2');
         });
         it('hfill', () => {
-            expect(fttt('1 + \\hfill 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 + \\hfill 1').toTeX()).toEqual('2');
         });
         it('hphantom', () => {
-            expect(fttt('1 \\hphantom{1cm} + \\hphantom{2en} 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 \\hphantom{1cm} + \\hphantom{2en} 1').toTeX()).toEqual('2');
         });
         it('phantom', () => {
-            expect(fttt('1 \\phantom{1cm} + \\phantom{2en} 1')).toEqual('2');
+            expect(nerdamer.convertFromLaTeX('1 \\phantom{1cm} + \\phantom{2en} 1').toTeX()).toEqual('2');
         });
     });
 })
 
 describe('Matricies', () => {
-
+    it('Basic Case', () => {
+        const matrix = `\\begin{bmatrix}
+        2 & 1 \\\\
+        3 & 2
+        \\end{bmatrix}`
+        expect(nerdamer.convertFromLaTeX('\\det' + matrix).toTeX()).toEqual('1');
+    });
 });
 
 describe('Calculus', () => {
@@ -304,13 +320,14 @@ describe('Calculus', () => {
     });
     describe('Integrals', () => {
         it('2x', () => {
-            expect(fttt('\\int 2x dx')).toEqual('x^{2}');
+            // a = nerdamer.convertFromLaTeX('\\int 2x dx').toTeX();
+            expect(nerdamer.convertFromLaTeX('\\int 2x dx').toTeX()).toEqual('x^{2}');
         });
         it('2x with mathrm d', () => {
-            expect(fttt('\\int 2x \\mathrm{d}x')).toEqual('x^{2}');
+            expect(nerdamer.convertFromLaTeX('\\int 2x \\mathrm{d}x').toTeX()).toEqual('x^{2}');
         });
         it('trig', () => {
-            expect(fttt('\\int \\sin dx')).toEqual('-\\cos\\left(x\\right)');
+            expect(nerdamer.convertFromLaTeX('\\int \\sin dx').toTeX()).toEqual('-\\cos\\left(x\\right)');
         });
 
     });
@@ -326,7 +343,12 @@ describe('Solving', () => {
 describe('Common Packages', () => {
     describe('xfrac', () => {
         it('\\sfrac', () => {
-            expect(fttt('\\sfrac{6}{2}')).toEqual('3');
+            expect(nerdamer.convertFromLaTeX('\\sfrac{6}{2}').toTeX()).toEqual('3');
+        });
+    });
+    describe('amsmath', () => {
+        it('\\text in math', () => {
+            expect(nerdamer.convertFromLaTeX('2 + 3 \\text{ (an example)}')).toEqual('5');
         });
     });
 });
