@@ -1265,20 +1265,27 @@ var nerdamer = (function(imports) {
                         break;
                     }
                     else {
-                        var xf = new bigInt(2),
-                            cz = new bigInt(2),
-                            x = new bigInt(2),
-                            factor = new bigInt(1);
+                        function rho(c) {
+                            var xf = new bigInt(c),
+                                cz = 2,
+                                x = new bigInt(c),
+                                factor = new bigInt(1);
 
-                        while(factor.abs().equals(1)) { 
-                            for(var i=0; i<=cz && factor <=1; i++) {
-                                x = x.pow(2).add(1).mod(n);
-                                factor = bigInt.gcd(x.minus(xf), n);
+                            while(factor.equals(1)) { 
+                                for(var i=0; i<=cz && factor.equals(1); i++) {
+                                    x = x.pow(2).add(1).mod(n);
+                                    factor = bigInt.gcd(x.minus(xf).abs(), n);
+                                }
+
+                                cz = cz * 2;
+                                xf = x;
                             }
-
-                            cz = cz.times(2);
-                            xf = x;
+                            if (factor.equals(n)) {
+                              return rho(c + 1);
+                            }
+                            return factor;
                         }
+                        var factor = rho(2);
                         add(factor);
                         //divide out the factor
                         n = n.divide(factor);
