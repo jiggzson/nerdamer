@@ -123,6 +123,19 @@ describe('Solve', function () {
                 given: 'solve(tan(b*x)=a, x)',
                 expected: 'atan(a)/b' // overly simplified solution
             },
+            // combined trig functions
+            {
+                given: 'solve(sin(cos(x^2))=a^2-b, x)',
+                expected: '[sqrt(acos(asin(a^2-b))), -sqrt(acos(asin(a^2-b)))]' // overly simplified solution
+            },
+            {
+                given: 'solve(cos(sin(a*x-b))=c, x)',
+                expected: '[(asin(acos(c))+b)/a]' // unmatched domain and range between asin and acos
+            },
+            {
+                given: 'solve(tan(sin(cos(x^2)))=c, x)',
+                expected: '[sqrt(acos(asin(atan(c))), -sqrt(acos(asin(atan(c)))]' // simplified solution
+            },
             {
                 given: 'solve(a*x^3+b*x+c, x)',
                 expected: '[(-1/3)*(27*a^2*c+sqrt(108*a^3*b^3+729*a^4*c^2))^(1/3)*2^(-1/3)*a^(-1)'+
