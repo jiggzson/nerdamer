@@ -54,6 +54,15 @@ describe('Solve', function () {
                 given: 'solve(a*x^2+b, x)',
                 expected: '[a^(-1)*i*sqrt(a)*sqrt(b),-a^(-1)*i*sqrt(a)*sqrt(b)]'
             },
+            // x under square root with multiple variables
+            {
+                given: 'solve(a*sqrt(x+c)=b^2, x)',
+                expected: '[b^4/a^2-c]'
+            },
+            {
+                given: 'solve(b+sqrt(a*x^2-c)=c, x)',
+                expected: '[sqrt((b^2 - 2 b c + c^2 + c)/a),-sqrt((b^2 - 2 b c + c^2 + c)/a)]'
+            },
             {
                 given: 'solve(x^2+2*x+1, x)',
                 expected: '[-1]'
@@ -100,6 +109,19 @@ describe('Solve', function () {
                 given: 'solve(cos(x)*x+1-cos(x), x)',
                 expected: '[-2656223529/19001015,-302136356/39039211,-308954356/17824291,-36091008/7390861,-88830662/83379401,0,150965503/34192001,1887835580/8523467,2053282505/45052302,332594509/8463821,3498970568/8735403,392182006/35998715,406482779/5074820,467039565/19859218,738326717/6103909]'
 
+            },
+            // trig functions with multiple variables
+            {
+                given: 'solve(cos(b*x)=a, x)',
+                expected: 'acos(a)/b' // overly simplified solution, should be x = (2 π n - acos(a))/b, n element Z or x = (acos(a) + 2 π n)/b, n element Z
+            },
+            {
+                given: 'solve(sin(b*x)=a, x)',
+                expected: 'asin(a)/b' // overly simplified solution
+            },
+            {
+                given: 'solve(tan(b*x)=a, x)',
+                expected: 'atan(a)/b' // overly simplified solution
             },
             {
                 given: 'solve(a*x^3+b*x+c, x)',
