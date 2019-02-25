@@ -151,6 +151,7 @@ describe('Solve', function () {
                         '(-27*a^2*y^4-27*abs(a^2*y^4))^(1/3)*(1+i*sqrt(3))*2^(-1/3)*a^(-1)*y^(-2),(1/6)*'+
                         '(-27*a^2*y^4-27*abs(a^2*y^4))^(1/3)*(-i*sqrt(3)+1)*2^(-1/3)*a^(-1)*y^(-2)]'
             },
+            // logarithms
             {
                 given: 'solve(log(x,2)+log(x,3)=log(x,5), x)',
                 expected: '[1]'
@@ -158,6 +159,18 @@ describe('Solve', function () {
             {
                 given: 'solve(log(x)-log(x,0.5)=log(x,-3), x)',
                 expected: '[1]'
+            },
+            {
+                given: 'solve(log(x)=a+b, x)',
+                expected: '[e^(a+b)]'
+            },
+            {
+                given: 'solve(log(a*x+c)=b, x)',
+                expected: '[(e^b-c)/a]'
+            },
+            {
+                given: 'solve(a*log(x-c)+b^2=1/c, x)',
+                expected: '[e^((1/c-b^2)/a)+c]'
             }
         ];
 
