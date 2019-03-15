@@ -960,6 +960,9 @@ var nerdamer = (function(imports) {
         csc: function(x) { return 1/Math.sin(x); },
         sec: function(x) { return 1/Math.cos(x); },
         cot: function(x) { return 1/Math.tan(x); },
+		acsc: function(x) { return 1/Math.asin(1/x); },
+        asec: function(x) { return 1/Math.acos(1/x); },
+        acot: function(x) { return (x < 0)? (Math.PI + Math.atan(1/x)) : (Math.atan(1/x)); },
         // https://gist.github.com/jiggzson/df0e9ae8b3b06ff3d8dc2aa062853bd8
         erf: function(x) {
             var t = 1/(1+0.5*Math.abs(x));
