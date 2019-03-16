@@ -960,6 +960,9 @@ var nerdamer = (function(imports) {
         csc: function(x) { return 1/Math.sin(x); },
         sec: function(x) { return 1/Math.cos(x); },
         cot: function(x) { return 1/Math.tan(x); },
+        acsc: function(x) { return Math.asin(1/x); },
+        asec: function(x) { return Math.acos(1/x); },
+        acot: function(x) { return (x < 0)? (Math.PI + Math.atan(1/x)) : (Math.atan(1/x)); },
         // https://gist.github.com/jiggzson/df0e9ae8b3b06ff3d8dc2aa062853bd8
         erf: function(x) {
             var t = 1/(1+0.5*Math.abs(x));
@@ -4196,25 +4199,23 @@ var nerdamer = (function(imports) {
                 return _.symfunction('acsc', arguments);
             },
             acot: function(symbol) {
-                var retval;
                 if(Settings.PARSE2NUMBER) {
-                    if(symbol.isImaginary()) {
-                        retval = complex.evaluate(symbol, 'acot');
-                    }
-                    else {
-                        var k = _.parse('pi/2');
-                        if(symbol.equals(0))
-                            retval = k;
-                        else {
-                            if(symbol.lessThan(0))
-                                k.negate();
-                            retval = _.subtract(k, trig.atan(symbol));
+                    if(symbol.isConstant()) {
+                        if(symbol.equals(0)) {
+                            return _.parse('pi/2');
+                        } else {
+                            if(symbol.lessThan(0)) {
+                                return new Symbol(_.add(_.parse('pi'), trig.atan(_.divide(_.parse('1'), symbol))));
+                            } else {
+                                return new Symbol(trig.atan(_.divide(_.parse('1'), symbol)));
+                            }
                         }
                     }
+
+                    if(symbol.isImaginary())
+                        return complex.evaluate(symbol, 'acot');
                 }
-                else 
-                    retval = _.symfunction('acot', arguments);
-                return retval;    
+                return _.symfunction('acot', arguments);
             },
             atan2: function(a, b) {
                 if(a.equals(0) && b.equals(0))
@@ -9107,7 +9108,7 @@ var nerdamer = (function(imports) {
                 return retval;
             },
 
-            ftext_function = function(bn) { 
+            ftext_function = function(bn) {
                 var retval;
                 if(bn in Math) retval = 'Math.'+bn;
                 else {
