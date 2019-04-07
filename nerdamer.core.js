@@ -5971,13 +5971,13 @@ var nerdamer = (function(imports) {
                     retval = _.symfunction(SQRT, [symbol]);
                 }
 
-                if(m) retval = _.multiply(m, retval);
-
-                if(img) retval = _.multiply(img, retval);
-                
                 //put back the sign that was removed earlier
                 if(sign < 0)
                     retval.power.negate();
+
+                if(m) retval = _.multiply(m, retval);
+
+                if(img) retval = _.multiply(img, retval);
             }
             
             if(is_negative && Settings.PARSE2NUMBER)
