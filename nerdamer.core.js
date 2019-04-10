@@ -1374,6 +1374,8 @@ var nerdamer = (function (imports) {
             // This algorithm adapted from pseudocode in:
             // http://www.math.utk.edu/~ccollins/refs/Handouts/rich.pdf
             function adsimp(f, a, b, fa, fm, fb, V0, tol, maxdepth, depth, state) {
+                //console.log(f.toString(), a.toString(), b.toString(), fa.toString(), fm.toString(), fb.toString(), V0.toString(), tol.toString(), maxdepth.toString(), depth.toString(), state.toString())
+                
                 if (state.nanEncountered) {
                     return NaN;
                 }
@@ -1396,13 +1398,18 @@ var nerdamer = (function (imports) {
                 sr = h * (fm + 4 * f2 + fb) / 12;
                 s2 = sl + sr;
                 err = (s2 - V0) / 15;
-
+                
+                if(state.maxDepthCount > 1000*maxdepth)
+                    return;
+                
                 if (depth > maxdepth) {
                     state.maxDepthCount++;
                     return s2 + err;
-                } else if (Math.abs(err) < tol) {
+                } 
+                else if (Math.abs(err) < tol) {
                     return s2 + err;
-                } else {
+                } 
+                else {
                     m = a + h * 0.5;
                     V1 = adsimp(f, a, m, fa, f1, fm, sl, tol * 0.5, maxdepth, depth + 1, state);
                     if (isNaN(V1)) {
@@ -1430,6 +1437,8 @@ var nerdamer = (function (imports) {
                     tol = 1e-9;
                 }
                 if (maxdepth === undefined) {
+                    //Issue #458 - This was lowered because of performance issues. 
+                    //This was suspected from before but is now confirmed with this issue
                     maxdepth = 45;
                 }
 
@@ -6072,6 +6081,10 @@ var nerdamer = (function (imports) {
         }
 
         function pfactor(symbol) {
+            //Fix issue #458 | nerdamer("sqrt(1-(3.3333333550520926e-7)^2)").evaluate().text()
+            //More Big Number issues >:(
+            if(symbol.greaterThan(9.999999999998891e+41))
+                return symbol;
             //Fix issue #298
             if (symbol.equals(Math.PI))
                 return new Symbol(Math.PI);
@@ -9763,4 +9776,3 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-;

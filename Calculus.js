@@ -1945,9 +1945,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     return __.Limit.limit(integral, dx, point);
                 }
             };
+            
             var vars = core.Utils.variables(symbol),
                 integral = __.integrate(symbol, dx),
                 retval;
+        
             if(vars.length === 1)
                 dx = vars[0];
             if(!integral.hasIntegral()) { 
@@ -1956,6 +1958,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     a, b;
                 upper[dx] = to;
                 lower[dx] = from;
+                
                 a = get_value(integral, upper, to, dx);  
                 b = get_value(integral, lower, from, dx);
                 retval = _.subtract(a, b);
@@ -1963,6 +1966,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             else if(vars.length === 1 && from.isConstant() && to.isConstant()) {
                 var f = core.Utils.build(symbol);
                 retval = new Symbol(core.Math2.num_integrate(f, Number(from), Number(to)));
+                
             }
             else 
                 retval = _.symfunction('defint', [symbol, from , to, dx]);
@@ -2360,3 +2364,4 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     //link registered functions externally
     nerdamer.api();
 })();
+
