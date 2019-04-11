@@ -49,6 +49,8 @@
     "test": "jasmine"
   },
   "devDependencies": {
-    "jasmine": "2.6.0"
+    "jasmine": "2.6.0",
+    "big-integer": "1.6.43",
+    "big.js": "5.2.2"
   }
 }
