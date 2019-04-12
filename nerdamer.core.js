@@ -1130,7 +1130,7 @@ var nerdamer = (function (imports) {
         //the factorial function but using the big library instead
         factorial: function (x) {
             if (x < 0)
-                throw new UndefinedError('factorial not defined for negative numbers');
+                throw new Error('factorial not defined for negative numbers');
             var retval = 1;
             for (var i = 2; i <= x; i++)
                 retval = retval * i;
@@ -1361,6 +1361,50 @@ var nerdamer = (function (imports) {
             var sign = Math.sign(x);
             return sign * Math.floor(Math.abs(x));
         },
+        simpson: function(f, a, b, step) {
+            var get_value = function (f, x, side) {
+                var v = f(x);
+                var d = 0.000000000001;
+                if (isNaN(v)) {
+                    v = f(side === 1 ? x + d : x - d);
+                }
+                return v;
+            };
+
+            step = step || 0.0001;
+            //calculate the number of intervals
+            var n = Math.abs(Math.floor((b - a) / step));
+            //simpson's rule requires an even number of intervals. If it's not then add 1
+            if (n % 2 !== 0)
+                n++;
+            //get the interval size
+            var dx = (b - a) / n;
+            //get x0
+            var retval = get_value(f, a, 1);
+
+            //get the middle part 4x1+2x2+4x3 ...
+            //but first set a flag to see if it's even or odd. 
+            //The first one is odd so we start there
+            var even = false;
+            //get x1
+            var xi = a + dx;
+            //the coefficient
+            var c, k;
+            //https://en.wikipedia.org/wiki/Simpson%27s_rule
+            for (var i = 1; i < n; i++) {
+                c = even ? 2 : 4;
+                k = c * get_value(f, xi, 1);
+                retval += k;
+                //flip the even flag
+                even = !even;
+                //increment xi
+                xi += dx;
+            }
+
+            //add xn
+            return (retval + get_value(f, xi, 2)) * (dx / 3);
+
+        },
         /**
          * https://github.com/scijs/integrate-adaptive-simpson
          * @param {Function} f - the function being integrated
@@ -1371,11 +1415,12 @@ var nerdamer = (function (imports) {
          * @returns {Number}
          */
         num_integrate: function (f, a, b, tol, maxdepth) {
+            if(maxdepth < 0)
+                throw new Error('max depth cannot be negative');
+            
             // This algorithm adapted from pseudocode in:
             // http://www.math.utk.edu/~ccollins/refs/Handouts/rich.pdf
             function adsimp(f, a, b, fa, fm, fb, V0, tol, maxdepth, depth, state) {
-                //console.log(f.toString(), a.toString(), b.toString(), fa.toString(), fm.toString(), fb.toString(), V0.toString(), tol.toString(), maxdepth.toString(), depth.toString(), state.toString())
-                
                 if (state.nanEncountered) {
                     return NaN;
                 }
@@ -1399,8 +1444,10 @@ var nerdamer = (function (imports) {
                 s2 = sl + sr;
                 err = (s2 - V0) / 15;
                 
-                if(state.maxDepthCount > 1000*maxdepth)
+                if(state.maxDepthCount > 1000*maxdepth) {
                     return;
+                }
+                    
                 
                 if (depth > maxdepth) {
                     state.maxDepthCount++;
@@ -1455,13 +1502,21 @@ var nerdamer = (function (imports) {
                 }
 
                 if (state.nanEncountered) {
-                    throw new UndefinedError('Function does not converge over interval!');
+                    throw new Error('Function does not converge over interval!');
                 }
 
                 return result;
             }
-
-            return nround(integrate(f, a, b, tol, maxdepth), 12);
+            var retval;
+                    
+            try { 
+                retval = integrate(f, a, b, tol, maxdepth);
+            }
+            catch(e) {
+                //fallback to non-adaptive
+                return Math2.simpson(f, a, b);
+            }
+            return nround(retval, 12);
         },
         //https://en.wikipedia.org/wiki/Trigonometric_integral
         //CosineIntegral
