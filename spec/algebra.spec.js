@@ -593,6 +593,10 @@ describe('Algebra', function () {
             {
                 given: 'pfactor(product(n!,n,1,10))',
                 expected: '(2^38)*(3^17)*(5^7)*(7^4)'
+            },
+            {
+                given: 'pfactor(4677271)',
+                expected: '(2089)*(2239)'
             }
         ];
 

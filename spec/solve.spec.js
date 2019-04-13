@@ -54,15 +54,6 @@ describe('Solve', function () {
                 given: 'solve(a*x^2+b, x)',
                 expected: '[a^(-1)*i*sqrt(a)*sqrt(b),-a^(-1)*i*sqrt(a)*sqrt(b)]'
             },
-            // x under square root with multiple variables
-            {
-                given: 'solve(a*sqrt(x+c)=b^2, x)',
-                expected: '[b^4/a^2-c]'
-            },
-            {
-                given: 'solve(b+sqrt(a*x^2-c)=c, x)',
-                expected: '[sqrt((b^2 - 2 b c + c^2 + c)/a),-sqrt((b^2 - 2 b c + c^2 + c)/a)]'
-            },
             {
                 given: 'solve(x^2+2*x+1, x)',
                 expected: '[-1]'
@@ -110,32 +101,6 @@ describe('Solve', function () {
                 expected: '[-2656223529/19001015,-302136356/39039211,-308954356/17824291,-36091008/7390861,-88830662/83379401,0,150965503/34192001,1887835580/8523467,2053282505/45052302,332594509/8463821,3498970568/8735403,392182006/35998715,406482779/5074820,467039565/19859218,738326717/6103909]'
 
             },
-            // trig functions with multiple variables
-            {
-                given: 'solve(cos(b*x)=a, x)',
-                expected: 'acos(a)/b' // overly simplified solution, should be x = (2 π n - acos(a))/b, n element Z or x = (acos(a) + 2 π n)/b, n element Z
-            },
-            {
-                given: 'solve(sin(b*x)=a, x)',
-                expected: 'asin(a)/b' // overly simplified solution
-            },
-            {
-                given: 'solve(tan(b*x)=a, x)',
-                expected: 'atan(a)/b' // overly simplified solution
-            },
-            // combined trig functions
-            {
-                given: 'solve(sin(cos(x^2))=a^2-b, x)',
-                expected: '[sqrt(acos(asin(a^2-b))), -sqrt(acos(asin(a^2-b)))]' // overly simplified solution
-            },
-            {
-                given: 'solve(cos(sin(a*x-b))=c, x)',
-                expected: '[(asin(acos(c))+b)/a]' // unmatched domain and range between asin and acos
-            },
-            {
-                given: 'solve(tan(sin(cos(x^2)))=c, x)',
-                expected: '[sqrt(acos(asin(atan(c))), -sqrt(acos(asin(atan(c)))]' // simplified solution
-            },
             {
                 given: 'solve(a*x^3+b*x+c, x)',
                 expected: '[(-1/3)*(27*a^2*c+sqrt(108*a^3*b^3+729*a^4*c^2))^(1/3)*2^(-1/3)*a^(-1)'+
@@ -151,7 +116,6 @@ describe('Solve', function () {
                         '(-27*a^2*y^4-27*abs(a^2*y^4))^(1/3)*(1+i*sqrt(3))*2^(-1/3)*a^(-1)*y^(-2),(1/6)*'+
                         '(-27*a^2*y^4-27*abs(a^2*y^4))^(1/3)*(-i*sqrt(3)+1)*2^(-1/3)*a^(-1)*y^(-2)]'
             },
-            // logarithms
             {
                 given: 'solve(log(x,2)+log(x,3)=log(x,5), x)',
                 expected: '[1]'
@@ -159,18 +123,6 @@ describe('Solve', function () {
             {
                 given: 'solve(log(x)-log(x,0.5)=log(x,-3), x)',
                 expected: '[1]'
-            },
-            {
-                given: 'solve(log(x)=a+b, x)',
-                expected: '[e^(a+b)]'
-            },
-            {
-                given: 'solve(log(a*x+c)=b, x)',
-                expected: '[(e^b-c)/a]'
-            },
-            {
-                given: 'solve(a*log(x-c)+b^2=1/c, x)',
-                expected: '[e^((1/c-b^2)/a)+c]'
             }
         ];
 

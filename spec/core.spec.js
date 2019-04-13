@@ -60,6 +60,11 @@ describe('Nerdamer core', function () {
                 given: '6.5*2',
                 expected: '13',
                 expectedValue: '13'
+            },
+            {
+                given: '(11.85)^(1/2)',
+                expected: '(1/2)*sqrt(237)*sqrt(5)^(-1)',
+                expectedValue: '3.4423828956117015'
             }
         ];
 
@@ -860,6 +865,11 @@ describe('Nerdamer core', function () {
                 given: '74689676.31109099*sqrt(5578547747455547)',
                 expected: '(824947474856/11045)*sqrt(5578547747455547)',
                 expectedValue: '5578547747455547'
+            },
+            {
+                given: 'sqrt(2/x)',
+                expected: 'sqrt(2)*sqrt(x)^(-1)',
+                expectedValue: '0.9759000729485331'
             }
         ];
 
@@ -2336,6 +2346,22 @@ describe('trigonometric functions', function () {
             'csc(2*pi)',
             'cot(pi)',
             'cot(2*pi)'
+        ];
+
+        for (var i = 0; i < testCases.length; ++i) {
+            var threwError = false;
+            try {
+                nerdamer(testCases[i]);
+            } catch (e) {
+                threwError = true;
+            }
+            expect(threwError).toBe(true);
+        }
+    });
+    it('should throw for malformed expression', function () {
+        // given
+        var testCases = [
+            '5+'
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
