@@ -53,16 +53,16 @@ describe('TeX features', function () {
                 decimalTeX: '0.75 \\cdot x^{0.666666666666666666666666666666666666667}'
             }, {
                 given: '4*cos(x)',
-                TeX: '4 \\cdot \\mathrm{cos}\\left(x\\right)',
-                decimalTeX: '4 \\cdot \\mathrm{cos}\\left(x\\right)'
+                TeX: '4 \\cdot \\cos\\left(x\\right)',
+                decimalTeX: '4 \\cdot \\cos\\left(x\\right)'
             }, {
                 given: '(1/4)*cos(x)',
-                TeX: '\\frac{\\mathrm{cos}\\left(x\\right)}{4}',
-                decimalTeX: '0.25 \\cdot \\mathrm{cos}\\left(x\\right)'
+                TeX: '\\frac{\\cos\\left(x\\right)}{4}',
+                decimalTeX: '0.25 \\cdot \\cos\\left(x\\right)'
             }, {
                 given: '(5/4)*cos(x)',
-                TeX: '\\frac{5 \\cdot \\mathrm{cos}\\left(x\\right)}{4}',
-                decimalTeX: '1.25 \\cdot \\mathrm{cos}\\left(x\\right)'
+                TeX: '\\frac{5 \\cdot \\cos\\left(x\\right)}{4}',
+                decimalTeX: '1.25 \\cdot \\cos\\left(x\\right)'
             }, {
                 given: '7/8*sqrt(x)',
                 TeX: '\\frac{7 \\cdot \\sqrt{x}}{8}',
@@ -117,16 +117,16 @@ describe('TeX features', function () {
                 decimalTeX: '\\frac{0.75 \\cdot \\left|x+y\\right|^{x}}{\\left(x+5\\right)^{2}}'
             }, {
                 given: 'x^(1/4)+3/4*x^2+cos(1/4)',
-                TeX: '\\frac{3 \\cdot x^{2}}{4}+x^{\\frac{1}{4}}+\\mathrm{cos}\\left(\\frac{1}{4}\\right)',
-                decimalTeX: '0.75 \\cdot x^{2}+x^{0.25}+\\mathrm{cos}\\left(0.25\\right)'
+                TeX: '\\frac{3 \\cdot x^{2}}{4}+x^{\\frac{1}{4}}+\\cos\\left(\\frac{1}{4}\\right)',
+                decimalTeX: '0.75 \\cdot x^{2}+x^{0.25}+\\cos\\left(0.25\\right)'
             }, {
                 given: '-(x^wtf+1)^6-(t+1)/(x+3)^2',
                 TeX: '-\\left(x^{wtf}+1\\right)^{6}-\\frac{t+1}{\\left(x+3\\right)^{2}}',
                 decimalTeX: '-\\left(x^{wtf}+1\\right)^{6}-\\frac{t+1}{\\left(x+3\\right)^{2}}'
             }, {
                 given: '2*(-log(x)*sin(x)+cos(x)*x^(-1))',
-                TeX: '2\\left(-\\mathrm{log}\\left(x\\right) \\cdot \\mathrm{sin}\\left(x\\right)+\\frac{\\mathrm{cos}\\left(x\\right)}{x}\\right)',
-                decimalTeX: '2\\left(-\\mathrm{log}\\left(x\\right) \\cdot \\mathrm{sin}\\left(x\\right)+\\frac{\\mathrm{cos}\\left(x\\right)}{x}\\right)'
+                TeX: '2\\left(-\\log\\left(x\\right) \\cdot \\sin\\left(x\\right)+\\frac{\\cos\\left(x\\right)}{x}\\right)',
+                decimalTeX: '2\\left(-\\log\\left(x\\right) \\cdot \\sin\\left(x\\right)+\\frac{\\cos\\left(x\\right)}{x}\\right)'
             }, {
                 given: '(x*(x+1))/(x^2+2*x+1)',
                 TeX: '\\frac{x \\cdot \\left(x+1\\right)}{x^{2}+2 \\cdot x+1}',
@@ -147,7 +147,7 @@ describe('TeX features', function () {
                 given: '(x+1)!',
                 TeX: '\\left(x+1\\right)!',
                 decimalTeX: '\\left(x+1\\right)!'
-            }, 
+            },
             {
                 given: 'x!+(x+1)!',
                 TeX: '\\left(x+1\\right)!+x!',
@@ -257,7 +257,7 @@ describe('TeX features', function () {
         expect(teX).toEqual(testCases[i].expected);
       }
     });
-    
+
     it('should explicitly convert to LaTeX', function () {
       // given
       var testCases = [
@@ -271,11 +271,11 @@ describe('TeX features', function () {
         },
         {
           given: 'diff(cos(x),x)',
-          expected: '\\frac{d}{d x}\\left({\\mathrm{cos}\\left(x\\right)}\\right)'
+          expected: '\\frac{d}{d x}\\left({\\cos\\left(x\\right)}\\right)'
         },
         {
           given: 'integrate(cos(x),x)',
-          expected: '\\int {\\mathrm{cos}\\left(x\\right)}\\, dx'
+          expected: '\\int {\\cos\\left(x\\right)}\\, dx'
         },
         {
           given: '2*(sqrt(3)+sqrt(2))',
@@ -291,17 +291,17 @@ describe('TeX features', function () {
         expect(teX).toEqual(testCases[i].expected);
       }
     });
-    
+
     it('should display integrals', function () {
       // given
       var testCases = [
         {
           given: 'defint(log(2cos(x/2)),-π,π,x)',
-          expected: '\\int\\limits_{-\\pi}^{\\pi} \\mathrm{log}\\left(2 \\cdot \\mathrm{cos}\\left(\\frac{x}{2}\\right)\\right) dx'
+          expected: '\\int\\limits_{-\\pi}^{\\pi} \\log\\left(2 \\cdot \\cos\\left(\\frac{x}{2}\\right)\\right) dx'
         },
         {
           given: 'integrate(sin(x^x),x)',
-          expected: '\\int{\\mathrm{sin}\\left(x^{x}\\right)}{dx}'
+          expected: '\\int{\\sin\\left(x^{x}\\right)}{dx}'
         },
       ];
 
@@ -313,5 +313,5 @@ describe('TeX features', function () {
         expect(teX).toEqual(testCases[i].expected);
       }
     });
-    
+
 });

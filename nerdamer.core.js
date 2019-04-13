@@ -3858,7 +3858,7 @@ var nerdamer = (function (imports) {
                 d[1].negate();
                 return this.asin.apply(this, d);
             },
-            acot: function (r, i) {
+            acot: function(r, i) {
                 var d = this.removeDen([r, i]);
                 d[1].negate();
                 return this.atan.apply(this, d);
@@ -4180,95 +4180,90 @@ var nerdamer = (function (imports) {
 
                 return retval;
             },
-            csc: function (symbol) {
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
+            csc: function(symbol) {
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.isConstant())
                         return new Symbol(Math2.csc(symbol.valueOf()));
-                    if (symbol.isImaginary())
+                    if(symbol.isImaginary())
                         return complex.evaluate(symbol, 'csc');
                     return _.parse(format('1/sin({0})', symbol));
                 }
 
                 var retval,
-                        c = false,
-                        q = getQuadrant(symbol.multiplier.toDecimal()),
-                        m = symbol.multiplier.abs();
+                    c = false,
+                    q = getQuadrant(symbol.multiplier.toDecimal()),
+                    m = symbol.multiplier.abs();
 
                 symbol.multiplier = m;
 
-                if (symbol.isPi() && symbol.isLinear()) {
+                if(symbol.isPi() && symbol.isLinear()) {
                     //return for 0 for multiples of pi
-                    if (isInt(m)) {
-                        throw new UndefinedError('csc is undefined for ' + symbol.toString());
-                    } else {
+                    if(isInt(m)) {
+                        throw new UndefinedError('csc is undefined for '+symbol.toString());
+                    }
+                    else {
                         var n = m.num, d = m.den;
-                        if (d == 2) {
-                            retval = new Symbol(1);
-                            c = true;
-                        } else if (d == 3) {
-                            retval = _.parse('2/sqrt(3)');
-                            c = true
-                        } else if (d == 4) {
-                            retval = _.parse('sqrt(2)');
-                            c = true;
-                        } else if (d == 6) {
-                            retval = new Symbol(2);
-                            c = true;
-                        } else
-                            retval = _.symfunction('csc', [symbol]);
+                        if(d == 2) {
+                            retval = new Symbol(1); c = true;
+                        }
+                        else if(d == 3) {
+                            retval = _.parse('2/sqrt(3)'); c = true
+                        }
+                        else if(d == 4) {
+                            retval = _.parse('sqrt(2)'); c = true;
+                        }
+                        else if(d == 6) {
+                            retval = new Symbol(2); c = true;
+                        }
+                        else retval = _.symfunction('csc', [symbol]);
                     }
                 }
 
-                if (!retval)
-                    retval = _.symfunction('csc', [symbol]);
+                if(!retval) retval = _.symfunction('csc', [symbol]);
 
-                if (c && (q === 3 || q === 4))
-                    retval.negate();
+                if(c && (q === 3 || q === 4)) retval.negate();
 
                 return retval;
             },
-            cot: function (symbol) {
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
+            cot: function(symbol) {
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.isConstant())
                         return new Symbol(Math2.cot(symbol.valueOf()));
-                    if (symbol.isImaginary())
+                    if(symbol.isImaginary())
                         return complex.evaluate(symbol, 'cot');
                     return _.parse(format('1/tan({0})', symbol));
                 }
                 var retval,
-                        c = false,
-                        q = getQuadrant(symbol.multiplier.toDecimal()),
-                        m = symbol.multiplier;
+                    c = false,
+                    q = getQuadrant(symbol.multiplier.toDecimal()),
+                    m = symbol.multiplier;
 
                 symbol.multiplier = m;
 
-                if (symbol.isPi() && symbol.isLinear()) {
+                if(symbol.isPi() && symbol.isLinear()) {
                     //return 0 for all multiples of pi
-                    if (isInt(m)) {
-                        throw new UndefinedError('cot is undefined for ' + symbol.toString());
-                    } else {
+                    if(isInt(m)) {
+                        throw new UndefinedError('cot is undefined for '+symbol.toString());
+                    }
+                    else {
                         var n = m.num, d = m.den;
-                        if (d == 2)
-                            retval = new Symbol(0);
-                        else if (d == 3) {
-                            retval = _.parse('1/sqrt(3)');
-                            c = true;
-                        } else if (d == 4) {
-                            retval = new Symbol(1);
-                            c = true;
-                        } else if (d == 6) {
-                            retval = _.parse('sqrt(3)');
-                            c = true;
-                        } else
-                            retval = _.symfunction('cot', [symbol]);
+                        if(d == 2) retval = new Symbol(0);
+                        else if(d == 3) {
+                            retval = _.parse('1/sqrt(3)'); c = true;
+                        }
+                        else if(d == 4) {
+                            retval = new Symbol(1); c = true;
+                        }
+                        else if(d == 6) {
+                            retval = _.parse('sqrt(3)'); c = true;
+                        }
+                        else retval = _.symfunction('cot', [symbol]);
                     }
                 }
 
-                if (!retval)
-                    retval = _.symfunction('cot', [symbol]);
+                if(!retval) retval = _.symfunction('cot', [symbol]);
 
-                if (c && (q === 2 || q === 4))
-                    retval.negate();
+                if(c && (q === 2 || q === 4)) retval.negate();
 
                 return retval;
             },
@@ -4591,6 +4586,15 @@ var nerdamer = (function (imports) {
                     return x;
                 }
             },
+            'plus': {
+                precedence: 3,
+                operator: 'plus',
+                action: 'add',
+                prefix: true,
+                postfix: false,
+                leftAssoc: false,
+                operation: function(x) { return x; }
+            },
             '-': {
                 precedence: 3,
                 operator: '-',
@@ -4728,93 +4732,96 @@ var nerdamer = (function (imports) {
         // Supported functions.
         // Format: function_name: [mapped_function, number_of_parameters]
         var functions = this.functions = {
-            'cos': [trig.cos, 1],
-            'sin': [trig.sin, 1],
-            'tan': [trig.tan, 1],
-            'sec': [trig.sec, 1],
-            'csc': [trig.csc, 1],
-            'cot': [trig.cot, 1],
-            'acos': [trig.acos, 1],
-            'asin': [trig.asin, 1],
-            'atan': [trig.atan, 1],
-            'asec': [trig.asec, 1],
-            'acsc': [trig.acsc, 1],
-            'acot': [trig.acot, 1],
-            'atan2': [trig.atan2, 2],
-            'acoth': [trigh.acoth, 1],
-            'asech': [trigh.asech, 1],
-            'acsch': [trigh.acsch, 1],
-            'sinh': [trigh.sinh, 1],
-            'cosh': [trigh.cosh, 1],
-            'tanh': [trigh.tanh, 1],
-            'asinh': [trigh.asinh, 1],
-            'sech': [trigh.sech, 1],
-            'csch': [trigh.csch, 1],
-            'coth': [trigh.coth, 1],
-            'acosh': [trigh.acosh, 1],
-            'atanh': [trigh.atanh, 1],
-            'log10': [, 1],
-            'exp': [exp, 1],
-            'min': [min, -1],
-            'max': [max, -1],
-            'erf': [, 1],
-            'floor': [, 1],
-            'ceil': [, 1],
-            'trunc': [, 1],
-            'Si': [, 1],
-            'step': [, 1],
-            'rect': [, 1],
-            'sinc': [sinc, 1],
-            'tri': [, 1],
-            'sign': [sign, 1],
-            'Ci': [, 1],
-            'Ei': [, 1],
-            'Shi': [, 1],
-            'Chi': [, 1],
-            'Li': [, 1],
-            'fib': [, 1],
-            'fact': [factorial, 1],
-            'factorial': [factorial, 1],
-            'continued_fraction': [continued_fraction, [1, 2]],
-            'dfactorial': [, 1],
-            'gamma_incomplete': [, [1, 2]],
-            'round': [round, [1, 2]],
-            'mod': [mod, 2],
-            'pfactor': [pfactor, 1],
-            'vector': [vector, -1],
-            'matrix': [matrix, -1],
-            'imatrix': [imatrix, -1],
-            'parens': [parens, -1],
-            'sqrt': [sqrt, 1],
-            'nthroot': [nthroot, 2],
-            'log': [log, [1, 2]],
-            'expand': [expand, 1],
-            'abs': [abs, 1],
-            'invert': [invert, 1],
-            'determinant': [determinant, 1],
-            'size': [size, 1],
-            'transpose': [transpose, 1],
-            'dot': [dot, 2],
-            'cross': [cross, 2],
-            'vecget': [vecget, 2],
-            'vecset': [vecset, 3],
-            'matget': [matget, 3],
-            'matset': [matset, 4],
-            'matgetrow': [matgetrow, 2],
-            'matsetrow': [matsetrow, 3],
-            'matgetcol': [matgetcol, 2],
-            'matsetcol': [matsetcol, 3],
-            'IF': [IF, 3],
-            //imaginary support
-            'realpart': [realpart, 1],
-            'imagpart': [imagpart, 1],
-            'conjugate': [conjugate, 1],
-            'arg': [arg, 1],
-            'polarform': [polarform, 1],
-            'rectform': [rectform, 1],
-            'sort': [sort, [1, 2]],
-            'integer_part': [, 1]
-        };
+                'cos'               : [ trig.cos, 1],
+                'sin'               : [ trig.sin, 1],
+                'tan'               : [ trig.tan, 1],
+                'sec'               : [ trig.sec, 1],
+                'csc'               : [ trig.csc, 1],
+                'cot'               : [ trig.cot, 1],
+                'acos'              : [ trig.acos, 1],
+                'asin'              : [ trig.asin, 1],
+                'atan'              : [ trig.atan, 1],
+                'arccos'            : [ trig.acos, 1],
+                'arcsin'            : [ trig.asin, 1],
+                'arctan'            : [ trig.atan, 1],
+                'asec'              : [ trig.asec, 1],
+                'acsc'              : [ trig.acsc, 1],
+                'acot'              : [ trig.acot, 1],
+                'atan2'             : [ trig.atan2, 2],
+                'acoth'             : [ trigh.acoth, 1],
+                'asech'             : [ trigh.asech, 1],
+                'acsch'             : [ trigh.acsch, 1],
+                'sinh'              : [ trigh.sinh, 1],
+                'cosh'              : [ trigh.cosh, 1],
+                'tanh'              : [ trigh.tanh, 1],
+                'asinh'             : [ trigh.asinh, 1],
+                'sech'              : [ trigh.sech, 1],
+                'csch'              : [ trigh.csch, 1],
+                'coth'              : [ trigh.coth, 1],
+                'acosh'             : [ trigh.acosh, 1],
+                'atanh'             : [ trigh.atanh, 1],
+                'log10'             : [ , 1],
+                'exp'               : [ exp, 1],
+                'min'               : [ min ,-1],
+                'max'               : [ max,-1],
+                'erf'               : [ , 1],
+                'floor'             : [ , 1],
+                'ceil'              : [ , 1],
+                'trunc'             : [ , 1],
+                'Si'                : [ , 1],
+                'step'              : [ , 1],
+                'rect'              : [ , 1],
+                'sinc'              : [ sinc, 1],
+                'tri'               : [ , 1],
+                'sign'              : [ sign, 1],
+                'Ci'                : [ , 1],
+                'Ei'                : [ , 1],
+                'Shi'               : [ , 1],
+                'Chi'               : [ , 1],
+                'Li'                : [ , 1],
+                'fib'               : [ , 1],
+                'fact'              : [factorial, 1],
+                'factorial'         : [factorial, 1],
+                'continued_fraction': [continued_fraction, [1,2]],
+                'dfactorial'        : [ , 1],
+                'gamma_incomplete'  : [ , [1, 2]],
+                'round'             : [ round, [1, 2]],
+                'mod'               : [ mod, 2],
+                'pfactor'           : [ pfactor , 1],
+                'vector'            : [ vector, -1],
+                'matrix'            : [ matrix, -1],
+                'imatrix'           : [ imatrix, -1],
+                'parens'            : [ parens, -1],
+                'sqrt'              : [ sqrt, 1],
+                'nthroot'           : [ nthroot, 2],
+                'log'               : [ log , [1, 2]],
+                'expand'            : [ expand , 1],
+                'abs'               : [ abs , 1],
+                'invert'            : [ invert, 1],
+                'determinant'       : [ determinant, 1],
+                'size'              : [ size, 1],
+                'transpose'         : [ transpose, 1],
+                'dot'               : [ dot, 2],
+                'cross'             : [ cross, 2],
+                'vecget'            : [ vecget, 2],
+                'vecset'            : [ vecset, 3],
+                'matget'            : [ matget, 3],
+                'matset'            : [ matset, 4],
+                'matgetrow'         : [ matgetrow, 2],
+                'matsetrow'         : [ matsetrow, 3],
+                'matgetcol'         : [ matgetcol, 2],
+                'matsetcol'         : [ matsetcol, 3],
+                'IF'                : [ IF, 3],
+                //imaginary support
+                'realpart'          : [ realpart, 1],
+                'imagpart'          : [ imagpart, 1],
+                'conjugate'         : [ conjugate, 1],
+                'arg'               : [ arg, 1],
+                'polarform'         : [ polarform, 1],
+                'rectform'          : [ rectform, 1],
+                'sort'              : [ sort, [1, 2]],
+                'integer_part'      : [, 1]
+            };
         //error handler
         this.error = err;
         //this function is used to comb through the function modules and find a function given its name
@@ -5001,6 +5008,10 @@ var nerdamer = (function (imports) {
             //will replace this with some cloning action in the future
             return operators;
         };
+        
+        this.getBrackets = function() {
+            return brackets;
+        };
         /*
          * Preforms preprocessing on the string. Useful for making early modification before 
          * sending to the parser
@@ -5126,6 +5137,18 @@ var nerdamer = (function (imports) {
             var depth = 0;
             var open_brackets = [];
             var HAS_SPACE = false; //marks if an open space character was found
+            //Possible source of bug. Review
+            /*
+            //gets the next space
+            var next_space = function(from) {
+                for(var i=from; i<L; i++) {
+                    if(e.charAt(i) === ' ')
+                        return i;
+                }
+
+                return L; //assume the end of the string instead
+            };
+            */
             /**
              * Adds a scope to tokens
              * @param {String} scope_type 
@@ -5314,6 +5337,19 @@ var nerdamer = (function (imports) {
                         } else {
                             add_token(undefined, f);
                         }
+                        //Possible source of bug. Review
+                        /*
+                        //space can mean multiplication so add the symbol if the is encountered
+                        if(/\d+|\d+\.?\d*e[\+\-]*\d+/i.test(f)) {
+                            var next = e.charAt(col+1);
+                            var next_is_operator = next in operators;
+                            var ns = next_space(col+1);
+                            var next_word = e.substring(col+1, ns);
+                            //the next can either be a prefix operator or no operator
+                            if((next_is_operator && operators[next].prefix) || !(next_is_operator || next_word in operators))
+                                target.push(new Token('*', Token.OPERATOR, col));
+                        }
+                        */
                     }
                     set_last_position(col); //mark this location    
                 }
@@ -5600,6 +5636,90 @@ var nerdamer = (function (imports) {
          * @param {Object} substitutions
          * @returns {Symbol}
          */
+        
+        function Node(token) {
+            this.type = token.type;
+            this.value = token.value;
+            //the incoming token may already be a Node type
+            this.left = token.left;
+            this.right = token.right;
+        }
+
+        Node.prototype.toString = function() {
+            var left = this.left ? this.left.toString()+'---' : '';
+            var right = this.right ? '---'+this.right.toString() : '';
+            return left+'('+this.value+')'+right;
+        };
+
+        Node.prototype.toHTML = function(depth, indent) {
+            depth = depth || 0;
+            indent = typeof indent === 'undefined' ? 4 : indent;
+            var tab = function(n) {
+                return ' '.repeat(indent*n);
+            };
+            var html = '';
+            var left = this.left ? tab(depth+1)+'<li>\n'+this.left.toHTML(depth+2, indent)+tab(depth+1)+'</li> \n': '';
+            var right = this.right ? tab(depth+1)+'<li>\n'+this.right.toHTML(depth+2, indent)+tab(depth+1)+'</li>\n': '';
+            var html = tab(depth)+'<div class="'+this.type.toLowerCase()+'"><span>'+this.value+'</span></div>'+tab(depth)+'\n';
+            if(left || right) {
+                html += tab(depth)+'<ul>\n'+left+right+tab(depth)+'</ul>\n';
+            }
+            html += '';
+            return html;
+        };
+
+        this.tree = function(tokens) {
+            var Q = [];
+            for(var i=0; i<tokens.length; i++) {
+                var e = tokens[i];
+                //Arrays indicate a new scope so parse that out
+                if(Array.isArray(e)) {
+                    e = this.tree(e);
+                    //if it's a comma then it's just arguments
+                    Q.push(e);
+                    continue;
+                }
+                if(e.type === Token.OPERATOR) {
+                    if(e.is_prefix || e.postfix) {
+                        //prefixes go to the left, postfix to the right
+                        var location = e.is_prefix ? 'left' : 'right';
+                        var last = Q.pop();
+                        e = new Node(e);
+                        e[location] = last;
+                        Q.push(e);
+                    }
+                    else {
+                        e = new Node(e);
+                        e.right = Q.pop();
+                        e.left = Q.pop();
+                        Q.push(e);
+                    }
+                }
+                else if(e.type === Token.FUNCTION) {
+                    e = new Node(e);
+                    var args = Q.pop();
+                    e.right = args;
+                    if(forTeX && e.value === 'object') {
+                        //check if Q has a value
+                        var last = Q[Q.length-1];
+                        if(last) {
+                            while(last.right) {
+                                last = last.right;
+                            }
+                            last.right = e;
+                            continue;
+                        }
+                    }
+
+                    Q.push(e);
+                }
+                else {
+                    Q.push(new Node(e));
+                }
+            }
+
+            return Q[0];
+        };
         this.parse = function (e, substitutions) {
             e = prepare_expression(e);
             substitutions = substitutions || {};
@@ -8009,7 +8129,8 @@ var nerdamer = (function (imports) {
                     } else {
                         frac = qc;
                     }
-                } else {
+                } 
+                else {
                     frac = this.fullConversion(value);
                 }
             }
@@ -8067,6 +8188,42 @@ var nerdamer = (function (imports) {
 
     //The latex generator
     var LaTeX = {
+        parser: (function() {
+            //create a parser and strip it from everything except the items that you need
+            var keep = ['classes', 'setOperator', 'getOperators', 'getBrackets', 'tokenize', 'toRPN', 'tree', 'units'];
+            var parser = new Parser();
+            for(var x in parser) {
+                if(keep.indexOf(x) === -1)
+                    delete parser[x];
+            }
+            //declare the operators
+            parser.setOperator({
+                precedence: 8,
+                operator: '\\',
+                action: 'slash',
+                prefix: true,
+                postfix: false,
+                leftAssoc: true,
+                operation: function(e) {
+                    return e; //bypass the slash
+                }
+            });
+            parser.setOperator({
+                precedence: 8,
+                operator: '\\,',
+                action: 'slash_comma',
+                prefix: true,
+                postfix: false,
+                leftAssoc: true,
+                operation: function(e) {
+                    return e; //bypass the slash
+                }
+            });
+            //have braces not map to anything. We want them to be return as-is
+            var brackets = parser.getBrackets();
+            brackets['{'].maps_to = undefined;
+            return parser;
+        })(),
         space: '~',
         dot: ' \\cdot ',
         //grab a list of supported functions but remove the excluded ones found in exclFN
@@ -8208,6 +8365,40 @@ var nerdamer = (function (imports) {
             Psi: '\\Psi',
             Omega: '\\Omega'
         },
+        symbols: {
+            arccos: '\\arccos',
+            cos: '\\cos',
+            csc: '\\csc',
+            exp: '\\exp',
+            ker: '\\ker',
+            limsup: '\\limsup',
+            min: '\\min',
+            sinh: '\\sinh',
+            arcsin: '\\arcsin',
+            cosh: '\\cosh',
+            deg: '\\deg',
+            gcd: '\\gcd',
+            lg: '\\lg',
+            ln: '\\ln',
+            Pr: '\\Pr',
+            sup: '\\sup',
+            arctan: '\\arctan',
+            cot: '\\cot',
+            det: '\\det',
+            hom: '\\hom',
+            lim: '\\lim',
+            log: '\\log',
+            sec: '\\sec',
+            tan: '\\tan',
+            arg: '\\arg',
+            coth: '\\coth',
+            dim: '\\dim',
+            inf: '\\inf',
+            liminf: '\\liminf',
+            max: '\\max',
+            sin: '\\sin',
+            tanh: '\\tanh'
+        },
         //get the raw value of the symbol as an array
         value: function (symbol, inverted, option, negative) {
             var group = symbol.group,
@@ -8217,7 +8408,8 @@ var nerdamer = (function (imports) {
             /*if(group === N) //do nothing since we want to return top & bottom blank; */
             if (symbol.isInfinity) {
                 v[index] = '\\infty';
-            } else if (group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) {
+            } 
+            else if (group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) {
                 var value = symbol.value;
                 if (value.replace)
                     value = value.replace(/(.+)_$/, '$1\\_');
@@ -8226,6 +8418,11 @@ var nerdamer = (function (imports) {
                 var greek = this.greek[t_varray[0]];
                 if (greek) {
                     t_varray[0] = greek;
+                    value = t_varray.join('_');
+                }
+                var symbol = this.symbols[t_varray[0]];
+                if(symbol) {
+                    t_varray[0] = symbol;
                     value = t_varray.join('_');
                 }
                 v[index] = value;
@@ -9669,7 +9866,8 @@ var nerdamer = (function (imports) {
         try {
             validateName(varname);
             return RESERVED.indexOf(varname) === -1;
-        } catch (e) {
+        } 
+        catch (e) {
             return false;
         }
     };
@@ -9818,6 +10016,23 @@ var nerdamer = (function (imports) {
     libExports.setOperator = function (operator, shift) {
         _.setOperator(operator, shift);
     };
+    
+        libExports.tree = function(expression) {
+        return _.tree(_.toRPN(_.tokenize(expression)));
+    };
+
+    libExports.htmlTree = function(expression, indent) {
+        var tree = this.tree(expression);
+
+        return '<div class="tree">\n'+
+               '    <ul>\n'+
+               '        <li>\n'+
+                            tree.toHTML(3, indent)+'\n'+
+               '        </li>\n'+
+               '    </ul>\n'+
+               '</div>';
+    };
+
 
     libExports.api();
 
