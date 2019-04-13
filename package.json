@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "jasmine": "2.6.0",
-    "big-integer": "1.6.43",
-    "big.js": "5.2.2"
+    "big-integer": "1.6.41",
+    "decimal.js": "10.1.1"
   }
 }
