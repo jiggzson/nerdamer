@@ -4327,7 +4327,7 @@ var nerdamer = (function (imports) {
             acsc: function (symbol) {
                 if (Settings.PARSE2NUMBER) {
                     if (symbol.isConstant())
-                        return new Symbol(Math.acos(symbol.invert().valueOf()));
+                        return new Symbol(Math.asin(symbol.invert().valueOf()));
                     if (symbol.isImaginary())
                         return complex.evaluate(symbol, 'acsc');
                 }
