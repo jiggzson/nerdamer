@@ -12,6 +12,8 @@ describe('Basic operations', function() {
     it('should divide correctly', function(){expect(parse('6/3')).toEqual(2);});
     it('should multiply correctly', function(){expect(parse('2*6')).toEqual(12);});
     it('should raise to power correctly', function(){expect(parse('2^3')).toEqual(8);});
+    it('should parse scientific notation correctly', function(){expect(parse('1.234e+1')).toEqual(12.34);});
+    it('should parse non-normalized scientific notation correctly', function(){expect(parse('12.3e-1')).toEqual(1.23);});
 });
 
 describe('Order of precedence', function() {
