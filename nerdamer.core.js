@@ -242,12 +242,21 @@ var nerdamer = (function (imports) {
                     sign = e / l,
                     coeff_array = parts[0].split('.');
             if (sign === -1) {
-                num = zero + '.' + new Array(l).join(zero) + coeff_array.join('');
+                l = l - coeff_array[0].length;
+                if (l < 0) {
+                  num = coeff_array[0].slice(0, l) + '.' + coeff_array[0].slice(l) + (coeff_array.length === 2 ? coeff_array[1] : '');
+                } else {
+                  num = zero + '.' + new Array(l + 1).join(zero) + coeff_array.join('');
+                }
             } else {
                 var dec = coeff_array[1];
                 if (dec)
                     l = l - dec.length;
-                num = coeff_array.join('') + new Array(l + 1).join(zero);
+                if (l < 0) {
+                  num = coeff_array[0] + dec.slice(0, l) + '.' + dec.slice(l);
+                } else {
+                  num = coeff_array.join('') + new Array(l + 1).join(zero);
+                }
             }
         }
 
@@ -10068,5 +10077,3 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
-var x = nerdamer("(-x+1)^(-2)+((-x+1)^(-2)+(-x+1)^(-4)*x)");
