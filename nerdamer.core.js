@@ -320,9 +320,9 @@ var nerdamer = (function (imports) {
             if (group === CP || group === CB || prevgroup === CP || prevgroup === CB) {
                 for (var x in obj.symbols)
                     variables(obj.symbols[x], poly, vars);
-            } else if (group === S || prevgroup === S) {
+            } else if (group === S || prevgroup === S) { 
                 //very crude needs fixing. TODO
-                if (!(obj.value === 'e' || obj.value === 'pi'))
+                if (!(obj.value === 'e' || obj.value === 'pi' || obj.value === Settings.IMAGINARY))
                     vars.add(obj.value);
             } else if (group === PL || prevgroup === PL) {
                 variables(firstObject(obj.symbols), poly, vars);
@@ -1941,6 +1941,7 @@ var nerdamer = (function (imports) {
             switch (group) {
                 case N:
                     multiplier = '';
+
                     //if it's numerical then all we need is the multiplier
                     value = obj.multiplier == '-1' ? '1' : toString(obj.multiplier);
                     power = '';
@@ -2531,7 +2532,8 @@ var nerdamer = (function (imports) {
         toString: function () {
             return !this.den.equals(1) ? this.num.toString() + '/' + this.den.toString() : this.num.toString();
         },
-        valueOf: function () {
+        valueOf: function () { 
+//            if(this.num == 24) throw new Error(999)
             if(Settings.USE_BIG)
                 return new bigDec(this.num.toString()).div(new bigDec(this.den.toString()));
             return this.num/this.den;
@@ -2710,7 +2712,9 @@ var nerdamer = (function (imports) {
         equals: function (symbol) {
             if (!isSymbol(symbol))
                 symbol = new Symbol(symbol);
-            return this.value === symbol.value && this.power.equals(symbol.power) && this.multiplier.equals(symbol.multiplier);
+            return this.value === symbol.value && this.power.equals(symbol.power) 
+                    && this.multiplier.equals(symbol.multiplier) 
+                    && this.group === symbol.group;
         },
         // Greater than
         gt: function (symbol) {
@@ -3598,8 +3602,9 @@ var nerdamer = (function (imports) {
                     key = this.value;
                 return key;
             } else if (g === CP) {
-                if (group === CP)
+                if (group === CP) {
                     key = text(this, 'hash');
+                }
                 if (group === PL)
                     key = this.power.toDecimal();
                 else
@@ -4105,7 +4110,7 @@ var nerdamer = (function (imports) {
                             retval = _.parse('1/2');
                             c = true;
                         } else
-                            retval = _.symfunction('sin', [symbol]);
+                            retval = _.multiply(new Symbol(sign), _.symfunction('sin', [symbol]));
                     }
                 }
 
@@ -7181,7 +7186,7 @@ var nerdamer = (function (imports) {
                     h2 = text(b, 'hash');
 
                 if (g1 === CP && g2 === CP && b.isLinear() && !a.isLinear() && h1 !== h2) {
-                    return this.add(a, b);
+                    return this.add(b, a);
                 }
 
                 //PL & PL should compare hashes and not values e.g. compare x+x^2 with x+x^3 and not x with x
@@ -9526,6 +9531,7 @@ var nerdamer = (function (imports) {
             }
             args = arg_array;
         }
+        
         var f_array = ftext(symbol);
         return new Function(args, f_array[1] + ' return ' + f_array[0] + ';');
     };
@@ -10062,3 +10068,5 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
+
+var x = nerdamer("(-x+1)^(-2)+((-x+1)^(-2)+(-x+1)^(-4)*x)");

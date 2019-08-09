@@ -1336,6 +1336,12 @@ describe('Nerdamer core', function () {
         expect(parsed).toEqual(testCases[i].expected);
       }
     });
+    it('should ignore constants and special values', function() {
+        var core = nerdamer.getCore();
+        expect(nerdamer('e').variables()).toEqual([]);
+        expect(nerdamer('pi').variables()).toEqual([]);
+        expect(nerdamer(core.Settings.IMAGINARY).variables()).toEqual([]);
+    });
     /** #44: a+b - (a+b) not evaluated as 0 */
     it('should perform subtraction of terms', function () {
       // given

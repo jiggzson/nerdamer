@@ -2577,7 +2577,8 @@ if((typeof module) !== 'undefined') {
          */
         allLinear: function(set) {
             var l = set.length;
-            for(var i=0; i<l; i++) if(!__.isLinear(set[i])) return false;
+            for(var i=0; i<l; i++) 
+                if(!__.isLinear(set[i])) return false;
             return true;
         },
         /*

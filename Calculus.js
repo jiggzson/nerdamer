@@ -388,7 +388,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 nth--;
                 symbol = __.diff(symbol, wrt, nth);
             }
-   
+
             return symbol;
   
              // Equivalent to "derivative of the outside".

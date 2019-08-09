@@ -477,6 +477,7 @@ if((typeof module) !== 'undefined') {
      * @returns {Array}
      */
     var solve = function(eqns, solve_for, solutions) { 
+        
         if(eqns instanceof Equation) {
             //if it's zero then we're done
             if(eqns.isZero())
@@ -490,6 +491,7 @@ if((typeof module) !== 'undefined') {
                 return [eqns.LHS];
             }
         }
+        
         //unwrap the vector since what we want are the elements
         if(eqns instanceof core.Vector)
             eqns = eqns.elements;
@@ -558,8 +560,9 @@ if((typeof module) !== 'undefined') {
             var points = core.Utils.arrayUnique(points1.concat(points2).concat(points3)),
                 l = points.length;
             //compile the function and the derivative of the function
-            var f = build(symbol.clone()),
-                fp = build(_C.diff(symbol.clone()));
+            var f = build(symbol.clone());
+            var d = _C.diff(symbol.clone());
+            var fp = build(d);
             for(var i=0; i<l; i++) {
                 var point = points[i];
                 add_to_result(Newton(point, f, fp), has_trig);
