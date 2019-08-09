@@ -140,6 +140,7 @@ if((typeof module) !== 'undefined') {
                 return _.multiply(retval, coeff);
             },
             inverse: function(symbol, s_, t) { 
+                var input_symbol = symbol.clone();
                 return core.Utils.block('POSITIVE_MULTIPLIERS', function() {
                     if(symbol.group === S || symbol.group === CB || symbol.group === CP) { 
                         var finalize = function() {
@@ -243,7 +244,6 @@ if((typeof module) !== 'undefined') {
                                         }
                                     }
                                 }
-
                             }
                         }
                         else if(f.x.power.num && f.x.power.num.equals(3) && f.x.power.den.equals(2) && num.contains('sqrt(pi)') && !num.contains(s) && num.isLinear()){
@@ -325,7 +325,8 @@ if((typeof module) !== 'undefined') {
                     }
 
                     if(!retval)
-                        retval = _.symfunction('ilt', arguments);
+                        retval = _.symfunction('ilt', [input_symbol, s_, t]);
+
                     return retval;
                 }, true); 
             }

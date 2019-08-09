@@ -5581,6 +5581,7 @@ var nerdamer = (function (imports) {
                 if (Array.isArray(e)) {
                     e = this.parseRPN(e, substitutions);
                 }
+                
                 if (e.type === Token.OPERATOR) {
                     if (e.is_prefix || e.postfix)
                         //resolve the operation assocated with the prefix
