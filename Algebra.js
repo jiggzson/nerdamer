@@ -2587,8 +2587,9 @@ if((typeof module) !== 'undefined') {
          */
         allLinear: function(set) {
             var l = set.length;
-            for(var i=0; i<l; i++) 
+            for(var i=0; i<l; i++) {
                 if(!__.isLinear(set[i])) return false;
+            }
             return true;
         },
         /*
@@ -2602,7 +2603,13 @@ if((typeof module) !== 'undefined') {
                 status = true;
                 for(var s in e.symbols) {
                     var symbol = e.symbols[s], sg = symbol.group;
-                    if(sg === FN || sg === EX || sg === CB) { status = false;}
+                    if(sg === FN || sg === EX) { 
+                        status = false;
+                    }
+                    if(sg === CB) {
+                        //needs further checking since it might be imaginary
+                        status = symbol.isImaginary() && variables(symbol).length === 1;
+                    }
                     else {
                         if(sg === PL || sg === CP) status = __.isLinear(symbol);
                         else {

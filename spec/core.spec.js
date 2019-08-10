@@ -2718,4 +2718,7 @@ describe('hyperbolic trigonometric functions', function () {
             expect(value).toEqual(testCases[i].expectedValue);
         }
     });
+    it('should not overflow', function() {
+        expect(nerdamer('(x+1)+((x+1)^2+(x+1)^3)').toString()).toEqual('(1+x)^2+(1+x)^3+1+x');
+    });
 });
