@@ -75,7 +75,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     };
     //transforms a function
     Symbol.prototype.fnTransform = function() { 
+        if(this.group !== FN)
+            return this;
         var retval, a = this.args[0];
+        var m = new Symbol(this.multiplier);
+        var sym = this.clone().toUnitMultiplier();
         if(this.isLinear()) {
             switch(this.fname) {
                 case SINH:
@@ -97,7 +101,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     retval = _.parse(format('1/cos({0})', a));
                     break;
                 default:
-                    retval = this;
+                    retval = sym;
             }
         }
         else if(this.power.equals(2)) {
@@ -125,7 +129,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     retval = _.parse(format('(1-cos(2*({0})))/(1+cos(2*({0})))+1', a));
                     break;
                 default:
-                    retval = this;
+                    retval = sym;
             }
         }
         else if(this.fname === SEC) {
@@ -155,9 +159,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             retval = _.parse(format('(cos(3*({0}))+3*cos({0}))/4', this.args[0]));
         }
         else
-            retval = this;
-            
-        return retval;
+            retval = sym;
+        
+        return _.multiply(retval, m);
     };
 
     core.Expression.prototype.hasIntegral = function() {

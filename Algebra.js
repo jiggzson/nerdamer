@@ -2053,6 +2053,14 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             factor: function(symbol, factors) {
+                //some items cannot be factored any further so return those right away
+                if(symbol.group === FN) {
+                    var arg = symbol.args[0];
+                    if(arg.group === S && arg.isSimple())
+                        return symbol;
+                }
+                else if(symbol.group === S && symbol.isSimple())
+                    return symbol;
                 //expand the symbol to get it in a predictable form. If this step
                 //is skipped some factors are missed.
                 
@@ -2069,7 +2077,8 @@ if((typeof module) !== 'undefined') {
                 
                 if(symbol.group === FN && symbol.fname !== 'sqrt')
                     symbol = core.Utils.evaluate(symbol);
-                
+                //make a copy of the symbol to return if something goes wrong
+                var untouched = symbol.clone();
                 try {
                     if(symbol.group === CB) { 
                         //TODO: I have to revisit this again. I'm checking if they're all
@@ -2127,8 +2136,9 @@ if((typeof module) !== 'undefined') {
                                 if(x.group !== S) all_S = false;
                                 if(!x.multiplier.equals(1)) all_unit = false;
                             });       
-                            if(all_S && all_unit) 
+                            if(all_S && all_unit) {
                                 return _.pow(_.parse(symbol, core.Utils.getFunctionsSubs(map)), _.parse(p));
+                            }
                         }
                         //factor the coefficients
                         var coeff_factors = new Factors();
@@ -2174,7 +2184,7 @@ if((typeof module) !== 'undefined') {
                 }
                 catch(e) {
                     //no need to stop the show because something went wrong :)
-                    return symbol;
+                    return untouched;
                 }
             },
             reduce: function(symbol, factors) {
@@ -3373,60 +3383,27 @@ if((typeof module) !== 'undefined') {
                 f: _.add(_.pow(sym.clone(), new Symbol(2)), d.clone())
             };
         },
-        trigSimp: function(symbol, map) {
+        trigSimp: function(symbol, map) { 
             symbol = symbol.clone();
-            map = map || {};
-            //create the map
-            symbol.each(function(x) {
-                if(x.group === FN) {
-                    var key = x.args.toString();
-                    var entry = map[key];
-                    entry ? entry.push(x) : map[key] = [x];
-                }
-            }, true);
-            
-            //1. try simplify cos(x)^2+sin(x)^2
-            
-            for(var x in map) {
-                var sin, cos;
-                map[x].map(function(s, i) {
-                    //fish out sin(x)^2 and cos(x)^2
-                    if(s.power.equals(2) && !s.multiplier.isNegative()) {
-                        if(s.fname === 'cos')
-                            cos = s;
-                        else if(s.fname === 'sin')
-                            sin = s;
-                    }
-                });
-                //if we have sin and cos then we can simplify
-                if(sin && cos) {
-                    //add them together and divide by two since each contributes half
-                    var m = cos.multiplier.add(sin.multiplier);
-                    //get the remainder which may be there if they're not equal and divide it back to get wholes
-                    var r = m.mod(new core.Frac(m.greaterThan(new core.Frac(2)) ? 2 : 1));
-                    //get the whole
-                    var w = m.subtract(r).divide(new core.Frac(2));
-                    //r belongs to the greater of the two
-                    if(cos.multiplier.greaterThan(sin.multiplier)) {
-                        sin.power = new core.Frac(0);
-                        sin.multiplier = w;
-                        cos.multiplier = r;
-                    }
-                    else if(sin.multiplier.greaterThan(cos.multiplier)) {
-                        cos.power = new core.Frac(0);
-                        cos.multiplier = w;
-                        sin.multiplier = r;
-                    }
-                    else {
-                        //doesn't matter which but we'll throw the bone to cos
-                        cos.multiplier = w;
-                        cos.power = new core.Frac(0);
-                        sin.multiplier = new core.Frac(0);
-                    }
+            //rewrite the symbol
+            if(symbol.group === CP) {
+                var retval = new Symbol(0);
+                symbol.each(function(x) {
+                    //rewrite the function
+                    var tr = __.trigSimp(x.fnTransform());
+                    retval = _.add(retval, tr);
+                }, true);
+                //put back the power and multiplier and return
+                return _.pow(_.multiply(new Symbol(symbol.multiplier), retval), new Symbol(symbol.power));
+            }
+            else if(symbol.group === CB) {
+                //try for tangent
+                var n = symbol.getNum();
+                var d = symbol.getDenom();
+                if(n.fname === 'sin' && d.fname === 'cos' && n.args[0].equals(d.args[0]) && n.power.equals(d.power)) {
+                    return _.parse(core.Utils.format('({0})*({1})*tan({2})^({3})', d.multiplier, n.multiplier, n.args[0], n.power));
                 }
             }
-            
-                
             return symbol;
         },
         simplify: function(symbol) {
@@ -3437,7 +3414,6 @@ if((typeof module) !== 'undefined') {
             symbol = symbol.clone(); //make a copy
             ////1. Try cos(x)^2+sin(x)^2
             simplified = __.trigSimp(symbol);
-            
             //first go for the "cheapest" simplification which may eliminate 
             //your problems right away. factor -> evaluate. Remember
             //that there's no need to expand since factor already does that
@@ -3449,6 +3425,7 @@ if((typeof module) !== 'undefined') {
                 var m = simplified.multiplier.clone();
                 simplified.toUnitMultiplier();
                 var r = new Symbol(0);
+                //return the sum of simplifications
                 simplified.each(function(x) {
                     var s = __.simplify(x);
                     r = _.add(r, s);

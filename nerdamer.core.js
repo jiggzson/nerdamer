@@ -2666,6 +2666,9 @@ var nerdamer = (function (imports) {
         return _.parse('(' + value + ')^(' + power + ')');
     };
     Symbol.prototype = {
+        isSimple: function() {
+            return this.power.equals(1) && this.multiplier.equals(1);
+        },
         //returns a clone.
         powSimp: function () {
             if (this.group === CB) {
@@ -7166,8 +7169,9 @@ var nerdamer = (function (imports) {
                         bp = b.power.toString();
 
                 //always keep the greater group on the left. 
-                if (g1 < g2 || (g1 === g2 && ap > bp && bp > 0))
+                if (g1 < g2 || (g1 === g2 && ap > bp && bp > 0)) {
                     return this.add(b, a);
+                }
 
                 /*note to self: Please don't forget about this dilemma ever again. In this model PL and CB goes crazy
                  * because it doesn't know which one to prioritize. */
@@ -7235,7 +7239,8 @@ var nerdamer = (function (imports) {
                     result = Symbol.shell(PL).attach([a, b]);
                     //update the hash
                     result.value = g1 === PL ? h1 : v1;
-                } else if (aIsComposite && a.isLinear()) {
+                } 
+                else if (aIsComposite && a.isLinear()) {
                     var canIterate = g1 === g2,
                             bothPL = g1 === PL && g2 === PL;
 
@@ -7262,7 +7267,8 @@ var nerdamer = (function (imports) {
                     } else {
                         result = a.attach(b);
                     }
-                } else {
+                } 
+                else {
                     if (g1 === FN && a.fname === SQRT && g2 !== EX && b.power.equals(0.5)) {
                         var m = b.multiplier.clone();
                         b = sqrt(b.toUnitMultiplier().toLinear());
