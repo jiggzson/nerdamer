@@ -2156,6 +2156,7 @@ if((typeof module) !== 'undefined') {
                                 x.invert();
                             factors.add(x);
                         });
+                        
                         if(!multiVar) { 
                             symbol = __.Factor.squareFree(symbol, factors);
                             var t_factors = new Factors();
@@ -2165,6 +2166,7 @@ if((typeof module) !== 'undefined') {
                             }
                         }
                         else {
+                            
                             symbol = __.Factor.mfactor(symbol, factors);
                             //put back the sign of power
                             factors.each(function(x) {
@@ -2174,9 +2176,9 @@ if((typeof module) !== 'undefined') {
                         }
                         
                         symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
-
                         factors.add(_.pow(symbol, _.parse(p)));
                         //last minute clean up
+                        
                         return factors.toSymbol();
                     }
                     
@@ -2486,13 +2488,14 @@ if((typeof module) !== 'undefined') {
                         var factors2 = new Factors(),
                             arg = __.Factor.common(symbol.args[0].clone(), factors2);
                         arg = __.Factor.coeffFactor(arg, factors2);
-                        symbol = _.symfunction('sqrt', [arg]);
+                        symbol = _.multiply(_.symfunction('sqrt', [arg]), _.parse(symbol.multiplier));
                         factors2.each(function(x) {
                             symbol = _.multiply(symbol, _.parse(core.Utils.format('sqrt({0})', x)));
                         });
                     }
                     else
                         factors.add(symbol);
+                    
                 }
                 else { 
                     //symbol = __.Factor.common(symbol, factors);
@@ -3414,6 +3417,9 @@ if((typeof module) !== 'undefined') {
             return symbol;
         },
         simplify: function(symbol) {
+            //remove the multiplier to make calculation easier;
+            var c = _.parse(symbol.multiplier);
+            symbol.toUnitMultiplier();
             //nothing more to do
             if(symbol.isConstant() || symbol.group === core.groups.S)
                 return symbol;
@@ -3425,23 +3431,19 @@ if((typeof module) !== 'undefined') {
             //your problems right away. factor -> evaluate. Remember
             //that there's no need to expand since factor already does that
             simplified = __.Factor.factor(simplified);
-            
             //If the simplfied is a sum then we can make a few more simplifications
             //e.g. simplify(1/(x-1)+1/(1-x)) as per issue #431
             if(simplified.group === core.groups.CP && simplified.isLinear()) {
-                var m = simplified.multiplier.clone();
-                simplified.toUnitMultiplier();
                 var r = new Symbol(0);
                 //return the sum of simplifications
                 simplified.each(function(x) {
                     var s = __.simplify(x);
                     r = _.add(r, s);
                 });
-                r.multiplier = r.multiplier.multiply(m);
                 simplified = r;
             }
-            
-            return evaluate(simplified);
+            //place back multiplier and return
+            return _.multiply(c, evaluate(simplified));
         },
         Classes: {
             Polynomial: Polynomial,
