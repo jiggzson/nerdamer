@@ -272,7 +272,9 @@ if ((typeof module) !== 'undefined') {
             }
             //consider case (a+b)*I+u
         }
-
+        //check if the system has a distinct solution
+        if(m.determinant().equals(0))
+            throw new core.exceptions.SolveError('System does not have a distinct solution');
         // Use M^-1*c to solve system
         m = m.invert();
         var result = m.multiply(c);
@@ -544,6 +546,10 @@ if ((typeof module) !== 'undefined') {
             });
 
             return solutions;
+        }
+        
+        if(eqns.group === FN && eqns.fname === 'sqrt') {
+            eqns = _.pow(Symbol.unwrapSQRT(eqns), new Symbol(2));
         }
         
         var existing = {}, //mark existing solutions as not to have duplicates
@@ -998,6 +1004,3 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var x = nerdamer('solve(1/x=a,x)');
-console.log(x.toString())

@@ -2611,7 +2611,7 @@ if((typeof module) !== 'undefined') {
                     }
                     if(sg === CB) {
                         //needs further checking since it might be imaginary
-                        status = symbol.isImaginary() && variables(symbol).length === 1;
+                        status = variables(symbol).length === 1;
                     }
                     else {
                         if(sg === PL || sg === CP) status = __.isLinear(symbol);

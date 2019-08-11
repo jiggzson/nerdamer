@@ -91,6 +91,10 @@ describe('Solve', function () {
                 expected: '[a^(-1)]'
             },
             {
+                given: 'solve(sqrt(x^2-1),x)',
+                expected: '[1,-1]'
+            },
+            {
                 given: 'solve(m*x^9+n,x)',
                 expected: '[2*m^(-1/9)*n^(1/9),2*e^((2/9)*i*pi)*m^(-1/9)*n^(1/9),2*e^((4/9)*i*pi)*m^(-1/9)*n^(1/9),'+
                         '2*e^((2/3)*i*pi)*m^(-1/9)*n^(1/9),2*e^((8/9)*i*pi)*m^(-1/9)*n^(1/9),2*e^((10/9)*i*pi)*m^(-1/9)*n^(1/9),'+

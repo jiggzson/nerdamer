@@ -974,6 +974,8 @@ var nerdamer = (function (imports) {
     var ValueLimitExceededError = customError('ValueLimitExceededError');
     //Is throw if the value is an incorrect LH or RH value
     var NerdamerValueError = customError('NerdamerValueError');
+    //Is throw if the value is an incorrect LH or RH value
+    var SolveError = customError('SolveError');
 
     var exceptions = {
         DivisionByZero: DivisionByZero,
@@ -987,7 +989,8 @@ var nerdamer = (function (imports) {
         DimensionError: DimensionError,
         InvalidVariableNameError: InvalidVariableNameError,
         ValueLimitExceededError: ValueLimitExceededError,
-        NerdamerValueError: NerdamerValueError
+        NerdamerValueError: NerdamerValueError,
+        SolveError: SolveError
     };
 //Big ========================================================================== 
     var Big = {
