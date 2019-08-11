@@ -44,7 +44,7 @@ if ((typeof module) !== 'undefined') {
     // The search radius for the roots
     core.Settings.SOLVE_RADIUS = 1000;
     // The maximum number to fish for on each side of the zero
-    core.Settings.ROOTS_PER_SIDE = 5;
+    core.Settings.ROOTS_PER_SIDE = 10;
     // Covert the number to multiples of pi if possible
     core.Settings.make_pi_conversions = true;
     // The step size
@@ -85,6 +85,10 @@ if ((typeof module) !== 'undefined') {
      * @returns {Symbol}
      */
     var removeDenom = function (a, b) { 
+        //remove the denominator on both sides
+        var den = _.multiply(a.getDenom(), b.getDenom());
+        a = _.expand(_.multiply(a, den.clone()));
+        b = _.expand(_.multiply(b, den));
         //swap the groups
         if (b.group === CP && b.group !== CP) {
             var t = a;
@@ -123,14 +127,6 @@ if ((typeof module) !== 'undefined') {
                     }
                 }
             }
-        }
-        else if(a.group === S) {
-            //grab the denominator
-            var den = a.getDenom();
-            var num = a.getNum();
-            //move it to the RHS and then the denominator is now the LHS
-            b = _.multiply(b, den);
-            a = num;
         }
 
         return _.expand(_.subtract(a, b));
@@ -430,7 +426,7 @@ if ((typeof module) !== 'undefined') {
     };
 
     var get_points = function (symbol, step) {
-        step = step || 0.1;
+        step = step || 0.01;
         var f = build(symbol);
         var start = Math.round(f(0)),
                 last = f(start),
@@ -439,7 +435,9 @@ if ((typeof module) !== 'undefined') {
                 rside = core.Settings.ROOTS_PER_SIDE, // the max number of roots on right side
                 lside = rside * 2 + 1; // the max number of roots on left side
         // check around the starting point
-        points.push(Math.floor(start / 2));
+        points.push(Math.floor(start / 2)); //half way from zero might be a good start
+        points.push(Math.abs(start)); //|f(0)| could be a good start
+        points.push(start);//|f(0)| could be a good start
         //adjust for log. A good starting point to include for log is 0.1
         symbol.each(function (x) {
             if (x.containsFunction('log'))
@@ -451,11 +449,13 @@ if ((typeof module) !== 'undefined') {
         for (var i = start; (i) < core.Settings.SOLVE_RADIUS; i++) {
             var val = f(i * step),
                     sign = val / Math.abs(val);
-            if (isNaN(val) || !isFinite(val) || points.length > rside)
+            if (isNaN(val) || !isFinite(val) || points.length > rside) { 
                 break;
+            }
             //compare the signs. The have to be different if they cross a zero
-            if (sign !== last_sign)
+            if (sign !== last_sign) {
                 points.push((i - 1) / 2); //take note of the possible zero location
+            }
             last_sign = sign;
         }
 
@@ -998,3 +998,6 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer('solve(1/x=a,x)');
+console.log(x.toString())
