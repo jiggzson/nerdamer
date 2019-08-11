@@ -768,51 +768,61 @@ if ((typeof module) !== 'undefined') {
         //polynomial single variable
         if (numvars === 1) {
             if (eq.isPoly(true)) {
-                var coeffs = core.Utils.getCoeffs(eq, solve_for),
-                        deg = coeffs.length - 1,
-                        was_calculated = false;
-                if (vars[0] === solve_for) {
-                    //check to see if all the coefficients are constant
-                    if (checkAll(coeffs, function (x) {
-                        return x.group !== core.groups.N;
-                    })) {
-                        var roots = core.Algebra.proots(eq);
-                        //if all the roots are integers then return those
-                        if (checkAll(roots, function (x) {
-                            return !core.Utils.isInt(x);
+                //try to factor and solve
+                var factors = new core.Algebra.Classes.Factors();
+                core.Algebra.Factor.factor(eq, factors);
+                //if the equation has more than one symbolic factor then solve those individually
+                if(factors.getNumberSymbolics() > 1) {
+                    for(var x in factors.factors) {
+                        add_to_result(solve(factors.factors[x]));
+                    }
+                }
+                else {
+                    var coeffs = core.Utils.getCoeffs(eq, solve_for),
+                            deg = coeffs.length - 1,
+                            was_calculated = false;
+                    if (vars[0] === solve_for) {
+                        //check to see if all the coefficients are constant
+                        if (checkAll(coeffs, function (x) {
+                            return x.group !== core.groups.N;
                         })) {
-                            //roots have been calculates
-                            was_calculated = true;
-                            roots.map(function (x) {
-                                add_to_result(new Symbol(x));
-                            });
+                            var roots = core.Algebra.proots(eq);
+                            //if all the roots are integers then return those
+                            if (checkAll(roots, function (x) {
+                                return !core.Utils.isInt(x);
+                            })) {
+                                //roots have been calculates
+                                was_calculated = true;
+                                roots.map(function (x) {
+                                    add_to_result(new Symbol(x));
+                                });
+                            }
+                        }
+
+                        if (!was_calculated) {
+                            //we can solve algebraically for degrees 1, 2, 3. The remainder we switch to Jenkins-
+                            if (deg === 1)
+                                add_to_result(_.divide(coeffs[0], coeffs[1].negate()));
+                            else if (deg === 2) {
+                                add_to_result(_.expand(quad.apply(undefined, coeffs)));
+                                coeffs.push('-');
+                                add_to_result(_.expand(quad.apply(undefined, coeffs)));
+                            }
+                            else if (deg === 3)
+                                add_to_result(cubic.apply(undefined, coeffs));
+                            else {
+                                /*
+                                 var sym_roots = csolve(eq, solve_for); 
+                                 if(sym_roots.length === 0)
+                                 sym_roots = divnconsolve(eq, solve_for);
+                                 if(sym_roots.length > 0) 
+                                 add_to_result(sym_roots);
+                                 else
+                                 */
+                                _A.proots(eq).map(add_to_result);
+                            }
                         }
                     }
-
-                    if (!was_calculated) {
-                        //we can solve algebraically for degrees 1, 2, 3. The remainder we switch to Jenkins-
-                        if (deg === 1)
-                            add_to_result(_.divide(coeffs[0], coeffs[1].negate()));
-                        else if (deg === 2) {
-                            add_to_result(_.expand(quad.apply(undefined, coeffs)));
-                            coeffs.push('-');
-                            add_to_result(_.expand(quad.apply(undefined, coeffs)));
-                        }
-                        else if (deg === 3)
-                            add_to_result(cubic.apply(undefined, coeffs));
-                        else {
-                            /*
-                             var sym_roots = csolve(eq, solve_for); 
-                             if(sym_roots.length === 0)
-                             sym_roots = divnconsolve(eq, solve_for);
-                             if(sym_roots.length > 0) 
-                             add_to_result(sym_roots);
-                             else
-                             */
-                            _A.proots(eq).map(add_to_result);
-                        }
-                    }
-
                 }
             }
             else {

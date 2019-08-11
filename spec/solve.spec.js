@@ -64,7 +64,11 @@ describe('Solve', function () {
             },
             {
                 given: 'solve(-5*sqrt(14)x-14x^2*sqrt(83)-10x=0,x)',
-                expected: '[(-1/28)*abs(10+5*sqrt(14))*sqrt(83)^(-1)+(-5/14)*sqrt(83)^(-1)+(-5/28)*sqrt(14)*sqrt(83)^(-1),(-5/14)*sqrt(83)^(-1)+(-5/28)*sqrt(14)*sqrt(83)^(-1)+(1/28)*abs(10+5*sqrt(14))*sqrt(83)^(-1)]'
+                expected: '[(-5/14)*(2+sqrt(14))*sqrt(83)^(-1),0]'
+            },
+            {
+                given: 'solve(8*x^3-26x^2+3x+9,x)',
+                expected: '[3/4,-1/2,3]'
             },
             {
                 given: 'solve(a*x^2+b*x+c, x)',

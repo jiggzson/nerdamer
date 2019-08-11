@@ -621,6 +621,15 @@ if((typeof module) !== 'undefined') {
      */
     function Factors() {
         this.factors = {};
+        this.length = 0;
+    };
+    Factors.prototype.getNumberSymbolics = function() {
+        var n = 0;
+        this.each(function(x) {
+            if(!x.isConstant(true))
+                n++;
+        });
+        return n;
     };
     /**
      * Adds the factors to the factor object
@@ -649,7 +658,10 @@ if((typeof module) !== 'undefined') {
             var v = is_constant ? s.value: s.text();
             if(v in this.factors) 
                 this.factors[v] = _.multiply(this.factors[v], s);
-            else this.factors[v] = s;
+            else {
+                this.factors[v] = s;
+                this.length++;
+            }
         }
         return this;
     };

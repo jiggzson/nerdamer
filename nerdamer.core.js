@@ -431,7 +431,7 @@ var nerdamer = (function (imports) {
      * @param {Symbol} symbol
      */
     var isNumericSymbol = function (symbol) {
-        return symbol.group === N;
+        return symbol.group === N || symbol.group === P;
     };
 
     /**
@@ -3086,6 +3086,9 @@ var nerdamer = (function (imports) {
                 }
                 return true;
             }
+            
+            if(check_all)
+                return isNumericSymbol(this);
             return this.value === CONST_HASH;
         },
         //the symbols is imaginary if 
