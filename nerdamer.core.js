@@ -330,8 +330,9 @@ var nerdamer = (function (imports) {
                 variables(obj.power, poly, vars);
 
             if (group === CP || group === CB || prevgroup === CP || prevgroup === CB) {
-                for (var x in obj.symbols)
+                for (var x in obj.symbols) {
                     variables(obj.symbols[x], poly, vars);
+                }
             }
             else if (group === S || prevgroup === S) {
                 //very crude needs fixing. TODO
@@ -352,6 +353,7 @@ var nerdamer = (function (imports) {
                 }
             }
         }
+
         return vars.c.sort();
     };
 

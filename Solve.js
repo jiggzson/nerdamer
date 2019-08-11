@@ -34,7 +34,7 @@ if ((typeof module) !== 'undefined') {
 
     //version solve
     core.Solve = {
-        version: '1.2.6',
+        version: '1.2.7',
         solve: function (eq, variable) {
             var solution = solve(eq, String(variable));
             return new core.Vector(solution);
@@ -78,7 +78,13 @@ if ((typeof module) !== 'undefined') {
     ;
 
     //UTILS ##!!
-    var removeDenom = function (a, b) {
+    /**
+     * This function is confusing and should be refactored. Why is removeDenom bringing the equation to LHS????
+     * @param {Symbol} a
+     * @param {Symbol} b
+     * @returns {Symbol}
+     */
+    var removeDenom = function (a, b) { 
         //swap the groups
         if (b.group === CP && b.group !== CP) {
             var t = a;
@@ -118,7 +124,14 @@ if ((typeof module) !== 'undefined') {
                 }
             }
         }
-
+        else if(a.group === S) {
+            //grab the denominator
+            var den = a.getDenom();
+            var num = a.getNum();
+            //move it to the RHS and then the denominator is now the LHS
+            b = _.multiply(b, den);
+            a = num;
+        }
 
         return _.expand(_.subtract(a, b));
     };
@@ -180,7 +193,7 @@ if ((typeof module) !== 'undefined') {
         //parse all the equations to LHS. Remember that they come in as strings
         for (var i = 0; i < eqns.length; i++)
             eqns[i] = toLHS(eqns[i]);
-console.log(eqns.toString())
+
         var l = eqns.length,
                 m = new core.Matrix(),
                 c = new core.Matrix(),
@@ -532,6 +545,7 @@ console.log(eqns.toString())
 
             return solutions;
         }
+        
         var existing = {}, //mark existing solutions as not to have duplicates
                 add_to_result = function (r, has_trig) {
                     var r_is_symbol = isSymbol(r);
@@ -718,6 +732,10 @@ console.log(eqns.toString())
             return [lhs, rhs];
         };
 
+        var inverse_function = function(name, lhs, rhs) {
+            return _.symfunction(name, [_.divide(rhs, _.parse(lhs.multiplier))]);
+        };
+        
         //first remove any denominators
         eq = correct_denom(eq);
 
@@ -844,13 +862,29 @@ console.log(eqns.toString())
             }
             else {
                 try {
-                    var rw = rewrite(eq);
+                    var rw = rewrite(eq); 
                     var lhs = rw[0];
                     var rhs = rw[1];
                     if (lhs.group === FN) {
                         if (lhs.fname === 'abs') {
                             solutions.push(rhs.clone());
                             solutions.push(rhs.negate());
+                        }
+                        else if(lhs.fname === 'sin') {
+                            //asin
+                            solutions.push(inverse_function('asin', lhs, rhs));
+                        }
+                        else if(lhs.fname === 'cos') {
+                            //asin
+                            solutions.push(inverse_function('acos', lhs, rhs));
+                        }
+                        else if(lhs.fname === 'tan') {
+                            //asin
+                            solutions.push(inverse_function('atan', lhs, rhs));
+                        }
+                        else if(lhs.fname === 'log') {
+                            //asin
+                            solutions.push(_.pow(new Symbol('e'), _.divide(rhs, _.parse(lhs.multiplier))));
                         }
                         else
                             solutions.push(_.subtract(lhs, rhs));
