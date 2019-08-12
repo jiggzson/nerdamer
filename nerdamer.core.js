@@ -7719,7 +7719,11 @@ var nerdamer = (function (imports) {
                     a.setPower(new Frac(0.5).multiply(a_pow));
                     g1 = a.group;
                 }
-                ;
+                //simplify n/sqrt(n). Being very specific
+                else if(g1 === FN && a.fname === SQRT && a.multiplier.equals(1) && a.power.equals(-1) && b.isConstant() && a.args[0].equals(b)) {
+                    a = _.symfunction(SQRT,[b.clone()]);
+                    b = new Symbol(1);
+                };
 
                 var v1 = a.value,
                         v2 = b.value,

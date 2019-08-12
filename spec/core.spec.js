@@ -883,6 +883,12 @@ describe('Nerdamer core', function () {
             expect(value).toEqual(testCases[i].expectedValue);
         }
     });
+    it('should simplify square roots', function() {
+        expect(nerdamer('sqrt(128/49)').toString()).toEqual('(8/7)*sqrt(2)');
+        expect(nerdamer('sqrt(2)-2/(sqrt(2))').toString()).toEqual('0');
+        expect(nerdamer('expand((sqrt(7)+3sqrt(2))(sqrt(7)-3sqrt(2)))').toString()).toEqual('-11');
+        expect(nerdamer('3sqrt(2)*2sqrt(6)').toString()).toEqual('12*sqrt(3)');
+    });
     it('expand square roots', function () {
         // given
         var testCases = [
@@ -893,7 +899,7 @@ describe('Nerdamer core', function () {
             {
                 given: 'sqrt(33)*sqrt(11)',
                 expected: '11*sqrt(3)'
-            },
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
