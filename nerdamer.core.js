@@ -358,6 +358,19 @@ var nerdamer = (function (imports) {
 
         return vars.c.sort();
     };
+    
+    /**
+     * Returns the sum of an array
+     * @param {Array} arr
+     * @returns {Symbol}
+     */
+    var arraySum = function(arr) {
+        var sum = new Symbol(0);
+        arr.map(function(x) {
+            sum = _.add(sum, x);
+        });
+        return sum;
+    };
 
     /**
      * Separates out the variables into terms of variabls. 
@@ -9891,6 +9904,7 @@ var nerdamer = (function (imports) {
         arrayMax: arrayMax,
         arrayMin: arrayMin,
         arrayUnique: arrayUnique,
+        arraySum: arraySum,
         block: block,
         build: build,
         clearU: clearU,

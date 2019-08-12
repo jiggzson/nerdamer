@@ -215,17 +215,32 @@ if ((typeof module) !== 'undefined') {
             // populate the matrix
             for (var i = 0; i < l; i++) {
                 var e = eqns[i]; //store the expression
+                
+//                for (var j = 0; j < l; j++) {
+//                    var variable = e.symbols[vars[j]];
+//                    m.set(i, j, variable ? variable.multiplier : 0);
+//                }
+                
                 for (var j = 0; j < l; j++) {
-                    var variable = e.symbols[vars[j]];
-                    m.set(i, j, variable ? variable.multiplier : 0);
+                    var v = vars[j];
+                    var coeffs = [];
+                    e.each(function(x) {
+                        if(x.contains(v)) {
+                            coeffs = coeffs.concat(x.coeffs());
+                        }
+                    });
+                    
+                    var cf = core.Utils.arraySum(coeffs);
+                    m.set(i, j, cf);
                 }
+
                 //strip the variables from the symbol so we're left with only the zeroth coefficient
                 //start with the symbol and remove each variable and its coefficient
                 var num = e.clone();
                 vars.map(function(e) {
                     num = num.stripVar(e);
                 });
-                c.set(i, 0, new Symbol(num ? -num.multiplier : 0));
+                c.set(i, 0, num.negate());
             }
         }
         else {
@@ -272,6 +287,7 @@ if ((typeof module) !== 'undefined') {
             }
             //consider case (a+b)*I+u
         }
+        
         //check if the system has a distinct solution
         if(m.determinant().equals(0))
             throw new core.exceptions.SolveError('System does not have a distinct solution');

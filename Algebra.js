@@ -497,6 +497,13 @@ if((typeof module) !== 'undefined') {
     };
 
     /**
+     * TODO
+     * ===================================================================================
+     * THIS METHOD HAS A NASTY HIDDEN BUG. IT HAS INCONSISTENT RETURN TYPES PRIMARILY DUE TO 
+     * WRONG ASSUMPTIONS AT THE BEGINNING. THE ASSUMPTION WAS THAT COEFFS WERE ALWAYS GOING BE NUMBERS
+     * NOT TAKING INTO ACCOUNT THAT IMAGINARY NUMBERS. FIXING THIS BREAKS WAY TOO MANY TESTS 
+     * AT THEM MOMENT WHICH I DON'T HAVE TO FIX
+     * ===================================================================================
     * If the symbols is of group PL or CP it will return the multipliers of each symbol
     * as these are polynomial coefficients. CB symbols are glued together by multiplication
     * so the symbol multiplier carries the coefficients for all contained symbols.
@@ -517,18 +524,32 @@ if((typeof module) !== 'undefined') {
                 }
                 else { 
                     if(with_order) c[sub.isConstant() ? 0 : sub.power.toDecimal()] = sub.multiplier;
-                    else c.push(sub.multiplier);
+                    else {
+                        c.push(sub.multiplier);
+                    }
                 }
             }
         }
         else { 
-            if(with_order) c[s.isConstant() ? 0 : s.power.toDecimal()] = s.multiplier;
-            else c.push(s.multiplier);
+            if(with_order) c[s.isConstant(true) ? 0 : s.power.toDecimal()] = s.multiplier;
+            else {
+                if(s.group === CB && s.isImaginary()) {
+                    var m = new Symbol(s.multiplier);
+                    s.each(function(x) {
+                       //add the imaginary part
+                       if(x.isConstant(true) || x.imaginary)
+                           m = _.multiply(m, x);
+                    });
+                    c.push(m);
+                }
+                else
+                    c.push(s.multiplier);
+            }
         }
         //fill the holes
         if(with_order) {
             for(var i=0; i<c.length; i++)
-                if(c[i] === undefined) c[i] = new Frac(0);
+                if(c[i] === undefined) c[i] = new Symbol(0);
         }
         return c;
     };
