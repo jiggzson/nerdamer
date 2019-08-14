@@ -115,7 +115,7 @@ var nerdamer = (function (imports) {
             }
         }
     })();
-
+    
     //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
     //The groups that help with organizing during parsing. Note that for FN is still a function even 
     //when it's raised to a symbol, which typically results in an EX
@@ -9780,7 +9780,9 @@ var nerdamer = (function (imports) {
     };
     //aliases
     Matrix.prototype.each = Matrix.prototype.eachElement;
-
+    
+    
+    
 //build ========================================================================
     var build = function (symbol, arg_array) {
         symbol = block('PARSE2NUMBER', function () {
@@ -9877,11 +9879,12 @@ var nerdamer = (function (imports) {
             }
             args = arg_array;
         }
-
+        
         var f_array = ftext(symbol);
         return new Function(args, f_array[1] + ' return ' + f_array[0] + ';');
     };
-
+    
+    
 //finalize =====================================================================
     /* FINALIZE */
     (function () {
@@ -9895,6 +9898,11 @@ var nerdamer = (function (imports) {
 
     /* END FINALIZE */
 
+    build.dependencies = {
+        factorial: {
+            'Math2.gamma': Math2.gamma
+        }
+    };
 
 //Core =========================================================================
     var Utils = {

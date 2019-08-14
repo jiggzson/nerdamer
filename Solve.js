@@ -200,7 +200,7 @@ if ((typeof module) !== 'undefined') {
             //check to make sure that all the equations are linear
             if (!_A.allLinear(eqns))
                 core.err('System must contain all linear equations!');
-            vars = variables(eqns[0]);
+            vars = variables(eqns[0], null, null, true);
 
             //get all variables
             for (var i = 1; i < l; i++)
@@ -1030,3 +1030,6 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+//const resul = ["2*X1 - 4*X2 + 2*i = 3","- 5*X1 + 8*X2*i - 4*i*X1= 2"] 
+//const sol = nerdamer.solveEquations(resul);
+//console.log(sol.toString())
