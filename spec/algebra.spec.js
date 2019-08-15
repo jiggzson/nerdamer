@@ -15,6 +15,11 @@ describe('Algebra', function () {
                 expected_lcm: '27*x^3+27*x^4+28*x+28*x^2+5*x^5+5*x^6'
             },
             {
+                given:'-20+16*i,-10+8*i',
+                expected_gcd: '-10+8*i',
+                expected_lcm: '-10+8*i'
+            },
+            {
                 given:'2*x^2+2*x+1,x+1',
                 expected_gcd: '1',
                 expected_lcm: '(1+2*x+2*x^2)*(1+x)'
@@ -351,6 +356,10 @@ describe('Algebra', function () {
             {
                 given: 'divide(a*b^(-1)+b^(-1)*c,a+c)',
                 expected: 'b^(-1)'
+            },
+            {
+                given: 'divide(-20+16*i,-10+8*i)',
+                expected: '2'
             }
         ];
 
@@ -707,6 +716,11 @@ describe('Algebra', function () {
             {
                 given: 'simplify(n!/(n+1)!)',
                 expected: '(1+n)^(-1)*n'
+            },
+            //imaginary number
+            {
+                given: 'simplify((17/2)*(-10+8*i)^(-1)-5*(-10+8*i)^(-1)*i)',
+                expected: '(-9/82)*i-125/164'
             }
         ];
 
