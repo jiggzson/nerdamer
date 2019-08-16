@@ -1745,7 +1745,7 @@ if((typeof module) !== 'undefined') {
                 for( i=0; i<l; i++ ) {
                     // We round the imaginary part to avoid having something crazy like 5.67e-16.
                     var img = round( zeroi[i], decp+8 ),
-                        real = round( zeror[i], decp );
+                        real = round( zeror[i], decp+8 );
                     // Did the rounding pay off? If the rounding did nothing more than chop off a few digits then no.
                     // If the rounding results in a a number at least 3 digits shorter we'll keep it else we'll keep 
                     // the original otherwise the rounding was worth it.
@@ -3479,6 +3479,21 @@ if((typeof module) !== 'undefined') {
                 var p = cp[1];
                 return _.pow(_.multiply(c, symbol), p);
             },
+            complexSimp: function(num, den) {
+                var ac, bd, bc, ad, cd, r1, r2, i1, i2;
+                r1 = num.realpart();
+                i1 = num.imagpart();
+                r2 = den.realpart();
+                i2 = den.imagpart();
+                //apply complex arithmatic rule
+                ac = _.multiply(r1.clone(), r2.clone());
+                bd = _.multiply(i1.clone(), i2.clone());
+                bc = _.multiply(r2.clone(), i1);
+                ad = _.multiply(r1, i2.clone());
+                cd = _.add(_.pow(r2, new Symbol(2)), _.pow(i2, new Symbol(2)));
+                
+                return _.divide(_.add(_.add(ac, bd), _.multiply(_.subtract(bc, ad), Symbol.imaginary())), cd);
+            },
             trigSimp: function(symbol) { 
                 symbol = symbol.clone();
                 //remove power and multiplier
@@ -3511,11 +3526,17 @@ if((typeof module) !== 'undefined') {
                 return retval;
             },
             fracSimp: function(symbol) {
+                //try a quick simplify of imaginary numbers
+                var den = symbol.getDenom();
+                var num = symbol.getNum();
+                if(num.isImaginary() && den.isImaginary())
+                    symbol = __.Simplify.complexSimp(num, den);
+                
                 if(symbol.isComposite()) {
                     var symbols = symbol.collectSymbols();
                     //assumption 1.
                     //since it's a composite, it has a length of at least 1
-                    var retval, a, b, d1, d2, n1, n2, x, y, c, den, num, r1, r2, i1, i2;
+                    var retval, a, b, d1, d2, n1, n2, x, y, c, den, num;
                     a = symbols.pop(); //grab the first symbol
                     //loop through each term and make denominator common
                     while(symbols.length) {
@@ -3534,18 +3555,7 @@ if((typeof module) !== 'undefined') {
                     
                     //simplify imaginary
                     if(num.isImaginary() && den.isImaginary()) {
-                        var ac, bd, bc, ad, cd;
-                        r1 = num.realpart();
-                        i1 = num.imagpart();
-                        r2 = den.realpart();
-                        i2 = den.imagpart();
-                        //apply complex arithmatic rule
-                        ac = _.multiply(r1.clone(), r2.clone());
-                        bd = _.multiply(i1.clone(), i2.clone());
-                        bc = _.multiply(r2.clone(), i1);
-                        ad = _.multiply(r1, i2.clone());
-                        cd = _.add(_.pow(r2, new Symbol(2)), _.pow(i2, new Symbol(2)));
-                        retval = _.divide(_.add(_.add(ac, bd), _.multiply(_.subtract(bc, ad), Symbol.imaginary())), cd);
+                        retval = __.Simplify.complexSimp(num, den);
                     }
                     else {
                         retval = _.divide(num, den);

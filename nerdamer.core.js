@@ -1195,8 +1195,15 @@ var nerdamer = (function (imports) {
         },
         //the factorial function but using the big library instead
         factorial: function (x) {
-            if (x < 0)
-                throw new Error('factorial not defined for negative numbers');
+            var is_int = x % 1 === 0;
+            
+            //factorial for negative integers is complex infinity according to Wolfram Alpha
+            if (is_int && x < 0)
+                return NaN;
+            
+            if(!is_int)
+                return Math2.gamma(x+1);
+            
             var retval = 1;
             for (var i = 2; i <= x; i++)
                 retval = retval * i;
@@ -2216,7 +2223,7 @@ var nerdamer = (function (imports) {
          * @param vars {Array}
          */
         buildFunction: function (vars) {
-            return build(this.symbol, vars);
+            return Build.build(this.symbol, vars);
         },
         /**
          * Checks to see if the expression is just a plain old number
@@ -4989,6 +4996,7 @@ var nerdamer = (function (imports) {
             'pfactor': [pfactor, 1],
             'vector': [vector, -1],
             'matrix': [matrix, -1],
+            'Set': [set, -1],
             'imatrix': [imatrix, -1],
             'parens': [parens, -1],
             'sqrt': [sqrt, 1],
@@ -5019,7 +5027,13 @@ var nerdamer = (function (imports) {
             'polarform': [polarform, 1],
             'rectform': [rectform, 1],
             'sort': [sort, [1, 2]],
-            'integer_part': [, 1]
+            'integer_part': [, 1],
+            'union': [union, 2],
+            'contains': [contains, 2],
+            'intersection': [intersection, 2],
+            'difference': [difference, 2],
+            'intersects': [intersects, 2],
+            'is_subset': [is_subset, 2]
         };
         //error handler
         this.error = err;
@@ -5750,106 +5764,118 @@ var nerdamer = (function (imports) {
 
             var Q = [];
             for (var i = 0, l = rpn.length; i < l; i++) {
-                var e = rpn[i];
+                var e = rpn[i]; 
+
                 //Arrays indicate a new scope so parse that out
                 if (Array.isArray(e)) {
                     e = this.parseRPN(e, substitutions);
                 }
 
-                if (e.type === Token.OPERATOR) {
-                    if (e.is_prefix || e.postfix)
-                        //resolve the operation assocated with the prefix
-                        Q.push(e.operation(Q.pop()));
-                    else {
-                        var b = Q.pop();
-                        var a = Q.pop();
-                        //Throw an error if the RH value is empty. This cannot be a postfix since we already checked
-                        if (typeof a === 'undefined')
-                            throw new OperatorError(e + ' is not a valid postfix operator at ' + e.column);
-                        Q.push(_[e.action](a, b));
-                    }
-                }
-                else if (e.type === Token.FUNCTION) {
-                    var args = Q.pop();
-                    if (!(args instanceof Collection))
-                        args = Collection.create(args);
-                    //the return value may be a vector. If it is then we check
-                    //Q to see if there's another vector on the stack. If it is then
-                    //we check if has elements. If it does then we know that we're dealing
-                    //with an "getter" object and return the requested values
-                    var ret = _.callfunction(e.value, args.getItems()); //call the function. This is the _.callfunction method in nerdamer
-                    var last = Q[Q.length - 1];
-                    var next = rpn[i + 1];
-                    var next_is_comma = next && next.type === Token.OPERATOR && next.value === ',';
-
-                    if (!next_is_comma && ret instanceof Vector && last && last.elements && !(last instanceof Collection)) {
-                        //remove the item from the queue
-                        var item = Q.pop();
-
-                        var getter = ret.elements[0];
-                        //check if it's symbolic. If so put it back
-                        if (!getter.isConstant()) {
-                            item.getter = getter;
-                            Q.push(item);
+                if(e) {
+                    if (e.type === Token.OPERATOR) {
+                        if (e.is_prefix || e.postfix)
+                            //resolve the operation assocated with the prefix
+                            Q.push(e.operation(Q.pop()));
+                        else {
+                            var b = Q.pop();
+                            var a = Q.pop();
+                            //Throw an error if the RH value is empty. This cannot be a postfix since we already checked
+                            if (typeof a === 'undefined')
+                                throw new OperatorError(e + ' is not a valid postfix operator at ' + e.column);
+                            
+                            var is_comma = e.action === 'comma'
+                            //convert Sets to Vectors on all operations at this point. Sets are only recognized functions or individually
+                            if(a instanceof Set && !is_comma)
+                                a = Vector.fromSet(a);
+                            
+                            if(b instanceof Set && !is_comma)
+                                b = Vector.fromSet(b);
+                            
+                            Q.push(_[e.action](a, b));
                         }
-                        else if (getter instanceof Slice) {
-                            //if it's a Slice return the slice
-                            Q.push(Vector.fromArray(item.elements.slice(getter.start, getter.end)));
+                    }
+                    else if (e.type === Token.FUNCTION) {
+                        var args = Q.pop();
+                        if (!(args instanceof Collection))
+                            args = Collection.create(args);
+                        //the return value may be a vector. If it is then we check
+                        //Q to see if there's another vector on the stack. If it is then
+                        //we check if has elements. If it does then we know that we're dealing
+                        //with an "getter" object and return the requested values
+                        var ret = _.callfunction(e.value, args.getItems()); //call the function. This is the _.callfunction method in nerdamer
+                        var last = Q[Q.length - 1];
+                        var next = rpn[i + 1];
+                        var next_is_comma = next && next.type === Token.OPERATOR && next.value === ',';
+
+                        if (!next_is_comma && ret instanceof Vector && last && last.elements && !(last instanceof Collection)) {
+                            //remove the item from the queue
+                            var item = Q.pop();
+
+                            var getter = ret.elements[0];
+                            //check if it's symbolic. If so put it back
+                            if (!getter.isConstant()) {
+                                item.getter = getter;
+                                Q.push(item);
+                            }
+                            else if (getter instanceof Slice) {
+                                //if it's a Slice return the slice
+                                Q.push(Vector.fromArray(item.elements.slice(getter.start, getter.end)));
+                            }
+                            else {
+                                var index = Number(getter);
+                                var il = item.elements.length;
+                                //support for negative indices
+                                if (index < 0)
+                                    index = il + index;
+                                //it it's still out of bounds
+                                if (index < 0 || index >= il) //index should no longer be negative since it's been reset above
+                                    //range error
+                                    throw new OutOfRangeError('Index out of range ' + (e.column + 1));
+                                Q.push(item.elements[index]);
+                            }
                         }
                         else {
-                            var index = Number(getter);
-                            var il = item.elements.length;
-                            //support for negative indices
-                            if (index < 0)
-                                index = il + index;
-                            //it it's still out of bounds
-                            if (index < 0 || index >= il) //index should no longer be negative since it's been reset above
-                                //range error
-                                throw new OutOfRangeError('Index out of range ' + (e.column + 1));
-                            Q.push(item.elements[index]);
+                            Q.push(ret);
                         }
                     }
                     else {
-                        Q.push(ret);
-                    }
-                }
-                else {
-                    var subbed;
-                    var v = e.value;
+                        var subbed;
+                        var v = e.value;
 
-                    if (v in Settings.ALIASES)
-                        e = _.parse(Settings.ALIASES[e]);
-                    //wrap it in a symbol if need be
-                    else if (e.type === Token.VARIABLE_OR_LITERAL)
-                        e = new Symbol(v);
-                    else if (e.type === Token.UNIT) {
-                        e = new Symbol(v);
-                        e.isUnit = true;
-                    }
+                        if (v in Settings.ALIASES)
+                            e = _.parse(Settings.ALIASES[e]);
+                        //wrap it in a symbol if need be
+                        else if (e.type === Token.VARIABLE_OR_LITERAL)
+                            e = new Symbol(v);
+                        else if (e.type === Token.UNIT) {
+                            e = new Symbol(v);
+                            e.isUnit = true;
+                        }
 
-                    //make substitutions
-                    //Always constants first. This avoids the being overridden
-                    if (v in _.CONSTANTS) {
-                        subbed = e;
-                        e = new Symbol(_.CONSTANTS[v]);
-                    }
-                    //next substitutions. This allows declared variable to be overridden
-                    //check if the values match to avoid erasing the multiplier. 
-                    //Example:/e = 3*a. substutiting a for a will wipe out the multiplier.
-                    else if (v in substitutions && v !== substitutions[v].value) {
-                        subbed = e;
-                        e = substitutions[v].clone();
-                    }
-                    //next declare variables
-                    else if (v in VARS) {
-                        subbed = e;
-                        e = VARS[v].clone();
-                    }
-                    //make notation of what it was before
-                    if (subbed)
-                        e.subbed = subbed;
+                        //make substitutions
+                        //Always constants first. This avoids the being overridden
+                        if (v in _.CONSTANTS) {
+                            subbed = e;
+                            e = new Symbol(_.CONSTANTS[v]);
+                        }
+                        //next substitutions. This allows declared variable to be overridden
+                        //check if the values match to avoid erasing the multiplier. 
+                        //Example:/e = 3*a. substutiting a for a will wipe out the multiplier.
+                        else if (v in substitutions && v !== substitutions[v].value) {
+                            subbed = e;
+                            e = substitutions[v].clone();
+                        }
+                        //next declare variables
+                        else if (v in VARS) {
+                            subbed = e;
+                            e = VARS[v].clone();
+                        }
+                        //make notation of what it was before
+                        if (subbed)
+                            e.subbed = subbed;
 
-                    Q.push(e);
+                        Q.push(e);
+                    }
                 }
             }
 
@@ -7204,6 +7230,11 @@ var nerdamer = (function (imports) {
         function matrix() {
             return Matrix.fromArray(arguments);
         }
+        
+        //the constructor for sets
+        function set() {
+            return Set.fromArray(arguments);
+        }
 
         function determinant(symbol) {
             if (isMatrix(symbol)) {
@@ -7241,7 +7272,32 @@ var nerdamer = (function (imports) {
                 return mat.invert();
             err('invert expects a matrix');
         }
-
+        
+        //basic set functions
+        function union(set1, set2) {
+            return set1.union(set2);
+        }
+        
+        function intersection(set1, set2) {
+            return set1.intersection(set2);
+        }
+        
+        function contains(set1, e) {
+            return set1.contains(e);
+        }
+        
+        function difference(set1, set2) {
+            return set1.difference(set2);
+        }
+        
+        function intersects(set1, set2) {
+            return Number(set1.intersects(set2));
+        }
+        
+        function is_subset(set1, set2) {
+            return Number(set1.is_subset(set2));
+        }
+        
         function testSQRT(symbol) {
             //wrap the symbol in sqrt. This eliminates one more check down the line.
             if (!isSymbol(symbol.power) && symbol.power.absEquals(0.5)) {
@@ -9170,6 +9226,16 @@ var nerdamer = (function (imports) {
         v.elements = a;
         return v;
     };
+    
+    /**
+     * Convert a Set to a Vector
+     * @param {Set} set
+     * @returns {Vector}
+     */
+    Vector.fromSet = function(set) {
+        return Vector.fromArray(set.members);
+    };
+    
     //Ported from Sylvester.js
     Vector.prototype = {
         custom: true,
@@ -9780,108 +9846,247 @@ var nerdamer = (function (imports) {
     };
     //aliases
     Matrix.prototype.each = Matrix.prototype.eachElement;
-    
-    
-    
-//build ========================================================================
-    var build = function (symbol, arg_array) {
-        symbol = block('PARSE2NUMBER', function () {
-            return _.parse(symbol);
-        }, true);
-        var args = variables(symbol);
-        var supplements = [];
-        var ftext = function (symbol, xports) {
-            xports = xports || [];
-            var c = [],
-                    group = symbol.group,
-                    prefix = '';
 
-            var ftext_complex = function (group) {
-                var d = group === CB ? '*' : '+',
-                        cc = [];
 
-                for (var x in symbol.symbols) {
-                    var sym = symbol.symbols[x],
-                            ft = ftext(sym, xports)[0];
-                    //wrap it in brackets if it's group PL or CP
-                    if (sym.isComposite())
-                        ft = inBrackets(ft);
-                    cc.push(ft);
-                }
-                var retval = cc.join(d);
-                retval = retval && !symbol.multiplier.equals(1) ? inBrackets(retval) : retval;
-                return retval;
-            },
-                    ftext_function = function (bn) {
-                        var retval;
-                        if (bn in Math)
-                            retval = 'Math.' + bn;
-                        else {
-                            if (supplements.indexOf(bn) === -1) { //make sure you're not adding the function twice
-                                //Math2 functions aren't part of the standard javascript
-                                //Math library and must be exported.
-                                xports.push('var ' + bn + ' = ' + Math2[bn].toString() + '; ');
-                                supplements.push(bn);
-                            }
-                            retval = bn;
-                        }
-                        retval = retval + inBrackets(symbol.args.map(function (x) {
-                            return ftext(x, xports)[0];
-                        }).join(','));
-
-                        return retval;
-                    };
-
-            //the multiplier
-            if (group === N)
-                c.push(symbol.multiplier.toDecimal());
-            else if (symbol.multiplier.equals(-1))
-                prefix = '-';
-            else if (!symbol.multiplier.equals(1))
-                c.push(symbol.multiplier.toDecimal());
-            //the value
-            var value;
-
-            if (group === S || group === P)
-                value = symbol.value;
-            else if (group === FN) {
-                value = ftext_function(symbol.fname);
+    function Set(set) {
+        this.members = [];
+        if(set) {
+            var elements = set.elements;
+            for(var i=0, l=elements.length; i<l; i++) {
+                this.add(elements[i]);
             }
-            else if (group === EX) {
-                var pg = symbol.previousGroup;
-                if (pg === N || pg === S)
-                    value = symbol.value;
-                else if (pg === FN)
-                    value = ftext_function(symbol.fname);
-                else
-                    value = ftext_complex(symbol.previousGroup);
-            }
-            else {
-                value = ftext_complex(symbol.group);
-            }
-
-            if (symbol.group !== N && !symbol.power.equals(1)) {
-                var pow = ftext(_.parse(symbol.power));
-                xports.push(pow[1]);
-                value = 'Math.pow' + inBrackets(value + ',' + pow[0]);
-            }
-
-            if (value)
-                c.push(prefix + value);
-
-            return [c.join('*'), xports.join('').replace(/\n+\s+/g, ' ')];
-        };
-        if (arg_array) {
-            for (var i = 0; i < args.length; i++) {
-                var arg = args[i];
-                if (arg_array.indexOf(arg) === -1)
-                    err(arg + ' not found in argument array');
-            }
-            args = arg_array;
         }
-        
-        var f_array = ftext(symbol);
-        return new Function(args, f_array[1] + ' return ' + f_array[0] + ';');
+    }
+    
+    Set.fromArray = function (arr) {
+        function F(args) {
+            return Set.apply(this, args);
+        }
+        F.prototype = Set.prototype;
+
+        return new F(arr);
+    };
+    
+    Set.prototype = {
+        add: function(x) {
+            if(!this.contains(x))
+                this.members.push(x.clone());
+        },
+        contains: function(x) {
+            for(var i=0; i<this.members.length; i++) {
+                var e = this.members[i];
+                if(x.equals(e))
+                    return true;
+            }
+            return false;
+        },
+        each: function(f) {
+            var members = this.members;
+            var set = new Set();
+            for(var i=0, l=members.length; i<l; i++) {
+                var e = members[i];
+                f.call(this, e, set, i);
+            }
+            return set;
+        },
+        clone: function() {
+            var set = new Set();
+            this.each(function(e) {
+                set.add(e.clone());
+            });
+            return set;
+        },
+        union: function(set) {
+            var _union = this.clone();
+            set.each(function(e) {
+                _union.add(e);
+            });
+            
+            return _union;
+        },
+        difference: function(set) {
+            var diff = new Set();
+            var A = this.clone();
+            set.each(function(e) {
+                if(!A.contains(e)) {
+                    diff.add(e);
+                }
+            });
+            return diff;
+        },
+        intersection: function(set) { 
+            var _intersection = new Set();
+            var A = this;
+            set.each(function(e) {
+                if(A.contains(e)) {
+                    _intersection.add(e);
+                };
+            });
+            
+            return _intersection;
+        },
+        intersects: function(set) {
+            return this.intersection(set).members.length > 0;
+        },
+        is_subset: function(set) {
+            var members = set.members;
+            for(var i=0, l=members.length; i<l; i++) {
+                if(!this.contains(members[i])) {
+                    return false;
+                }
+            }
+            return true;
+        },
+        toString: function() {
+            return 'Set(['+this.members.join(',')+'])';
+        }
+    };
+
+//build ========================================================================
+    var Build = {
+        dependencies: {
+            factorial: {
+                'Math2.gamma': Math2.gamma
+            }
+        },
+        getProperName: function(f) {
+            var map = {
+                continued_fraction: 'continuedFraction'
+            }
+            return map[f] || f;
+        },
+        //assumes that dependences are at max 2 levels
+        compileDependencies: function(f) {
+            //grab the predefined dependiences
+            var dependencies = Build.dependencies[f];
+            
+            //the dependency string
+            var dep_string = '';
+            
+            //the functions to be replaced
+            var replacements = {};
+            
+            //loop through them and add them to the list
+            for(var x in dependencies) {
+                var components = x.split('.');
+                dep_string += 'var '+components[1]+'='+dependencies[x]+';';
+                replacements[x] = components.pop();
+            }
+            
+            return [replacements, dep_string];
+        },
+        build: function (symbol, arg_array) {
+            symbol = block('PARSE2NUMBER', function () {
+                return _.parse(symbol);
+            }, true);
+            var args = variables(symbol);
+            var supplements = [];
+            var dependencies = [];
+            var ftext = function (symbol, xports) {
+                xports = xports || [];
+                var c = [],
+                        group = symbol.group,
+                        prefix = '';
+
+                var ftext_complex = function (group) {
+                    var d = group === CB ? '*' : '+',
+                            cc = [];
+
+                    for (var x in symbol.symbols) {
+                        var sym = symbol.symbols[x],
+                                ft = ftext(sym, xports)[0];
+                        //wrap it in brackets if it's group PL or CP
+                        if (sym.isComposite())
+                            ft = inBrackets(ft);
+                        cc.push(ft);
+                    }
+                    var retval = cc.join(d);
+                    retval = retval && !symbol.multiplier.equals(1) ? inBrackets(retval) : retval;
+                    return retval;
+                },
+                ftext_function = function (bn) {
+                    var retval;
+                    if (bn in Math)
+                        retval = 'Math.' + bn;
+                    else {
+                        bn = Build.getProperName(bn);
+                        if (supplements.indexOf(bn) === -1) { //make sure you're not adding the function twice
+                            //Math2 functions aren't part of the standard javascript
+                            //Math library and must be exported.
+                            xports.push('var ' + bn + ' = ' + Math2[bn].toString() + '; ');
+                            supplements.push(bn);
+                        }
+                        retval = bn;
+                    }
+                    retval = retval + inBrackets(symbol.args.map(function (x) {
+                        return ftext(x, xports)[0];
+                    }).join(','));
+
+                    return retval;
+                };
+                
+                //the multiplier
+                if (group === N)
+                    c.push(symbol.multiplier.toDecimal());
+                else if (symbol.multiplier.equals(-1))
+                    prefix = '-';
+                else if (!symbol.multiplier.equals(1))
+                    c.push(symbol.multiplier.toDecimal());
+                //the value
+                var value;
+
+                if (group === S || group === P)
+                    value = symbol.value;
+                else if (group === FN) {
+                    value = ftext_function(symbol.fname);
+                    dependencies = Build.compileDependencies(symbol.fname);
+                }
+                else if (group === EX) {
+                    var pg = symbol.previousGroup;
+                    if (pg === N || pg === S)
+                        value = symbol.value;
+                    else if (pg === FN) {
+                        value = ftext_function(symbol.fname);
+                        dependencies = Build.compileDependencies(symbol.fname);
+                    }
+                    else
+                        value = ftext_complex(symbol.previousGroup);
+                }
+                else {
+                    value = ftext_complex(symbol.group);
+                }
+
+                if (symbol.group !== N && !symbol.power.equals(1)) {
+                    var pow = ftext(_.parse(symbol.power));
+                    xports.push(pow[1]);
+                    value = 'Math.pow' + inBrackets(value + ',' + pow[0]);
+                }
+
+                if (value)
+                    c.push(prefix + value);
+
+                return [c.join('*'), xports.join('').replace(/\n+\s+/g, ' ')];
+            };
+            if (arg_array) {
+                for (var i = 0; i < args.length; i++) {
+                    var arg = args[i];
+                    if (arg_array.indexOf(arg) === -1)
+                        err(arg + ' not found in argument array');
+                }
+                args = arg_array;
+            }
+
+            var f_array = ftext(symbol);
+            
+            //make all the substitutions;
+            for(var x in dependencies[0]) {
+                var alias = dependencies[0][x];
+                f_array[1] = f_array[1].replace(x, alias);
+                dependencies[1] = dependencies[1].replace(x, alias);
+            }
+            
+            return new Function(args, (dependencies[1] || '') + f_array[1] + ' return ' + f_array[0] + ';');
+        }
     };
     
     
@@ -9895,14 +10100,8 @@ var nerdamer = (function (imports) {
         if (!_.error)
             _.error = err;
     })();
-
+    
     /* END FINALIZE */
-
-    build.dependencies = {
-        factorial: {
-            'Math2.gamma': Math2.gamma
-        }
-    };
 
 //Core =========================================================================
     var Utils = {
@@ -9914,7 +10113,7 @@ var nerdamer = (function (imports) {
         arrayUnique: arrayUnique,
         arraySum: arraySum,
         block: block,
-        build: build,
+        build: Build.build,
         clearU: clearU,
         comboSort: comboSort,
         compare: compare,

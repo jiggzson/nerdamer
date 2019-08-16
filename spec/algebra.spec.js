@@ -721,6 +721,10 @@ describe('Algebra', function () {
             {
                 given: 'simplify((17/2)*(-10+8*i)^(-1)-5*(-10+8*i)^(-1)*i)',
                 expected: '(-9/82)*i-125/164'
+            },
+            {
+                given: 'simplify((-2*i+7)^(-1)*(3*i+4))',
+                expected: '(29/53)*i+22/53'
             }
         ];
 

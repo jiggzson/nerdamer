@@ -80,7 +80,7 @@ describe('Solve', function () {
             },
             {
                 given: 'solve(x^3-10x^2+31x-30,x)',
-                expected: '[2,3,5]'
+                expected: '[3,5,2]'
             },
             {
                 given: 'solve(sqrt(x)+sqrt(2x+1)=5,x)',
