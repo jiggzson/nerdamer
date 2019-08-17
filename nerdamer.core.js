@@ -440,7 +440,11 @@ var nerdamer = (function (imports) {
     var isMatrix = function (obj) {
         return (obj instanceof Matrix);
     };
-
+    
+    var isSet = function(obj) {
+        return (obj instanceof Set);
+    };
+    
     /**
      * Checks to see if a symbol is in group N
      * @param {Symbol} symbol
@@ -8650,7 +8654,7 @@ var nerdamer = (function (imports) {
                 return this.brackets(LaTeXArray.join(', '), 'square');
             }
 
-            if (isMatrix(symbol)) {
+            else if (isMatrix(symbol)) {
                 var TeX = '\\begin{pmatrix}\n';
                 for (var i = 0; i < symbol.elements.length; i++) {
                     var rowTeX = [],
@@ -8667,12 +8671,21 @@ var nerdamer = (function (imports) {
                 return TeX;
             }
 
-            if (isVector(symbol)) {
+            else if (isVector(symbol)) {
                 var TeX = '\\left[';
                 for (var i = 0; i < symbol.elements.length; i++) {
                     TeX += this.latex(symbol.elements[i]) + ' ' + (i !== symbol.elements.length - 1 ? ',\\,' : '');
                 }
                 TeX += '\\right]';
+                return TeX;
+            }
+            
+            else if(isSet(symbol)) {
+                var TeX = '\\{';
+                for (var i = 0; i < symbol.members.length; i++) {
+                    TeX += this.latex(symbol.members[i]) + ' ' + (i !== symbol.members.length - 1 ? ',\\,' : '');
+                }
+                TeX += '\\}';
                 return TeX;
             }
 
