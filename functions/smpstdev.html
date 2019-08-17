@@ -161,18 +161,28 @@ console.log(x.text());</code></pre>
     </script>
     <script>hljs.initHighlightingOnLoad();</script>
     <script>
+        function escapeHTML(raw) {
+            return raw
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+         }
         function oprint(o) {
             var r = '';
             for(var i=0; i<arguments.length; i++) {
                 var o = arguments[i];
-                if(typeof o !== 'string') o = JSON.stringify(o);
+                if(typeof o !== 'string') 
+                    o = JSON.stringify(o);
                 r += o;
             }
             
-            $('#output').append($('<div/>').append(r));
+            $('#output').append($('<div/>').append(escapeHTML(r)));
         };
     </script>
     <script>
+        
         $(function() {
             try {
                 var x = nerdamer('smpstdev(4,2,5,4)').evaluate();

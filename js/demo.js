@@ -81,6 +81,19 @@
         var validation_regex_str = nerdamer.getCore().Settings.VALIDATION_REGEX.toString();
         //create the regex for extracting variables
         var variable_regex = new RegExp('('+validation_regex_str.substring(1, validation_regex_str.length-3)+'\\(?,*.*\\)?)(\\s*,\\s*)(.*)');
+        function getGetParam(parameterName, alt) {
+            var result = alt,
+                tmp = [];
+            location.search
+                .substr(1)
+                .split("&")
+                .forEach(function (item) {
+                  tmp = item.split("=");
+                  if (tmp[0] === parameterName) 
+                      result = decodeURIComponent(tmp[1]);
+                });
+            return result;
+        };
         //define how the user is being notified.
         function notify(msg) {
             var modal = $('#alertModal');
@@ -250,12 +263,14 @@
             var adjustment = ''; 
             if(h > 1)
                 adjustment = '\\large ';
-            $panel.append(new PanelExpression({
+            var PE = new PanelExpression({
                 LaTeX: katex.renderToString(adjustment+LaTeX),
                 expression: expression,
                 output: output,
                 variable: variable
-            }).toHTML());
+            }).toHTML();
+            $panel.append(PE);
+            return PE;
         }
         //perform preparations before parsing. Extract variables and declarations
         function prepareExpression(str) {
@@ -292,8 +307,7 @@
                 //alternative regex: ^([a-z_][a-z\d\_]*)\(([a-z_,])\):=([\+\-\*\/a-z\d*_,\^!\(\)]+)
                 functionRegex = /^([a-z_][a-z\d\_]*)\(([a-z_,\s]*)\):=(.+)$/gi, //does not validate the expression
                 functionDeclaration = functionRegex.exec(expression),
-                LaTeX;
-            
+                LaTeX, panelExpression;
             //it might be a function declaration. If it is the scope object gets ignored
             if(functionDeclaration) { 
                 //Remember: The match comes back as [str, fnName, params, fnBody]
@@ -320,7 +334,7 @@
                         notify('A variable object was provided but is ignored for function declaration.');
                     
                     //add the LaTeX to the panel
-                    addToPanel(LaTeX, expression);   
+                    panelExpression = addToPanel(LaTeX, expression);   
                     clear();
                 }
                 catch(e) { 
@@ -337,7 +351,7 @@
                         nerdamer.setVar(varName, varValue);
                         //generate the LaTeX
                         LaTeX = varName+':'+nerdamer(varValue).toTeX();
-                        addToPanel(LaTeX, expression, undefined, varName);   
+                        panelExpression = addToPanel(LaTeX, expression, undefined, varName);   
                         clear();
                     }
                     catch(e){
@@ -363,7 +377,7 @@
                         }
                         LaTeX = evaluated.toTeX(decimal);
                         //add the LaTeX to the panel
-                        addToPanel(LaTeX, user_expression, output);   
+                        panelExpression = addToPanel(LaTeX, user_expression, output);   
                         clear();
                     }
                     catch(e){
@@ -371,6 +385,30 @@
                         notify('Something went wrong. Nerdamer could not parse expression!</br>'+e.toString());
                     } 
                 }  
+            }
+            return panelExpression;
+        }
+        function draw_graph(e) {
+            var $this = $(this),
+                expression = $this.data('expression'),
+                insertBefore = $this.parents().eq(1);
+            //load this information to the graph data object and show the modal 
+            graph(expression, insertBefore);
+        }
+        //ONLOAD
+        //get the user equation
+        var user_eq = getGetParam('eq');
+        //check if the user wants to have this graphed
+        var user_draw_graph = getGetParam('graph') === '1';
+        if(user_eq) {
+            //if the user supplied an equation then set the panel to that
+            setInputValue(user_eq);
+            //process the expression
+            var processed = process();
+            //draw the graph if requested
+            if(user_draw_graph) {
+                var graphBtn = processed.find('.expression-graph a');
+                draw_graph.call(graphBtn);
             }
         }
         //EVENTS
@@ -384,13 +422,7 @@
             setInputValue($(this).data('output'));
         });
         //bind the event for graphing the expression
-        $('#demo-panel').on('click', '.expression-graph a', function(e) {
-            var $this = $(this),
-                expression = $this.data('expression'),
-                insertBefore = $this.parents().eq(1);;
-            //load this information to the graph data object and show the modal 
-            graph(expression, insertBefore);
-        });
+        $('#demo-panel').on('click', '.expression-graph a', draw_graph);
         //bind the delete event
         //bind the event for graphing the expression
         $('#demo-panel').on('click', '.expression-delete a', function(e) {

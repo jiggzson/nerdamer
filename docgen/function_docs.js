@@ -317,7 +317,7 @@ FUNCTIONS = {
     },
     nerdamer__version: {
         type: 'nerdamer',
-        usage: 'nerdamer.version',
+        usage: 'nerdamer.version()',
         full_name: 'version',
         description: 'returns the current version of nerdamer.',
         parameters: {
@@ -328,6 +328,40 @@ FUNCTIONS = {
         },
         examples: [
             "var x = nerdamer.version();",
+            "console.log(x);"
+        ],
+        returns: 'nerdamer'
+    },
+    nerdamer__tree: {
+        type: 'nerdamer',
+        usage: 'nerdamer.tree()',
+        full_name: 'Tree',
+        description: 'Generates an RPN object which can be evaluated manually.',
+        parameters: {
+            x: {
+                type: 'Expression',
+                description: "The expression for which you want to generate the RPN"
+            }
+        },
+        examples: [
+            "var x = nerdamer.tree('x^2+2*x+1');",
+            "console.log(x);"
+        ],
+        returns: 'nerdamer'
+    },
+    nerdamer__htmlTree: {
+        type: 'nerdamer',
+        usage: 'nerdamer.htmlTree()',
+        full_name: 'HTML Tree',
+        description: 'Generates the RPN for the expression and formats it in HTML.',
+        parameters: {
+            x: {
+                type: 'Expression',
+                description: "The expression for which you want to generate the HTML"
+            }
+        },
+        examples: [
+            "var x = nerdamer.htmlTree('x^2+2*x+1');",
             "console.log(x);"
         ],
         returns: 'nerdamer'
