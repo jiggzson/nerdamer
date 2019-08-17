@@ -494,7 +494,7 @@ FUNCTIONS = {
         returns: 'bool'
     },
     Solve__solveFor: {
-        type: 'nerdamer',
+        type: 'internal',
         usage: 'nerdamer(equation).solveFor(variable)',
         full_name: 'solveFor',
         description: 'This method requires that the Solve, Calculus, and Algebra add-ons are loaded. It will attempt to solve an equation. If solutions no solutions are found then\n\
@@ -515,7 +515,7 @@ FUNCTIONS = {
         returns: 'Expression[]'
     },
     Solve__solve: {
-        type: 'nerdamer',
+        type: 'internal',
         usage: 'nerdamer("solve(expression, variable")',
         full_name: 'solve',
         description: 'Similiar to solveFor this will solve for a given variable. The difference is that this is a self contained function.',
@@ -540,7 +540,7 @@ FUNCTIONS = {
         returns: 'Symbol[]'
     },
     Solve__solveEquations: {
-        type: 'nerdamer',
+        type: 'internal',
         usage: 'nerdamer.solveEquations(expression_or_array, variables)',
         full_name: 'solveEquations',
         description: 'Solves a system of linear equations',
@@ -2001,6 +2001,42 @@ FUNCTIONS = {
         ],
         returns: 'Expression'
     },
+    continued_fraction: {
+        type: 'internal',
+        usage: 'continued_fraction(x)',
+        full_name: 'Continued Fraction',
+        description: 'Returns the fraction as a continued fraction.',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('continued_fraction(3.14159))');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    simplify: {
+        type: 'internal',
+        usage: 'simplify(x)',
+        full_name: 'Simplify',
+        description: 'Attempts to simplify an expression. Please report any bugs or errors since this is actively being worked on.',
+        parameters: {
+            x: {
+                type: 'expression',
+                description: "Returns the appropriate value if possible otherwise it returns the function with the simplified expression"
+            }
+        },
+        examples: [
+            "var x = nerdamer('simplify((x^2+4*x-45)/(x^2+x-30))');",
+            "console.log(x.toString());",
+            "var y = nerdamer('simplify((17/2)*(-10+8*i)^(-1)-5*(-10+8*i)^(-1)*i)');",
+            "console.log(y.toString());"
+        ],
+        returns: 'Expression'
+    },
     gamma_incomplete: {
         type: 'internal',
         usage: 'gamma_incomplete(n, x)',
@@ -2674,6 +2710,131 @@ FUNCTIONS = {
         ],
         returns: 'Matrix'
     },
+    Set: {
+        type: 'internal',
+        usage: 'Set([x1, x2, x3, ...])',
+        full_name: 'Set',
+        description: 'Create a collecton of distinct elements. When an operation such as addition, multiplication, division, etc. is preformed on the set, '+
+                'it is converted to a vector before operations are performed. The return type will also be a vector',
+        parameters: {
+            xn: {
+                type: 'expression',
+                description: "An algebraic number"
+            }
+        },
+        examples: [
+            "var x = nerdamer('Set([x, a, 2, 2, 2, x])');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    intersection: {
+        type: 'internal',
+        usage: 'intersection(set1, set2)',
+        full_name: 'Intersection',
+        description: 'Finds the intersection of two sets',
+        parameters: {
+            set1: {
+                type: 'Set',
+                description: "A set"
+            },
+            set2: {
+                type: 'Set',
+                description: "A set"
+            }
+        },
+        examples: [
+            "var x = nerdamer('intersection(Set([x, a, 2, b/t]), Set([x^2, 1, b/t, 2]))');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    intersects: {
+        type: 'internal',
+        usage: 'intersects(set1, set2)',
+        full_name: 'Intersecst',
+        description: 'Checks to see if one set intersects the other',
+        parameters: {
+            set1: {
+                type: 'Set',
+                description: "A set"
+            },
+            set2: {
+                type: 'Set',
+                description: "A set"
+            }
+        },
+        examples: [
+            "var x = nerdamer('intersects(Set([x, a, 2, b/t]), Set([x^2, 1, b/t, 2]))');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    union: {
+        type: 'internal',
+        usage: 'union(set1, set2)',
+        full_name: 'Set',
+        description: 'Finds the union of two sets',
+        parameters: {
+            set1: {
+                type: 'Set',
+                description: "A set"
+            },
+            set2: {
+                type: 'Set',
+                description: "A set"
+            }
+        },
+        examples: [
+            "var x = nerdamer('union(Set([x, a, 2, b/t]), Set([x^2, 1, b/t, 2]))');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    difference: {
+        type: 'internal',
+        usage: 'difference(set1, set2)',
+        full_name: 'Difference',
+        description: 'Finds the difference of two sets',
+        parameters: {
+            set1: {
+                type: 'Set',
+                description: "A set"
+            },
+            set2: {
+                type: 'Set',
+                description: "A set"
+            }
+        },
+        examples: [
+            "var x = nerdamer('difference(Set([x, a, 2, b/t]), Set([x^2, 1, b/t, 2]))');",
+            "console.log(x.toString());"
+        ],
+        returns: 'Expression'
+    },
+    is_subset: {
+        type: 'internal',
+        usage: 'is_subset(set1, set2)',
+        full_name: 'Is Subset',
+        description: 'Checks if one set is a subset of the other',
+        parameters: {
+            set1: {
+                type: 'Set',
+                description: "A set"
+            },
+            set2: {
+                type: 'Set',
+                description: "A set"
+            }
+        },
+        examples: [
+            "var x = nerdamer('is_subset(Set([x, a, 2, b/t]), Set([b/t, 2]))');",
+            "console.log(x.toString());",
+            "var y = nerdamer('is_subset(Set([x, a, 2, b/t]), Set([2, q/4, r]))');",
+            "console.log(y.toString());",
+        ],
+        returns: 'Expression'
+    },
     deg: {
         type: 'internal',
         usage: 'deg(p)',
@@ -3107,6 +3268,33 @@ FUNCTIONS = {
             "var x = nerdamer('ilt(factorial(6)*s^(-7),s, t)').evaluate();",
             "console.log(x.toString());",
             "var y = nerdamer('ilt((1+s^2)^(-1)*s, s, t)').evaluate();",
+            "console.log(y.toString());",
+        ],
+        returns: 'Expression'
+    },
+    Extra__limit: {
+        type: 'internal',
+        usage: 'limit(expression, variable, limit)',
+        full_name: 'Limit',
+        description: 'Attempts to calculate the limit of a function.',
+        parameters: {
+            expression: {
+                type: 'expression',
+                description: "The expression to be transformed"
+            },
+            variable: {
+                type: 'variable',
+                description: 'The variable'
+            },
+            limit: {
+                type: 'limit',
+                description: "The limit"
+            }
+        },
+        examples: [
+            "var x = nerdamer('limit(x^x-1,x,0)');",
+            "console.log(x.toString());",
+            "var y = nerdamer('limit((x^2+2*x-3)/(x^6+4),x,0)');",
             "console.log(y.toString());",
         ],
         returns: 'Expression'

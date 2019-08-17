@@ -91,30 +91,30 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>Solve.solve</h1>
+                    <h1>intersects</h1>
                     <hr>
-                    <h3 class="text-capitalize">solve</h3>
+                    <h3 class="text-capitalize">Intersecst</h3>
                     <div>
-                        Similiar to solveFor this will solve for a given variable. The difference is that this is a self contained function.
+                        Checks to see if one set intersects the other
                     </div>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("solve(expression, variable")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("intersects(set1, set2)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
                         <table class="table table-responsive table-condensed">
                             <tr>
     <td>
-        <span class="parameter-type">Expression </span>
-        <span class="parameter-name">expression </span>
+        <span class="parameter-type">Set </span>
+        <span class="parameter-name">set1 </span>
     </td>
-    <td><span class="parameter-description">The expression to solve</span></td>
+    <td><span class="parameter-description">A set</span></td>
 </tr><tr>
     <td>
-        <span class="parameter-type">String </span>
-        <span class="parameter-name">variable </span>
+        <span class="parameter-type">Set </span>
+        <span class="parameter-name">set2 </span>
     </td>
-    <td><span class="parameter-description">The variable to solve for.</span></td>
+    <td><span class="parameter-description">A set</span></td>
 </tr>
                         </table>
                     </div>
@@ -122,11 +122,7 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('solve(x^3+1, x)');
-console.log(x.toString());
-x = nerdamer.solve('x^2+2*x+1', 'x');
-console.log(x.toString());
-x = nerdamer.solve('3*(x+a)*(x-b)', 'x');
+                    <pre><code class="javascript">var x = nerdamer('intersects(Set([x, a, 2, b/t]), Set([x^2, 1, b/t, 2]))');
 console.log(x.toString());</code></pre>
                 </div>
                 OUTPUT:
@@ -179,11 +175,7 @@ console.log(x.toString());</code></pre>
     <script>
         $(function() {
             try {
-                var x = nerdamer('solve(x^3+1, x)');
-oprint(x.toString());
-x = nerdamer.solve('x^2+2*x+1', 'x');
-oprint(x.toString());
-x = nerdamer.solve('3*(x+a)*(x-b)', 'x');
+                var x = nerdamer('intersects(Set([x, a, 2, b/t]), Set([x^2, 1, b/t, 2]))');
 oprint(x.toString());
             }
             catch(e) {
