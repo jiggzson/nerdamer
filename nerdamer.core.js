@@ -9201,7 +9201,11 @@ var nerdamer = (function (imports) {
                     retval += 'limit' + inBrackets([parse_next(), get(nxt[0]), get(nxt[2])].join(','));
                 }
                 else {
-                    retval += get(token.value.toString());
+                    if(Array.isArray(token)) {
+                        retval += get(LaTeX.parse(token));
+                    }
+                    else
+                        retval += get(token.value.toString());
                 }
             }
             return inBrackets(retval);
