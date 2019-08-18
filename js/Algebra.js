@@ -3520,6 +3520,16 @@ if((typeof module) !== 'undefined') {
                     if(n.fname === 'sin' && d.fname === 'cos' && n.args[0].equals(d.args[0]) && n.power.equals(d.power)) {
                         retval =_.parse(core.Utils.format('({0})*({1})*tan({2})^({3})', d.multiplier, n.multiplier, n.args[0], n.power));
                     }
+                    if(retval.group === CB) {
+                        var t = new Symbol(1);
+                        retval.each(function(x) {
+                            if(x.fname === 'tan') {
+                                x = _.parse(core.Utils.format('({0})*sin({1})^({2})/cos({1})^({2})', x.multiplier, __.Simplify.simplify(x.args[0]), x.power));
+                            }
+                            t = _.multiply(t, x);
+                        });
+                        retval = t;
+                    }
                 }
                 
                 retval = __.Simplify.unstrip(sym_array, retval).distributeMultiplier();

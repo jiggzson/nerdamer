@@ -5959,7 +5959,7 @@ var nerdamer = (function (imports) {
                     e = new Node(e);
                     var args = Q.pop();
                     e.right = args;
-                    if (e.value === 'object') {
+                    if (forTeX && e.value === 'object') {
                         //check if Q has a value
                         var last = Q[Q.length - 1];
                         if (last) {
@@ -9201,7 +9201,11 @@ var nerdamer = (function (imports) {
                     retval += 'limit' + inBrackets([parse_next(), get(nxt[0]), get(nxt[2])].join(','));
                 }
                 else {
-                    retval += get(token.value.toString());
+                    if(Array.isArray(token)) {
+                        retval += get(LaTeX.parse(token));
+                    }
+                    else
+                        retval += get(token.value.toString());
                 }
             }
             return inBrackets(retval);
@@ -10643,3 +10647,5 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
+var x = nerdamer('(18*x^5-4*x^3+1)/(a*b*c^x+4)-(a*b*c^x*log(c)*(3*x^6-x^4+x))/(a*b*c^x+4)^2').toTeX().replace(/\\/g, '\\\\\\\\');
+console.log(x.toString());

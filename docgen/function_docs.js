@@ -315,6 +315,25 @@ FUNCTIONS = {
         ],
         returns: 'String'
     },
+    nerdamer__convertFromLaTeX: {
+        type: 'nerdamer',
+        usage: 'nerdamer.convertFromLaTeX(TeX)',
+        full_name: 'convertFromLaTeX',
+        description: 'Attempts to import a LaTeX string.',
+        parameters: {
+            TeX: {
+                type: 'String',
+                description: "The expression being converted"
+            }
+        },
+        examples: [
+            "var x = nerdamer.convertFromLaTeX('-2 \\\\sin{\\\\left( {{x}^{2}}-1\\\\right) }-\\\\frac{\\cos{\\\\left( {{x}^{2}}-1\\\\right) }}{{{x}^{2}}}');",
+            "console.log(x.toString());",
+            "x = nerdamer.convertFromLaTeX('\\\\frac{18 \\\\cdot x^{5}-4 \\\\cdot x^{3}+1}{a \\\\cdot b \\\\cdot c^{x}+4}-\\\\frac{a \\\\cdot b \\\\cdot c^{x} \\\\cdot \\\\mathrm{log}\\\\left(c\\\\right) \\\\cdot \\\\left(3 \\\\cdot x^{6}-x^{4}+x\\\\right)}{\\\\left(a \\\\cdot b \\\\cdot c^{x}+4\\\\right)^{2}}')",
+            "console.log(x.toString())"
+        ],
+        returns: 'String'
+    },
     nerdamer__version: {
         type: 'nerdamer',
         usage: 'nerdamer.version()',
