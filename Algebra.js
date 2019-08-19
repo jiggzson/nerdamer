@@ -48,6 +48,7 @@ if((typeof module) !== 'undefined') {
     function Polynomial(symbol, variable, order) { 
         if(core.Utils.isSymbol(symbol)) {
             this.parse(symbol);
+            this.variable = this.variable || variable;
         }
         else if(!isNaN(symbol)) { 
             order = order || 0;
@@ -113,8 +114,12 @@ if((typeof module) !== 'undefined') {
             c = c || [];
             if(!symbol.power.absEquals(1)) symbol = _.expand(symbol);
 
-            if(symbol.group === core.groups.N) { c[0] = symbol.multiplier; }
-            else if(symbol.group === core.groups.S) { c[symbol.power.toDecimal()] = symbol.multiplier; }
+            if(symbol.group === core.groups.N) {
+                c[0] = symbol.multiplier; 
+            }
+            else if(symbol.group === core.groups.S) { 
+                c[symbol.power.toDecimal()] = symbol.multiplier; 
+            }
             else { 
                 for(var x in symbol.symbols) { 
                     var sub = symbol.symbols[x],
@@ -497,6 +502,13 @@ if((typeof module) !== 'undefined') {
     };
 
     /**
+     * TODO
+     * ===================================================================================
+     * THIS METHOD HAS A NASTY HIDDEN BUG. IT HAS INCONSISTENT RETURN TYPES PRIMARILY DUE TO 
+     * WRONG ASSUMPTIONS AT THE BEGINNING. THE ASSUMPTION WAS THAT COEFFS WERE ALWAYS GOING BE NUMBERS
+     * NOT TAKING INTO ACCOUNT THAT IMAGINARY NUMBERS. FIXING THIS BREAKS WAY TOO MANY TESTS 
+     * AT THEM MOMENT WHICH I DON'T HAVE TO FIX
+     * ===================================================================================
     * If the symbols is of group PL or CP it will return the multipliers of each symbol
     * as these are polynomial coefficients. CB symbols are glued together by multiplication
     * so the symbol multiplier carries the coefficients for all contained symbols.
@@ -517,18 +529,32 @@ if((typeof module) !== 'undefined') {
                 }
                 else { 
                     if(with_order) c[sub.isConstant() ? 0 : sub.power.toDecimal()] = sub.multiplier;
-                    else c.push(sub.multiplier);
+                    else {
+                        c.push(sub.multiplier);
+                    }
                 }
             }
         }
         else { 
-            if(with_order) c[s.isConstant() ? 0 : s.power.toDecimal()] = s.multiplier;
-            else c.push(s.multiplier);
+            if(with_order) c[s.isConstant(true) ? 0 : s.power.toDecimal()] = s.multiplier;
+            else {
+                if(s.group === CB && s.isImaginary()) {
+                    var m = new Symbol(s.multiplier);
+                    s.each(function(x) {
+                       //add the imaginary part
+                       if(x.isConstant(true) || x.imaginary)
+                           m = _.multiply(m, x);
+                    });
+                    c.push(m);
+                }
+                else
+                    c.push(s.multiplier);
+            }
         }
         //fill the holes
         if(with_order) {
             for(var i=0; i<c.length; i++)
-                if(c[i] === undefined) c[i] = new Frac(0);
+                if(c[i] === undefined) c[i] = new Symbol(0);
         }
         return c;
     };
@@ -621,6 +647,15 @@ if((typeof module) !== 'undefined') {
      */
     function Factors() {
         this.factors = {};
+        this.length = 0;
+    };
+    Factors.prototype.getNumberSymbolics = function() {
+        var n = 0;
+        this.each(function(x) {
+            if(!x.isConstant(true))
+                n++;
+        });
+        return n;
     };
     /**
      * Adds the factors to the factor object
@@ -649,7 +684,10 @@ if((typeof module) !== 'undefined') {
             var v = is_constant ? s.value: s.text();
             if(v in this.factors) 
                 this.factors[v] = _.multiply(this.factors[v], s);
-            else this.factors[v] = s;
+            else {
+                this.factors[v] = s;
+                this.length++;
+            }
         }
         return this;
     };
@@ -1707,7 +1745,7 @@ if((typeof module) !== 'undefined') {
                 for( i=0; i<l; i++ ) {
                     // We round the imaginary part to avoid having something crazy like 5.67e-16.
                     var img = round( zeroi[i], decp+8 ),
-                        real = round( zeror[i], decp );
+                        real = round( zeror[i], decp+8 );
                     // Did the rounding pay off? If the rounding did nothing more than chop off a few digits then no.
                     // If the rounding results in a a number at least 3 digits shorter we'll keep it else we'll keep 
                     // the original otherwise the rounding was worth it.
@@ -1867,6 +1905,21 @@ if((typeof module) !== 'undefined') {
         },
         //The factor object
         Factor: {
+            //splits the symbol in symbol and constant
+            split: function(symbol) {
+                var c = new Symbol(1); //the constants part
+                var s = new Symbol(1); //the symbolic part
+                __.Factor.factor(symbol, new Factors()).each(function(x) {
+                    var t = _.parse(x);
+                    if(x.isConstant(true)) {
+                        c = _.multiply(c, t);
+                    }
+                    else {
+                        s = _.multiply(s, t);
+                    }
+                });
+                return [c, s];
+            },
             mix: function(o, include_negatives) {
                 var factors = keys(o);
                 var l = factors.length;
@@ -2053,6 +2106,14 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             factor: function(symbol, factors) {
+                //some items cannot be factored any further so return those right away
+                if(symbol.group === FN) {
+                    var arg = symbol.args[0];
+                    if(arg.group === S && arg.isSimple())
+                        return symbol;
+                }
+                else if(symbol.group === S && symbol.isSimple())
+                    return symbol;
                 //expand the symbol to get it in a predictable form. If this step
                 //is skipped some factors are missed.
                 
@@ -2069,24 +2130,24 @@ if((typeof module) !== 'undefined') {
                 
                 if(symbol.group === FN && symbol.fname !== 'sqrt')
                     symbol = core.Utils.evaluate(symbol);
-                
+                //make a copy of the symbol to return if something goes wrong
+                var untouched = symbol.clone();
                 try {
                     if(symbol.group === CB) { 
-                        //TODO: I have to revisit this again. I'm checking if they're all
-                        //group S. I don't know why just adding them to factors isn't working
-                        factors = factors || new Factors();
-                        var all_S = true;
-                        factors.add(new Symbol(symbol.multiplier));
-                        symbol.each(function(x) {
-                            if(x.group !== S)
-                                all_S = false;
-                            var factored = __.Factor.factor(x.clone());
-                            factors.add(factored);
-                        });
-                        //if they're all of group S then all this was for nothing and return the symbol as it is.
-                        if(all_S)
+                        var den_array, num_array, den, num, dfact, nfact;
+                        //grab the denominator and strip the multiplier and power. Store them in an array
+                        den_array = __.Simplify.strip(symbol.getDenom());
+                        num_array = __.Simplify.strip(symbol.getNum());
+                        den = den_array.pop();
+                        num = num_array.pop();
+
+                        //if the numerator equals the symbol then we've hit the simplest form and then we're done
+                        if(num.equals(symbol))
                             return symbol;
-                        return factors.toSymbol();
+                        nfact = __.Factor.factor(num);
+                        dfact = __.Factor.factor(den);
+
+                        return _.divide(__.Simplify.unstrip(num_array, nfact), __.Simplify.unstrip(den_array, dfact));
                     }
                     if(symbol.group === S) 
                         return symbol; //absolutely nothing to do
@@ -2117,9 +2178,13 @@ if((typeof module) !== 'undefined') {
                             symbol.toLinear();
                         } 
                         
-                        var vars = variables(symbol),
-                            multiVar = vars.length > 1;
-
+                        var vars = variables(symbol);
+                        //bypass for imaginary. TODO: find a better solution
+                        if(symbol.isImaginary()) {
+                            vars.push(core.Settings.IMAGINARY);
+                        }
+                        var multiVar = vars.length > 1;
+                        
                         //minor optimization. Seems to cut factor time by half in some cases.
                         if(multiVar) { 
                             var all_S = true, all_unit = true;
@@ -2127,8 +2192,9 @@ if((typeof module) !== 'undefined') {
                                 if(x.group !== S) all_S = false;
                                 if(!x.multiplier.equals(1)) all_unit = false;
                             });       
-                            if(all_S && all_unit) 
+                            if(all_S && all_unit) {
                                 return _.pow(_.parse(symbol, core.Utils.getFunctionsSubs(map)), _.parse(p));
+                            }
                         }
                         //factor the coefficients
                         var coeff_factors = new Factors();
@@ -2146,10 +2212,13 @@ if((typeof module) !== 'undefined') {
                                 x.invert();
                             factors.add(x);
                         });
+                        
                         if(!multiVar) { 
-                            symbol = __.Factor.squareFree(symbol, factors);
+                            //pass in vars[0] for safety
+                            var v = vars[0];
+                            symbol = __.Factor.squareFree(symbol, factors, v);
                             var t_factors = new Factors();
-                            symbol = __.Factor.trialAndError(symbol, t_factors);
+                            symbol = __.Factor.trialAndError(symbol, t_factors, v);
                             for(var x in t_factors.factors) {
                                 factors.add(_.pow(t_factors.factors[x], _.parse(p)));
                             }
@@ -2164,9 +2233,9 @@ if((typeof module) !== 'undefined') {
                         }
                         
                         symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
-
                         factors.add(_.pow(symbol, _.parse(p)));
                         //last minute clean up
+                        
                         return factors.toSymbol();
                     }
                     
@@ -2174,7 +2243,7 @@ if((typeof module) !== 'undefined') {
                 }
                 catch(e) {
                     //no need to stop the show because something went wrong :)
-                    return symbol;
+                    return untouched;
                 }
             },
             reduce: function(symbol, factors) {
@@ -2212,9 +2281,9 @@ if((typeof module) !== 'undefined') {
              * @param {Factors} factors
              * @returns {[Symbol, Factor]}
              */
-            squareFree: function(symbol, factors) {
+            squareFree: function(symbol, factors, variable) {
                 if(symbol.isConstant() || symbol.group === S) return symbol;
-                var poly = new Polynomial(symbol);
+                var poly = new Polynomial(symbol, variable);
                 var sqfr = poly.squareFree();
                 var p = sqfr[2];
                 //if we found a square then the p entry in the array will be non-unit
@@ -2277,9 +2346,9 @@ if((typeof module) !== 'undefined') {
              * @param {Factor} factors
              * @returns {Symbol}
              */
-            trialAndError: function(symbol, factors) {
+            trialAndError: function(symbol, factors, variable) {
                 if(symbol.isConstant() || symbol.group === S) return symbol;
-                var poly = new Polynomial(symbol),
+                var poly = new Polynomial(symbol, variable),
                     cnst = poly.coeffs[0],
                     cfactors = core.Math2.ifactor(cnst),
                     roots = __.proots(symbol);
@@ -2476,13 +2545,14 @@ if((typeof module) !== 'undefined') {
                         var factors2 = new Factors(),
                             arg = __.Factor.common(symbol.args[0].clone(), factors2);
                         arg = __.Factor.coeffFactor(arg, factors2);
-                        symbol = _.symfunction('sqrt', [arg]);
+                        symbol = _.multiply(_.symfunction('sqrt', [arg]), _.parse(symbol.multiplier));
                         factors2.each(function(x) {
                             symbol = _.multiply(symbol, _.parse(core.Utils.format('sqrt({0})', x)));
                         });
                     }
                     else
                         factors.add(symbol);
+                    
                 }
                 else { 
                     //symbol = __.Factor.common(symbol, factors);
@@ -2577,7 +2647,9 @@ if((typeof module) !== 'undefined') {
          */
         allLinear: function(set) {
             var l = set.length;
-            for(var i=0; i<l; i++) if(!__.isLinear(set[i])) return false;
+            for(var i=0; i<l; i++) {
+                if(!__.isLinear(set[i])) return false;
+            }
             return true;
         },
         /*
@@ -2591,7 +2663,13 @@ if((typeof module) !== 'undefined') {
                 status = true;
                 for(var s in e.symbols) {
                     var symbol = e.symbols[s], sg = symbol.group;
-                    if(sg === FN || sg === EX || sg === CB) { status = false;}
+                    if(sg === FN || sg === EX) { 
+                        status = false;
+                    }
+                    if(sg === CB) {
+                        //needs further checking since it might be imaginary
+                        status = variables(symbol).length === 1;
+                    }
                     else {
                         if(sg === PL || sg === CP) status = __.isLinear(symbol);
                         else {
@@ -2610,8 +2688,10 @@ if((typeof module) !== 'undefined') {
             else args = core.Utils.arguments2Array(arguments);
             
             //short-circuit early
-            if (args.length == 0) return new Symbol(1);
-            else if (args.length == 1) return args[0];
+            if (args.length === 0) 
+                return new Symbol(1);
+            else if (args.length === 1) 
+                return args[0];
             
             var appeared = [], evaluate = false;
             for(var i = 0; i < args.length; i++) {
@@ -2638,17 +2718,17 @@ if((typeof module) !== 'undefined') {
             }
             
             //appeared.length is 0 when all arguments are group N
-            if (evaluate || appeared.length === 0)
-            {
+            if (evaluate || appeared.length === 0) {
                 //TODO: distribute exponent so that (a^-1*b^-1)^-1 => a*b
-                if(args.every(function(symbol){return symbol.getDenom().equals(1)}))
-                {
+                if(args.every(function(symbol){return symbol.getDenom().equals(1)})) {
                     var aggregate = args[0];
-                    for(var i = 1; i < args.length; i++) aggregate = __.gcd_(args[i], aggregate);
+                    
+                    for(var i = 1; i < args.length; i++) {
+                        aggregate = __.gcd_(args[i], aggregate);
+                    }
                     return aggregate;
                 }
-                else
-                {
+                else {
                     //gcd_ cannot handle denominators correctly
                     return _.divide(__.gcd.apply(null, args.map(function(symbol){return symbol.getNum()})),
                                     __.lcm.apply(null, args.map(function(symbol){return symbol.getDenom()})));
@@ -2671,7 +2751,7 @@ if((typeof module) !== 'undefined') {
                 // return core.Math2.QGCD(new Frac(+a), new Frac(+b));
                 return new Symbol(core.Math2.QGCD(new Frac(+a), new Frac(+b)));
             }
-		
+
             var den = _.multiply(a.getDenom() || new Symbol(1), b.getDenom() || new Symbol(1)).invert();
             a = _.multiply(a.clone(), den.clone());
             b = _.multiply(b.clone(), den.clone());
@@ -2679,7 +2759,7 @@ if((typeof module) !== 'undefined') {
             //feels counter intuitive but it works. Issue #123 (nerdamer("gcd(x+y,(x+y)^2)"))
             a = _.expand(a);
             b = _.expand(b);
-		
+
             if(a.group === CB || b.group === CB) {
                 var q = _.divide(a.clone(), b.clone()); //get the quotient
                 var t = _.multiply(b.clone(), q.getDenom().invert());//multiply by the denominator
@@ -2708,24 +2788,32 @@ if((typeof module) !== 'undefined') {
                 return _.divide(a.gcd(b).toSymbol(), den);
             }
             else { 
-                var T;
-                while(!b.equals(0)) {  
-                    var t = b.clone(); 
-                    a = a.clone(); 
-                    T = __.div(a, t);
-                    b = T[1]; 
-                    if(T[0].equals(0)) {
-                        //return _.multiply(new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier)), b);
-                        return _.divide(new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier)), den)
-                    }
-                    a = t; 
-                }
+                //get the gcd of the multipiers
                 //get rid of gcd in coeffs
                 var multipliers = [];
                 a.each(function(x) {
                     multipliers.push(x.multiplier);
                 });
+                b.each(function(x) {
+                    multipliers.push(x.multiplier);
+                });
+                
+                var T;
+                while(!b.equals(0)) {  
+                    var t = b.clone(); 
+                    a = a.clone(); 
+                    T = __.div(a, t);
+                    
+                    b = T[1]; 
+                    if(T[0].equals(0)) {
+                        //return _.multiply(new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier)), b);
+                        return _.divide(new Symbol(core.Math2.QGCD(a.multiplier, b.multiplier)), den);
+                    }
+                    a = t; 
+                }
+                
                 var gcd = core.Math2.QGCD.apply(undefined, multipliers);
+
                 if(!gcd.equals(1)) {
                     a.each(function(x) {
                         x.multiplier = x.multiplier.divide(gcd);
@@ -2849,6 +2937,12 @@ if((typeof module) !== 'undefined') {
             //get a list of the variables
             var vars = core.Utils.arrayUnique(variables(symbol1).concat(variables(symbol2))),
                 quot, rem;
+        
+            //treat imaginary numbers as variables
+            if(symbol1.isImaginary() || symbol2.isImaginary()) {
+                vars.push(core.Settings.IMAGINARY);
+            }
+            
             if(vars.length === 1) { 
                 var q = new Polynomial(symbol1).divide(new Polynomial(symbol2));
                 quot = q[0].toSymbol();
@@ -3372,92 +3466,157 @@ if((typeof module) !== 'undefined') {
                 f: _.add(_.pow(sym.clone(), new Symbol(2)), d.clone())
             };
         },
-        trigSimp: function(symbol, map) {
-            symbol = symbol.clone();
-            map = map || {};
-            //create the map
-            symbol.each(function(x) {
-                if(x.group === FN) {
-                    var key = x.args.toString();
-                    var entry = map[key];
-                    entry ? entry.push(x) : map[key] = [x];
+        Simplify: {
+            strip: function(symbol) {
+                var c = _.parse(symbol.multiplier);
+                symbol.toUnitMultiplier();
+                var p = _.parse(symbol.power);
+                symbol.toLinear();
+                return [c, p, symbol];
+            },
+            unstrip: function(cp, symbol) {
+                var c = cp[0];
+                var p = cp[1];
+                return _.pow(_.multiply(c, symbol), p);
+            },
+            complexSimp: function(num, den) {
+                var ac, bd, bc, ad, cd, r1, r2, i1, i2;
+                r1 = num.realpart();
+                i1 = num.imagpart();
+                r2 = den.realpart();
+                i2 = den.imagpart();
+                //apply complex arithmatic rule
+                ac = _.multiply(r1.clone(), r2.clone());
+                bd = _.multiply(i1.clone(), i2.clone());
+                bc = _.multiply(r2.clone(), i1);
+                ad = _.multiply(r1, i2.clone());
+                cd = _.add(_.pow(r2, new Symbol(2)), _.pow(i2, new Symbol(2)));
+                
+                return _.divide(_.add(_.add(ac, bd), _.multiply(_.subtract(bc, ad), Symbol.imaginary())), cd);
+            },
+            trigSimp: function(symbol) { 
+                symbol = symbol.clone();
+                //remove power and multiplier
+                var sym_array = __.Simplify.strip(symbol);
+                symbol = sym_array.pop();
+                //the default return value is the symbol
+                var retval = symbol.clone();
+                
+                //rewrite the symbol
+                if(symbol.group === CP) {
+                    var sym = new Symbol(0);
+                    symbol.each(function(x) {
+                        //rewrite the function
+                        var tr = __.Simplify.trigSimp(x.fnTransform());
+                        sym = _.add(sym, tr);
+                    }, true);
+                    //put back the power and multiplier and return
+                    retval = _.pow(_.multiply(new Symbol(symbol.multiplier), sym), new Symbol(symbol.power));
                 }
-            }, true);
-            
-            //1. try simplify cos(x)^2+sin(x)^2
-            
-            for(var x in map) {
-                var sin, cos;
-                map[x].map(function(s, i) {
-                    //fish out sin(x)^2 and cos(x)^2
-                    if(s.power.equals(2) && !s.multiplier.isNegative()) {
-                        if(s.fname === 'cos')
-                            cos = s;
-                        else if(s.fname === 'sin')
-                            sin = s;
+                else if(symbol.group === CB) {
+                    //try for tangent
+                    var n = symbol.getNum();
+                    var d = symbol.getDenom();
+                    if(n.fname === 'sin' && d.fname === 'cos' && n.args[0].equals(d.args[0]) && n.power.equals(d.power)) {
+                        retval =_.parse(core.Utils.format('({0})*({1})*tan({2})^({3})', d.multiplier, n.multiplier, n.args[0], n.power));
                     }
-                });
-                //if we have sin and cos then we can simplify
-                if(sin && cos) {
-                    //add them together and divide by two since each contributes half
-                    var m = cos.multiplier.add(sin.multiplier);
-                    //get the remainder which may be there if they're not equal and divide it back to get wholes
-                    var r = m.mod(new core.Frac(m.greaterThan(new core.Frac(2)) ? 2 : 1));
-                    //get the whole
-                    var w = m.subtract(r).divide(new core.Frac(2));
-                    //r belongs to the greater of the two
-                    if(cos.multiplier.greaterThan(sin.multiplier)) {
-                        sin.power = new core.Frac(0);
-                        sin.multiplier = w;
-                        cos.multiplier = r;
+                    if(retval.group === CB) {
+                        var t = new Symbol(1);
+                        retval.each(function(x) {
+                            if(x.fname === 'tan') {
+                                x = _.parse(core.Utils.format('({0})*sin({1})^({2})/cos({1})^({2})', x.multiplier, __.Simplify.simplify(x.args[0]), x.power));
+                            }
+                            t = _.multiply(t, x);
+                        });
+                        retval = t;
                     }
-                    else if(sin.multiplier.greaterThan(cos.multiplier)) {
-                        cos.power = new core.Frac(0);
-                        cos.multiplier = w;
-                        sin.multiplier = r;
+                }
+                
+                retval = __.Simplify.unstrip(sym_array, retval).distributeMultiplier();
+                return retval;
+            },
+            fracSimp: function(symbol) {
+                //try a quick simplify of imaginary numbers
+                var den = symbol.getDenom();
+                var num = symbol.getNum();
+                if(num.isImaginary() && den.isImaginary())
+                    symbol = __.Simplify.complexSimp(num, den);
+                
+                if(symbol.isComposite()) {
+                    var symbols = symbol.collectSymbols();
+                    //assumption 1.
+                    //since it's a composite, it has a length of at least 1
+                    var retval, a, b, d1, d2, n1, n2, x, y, c, den, num;
+                    a = symbols.pop(); //grab the first symbol
+                    //loop through each term and make denominator common
+                    while(symbols.length) {
+                        b = symbols.pop(); //grab the second symbol
+                        d1 = _.parse(a.getDenom());
+                        d2 = _.parse(b.getDenom());
+                        n1 = a.getNum();
+                        n2 = b.getNum();
+                        c = _.multiply(d1.clone(), d2.clone());
+                        x = _.multiply(n1, d2);
+                        y = _.multiply(n2, d1);
+                        a = _.divide(_.add(x, y), c);
+                    }
+                    den = _.expand(a.getDenom());
+                    num = _.expand(a.getNum());
+                    
+                    //simplify imaginary
+                    if(num.isImaginary() && den.isImaginary()) {
+                        retval = __.Simplify.complexSimp(num, den);
                     }
                     else {
-                        //doesn't matter which but we'll throw the bone to cos
-                        cos.multiplier = w;
-                        cos.power = new core.Frac(0);
-                        sin.multiplier = new core.Frac(0);
+                        retval = _.divide(num, den);
                     }
+
+                    //we've already hit the simplest form so return that
+                    if(retval.equals(symbol))
+                        return retval;
+                    //otherwise simplify it some more
+                    return __.Simplify.simplify(retval);
                 }
-            }
-            
-                
-            return symbol;
-        },
-        simplify: function(symbol) {
-            //nothing more to do
-            if(symbol.isConstant() || symbol.group === core.groups.S)
                 return symbol;
-            var simplified;
-            symbol = symbol.clone(); //make a copy
-            ////1. Try cos(x)^2+sin(x)^2
-            simplified = __.trigSimp(symbol);
-            
-            //first go for the "cheapest" simplification which may eliminate 
-            //your problems right away. factor -> evaluate. Remember
-            //that there's no need to expand since factor already does that
-            simplified = __.Factor.factor(simplified);
-            
-            //If the simplfied is a sum then we can make a few more simplifications
-            //e.g. simplify(1/(x-1)+1/(1-x)) as per issue #431
-            if(simplified.group === core.groups.CP && simplified.isLinear()) {
-                var m = simplified.multiplier.clone();
-                simplified.toUnitMultiplier();
-                var r = new Symbol(0);
-                simplified.each(function(x) {
-                    var s = __.simplify(x);
-                    r = _.add(r, s);
-                });
-                r.multiplier = r.multiplier.multiply(m);
-                simplified = r;
+            },
+            simplify: function(symbol) {
+                //remove the multiplier to make calculation easier;
+                var sym_array = __.Simplify.strip(symbol);
+                symbol = sym_array.pop();
+                
+                //remove gcd from denominator
+                symbol = __.Simplify.fracSimp(symbol);
+
+                //nothing more to do
+                if(symbol.isConstant() || symbol.group === core.groups.S) {
+                    sym_array.push(symbol);
+                    return __.Simplify.unstrip(sym_array, symbol);
+                }
+                    
+                var simplified;
+                symbol = symbol.clone(); //make a copy
+                ////1. Try cos(x)^2+sin(x)^2
+                simplified = __.Simplify.trigSimp(symbol);
+                //first go for the "cheapest" simplification which may eliminate 
+                //your problems right away. factor -> evaluate. Remember
+                //that there's no need to expand since factor already does that
+                simplified = __.Factor.factor(simplified);
+                //If the simplfied is a sum then we can make a few more simplifications
+                //e.g. simplify(1/(x-1)+1/(1-x)) as per issue #431
+                if(simplified.group === core.groups.CP && simplified.isLinear()) {
+                    var r = new Symbol(0);
+                    //return the sum of simplifications
+                    simplified.each(function(x) {
+                        var s = __.Simplify.simplify(x);
+                        r = _.add(r, s);
+                    });
+                    simplified = r;
+                }
+                //place back multiplier and return
+                return __.Simplify.unstrip(sym_array, evaluate(simplified));
             }
-            
-            return evaluate(simplified);
         },
+            
         Classes: {
             Polynomial: Polynomial,
             Factors: Factors,
@@ -3497,7 +3656,7 @@ if((typeof module) !== 'undefined') {
             name: 'simplify',
             visible: true,
             numargs: 1,
-            build: function() { return __.simplify; }
+            build: function() { return __.Simplify.simplify; }
         },
         {
             name: 'gcd',

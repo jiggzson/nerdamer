@@ -883,6 +883,12 @@ describe('Nerdamer core', function () {
             expect(value).toEqual(testCases[i].expectedValue);
         }
     });
+    it('should simplify square roots', function() {
+        expect(nerdamer('sqrt(128/49)').toString()).toEqual('(8/7)*sqrt(2)');
+        expect(nerdamer('sqrt(2)-2/(sqrt(2))').toString()).toEqual('0');
+        expect(nerdamer('expand((sqrt(7)+3sqrt(2))(sqrt(7)-3sqrt(2)))').toString()).toEqual('-11');
+        expect(nerdamer('3sqrt(2)*2sqrt(6)').toString()).toEqual('12*sqrt(3)');
+    });
     it('expand square roots', function () {
         // given
         var testCases = [
@@ -893,7 +899,7 @@ describe('Nerdamer core', function () {
             {
                 given: 'sqrt(33)*sqrt(11)',
                 expected: '11*sqrt(3)'
-            },
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
@@ -1335,6 +1341,12 @@ describe('Nerdamer core', function () {
         // then
         expect(parsed).toEqual(testCases[i].expected);
       }
+    });
+    it('should ignore constants and special values', function() {
+        var core = nerdamer.getCore();
+        expect(nerdamer('e').variables()).toEqual([]);
+        expect(nerdamer('pi').variables()).toEqual([]);
+        expect(nerdamer(core.Settings.IMAGINARY).variables()).toEqual([]);
     });
     /** #44: a+b - (a+b) not evaluated as 0 */
     it('should perform subtraction of terms', function () {
@@ -2711,5 +2723,8 @@ describe('hyperbolic trigonometric functions', function () {
             expect(parsed.toString()).toEqual(testCases[i].expected);
             expect(value).toEqual(testCases[i].expectedValue);
         }
+    });
+    it('should not overflow', function() {
+        expect(nerdamer('(x+1)+((x+1)^2+(x+1)^3)').toString()).toEqual('(1+x)^2+(1+x)^3+1+x');
     });
 });
