@@ -1030,6 +1030,3 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-//const resul = ["2*X1 - 4*X2 + 2*i = 3","- 5*X1 + 8*X2*i - 4*i*X1= 2"] 
-//const sol = nerdamer.solveEquations(resul);
-//console.log(sol.toString())

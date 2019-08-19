@@ -2363,6 +2363,12 @@ var nerdamer = (function (imports) {
         },
         denominator: function () {
             return new Expression(this.symbol.getDenom());
+        },
+        hasFunction: function(f) {
+            return this.symbol.containsFunction(f);
+        },
+        contains: function(variable) {
+            return this.symbol.contains(variable);
         }
     };
     //Aliases
@@ -3421,6 +3427,8 @@ var nerdamer = (function (imports) {
         },
         /**
          * Inverts a symbol
+         * @param {boolean} power_only
+         * @param {boolean} all
          * @returns {boolean}
          */
         invert: function (power_only, all) {
@@ -3448,6 +3456,7 @@ var nerdamer = (function (imports) {
          * convenient in many cases, however in some cases the multiplier needs
          * to be carried individually e.g. 2*x+2*y+2*z.
          * This method distributes the multiplier over the entire symbol
+         * @param {boolean} all
          * @returns {Symbol}
          */
         distributeMultiplier: function (all) {
@@ -3489,6 +3498,8 @@ var nerdamer = (function (imports) {
          * from one group to another. Not all symbols are convertible from one 
          * group to another however. In that case the symbol will remain 
          * unchanged.
+         * @param {int} group
+         * @param {string} imaginary 
          */
         convert: function (group, imaginary) {
             if (group > FN) {
@@ -3568,6 +3579,8 @@ var nerdamer = (function (imports) {
          * incorrectly grouped. It should be noted that this method is not
          * called directly but rather by the 'attach' method for addition groups
          * and the 'combine' method for multipiclation groups.
+         * @param {Symbol} symbol
+         * @param {String} action
          */
         insert: function (symbol, action) {
             //this check can be removed but saves a lot of aggravation when trying to hunt down
@@ -3695,6 +3708,7 @@ var nerdamer = (function (imports) {
          * this function defines how every group in stored within a group of 
          * higher order think of it as the switchboard for the library. It 
          * defines the hashes for symbols. 
+         * @param {int} group
          */
         keyForGroup: function (group) {
             var g = this.group;
@@ -7248,9 +7262,14 @@ var nerdamer = (function (imports) {
         }
 
         function size(symbol) {
+            var retval;
             if (isMatrix(symbol))
-                return [new Symbol(symbol.cols()), new Symbol(symbol.rows())];
-            err('size expects a matrix or a vector');
+                retval = [new Symbol(symbol.cols()), new Symbol(symbol.rows())];
+            else if(isVector(symbol) || isSet(symbol)) 
+                retval = new Symbol(symbol.elements.length);
+            else
+                err('size expects a matrix or a vector');
+            return retval;
         }
 
         function dot(vec1, vec2) {
@@ -7295,11 +7314,11 @@ var nerdamer = (function (imports) {
         }
         
         function intersects(set1, set2) {
-            return Number(set1.intersects(set2));
+            return new Symbol(Number(set1.intersects(set2)));
         }
         
         function is_subset(set1, set2) {
-            return Number(set1.is_subset(set2));
+            return new Symbol(Number(set1.is_subset(set2)));
         }
         
         function testSQRT(symbol) {
@@ -8682,8 +8701,8 @@ var nerdamer = (function (imports) {
             
             else if(isSet(symbol)) {
                 var TeX = '\\{';
-                for (var i = 0; i < symbol.members.length; i++) {
-                    TeX += this.latex(symbol.members[i]) + ' ' + (i !== symbol.members.length - 1 ? ',\\,' : '');
+                for (var i = 0; i < symbol.elements.length; i++) {
+                    TeX += this.latex(symbol.elements[i]) + ' ' + (i !== symbol.elements.length - 1 ? ',\\,' : '');
                 }
                 TeX += '\\}';
                 return TeX;
@@ -9250,7 +9269,7 @@ var nerdamer = (function (imports) {
      * @returns {Vector}
      */
     Vector.fromSet = function(set) {
-        return Vector.fromArray(set.members);
+        return Vector.fromArray(set.elements);
     };
     
     //Ported from Sylvester.js
@@ -9866,7 +9885,7 @@ var nerdamer = (function (imports) {
 
 
     function Set(set) {
-        this.members = [];
+        this.elements = [];
         if(set) {
             var elements = set.elements;
             for(var i=0, l=elements.length; i<l; i++) {
@@ -9887,21 +9906,21 @@ var nerdamer = (function (imports) {
     Set.prototype = {
         add: function(x) {
             if(!this.contains(x))
-                this.members.push(x.clone());
+                this.elements.push(x.clone());
         },
         contains: function(x) {
-            for(var i=0; i<this.members.length; i++) {
-                var e = this.members[i];
+            for(var i=0; i<this.elements.length; i++) {
+                var e = this.elements[i];
                 if(x.equals(e))
                     return true;
             }
             return false;
         },
         each: function(f) {
-            var members = this.members;
+            var elements = this.elements;
             var set = new Set();
-            for(var i=0, l=members.length; i<l; i++) {
-                var e = members[i];
+            for(var i=0, l=elements.length; i<l; i++) {
+                var e = elements[i];
                 f.call(this, e, set, i);
             }
             return set;
@@ -9922,14 +9941,21 @@ var nerdamer = (function (imports) {
             return _union;
         },
         difference: function(set) {
-            var diff = new Set();
-            var A = this.clone();
+            var diff = this.clone();
             set.each(function(e) {
-                if(!A.contains(e)) {
-                    diff.add(e);
-                }
+                diff.remove(e);
             });
             return diff;
+        },
+        remove: function(element) {
+            for(var i=0, l=this.elements.length; i<l; i++) {
+                var e = this.elements[i];
+                if(e.equals(element)) {
+                    remove(this.elements, i);
+                    return true;
+                }
+            }
+            return false;
         },
         intersection: function(set) { 
             var _intersection = new Set();
@@ -9943,19 +9969,19 @@ var nerdamer = (function (imports) {
             return _intersection;
         },
         intersects: function(set) {
-            return this.intersection(set).members.length > 0;
+            return this.intersection(set).elements.length > 0;
         },
         is_subset: function(set) {
-            var members = set.members;
-            for(var i=0, l=members.length; i<l; i++) {
-                if(!this.contains(members[i])) {
+            var elements = set.elements;
+            for(var i=0, l=elements.length; i<l; i++) {
+                if(!this.contains(elements[i])) {
                     return false;
                 }
             }
             return true;
         },
         toString: function() {
-            return 'Set(['+this.members.join(',')+'])';
+            return 'Set(['+this.elements.join(',')+'])';
         }
     };
 
