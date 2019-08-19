@@ -5959,7 +5959,7 @@ var nerdamer = (function (imports) {
                     e = new Node(e);
                     var args = Q.pop();
                     e.right = args;
-                    if (forTeX && e.value === 'object') {
+                    if (e.value === 'object') {
                         //check if Q has a value
                         var last = Q[Q.length - 1];
                         if (last) {
