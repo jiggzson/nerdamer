@@ -93,24 +93,24 @@
             <div class="col-sm-8">
                 <div class="function-doc-main">
                     <a href="../documentation.html" class="btn btn-xs btn-default pull-right">Back to functions</a>
-                    <h1>dfactorial</h1>
+                    <h1>size</h1>
                     <hr>
-                    <h3 class="text-capitalize">double factorial</h3>
+                    <h3 class="text-capitalize">Size</h3>
                     <div>
-                        Calculates the double factorial of a number.
+                        Gets the size of the matrix or vector. Returns a vector with the [row length, column length] in matrix.
                     </div>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer("dfactorial(x)")</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer("size(M_V)")</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
                         <table class="table table-responsive table-condensed">
                             <tr>
     <td>
-        <span class="parameter-type">expression </span>
-        <span class="parameter-name">x </span>
+        <span class="parameter-type">Matrix | Vector </span>
+        <span class="parameter-name">M_V </span>
     </td>
-    <td><span class="parameter-description">Returns the appropriate value if possible otherwise it returns the function with the simplified expression</span></td>
+    <td><span class="parameter-description">a matrix for which the row is being set.</span></td>
 </tr>
                         </table>
                     </div>
@@ -118,12 +118,11 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('dfactorial(5)').evaluate();
-console.log(x.text());
-x = nerdamer('dfactorial(9)').evaluate();
-console.log(x.text());
-x = nerdamer('dfactorial(x+1)').evaluate();
-console.log(x.text());</code></pre>
+                    <pre><code class="javascript">nerdamer.setVar('M', 'matrix([x,y],[a,b])');
+var matrix_size = nerdamer('size(M)');
+console.log(matrix_size.toString());
+var vector_size = nerdamer('size([a, b, c])');
+console.log(vector_size.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -185,12 +184,11 @@ console.log(x.text());</code></pre>
         
         $(function() {
             try {
-                var x = nerdamer('dfactorial(5)').evaluate();
-oprint(x.text());
-x = nerdamer('dfactorial(9)').evaluate();
-oprint(x.text());
-x = nerdamer('dfactorial(x+1)').evaluate();
-oprint(x.text());
+                nerdamer.setVar('M', 'matrix([x,y],[a,b])');
+var matrix_size = nerdamer('size(M)');
+oprint(matrix_size.toString());
+var vector_size = nerdamer('size([a, b, c])');
+oprint(vector_size.toString());
             }
             catch(e) {
                 oprint(e.toString());

@@ -439,6 +439,11 @@ FUNCTIONS = {
                                 <td>The library returns a symbolic min or max e.g. <strong>min(sqrt(2), sqrt(3))</strong> returns <strong>sqrt(2)</strong></td>\n\
                             </tr>\n\
                             <tr>\n\
+                                <td>SOLUTIONS_AS_OBJECT</td>\n\
+                                <td>false</td>\n\
+                                <td>Set to true to have solutions returned as an object instead of an array when using <strong>nerdamer.solveEquations</strong></td>\n\
+                            </tr>\n\
+                            <tr>\n\
                                 <td>USE_MULTICHARACTER_VARS</td>\n\
                                 <td>true</td>\n\
                                 <td>When this is set to false nerdamer will treat each letter as a variable so the input '<strong>six</strong>' will be treated as '<strong>s*i*x</strong>'</td>\n\
@@ -613,7 +618,10 @@ FUNCTIONS = {
             "sol = nerdamer.solveEquations('cos(x)+cos(3*x)=1','x');",
             "console.log(sol.toString());",
             "sol = nerdamer.solveEquations('x^2+8+y=x+6','x');",
-            "console.log(sol.toString());"
+            "console.log(sol.toString());",
+            "nerdamer.set('SOLUTIONS_AS_OBJECT', true);",
+            "sol = nerdamer.solveEquations(['2*x-y=8', '10*x+7*y-z=53', '4*z+y=6']);",
+            'console.log(sol)'
         ],
         returns: 'Symbol[]'
     },
@@ -2697,6 +2705,26 @@ FUNCTIONS = {
             "nerdamer.setVar('M', 'matrix([x,y],[a,b])');",
             "var M2 = nerdamer('matsetrow(M, 0, [1, 2])');",
             "console.log(M2.toString());"
+        ],
+        returns: 'Matrix'
+    },
+    size: {
+        type: 'internal',
+        usage: 'size(M_V)',
+        full_name: 'Size',
+        description: 'Gets the size of the matrix or vector. Returns a vector with the [row length, column length] in matrix.',
+        parameters: {
+            M_V: {
+                type: 'Matrix | Vector',
+                description: "a matrix for which the row is being set."
+            }
+        },
+        examples: [
+            "nerdamer.setVar('M', 'matrix([x,y],[a,b])');",
+            "var matrix_size = nerdamer('size(M)');",
+            "console.log(matrix_size.toString());",
+            "var vector_size = nerdamer('size([a, b, c])');",
+            "console.log(vector_size.toString());"
         ],
         returns: 'Matrix'
     },
