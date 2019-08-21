@@ -2805,6 +2805,11 @@ var nerdamer = (function (imports) {
                     && this.multiplier.equals(symbol.multiplier)
                     && this.group === symbol.group;
         },
+        abs: function() {
+            var e = this.clone();
+            e.multiplier.abs();
+            return e;
+        },
         // Greater than
         gt: function (symbol) {
             if (!isSymbol(symbol))
@@ -9402,13 +9407,13 @@ var nerdamer = (function (imports) {
         // Returns true iff the vector is antiparallel to the argument
         isAntiparallelTo: function (vector) {
             var angle = this.angleFrom(vector).valueOf();
-            return (angle === null) ? null : (Math.abs(angle - Math.PI) <= Sylvester.precision);
+            return (angle === null) ? null : (Math.abs(angle - Math.PI) <= PRECISION);
         },
 
         // Returns true iff the vector is perpendicular to the argument
         isPerpendicularTo: function (vector) {
             var dot = this.dot(vector);
-            return (dot === null) ? null : (Math.abs(dot) <= Sylvester.precision);
+            return (dot === null) ? null : (Math.abs(dot) <= PRECISION);
         },
 
         // Returns the result of adding the argument to the vector
@@ -9494,7 +9499,13 @@ var nerdamer = (function (imports) {
             while (--n);
             return m;
         },
-
+        magnitude: function() {
+            var magnitude = new Symbol(0);
+            this.each(function(e) {
+                magnitude = _.add(magnitude, _.pow(e, new Symbol(2)));
+            });
+            return _.sqrt(magnitude);
+        },
         // Returns the index of the first match found
         indexOf: function (x) {
             var index = null, n = this.elements.length, k = n, i;

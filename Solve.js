@@ -19,6 +19,7 @@ if ((typeof module) !== 'undefined') {
             _A = core.Algebra,
             _C = core.Calculus,
             explode = _C.integration.decompose_arg,
+            evaluate = core.Utils.evaluate,
             remove = core.Utils.remove,
             format = core.Utils.format,
             build = core.Utils.build,
@@ -41,6 +42,8 @@ if ((typeof module) !== 'undefined') {
     core.Settings.make_pi_conversions = true;
     // The step size
     core.Settings.STEP_SIZE = 0.1;
+    //the maximum iterations for Newton's method
+    core.Settings.MAX_NEWTON_ITERATIONS = 200;
 
     core.Symbol.prototype.hasTrig = function () {
         return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
@@ -172,6 +175,32 @@ if ((typeof module) !== 'undefined') {
             return core.Utils.arrayUnique(variables(this.symbol.LHS).concat(variables(this.symbol.RHS)));
         return variables(this.symbol);
     };
+    
+    core.Matrix.jacobian = function(eqns, vars) {
+        var jacobian = new core.Matrix();
+        //get the variables if not supplied
+        if(!vars) {
+            vars = __.getSystemVariables(eqns);
+        }
+        
+        vars.forEach(function(v, i) {
+            eqns.forEach(function(eq, j) {
+                jacobian.set(j, i, core.Calculus.diff(eq.clone(), v));
+            });
+        });
+        
+        return jacobian;
+    };
+    
+    core.Matrix.prototype.max = function() {
+        var max = new Symbol(0);
+        this.each(function(x) {
+            var e = x.abs();
+            if(e.gt(max))
+                max = e;
+        });
+        return max;
+    };
 
     var setEq = function (a, b) {
         return _.equals(a, b);
@@ -212,6 +241,77 @@ if ((typeof module) !== 'undefined') {
             }
             return eqn.toLHS();
         },
+        getSystemVariables: function(eqns) {
+            vars = variables(eqns[0], null, null, true);
+
+            //get all variables
+            for (var i = 1, l=eqns.length; i < l; i++)
+                vars = vars.concat(variables(eqns[i]));
+            //remove duplicates
+            vars = core.Utils.arrayUnique(vars).sort();
+            
+            //done
+            return vars;
+        },
+        solveNonLinearSystem: function(eqns, c) {
+            //initialize the c matrix with something close to 0. 
+            c = new core.Matrix([new Symbol(0.1)],[new Symbol(0.1)],[new Symbol(0.1)]);
+            
+            var vars = __.getSystemVariables(eqns);
+            var jacobian = core.Matrix.jacobian(eqns, vars);
+            var max_iter = core.Settings.MAX_NEWTON_ITERATIONS;
+            var o, t, iters, diff, norm, tt;
+            
+            iters = 0;
+            do {
+                //if we've reached the max iterations then exit
+                if(iters > max_iter)
+                    break;
+                
+                //set the substitution object
+                o = {};
+                vars.forEach(function(v, i) {
+                    o[v] = c.get(i, 0);
+                });
+
+                //make all the substitutions for each of the equations
+                eqns.forEach(function(eq, i) {
+                    c.set(i, 0, evaluate(eq, o));
+                });
+                
+                var m = new core.Matrix();
+                jacobian.clone().eachElement(function(e, i, j) {
+                    var ans = _.parse(Number(evaluate(e, o)));
+                    m.set(i, j, ans);
+                });
+
+                //preform the elimination
+                t = _.multiply(m.invert(), c);
+                
+                //get the difference of the two vectors (matrices technically)
+                diff = new core.Matrix();
+
+                c.clone().eachElement(function(e, i, j) {
+                    var te = t.get(i, j);
+                    diff.set(i, j, _.parse(Number(te)+Number(e)));
+                });
+                
+                //move t along since it's now c
+                c = t;
+                
+                //get the norm
+                norm = diff.max();
+                
+                iters++;
+            }
+            while(Number(norm) >= Number.EPSILON)
+            var result = [];
+        
+            c.each(function(x) {
+                result.push(x.multiplier.toDecimal());
+            });
+            return result;
+        },
         solveSystem: function (eqns, var_array) {
             //check if a var_array was specified
             //nerdamer.clearVars();// this deleted ALL variables: not what we want
@@ -220,23 +320,18 @@ if ((typeof module) !== 'undefined') {
                 eqns[i] = __.toLHS(eqns[i]);
 
             var l = eqns.length,
-                    m = new core.Matrix(),
-                    c = new core.Matrix(),
-                    expand_result = false,
-                    vars;
+                m = new core.Matrix(),
+                c = new core.Matrix(),
+                expand_result = false,
+                vars;
 
             if (typeof var_array === 'undefined') {
                 //check to make sure that all the equations are linear
                 if (!_A.allLinear(eqns))
-                    core.err('System must contain all linear equations!');
-                vars = variables(eqns[0], null, null, true);
-
-                //get all variables
-                for (var i = 1; i < l; i++)
-                    vars = vars.concat(variables(eqns[i]));
-                //remove duplicates
-                vars = core.Utils.arrayUnique(vars).sort();
-
+                    return __.solveNonLinearSystem(eqns)
+//                    core.err('System must contain all linear equations!');
+                
+                vars = __.getSystemVariables(eqns);
                 // deletes only the variables of the linear equations in the nerdamer namespace
                 for (var i = 0; i < vars.length; i++) {
                     nerdamer.setVar(vars[i], "delete");
@@ -542,7 +637,7 @@ if ((typeof module) !== 'undefined') {
             return points;
         },
         Newton: function (point, f, fp) {
-            var maxiter = 200,
+            var maxiter = core.Settings.MAX_NEWTON_ITERATIONS,
                     iter = 0;
             //first try the point itself. If it's zero viola. We're done
             var x0 = point, x;
@@ -1098,5 +1193,6 @@ if ((typeof module) !== 'undefined') {
     nerdamer.api();
 })();
 
-//var x = nerdamer('solve(sqrt(x^2-p)+2sqrt(x^2-1),x) ');
+////var x = nerdamer.solveEquations(['3*x1-cos(x2*x3)-1/2','x1^2-81*(x2+0.1)^2+sin(x3)+1.06', 'e^(-x1*x2)+20x3+(10*pi-3)/3']);
+//var x = nerdamer.solveEquations(['x^2+y=3','x+x*y+z=6', 'z^2-y=4']);
 //console.log(x.toString())
