@@ -9592,6 +9592,13 @@ var nerdamer = (function (imports) {
                 return undefined;
             return this.elements[row][column];
         },
+        map: function(f, raw_values) {
+            var M = new Matrix();
+            this.each(function(e, i, j) {
+                M.set( i, j, f.call(M, e), raw_values);
+            });
+            return M;
+        },
         set: function (row, column, value, raw) {
             if (!this.elements[row])
                 this.elements[row] = [];

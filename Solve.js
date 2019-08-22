@@ -44,6 +44,14 @@ if ((typeof module) !== 'undefined') {
     core.Settings.STEP_SIZE = 0.1;
     //the maximum iterations for Newton's method
     core.Settings.MAX_NEWTON_ITERATIONS = 200;
+    //the maximum number of time non-linear solve tries another jump point
+    core.Settings.MAX_NON_LINEAR_TRIES = 12;
+    //the amount non-linear solve jumps by
+    core.Settings.NON_LINEAR_JUMP = 20;
+    //the size of the jump
+    core.Settings.NON_LINEAR_JUMP_SIZE = 100;
+    //the original starting point for nonlinear solving
+    core.Settings.NON_LINEAR_START = 0.01;
 
     core.Symbol.prototype.hasTrig = function () {
         return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
@@ -124,7 +132,7 @@ if ((typeof module) !== 'undefined') {
                                 return new Equation(
                                         _.expand(_.multiply(sym2.clone().toLinear(), a)),
                                         _.expand(_.multiply(sym2.clone().toLinear(), b))
-                                        ).toLHS();
+                                        );
                             }
                         }
                     }
@@ -176,7 +184,7 @@ if ((typeof module) !== 'undefined') {
         return variables(this.symbol);
     };
     
-    core.Matrix.jacobian = function(eqns, vars, callback) {
+    core.Matrix.jacobian = function(eqns, vars) {
         var jacobian = new core.Matrix();
         //get the variables if not supplied
         if(!vars) {
@@ -186,8 +194,6 @@ if ((typeof module) !== 'undefined') {
         vars.forEach(function(v, i) {
             eqns.forEach(function(eq, j) {
                 var e = core.Calculus.diff(eq.clone(), v);
-                if(callback)
-                    e = callback(eq, e);
                 jacobian.set(j, i, e);
             });
         });
@@ -265,39 +271,65 @@ if ((typeof module) !== 'undefined') {
             //done
             return vars;
         },
-        solveNonLinearSystem: function(eqns, c) {
+        solveNonLinearSystem: function(eqns, tries, start) {
+            if(tries < 0)
+                return [];//can't find a solution
+            start = typeof start === 'undefined' ? core.Settings.NON_LINEAR_START : start;
+
+            //the maximum number of times to jump
+            var max_tries = core.Settings.MAX_NON_LINEAR_TRIES;
+            
+            //halfway through the tries
+            var halfway = Math.floor(max_tries/2);
+            
+            //initialize the number of tries to 10 if not specified
+            tries = typeof tries === 'undefined' ? max_tries : tries;
+            
+            //a point at which we check to see if we're converging. By inspection it seems that we can
+            //use around 20 iterations to see if we're converging. If not then we retry a jump of x
+            var jump_at = core.Settings.NON_LINEAR_JUMP; 
+            
+            //we jump by this many points at each pivot point
+            var jump = core.Settings.NON_LINEAR_JUMP_SIZE;
+            
+            //used to check if we actually found a solution or if we gave up. Assume we will find a solution.
+            var found = true;
             
             var create_subs = function(vars, matrix) {
-                var o = {};
-                vars.forEach(function(v, i) {
-                    o[v] = matrix.get(i, 0);
+                return vars.map(function(x, i) {
+                    return Number(matrix.get(i, 0));
                 });
-                return o;
             };
             
             var vars = __.getSystemVariables(eqns);
-            var jacobian = core.Matrix.jacobian(eqns, vars);
-            var max_iter = core.Settings.MAX_NEWTON_ITERATIONS;
-            var o, y, iters, xn1, norm, xn, d;
+            var jacobian = core.Matrix.jacobian(eqns, vars, function(x) {
+                return build(x, vars);
+            }, true);
             
+            var max_iter = core.Settings.MAX_NEWTON_ITERATIONS;
+            var o, y, iters, xn1, norm, lnorm, xn, d;
+            
+            var f_eqns = eqns.map(function(eq) {
+                return build(eq, vars);
+            });
+            
+            var J = jacobian.map(function(e) {
+                return build(e, vars);
+            }, true);
             //initial values
             xn1 = core.Matrix.cMatrix(0, vars);;
             //initialize the c matrix with something close to 0. 
-            c = core.Matrix.cMatrix(3, vars);
-            
-//            //create a zero substitution object
-//            var zeroes = create_subs(vars, xn1);
-//            eqns.forEach(function(x) {
-//                console.log(evaluate(x, zeroes).toString())
-//            })
+            var c = core.Matrix.cMatrix(start, vars);
             
             iters = 0;
             
             //start of algorithm
             do {
                 //if we've reached the max iterations then exit
-                if(iters > max_iter)
+                if(iters > max_iter) {
                     break;
+                    found = false;
+                }
                 
                 //set the substitution object
                 o = create_subs(vars, c);
@@ -306,13 +338,13 @@ if ((typeof module) !== 'undefined') {
                 xn = c.clone();
                 
                 //make all the substitutions for each of the equations
-                eqns.forEach(function(eq, i) {
-                    c.set(i, 0, evaluate(eq, o));
+                f_eqns.forEach(function(f, i) {
+                    c.set(i, 0, f.apply(null, o));
                 });
                 
                 var m = new core.Matrix();
-                jacobian.each(function(e, i, j) {
-                    var ans = _.parse(Number(evaluate(e, o)));
+                J.each(function(fn, i, j) {
+                    var ans = fn.apply(null, o);
                     m.set(i, j, ans);
                 });
 
@@ -321,19 +353,49 @@ if ((typeof module) !== 'undefined') {
                 //preform the elimination
                 y = _.multiply(m, c).negate();
                 
+                //the callback is to avoid overflow in the coeffient denonimator
+                //it converts it to a decimal and then back to a fraction. Some precision
+                //is lost be it's better than overflow. 
                 d = y.subtract(xn1, function(x) { return _.parse(Number(x)); });
-//                console.log(y+'-'+xn1.toString())
+
                 xn1 = xn.add(y, function(x) { return _.parse(Number(x)); });
 
                 //move c is now xn1
                 c = xn1;
                 
                 //get the norm
+                
+                //the expectation is that we're converging to some answer as this point regardless of where we start
+                //this may have to be adjusted at some point because of erroneous assumptions
+                if(iters >= jump_at) {
+                    //check the norm. If the norm is greater than one then it's time to try another point
+                    if(norm > 1) {
+                        //reset the start point at halway
+                        if(tries === halfway)
+                            start = 0;
+                        var sign = tries > halfway ? 1 : -1; //which side are we incrementing
+                        //we increment +n at one side and -n at the other. 
+                        n = (tries % Math.floor(halfway))+1;
+                        //adjust the start point
+                        start += (sign*n*jump);
+                        //call restart
+                        return __.solveNonLinearSystem(eqns, --tries, start);
+                    }
+                }
+                lnorm = norm;
+                iters++;
                 norm = d.max();
                 
-                iters++;
+                //exit early. Revisit if we get bugs
+                if(Number(norm) === Number(lnorm))
+                    break;
+                
             }
             while(Number(norm) >= Number.EPSILON)
+            
+            //return a blank set if nothing was found;
+            if(!found) 
+                return [];
             
             //return c since that's the answer
             return __.systemSolutions(c, vars, true, function(x) {
@@ -1225,7 +1287,9 @@ if ((typeof module) !== 'undefined') {
     nerdamer.api();
 })();
 
-//var x = nerdamer.solveEquations(['3*x1-cos(x2*x3)-1/2','x1^2-81*(x2+0.1)^2+sin(x3)+1.06', 'e^(-x1*x2)+20x3+(10*pi-3)/3']);
-//var x = nerdamer.solveEquations(['x^2+y=3','x+y+z=6', 'z^2-y=7']);
-//var x = nerdamer.solveEquations(['x^3+y=9','y^3-x=-1']);
+//nerdamer.set('NON_LINEAR_START', 30)
+//var x = nerdamer.solveEquations(['3*x^2+y-4*z=5', '4*y^3+x+z^2=-4', 'x-y-6*z/x=-5']);
+////var x = nerdamer.solveEquations(['3*x1-cos(x2*x3)-1/2','x1^2-81*(x2+0.1)^2+sin(x3)+1.06', 'e^(-x1*x2)+20x3+(10*pi-3)/3']);
+////var x = nerdamer.solveEquations(['x^2+y=3','x+y+z=6', 'z^2-y=7']);
+////var x = nerdamer.solveEquations(['x^3+y=9','y^3-x=-1']);
 //console.log(x.toString())
