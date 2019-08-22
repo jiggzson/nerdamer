@@ -9592,10 +9592,10 @@ var nerdamer = (function (imports) {
                 return undefined;
             return this.elements[row][column];
         },
-        set: function (row, column, value) {
+        set: function (row, column, value, raw) {
             if (!this.elements[row])
                 this.elements[row] = [];
-            this.elements[row][column] = isSymbol(value) ? value : new Symbol(value);
+            this.elements[row][column] = raw ? value : (isSymbol(value) ? value : new Symbol(value));
         },
         cols: function () {
             return this.elements[0].length;

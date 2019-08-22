@@ -176,7 +176,7 @@ if ((typeof module) !== 'undefined') {
         return variables(this.symbol);
     };
     
-    core.Matrix.jacobian = function(eqns, vars) {
+    core.Matrix.jacobian = function(eqns, vars, callback) {
         var jacobian = new core.Matrix();
         //get the variables if not supplied
         if(!vars) {
@@ -185,7 +185,10 @@ if ((typeof module) !== 'undefined') {
         
         vars.forEach(function(v, i) {
             eqns.forEach(function(eq, j) {
-                jacobian.set(j, i, core.Calculus.diff(eq.clone(), v));
+                var e = core.Calculus.diff(eq.clone(), v);
+                if(callback)
+                    e = callback(eq, e);
+                jacobian.set(j, i, e);
             });
         });
         
@@ -200,6 +203,15 @@ if ((typeof module) !== 'undefined') {
                 max = e;
         });
         return max;
+    };
+    
+    core.Matrix.cMatrix = function(value, vars) {
+        var m = new core.Matrix();
+        //make an initial guess
+        vars.forEach(function(v, i) {
+            m.set(i, 0, _.parse(value));
+        });
+        return m;
     };
 
     var setEq = function (a, b) {
@@ -254,15 +266,31 @@ if ((typeof module) !== 'undefined') {
             return vars;
         },
         solveNonLinearSystem: function(eqns, c) {
+            
+            var create_subs = function(vars, matrix) {
+                var o = {};
+                vars.forEach(function(v, i) {
+                    o[v] = matrix.get(i, 0);
+                });
+                return o;
+            };
+            
             var vars = __.getSystemVariables(eqns);
             var jacobian = core.Matrix.jacobian(eqns, vars);
             var max_iter = core.Settings.MAX_NEWTON_ITERATIONS;
             var o, y, iters, xn1, norm, xn, d;
             
             //initial values
-            xn1 = new core.Matrix([new Symbol(0)],[new Symbol(0)],[new Symbol(0)]);
+            xn1 = core.Matrix.cMatrix(0, vars);;
             //initialize the c matrix with something close to 0. 
-            c = new core.Matrix([new Symbol(-.01)],[new Symbol(0.20)],[new Symbol(0.30)]);
+            c = core.Matrix.cMatrix(3, vars);
+            
+//            //create a zero substitution object
+//            var zeroes = create_subs(vars, xn1);
+//            eqns.forEach(function(x) {
+//                console.log(evaluate(x, zeroes).toString())
+//            })
+            
             iters = 0;
             
             //start of algorithm
@@ -272,10 +300,7 @@ if ((typeof module) !== 'undefined') {
                     break;
                 
                 //set the substitution object
-                o = {};
-                vars.forEach(function(v, i) {
-                    o[v] = c.get(i, 0);
-                });
+                o = create_subs(vars, c);
                 
                 //set xn
                 xn = c.clone();
@@ -291,10 +316,13 @@ if ((typeof module) !== 'undefined') {
                     m.set(i, j, ans);
                 });
 
+                m = m.invert();
+                
                 //preform the elimination
-                y = _.multiply(m.invert(), c).negate();
+                y = _.multiply(m, c).negate();
                 
                 d = y.subtract(xn1, function(x) { return _.parse(Number(x)); });
+//                console.log(y+'-'+xn1.toString())
                 xn1 = xn.add(y, function(x) { return _.parse(Number(x)); });
 
                 //move c is now xn1
@@ -308,13 +336,17 @@ if ((typeof module) !== 'undefined') {
             while(Number(norm) >= Number.EPSILON)
             
             //return c since that's the answer
-            return __.systemSolutions(c, vars);
+            return __.systemSolutions(c, vars, true, function(x) {
+                return core.Utils.round(Number(x), 14);
+            });
         },
-        systemSolutions: function(result, vars, expand_result) {
+        systemSolutions: function(result, vars, expand_result, callback) {
             var solutions = core.Settings.SOLUTIONS_AS_OBJECT ? {} : [];
             
             result.each(function (e, idx) {
                 var solution = (expand_result ? _.expand(e) : e).valueOf();
+                if(callback)
+                    solution = callback.call(e, solution);
                 var variable = vars[idx];
                 if (core.Settings.SOLUTIONS_AS_OBJECT) {
                     solutions[variable] = solution;
@@ -553,7 +585,7 @@ if ((typeof module) !== 'undefined') {
         },
         /**
          * Attempts to solve the equation assuming it's a polynomial with numeric coefficients
-         * @param {Symbol} symbol
+         * @param {Symbol} eq
          * @param {String} solve_for
          * @returns {Array}
          */
@@ -1194,5 +1226,6 @@ if ((typeof module) !== 'undefined') {
 })();
 
 //var x = nerdamer.solveEquations(['3*x1-cos(x2*x3)-1/2','x1^2-81*(x2+0.1)^2+sin(x3)+1.06', 'e^(-x1*x2)+20x3+(10*pi-3)/3']);
-//var x = nerdamer.solveEquations(['x^2+y=3','x+y+z=6', 'z^2-y=4']);
+//var x = nerdamer.solveEquations(['x^2+y=3','x+y+z=6', 'z^2-y=7']);
+//var x = nerdamer.solveEquations(['x^3+y=9','y^3-x=-1']);
 //console.log(x.toString())
