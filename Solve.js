@@ -254,15 +254,18 @@ if ((typeof module) !== 'undefined') {
             return vars;
         },
         solveNonLinearSystem: function(eqns, c) {
-            //initialize the c matrix with something close to 0. 
-            c = new core.Matrix([new Symbol(0.1)],[new Symbol(0.1)],[new Symbol(0.1)]);
-            
             var vars = __.getSystemVariables(eqns);
             var jacobian = core.Matrix.jacobian(eqns, vars);
             var max_iter = core.Settings.MAX_NEWTON_ITERATIONS;
-            var o, t, iters, diff, norm, tt;
+            var o, y, iters, xn1, norm, xn, d;
             
+            //initial values
+            xn1 = new core.Matrix([new Symbol(0)],[new Symbol(0)],[new Symbol(0)]);
+            //initialize the c matrix with something close to 0. 
+            c = new core.Matrix([new Symbol(-.01)],[new Symbol(0.20)],[new Symbol(0.30)]);
             iters = 0;
+            
+            //start of algorithm
             do {
                 //if we've reached the max iterations then exit
                 if(iters > max_iter)
@@ -273,45 +276,56 @@ if ((typeof module) !== 'undefined') {
                 vars.forEach(function(v, i) {
                     o[v] = c.get(i, 0);
                 });
-
+                
+                //set xn
+                xn = c.clone();
+                
                 //make all the substitutions for each of the equations
                 eqns.forEach(function(eq, i) {
                     c.set(i, 0, evaluate(eq, o));
                 });
                 
                 var m = new core.Matrix();
-                jacobian.clone().eachElement(function(e, i, j) {
+                jacobian.each(function(e, i, j) {
                     var ans = _.parse(Number(evaluate(e, o)));
                     m.set(i, j, ans);
                 });
 
                 //preform the elimination
-                t = _.multiply(m.invert(), c);
+                y = _.multiply(m.invert(), c).negate();
                 
-                //get the difference of the two vectors (matrices technically)
-                diff = new core.Matrix();
+                d = y.subtract(xn1, function(x) { return _.parse(Number(x)); });
+                xn1 = xn.add(y, function(x) { return _.parse(Number(x)); });
 
-                c.clone().eachElement(function(e, i, j) {
-                    var te = t.get(i, j);
-                    diff.set(i, j, _.parse(Number(te)+Number(e)));
-                });
-                
-                //move t along since it's now c
-                c = t;
+                //move c is now xn1
+                c = xn1;
                 
                 //get the norm
-                norm = diff.max();
+                norm = d.max();
                 
                 iters++;
             }
             while(Number(norm) >= Number.EPSILON)
-            var result = [];
-        
-            c.each(function(x) {
-                result.push(x.multiplier.toDecimal());
-            });
-            return result;
+            
+            //return c since that's the answer
+            return __.systemSolutions(c, vars);
         },
+        systemSolutions: function(result, vars, expand_result) {
+            var solutions = core.Settings.SOLUTIONS_AS_OBJECT ? {} : [];
+            
+            result.each(function (e, idx) {
+                var solution = (expand_result ? _.expand(e) : e).valueOf();
+                var variable = vars[idx];
+                if (core.Settings.SOLUTIONS_AS_OBJECT) {
+                    solutions[variable] = solution;
+                }
+                else
+                    solutions.push([variable, solution]); /*NO*/
+            });
+            //done
+            return solutions;
+        },
+        //https://www.lakeheadu.ca/sites/default/files/uploads/77/docs/RemaniFinal.pdf
         solveSystem: function (eqns, var_array) {
             //check if a var_array was specified
             //nerdamer.clearVars();// this deleted ALL variables: not what we want
@@ -328,8 +342,8 @@ if ((typeof module) !== 'undefined') {
             if (typeof var_array === 'undefined') {
                 //check to make sure that all the equations are linear
                 if (!_A.allLinear(eqns))
-                    return __.solveNonLinearSystem(eqns)
-//                    core.err('System must contain all linear equations!');
+                    return __.solveNonLinearSystem(eqns);
+                    //core.err('System must contain all linear equations!');
                 
                 vars = __.getSystemVariables(eqns);
                 // deletes only the variables of the linear equations in the nerdamer namespace
@@ -419,19 +433,7 @@ if ((typeof module) !== 'undefined') {
                 });
             
             
-            var solutions = core.Settings.SOLUTIONS_AS_OBJECT ? {} : [];
-            
-            result.each(function (e, idx) {
-                var solution = (expand_result ? _.expand(e) : e).valueOf();
-                var variable = vars[idx];
-                if (core.Settings.SOLUTIONS_AS_OBJECT) {
-                    solutions[variable] = solution;
-                }
-                else
-                    solutions.push([variable, solution]); /*NO*/
-            });
-            //done
-            return solutions;
+            return __.systemSolutions(result, vars, expand_result);
         },
         /**
          * The quadratic function but only one side.
@@ -897,8 +899,6 @@ if ((typeof module) !== 'undefined') {
             }
             return symbol;
         };
-        //rewrites equations/expression in simpler form
-//        var rewrite = ;
 
         //separate the equation
         var separate = function (eq) {
@@ -1193,6 +1193,6 @@ if ((typeof module) !== 'undefined') {
     nerdamer.api();
 })();
 
-////var x = nerdamer.solveEquations(['3*x1-cos(x2*x3)-1/2','x1^2-81*(x2+0.1)^2+sin(x3)+1.06', 'e^(-x1*x2)+20x3+(10*pi-3)/3']);
-//var x = nerdamer.solveEquations(['x^2+y=3','x+x*y+z=6', 'z^2-y=4']);
+//var x = nerdamer.solveEquations(['3*x1-cos(x2*x3)-1/2','x1^2-81*(x2+0.1)^2+sin(x3)+1.06', 'e^(-x1*x2)+20x3+(10*pi-3)/3']);
+//var x = nerdamer.solveEquations(['x^2+y=3','x+y+z=6', 'z^2-y=4']);
 //console.log(x.toString())

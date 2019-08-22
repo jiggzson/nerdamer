@@ -9623,7 +9623,7 @@ var nerdamer = (function (imports) {
                     nc = this.cols(), i, j;
             for (i = 0; i < nr; i++) {
                 for (j = 0; j < nc; j++) {
-                    this.elements[i][j] = fn.call(this, this.elements[i][j], i, j);
+                    fn.call(this, this.elements[i][j], i, j);
                 }
             }
         },
@@ -9830,20 +9830,28 @@ var nerdamer = (function (imports) {
                 return Matrix.fromArray(elements);
             }, undefined, this);
         },
-        add: function (matrix) {
+        add: function (matrix, callback) {
             var M = new Matrix();
             if (this.sameSize(matrix)) {
                 this.eachElement(function (e, i, j) {
-                    M.set(i, j, _.add(e.clone(), matrix.elements[i][j]));
+                    var result = _.add(e.clone(), matrix.elements[i][j].clone());
+                    if(callback) {
+                        result = callback.call(M, result, e, matrix.elements[i][j]);
+                    }
+                    M.set(i, j, result);
                 });
             }
             return M;
         },
-        subtract: function (matrix) {
+        subtract: function (matrix, callback) {
             var M = new Matrix();
             if (this.sameSize(matrix)) {
                 this.eachElement(function (e, i, j) {
-                    M.set(i, j, _.subtract(e.clone(), matrix.elements[i][j]));
+                    var result = _.subtract(e.clone(), matrix.elements[i][j].clone());
+                    if(callback) {
+                        result = callback.call(M, result, e, matrix.elements[i][j]);
+                    }
+                    M.set(i, j, result);
                 });
             }
             return M;
@@ -9862,13 +9870,14 @@ var nerdamer = (function (imports) {
             }
             return this;
         },
-        toString: function (newline) {
+        toString: function (newline, to_decimal) {
             var l = this.rows(),
                     s = [];
             newline = newline === undefined ? '\n' : newline;
             for (var i = 0; i < l; i++) {
                 s.push('[' + this.elements[i].map(function (x) {
-                    return x !== undefined ? x.toString() : '';
+                    var v = to_decimal ? x.multiplier.toDecimal() : x.toString();
+                    return x !== undefined ? v : '';
                 }).join(',') + ']');
             }
             return 'matrix' + inBrackets(s.join(','));
