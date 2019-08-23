@@ -46,8 +46,8 @@ if ((typeof module) !== 'undefined') {
     core.Settings.MAX_NEWTON_ITERATIONS = 200;
     //the maximum number of time non-linear solve tries another jump point
     core.Settings.MAX_NON_LINEAR_TRIES = 12;
-    //the amount non-linear solve jumps by
-    core.Settings.NON_LINEAR_JUMP = 20;
+    //the amount of iterations the function will start to jump at
+    core.Settings.NON_LINEAR_JUMP_AT = 50;
     //the size of the jump
     core.Settings.NON_LINEAR_JUMP_SIZE = 100;
     //the original starting point for nonlinear solving
@@ -287,7 +287,7 @@ if ((typeof module) !== 'undefined') {
             
             //a point at which we check to see if we're converging. By inspection it seems that we can
             //use around 20 iterations to see if we're converging. If not then we retry a jump of x
-            var jump_at = core.Settings.NON_LINEAR_JUMP; 
+            var jump_at = core.Settings.NON_LINEAR_JUMP_AT; 
             
             //we jump by this many points at each pivot point
             var jump = core.Settings.NON_LINEAR_JUMP_SIZE;
@@ -1287,9 +1287,3 @@ if ((typeof module) !== 'undefined') {
     nerdamer.api();
 })();
 
-//nerdamer.set('NON_LINEAR_START', 30)
-//var x = nerdamer.solveEquations(['3*x^2+y-4*z=5', '4*y^3+x+z^2=-4', 'x-y-6*z/x=-5']);
-////var x = nerdamer.solveEquations(['3*x1-cos(x2*x3)-1/2','x1^2-81*(x2+0.1)^2+sin(x3)+1.06', 'e^(-x1*x2)+20x3+(10*pi-3)/3']);
-////var x = nerdamer.solveEquations(['x^2+y=3','x+y+z=6', 'z^2-y=7']);
-////var x = nerdamer.solveEquations(['x^3+y=9','y^3-x=-1']);
-//console.log(x.toString())

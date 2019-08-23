@@ -185,6 +185,19 @@ describe('Solve', function () {
             {
                 given: 'x^2+4=x-y',
                 expected: '(1/2)*(1+sqrt(-15-4*y)),(1/2)*(-sqrt(-15-4*y)+1)'
+            },
+            //non-linear systems
+            {
+                given: ['x+y=3','y^3-x=7'],
+                expected: 'x,1,y,2'
+            },
+            {
+                given: ['x^2+y=3','x+y+z=6', 'z^2-y=7'],
+                expected: 'x,1,y,2,z,3'
+            },
+            {
+                given: ['x*y-cos(z)=-3', '3*z^3-y^2+1=12', '3*sin(x)*cos(y)-x^3=-4'],
+                expected: 'x,100.0124787314866,y,-0.02970899808037,z,1.54206291184297'
             }
             
         ];
