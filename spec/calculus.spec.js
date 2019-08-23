@@ -254,6 +254,10 @@ describe('calculus', function () {
                 given: 'limit(tan(3*x)/tan(x), x, pi/2)',
                 expected: '1/3'
             },
+            {
+                given: 'limit(cos(sin(x)+2), x, Infinity)',
+                expected: '[cos(1),cos(3)]'
+            },
             /*
             {
                 given: 'limit((x+1)^(1+1/x)-x^(1+x),x, Infinity)',

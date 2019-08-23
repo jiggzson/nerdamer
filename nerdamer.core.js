@@ -1201,7 +1201,7 @@ var nerdamer = (function (imports) {
         factorial: function (x) {
             var is_int = x % 1 === 0;
             
-            //factorial for negative integers is complex infinity according to Wolfram Alpha
+            /*factorial for negative integers is complex infinity according to Wolfram Alpha*/
             if (is_int && x < 0)
                 return NaN;
             
@@ -8574,7 +8574,7 @@ var nerdamer = (function (imports) {
         quickConversion: function (dec) {
             var x = (dec.toExponential() + '').split('e');
             var d = x[0].split('.')[1];// get the number of places after the decimal
-            var l = d ? d.length : 0; // maybe the coefficient is an integer;
+            var l = (d ? d.length : 0)-parseInt(x[1]); // maybe the coefficient is an integer;
             //call Math.round to avoid rounding error
             return [Math.round(Math.pow(10, l) * x[0]), Math.pow(10, Math.abs(x[1]) + l)];
         },
@@ -8673,7 +8673,7 @@ var nerdamer = (function (imports) {
                     //This way I can generate LaTeX on an array of strings.
                     if (!isSymbol(sym))
                         sym = _.parse(sym);
-                    LaTeXArray.push(this.latex(sym));
+                    LaTeXArray.push(this.latex(sym, option));
                 }
                 return this.brackets(LaTeXArray.join(', '), 'square');
             }
@@ -8684,7 +8684,7 @@ var nerdamer = (function (imports) {
                     var rowTeX = [],
                             e = symbol.elements[i];
                     for (var j = 0; j < e.length; j++) {
-                        rowTeX.push(this.latex(e[j]));
+                        rowTeX.push(this.latex(e[j], option));
                     }
                     TeX += rowTeX.join(' & ');
                     if (i < symbol.elements.length - 1) {
@@ -8698,7 +8698,7 @@ var nerdamer = (function (imports) {
             else if (isVector(symbol)) {
                 var TeX = '\\left[';
                 for (var i = 0; i < symbol.elements.length; i++) {
-                    TeX += this.latex(symbol.elements[i]) + ' ' + (i !== symbol.elements.length - 1 ? ',\\,' : '');
+                    TeX += this.latex(symbol.elements[i], option) + ' ' + (i !== symbol.elements.length - 1 ? ',\\,' : '');
                 }
                 TeX += '\\right]';
                 return TeX;
@@ -8707,7 +8707,7 @@ var nerdamer = (function (imports) {
             else if(isSet(symbol)) {
                 var TeX = '\\{';
                 for (var i = 0; i < symbol.elements.length; i++) {
-                    TeX += this.latex(symbol.elements[i]) + ' ' + (i !== symbol.elements.length - 1 ? ',\\,' : '');
+                    TeX += this.latex(symbol.elements[i], option) + ' ' + (i !== symbol.elements.length - 1 ? ',\\,' : '');
                 }
                 TeX += '\\}';
                 return TeX;
@@ -9339,6 +9339,7 @@ var nerdamer = (function (imports) {
             this.each(function (x, i) {
                 elements.push(fn(x, i));
             });
+
             return new Vector(elements);
         },
 
