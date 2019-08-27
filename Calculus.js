@@ -1968,9 +1968,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 retval = _.subtract(a, b);
             }
             else if(vars.length === 1 && from.isConstant() && to.isConstant()) {
-                var f = core.Utils.build(symbol);
-                retval = new Symbol(core.Math2.num_integrate(f, Number(from), Number(to)));
-                
+                var f = core.Utils.build(symbol); 
+                    retval = new Symbol(core.Math2.num_integrate(f, Number(from), Number(to)));
             }
             else 
                 retval = _.symfunction('defint', [symbol, from , to, dx]);
@@ -2141,8 +2140,18 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     
                                     //Squeeze theorem lim f(g(x)) = lim f(lim g))
                                     var arg = __.Limit.limit(symbol.args[0], x, lim);
+                                    if(core.Utils.isVector(arg)) {
+                                        //get the limit over that interval
+                                        retval = arg.map(function(e) {
+                                            var clone = symbol.clone();
+                                            clone.args[0] = e;
+                                            return __.Limit.limit(_.symfunction(symbol.fname, [e]), x, lim);
+                                        });
+                                        
+                                        return _.multiply(m, retval)
+                                    }
                                     //if the argument is constant then we're done
-                                    if(arg.isConstant(true)) {
+                                    else if(arg.isConstant(true)) {
                                         var evaluates;
                                         //double check that it evaluates
                                         var trial = _.symfunction(symbol.fname, [arg]);

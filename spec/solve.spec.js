@@ -60,7 +60,7 @@ describe('Solve', function () {
             },
             {
                 given: 'solve(-5 sqrt(14)x-14x^2 sqrt(83)-10=0,x)',
-                expected: '[(-1/28)*sqrt(-560*sqrt(83)+350)*sqrt(83)^(-1)+(-5/28)*sqrt(14)*sqrt(83)^(-1),(-5/28)*sqrt(14)*sqrt(83)^(-1)+(1/28)*sqrt(-560*sqrt(83)+350)*sqrt(83)^(-1)]'
+                expected: '[(-1/28)*(5*sqrt(14)+sqrt(-560*sqrt(83)+350))*sqrt(83)^(-1),(-1/28)*(-sqrt(-560*sqrt(83)+350)+5*sqrt(14))*sqrt(83)^(-1)]'
             },
             {
                 given: 'solve(-5*sqrt(14)x-14x^2*sqrt(83)-10x=0,x)',
@@ -106,11 +106,8 @@ describe('Solve', function () {
             },
             {
                 given: 'solve(sqrt(97)x^2-sqrt(13)x+sqrt(14)x+sqrt(43)x^2+sqrt(3)*sqrt(101)=0,x)',
-                expected: '[(-1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(14)+(1/2)*(sqrt(43)+sqrt(97))^(-1)'+
-                        '*sqrt((-sqrt(13)+sqrt(14))^2-4*(sqrt(43)+sqrt(97))*sqrt(101)*sqrt(3))+(1/2)*'+
-                        '(sqrt(43)+sqrt(97))^(-1)*sqrt(13),(-1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt((-sqrt(13)'+
-                        '+sqrt(14))^2-4*(sqrt(43)+sqrt(97))*sqrt(101)*sqrt(3))+(-1/2)*(sqrt(43)+sqrt(97))^(-1)'+
-                        '*sqrt(14)+(1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(13)]'
+                expected: '[(1/2)*(-sqrt(14)+sqrt((-sqrt(13)+sqrt(14))^2-4*(sqrt(43)+sqrt(97))*sqrt(101)*sqrt(3))+sqrt(13))*(sqrt(43)+sqrt(97))^(-1),'+
+                        '(1/2)*(-sqrt((-sqrt(13)+sqrt(14))^2-4*(sqrt(43)+sqrt(97))*sqrt(101)*sqrt(3))-sqrt(14)+sqrt(13))*(sqrt(43)+sqrt(97))^(-1)]'
             },
             {
                 given: 'solve(cos(x), x)',
@@ -149,6 +146,14 @@ describe('Solve', function () {
             {
                 given: 'solve(log(x)-log(x,0.5)=log(x,-3), x)',
                 expected: '[1]'
+            },
+            {
+                given: 'solve((1/2)*sqrt(-4*x+4*y)-2+y, y)',
+                expected: '[(-1/2)*(-5+sqrt(-4*x+9)),(-1/2)*(-5-sqrt(-4*x+9))]'
+            },
+            {
+                given: 'solve(log(a*x-c)-b=21, x)',
+                expected: '[-(-c-e^(21+b))*a^(-1)]'
             }
         ];
 
@@ -180,6 +185,19 @@ describe('Solve', function () {
             {
                 given: 'x^2+4=x-y',
                 expected: '(1/2)*(1+sqrt(-15-4*y)),(1/2)*(-sqrt(-15-4*y)+1)'
+            },
+            //non-linear systems
+            {
+                given: ['x+y=3','y^3-x=7'],
+                expected: 'x,1,y,2'
+            },
+            {
+                given: ['x^2+y=3','x+y+z=6', 'z^2-y=7'],
+                expected: 'x,1,y,2,z,3'
+            },
+            {
+                given: ['x*y-cos(z)=-3', '3*z^3-y^2+1=12', '3*sin(x)*cos(y)-x^3=-4'],
+                expected: 'x,1.10523895006979,y,-2.98980336936266,z,1.88015428627437'
             }
             
         ];

@@ -16,7 +16,7 @@ var nerdamer = (function (imports) {
     "use strict";
 
 //version ====================================================================== 
-    var version = '1.0.0';
+    var version = '1.0.1';
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
@@ -1201,7 +1201,7 @@ var nerdamer = (function (imports) {
         factorial: function (x) {
             var is_int = x % 1 === 0;
             
-            //factorial for negative integers is complex infinity according to Wolfram Alpha
+            /*factorial for negative integers is complex infinity according to Wolfram Alpha*/
             if (is_int && x < 0)
                 return NaN;
             
@@ -2374,6 +2374,123 @@ var nerdamer = (function (imports) {
     //Aliases
     Expression.prototype.toTeX = Expression.prototype.latex;
 
+//Scientific ===================================================================  
+    /*
+    * Javascript has the toExponential method but this allows you to work with string and therefore any number of digits of your choosing
+    * For example Scientific('464589498449496467924197545625247695464569568959124568489548454');
+    */
+
+    function Scientific(num) {
+        if (!(this instanceof Scientific))
+            return new Scientific(num);
+
+        num = String(typeof num === 'undefined' ? 0 : num); //convert to a string
+
+        //remove the sign
+        if (num.startsWith('-')) {
+            this.sign = -1;
+            //remove the sign
+            num = num.substr(1, num.length);
+        } else {
+            this.sign = 1;
+        }
+
+        if (Scientific.isScientific(num)) {
+            this.fromScientific(num);
+        } else {
+            this.convert(num);
+        }
+        return this;
+    }
+    
+    //Static
+    Scientific.isScientific = function (num) {
+        return /\d+\.?\d*e[\+\-]*\d+/i.test(num);
+    };
+    Scientific.leadingZeroes = function (num) {
+        var match = num.match(/^(0*).*$/);
+        return match ? match[1] : '';
+    };
+    Scientific.removeLeadingZeroes = function (num) {
+        var match = num.match(/^0*(.*)$/);
+        return match ? match[1] : '';
+    };
+
+    Scientific.removeTrailingZeroes = function (num) {
+        var match = num.match(/0*$/);
+        return match ? num.substring(0, num.length - match[0].length) : '';
+    };
+    
+    //Prototyped
+    Scientific.prototype = {
+        fromScientific: function (num) {
+            var parts = String(num).toLowerCase().split('e');
+            this.coeff = parts[0];
+            this.exponent = parts[1];
+
+            return this;
+        },
+        convert: function (num) {
+            //get wholes and decimals
+            var parts = num.split('.');
+            //make zero go away
+            var w = parts[0] || '';
+            var d = parts[1] || '';
+            //convert zero to blank strings
+            w = Scientific.removeLeadingZeroes(w);
+            d = Scientific.removeTrailingZeroes(d);
+            //find the location of the decimal place which is right after the wholes
+            var dot_location = w.length;
+            //add them together so we can move the dot
+            var n = w + d;
+            //find the next number
+            var zeroes = Scientific.leadingZeroes(n).length;
+            //set the exponent
+            this.exponent = dot_location - (zeroes + 1);
+            //set the coeff but first remove leading zeroes
+            var coeff = Scientific.removeLeadingZeroes(n);
+            this.coeff = coeff.charAt(0) + '.' + (coeff.substr(1, coeff.length) || '0');
+
+            return this;
+        },
+        round: function (num) {
+            var n = this.copy();
+
+            num = Number(num); //cast to number for safety
+            //since we know it guaranteed to be in the format {digit}{optional dot}{optional digits}
+            //we can round based on this
+            if (num === 0)
+                n.coeff = n.coeff.charAt(0);
+            else {
+                //get up to n-1 digits
+                var rounded = this.coeff.substring(0, num + 1);
+                //get the next two
+                var next_two = this.coeff.substring(num + 1, num + 3);
+                //the extra digit
+                var ed = next_two.charAt(0);
+
+                if (next_two.charAt(1) > 4)
+                    ed++;
+
+                n.coeff = rounded + ed;
+            }
+
+            return n;
+        },
+        copy: function () {
+            var n = new Scientific(0);
+            n.coeff = this.coeff;
+            n.exponent = this.exponent;
+            n.sign = this.sign;
+            return n;
+        },
+        toString: function (n) {
+            var coeff = typeof n === 'undefined' ? this.coeff : Scientific.round(this.coeff, n);
+            return (this.sign === -1 ? '-' : '') + coeff + 'e' + this.exponent;
+        }
+    };
+
+    
 
 //Frac =========================================================================    
     function Frac(n) {
@@ -2804,6 +2921,11 @@ var nerdamer = (function (imports) {
             return this.value === symbol.value && this.power.equals(symbol.power)
                     && this.multiplier.equals(symbol.multiplier)
                     && this.group === symbol.group;
+        },
+        abs: function() {
+            var e = this.clone();
+            e.multiplier.abs();
+            return e;
         },
         // Greater than
         gt: function (symbol) {
@@ -5010,6 +5132,7 @@ var nerdamer = (function (imports) {
             'dfactorial': [, 1],
             'gamma_incomplete': [, [1, 2]],
             'round': [round, [1, 2]],
+            'scientific': [scientific, [1, 2]],
             'mod': [mod, 2],
             'pfactor': [pfactor, 1],
             'vector': [vector, -1],
@@ -6507,6 +6630,13 @@ var nerdamer = (function (imports) {
             if (is_negative && Settings.PARSE2NUMBER)
                 return _.parse(retval);
             return retval;
+        }
+        
+        function scientific(symbol, sigfigs) {
+            Settings.SIG_FIGS = sigfigs || 14;
+            return block('SCIENTIFIC', function() {
+                return _.parse(symbol);
+            }, true);
         }
 
         /**
@@ -8569,7 +8699,7 @@ var nerdamer = (function (imports) {
         quickConversion: function (dec) {
             var x = (dec.toExponential() + '').split('e');
             var d = x[0].split('.')[1];// get the number of places after the decimal
-            var l = d ? d.length : 0; // maybe the coefficient is an integer;
+            var l = (d ? d.length : 0)-parseInt(x[1]); // maybe the coefficient is an integer;
             //call Math.round to avoid rounding error
             return [Math.round(Math.pow(10, l) * x[0]), Math.pow(10, Math.abs(x[1]) + l)];
         },
@@ -8668,7 +8798,7 @@ var nerdamer = (function (imports) {
                     //This way I can generate LaTeX on an array of strings.
                     if (!isSymbol(sym))
                         sym = _.parse(sym);
-                    LaTeXArray.push(this.latex(sym));
+                    LaTeXArray.push(this.latex(sym, option));
                 }
                 return this.brackets(LaTeXArray.join(', '), 'square');
             }
@@ -8679,7 +8809,7 @@ var nerdamer = (function (imports) {
                     var rowTeX = [],
                             e = symbol.elements[i];
                     for (var j = 0; j < e.length; j++) {
-                        rowTeX.push(this.latex(e[j]));
+                        rowTeX.push(this.latex(e[j], option));
                     }
                     TeX += rowTeX.join(' & ');
                     if (i < symbol.elements.length - 1) {
@@ -8693,7 +8823,7 @@ var nerdamer = (function (imports) {
             else if (isVector(symbol)) {
                 var TeX = '\\left[';
                 for (var i = 0; i < symbol.elements.length; i++) {
-                    TeX += this.latex(symbol.elements[i]) + ' ' + (i !== symbol.elements.length - 1 ? ',\\,' : '');
+                    TeX += this.latex(symbol.elements[i], option) + ' ' + (i !== symbol.elements.length - 1 ? ',\\,' : '');
                 }
                 TeX += '\\right]';
                 return TeX;
@@ -8702,7 +8832,7 @@ var nerdamer = (function (imports) {
             else if(isSet(symbol)) {
                 var TeX = '\\{';
                 for (var i = 0; i < symbol.elements.length; i++) {
-                    TeX += this.latex(symbol.elements[i]) + ' ' + (i !== symbol.elements.length - 1 ? ',\\,' : '');
+                    TeX += this.latex(symbol.elements[i], option) + ' ' + (i !== symbol.elements.length - 1 ? ',\\,' : '');
                 }
                 TeX += '\\}';
                 return TeX;
@@ -9334,6 +9464,7 @@ var nerdamer = (function (imports) {
             this.each(function (x, i) {
                 elements.push(fn(x, i));
             });
+
             return new Vector(elements);
         },
 
@@ -9402,13 +9533,13 @@ var nerdamer = (function (imports) {
         // Returns true iff the vector is antiparallel to the argument
         isAntiparallelTo: function (vector) {
             var angle = this.angleFrom(vector).valueOf();
-            return (angle === null) ? null : (Math.abs(angle - Math.PI) <= Sylvester.precision);
+            return (angle === null) ? null : (Math.abs(angle - Math.PI) <= PRECISION);
         },
 
         // Returns true iff the vector is perpendicular to the argument
         isPerpendicularTo: function (vector) {
             var dot = this.dot(vector);
-            return (dot === null) ? null : (Math.abs(dot) <= Sylvester.precision);
+            return (dot === null) ? null : (Math.abs(dot) <= PRECISION);
         },
 
         // Returns the result of adding the argument to the vector
@@ -9494,7 +9625,13 @@ var nerdamer = (function (imports) {
             while (--n);
             return m;
         },
-
+        magnitude: function() {
+            var magnitude = new Symbol(0);
+            this.each(function(e) {
+                magnitude = _.add(magnitude, _.pow(e, new Symbol(2)));
+            });
+            return _.sqrt(magnitude);
+        },
         // Returns the index of the first match found
         indexOf: function (x) {
             var index = null, n = this.elements.length, k = n, i;
@@ -9581,10 +9718,17 @@ var nerdamer = (function (imports) {
                 return undefined;
             return this.elements[row][column];
         },
-        set: function (row, column, value) {
+        map: function(f, raw_values) {
+            var M = new Matrix();
+            this.each(function(e, i, j) {
+                M.set( i, j, f.call(M, e), raw_values);
+            });
+            return M;
+        },
+        set: function (row, column, value, raw) {
             if (!this.elements[row])
                 this.elements[row] = [];
-            this.elements[row][column] = isSymbol(value) ? value : new Symbol(value);
+            this.elements[row][column] = raw ? value : (isSymbol(value) ? value : new Symbol(value));
         },
         cols: function () {
             return this.elements[0].length;
@@ -9612,7 +9756,7 @@ var nerdamer = (function (imports) {
                     nc = this.cols(), i, j;
             for (i = 0; i < nr; i++) {
                 for (j = 0; j < nc; j++) {
-                    this.elements[i][j] = fn.call(this, this.elements[i][j], i, j);
+                    fn.call(this, this.elements[i][j], i, j);
                 }
             }
         },
@@ -9819,20 +9963,28 @@ var nerdamer = (function (imports) {
                 return Matrix.fromArray(elements);
             }, undefined, this);
         },
-        add: function (matrix) {
+        add: function (matrix, callback) {
             var M = new Matrix();
             if (this.sameSize(matrix)) {
                 this.eachElement(function (e, i, j) {
-                    M.set(i, j, _.add(e.clone(), matrix.elements[i][j]));
+                    var result = _.add(e.clone(), matrix.elements[i][j].clone());
+                    if(callback) {
+                        result = callback.call(M, result, e, matrix.elements[i][j]);
+                    }
+                    M.set(i, j, result);
                 });
             }
             return M;
         },
-        subtract: function (matrix) {
+        subtract: function (matrix, callback) {
             var M = new Matrix();
             if (this.sameSize(matrix)) {
                 this.eachElement(function (e, i, j) {
-                    M.set(i, j, _.subtract(e.clone(), matrix.elements[i][j]));
+                    var result = _.subtract(e.clone(), matrix.elements[i][j].clone());
+                    if(callback) {
+                        result = callback.call(M, result, e, matrix.elements[i][j]);
+                    }
+                    M.set(i, j, result);
                 });
             }
             return M;
@@ -9851,13 +10003,14 @@ var nerdamer = (function (imports) {
             }
             return this;
         },
-        toString: function (newline) {
+        toString: function (newline, to_decimal) {
             var l = this.rows(),
                     s = [];
             newline = newline === undefined ? '\n' : newline;
             for (var i = 0; i < l; i++) {
                 s.push('[' + this.elements[i].map(function (x) {
-                    return x !== undefined ? x.toString() : '';
+                    var v = to_decimal ? x.multiplier.toDecimal() : x.toString();
+                    return x !== undefined ? v : '';
                 }).join(',') + ']');
             }
             return 'matrix' + inBrackets(s.join(','));
