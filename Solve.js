@@ -1075,8 +1075,14 @@ if ((typeof module) !== 'undefined') {
                             else if (deg === 2) {
                                 add_to_result(_.expand(__.quad.apply(undefined, coeffs)));
                             }
-                            else if (deg === 3)
-                                add_to_result(__.cubic.apply(undefined, coeffs));
+                            else if (deg === 3) {
+                                //first try to factor and solve
+                                var solutions = solve(core.Algebra.Factor.factor(eqns));
+                                if(solutions.length > 0)
+                                    add_to_result(solutions);
+                                else
+                                    add_to_result(__.cubic.apply(undefined, coeffs));
+                            }
                             else {
                                 /*
                                  var sym_roots = csolve(eq, solve_for); 
