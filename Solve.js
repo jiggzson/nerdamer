@@ -1009,8 +1009,15 @@ if ((typeof module) !== 'undefined') {
             return [lhs, rhs];
         };
 
-        var inverse_function = function(name, lhs, rhs) {
-            return _.symfunction(name, [_.divide(rhs, _.parse(lhs.multiplier))]);
+        __.inverseFunctionSolve = function(name, lhs, rhs) {
+            //ax+b comes back as [a, x, ax, b];
+            var parts = explode(lhs.args[0], solve_for);
+            //check if x is by itself
+            var x = parts[1];
+            if(x.group === S) {
+                return _.divide(_.symfunction(name, [_.divide(rhs, _.parse(lhs.multiplier))]), parts[0]);
+            }
+            
         };
         
         //first remove any denominators
@@ -1181,15 +1188,15 @@ if ((typeof module) !== 'undefined') {
                         }
                         else if(lhs.fname === 'sin') {
                             //asin
-                            add_to_result(inverse_function('asin', lhs, rhs));
+                            add_to_result(__.inverseFunctionSolve('asin', lhs, rhs));
                         }
                         else if(lhs.fname === 'cos') {
                             //asin
-                            add_to_result(inverse_function('acos', lhs, rhs));
+                            add_to_result(__.inverseFunctionSolve('acos', lhs, rhs));
                         }
                         else if(lhs.fname === 'tan') {
                             //asin
-                            add_to_result(inverse_function('atan', lhs, rhs));
+                            add_to_result(__.inverseFunctionSolve('atan', lhs, rhs));
                         }
                         else if(lhs.fname === 'log') {
                             //ax+b comes back as [a, x, ax, b];
