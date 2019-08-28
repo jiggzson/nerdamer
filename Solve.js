@@ -237,7 +237,7 @@ if ((typeof module) !== 'undefined') {
     
     //version solve
     var __ = core.Solve = {
-        version: '2.0.0',
+        version: '2.0.1',
         solutions: [],
         solve: function (eq, variable) {
             var solution = solve(eq, String(variable));
@@ -250,6 +250,8 @@ if ((typeof module) !== 'undefined') {
          * @returns {Symbol}
          */
         toLHS: function (eqn) {
+            if(isSymbol(eqn))
+                return eqn;
             //If it's an equation then call its toLHS function instead
             if (!(eqn instanceof Equation)) {
                 var es = eqn.split('=');
