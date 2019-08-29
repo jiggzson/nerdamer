@@ -237,7 +237,7 @@ if ((typeof module) !== 'undefined') {
     
     //version solve
     var __ = core.Solve = {
-        version: '2.0.0',
+        version: '2.0.1',
         solutions: [],
         solve: function (eq, variable) {
             var solution = solve(eq, String(variable));
@@ -250,6 +250,8 @@ if ((typeof module) !== 'undefined') {
          * @returns {Symbol}
          */
         toLHS: function (eqn) {
+            if(isSymbol(eqn))
+                return eqn;
             //If it's an equation then call its toLHS function instead
             if (!(eqn instanceof Equation)) {
                 var es = eqn.split('=');
@@ -920,6 +922,7 @@ if ((typeof module) !== 'undefined') {
         }
         if (eqns.group === CB) {
             var sf = String(solve_for); //everything else belongs to the coeff
+            //get the denominator and make sure it doesn't have x since we don't know how to solve for those
             eqns.each(function (x) {
                 if (x.contains(sf))
                     solve(x, solve_for, solutions);
@@ -947,9 +950,23 @@ if ((typeof module) !== 'undefined') {
                 cfact;
         var correct_denom = function (symbol) {
             var original = symbol.clone(); //preserve the original
+            
             if (symbol.symbols) {
                 for (var x in symbol.symbols) {
                     var sym = symbol.symbols[x];
+                    
+                    //get the denominator of the sub-symbol
+                    var den = sym.getDenom();
+                    
+                    if(!den.isConstant(true) && symbol.isComposite()) {
+                        var t = new Symbol(0);
+                        symbol.each(function(e) {
+                            t = _.add(t, _.multiply(e, den.clone()));
+                        });
+
+                        return correct_denom(_.multiply(_.parse(symbol.multiplier), t));
+                    }
+                    
                     var parts = explode(sym, solve_for);
                     var is_sqrt = parts[1].fname === core.Settings.SQRT;
                     var v = Symbol.unwrapSQRT(parts[1]);
@@ -991,6 +1008,7 @@ if ((typeof module) !== 'undefined') {
                     }
                 }
             }
+            
             return symbol;
         };
 
@@ -1007,8 +1025,15 @@ if ((typeof module) !== 'undefined') {
             return [lhs, rhs];
         };
 
-        var inverse_function = function(name, lhs, rhs) {
-            return _.symfunction(name, [_.divide(rhs, _.parse(lhs.multiplier))]);
+        __.inverseFunctionSolve = function(name, lhs, rhs) {
+            //ax+b comes back as [a, x, ax, b];
+            var parts = explode(lhs.args[0], solve_for);
+            //check if x is by itself
+            var x = parts[1];
+            if(x.group === S) {
+                return _.divide(_.symfunction(name, [_.divide(rhs, _.parse(lhs.multiplier))]), parts[0]);
+            }
+            
         };
         
         //first remove any denominators
@@ -1134,6 +1159,8 @@ if ((typeof module) !== 'undefined') {
 
                     var l = coeffs.length,
                             deg = l - 1; //the degree of the polynomial
+                    //get the denominator and make sure it doesn't have x
+                    
                     //handle the problem based on the degree
                     switch (deg) {
                         case 0:
@@ -1179,15 +1206,15 @@ if ((typeof module) !== 'undefined') {
                         }
                         else if(lhs.fname === 'sin') {
                             //asin
-                            add_to_result(inverse_function('asin', lhs, rhs));
+                            add_to_result(__.inverseFunctionSolve('asin', lhs, rhs));
                         }
                         else if(lhs.fname === 'cos') {
                             //asin
-                            add_to_result(inverse_function('acos', lhs, rhs));
+                            add_to_result(__.inverseFunctionSolve('acos', lhs, rhs));
                         }
                         else if(lhs.fname === 'tan') {
                             //asin
-                            add_to_result(inverse_function('atan', lhs, rhs));
+                            add_to_result(__.inverseFunctionSolve('atan', lhs, rhs));
                         }
                         else if(lhs.fname === 'log') {
                             //ax+b comes back as [a, x, ax, b];
