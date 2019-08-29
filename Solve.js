@@ -1319,6 +1319,3 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-//var x = nerdamer('solve((a*x^2+1),x)');
-//console.log(x.toString())

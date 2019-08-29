@@ -170,6 +170,10 @@ describe('Solve', function () {
             {
                 given: 'solve(x/(x^2+2*x+1)+4,x)',
                 expected: '[(1/8)*(-9+sqrt(17)),(1/8)*(-9-sqrt(17))]'
+            },
+            {
+                given: 'solve((a*x^2+1),x)',
+                expected: '[a^(-1)*sqrt(-a),-a^(-1)*sqrt(-a)]'
             }
         ];
 

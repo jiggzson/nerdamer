@@ -7936,7 +7936,7 @@ var nerdamer = (function (imports) {
                         bnum = b.multiplier.num,
                         bden = b.multiplier.den;
 
-                if (g1 === FN && a.fname === SQRT && !b.isConstant() && a.args[0].value === b.value) {
+                if (g1 === FN && a.fname === SQRT && !b.isConstant() && a.args[0].value === b.value && !a.args[0].multiplier.lessThan(0)) {
                     //unwrap sqrt
                     var a_pow = a.power;
                     a = a.args[0].clone();
