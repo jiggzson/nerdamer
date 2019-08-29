@@ -922,6 +922,7 @@ if ((typeof module) !== 'undefined') {
         }
         if (eqns.group === CB) {
             var sf = String(solve_for); //everything else belongs to the coeff
+            //get the denominator and make sure it doesn't have x since we don't know how to solve for those
             eqns.each(function (x) {
                 if (x.contains(sf))
                     solve(x, solve_for, solutions);
@@ -949,9 +950,23 @@ if ((typeof module) !== 'undefined') {
                 cfact;
         var correct_denom = function (symbol) {
             var original = symbol.clone(); //preserve the original
+            
             if (symbol.symbols) {
                 for (var x in symbol.symbols) {
                     var sym = symbol.symbols[x];
+                    
+                    //get the denominator of the sub-symbol
+                    var den = sym.getDenom();
+                    
+                    if(!den.isConstant(true) && symbol.isComposite()) {
+                        var t = new Symbol(0);
+                        symbol.each(function(e) {
+                            t = _.add(t, _.multiply(e, den.clone()));
+                        });
+
+                        return correct_denom(_.multiply(_.parse(symbol.multiplier), t));
+                    }
+                    
                     var parts = explode(sym, solve_for);
                     var is_sqrt = parts[1].fname === core.Settings.SQRT;
                     var v = Symbol.unwrapSQRT(parts[1]);
@@ -993,6 +1008,7 @@ if ((typeof module) !== 'undefined') {
                     }
                 }
             }
+            
             return symbol;
         };
 
@@ -1143,6 +1159,8 @@ if ((typeof module) !== 'undefined') {
 
                     var l = coeffs.length,
                             deg = l - 1; //the degree of the polynomial
+                    //get the denominator and make sure it doesn't have x
+                    
                     //handle the problem based on the degree
                     switch (deg) {
                         case 0:
@@ -1301,3 +1319,6 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+//var x = nerdamer('solve((a*x^2+1),x)');
+//console.log(x.toString())

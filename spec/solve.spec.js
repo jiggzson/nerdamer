@@ -154,6 +154,22 @@ describe('Solve', function () {
             {
                 given: 'solve(log(a*x-c)-b=21, x)',
                 expected: '[-(-c-e^(21+b))*a^(-1)]'
+            },
+            {
+                given: 'solve(x/(x-a)+4,x)',
+                expected: '[(4/5)*a]'
+            },
+            {
+                given: 'solve(3*sin(a^2*x-b)-4,x)',
+                expected: '[a^(-2)*asin(4/3)]'
+            },
+            {
+                given: 'solve(a*log(x^2-4)-4,x)',
+                expected: '[(1/2)*sqrt(16+4*e^(4*a^(-1))),(-1/2)*sqrt(16+4*e^(4*a^(-1)))]'
+            },
+            {
+                given: 'solve(x/(x^2+2*x+1)+4,x)',
+                expected: '[(1/8)*(-9+sqrt(17)),(1/8)*(-9-sqrt(17))]'
             }
         ];
 
