@@ -601,7 +601,8 @@ FUNCTIONS = {
         type: 'internal',
         usage: 'nerdamer.solveEquations(expression_or_array, variables)',
         full_name: 'solveEquations',
-        description: 'Solves a system of linear equations',
+        description: 'Solves a system of linear equations. Has limited ability to solve system of nonlinear equations. With nonlinear equations, the first set of solutions which '+
+                'satisfies the constraints will be returned. Also keep in mind that there may be some floating point errors.',
         parameters: {
             expressions_or_array: {
                 type: 'Expression',
@@ -621,7 +622,11 @@ FUNCTIONS = {
             "console.log(sol.toString());",
             "nerdamer.set('SOLUTIONS_AS_OBJECT', true);",
             "sol = nerdamer.solveEquations(['2*x-y=8', '10*x+7*y-z=53', '4*z+y=6']);",
-            'console.log(sol)'
+            'console.log(sol)',
+            "//nerdamer also has some ability to solve some nonlinear equations",
+            "nerdamer.set('SOLUTIONS_AS_OBJECT', false);",
+            "sol = nerdamer('solveEquations([2*x^2*z-y=-59, 0.5*y^3-z=65.5, x^2+y^3-5*z^2=89])');",
+            "console.log(sol.toString());"
         ],
         returns: 'Symbol[]'
     },

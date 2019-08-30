@@ -97,7 +97,7 @@
                     <hr>
                     <h3 class="text-capitalize">solveEquations</h3>
                     <div>
-                        Solves a system of linear equations
+                        Solves a system of linear equations. Has limited ability to solve system of nonlinear equations. With nonlinear equations, the first set of solutions which satisfies the constraints will be returned. Also keep in mind that there may be some floating point errors.
                     </div>
                     <hr>
                     <h4>Usage: <span class="usage-example">nerdamer("nerdamer.solveEquations(expression_or_array, variables)")</span></h4>
@@ -132,7 +132,11 @@ sol = nerdamer.solveEquations('x^2+8+y=x+6','x');
 console.log(sol.toString());
 nerdamer.set('SOLUTIONS_AS_OBJECT', true);
 sol = nerdamer.solveEquations(['2*x-y=8', '10*x+7*y-z=53', '4*z+y=6']);
-console.log(sol)</code></pre>
+console.log(sol)
+//nerdamer also has some ability to solve some nonlinear equations
+nerdamer.set('SOLUTIONS_AS_OBJECT', false);
+sol = nerdamer('solveEquations([2*x^2*z-y=-59, 0.5*y^3-z=65.5, x^2+y^3-5*z^2=89])');
+console.log(sol.toString());</code></pre>
                 </div>
                 OUTPUT:
                 <div id="output"></div>
@@ -203,6 +207,10 @@ oprint(sol.toString());
 nerdamer.set('SOLUTIONS_AS_OBJECT', true);
 sol = nerdamer.solveEquations(['2*x-y=8', '10*x+7*y-z=53', '4*z+y=6']);
 oprint(sol)
+//nerdamer also has some ability to solve some nonlinear equations
+nerdamer.set('SOLUTIONS_AS_OBJECT', false);
+sol = nerdamer('solveEquations([2*x^2*z-y=-59, 0.5*y^3-z=65.5, x^2+y^3-5*z^2=89])');
+oprint(sol.toString());
             }
             catch(e) {
                 oprint(e.toString());
