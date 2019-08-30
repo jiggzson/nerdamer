@@ -862,13 +862,14 @@ if ((typeof module) !== 'undefined') {
                     var solutions = solve(t, v);
                     //test the points. The dumb way of getting the answers
                     solutions = solutions.filter(function(e) {
+                        if(e.isImaginary())
+                            return e;
                         var subs = {};
                         subs[v] = e;
                         var point = evaluate(symbol, subs);
                         if(point.equals(0))
                             return e;
                     });
-                    
                     return solutions;
                 }
             }
@@ -979,6 +980,7 @@ if ((typeof module) !== 'undefined') {
         var fractionals = {},
                 cfact;
         var correct_denom = function (symbol) {
+            symbol = _.expand(symbol);
             var original = symbol.clone(); //preserve the original
             
             if (symbol.symbols) {
@@ -1135,8 +1137,11 @@ if ((typeof module) !== 'undefined') {
                                 add_to_result(_.expand(__.quad.apply(undefined, coeffs)));
                             }
                             else if (deg === 3) {
+                                var solutions = []; //set to blank
                                 //first try to factor and solve
-                                var solutions = solve(core.Algebra.Factor.factor(eqns));
+                                var factored = core.Algebra.Factor.factor(eqns);
+                                //if it was successfully factored
+                                var solutions = !factored.equals(eqns) ? solve(factored, solve_for) : [];
                                 if(solutions.length > 0)
                                     add_to_result(solutions);
                                 else

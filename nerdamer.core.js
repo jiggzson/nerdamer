@@ -529,7 +529,7 @@ var nerdamer = (function (imports) {
 
     /**
      * A helper function to replace multiple occurences in a string. Takes multiple arguments
-     * @example format('{0} nice, {0} sweet')
+     * @example format('{0} nice, {0} sweet', 'something')
      * //returns 'something nice, something sweet'
      */
     var format = function () {
@@ -3254,7 +3254,7 @@ var nerdamer = (function (imports) {
                 return true;
             else if (this.symbols) {
                 for (var x in this.symbols)
-                    if (this.symbols[x].imaginary)
+                    if (this.symbols[x].isImaginary())
                         return true;
             }
             return false;
@@ -3327,6 +3327,11 @@ var nerdamer = (function (imports) {
             else
                 return this.power.equals(1);
         },
+        /**
+         * Checks to see if a symbol has a function by a specified name or within a specified list
+         * @param {String|String[]} names
+         * @returns {Boolean}
+         */
         containsFunction: function (names) {
             if (typeof names === 'string')
                 names = [names];
@@ -3416,7 +3421,8 @@ var nerdamer = (function (imports) {
             return this.power < 0;
         },
         /**
-         * Make a duplicate of a symbol by copying a predefined list of items
+         * Make a duplicate of a symbol by copying a predefined list of items. 
+         * The name 'copy' would probably be a more appropriate name.
          * to a new symbol
          * @param {Symbol} c 
          * @returns {Symbol}
@@ -3451,15 +3457,29 @@ var nerdamer = (function (imports) {
 
             return clone;
         },
+        /**
+         * Converts a symbol multiplier to one.
+         * @param {Boolean} keepSign Keep the multiplier as negative if the multiplier is negative and keepSign is true
+         * @returns {Symbol}
+         */
         toUnitMultiplier: function (keepSign) {
             this.multiplier.num = new bigInt(this.multiplier.num.isNegative() && keepSign ? -1 : 1);
             this.multiplier.den = new bigInt(1);
             return this;
         },
+        /**
+         * Converts a Symbol's power to one.
+         * @returns {Symbol}
+         */
         toLinear: function () {
             this.setPower(new Frac(1));
             return this;
         },
+        /**
+         * Iterates over all the sub-symbols. If no sub-symbols exist then it's called on itself
+         * @param {Function} fn
+         * @@param {Boolean} deep If true it will itterate over the sub-symbols their symbols as well 
+         */
         each: function (fn, deep) {
             if (!this.symbols) {
                 fn.call(this, this, this.value);
@@ -3700,7 +3720,7 @@ var nerdamer = (function (imports) {
          * up-convert or down-convert a symbol if it detects that it's 
          * incorrectly grouped. It should be noted that this method is not
          * called directly but rather by the 'attach' method for addition groups
-         * and the 'combine' method for multipiclation groups.
+         * and the 'combine' method for multiplication groups.
          * @param {Symbol} symbol
          * @param {String} action
          */
@@ -3898,6 +3918,10 @@ var nerdamer = (function (imports) {
          * a difference. This function simply collects all the symbols and 
          * returns them as an array. If a function is supplied then that 
          * function is called on every symbol contained within the object.
+         * @param {Function} fn
+         * @param {Object} opt
+         * @param {Function} sort_fn
+         * @@param {Boolean} expand_symbol 
          * @returns {Array}
          */
         collectSymbols: function (fn, opt, sort_fn, expand_symbol) {
