@@ -97,7 +97,7 @@
                     <hr>
                     <h3 class="text-capitalize">Continued Fraction</h3>
                     <div>
-                        Returns the fraction as a continued fraction.
+                        Returns the fraction as a continued fraction. The first digit returned is the sign. The remainder is the continued fraction.
                     </div>
                     <hr>
                     <h4>Usage: <span class="usage-example">nerdamer("continued_fraction(x)")</span></h4>
@@ -118,7 +118,11 @@
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('continued_fraction(3.14159))');
+                    <pre><code class="javascript">var x = nerdamer('continued_fraction(3.14159)');
+console.log(x.toString());
+x = nerdamer('continued_fraction(1/6)')
+console.log(x.toString());
+x = nerdamer('continued_fraction(-5/4)')
 console.log(x.toString());</code></pre>
                 </div>
                 OUTPUT:
@@ -181,7 +185,11 @@ console.log(x.toString());</code></pre>
         
         $(function() {
             try {
-                var x = nerdamer('continued_fraction(3.14159))');
+                var x = nerdamer('continued_fraction(3.14159)');
+oprint(x.toString());
+x = nerdamer('continued_fraction(1/6)')
+oprint(x.toString());
+x = nerdamer('continued_fraction(-5/4)')
 oprint(x.toString());
             }
             catch(e) {

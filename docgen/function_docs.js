@@ -2071,7 +2071,7 @@ FUNCTIONS = {
         type: 'internal',
         usage: 'continued_fraction(x)',
         full_name: 'Continued Fraction',
-        description: 'Returns the fraction as a continued fraction.',
+        description: 'Returns the fraction as a continued fraction. The first digit returned is the sign. The remainder is the continued fraction.',
         parameters: {
             x: {
                 type: 'expression',
@@ -2079,7 +2079,11 @@ FUNCTIONS = {
             }
         },
         examples: [
-            "var x = nerdamer('continued_fraction(3.14159))');",
+            "var x = nerdamer('continued_fraction(3.14159)');",
+            "console.log(x.toString());",
+            "x = nerdamer('continued_fraction(1/6)')",
+            "console.log(x.toString());",
+            "x = nerdamer('continued_fraction(-5/4)')",
             "console.log(x.toString());"
         ],
         returns: 'Expression'
