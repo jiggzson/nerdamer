@@ -237,7 +237,7 @@ if ((typeof module) !== 'undefined') {
     
     //version solve
     var __ = core.Solve = {
-        version: '2.0.1',
+        version: '2.0.2',
         solutions: [],
         solve: function (eq, variable) {
             var solution = solve(eq, String(variable));
@@ -842,6 +842,37 @@ if ((typeof module) !== 'undefined') {
             else if (rhs.group === FN || rhs.group === S || rhs.group === PL) {
                 return [rhs, lhs];
             }
+        },
+        sqrtSolve: function(symbol, v) {
+            var sqrts = new Symbol(0);
+            var rem = new Symbol(0);
+            if(symbol.isComposite()) {
+                symbol.each(function(x) {
+                    if(x.fname === 'sqrt' && x.contains(v)) {
+                        sqrts = _.add(sqrts, x.clone());
+                    }
+                    else {
+                        rem = _.add(rem, x.clone());
+                    }
+                });
+                //quick and dirty ATM
+                if(!sqrts.equals(0)) {
+                    var t = _.expand(_.multiply(_.parse(symbol.multiplier), _.subtract(_.pow(rem, new Symbol(2)), _.pow(sqrts, new Symbol(2)))));
+                    //square both sides
+                    var solutions = solve(t, v);
+                    //test the points. The dumb way of getting the answers
+                    solutions = solutions.filter(function(e) {
+                        if(e.isImaginary())
+                            return e;
+                        var subs = {};
+                        subs[v] = e;
+                        var point = evaluate(symbol, subs);
+                        if(point.equals(0))
+                            return e;
+                    });
+                    return solutions;
+                }
+            }
         }
     };
 
@@ -876,9 +907,9 @@ if ((typeof module) !== 'undefined') {
         if (isArray(eqns)) {
             return __.solveSystem.apply(undefined, arguments);
         }
+        
         //parse out functions. Fix for issue #300
         //eqns = core.Utils.evaluate(eqns);
-
         solutions = solutions || [];
         //mark existing solutions as not to have duplicates
         var existing = {}; 
@@ -949,6 +980,7 @@ if ((typeof module) !== 'undefined') {
         var fractionals = {},
                 cfact;
         var correct_denom = function (symbol) {
+            symbol = _.expand(symbol);
             var original = symbol.clone(); //preserve the original
             
             if (symbol.symbols) {
@@ -1059,6 +1091,10 @@ if ((typeof module) !== 'undefined') {
             });
             eq = _.parse(eq);
         }
+        
+        //try for nested sqrts as per issue #486
+        add_to_result(__.sqrtSolve(eq, solve_for));
+        
         //polynomial single variable
         if (numvars === 1) {
             if (eq.isPoly(true)) {
@@ -1101,8 +1137,11 @@ if ((typeof module) !== 'undefined') {
                                 add_to_result(_.expand(__.quad.apply(undefined, coeffs)));
                             }
                             else if (deg === 3) {
+                                var solutions = []; //set to blank
                                 //first try to factor and solve
-                                var solutions = solve(core.Algebra.Factor.factor(eqns));
+                                var factored = core.Algebra.Factor.factor(eqns);
+                                //if it was successfully factored
+                                var solutions = !factored.equals(eqns) ? solve(factored, solve_for) : [];
                                 if(solutions.length > 0)
                                     add_to_result(solutions);
                                 else
