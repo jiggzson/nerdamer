@@ -2256,7 +2256,6 @@ if((typeof module) !== 'undefined') {
                     return symbol;    
                 }
                 catch(e) {
-                    console.log(e)
                     //no need to stop the show because something went wrong :)
                     return untouched;
                 }
