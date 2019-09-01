@@ -659,11 +659,12 @@ if((typeof module) !== 'undefined') {
     };
     /**
      * Adds the factors to the factor object
-     * @param {Symbol} s
+     * @param {Symbo} s
      * @returns {Factors}
      */
     Factors.prototype.add = function(s) {
-        if(s.equals(0)) return this; //nothing to add
+        if(s.equals(0)) 
+            return this; //nothing to add
         
         if(s.group === CB) { 
             var factors = this;
@@ -2232,16 +2233,30 @@ if((typeof module) !== 'undefined') {
                             });
                         }
                         
+                        //last minute clean up
                         symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
                         factors.add(_.pow(symbol, _.parse(p)));
-                        //last minute clean up
-                        
-                        return factors.toSymbol();
+//                        //mayb we can factor some more. Let's give it a go
+//                        if(factors.length > 1) {
+//                            var _factors = new Factors();
+//                            factors.each(function(x) {
+//                                var t = new Factors();
+//                                __.Factor.factor(x, t);
+//                                t.each(function(y) {
+//                                    _factors.add(y);
+//                                });
+//                            });
+//                            factors = _factors;
+//                        }
+                        var retval = factors.toSymbol();
+                        //maybe it can be factored some more
+                        return retval;
                     }
                     
                     return symbol;    
                 }
                 catch(e) {
+                    console.log(e)
                     //no need to stop the show because something went wrong :)
                     return untouched;
                 }
