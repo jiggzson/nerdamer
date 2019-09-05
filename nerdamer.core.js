@@ -16,7 +16,7 @@ var nerdamer = (function (imports) {
     "use strict";
 
 //version ====================================================================== 
-    var version = '1.0.4';
+    var version = '1.0.5';
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
@@ -555,13 +555,19 @@ var nerdamer = (function (imports) {
      * so only use if you need any first random or if there's only one item in the object
      * @param {Object} obj
      * @param {String} key Return this key as first object
+     * @param {Boolean} both
      * @returns {*}
      */
-    var firstObject = function (obj, key) {
+    var firstObject = function (obj, key, both) {
         for (var x in obj)
             break;
         if (key)
             return x;
+        if(both)
+            return {
+                key: x,
+                obj: obj[x]
+            };
         return obj[x];
     };
 
@@ -1291,6 +1297,10 @@ var nerdamer = (function (imports) {
             return Math.pow(b, e);
         },
         factor: function (n) {
+            n = Number(n);
+            var sign = Math.sign(n); //store the sign
+            //move the number to absolute value
+            n = Math.abs(n);
             var ifactors = Math2.ifactor(n);
             var factors = new Symbol();
             factors.symbols = {};
@@ -1303,6 +1313,15 @@ var nerdamer = (function (imports) {
                 factors.symbols[x] = factor;
             }
             factors.updateHash();
+            
+            if(n === 1) {
+                factors = new Symbol(n);
+            }
+            
+            //put back the sign
+            if(sign < 0)
+                factors.negate();
+            
             return factors;
         },
         /**

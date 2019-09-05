@@ -393,7 +393,7 @@ describe('Algebra', function () {
       var result = nerdamer(formula).toString();
 
       // then
-      expect(result).toBe('(1+2*x)^2*(1/4)');
+      expect(result).toBe('(1/4)*(1+2*x)^2');
     });
 
     /** #43: Formula not expanded. */
@@ -417,7 +417,7 @@ describe('Algebra', function () {
             }, 
             {
                 given: 'factor(x^2-y^2)',
-                expected: '(-y+x)*(x+y)'
+                expected: '-(-x+y)*(x+y)'
             }, 
             {
                 given: 'factor(a^2*x^2-b^2*y^2)',
@@ -457,11 +457,19 @@ describe('Algebra', function () {
             },
             {
                 given: 'factor(sqrt(4*x^2*y+4*x^2))',
-                expected: '(2)*(abs(x))*(sqrt(1+y))'
+                expected: '2*abs(x)*sqrt(1+y)'
             },
             {
                 given: 'factor(x^3-1/2x^2-13/2x-3)',
-                expected: '(-3+x)*(1+2*x)*(1/2)*(2+x)'
+                expected: '(1/2)*(-3+x)*(1+2*x)*(2+x)'
+            },
+            {
+                given: 'factor(x^16-1)',
+                expected: '(-1+x)*(1+x)*(1+x^2)*(1+x^4)*(1+x^8)'
+            },
+            {
+                given: 'factor(-1866240-311040*x^2-3265920*x+1120*x^8+150080*x^6+17610*x^7+2026080*x^4+2509920*x^3+30*x^9+738360*x^5)',
+                expected: '10*(-1+x)*(1+x)*(3*x+4)*(6+x)^6'
             }
         ];
 
@@ -695,7 +703,7 @@ describe('Algebra', function () {
             }, 
             {
                 given: 'simplify(cos(x)^2+sin(x)^2+cos(x)-tan(x)-1+sin(x^2)^2+cos(x^2)^2)',
-                expected: '-(-1-cos(x)+tan(x))'
+                expected: '-tan(x)+1+cos(x)'
             },
             {
                 given: 'simplify((x^2+4*x-45)/(x^2+x-30))',

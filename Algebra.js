@@ -666,6 +666,16 @@ if((typeof module) !== 'undefined') {
         if(s.equals(0)) 
             return this; //nothing to add
         
+        //we don't want to carry -1 as a factor. If a factor already exists,
+        //then add the minus one to that factor and return.
+        if(s.equals(-1) && this.length > 0) { 
+            var fo = core.Utils.firstObject(this.factors, null, true);
+            this.add(_.symfunction(core.Settings.PARENTHESIS, [fo.obj]).negate());
+            delete this.factors[fo.key];
+            this.length--;
+            return this;
+        }
+        
         if(s.group === CB) { 
             var factors = this;
             if(!s.multiplier.equals(1)) 
@@ -683,8 +693,14 @@ if((typeof module) !== 'undefined') {
             var is_constant = s.isConstant();
             if(is_constant && s.equals(1)) return this; //don't add 1
             var v = is_constant ? s.value: s.text();
-            if(v in this.factors) 
+            if(v in this.factors) {
                 this.factors[v] = _.multiply(this.factors[v], s);
+                //did the addition cancel out the existing factor? If so remove it and decrement the length
+                if(this.factors[v].equals(1)) {
+                    delete this.factors[v];
+                    this.length--;
+                }
+            }
             else {
                 this.factors[v] = s;
                 this.length++;
@@ -698,12 +714,15 @@ if((typeof module) !== 'undefined') {
      */
     Factors.prototype.toSymbol = function() {
         var factored = new Symbol(1);
-        for(var x in this.factors) {
-            var f = this.factors[x],
-                g = f.group;
+        var factors = Object.values(this.factors).sort(function(a, b) {
+            return a.group > b.group;
+        });
+        
+        for(var i=0, l=factors.length; i<l; i++) {
+            var f = factors[i];
             //don't wrap group S or FN
             var factor = f.power.equals(1)? 
-                _.symfunction(core.PARENTHESIS, [this.factors[x]]) : this. factors[x];
+                _.symfunction(core.PARENTHESIS, [f]) : f;
             factored = _.multiply(factored, factor);
         }
         if(factored.fname === '')
@@ -2107,6 +2126,29 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             factor: function(symbol, factors) {
+                var _symbol = _.parse(symbol);
+                var retval = __.Factor._factor(_symbol, factors);
+                if(retval.equals(symbol)) {
+                    return retval;
+                }
+                if(retval.group === CB) {
+                    var t = new Symbol(1);
+                    retval.each(function(x) {
+                        var factored = __.Factor._factor(x);
+                        if(factored.group === CB) {
+                            factored.each(function(y) {
+                                var _factored = __.Factor._factor(y);
+                                t = _.multiply(t, _factored);
+                            });
+                        }
+                        else
+                            t = _.multiply(t, factored);
+                    });
+                    retval = t;
+                }  
+                return retval;
+            },
+            _factor: function(symbol, factors) {
                 //some items cannot be factored any further so return those right away
                 if(symbol.group === FN) {
                     var arg = symbol.args[0];
@@ -2156,7 +2198,8 @@ if((typeof module) !== 'undefined') {
                     if(symbol.isConstant()) {
                         if(symbol.equals(1))
                             return symbol.clone();
-                        return core.Math2.factor(symbol);
+                        var ret = core.Math2.factor(symbol);
+                        return ret;
                     }
 
                     var p = symbol.power.clone();
@@ -2169,7 +2212,8 @@ if((typeof module) !== 'undefined') {
                         symbol = _.parse(core.Utils.subFunctions(symbol, map));
                         if(keys(map).length > 0) { //it might have functions
                             factors.preAdd = function(factor) {
-                                return _.parse(factor, core.Utils.getFunctionsSubs(map));
+                                var ret = _.parse(factor, core.Utils.getFunctionsSubs(map));
+                                return ret;
                             };
                         }
 
@@ -2200,6 +2244,7 @@ if((typeof module) !== 'undefined') {
                         //factor the coefficients
                         var coeff_factors = new Factors();
                         symbol = __.Factor.coeffFactor(symbol, coeff_factors);
+                        
                         coeff_factors.each(function(x) {
                             if(sign < 0)
                                 x.invert();
@@ -2218,11 +2263,21 @@ if((typeof module) !== 'undefined') {
                             //pass in vars[0] for safety
                             var v = vars[0];
                             symbol = __.Factor.squareFree(symbol, factors, v);
+                            
                             var t_factors = new Factors();
                             symbol = __.Factor.trialAndError(symbol, t_factors, v);
+                            
+                            //generate a symbol based off the last factors
+                            var tf_symbol = t_factors.toSymbol();
+                            //if nothing was factored then return the factors
+                            if(tf_symbol.equals(untouched))
+                                return tf_symbol;
                             for(var x in t_factors.factors) {
-                                factors.add(_.pow(t_factors.factors[x], _.parse(p)));
+                                //store the current factor in t_factor
+                                var t_factor = t_factors.factors[x];
+                                factors.add(_.pow(t_factor, _.parse(p)));
                             }
+                            
                         }
                         else {
                             symbol = __.Factor.mfactor(symbol, factors);
@@ -2236,27 +2291,16 @@ if((typeof module) !== 'undefined') {
                         //last minute clean up
                         symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
                         factors.add(_.pow(symbol, _.parse(p)));
-//                        //mayb we can factor some more. Let's give it a go
-//                        if(factors.length > 1) {
-//                            var _factors = new Factors();
-//                            factors.each(function(x) {
-//                                var t = new Factors();
-//                                __.Factor.factor(x, t);
-//                                t.each(function(y) {
-//                                    _factors.add(y);
-//                                });
-//                            });
-//                            factors = _factors;
-//                        }
+                        
                         var retval = factors.toSymbol();
-                        //maybe it can be factored some more
                         return retval;
                     }
                     
                     return symbol;    
                 }
                 catch(e) {
-                    //no need to stop the show because something went wrong :)
+                    //console.log(e);
+                    //no need to stop the show because something went wrong :). Just return the unfactored.
                     return untouched;
                 }
             },
@@ -2293,6 +2337,7 @@ if((typeof module) !== 'undefined') {
              * Makes Symbol square free
              * @param {Symbol} symbol
              * @param {Factors} factors
+             * @@param {String} variable The variable which is being factored 
              * @returns {[Symbol, Factor]}
              */
             squareFree: function(symbol, factors, variable) {
@@ -2336,6 +2381,7 @@ if((typeof module) !== 'undefined') {
              * @returns {Symbol}
              */
             coeffFactor: function(symbol, factors) {
+                
                 if(symbol.isComposite()) {
                     var gcd = core.Math2.QGCD.apply(null, symbol.coeffs());
                     if(!gcd.equals(1)) { 
@@ -2352,12 +2398,14 @@ if((typeof module) !== 'undefined') {
                     if(factors) 
                         factors.add(new Symbol(gcd));
                 }
+                
                 return symbol;
             },
             /**
              * The name says it all :)
              * @param {Symbol} symbol
              * @param {Factor} factors
+             * @@param {String} variable 
              * @returns {Symbol}
              */
             trialAndError: function(symbol, factors, variable) {
@@ -2393,6 +2441,7 @@ if((typeof module) !== 'undefined') {
                 if(!poly.equalsNumber(1)) {
                     poly = __.Factor.search(poly, factors);
                 }
+
                 return poly.toSymbol();
             },
             search: function(poly, factors, base) {
@@ -2461,7 +2510,6 @@ if((typeof module) !== 'undefined') {
              * @returns {AlgebraL#18.Factor.mSqfrFactor.symbol|Array|AlgebraL#18.__.Factor.mSqfrFactor.d}
              */
             mSqfrFactor: function(symbol, factors) {
-                
                 if(symbol.group !== FN) {
                     var vars = variables(symbol).reverse();
                     for(var i=0; i<vars.length; i++) {
@@ -2472,16 +2520,38 @@ if((typeof module) !== 'undefined') {
                                 symbol = new Symbol(1);
                                 continue;
                             }
-                            var d = __.Factor.coeffFactor(core.Calculus.diff(symbol, vars[i]));
-                            
+                            var diff = core.Calculus.diff(symbol, vars[i]);
+                            var d = __.Factor.coeffFactor(diff);
+
                             if(d.equals(0)) 
                                 break;
-                            var div = __.div(symbol, d.clone()),
-                                is_factor = div[1].equals(0);
-                            if(div[0].isConstant()) {
-                                factors.add(div[0]);
-                                break;
+                            
+                            //trial division to see if factors have whole numbers. 
+                            //This can be optimized by stopping as soon as can_divide is false
+                            //this will also need utilize big number at some point
+                            var can_divide = true;
+                            if(d.isConstant() && symbol.isComposite()) {
+                                //check the coefficients
+                                
+                                symbol.each(function(x) {
+                                    if(x.multiplier % d !== 0)
+                                        can_divide = false;
+                                }, true);
                             }
+                            
+                            //if we can divide then do so
+                            if(can_divide) {
+                                var div = __.div(symbol, d.clone()),
+                                is_factor = div[1].equals(0);
+
+                                if(div[0].isConstant()) {
+                                    factors.add(div[0]);
+                                    break;
+                                }
+                            }
+                            else
+                                is_factor = false;
+                                
                             if(is_factor) {
                                 factors.add(div[0]);
                                 symbol = d;
@@ -2490,7 +2560,7 @@ if((typeof module) !== 'undefined') {
                         while(is_factor)
                     }
                 }
-
+                
                 return symbol;
             },
             //difference of squares factorization
@@ -2554,6 +2624,7 @@ if((typeof module) !== 'undefined') {
             },
             //factoring for multivariate
             mfactor: function(symbol, factors) {  
+                
                 if(symbol.group === FN) { 
                     if(symbol.fname === 'sqrt') {
                         var factors2 = new Factors(),
@@ -2744,8 +2815,8 @@ if((typeof module) !== 'undefined') {
                 }
                 else {
                     //gcd_ cannot handle denominators correctly
-                    return _.divide(__.gcd.apply(null, args.map(function(symbol){return symbol.getNum()})),
-                                    __.lcm.apply(null, args.map(function(symbol){return symbol.getDenom()})));
+                    return _.divide(__.gcd.apply(null, args.map(function(symbol){return symbol.getNum(); })),
+                                    __.lcm.apply(null, args.map(function(symbol){return symbol.getDenom(); })));
                 }
             }
             else return _.symfunction('gcd', args);
@@ -3593,7 +3664,7 @@ if((typeof module) !== 'undefined') {
                 }
                 return symbol;
             },
-            simplify: function(symbol) {
+            simplify: function(symbol) { 
                 //remove the multiplier to make calculation easier;
                 var sym_array = __.Simplify.strip(symbol);
                 symbol = sym_array.pop();
@@ -3604,13 +3675,17 @@ if((typeof module) !== 'undefined') {
                 //nothing more to do
                 if(symbol.isConstant() || symbol.group === core.groups.S) {
                     sym_array.push(symbol);
-                    return __.Simplify.unstrip(sym_array, symbol);
+                    
+                    var ret = __.Simplify.unstrip(sym_array, symbol);
+                    return ret;
                 }
                     
                 var simplified;
                 symbol = symbol.clone(); //make a copy
                 ////1. Try cos(x)^2+sin(x)^2
+                
                 simplified = __.Simplify.trigSimp(symbol);
+                
                 //first go for the "cheapest" simplification which may eliminate 
                 //your problems right away. factor -> evaluate. Remember
                 //that there's no need to expand since factor already does that
@@ -3618,6 +3693,8 @@ if((typeof module) !== 'undefined') {
                 //If the simplfied is a sum then we can make a few more simplifications
                 //e.g. simplify(1/(x-1)+1/(1-x)) as per issue #431
                 if(simplified.group === core.groups.CP && simplified.isLinear()) {
+                    var m = simplified.multiplier.clone();
+                    simplified.toUnitMultiplier(); //strip the multiplier
                     var r = new Symbol(0);
                     //return the sum of simplifications
                     simplified.each(function(x) {
@@ -3625,9 +3702,13 @@ if((typeof module) !== 'undefined') {
                         r = _.add(r, s);
                     });
                     simplified = r;
+                    //put back the multiplier
+                    r.multiplier = r.multiplier.multiply(m);
                 }
                 //place back multiplier and return
-                return __.Simplify.unstrip(sym_array, evaluate(simplified));
+                var retval = __.Simplify.unstrip(sym_array, evaluate(simplified));
+
+                return retval;
             }
         },
             
@@ -3753,3 +3834,15 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer('factor(-1866240-311040*x^2-3265920*x+1120*x^8+150080*x^6+17610*x^7+2026080*x^4+2509920*x^3+30*x^9+738360*x^5)');
+//var x = nerdamer('factor(x^2-6*x+9-4*y^2)');
+//var x = nerdamer('factor((x-1))');
+//console.log(x.toString())
+//console.log('=====================================')
+//var x = nerdamer('factor((1-x))');
+//console.log(x.toString(), 'done')
+//var x = nerdamer('factor((1-x))');
+//var x = nerdamer('factor(((-1/2)*x+3/2+y)*((1/2)*x-3/2+y))');
+//var x = nerdamer('factor((-sqrt(2)*x+a)*(a+sqrt(2)*x))');
+console.log(x.toString(), 'done')
