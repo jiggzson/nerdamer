@@ -539,8 +539,8 @@ if ((typeof module) !== 'undefined') {
          * @returns {Symbol}
          */
         quad: function (c, b, a) {
-            var bsqmin4ac = _.subtract(_.pow(b.clone(), Symbol(2)), _.multiply(_.multiply(a.clone(), c.clone()), Symbol(4)))/*b^2 - 4ac*/;
-            var det = _.pow(bsqmin4ac, Symbol(0.5));
+            var discriminant = _.subtract(_.pow(b.clone(), Symbol(2)), _.multiply(_.multiply(a.clone(), c.clone()), Symbol(4)))/*b^2 - 4ac*/;
+            var det = _.pow(discriminant, Symbol(0.5));
             var retval = [
                 _.parse(_.divide(_.add(b.clone().negate(), det.clone()), _.multiply(new Symbol(2), a.clone()))),
                 _.parse(_.divide(_.subtract(b.clone().negate(), det.clone()), _.multiply(new Symbol(2), a.clone())))

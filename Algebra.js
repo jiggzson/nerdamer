@@ -3834,15 +3834,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var x = nerdamer('factor(-1866240-311040*x^2-3265920*x+1120*x^8+150080*x^6+17610*x^7+2026080*x^4+2509920*x^3+30*x^9+738360*x^5)');
-//var x = nerdamer('factor(x^2-6*x+9-4*y^2)');
-//var x = nerdamer('factor((x-1))');
-//console.log(x.toString())
-//console.log('=====================================')
-//var x = nerdamer('factor((1-x))');
-//console.log(x.toString(), 'done')
-//var x = nerdamer('factor((1-x))');
-//var x = nerdamer('factor(((-1/2)*x+3/2+y)*((1/2)*x-3/2+y))');
-//var x = nerdamer('factor((-sqrt(2)*x+a)*(a+sqrt(2)*x))');
-console.log(x.toString(), 'done')

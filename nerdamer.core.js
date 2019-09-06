@@ -4134,6 +4134,7 @@ var nerdamer = (function (imports) {
         Token.VARIABLE_OR_LITERAL = 'VARIABLE_OR_LITERAL';
         Token.FUNCTION = 'FUNCTION';
         Token.UNIT = 'UNIT';
+        Token.KEYWORD = 'KEYWORD';
         Token.MAX_PRECEDENCE = 999;
         //create link to classes
         this.classes = {
@@ -5043,14 +5044,6 @@ var nerdamer = (function (imports) {
                 postfix: false,
                 leftAssoc: false
             },
-            'in': {
-                precedence: 1,
-                operator: ',',
-                action: 'in',
-                prefix: false,
-                postfix: false,
-                leftAssoc: false
-            },
             ',': {
                 precedence: 0,
                 operator: ',',
@@ -5109,7 +5102,7 @@ var nerdamer = (function (imports) {
                 id: 5,
                 is_open: true,
                 is_close: false,
-                maps_to: 'object'
+                maps_to: 'Set'
             },
             '}': {
                 type: 'curly',
@@ -5203,6 +5196,7 @@ var nerdamer = (function (imports) {
             'matgetcol': [matgetcol, 2],
             'matsetcol': [matsetcol, 3],
             'IF': [IF, 3],
+            'is_in': [is_in, 2],
             //imaginary support
             'realpart': [realpart, 1],
             'imagpart': [imagpart, 1],
@@ -6510,7 +6504,32 @@ var nerdamer = (function (imports) {
                 return a;
             return b;
         }
-
+        /**
+         * 
+         * @param {Matrix|Vector|Set|Collection} obj
+         * @param {Symbol} item
+         * @returns {Boolean}
+         */
+        function is_in(obj, item) {
+            if(isMatrix(obj)) {
+                for(var i=0, l=obj.rows(); i<l; i++) {
+                    for(var j=0, l2=obj.cols(); j<l2; j++) {
+                        var element = obj.elements[i][j];
+                        if(element.equals(item))
+                            return new Symbol(1);
+                    }
+                }
+            }
+            else if(obj.elements) {
+                for(var i=0, l=obj.elements.length; i<l; i++) {
+                    if(obj.elements[i].equals(item))
+                        return new Symbol(1);
+                }
+            }
+            
+            return new Symbol(0);
+        }
+        
         /**
          * A symbolic extension for sinc
          * @param {Symbol} symbol
@@ -7865,7 +7884,7 @@ var nerdamer = (function (imports) {
                 }
                 if (aIsSymbol && isVector(b)) {
                     b = b.map(function (x) {
-                        return _.subtract(x, a.clone());
+                        return _.subtract(a.clone(), x);
                     });
                 }
                 else if (isVector(a) && isVector(b)) {
@@ -10082,7 +10101,11 @@ var nerdamer = (function (imports) {
 
     function Set(set) {
         this.elements = [];
-        if(set) {
+        //if the first object isn't an array, convert it to one.
+        if(!isVector(set))
+            set = Vector.fromArray(arguments);
+        
+        if(set) { 
             var elements = set.elements;
             for(var i=0, l=elements.length; i<l; i++) {
                 this.add(elements[i]);
@@ -10177,7 +10200,7 @@ var nerdamer = (function (imports) {
             return true;
         },
         toString: function() {
-            return 'Set(['+this.elements.join(',')+'])';
+            return '{'+this.elements.join(',')+'}';
         }
     };
 
