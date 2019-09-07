@@ -1698,11 +1698,28 @@ describe('Nerdamer core', function () {
     it('should add vectors correctly', function() {
         expect(nerdamer('1+[a,b]').toString()).toEqual('[1+a,1+b]');
         expect(nerdamer('[a,b]+1').toString()).toEqual('[1+a,1+b]');
-        //expect(nerdamer('[a,b]+[a,b]').toString()).toEqual('[2*a,2*b]');
+        expect(nerdamer('[a,b]+[a,b]').toString()).toEqual('[2*a,2*b]');
     });
     it('should subtract vectors correctly', function() {
         expect(nerdamer('1-[a,b]').toString()).toEqual('[-a+1,-b+1]');
         expect(nerdamer('[a,b]-1').toString()).toEqual('[-1+a,-1+b]');
+        expect(nerdamer('[a,b]-[a,b]').toString()).toEqual('[0,0]');
+    });
+    it('should multiply vectors correctly', function() {
+        expect(nerdamer('3*[a,b]').toString()).toEqual('[3*a,3*b]');
+        expect(nerdamer('[a,b]*x').toString()).toEqual('[a*x,b*x]');
+        expect(nerdamer('[a,b]*[a,b]').toString()).toEqual('[a^2,b^2]');
+    });
+    it('should divide vectors correctly', function() {
+        expect(nerdamer('12/[3,4]').toString()).toEqual('[4,3]');
+        expect(nerdamer('[21,15]/3').toString()).toEqual('[7,5]');
+        expect(nerdamer('[a^2, b^2]/[a,b]').toString()).toEqual('[a,b]');
+    });
+    it('should get slices correctly', function() {
+        expect(nerdamer('[1,2,3][0:2]').toString()).toEqual('[1,2]');
+    });
+    it('should get elements correctly', function() {
+        expect(nerdamer('[1,2,3][1]').toString()).toEqual('2');
     });
 });
 

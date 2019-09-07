@@ -5980,7 +5980,9 @@ var nerdamer = (function (imports) {
                         //Q to see if there's another vector on the stack. If it is then
                         //we check if has elements. If it does then we know that we're dealing
                         //with an "getter" object and return the requested values
-                        var ret = _.callfunction(e.value, args.getItems()); //call the function. This is the _.callfunction method in nerdamer
+                        
+                        //call the function. This is the _.callfunction method in nerdamer
+                        var ret = _.callfunction(e.value, args.getItems()); 
                         var last = Q[Q.length - 1];
                         var next = rpn[i + 1];
                         var next_is_comma = next && next.type === Token.OPERATOR && next.value === ',';
@@ -5990,10 +5992,11 @@ var nerdamer = (function (imports) {
                             var item = Q.pop();
 
                             var getter = ret.elements[0];
-                            //check if it's symbolic. If so put it back
+                            //check if it's symbolic. If so put it back and add the item to the stack
                             if (!getter.isConstant()) {
                                 item.getter = getter;
                                 Q.push(item);
+                                Q.push(ret);
                             }
                             else if (getter instanceof Slice) {
                                 //if it's a Slice return the slice
@@ -6015,6 +6018,7 @@ var nerdamer = (function (imports) {
                         else {
                             Q.push(ret);
                         }
+                        
                     }
                     else {
                         var subbed;
@@ -6133,7 +6137,7 @@ var nerdamer = (function (imports) {
                     e = new Node(e);
                     var args = Q.pop();
                     e.right = args;
-                    if (forTeX && e.value === 'object') {
+                    if (e.value === 'object') {
                         //check if Q has a value
                         var last = Q[Q.length - 1];
                         if (last) {
