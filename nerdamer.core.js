@@ -7876,13 +7876,12 @@ var nerdamer = (function (imports) {
                 return this.add(a, b.negate());
             }
             else {
-                if (bIsSymbol) {
-                    t = b;
-                    b = a;
-                    a = t;
-                    aIsSymbol = bIsSymbol;
+                if (bIsSymbol && isVector(a)) {
+                    b = a.map(function (x) {
+                        return _.subtract(x, b.clone());
+                    });
                 }
-                if (aIsSymbol && isVector(b)) {
+                else if (aIsSymbol && isVector(b)) {
                     b = b.map(function (x) {
                         return _.subtract(a.clone(), x);
                     });

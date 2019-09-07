@@ -1695,6 +1695,15 @@ describe('Nerdamer core', function () {
             expect(result.toString()).toEqual(testCases[i].expected);
       }
     });
+    it('should add vectors correctly', function() {
+        expect(nerdamer('1+[a,b]').toString()).toEqual('[1+a,1+b]');
+        expect(nerdamer('[a,b]+1').toString()).toEqual('[1+a,1+b]');
+        //expect(nerdamer('[a,b]+[a,b]').toString()).toEqual('[2*a,2*b]');
+    });
+    it('should subtract vectors correctly', function() {
+        expect(nerdamer('1-[a,b]').toString()).toEqual('[-a+1,-b+1]');
+        expect(nerdamer('[a,b]-1').toString()).toEqual('[-1+a,-1+b]');
+    });
 });
 
 describe('Further arithmetic test cases', function () {

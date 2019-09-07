@@ -959,6 +959,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         retval = __.integration.poly_integrate(symbol, dx, depth);
                     }
                     else if(g === EX) { 
+                        if(symbol.previousGroup === FN && !(symbol.fname === 'sqrt' || symbol.fname === Settings.PARENTHESIS))
+                            __.integration.stop();
                         //check the base
                         if(symbol.contains(dx) && symbol.previousGroup !== FN) {
                             //if the symbol also contains dx then we stop since we currently 
@@ -1968,6 +1970,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 retval = _.subtract(a, b);
             }
             else if(vars.length === 1 && from.isConstant() && to.isConstant()) {
+                
                 var f = core.Utils.build(symbol); 
                     retval = new Symbol(core.Math2.num_integrate(f, Number(from), Number(to)));
             }
