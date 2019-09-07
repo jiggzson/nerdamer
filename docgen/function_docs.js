@@ -372,7 +372,7 @@ FUNCTIONS = {
         type: 'nerdamer',
         usage: 'nerdamer.htmlTree()',
         full_name: 'HTML Tree',
-        description: 'Generates the RPN for the expression and formats it in HTML.',
+        description: 'Generates the RPN for the expression using <a href="./nerdamer.tree.html">Expression.tree</a> and then formats it to HTML.',
         parameters: {
             x: {
                 type: 'Expression',

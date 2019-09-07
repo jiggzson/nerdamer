@@ -5,11 +5,21 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script src="../js/nerdamer.core.js"></script>
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-58729441-1', 'auto');
+            ga('send', 'pageview');
+        </script>
         <style>
             /* source: https://codepen.io/philippkuehn/pen/QbrOaN */
             body {
                 font-family: sans-serif;
                 font-size: 15px;
+                margin: 0;
             }
 
             .tree ul {
@@ -131,11 +141,37 @@
                 color: #707070;
                 border-radius: 3px;
                 margin-left: 2px;
+            }
+            #header {
+                background: #384452;
+                color: #FFF;
+                padding: 20px;
+            }
+            #header a {
+                color: #FFF;
+                margin-top: 15px;
+                margin-bottom: 15px;
+                display: inline-block;
+            }
             </style>
         </head>
         <body>
-            <div style="margin-bottom: 20px;"><a href="../" style="color: #333;">Return Home</a></div>
-            <input type="text" placeholder="Type your expression here e.g. x^2-1" id="input" onKeyPress="keypress(event)"><button id="generate" onclick="generate()">Generate</button>
+            <div id="header">
+                <div id="top">
+                    <img src="../img/logo.png" alt="Nerdamer">
+                    <div>
+                        <a href="../">Return Home</a> | 
+                        <a href="../functions/nerdamer.htmlTree.html">Uses htmlTree</a> 
+                    </div>
+                    
+                </div>
+                <div>
+                    <input type="text" placeholder="Type your expression here e.g. x^2-1" id="input" onKeyPress="keypress(event)">
+                    <button id="generate" onclick="generate()">Generate</button>
+                </div>
+                    
+            </div>
+            
             <div id="output"></div>
             <script>
                 var output = document.getElementById('output');
