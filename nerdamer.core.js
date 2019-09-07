@@ -101,7 +101,10 @@ var nerdamer = (function (imports) {
         LONG_E: '2.718281828459045235360287471352662497757247093699959574966967627724076630353547594571382178525166427427466' +
                 '39193200305992181741359662904357290033429526059563073813232862794349076323382988075319525101901',
         PI: Math.PI,
-        E: Math.E
+        E: Math.E,
+        LOG: 'log', 
+        LOG10: 'log10',
+        LOG10_LATEX: 'log_{10}'
     };
 
     (function () {
@@ -4817,7 +4820,7 @@ var nerdamer = (function (imports) {
                 if (Settings.PARSE2NUMBER && symbol.isImaginary())
                     retval = complex.evaluate(symbol, 'acosh');
                 else if (Settings.PARSE2NUMBER)
-                    retval = evaluate(_.parse(format('log(({0})+sqrt(({0})^2-1))', symbol.toString())));
+                    retval = evaluate(_.parse(format(Settings.LOG+'(({0})+sqrt(({0})^2-1))', symbol.toString())));
                 else
                     retval = _.symfunction('acosh', arguments);
                 return retval;
@@ -4827,7 +4830,7 @@ var nerdamer = (function (imports) {
                 if (Settings.PARSE2NUMBER && symbol.isImaginary())
                     retval = complex.evaluate(symbol, 'asinh');
                 else if (Settings.PARSE2NUMBER)
-                    retval = evaluate(_.parse(format('log(({0})+sqrt(({0})^2+1))', symbol.toString())));
+                    retval = evaluate(_.parse(format(Settings.LOG+'(({0})+sqrt(({0})^2+1))', symbol.toString())));
                 else
                     retval = _.symfunction('asinh', arguments);
                 return retval;
@@ -4837,7 +4840,7 @@ var nerdamer = (function (imports) {
                 if (Settings.PARSE2NUMBER && symbol.isImaginary())
                     retval = complex.evaluate(symbol, 'atanh');
                 else if (Settings.PARSE2NUMBER) {
-                    retval = evaluate(_.parse(format('(1/2)*log((1+({0}))/(1-({0})))', symbol.toString())));
+                    retval = evaluate(_.parse(format('(1/2)*'+Settings.LOG+'((1+({0}))/(1-({0})))', symbol.toString())));
                 }
                 else
                     retval = _.symfunction('atanh', arguments);
@@ -4858,7 +4861,7 @@ var nerdamer = (function (imports) {
                 if (Settings.PARSE2NUMBER && symbol.isImaginary())
                     retval = complex.evaluate(symbol, 'acsch');
                 else if (Settings.PARSE2NUMBER)
-                    retval = evaluate(_.parse(format('log((1+sqrt(1+({0})^2))/({0}))', symbol.toString())));
+                    retval = evaluate(_.parse(format(Settings.LOG+'((1+sqrt(1+({0})^2))/({0}))', symbol.toString())));
                 else
                     retval = _.symfunction('acsch', arguments);
                 return retval;
@@ -5213,6 +5216,7 @@ var nerdamer = (function (imports) {
             'intersects': [intersects, 2],
             'is_subset': [is_subset, 2]
         };
+
         //error handler
         this.error = err;
         //this function is used to comb through the function modules and find a function given its name
@@ -6269,8 +6273,9 @@ var nerdamer = (function (imports) {
                             f = LaTeX.brackets(this.toTeX(e.args), 'abs');
                         else if (fname === PARENTHESIS)
                             f = LaTeX.brackets(this.toTeX(e.args), 'parens');
-                        else if (fname === 'log10')
-                            f = '\\log_{10}\\left( ' + this.toTeX(e.args) + '\\right)';
+                        else if (fname === Settings.LOG10) {
+                            f = '\\'+Settings.LOG10_LATEX+'\\left( ' + this.toTeX(e.args) + '\\right)';
+                        }
                         else if (fname === 'integrate') {
                             /* Retrive [Expression, x] */
                             var chunks = chunkAtCommas(e.args);
@@ -6966,12 +6971,12 @@ var nerdamer = (function (imports) {
 
             //log(0) is undefined so complain
             if (symbol.equals(0)) {
-                throw new UndefinedError('log(0) is undefined!');
+                throw new UndefinedError(Settings.LOG+'(0) is undefined!');
             }
 
             //deal with imaginary values
             if (symbol.isImaginary()) {
-                return complex.evaluate(symbol, 'log');
+                return complex.evaluate(symbol, Settings.LOG);
                 /*
                  var a = format('log(sqrt(({0})^2+({1})^2))-({2})*atan2(({1}),({0}))', symbol.imagpart(), symbol.realpart(), Settings.IMAGINARY),
                  b = format('({0})*PI/2', Settings.IMAGINARY);
@@ -7004,7 +7009,7 @@ var nerdamer = (function (imports) {
                 if (symbol.multiplier.equals(1))
                     retval = _.multiply(s, new Symbol(symbol.power));
                 else
-                    retval = _.symfunction('log', [symbol]);
+                    retval = _.symfunction(Settings.LOG, [symbol]);
             }
             else if (Settings.PARSE2NUMBER && isNumericSymbol(symbol)) {
                 var img_part;
@@ -7027,7 +7032,7 @@ var nerdamer = (function (imports) {
                 if (arguments.length > 1 && allSame(arguments))
                     retval = new Symbol(1);
                 else
-                    retval = _.symfunction('log', arguments);
+                    retval = _.symfunction(Settings.LOG, arguments);
 
                 if (s)
                     retval = _.multiply(s, retval);
@@ -7557,6 +7562,7 @@ var nerdamer = (function (imports) {
         this.expand = expand;
         this.clean = clean;
         this.sqrt = sqrt;
+        this.log = log;
         this.nthroot = nthroot;
 
 //Parser.methods ===============================================================
@@ -9020,6 +9026,7 @@ var nerdamer = (function (imports) {
             hom: '\\hom',
             lim: '\\lim',
             log: '\\log',
+            LN:  '\\LN',
             sec: '\\sec',
             tan: '\\tan',
             arg: '\\arg',
@@ -9106,12 +9113,12 @@ var nerdamer = (function (imports) {
                     v[index] = '\\left \\lceil' + this.braces(input[0]) + '\\right \\rceil';
                 }
                 //capture log(a, b)
-                else if (fname === 'log' && input.length > 1) {
-                    v[index] = '\\mathrm' + this.braces('log') + '_' + this.braces(input[1]) + this.brackets(input[0]);
+                else if (fname === Settings.LOG && input.length > 1) {
+                    v[index] = '\\mathrm' + this.braces(Settings.LOG) + '_' + this.braces(input[1]) + this.brackets(input[0]);
                 }
                 //capture log(a, b)
-                else if (fname === 'log10') {
-                    v[index] = '\\mathrm' + this.braces('log') + '_' + this.braces(10) + this.brackets(input[0]);
+                else if (fname === Settings.LOG10) {
+                    v[index] = '\\mathrm' + this.braces(Settings.LOG) + '_' + this.braces(10) + this.brackets(input[0]);
                 }
                 else if (fname === 'sum') {
                     var a = input[0],
@@ -10364,6 +10371,13 @@ var nerdamer = (function (imports) {
         //bug fix for error but needs to be revisited
         if (!_.error)
             _.error = err;
+        
+        //Store the log and log10 functions
+        Settings.LOG_FNS = {
+            log: _.functions['log'],
+            log10: _.functions['log10']
+        };
+        
     })();
     
     /* END FINALIZE */
@@ -10815,6 +10829,24 @@ var nerdamer = (function (imports) {
 
         if (setting === 'PRECISION')
             bigDec.set({precision: value});
+        else if(setting === 'USE_LN' && value === true) {
+            //set log as LN
+            Settings.LOG = 'LN';
+            //set log10 as log
+            Settings.LOG10 = 'log';
+            //point the functions in the right direction
+            _.functions['log'] = Settings.LOG_FNS.log10; //log is now log10
+            //the log10 function must be explicitly set
+            _.functions['log'][0] = function(x) {
+                if(x.isConstant())
+                    return new Symbol(Math.log10(x));
+                return _.symfunction(Settings.LOG10, [x]);
+            };
+            _.functions['LN'] = Settings.LOG_FNS.log; //LN is now log
+            
+            //remove log10
+            delete _.functions['log10'];
+        }
         else
             Settings[setting] = value;
     };
