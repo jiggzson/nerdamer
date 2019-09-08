@@ -29,6 +29,7 @@ if((typeof module) !== 'undefined') {
         CB = core.groups.CB,
         keys = core.Utils.keys,
         variables = core.Utils.variables,
+        format = core.Utils.format,
         round = core.Utils.round,
         Frac = core.Frac,
         isInt = core.Utils.isInt,
@@ -2148,6 +2149,48 @@ if((typeof module) !== 'undefined') {
                 }  
                 return retval;
             },
+            quadFactor: function(symbol, factors) {
+                if(symbol.isPoly() && __.degree(symbol.equals(2))) {
+                    //We've  already checked that we're dealing with a polynomial
+                    var v = core.Utils.variables(symbol)[0]; //get the variable
+                    var coeffs = __.coeffs(symbol, v);
+                    //factor the lead coefficient
+                    var cf = __.Factor._factor(coeffs[2].clone());
+                    //check if we have factors
+                    if(cf.group === CB) {
+                        var symbols = cf.collectSymbols();
+                        //if the factors are greater than 2 we're done so exit
+                        if(symbols.length > 2)
+                            return symbol; 
+                        //if we have two factors then attempt to factor the polynomial
+                        //let the factors be f1 and f1
+                        //let the factors be (ax+b)(cx+d)
+                        //let the coefficients be c1x^2+c2x+c3
+                        //then a(x1)+c(x2)=c2 and x1*x2=c3
+                        //we can solve for x1 and x2
+                        var c = _.multiply(_.parse(coeffs[0]), _.parse(symbols[0]));
+                        var b = _.parse(coeffs[1]).negate();
+                        var a = _.parse(symbols[1]);
+                        //solve the system
+                        var root = __.quad(a, b, c).filter(function(x) {
+                            if(core.Utils.isInt(x))
+                                return x;
+                        });
+                        //if we have one root then find the other one by dividing the constant
+                        if(root.length === 1) {
+                            var root1 = root[0];
+                            var root2 = _.divide(coeffs[0], _.parse(root1));
+                            if(core.Utils.isInt(root2)) {
+                                //we found them both
+                                factors.add(_.parse(format('({0})*({1})+({2})', symbols[1], v, root2)));
+                                factors.add(_.parse(format('({0})*({1})+({2})', symbols[0], v, root1)));
+                                symbol = new Symbol(1);
+                            }
+                        }
+                    }
+                }
+                return symbol;    
+            },
             _factor: function(symbol, factors) {
                 //some items cannot be factored any further so return those right away
                 if(symbol.group === FN) {
@@ -2277,7 +2320,10 @@ if((typeof module) !== 'undefined') {
                                 var t_factor = t_factors.factors[x];
                                 factors.add(_.pow(t_factor, _.parse(p)));
                             }
-                            
+                            //if we still don't have a factor and it's quadratic then let's just do a quad factor
+                            if(symbol.equals(untouched))
+                                symbol = __.Factor.quadFactor(symbol, factors);
+                           
                         }
                         else {
                             symbol = __.Factor.mfactor(symbol, factors);
@@ -3580,45 +3626,50 @@ if((typeof module) !== 'undefined') {
                 return _.divide(_.add(_.add(ac, bd), _.multiply(_.subtract(bc, ad), Symbol.imaginary())), cd);
             },
             trigSimp: function(symbol) { 
-                symbol = symbol.clone();
-                //remove power and multiplier
-                var sym_array = __.Simplify.strip(symbol);
-                symbol = sym_array.pop();
-                //the default return value is the symbol
-                var retval = symbol.clone();
-                
-                //rewrite the symbol
-                if(symbol.group === CP) {
-                    var sym = new Symbol(0);
-                    symbol.each(function(x) {
-                        //rewrite the function
-                        var tr = __.Simplify.trigSimp(x.fnTransform());
-                        sym = _.add(sym, tr);
-                    }, true);
-                    //put back the power and multiplier and return
-                    retval = _.pow(_.multiply(new Symbol(symbol.multiplier), sym), new Symbol(symbol.power));
-                }
-                else if(symbol.group === CB) {
-                    //try for tangent
-                    var n = symbol.getNum();
-                    var d = symbol.getDenom();
-                    if(n.fname === 'sin' && d.fname === 'cos' && n.args[0].equals(d.args[0]) && n.power.equals(d.power)) {
-                        retval =_.parse(core.Utils.format('({0})*({1})*tan({2})^({3})', d.multiplier, n.multiplier, n.args[0], n.power));
+                if(symbol.containsFunction(['cos', 'sin', 'tan'])) {
+                    symbol = symbol.clone();
+                    //remove power and multiplier
+                    var sym_array = __.Simplify.strip(symbol);
+                    symbol = sym_array.pop();
+                    //the default return value is the symbol
+                    var retval = symbol.clone();
+
+                    //rewrite the symbol
+                    if(symbol.group === CP) {
+                        var sym = new Symbol(0);
+                        symbol.each(function(x) {
+                            //rewrite the function
+                            var tr = __.Simplify.trigSimp(x.fnTransform());
+                            sym = _.add(sym, tr);
+                        }, true);
+                        //put back the power and multiplier and return
+                        retval = _.pow(_.multiply(new Symbol(symbol.multiplier), sym), new Symbol(symbol.power));
                     }
-                    if(retval.group === CB) {
-                        var t = new Symbol(1);
-                        retval.each(function(x) {
-                            if(x.fname === 'tan') {
-                                x = _.parse(core.Utils.format('({0})*sin({1})^({2})/cos({1})^({2})', x.multiplier, __.Simplify.simplify(x.args[0]), x.power));
-                            }
-                            t = _.multiply(t, x);
-                        });
-                        retval = t;
+                    else if(symbol.group === CB) {
+                        //try for tangent
+                        var n = symbol.getNum();
+                        var d = symbol.getDenom();
+                        if(n.fname === 'sin' && d.fname === 'cos' && n.args[0].equals(d.args[0]) && n.power.equals(d.power)) {
+                            retval =_.parse(core.Utils.format('({0})*({1})*tan({2})^({3})', d.multiplier, n.multiplier, n.args[0], n.power));
+                        }
+                        if(retval.group === CB) {
+                            var t = new Symbol(1);
+                            retval.each(function(x) {
+                                if(x.fname === 'tan') {
+                                    x = _.parse(core.Utils.format('({0})*sin({1})^({2})/cos({1})^({2})', x.multiplier, __.Simplify.simplify(x.args[0]), x.power));
+                                }
+                                t = _.multiply(t, x);
+                            });
+                            retval = t;
+                        }
                     }
+
+                    retval = __.Simplify.unstrip(sym_array, retval).distributeMultiplier();
+                    
+                    symbol = retval;
                 }
                 
-                retval = __.Simplify.unstrip(sym_array, retval).distributeMultiplier();
-                return retval;
+                return symbol;
             },
             fracSimp: function(symbol) {
                 //try a quick simplify of imaginary numbers
@@ -3664,6 +3715,14 @@ if((typeof module) !== 'undefined') {
                 }
                 return symbol;
             },
+            ratSimp: function(symbol) {
+                if(symbol.group === CB) {
+                    var den = __.Simplify.fracSimp(symbol.getDenom());
+                    var num = __.Simplify.fracSimp(symbol.getNum());
+                    symbol = _.divide(num, den);
+                }
+                return symbol;
+            },
             simplify: function(symbol) { 
                 //remove the multiplier to make calculation easier;
                 var sym_array = __.Simplify.strip(symbol);
@@ -3682,9 +3741,11 @@ if((typeof module) !== 'undefined') {
                     
                 var simplified;
                 symbol = symbol.clone(); //make a copy
-                ////1. Try cos(x)^2+sin(x)^2
-                
+                ////1. Try cos(x)^2+sin(x)^2 
                 simplified = __.Simplify.trigSimp(symbol);
+                
+                //simplify common denominators
+                simplified = __.Simplify.ratSimp(simplified);
                 
                 //first go for the "cheapest" simplification which may eliminate 
                 //your problems right away. factor -> evaluate. Remember
