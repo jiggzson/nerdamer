@@ -2132,8 +2132,17 @@ if((typeof module) !== 'undefined') {
                 if(retval.equals(symbol)) {
                     return retval;
                 }
+                
                 if(retval.group === CB) {
                     var t = new Symbol(1);
+                    /* 
+                     * NOTE: for sign issues with factor START DEBUGGING HERE
+                     */
+                    //move the sign to t
+                    if(retval.multiplier.lessThan(0)) {
+                        t.negate();
+                        retval.negate();
+                    }
                     retval.each(function(x) {
                         var factored = __.Factor._factor(x);
                         if(factored.group === CB) {
@@ -2286,6 +2295,7 @@ if((typeof module) !== 'undefined') {
                         }
                         //factor the coefficients
                         var coeff_factors = new Factors();
+                        
                         symbol = __.Factor.coeffFactor(symbol, coeff_factors);
                         
                         coeff_factors.each(function(x) {
