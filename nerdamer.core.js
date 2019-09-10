@@ -5925,147 +5925,152 @@ var nerdamer = (function (imports) {
          * @returns {Symbol}
          */
         this.parseRPN = function (rpn, substitutions) {
-            //default substitutions
-            substitutions = substitutions || {};
-            //prepare the substitutions.
-            //we first parse them out as-is
-            for (var x in substitutions)
-                substitutions[x] = _.parse(substitutions[x], {});
-            //Although technically constants,
-            //pi and e are only available when evaluating the expression so add to the subs.
-            //Doing this avoids rounding errors 
-            //link e and pi
-            if (Settings.PARSE2NUMBER) {
-                //use the value provided if the individual for some strange reason prefers this.
-                //one reason could be to sub e but not pi or vice versa
-                if (!('e' in substitutions))
-                    substitutions.e = new Symbol(Settings.E);
-                if ((!('pi' in substitutions)))
-                    substitutions.pi = new Symbol(Settings.PI);
-            }
-
-            var Q = [];
-            for (var i = 0, l = rpn.length; i < l; i++) {
-                var e = rpn[i]; 
-
-                //Arrays indicate a new scope so parse that out
-                if (Array.isArray(e)) {
-                    e = this.parseRPN(e, substitutions);
+            try {
+                //default substitutions
+                substitutions = substitutions || {};
+                //prepare the substitutions.
+                //we first parse them out as-is
+                for (var x in substitutions)
+                    substitutions[x] = _.parse(substitutions[x], {});
+                //Although technically constants,
+                //pi and e are only available when evaluating the expression so add to the subs.
+                //Doing this avoids rounding errors 
+                //link e and pi
+                if (Settings.PARSE2NUMBER) {
+                    //use the value provided if the individual for some strange reason prefers this.
+                    //one reason could be to sub e but not pi or vice versa
+                    if (!('e' in substitutions))
+                        substitutions.e = new Symbol(Settings.E);
+                    if ((!('pi' in substitutions)))
+                        substitutions.pi = new Symbol(Settings.PI);
                 }
 
-                if(e) {
-                    if (e.type === Token.OPERATOR) {
-                        if (e.is_prefix || e.postfix)
-                            //resolve the operation assocated with the prefix
-                            Q.push(e.operation(Q.pop()));
-                        else {
-                            var b = Q.pop();
-                            var a = Q.pop();
-                            //Throw an error if the RH value is empty. This cannot be a postfix since we already checked
-                            if (typeof a === 'undefined')
-                                throw new OperatorError(e + ' is not a valid postfix operator at ' + e.column);
-                            
-                            var is_comma = e.action === 'comma'
-                            //convert Sets to Vectors on all operations at this point. Sets are only recognized functions or individually
-                            if(a instanceof Set && !is_comma)
-                                a = Vector.fromSet(a);
-                            
-                            if(b instanceof Set && !is_comma)
-                                b = Vector.fromSet(b);
-                            
-                            Q.push(_[e.action](a, b));
-                        }
+                var Q = [];
+                for (var i = 0, l = rpn.length; i < l; i++) {
+                    var e = rpn[i]; 
+
+                    //Arrays indicate a new scope so parse that out
+                    if (Array.isArray(e)) {
+                        e = this.parseRPN(e, substitutions);
                     }
-                    else if (e.type === Token.FUNCTION) {
-                        var args = Q.pop();
-                        if (!(args instanceof Collection))
-                            args = Collection.create(args);
-                        //the return value may be a vector. If it is then we check
-                        //Q to see if there's another vector on the stack. If it is then
-                        //we check if has elements. If it does then we know that we're dealing
-                        //with an "getter" object and return the requested values
-                        
-                        //call the function. This is the _.callfunction method in nerdamer
-                        var ret = _.callfunction(e.value, args.getItems()); 
-                        var last = Q[Q.length - 1];
-                        var next = rpn[i + 1];
-                        var next_is_comma = next && next.type === Token.OPERATOR && next.value === ',';
 
-                        if (!next_is_comma && ret instanceof Vector && last && last.elements && !(last instanceof Collection)) {
-                            //remove the item from the queue
-                            var item = Q.pop();
+                    if(e) {
+                        if (e.type === Token.OPERATOR) {
+                            if (e.is_prefix || e.postfix)
+                                //resolve the operation assocated with the prefix
+                                Q.push(e.operation(Q.pop()));
+                            else {
+                                var b = Q.pop();
+                                var a = Q.pop();
+                                //Throw an error if the RH value is empty. This cannot be a postfix since we already checked
+                                if (typeof a === 'undefined')
+                                    throw new OperatorError(e + ' is not a valid postfix operator at ' + e.column);
 
-                            var getter = ret.elements[0];
-                            //check if it's symbolic. If so put it back and add the item to the stack
-                            if (!getter.isConstant()) {
-                                item.getter = getter;
-                                Q.push(item);
-                                Q.push(ret);
+                                var is_comma = e.action === 'comma'
+                                //convert Sets to Vectors on all operations at this point. Sets are only recognized functions or individually
+                                if(a instanceof Set && !is_comma)
+                                    a = Vector.fromSet(a);
+
+                                if(b instanceof Set && !is_comma)
+                                    b = Vector.fromSet(b);
+
+                                Q.push(_[e.action](a, b));
                             }
-                            else if (getter instanceof Slice) {
-                                //if it's a Slice return the slice
-                                Q.push(Vector.fromArray(item.elements.slice(getter.start, getter.end)));
+                        }
+                        else if (e.type === Token.FUNCTION) {
+                            var args = Q.pop();
+                            if (!(args instanceof Collection))
+                                args = Collection.create(args);
+                            //the return value may be a vector. If it is then we check
+                            //Q to see if there's another vector on the stack. If it is then
+                            //we check if has elements. If it does then we know that we're dealing
+                            //with an "getter" object and return the requested values
+
+                            //call the function. This is the _.callfunction method in nerdamer
+                            var ret = _.callfunction(e.value, args.getItems()); 
+                            var last = Q[Q.length - 1];
+                            var next = rpn[i + 1];
+                            var next_is_comma = next && next.type === Token.OPERATOR && next.value === ',';
+
+                            if (!next_is_comma && ret instanceof Vector && last && last.elements && !(last instanceof Collection)) {
+                                //remove the item from the queue
+                                var item = Q.pop();
+
+                                var getter = ret.elements[0];
+                                //check if it's symbolic. If so put it back and add the item to the stack
+                                if (!getter.isConstant()) {
+                                    item.getter = getter;
+                                    Q.push(item);
+                                    Q.push(ret);
+                                }
+                                else if (getter instanceof Slice) {
+                                    //if it's a Slice return the slice
+                                    Q.push(Vector.fromArray(item.elements.slice(getter.start, getter.end)));
+                                }
+                                else {
+                                    var index = Number(getter);
+                                    var il = item.elements.length;
+                                    //support for negative indices
+                                    if (index < 0)
+                                        index = il + index;
+                                    //it it's still out of bounds
+                                    if (index < 0 || index >= il) //index should no longer be negative since it's been reset above
+                                        //range error
+                                        throw new OutOfRangeError('Index out of range ' + (e.column + 1));
+                                    Q.push(item.elements[index]);
+                                }
                             }
                             else {
-                                var index = Number(getter);
-                                var il = item.elements.length;
-                                //support for negative indices
-                                if (index < 0)
-                                    index = il + index;
-                                //it it's still out of bounds
-                                if (index < 0 || index >= il) //index should no longer be negative since it's been reset above
-                                    //range error
-                                    throw new OutOfRangeError('Index out of range ' + (e.column + 1));
-                                Q.push(item.elements[index]);
+                                Q.push(ret);
                             }
+
                         }
                         else {
-                            Q.push(ret);
-                        }
-                        
-                    }
-                    else {
-                        var subbed;
-                        var v = e.value;
+                            var subbed;
+                            var v = e.value;
 
-                        if (v in Settings.ALIASES)
-                            e = _.parse(Settings.ALIASES[e]);
-                        //wrap it in a symbol if need be
-                        else if (e.type === Token.VARIABLE_OR_LITERAL)
-                            e = new Symbol(v);
-                        else if (e.type === Token.UNIT) {
-                            e = new Symbol(v);
-                            e.isUnit = true;
-                        }
+                            if (v in Settings.ALIASES)
+                                e = _.parse(Settings.ALIASES[e]);
+                            //wrap it in a symbol if need be
+                            else if (e.type === Token.VARIABLE_OR_LITERAL)
+                                e = new Symbol(v);
+                            else if (e.type === Token.UNIT) {
+                                e = new Symbol(v);
+                                e.isUnit = true;
+                            }
 
-                        //make substitutions
-                        //Always constants first. This avoids the being overridden
-                        if (v in _.CONSTANTS) {
-                            subbed = e;
-                            e = new Symbol(_.CONSTANTS[v]);
-                        }
-                        //next substitutions. This allows declared variable to be overridden
-                        //check if the values match to avoid erasing the multiplier. 
-                        //Example:/e = 3*a. substutiting a for a will wipe out the multiplier.
-                        else if (v in substitutions && v !== substitutions[v].value) {
-                            subbed = e;
-                            e = substitutions[v].clone();
-                        }
-                        //next declare variables
-                        else if (v in VARS) {
-                            subbed = e;
-                            e = VARS[v].clone();
-                        }
-                        //make notation of what it was before
-                        if (subbed)
-                            e.subbed = subbed;
+                            //make substitutions
+                            //Always constants first. This avoids the being overridden
+                            if (v in _.CONSTANTS) {
+                                subbed = e;
+                                e = new Symbol(_.CONSTANTS[v]);
+                            }
+                            //next substitutions. This allows declared variable to be overridden
+                            //check if the values match to avoid erasing the multiplier. 
+                            //Example:/e = 3*a. substutiting a for a will wipe out the multiplier.
+                            else if (v in substitutions && v !== substitutions[v].value) {
+                                subbed = e;
+                                e = substitutions[v].clone();
+                            }
+                            //next declare variables
+                            else if (v in VARS) {
+                                subbed = e;
+                                e = VARS[v].clone();
+                            }
+                            //make notation of what it was before
+                            if (subbed)
+                                e.subbed = subbed;
 
-                        Q.push(e);
+                            Q.push(e);
+                        }
                     }
                 }
-            }
 
-            return Q[0];
+                return Q[0];
+            }
+            catch(error) {
+                throw new ParseError(error.message+': '+e.column);
+            }
         };
         /**
          * This is the method that triggers the parsing of the string. It generates a parse tree but processes 
