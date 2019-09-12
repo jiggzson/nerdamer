@@ -1765,8 +1765,8 @@ if((typeof module) !== 'undefined') {
                 //format the output
                 for( i=0; i<l; i++ ) {
                     // We round the imaginary part to avoid having something crazy like 5.67e-16.
-                    var img = round( zeroi[i], decp+8 ),
-                        real = round( zeror[i], decp+8 );
+                    var img = zeroi[i],
+                        real = zeror[i];
                     // Did the rounding pay off? If the rounding did nothing more than chop off a few digits then no.
                     // If the rounding results in a a number at least 3 digits shorter we'll keep it else we'll keep 
                     // the original otherwise the rounding was worth it.
