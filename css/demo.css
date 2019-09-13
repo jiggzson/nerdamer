@@ -155,3 +155,10 @@
     border-bottom-style: none !important;
 }
 
+.input-expression {
+    /*background: #3d3d3d;*/
+    padding: 4px !important;
+    color: #000;
+    font-weight: bold;
+    /*text-align: center;*/
+}

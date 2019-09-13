@@ -213,6 +213,7 @@
         PanelExpression.prototype = {
             template: 
                     '<div class="expression" data-variable={{variable}}>'+
+                        '<div class="input-expression">{{text}} : </div>'+
                         '<div class="expression-delete expression-btn">'+
                             '<a href="javascript:void(0)" title="Remove expression"><i class="fa fa-close"></i></a>'+
                         '</div>'+
@@ -256,7 +257,7 @@
         }
 
         //This function is used to add the expression to the panel for display
-        function addToPanel(LaTeX, expression, output, variable) {
+        function addToPanel(LaTeX, expression, output, variable, text) {
             output = output || expression;
             var TeX = katex.renderToString(LaTeX);
             var h = /.+class="strut" style="height:([0-9\.]+)em.+/.exec(TeX)[1];
@@ -267,7 +268,8 @@
                 LaTeX: katex.renderToString(adjustment+LaTeX),
                 expression: expression,
                 output: output,
-                variable: variable
+                variable: variable,
+                text: text
             }).toHTML();
             $panel.append(PE);
             return PE;
@@ -301,13 +303,15 @@
         }
         //callback for handling of entered expression
         function process() {
-            var expressionAndScope = prepareExpression(getText()),
+            var txt = getText(),
+                expressionAndScope = prepareExpression(txt),
                 expression = expressionAndScope[0],
                 scope = expressionAndScope[1],
                 //alternative regex: ^([a-z_][a-z\d\_]*)\(([a-z_,])\):=([\+\-\*\/a-z\d*_,\^!\(\)]+)
                 functionRegex = /^([a-z_][a-z\d\_]*)\(([a-z_,\s]*)\):=(.+)$/gi, //does not validate the expression
                 functionDeclaration = functionRegex.exec(expression),
                 LaTeX, panelExpression;
+            
             //it might be a function declaration. If it is the scope object gets ignored
             if(functionDeclaration) { 
                 //Remember: The match comes back as [str, fnName, params, fnBody]
@@ -334,7 +338,7 @@
                         notify('A variable object was provided but is ignored for function declaration.');
                     
                     //add the LaTeX to the panel
-                    panelExpression = addToPanel(LaTeX, expression);   
+                    panelExpression = addToPanel(LaTeX, expression, undefined, undefined, txt);   
                     clear();
                 }
                 catch(e) { 
@@ -351,7 +355,7 @@
                         nerdamer.setVar(varName, varValue);
                         //generate the LaTeX
                         LaTeX = varName+':'+nerdamer(varValue).toTeX();
-                        panelExpression = addToPanel(LaTeX, expression, undefined, varName);   
+                        panelExpression = addToPanel(LaTeX, expression, undefined, varName, txt);   
                         clear();
                     }
                     catch(e){
@@ -377,7 +381,7 @@
                         }
                         LaTeX = evaluated.toTeX(decimal);
                         //add the LaTeX to the panel
-                        panelExpression = addToPanel(LaTeX, user_expression, output);   
+                        panelExpression = addToPanel(LaTeX, user_expression, output, undefined, txt);   
                         clear();
                     }
                     catch(e){
