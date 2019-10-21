@@ -10042,14 +10042,15 @@ var nerdamer = (function (imports) {
         text: function () {
             return 'matrix(' + this.elements.toString('') + ')';
         },
-        latex: function (option) {
+        latex: function (type = 'v', options) {
+            type = /^$|[bvVp]/.test(type) ? type : 'v';
             var cols = this.cols(), elements = this.elements;
-            return format('\\begin{vmatrix}{0}\\end{vmatrix}', function () {
+            return format('\\begin{' + type + 'matrix}{0}\\end{' + type + 'matrix}', function () {
                 var tex = [];
                 for (var row in elements) {
                     var row_tex = [];
                     for (var i = 0; i < cols; i++) {
-                        row_tex.push(LaTeX.latex.call(LaTeX, elements[row][i], option));
+                        row_tex.push(LaTeX.latex.call(LaTeX, elements[row][i], options));
                     }
                     tex.push(row_tex.join(' & '));
                 }
