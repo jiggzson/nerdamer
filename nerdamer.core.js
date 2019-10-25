@@ -1031,6 +1031,9 @@ var nerdamer = (function (imports) {
         cot: function (x) {
             return 1 / Math.tan(x);
         },
+		acsc: function(x) { return Math.asin(1/x); },
+        asec: function(x) { return Math.acos(1/x); },
+        acot: function(x) { return (Math.PI / 2) - Math.atan(x)},
         // https://gist.github.com/jiggzson/df0e9ae8b3b06ff3d8dc2aa062853bd8
         erf: function (x) {
             var t = 1 / (1 + 0.5 * Math.abs(x));
@@ -4529,55 +4532,50 @@ var nerdamer = (function (imports) {
 
                 return retval;
             },
-            csc: function (symbol) {
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
+            csc: function(symbol) {
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.isConstant())
                         return new Symbol(Math2.csc(symbol.valueOf()));
-                    if (symbol.isImaginary())
+                    if(symbol.isImaginary())
                         return complex.evaluate(symbol, 'csc');
                     return _.parse(format('1/sin({0})', symbol));
                 }
 
                 var retval,
-                        c = false,
-                        q = getQuadrant(symbol.multiplier.toDecimal()),
-                        m = symbol.multiplier.abs();
+                    c = false,
+                    q = getQuadrant(symbol.multiplier.toDecimal()),
+                    sign = symbol.multiplier.sign(),
+                    m = symbol.multiplier.abs();
 
                 symbol.multiplier = m;
 
-                if (symbol.isPi() && symbol.isLinear()) {
+                if(symbol.isPi() && symbol.isLinear()) {
                     //return for 0 for multiples of pi
-                    if (isInt(m)) {
-                        throw new UndefinedError('csc is undefined for ' + symbol.toString());
+                    if(isInt(m)) {
+                        throw new UndefinedError('csc is undefined for '+symbol.toString());
                     }
                     else {
                         var n = m.num, d = m.den;
-                        if (d == 2) {
-                            retval = new Symbol(1);
-                            c = true;
+                        if(d == 2) {
+                            retval = new Symbol(1); c = true;
                         }
-                        else if (d == 3) {
-                            retval = _.parse('2/sqrt(3)');
-                            c = true
+                        else if(d == 3) {
+                            retval = _.parse('2/sqrt(3)'); c = true
                         }
-                        else if (d == 4) {
-                            retval = _.parse('sqrt(2)');
-                            c = true;
+                        else if(d == 4) {
+                            retval = _.parse('sqrt(2)'); c = true;
                         }
-                        else if (d == 6) {
-                            retval = new Symbol(2);
-                            c = true;
+                        else if(d == 6) {
+                            retval = new Symbol(2); c = true;
                         }
-                        else
-                            retval = _.symfunction('csc', [symbol]);
+                        else 
+                            retval = _.multiply(new Symbol(sign), _.symfunction('csc', [symbol]));
                     }
                 }
 
-                if (!retval)
-                    retval = _.symfunction('csc', [symbol]);
+                if(!retval) retval = _.multiply(new Symbol(sign), _.symfunction('csc', [symbol]));
 
-                if (c && (q === 3 || q === 4))
-                    retval.negate();
+                if(c && (q === 3 || q === 4)) retval.negate();
 
                 return retval;
             },
@@ -4683,26 +4681,16 @@ var nerdamer = (function (imports) {
                 }
                 return _.symfunction('acsc', arguments);
             },
-            acot: function (symbol) {
-                var retval;
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isImaginary()) {
-                        retval = complex.evaluate(symbol, 'acot');
+            acot: function(symbol) {
+                if(Settings.PARSE2NUMBER) {
+                    if(symbol.isConstant()) {
+                        return new _.add(_.parse('pi/2'), trig.atan(symbol).negate());
                     }
-                    else {
-                        var k = _.parse('pi/2');
-                        if (symbol.equals(0))
-                            retval = k;
-                        else {
-                            if (symbol.lessThan(0))
-                                k.negate();
-                            retval = _.subtract(k, trig.atan(symbol));
-                        }
-                    }
+
+                    if(symbol.isImaginary())
+                        return complex.evaluate(symbol, 'acot');
                 }
-                else
-                    retval = _.symfunction('acot', arguments);
-                return retval;
+                return _.symfunction('acot', arguments);
             },
             atan2: function (a, b) {
                 if (a.equals(0) && b.equals(0))
