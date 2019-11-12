@@ -8,7 +8,7 @@
 */
 
 if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
-    nerdamer = require('./nerdamer.core.js');
+    var nerdamer = require('./nerdamer.core.js');
     require('./Algebra.js');
 }
 
