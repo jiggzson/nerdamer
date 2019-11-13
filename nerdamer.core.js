@@ -101,7 +101,10 @@ var nerdamer = (function (imports) {
         LONG_E: '2.718281828459045235360287471352662497757247093699959574966967627724076630353547594571382178525166427427466' +
                 '39193200305992181741359662904357290033429526059563073813232862794349076323382988075319525101901',
         PI: Math.PI,
-        E: Math.E
+        E: Math.E,
+        LOG: 'log', 
+        LOG10: 'log10',
+        LOG10_LATEX: 'log_{10}'
     };
 
     (function () {
@@ -555,13 +558,19 @@ var nerdamer = (function (imports) {
      * so only use if you need any first random or if there's only one item in the object
      * @param {Object} obj
      * @param {String} key Return this key as first object
+     * @param {Boolean} both
      * @returns {*}
      */
-    var firstObject = function (obj, key) {
+    var firstObject = function (obj, key, both) {
         for (var x in obj)
             break;
         if (key)
             return x;
+        if(both)
+            return {
+                key: x,
+                obj: obj[x]
+            };
         return obj[x];
     };
 
@@ -1294,6 +1303,10 @@ var nerdamer = (function (imports) {
             return Math.pow(b, e);
         },
         factor: function (n) {
+            n = Number(n);
+            var sign = Math.sign(n); //store the sign
+            //move the number to absolute value
+            n = Math.abs(n);
             var ifactors = Math2.ifactor(n);
             var factors = new Symbol();
             factors.symbols = {};
@@ -1306,6 +1319,15 @@ var nerdamer = (function (imports) {
                 factors.symbols[x] = factor;
             }
             factors.updateHash();
+            
+            if(n === 1) {
+                factors = new Symbol(n);
+            }
+            
+            //put back the sign
+            if(sign < 0)
+                factors.negate();
+            
             return factors;
         },
         /**
@@ -4118,6 +4140,7 @@ var nerdamer = (function (imports) {
         Token.VARIABLE_OR_LITERAL = 'VARIABLE_OR_LITERAL';
         Token.FUNCTION = 'FUNCTION';
         Token.UNIT = 'UNIT';
+        Token.KEYWORD = 'KEYWORD';
         Token.MAX_PRECEDENCE = 999;
         //create link to classes
         this.classes = {
@@ -4785,7 +4808,7 @@ var nerdamer = (function (imports) {
                 if (Settings.PARSE2NUMBER && symbol.isImaginary())
                     retval = complex.evaluate(symbol, 'acosh');
                 else if (Settings.PARSE2NUMBER)
-                    retval = evaluate(_.parse(format('log(({0})+sqrt(({0})^2-1))', symbol.toString())));
+                    retval = evaluate(_.parse(format(Settings.LOG+'(({0})+sqrt(({0})^2-1))', symbol.toString())));
                 else
                     retval = _.symfunction('acosh', arguments);
                 return retval;
@@ -4795,7 +4818,7 @@ var nerdamer = (function (imports) {
                 if (Settings.PARSE2NUMBER && symbol.isImaginary())
                     retval = complex.evaluate(symbol, 'asinh');
                 else if (Settings.PARSE2NUMBER)
-                    retval = evaluate(_.parse(format('log(({0})+sqrt(({0})^2+1))', symbol.toString())));
+                    retval = evaluate(_.parse(format(Settings.LOG+'(({0})+sqrt(({0})^2+1))', symbol.toString())));
                 else
                     retval = _.symfunction('asinh', arguments);
                 return retval;
@@ -4805,7 +4828,7 @@ var nerdamer = (function (imports) {
                 if (Settings.PARSE2NUMBER && symbol.isImaginary())
                     retval = complex.evaluate(symbol, 'atanh');
                 else if (Settings.PARSE2NUMBER) {
-                    retval = evaluate(_.parse(format('(1/2)*log((1+({0}))/(1-({0})))', symbol.toString())));
+                    retval = evaluate(_.parse(format('(1/2)*'+Settings.LOG+'((1+({0}))/(1-({0})))', symbol.toString())));
                 }
                 else
                     retval = _.symfunction('atanh', arguments);
@@ -4826,7 +4849,7 @@ var nerdamer = (function (imports) {
                 if (Settings.PARSE2NUMBER && symbol.isImaginary())
                     retval = complex.evaluate(symbol, 'acsch');
                 else if (Settings.PARSE2NUMBER)
-                    retval = evaluate(_.parse(format('log((1+sqrt(1+({0})^2))/({0}))', symbol.toString())));
+                    retval = evaluate(_.parse(format(Settings.LOG+'((1+sqrt(1+({0})^2))/({0}))', symbol.toString())));
                 else
                     retval = _.symfunction('acsch', arguments);
                 return retval;
@@ -5012,14 +5035,6 @@ var nerdamer = (function (imports) {
                 postfix: false,
                 leftAssoc: false
             },
-            'in': {
-                precedence: 1,
-                operator: ',',
-                action: 'in',
-                prefix: false,
-                postfix: false,
-                leftAssoc: false
-            },
             ',': {
                 precedence: 0,
                 operator: ',',
@@ -5078,7 +5093,7 @@ var nerdamer = (function (imports) {
                 id: 5,
                 is_open: true,
                 is_close: false,
-                maps_to: 'object'
+                maps_to: 'Set'
             },
             '}': {
                 type: 'curly',
@@ -5172,6 +5187,7 @@ var nerdamer = (function (imports) {
             'matgetcol': [matgetcol, 2],
             'matsetcol': [matsetcol, 3],
             'IF': [IF, 3],
+            'is_in': [is_in, 2],
             //imaginary support
             'realpart': [realpart, 1],
             'imagpart': [imagpart, 1],
@@ -5188,6 +5204,7 @@ var nerdamer = (function (imports) {
             'intersects': [intersects, 2],
             'is_subset': [is_subset, 2]
         };
+
         //error handler
         this.error = err;
         //this function is used to comb through the function modules and find a function given its name
@@ -5896,143 +5913,152 @@ var nerdamer = (function (imports) {
          * @returns {Symbol}
          */
         this.parseRPN = function (rpn, substitutions) {
-            //default substitutions
-            substitutions = substitutions || {};
-            //prepare the substitutions.
-            //we first parse them out as-is
-            for (var x in substitutions)
-                substitutions[x] = _.parse(substitutions[x], {});
-            //Although technically constants,
-            //pi and e are only available when evaluating the expression so add to the subs.
-            //Doing this avoids rounding errors 
-            //link e and pi
-            if (Settings.PARSE2NUMBER) {
-                //use the value provided if the individual for some strange reason prefers this.
-                //one reason could be to sub e but not pi or vice versa
-                if (!('e' in substitutions))
-                    substitutions.e = new Symbol(Settings.E);
-                if ((!('pi' in substitutions)))
-                    substitutions.pi = new Symbol(Settings.PI);
-            }
-
-            var Q = [];
-            for (var i = 0, l = rpn.length; i < l; i++) {
-                var e = rpn[i]; 
-
-                //Arrays indicate a new scope so parse that out
-                if (Array.isArray(e)) {
-                    e = this.parseRPN(e, substitutions);
+            try {
+                //default substitutions
+                substitutions = substitutions || {};
+                //prepare the substitutions.
+                //we first parse them out as-is
+                for (var x in substitutions)
+                    substitutions[x] = _.parse(substitutions[x], {});
+                //Although technically constants,
+                //pi and e are only available when evaluating the expression so add to the subs.
+                //Doing this avoids rounding errors 
+                //link e and pi
+                if (Settings.PARSE2NUMBER) {
+                    //use the value provided if the individual for some strange reason prefers this.
+                    //one reason could be to sub e but not pi or vice versa
+                    if (!('e' in substitutions))
+                        substitutions.e = new Symbol(Settings.E);
+                    if ((!('pi' in substitutions)))
+                        substitutions.pi = new Symbol(Settings.PI);
                 }
 
-                if(e) {
-                    if (e.type === Token.OPERATOR) {
-                        if (e.is_prefix || e.postfix)
-                            //resolve the operation assocated with the prefix
-                            Q.push(e.operation(Q.pop()));
-                        else {
-                            var b = Q.pop();
-                            var a = Q.pop();
-                            //Throw an error if the RH value is empty. This cannot be a postfix since we already checked
-                            if (typeof a === 'undefined')
-                                throw new OperatorError(e + ' is not a valid postfix operator at ' + e.column);
-                            
-                            var is_comma = e.action === 'comma'
-                            //convert Sets to Vectors on all operations at this point. Sets are only recognized functions or individually
-                            if(a instanceof Set && !is_comma)
-                                a = Vector.fromSet(a);
-                            
-                            if(b instanceof Set && !is_comma)
-                                b = Vector.fromSet(b);
-                            
-                            Q.push(_[e.action](a, b));
-                        }
+                var Q = [];
+                for (var i = 0, l = rpn.length; i < l; i++) {
+                    var e = rpn[i]; 
+
+                    //Arrays indicate a new scope so parse that out
+                    if (Array.isArray(e)) {
+                        e = this.parseRPN(e, substitutions);
                     }
-                    else if (e.type === Token.FUNCTION) {
-                        var args = Q.pop();
-                        if (!(args instanceof Collection))
-                            args = Collection.create(args);
-                        //the return value may be a vector. If it is then we check
-                        //Q to see if there's another vector on the stack. If it is then
-                        //we check if has elements. If it does then we know that we're dealing
-                        //with an "getter" object and return the requested values
-                        var ret = _.callfunction(e.value, args.getItems()); //call the function. This is the _.callfunction method in nerdamer
-                        var last = Q[Q.length - 1];
-                        var next = rpn[i + 1];
-                        var next_is_comma = next && next.type === Token.OPERATOR && next.value === ',';
 
-                        if (!next_is_comma && ret instanceof Vector && last && last.elements && !(last instanceof Collection)) {
-                            //remove the item from the queue
-                            var item = Q.pop();
+                    if(e) {
+                        if (e.type === Token.OPERATOR) {
+                            if (e.is_prefix || e.postfix)
+                                //resolve the operation assocated with the prefix
+                                Q.push(e.operation(Q.pop()));
+                            else {
+                                var b = Q.pop();
+                                var a = Q.pop();
+                                //Throw an error if the RH value is empty. This cannot be a postfix since we already checked
+                                if (typeof a === 'undefined')
+                                    throw new OperatorError(e + ' is not a valid postfix operator at ' + e.column);
 
-                            var getter = ret.elements[0];
-                            //check if it's symbolic. If so put it back
-                            if (!getter.isConstant()) {
-                                item.getter = getter;
-                                Q.push(item);
+                                var is_comma = e.action === 'comma'
+                                //convert Sets to Vectors on all operations at this point. Sets are only recognized functions or individually
+                                if(a instanceof Set && !is_comma)
+                                    a = Vector.fromSet(a);
+
+                                if(b instanceof Set && !is_comma)
+                                    b = Vector.fromSet(b);
+
+                                Q.push(_[e.action](a, b));
                             }
-                            else if (getter instanceof Slice) {
-                                //if it's a Slice return the slice
-                                Q.push(Vector.fromArray(item.elements.slice(getter.start, getter.end)));
+                        }
+                        else if (e.type === Token.FUNCTION) {
+                            var args = Q.pop();
+                            if (!(args instanceof Collection))
+                                args = Collection.create(args);
+                            //the return value may be a vector. If it is then we check
+                            //Q to see if there's another vector on the stack. If it is then
+                            //we check if has elements. If it does then we know that we're dealing
+                            //with an "getter" object and return the requested values
+
+                            //call the function. This is the _.callfunction method in nerdamer
+                            var ret = _.callfunction(e.value, args.getItems()); 
+                            var last = Q[Q.length - 1];
+                            var next = rpn[i + 1];
+                            var next_is_comma = next && next.type === Token.OPERATOR && next.value === ',';
+
+                            if (!next_is_comma && ret instanceof Vector && last && last.elements && !(last instanceof Collection)) {
+                                //remove the item from the queue
+                                var item = Q.pop();
+
+                                var getter = ret.elements[0];
+                                //check if it's symbolic. If so put it back and add the item to the stack
+                                if (!getter.isConstant()) {
+                                    item.getter = getter;
+                                    Q.push(item);
+                                    Q.push(ret);
+                                }
+                                else if (getter instanceof Slice) {
+                                    //if it's a Slice return the slice
+                                    Q.push(Vector.fromArray(item.elements.slice(getter.start, getter.end)));
+                                }
+                                else {
+                                    var index = Number(getter);
+                                    var il = item.elements.length;
+                                    //support for negative indices
+                                    if (index < 0)
+                                        index = il + index;
+                                    //it it's still out of bounds
+                                    if (index < 0 || index >= il) //index should no longer be negative since it's been reset above
+                                        //range error
+                                        throw new OutOfRangeError('Index out of range ' + (e.column + 1));
+                                    Q.push(item.elements[index]);
+                                }
                             }
                             else {
-                                var index = Number(getter);
-                                var il = item.elements.length;
-                                //support for negative indices
-                                if (index < 0)
-                                    index = il + index;
-                                //it it's still out of bounds
-                                if (index < 0 || index >= il) //index should no longer be negative since it's been reset above
-                                    //range error
-                                    throw new OutOfRangeError('Index out of range ' + (e.column + 1));
-                                Q.push(item.elements[index]);
+                                Q.push(ret);
                             }
+
                         }
                         else {
-                            Q.push(ret);
-                        }
-                    }
-                    else {
-                        var subbed;
-                        var v = e.value;
+                            var subbed;
+                            var v = e.value;
 
-                        if (v in Settings.ALIASES)
-                            e = _.parse(Settings.ALIASES[e]);
-                        //wrap it in a symbol if need be
-                        else if (e.type === Token.VARIABLE_OR_LITERAL)
-                            e = new Symbol(v);
-                        else if (e.type === Token.UNIT) {
-                            e = new Symbol(v);
-                            e.isUnit = true;
-                        }
+                            if (v in Settings.ALIASES)
+                                e = _.parse(Settings.ALIASES[e]);
+                            //wrap it in a symbol if need be
+                            else if (e.type === Token.VARIABLE_OR_LITERAL)
+                                e = new Symbol(v);
+                            else if (e.type === Token.UNIT) {
+                                e = new Symbol(v);
+                                e.isUnit = true;
+                            }
 
-                        //make substitutions
-                        //Always constants first. This avoids the being overridden
-                        if (v in _.CONSTANTS) {
-                            subbed = e;
-                            e = new Symbol(_.CONSTANTS[v]);
-                        }
-                        //next substitutions. This allows declared variable to be overridden
-                        //check if the values match to avoid erasing the multiplier. 
-                        //Example:/e = 3*a. substutiting a for a will wipe out the multiplier.
-                        else if (v in substitutions && v !== substitutions[v].value) {
-                            subbed = e;
-                            e = substitutions[v].clone();
-                        }
-                        //next declare variables
-                        else if (v in VARS) {
-                            subbed = e;
-                            e = VARS[v].clone();
-                        }
-                        //make notation of what it was before
-                        if (subbed)
-                            e.subbed = subbed;
+                            //make substitutions
+                            //Always constants first. This avoids the being overridden
+                            if (v in _.CONSTANTS) {
+                                subbed = e;
+                                e = new Symbol(_.CONSTANTS[v]);
+                            }
+                            //next substitutions. This allows declared variable to be overridden
+                            //check if the values match to avoid erasing the multiplier. 
+                            //Example:/e = 3*a. substutiting a for a will wipe out the multiplier.
+                            else if (v in substitutions && v !== substitutions[v].value) {
+                                subbed = e;
+                                e = substitutions[v].clone();
+                            }
+                            //next declare variables
+                            else if (v in VARS) {
+                                subbed = e;
+                                e = VARS[v].clone();
+                            }
+                            //make notation of what it was before
+                            if (subbed)
+                                e.subbed = subbed;
 
-                        Q.push(e);
+                            Q.push(e);
+                        }
                     }
                 }
-            }
 
-            return Q[0];
+                return Q[0];
+            }
+            catch(error) {
+                throw new ParseError(error.message+': '+e.column);
+            }
         };
         /**
          * This is the method that triggers the parsing of the string. It generates a parse tree but processes 
@@ -6108,7 +6134,7 @@ var nerdamer = (function (imports) {
                     e = new Node(e);
                     var args = Q.pop();
                     e.right = args;
-                    if (forTeX && e.value === 'object') {
+                    if (e.value === 'object') {
                         //check if Q has a value
                         var last = Q[Q.length - 1];
                         if (last) {
@@ -6240,8 +6266,9 @@ var nerdamer = (function (imports) {
                             f = LaTeX.brackets(this.toTeX(e.args), 'abs');
                         else if (fname === PARENTHESIS)
                             f = LaTeX.brackets(this.toTeX(e.args), 'parens');
-                        else if (fname === 'log10')
-                            f = '\\log_{10}\\left( ' + this.toTeX(e.args) + '\\right)';
+                        else if (fname === Settings.LOG10) {
+                            f = '\\'+Settings.LOG10_LATEX+'\\left( ' + this.toTeX(e.args) + '\\right)';
+                        }
                         else if (fname === 'integrate') {
                             /* Retrive [Expression, x] */
                             var chunks = chunkAtCommas(e.args);
@@ -6479,7 +6506,32 @@ var nerdamer = (function (imports) {
                 return a;
             return b;
         }
-
+        /**
+         * 
+         * @param {Matrix|Vector|Set|Collection} obj
+         * @param {Symbol} item
+         * @returns {Boolean}
+         */
+        function is_in(obj, item) {
+            if(isMatrix(obj)) {
+                for(var i=0, l=obj.rows(); i<l; i++) {
+                    for(var j=0, l2=obj.cols(); j<l2; j++) {
+                        var element = obj.elements[i][j];
+                        if(element.equals(item))
+                            return new Symbol(1);
+                    }
+                }
+            }
+            else if(obj.elements) {
+                for(var i=0, l=obj.elements.length; i<l; i++) {
+                    if(obj.elements[i].equals(item))
+                        return new Symbol(1);
+                }
+            }
+            
+            return new Symbol(0);
+        }
+        
         /**
          * A symbolic extension for sinc
          * @param {Symbol} symbol
@@ -6912,12 +6964,12 @@ var nerdamer = (function (imports) {
 
             //log(0) is undefined so complain
             if (symbol.equals(0)) {
-                throw new UndefinedError('log(0) is undefined!');
+                throw new UndefinedError(Settings.LOG+'(0) is undefined!');
             }
 
             //deal with imaginary values
             if (symbol.isImaginary()) {
-                return complex.evaluate(symbol, 'log');
+                return complex.evaluate(symbol, Settings.LOG);
                 /*
                  var a = format('log(sqrt(({0})^2+({1})^2))-({2})*atan2(({1}),({0}))', symbol.imagpart(), symbol.realpart(), Settings.IMAGINARY),
                  b = format('({0})*PI/2', Settings.IMAGINARY);
@@ -6950,7 +7002,7 @@ var nerdamer = (function (imports) {
                 if (symbol.multiplier.equals(1))
                     retval = _.multiply(s, new Symbol(symbol.power));
                 else
-                    retval = _.symfunction('log', [symbol]);
+                    retval = _.symfunction(Settings.LOG, [symbol]);
             }
             else if (Settings.PARSE2NUMBER && isNumericSymbol(symbol)) {
                 var img_part;
@@ -6973,7 +7025,7 @@ var nerdamer = (function (imports) {
                 if (arguments.length > 1 && allSame(arguments))
                     retval = new Symbol(1);
                 else
-                    retval = _.symfunction('log', arguments);
+                    retval = _.symfunction(Settings.LOG, arguments);
 
                 if (s)
                     retval = _.multiply(s, retval);
@@ -7503,6 +7555,7 @@ var nerdamer = (function (imports) {
         this.expand = expand;
         this.clean = clean;
         this.sqrt = sqrt;
+        this.log = log;
         this.nthroot = nthroot;
 
 //Parser.methods ===============================================================
@@ -7826,15 +7879,14 @@ var nerdamer = (function (imports) {
                 return this.add(a, b.negate());
             }
             else {
-                if (bIsSymbol) {
-                    t = b;
-                    b = a;
-                    a = t;
-                    aIsSymbol = bIsSymbol;
+                if (bIsSymbol && isVector(a)) {
+                    b = a.map(function (x) {
+                        return _.subtract(x, b.clone());
+                    });
                 }
-                if (aIsSymbol && isVector(b)) {
+                else if (aIsSymbol && isVector(b)) {
                     b = b.map(function (x) {
-                        return _.subtract(x, a.clone());
+                        return _.subtract(a.clone(), x);
                     });
                 }
                 else if (isVector(a) && isVector(b)) {
@@ -7919,9 +7971,7 @@ var nerdamer = (function (imports) {
                 }
                 //the quickies
                 if (a.isConstant() && b.isConstant() && Settings.PARSE2NUMBER) {
-                    //Leverage bigDecimal for now. Temporary fix issue #500
-                    var retval = new Symbol(new bigDec(a.text('decimal')).times(b.text('decimal')).toString());
-//                    var retval = new Symbol(a.multiplier.multiply(b.multiplier).toDecimal());
+                    var retval = new Symbol(a.multiplier.multiply(b.multiplier).toDecimal());
                     return retval;
                 }
 
@@ -8969,6 +9019,7 @@ var nerdamer = (function (imports) {
             hom: '\\hom',
             lim: '\\lim',
             log: '\\log',
+            LN:  '\\LN',
             sec: '\\sec',
             tan: '\\tan',
             arg: '\\arg',
@@ -9055,12 +9106,12 @@ var nerdamer = (function (imports) {
                     v[index] = '\\left \\lceil' + this.braces(input[0]) + '\\right \\rceil';
                 }
                 //capture log(a, b)
-                else if (fname === 'log' && input.length > 1) {
-                    v[index] = '\\mathrm' + this.braces('log') + '_' + this.braces(input[1]) + this.brackets(input[0]);
+                else if (fname === Settings.LOG && input.length > 1) {
+                    v[index] = '\\mathrm' + this.braces(Settings.LOG) + '_' + this.braces(input[1]) + this.brackets(input[0]);
                 }
                 //capture log(a, b)
-                else if (fname === 'log10') {
-                    v[index] = '\\mathrm' + this.braces('log') + '_' + this.braces(10) + this.brackets(input[0]);
+                else if (fname === Settings.LOG10) {
+                    v[index] = '\\mathrm' + this.braces(Settings.LOG) + '_' + this.braces(10) + this.brackets(input[0]);
                 }
                 else if (fname === 'sum') {
                     var a = input[0],
@@ -10053,7 +10104,11 @@ var nerdamer = (function (imports) {
 
     function Set(set) {
         this.elements = [];
-        if(set) {
+        //if the first object isn't an array, convert it to one.
+        if(!isVector(set))
+            set = Vector.fromArray(arguments);
+        
+        if(set) { 
             var elements = set.elements;
             for(var i=0, l=elements.length; i<l; i++) {
                 this.add(elements[i]);
@@ -10148,7 +10203,7 @@ var nerdamer = (function (imports) {
             return true;
         },
         toString: function() {
-            return 'Set(['+this.elements.join(',')+'])';
+            return '{'+this.elements.join(',')+'}';
         }
     };
 
@@ -10309,6 +10364,13 @@ var nerdamer = (function (imports) {
         //bug fix for error but needs to be revisited
         if (!_.error)
             _.error = err;
+        
+        //Store the log and log10 functions
+        Settings.LOG_FNS = {
+            log: _.functions['log'],
+            log10: _.functions['log10']
+        };
+        
     })();
     
     /* END FINALIZE */
@@ -10760,6 +10822,24 @@ var nerdamer = (function (imports) {
 
         if (setting === 'PRECISION')
             bigDec.set({precision: value});
+        else if(setting === 'USE_LN' && value === true) {
+            //set log as LN
+            Settings.LOG = 'LN';
+            //set log10 as log
+            Settings.LOG10 = 'log';
+            //point the functions in the right direction
+            _.functions['log'] = Settings.LOG_FNS.log10; //log is now log10
+            //the log10 function must be explicitly set
+            _.functions['log'][0] = function(x) {
+                if(x.isConstant())
+                    return new Symbol(Math.log10(x));
+                return _.symfunction(Settings.LOG10, [x]);
+            };
+            _.functions['LN'] = Settings.LOG_FNS.log; //LN is now log
+            
+            //remove log10
+            delete _.functions['log10'];
+        }
         else
             Settings[setting] = value;
     };

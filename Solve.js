@@ -539,8 +539,8 @@ if ((typeof module) !== 'undefined') {
          * @returns {Symbol}
          */
         quad: function (c, b, a) {
-            var bsqmin4ac = _.subtract(_.pow(b.clone(), Symbol(2)), _.multiply(_.multiply(a.clone(), c.clone()), Symbol(4)))/*b^2 - 4ac*/;
-            var det = _.pow(bsqmin4ac, Symbol(0.5));
+            var discriminant = _.subtract(_.pow(b.clone(), Symbol(2)), _.multiply(_.multiply(a.clone(), c.clone()), Symbol(4)))/*b^2 - 4ac*/;
+            var det = _.pow(discriminant, Symbol(0.5));
             var retval = [
                 _.parse(_.divide(_.add(b.clone().negate(), det.clone()), _.multiply(new Symbol(2), a.clone()))),
                 _.parse(_.divide(_.subtract(b.clone().negate(), det.clone()), _.multiply(new Symbol(2), a.clone())))
@@ -702,7 +702,7 @@ if ((typeof module) !== 'undefined') {
             points.push(start);//|f(0)| could be a good start
             //adjust for log. A good starting point to include for log is 0.1
             symbol.each(function (x) {
-                if (x.containsFunction('log'))
+                if (x.containsFunction(core.Settings.LOG))
                     points.push(0.1);
             });
             // Possible issue #1. If the step size exceeds the zeros then they'll be missed. Consider the case
@@ -1207,7 +1207,7 @@ if ((typeof module) !== 'undefined') {
                             var lhs = separated[0],
                                     rhs = separated[1];
                             if (lhs.group === core.groups.EX) {
-                                add_to_result(_.parse(core.Utils.format('log(({0})/({2}))/log({1})', rhs, lhs.value, lhs.multiplier)));
+                                add_to_result(_.parse(core.Utils.format(core.Settings.LOG+'(({0})/({2}))/'+core.Settings.LOG+'({1})', rhs, lhs.value, lhs.multiplier)));
                             }
                             break;
                         case 1:
@@ -1255,7 +1255,7 @@ if ((typeof module) !== 'undefined') {
                             //asin
                             add_to_result(__.inverseFunctionSolve('atan', lhs, rhs));
                         }
-                        else if(lhs.fname === 'log') {
+                        else if(lhs.fname === core.Settings.LOG) {
                             //ax+b comes back as [a, x, ax, b];
                             var parts = explode(lhs.args[0], solve_for);
                             //check if x is by itself
