@@ -7919,7 +7919,9 @@ var nerdamer = (function (imports) {
                 }
                 //the quickies
                 if (a.isConstant() && b.isConstant() && Settings.PARSE2NUMBER) {
-                    var retval = new Symbol(a.multiplier.multiply(b.multiplier).toDecimal());
+                    //Leverage bigDecimal for now. Temporary fix issue #500
+                    var retval = new Symbol(new bigDec(a.text('decimal')).times(b.text('decimal')).toString());
+//                    var retval = new Symbol(a.multiplier.multiply(b.multiplier).toDecimal());
                     return retval;
                 }
 
