@@ -26,7 +26,7 @@ var nerdamer = (function (imports) {
     var bigDec = imports.bigDec;
     //set the precision to js precision
     bigDec.set({
-        precision: 20
+        precision: 250
     });
 
     var Groups = {};
@@ -87,7 +87,7 @@ var nerdamer = (function (imports) {
         //Print out warnings or not
         SILENCE_WARNINGS: false,
         //Precision
-        PRECISION: 40,
+        PRECISION: 80,
         //function mappings
         VECTOR: 'vector',
         PARENTHESIS: 'parens',
@@ -477,7 +477,7 @@ var nerdamer = (function (imports) {
      * @param {Number} num
      */
     var isInt = function (num) {
-        return num % 1 === 0;
+        return /^[-+]?\d+e?\+?\d*$/gim.test(num.toString());
     };
 
     /**
@@ -2683,7 +2683,7 @@ var nerdamer = (function (imports) {
             if (prec || Settings.PRECISION) {
                 return this.decimal(prec);
             }
-            else
+            else 
                 return this.num / this.den;
         },
         qcompare: function (n) {
@@ -7971,7 +7971,8 @@ var nerdamer = (function (imports) {
                 }
                 //the quickies
                 if (a.isConstant() && b.isConstant() && Settings.PARSE2NUMBER) {
-                    var retval = new Symbol(a.multiplier.multiply(b.multiplier).toDecimal());
+                    var t = new bigDec(a.multiplier.toDecimal()).times(new bigDec(b.multiplier.toDecimal())).toFixed();
+                    var retval = new Symbol(t);
                     return retval;
                 }
 
@@ -10920,3 +10921,5 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
+
+
