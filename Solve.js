@@ -90,7 +90,9 @@ if ((typeof module) !== 'undefined') {
         },
         toLHS: function () {
             var eqn = this.removeDenom();
-            return _.expand(_.subtract(eqn.LHS, eqn.RHS));;
+            var _t = _.subtract(eqn.LHS, eqn.RHS);
+            var retval = _.expand(_t);
+            return retval;
         },
         removeDenom: function () { 
             var a = this.LHS.clone();
@@ -163,7 +165,26 @@ if ((typeof module) !== 'undefined') {
     };
     
     core.Expression.prototype.solveFor = function (x) {
-        return solve(core.Utils.isSymbol(this.symbol) ? this.symbol : this.symbol.toLHS(), x).map(function (x) {
+        var symbol;
+        if(this.symbol instanceof Equation) {
+            //exit right away if we already have the answer
+            //check the LHS
+            if(this.symbol.LHS.isConstant() && this.symbol.RHS.equals(x))
+                return new core.Expression(this.symbol.LHS);
+            
+            //check the RHS
+            if(this.symbol.RHS.isConstant() && this.symbol.LHS.equals(x))
+                return new core.Expression(this.symbol.RHS);
+            
+            //otherwise just bring it to LHS
+            symbol = this.symbol.toLHS();
+        }
+        else  {
+            symbol = this.symbol;
+        }
+            
+        
+        return solve(symbol, x).map(function (x) {
             return new core.Expression(x);
         });
     };
@@ -883,7 +904,6 @@ if ((typeof module) !== 'undefined') {
      * @returns {Array}
      */
     var solve = function (eqns, solve_for, solutions) {
-        
         //make preparations if it's an Equation
         if (eqns instanceof Equation) {
             //if it's zero then we're done

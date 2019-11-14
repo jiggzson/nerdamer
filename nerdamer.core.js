@@ -2198,12 +2198,22 @@ var nerdamer = (function (imports) {
         /**
          * Returns the text representation of the expression
          * @param {String} opt - option of formatting numbers
+         * @param {Number} n The number of significant figures
          * @returns {String}
          */
-        text: function (opt) {
+        text: function (opt, n) {
+            var round = typeof n === 'undefined';
+            n = n || 24; 
             opt = opt || 'decimals';
             if (this.symbol.text_)
                 return this.symbol.text_(opt);
+            if(this.symbol.group === N && opt === 'decimals') {
+                var txt = this.symbol.multiplier.toDecimal(n);
+                //round as not to have a breaking change but only do so if no significant figures were specified
+                if(round) 
+                    txt = nround(txt, 19).toString();
+                return txt;
+            }
             return text(this.symbol, opt);
         },
         /**
@@ -5439,36 +5449,40 @@ var nerdamer = (function (imports) {
                 }
             }
 
-            e = e.split(' ').join('')//strip empty spaces
-                    //replace scientific numbers
-                    .replace(/\-*\d+\.*\d*e\+?\-?\d+/gi, function (x) { 
-                        return scientificToDecimal(x);
-                    })
-                    //allow omission of multiplication after coefficients
-                    .replace(/([\+\-\/\*]*[0-9]+)([a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ]+[\+\-\/\*]*)/gi, function () {
-                        var str = arguments[4],
-                                group1 = arguments[1],
-                                group2 = arguments[2],
-                                start = arguments[3],
-                                first = str.charAt(start),
-                                before = '',
-                                d = '*';
-                        if (!first.match(/[\+\-\/\*]/))
-                            before = str.charAt(start - 1);
-                        if (before.match(/[a-z]/i))
-                            d = '';
-                        return group1 + d + group2;
-                    })
-                    .replace(/([a-z0-9_]+)/gi, function (match, a) {
-                        if (Settings.USE_MULTICHARACTER_VARS === false && !(a in functions)) {
-                            if (!isNaN(a))
-                                return a;
-                            return a.split('').join('*');
-                        }
+            e = e.split(' ').join('');//strip empty spaces
+            //only even bother to check if the string contains e. This regex is painfully slow and might need a better solution. e.g. hangs on (0.06/3650))^(365)
+            if(/e/gi.test(e)) {
+                e = e.replace(/\-*\d+\.*\d*e\+?\-?\d+/gi, function (x) { 
+                    return scientificToDecimal(x);
+                });
+            }
+            //replace scientific numbers
+            
+            //allow omission of multiplication after coefficients
+            e = e.replace(/([\+\-\/\*]*[0-9]+)([a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ]+[\+\-\/\*]*)/gi, function () {
+                var str = arguments[4],
+                        group1 = arguments[1],
+                        group2 = arguments[2],
+                        start = arguments[3],
+                        first = str.charAt(start),
+                        before = '',
+                        d = '*';
+                if (!first.match(/[\+\-\/\*]/))
+                    before = str.charAt(start - 1);
+                if (before.match(/[a-z]/i))
+                    d = '';
+                return group1 + d + group2;
+            })
+            .replace(/([a-z0-9_]+)/gi, function (match, a) {
+                if (Settings.USE_MULTICHARACTER_VARS === false && !(a in functions)) {
+                    if (!isNaN(a))
                         return a;
-                    })
-                    //allow omission of multiplication sign between brackets
-                    .replace(/\)\(/g, ')*(') || '0';
+                    return a.split('').join('*');
+                }
+                return a;
+            })
+            //allow omission of multiplication sign between brackets
+            .replace(/\)\(/g, ')*(') || '0';
             //replace x(x+a) with x*(x+a)
             while (true) {
                 var e_org = e; //store the original
@@ -8468,34 +8482,34 @@ var nerdamer = (function (imports) {
                 }
 
                 if (aIsConstant && bIsConstant && Settings.PARSE2NUMBER) {
-                    var c;
-                    //remove the sign
-                    if (sign < 0) {
-                        a.negate();
-                        if (b.multiplier.den.equals(2))
-                            //we know that the numerator has to be odd and therefore it's i
-                            c = new Symbol(Settings.IMAGINARY);
-                        else if (isInt(b.multiplier)) {
-                            if (even(b.multiplier))
-                                c = new Symbol(1);
-                            else
-                                c = new Symbol(-1);
-                        }
-                        else if (!even(b.multiplier.den)) {
-                            sign = Math.pow(sign, b.multiplier.num);
-                            c = new Symbol(Math.pow(a, b) * sign);
-                        }
-                        else {
-                            c = _.pow(_.symfunction(PARENTHESIS, [new Symbol(sign)]), b.clone());
+                        var c;
+                        //remove the sign
+                        if (sign < 0) {
+                            a.negate();
+                            if (b.multiplier.den.equals(2))
+                                //we know that the numerator has to be odd and therefore it's i
+                                c = new Symbol(Settings.IMAGINARY);
+                            else if (isInt(b.multiplier)) {
+                                if (even(b.multiplier))
+                                    c = new Symbol(1);
+                                else
+                                    c = new Symbol(-1);
+                            }
+                            else if (!even(b.multiplier.den)) {
+                                sign = Math.pow(sign, b.multiplier.num);
+                                c = new Symbol(Math.pow(a, b) * sign);
+                            }
+                            else {
+                                c = _.pow(_.symfunction(PARENTHESIS, [new Symbol(sign)]), b.clone());
+                            }
+
                         }
 
-                    }
-
-                    result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
-                    //result = new Symbol(Math2.bigpow(a.multiplier, b.multiplier));
-                    //put the back sign
-                    if (c)
-                        result = _.multiply(result, c);
+                        result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
+                        //result = new Symbol(Math2.bigpow(a.multiplier, b.multiplier));
+                        //put the back sign
+                        if (c)
+                            result = _.multiply(result, c);
                 }
                 else if (bIsInt && !m.equals(1)) {
                     var p = b.multiplier.toDecimal();
@@ -8603,6 +8617,7 @@ var nerdamer = (function (imports) {
                 }
 
                 result = testSQRT(result);
+                
                 //don't multiply until we've tested the remaining symbol
                 if (num && den)
                     result = _.multiply(result, testPow(_.multiply(num, den)));
@@ -10921,5 +10936,3 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
-
