@@ -3621,7 +3621,7 @@ if((typeof module) !== 'undefined') {
             unstrip: function(cp, symbol) {
                 var c = cp[0];
                 var p = cp[1];
-                return _.pow(_.multiply(c, symbol), p);
+                return _.multiply(c, _.pow(symbol, p));
             },
             complexSimp: function(num, den) {
                 var ac, bd, bc, ad, cd, r1, r2, i1, i2;
@@ -3747,7 +3747,6 @@ if((typeof module) !== 'undefined') {
                 //nothing more to do
                 if(symbol.isConstant() || symbol.group === core.groups.S) {
                     sym_array.push(symbol);
-                    
                     var ret = __.Simplify.unstrip(sym_array, symbol);
                     return ret;
                 }
