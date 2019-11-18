@@ -2120,7 +2120,7 @@ describe('Further arithmetic test cases', function () {
             {
                 given: 'y^y^y',
                 expected: 'y^y^y',
-                expectedValue: '4.568487550256372e+26'
+                expectedValue: '456848755025637200000000000'
             },
             {
                 given: '(x^4)^(1/4)',

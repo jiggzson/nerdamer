@@ -705,6 +705,12 @@ var nerdamer = (function (imports) {
      * @param {Number} s
      */
     var nround = function (x, s) {
+        if(isInt(x)) {
+            if(x >= Number.MAX_VALUE)
+                return x.toString();
+            return Number(x);
+        }
+            
         s = typeof s === 'undefined' ? 14 : s;
         return Math.round(x * Math.pow(10, s)) / Math.pow(10, s);
     };
@@ -2207,10 +2213,12 @@ var nerdamer = (function (imports) {
             opt = opt || 'decimals';
             if (this.symbol.text_)
                 return this.symbol.text_(opt);
+            
             if(this.symbol.group === N && opt === 'decimals') {
                 var txt = this.symbol.multiplier.toDecimal(n);
+                
                 //round as not to have a breaking change but only do so if no significant figures were specified
-                if(round) 
+                if(round && !isInt(txt)) 
                     txt = nround(txt, 19).toString();
                 return txt;
             }
