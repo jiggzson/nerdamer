@@ -633,13 +633,17 @@ FUNCTIONS = {
 
     Expression__text: {
         type: 'Expression',
-        usage: 'nerdamer.text(x)',
+        usage: 'nerdamer.text(option, n)',
         full_name: 'text',
         description: 'Returns the text representation of the expression.',
         parameters: {
-            asArray: {
+            option: {
                 type: 'String',
                 description: "Pass in the string 'decimals' to get back numers as decimals. Pass in the string 'fractions' to get back number as fractions. Defaults to decimals."
+            },
+            n: {
+                type: 'String',
+                description: "The number of decimal places if requested as decimal"
             }
         },
         examples: [

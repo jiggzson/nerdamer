@@ -100,7 +100,7 @@
                         Returns the text representation of the expression.
                     </div>
                     <hr>
-                    <h4>Usage: <span class="usage-example">nerdamer.text(x)</span></h4>
+                    <h4>Usage: <span class="usage-example">nerdamer.text(option, n)</span></h4>
                     <hr>
                     <h4 class="parameters">Parameters</h4>
                     <div>
@@ -108,9 +108,15 @@
                             <tr>
     <td>
         <span class="parameter-type">String </span>
-        <span class="parameter-name">asArray </span>
+        <span class="parameter-name">option </span>
     </td>
     <td><span class="parameter-description">Pass in the string 'decimals' to get back numers as decimals. Pass in the string 'fractions' to get back number as fractions. Defaults to decimals.</span></td>
+</tr><tr>
+    <td>
+        <span class="parameter-type">String </span>
+        <span class="parameter-name">n </span>
+    </td>
+    <td><span class="parameter-description">The number of decimal places if requested as decimal</span></td>
 </tr>
                         </table>
                     </div>
@@ -139,7 +145,7 @@ console.log(x.text('fractions'));</code></pre>
         <footer>
             <div class="row">
                 <div class="col-lg-12 text-center footer">
-                    <p>Copyright &copy; <strong>nerdamer.com</strong> <span class="date"></span></p>
+                    <p>Copyright &copy; <strong>Nerdamer.com</strong> <span class="date"></span></p>
                 </div>
             </div>
             <!-- /.row -->
