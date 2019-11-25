@@ -169,6 +169,9 @@ var nerdamer = (function (imports) {
     };
 
 //Utils ======================================================================== 
+    var PI = function(n) {
+        return Settings.LONG_PI;
+    };
     var customError = function (name) {
         var E = function (message) {
             this.name = name;
@@ -5976,7 +5979,7 @@ var nerdamer = (function (imports) {
                                 if (typeof a === 'undefined')
                                     throw new OperatorError(e + ' is not a valid postfix operator at ' + e.column);
 
-                                var is_comma = e.action === 'comma'
+                                var is_comma = e.action === 'comma';
                                 //convert Sets to Vectors on all operations at this point. Sets are only recognized functions or individually
                                 if(a instanceof Set && !is_comma)
                                     a = Vector.fromSet(a);
@@ -10442,6 +10445,7 @@ var nerdamer = (function (imports) {
         isVariableSymbol: isVariableSymbol,
         isVector: isVector,
         keys: keys,
+        PI: PI,
         remove: remove,
         reserveNames: reserveNames,
         round: nround,
@@ -10944,3 +10948,5 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
+
+console.log(10%4*8)

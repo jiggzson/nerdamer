@@ -996,7 +996,7 @@ if((typeof module) !== 'undefined') {
                     rarr = [],
                     max = core.Utils.arrayMax(powers); //maximum power and degree of polynomial to be solved
 
-                // Prepare the data
+                // Prepare the data by placing the coefficients in an array
                 for(var i=1; i<=max; i++) { 
                     var c = 0; //if there is no power then the hole must be filled with a zero
                     if(powers.indexOf(i+'') !== -1) { 
@@ -1008,10 +1008,10 @@ if((typeof module) !== 'undefined') {
                         }
                     }
                     // Insert the coeffient but from the front
-                    rarr.unshift(c);
+                    rarr.unshift(new Symbol(c.toString()));
                 }
                 
-                rarr.push(symbol.symbols[CONST_HASH].multiplier);
+                rarr.push(new Symbol(symbol.symbols[CONST_HASH].multiplier.toString()));
 
                 if(sym.group === S) rarr[0] = sym.multiplier;//the symbol maybe of group CP with one variable
 
@@ -1193,6 +1193,9 @@ if((typeof module) !== 'undefined') {
                } 
 
                function Quad_ak1(a, b1, c, iPar){
+                   /*
+                    * Make conversions to strict number
+                    */
                    // Calculates the zeros of the quadratic a*Z^2 + b1*Z + c
                    // The quadratic formula, modified to avoid overflow, is used to find the larger zero if the
                    // zeros are real and both zeros are complex. The smaller real zero is found directly from
@@ -1201,19 +1204,19 @@ if((typeof module) !== 'undefined') {
                    // iPar is a dummy variable for passing in the four parameters--sr, si, lr, and li--by reference
 
                    var b, d, e;
-                   iPar.sr = iPar.si = iPar.lr = iPar.li = 0.0;
+                   iPar.sr = iPar.si = iPar.lr = iPar.li = new Symbol(0.0);
 
-                   if (a == 0) {
-                       iPar.sr = ((b1 != 0) ? -(c/b1) : iPar.sr);
+                   if (a.equals(0)) {
+                       iPar.sr = ((b1 != 0) ? _.divide(_.parse(c),_.parse(b1)).negate() : iPar.sr);
                        return;
                    } 
                    if (c == 0){
-                       iPar.lr = -(b1/a);
+                       iPar.lr = _.divide(_.parse(b1),_.parse(a)).negate();
                        return;
                    } 
 
                    // Compute discriminant avoiding overflow
-                   b = b1/2.0;
+                   b = _.divide(_.parse(b1), new Symbol(2.0));
                    if (Math.abs(b) < Math.abs(c)){
                        e = ((c >= 0) ? a : -a);
                        e = -e + b*(b/Math.abs(c));
@@ -1551,10 +1554,18 @@ if((typeof module) !== 'undefined') {
                    return;
                }  
 
+               /**
+                * HINT: track p
+                * @param {type} degPar
+                * @param {type} p The power indexed coefficient array of the polynomial
+                * @param {type} zeror
+                * @param {type} zeroi
+                * @returns {undefined}
+                */
                function rpSolve(degPar, p, zeror, zeroi){ 
                    var N = degPar.Degree,
-                       RADFAC = 3.14159265358979323846/180,  // Degrees-to-radians conversion factor = PI/180
-                       LB2 = Math.LN2,// Dummy variable to avoid re-calculating this value in loop below
+                       RADFAC = _.parse('pi/180', {pi: core.Utils.PI()}),  // Degrees-to-radians conversion factor = PI/180
+                       LB2 = _.parse(core.Settings.LOG+'(2)'),// Dummy variable to avoid re-calculating this value in loop below
                        MDP1 = degPar.Degree + 1,
                        K = new Array(MDP1),
                        pt = new Array(MDP1),
@@ -1567,7 +1578,6 @@ if((typeof module) !== 'undefined') {
                        bnd, DBL_EPSILON, df, dx, factor, ff, moduli_max, moduli_min, sc, x, xm,
                        aa, bb, cc, sr, t, u, xxx,
                        j, jj, l, NM1, NN, zerok;// Integer variables
-
                    // Calculate the machine epsilon and store in the variable DBL_EPSILON.
                    // To calculate this value, just use existing variables rather than create new ones that will be used only for this code block
                    aa = 1.0;
@@ -1587,7 +1597,7 @@ if((typeof module) !== 'undefined') {
                    Fxshfr_Par.szr = Fxshfr_Par.szi =  Fxshfr_Par.lzr = Fxshfr_Par.lzi = 0.0;
 
                    // Remove zeros at the origin, if any
-                   while (p[N] == 0){
+                   while (p[N].equals(0)){
                        zeror[j] = zeroi[j] = 0;
                        N--;
                        j++;
@@ -1600,12 +1610,12 @@ if((typeof module) !== 'undefined') {
                        if (N <= 2){
                            // Calculate the final zero or pair of zeros
                            if (N < 2){
-                               zeror[degPar.Degree - 1] = -(p[1]/p[0]);
+                               zeror[degPar.Degree - 1] = (_.divide(_.parse(p[1]),_.parse(p[0]))).negate();
                                zeroi[degPar.Degree - 1] = 0;
                            } 
                            else { 
                                qPar.li = qPar.lr =  qPar.si = qPar.sr = 0.0;
-                               Quad_ak1(p[0], p[1], p[2], qPar);
+                               Quad_ak1(p[0], p[1], p[2], qPar); //~p
                                zeror[degPar.Degree - 2] = qPar.sr;
                                zeroi[degPar.Degree - 2] = qPar.si;
                                zeror[degPar.Degree - 1] = qPar.lr;
@@ -1614,13 +1624,15 @@ if((typeof module) !== 'undefined') {
                              break;
                        } 
 
-                       // Find the largest and smallest moduli of the coefficients
+                      // Find the largest and smallest moduli of the coefficients
                        moduli_max = 0.0;
                        moduli_min = Number.MAX_VALUE;
 
                        for (i = 0; i < NN; i++){
-                           x = Math.abs(p[i]);
+                           x = p[i].abs();
+                           
                            if (x > moduli_max) moduli_max = x;
+                           
                            if ((x != 0) && (x < moduli_min)) moduli_min = x;
                        }
 
@@ -1765,8 +1777,10 @@ if((typeof module) !== 'undefined') {
                 //format the output
                 for( i=0; i<l; i++ ) {
                     // We round the imaginary part to avoid having something crazy like 5.67e-16.
-                    var img = round( zeroi[i], decp+8 ),
-                        real = round( zeror[i], decp+8 );
+//                    var img = round( zeroi[i], decp+8 ),
+//                        real = round( zeror[i], decp+8 );
+                    var img = zeroi[i],
+                        real = zeror[i];
                     // Did the rounding pay off? If the rounding did nothing more than chop off a few digits then no.
                     // If the rounding results in a a number at least 3 digits shorter we'll keep it else we'll keep 
                     // the original otherwise the rounding was worth it.
@@ -3907,3 +3921,7 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+console.time('solve')
+var x = nerdamer.roots('x^2+2*x+1');
+console.timeEnd('solve')
+console.log(x.toString())
