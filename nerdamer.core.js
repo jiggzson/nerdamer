@@ -4944,7 +4944,7 @@ var nerdamer = (function (imports) {
                 leftAssoc: true
             },
             '%': {
-                precedence: 4,
+                precedence: 3,
                 operator: '%',
                 action: 'percent',
                 prefix: false,
@@ -10944,3 +10944,6 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
+
+var x = nerdamer('10%4*8');
+console.log(x.toString());
