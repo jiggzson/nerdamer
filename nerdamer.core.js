@@ -4944,7 +4944,7 @@ var nerdamer = (function (imports) {
                 leftAssoc: true
             },
             '%': {
-                precedence: 3,
+                precedence: 4,
                 operator: '%',
                 action: 'percent',
                 prefix: false,
@@ -4952,6 +4952,7 @@ var nerdamer = (function (imports) {
                 leftAssoc: true,
                 overloaded: true,
                 overloadAction: 'mod',
+		overloadLeftAssoc: false,
                 operation: function (x) {
                     return _.divide(x, new Symbol(100));
                 }
@@ -5818,6 +5819,19 @@ var nerdamer = (function (imports) {
                 var e = tokens[i];
                 if (e.type === Token.OPERATOR) {
                     var operator = e;
+		    
+		    //create the option for the operator being overloaded
+                    if (operator.overloaded) {
+                        var next = tokens[i + 1];
+                        //if it's followed by a number or variable then we assume it's not a postfix operator
+                        if (next && next.type === Token.VARIABLE_OR_LITERAL) {
+                            operator.postfix = false;
+                            //override the original function with the overload function
+                            operator.action = operator.overloadAction;
+			    operator.leftAssoc = operator.overloadLeftAssoc;
+                        }
+                    }
+			
                     //if the stack is not empty
                     while (stack.length) {
                         var last = stack[stack.length - 1];
@@ -5828,17 +5842,7 @@ var nerdamer = (function (imports) {
                             break;
                         output.push(stack.pop());
                     }
-                    //create the option for the operator being overloaded
-                    if (operator.overloaded) {
-                        var next = tokens[i + 1];
-                        //if it's followed by a number or variable then we assume it's not a postfix operator
-                        if (next && next.type === Token.VARIABLE_OR_LITERAL) {
-                            operator.postfix = false;
-                            //override the original function with the overload function
-                            operator.action = operator.overloadAction;
-                        }
-                    }
-
+                    
                     //change the behavior of the operator if it's a vector and we've been asked to do so
                     if ((fn === 'vector' || fn === 'set') && 'vectorFn' in operator)
                         operator.action = operator.vectorFn;
