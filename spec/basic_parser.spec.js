@@ -47,10 +47,11 @@ describe('Functions', function() {
 describe('Modulus', function() {
     it('should calculate modulus', function(){expect(parse('10%4')).toEqual(2);});
     it('should add with modulus', function(){expect(parse('10%4+6')).toEqual(8);});
-    it('should multiply with modulus', function(){expect(parse('10%4*8')).toEqual(10);});
-    it('should add and multiply with modulus', function(){expect(parse('2+10%4*8')).toEqual(12);});
-    it('should respect modulus in functions', function(){expect(parse('max(3,2+10%4*8,5)')).toEqual(12);});
+    it('should multiply with modulus', function(){expect(parse('10%4*8')).toEqual(16);});
+    it('should add and multiply with modulus', function(){expect(parse('2+10%4*8')).toEqual(18);});
+    it('should respect modulus in functions', function(){expect(parse('max(3,2+10%4*8,5)')).toEqual(18);});
     it('should respect modulus with percentages', function(){expect(parse('8000%%8')).toEqual(0);});
+    it('should correctly handle modulus left assoc', function(){expect(parse('3*3%9')).toEqual(0);});
 });
 
 describe('Brackets', function() {

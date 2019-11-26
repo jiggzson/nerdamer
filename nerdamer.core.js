@@ -4944,7 +4944,7 @@ var nerdamer = (function (imports) {
                 leftAssoc: true
             },
             '%': {
-                precedence: 3,
+                precedence: 4,
                 operator: '%',
                 action: 'percent',
                 prefix: false,
