@@ -2214,7 +2214,7 @@ var nerdamer = (function (imports) {
             if (this.symbol.text_)
                 return this.symbol.text_(opt);
             
-            if(this.symbol.group === N && opt === 'decimals') {
+            if(this.symbol.group === N && (opt === 'decimals' || opt === 'decimal')) {
                 var txt = this.symbol.multiplier.toDecimal(n);
                 
                 //round as not to have a breaking change but only do so if no significant figures were specified
@@ -8931,7 +8931,7 @@ var nerdamer = (function (imports) {
             }
 
             symbol = symbol.clone();
-            var decimal = option === 'decimal',
+            var decimal = (option === 'decimal' || option === 'decimals'),
                     power = symbol.power,
                     invert = isNegative(power),
                     negative = symbol.multiplier.lessThan(0);
@@ -10949,5 +10949,3 @@ if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
 
-var x = nerdamer('10%4*8');
-console.log(x.toString());
