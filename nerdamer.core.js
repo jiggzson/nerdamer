@@ -490,7 +490,16 @@ var nerdamer = (function (imports) {
         }
         return obj.lessThan(0);
     };
-
+    /**
+     * Safely stringify object
+     * @param o
+     */
+    var stringify = function(o) {
+        if(!o)
+            return o;
+        return String(o);
+    };
+    
     /**
      * @param {String} str
      * @returns {String} - returns a formatted string surrounded by brackets
@@ -5529,8 +5538,24 @@ var nerdamer = (function (imports) {
             }
             return o.toString();
         };
+        this.peekers = {
+            pre_operator: [],
+            post_operator: [],
+            pre_function: [],
+            post_function: []
+        }
+        
+        this.callPeekers = function(name) {
+            var peekers = this.peekers[name];
+            //remove the first items and stringify
+            var args = arguments2Array(arguments).slice(1).map(stringify);
+            //call each one of the peekers
+            for(var i=0; i<peekers.length; i++) {
+                peekers[i].apply(null, args);
+            }
+        };
         /*
-         * Tokneizes the string
+         * Tokenizes the string
          * @param {String} e
          * @returns {Token[]}
          */
@@ -5988,7 +6013,15 @@ var nerdamer = (function (imports) {
                                 if(b instanceof Set && !is_comma)
                                     b = Vector.fromSet(b);
 
-                                Q.push(_[e.action](a, b));
+                                //call all the pre-operators 
+                                this.callPeekers('pre_operator', a, b, e);
+                                
+                                var ans = _[e.action](a, b);
+                                
+                                //call all the pre-operators
+                                this.callPeekers('post_operator', ans, a, b, e);
+                                
+                                Q.push(ans);
                             }
                         }
                         else if (e.type === Token.FUNCTION) {
@@ -6001,7 +6034,18 @@ var nerdamer = (function (imports) {
                             //with an "getter" object and return the requested values
 
                             //call the function. This is the _.callfunction method in nerdamer
-                            var ret = _.callfunction(e.value, args.getItems()); 
+                            //call the function. This is the _.callfunction method in nerdamer
+                            var fn_name = e.value;
+                            var fn_args = args.getItems();
+                            
+                            //call the pre-function peekers
+                            this.callPeekers('pre_function', fn_name, fn_args);
+                            
+                            var ret = _.callfunction(fn_name, fn_args); 
+                            
+                            //call the post-function peekers
+                            this.callPeekers('post_function', ret, fn_name, fn_args);
+                            
                             var last = Q[Q.length - 1];
                             var next = rpn[i + 1];
                             var next_is_comma = next && next.type === Token.OPERATOR && next.value === ',';
@@ -10928,7 +10972,15 @@ var nerdamer = (function (imports) {
                 '    </ul>\n' +
                 '</div>';
     };
-
+    
+    libExports.addPeeker = function(name, f) {
+        if(_.peekers[name])
+            _.peekers[name].push(f);
+    };
+    
+    libExports.removePeeker = function(name, f) {
+        remove(_.peekers[name], f);
+    };
 
     libExports.api();
 
@@ -10949,3 +11001,16 @@ if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
 
+var expression = 'x+y-cos(x+1)';;
+var pre_operator = function(a, b, o) {
+    console.log('Pre-operator: '+' ('+a+') '+o+' ('+b+') ');
+};
+var post_operator = function(ans) {
+    console.log('Post-operator: '+ans);
+};
+var pre_function = function(fn, args) {
+    console.log('Pre-function: '+fn+' '+args);
+};
+var post_function = function(called) {
+    console.log('Post-function: '+called);
+};
