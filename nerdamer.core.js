@@ -8569,7 +8569,11 @@ var nerdamer = (function (imports) {
                             result = _.multiply(result, c);
                 }
                 else if (bIsInt && !m.equals(1)) {
-                    if(b.gt(Settings.MAX_EXP)) {
+                    var abs_b = b.abs();     
+                    // Provide fall back to JS until big number implementation is improved
+                    if(abs_b.gt(Settings.MAX_EXP)) {
+                        if(b.sign() < 0)
+                            return new Symbol(0);
                         return Symbol.infinity();
                     }
                     else {
@@ -11006,4 +11010,3 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
-
