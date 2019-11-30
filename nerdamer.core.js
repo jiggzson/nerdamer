@@ -104,7 +104,8 @@ var nerdamer = (function (imports) {
         E: Math.E,
         LOG: 'log', 
         LOG10: 'log10',
-        LOG10_LATEX: 'log_{10}'
+        LOG10_LATEX: 'log_{10}',
+        MAX_EXP: 200000
     };
 
     (function () {
@@ -8568,16 +8569,21 @@ var nerdamer = (function (imports) {
                             result = _.multiply(result, c);
                 }
                 else if (bIsInt && !m.equals(1)) {
-                    var p = b.multiplier.toDecimal();
-                    var sgn = Math.sign(p);
-                    p = Math.abs(p);
-                    var multiplier = new Frac(1);
-                    multiplier.num = m.num.pow(p);
-                    multiplier.den = m.den.pow(p);
-                    if (sgn < 0)
-                        multiplier.invert();
-                    //multiplying is justified since after mulltiplyPower if it was of group P it will now be of group N
-                    result.multiplier = result.multiplier.multiply(multiplier);
+                    if(b.gt(Settings.MAX_EXP)) {
+                        return Symbol.infinity();
+                    }
+                    else {
+                        var p = b.multiplier.toDecimal();
+                        var sgn = Math.sign(p);
+                        p = Math.abs(p);
+                        var multiplier = new Frac(1);
+                        multiplier.num = m.num.pow(p);
+                        multiplier.den = m.den.pow(p);
+                        if (sgn < 0)
+                            multiplier.invert();
+                        //multiplying is justified since after mulltiplyPower if it was of group P it will now be of group N
+                        result.multiplier = result.multiplier.multiply(multiplier);
+                    }
                 }
                 else {
                     var sign = a.sign();
@@ -11001,16 +11007,3 @@ if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 }
 
-var expression = 'x+y-cos(x+1)';;
-var pre_operator = function(a, b, o) {
-    console.log('Pre-operator: '+' ('+a+') '+o+' ('+b+') ');
-};
-var post_operator = function(ans) {
-    console.log('Post-operator: '+ans);
-};
-var pre_function = function(fn, args) {
-    console.log('Pre-function: '+fn+' '+args);
-};
-var post_function = function(called) {
-    console.log('Post-function: '+called);
-};
