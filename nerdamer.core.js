@@ -16,7 +16,7 @@ var nerdamer = (function (imports) {
     "use strict";
 
 //version ====================================================================== 
-    var version = '1.0.5';
+    var version = '1.1.0';
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
@@ -5450,6 +5450,7 @@ var nerdamer = (function (imports) {
             for (var i = 0; i < preprocessors.actions.length; i++)
                 e = preprocessors.actions[i].call(this, e);
 
+            /* //NO LONGER NEEDED SINCE IMPLIED MULTIPLICATION IS NOW HANDLED LATER IN TOKENIZER
             var match;
             //add support for spaces between variables
             while (true) {
@@ -5467,8 +5468,12 @@ var nerdamer = (function (imports) {
                     break;
                 }
             }
-
-            e = e.split(' ').join('');//strip empty spaces
+            */
+            
+            //e = e.split(' ').join('');//strip empty spaces
+            //replace multiple spaces with one space
+            e = e.replace(/\s+/g, ' ');
+            
             //only even bother to check if the string contains e. This regex is painfully slow and might need a better solution. e.g. hangs on (0.06/3650))^(365)
             if(/e/gi.test(e)) {
                 e = e.replace(/\-*\d+\.*\d*e\+?\-?\d+/gi, function (x) { 
@@ -5579,6 +5584,8 @@ var nerdamer = (function (imports) {
             var target = scopes[0]; //the target to which the tokens are added. This can swing up or down
             var depth = 0;
             var open_brackets = [];
+            var SPACE = ' ';
+            var COMMA = ',';
             var HAS_SPACE = false; //marks if an open space character was found
             //Possible source of bug. Review
             /*
@@ -5714,7 +5721,8 @@ var nerdamer = (function (imports) {
                     //is right befor an operator then it makes no sense to go up in scope
                     //consider sin -x. The last position = current position at the minus sign
                     //this means that we're going for sin(x) -x which is wrong
-                    if (HAS_SPACE && lpos < col) {
+                    //Ignore comma since comma is still part of the existing scope.
+                    if (HAS_SPACE && lpos < col && ch !== COMMA) {
                         HAS_SPACE = false;
                         goUp();
                     }
@@ -5759,7 +5767,7 @@ var nerdamer = (function (imports) {
                     }
                     set_last_position(col);
                 }
-                else if (ch === ' ') {
+                else if (ch === SPACE) {
                     if (HAS_SPACE) {
                         var temp_token = e.substring(lpos, col);
                         if (temp_token in operators) {
@@ -5773,10 +5781,10 @@ var nerdamer = (function (imports) {
                         HAS_SPACE = false; //remove the space
                     }
                     else {
-
                         //we're at the closing space
                         //check if it's a function
                         var f = e.substring(lpos, col);
+
                         if (f in functions) {
                             //there's no need to go up in scope if the next character is an operator
                             HAS_SPACE = true; //mark that a space was found
@@ -5788,6 +5796,13 @@ var nerdamer = (function (imports) {
                         }
                         else {
                             add_token(undefined, f);
+                            //peek ahead to the next character
+                            var nxt = e.charAt(col+1);
+
+                            //If it's a number then add the multiplication operator to the stack but make sure that the next character
+                            //is not an operator
+                            if(/^\d+\.?\d*$/.test(f) && !(nxt in operators))
+                                target.push(new Token('*', Token.OPERATOR, col));
                         }
                         //Possible source of bug. Review
                         /*
@@ -5813,6 +5828,7 @@ var nerdamer = (function (imports) {
             }
             //add the last token
             add_token(col);
+
             return tokens;
         };
         /*

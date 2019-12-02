@@ -2779,3 +2779,18 @@ describe('hyperbolic trigonometric functions', function () {
         expect(nerdamer('(x+1)+((x+1)^2+(x+1)^3)').toString()).toEqual('(1+x)^2+(1+x)^3+1+x');
     });
 });
+
+describe('omit brackets for functions', function() {
+    it('should add functions with coefficients', function() {
+        expect(nerdamer('2 sin x + 4 sin x').toString()).toEqual('6*sin(x)');
+    });
+    it('should add functions without coefficients', function() {
+        expect(nerdamer('sin x + sin x').toString()).toEqual('2*sin(x)');
+    });
+    it('should multiply and divide functions with "random" spaces', function() {
+        expect(nerdamer('3sin x /6+sin x').toString()).toEqual('(3/2)*sin(x)');
+    });
+    it('should recognize functions with multiple arguments', function() {
+        expect(nerdamer('2 max 1,2,3 +1').toString()).toEqual('7');
+    });
+});
