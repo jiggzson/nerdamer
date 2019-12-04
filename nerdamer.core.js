@@ -5594,6 +5594,7 @@ var nerdamer = (function (imports) {
             var open_brackets = [];
             var has_space = false; //marks if an open space character was found
             var SPACE = ' ';
+            var EMPTY_STRING = '';
             var COMMA = ',';
             var MINUS = '-';
             var MULT = '*';
@@ -5782,9 +5783,9 @@ var nerdamer = (function (imports) {
                     set_last_position(col);
                 }
                 else if (ch === SPACE) {
+                    var prev = e.substring(lpos, col); //look back
+                    var nxt = e.charAt(col+1); //look forward
                     if (has_space) {
-                        var prev = e.substring(lpos, col); //look back
-                        var nxt = e.charAt(col+1); //look forward
 
                         if (prev in operators) {
                             target.push(new Token(prev, Token.OPERATOR, col));
@@ -5823,7 +5824,8 @@ var nerdamer = (function (imports) {
 
                             //If it's a number then add the multiplication operator to the stack but make sure that the next character
                             //is not an operator
-                            if(isNumber(f) && !(nxt in operators))
+                            
+                            if(prev !== EMPTY_STRING && nxt !== EMPTY_STRING && !(prev in operators) && !(nxt in operators))
                                 target.push(new Token(MULT, Token.OPERATOR, col));
                         }
                         //Possible source of bug. Review

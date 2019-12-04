@@ -2803,5 +2803,6 @@ describe('omit brackets for functions', function() {
     it('should multiply functions without brackets', function() {
         expect(nerdamer('sin 2a cos 2b').toString()).toEqual('cos(2*b)*sin(2*a)');
         expect(nerdamer('sin x + sin x + 1 ').toString()).toEqual('1+2*sin(x)');
+        expect(nerdamer('5 x y sin x').toString()).toEqual('5*sin(x)*x*y');
     });
 });
