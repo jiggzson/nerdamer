@@ -2793,4 +2793,15 @@ describe('omit brackets for functions', function() {
     it('should recognize functions with multiple arguments', function() {
         expect(nerdamer('2 max 1,2,3 +1').toString()).toEqual('7');
     });
+    it('should recognize functions with arguments containing coefficients', function() {
+        expect(nerdamer('sin 2x').toString()).toEqual('sin(2*x)');
+    });
+    it('should recognize functions with arguments containing coefficients', function() {
+        expect(nerdamer('sin 2x').toString()).toEqual('sin(2*x)');
+        expect(nerdamer('sin a x').toString()).toEqual('sin(a)*x');
+    });
+    it('should multiply functions without brackets', function() {
+        expect(nerdamer('sin 2a cos 2b').toString()).toEqual('cos(2*b)*sin(2*a)');
+        expect(nerdamer('sin x + sin x + 1 ').toString()).toEqual('1+2*sin(x)');
+    });
 });

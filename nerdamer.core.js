@@ -283,6 +283,14 @@ var nerdamer = (function (imports) {
         }
         return true;
     };
+    
+    /**
+     * Checks if n is a number
+     * @param {any} n 
+     */
+    var isNumber = function(n) {
+        return /^\d+\.?\d*$/.test(n);
+    };
 
     /**
      * Checks to see if a number or Symbol is a fraction
@@ -5584,9 +5592,11 @@ var nerdamer = (function (imports) {
             var target = scopes[0]; //the target to which the tokens are added. This can swing up or down
             var depth = 0;
             var open_brackets = [];
+            var has_space = false; //marks if an open space character was found
             var SPACE = ' ';
             var COMMA = ',';
-            var HAS_SPACE = false; //marks if an open space character was found
+            var MINUS = '-';
+            var MULT = '*';
             //Possible source of bug. Review
             /*
              //gets the next space
@@ -5717,13 +5727,17 @@ var nerdamer = (function (imports) {
                 var ch = e.charAt(col);
                 if (ch in operators) {
                     add_token(col);
+                    //is the last token numeric?
+                    var last_token_is_numeric = target[0] && isNumber(target[0]); 
+                    //is this character multiplication?
+                    var is_multiplication = last_token_is_numeric && ch === MULT;
                     //if we're in a new scope then go up by one but if the space 
                     //is right befor an operator then it makes no sense to go up in scope
                     //consider sin -x. The last position = current position at the minus sign
                     //this means that we're going for sin(x) -x which is wrong
                     //Ignore comma since comma is still part of the existing scope.
-                    if (HAS_SPACE && lpos < col && ch !== COMMA) {
-                        HAS_SPACE = false;
+                    if (has_space && lpos < col && !(ch === COMMA || is_multiplication)) {
+                        has_space = false;
                         goUp();
                     }
                     //mark the last position that a 
@@ -5768,17 +5782,25 @@ var nerdamer = (function (imports) {
                     set_last_position(col);
                 }
                 else if (ch === SPACE) {
-                    if (HAS_SPACE) {
-                        var temp_token = e.substring(lpos, col);
-                        if (temp_token in operators) {
-                            target.push(new Token(temp_token, Token.OPERATOR, col));
+                    if (has_space) {
+                        var prev = e.substring(lpos, col); //look back
+                        var nxt = e.charAt(col+1); //look forward
+
+                        if (prev in operators) {
+                            target.push(new Token(prev, Token.OPERATOR, col));
                         }
                         else {
-                            add_token(undefined, temp_token);
+                            add_token(undefined, prev);
                             //we're at the closing space
                             goUp(); //go up in scope if we're at a space
+                            
+                            //assume multiplication if it's not an operator except for minus
+                            var is_operator = nxt in operators;
+
+                            if((is_operator && operators[nxt].value === MINUS) || !is_operator)
+                                target.push(new Token(MULT, Token.OPERATOR, col));
                         }
-                        HAS_SPACE = false; //remove the space
+                        has_space = false; //remove the space
                     }
                     else {
                         //we're at the closing space
@@ -5787,7 +5809,7 @@ var nerdamer = (function (imports) {
 
                         if (f in functions) {
                             //there's no need to go up in scope if the next character is an operator
-                            HAS_SPACE = true; //mark that a space was found
+                            has_space = true; //mark that a space was found
                             add_function(f);
                             addScope();
                         }
@@ -5801,8 +5823,8 @@ var nerdamer = (function (imports) {
 
                             //If it's a number then add the multiplication operator to the stack but make sure that the next character
                             //is not an operator
-                            if(/^\d+\.?\d*$/.test(f) && !(nxt in operators))
-                                target.push(new Token('*', Token.OPERATOR, col));
+                            if(isNumber(f) && !(nxt in operators))
+                                target.push(new Token(MULT, Token.OPERATOR, col));
                         }
                         //Possible source of bug. Review
                         /*
