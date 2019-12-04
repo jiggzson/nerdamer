@@ -122,6 +122,12 @@ describe('Accessing vectors', function(){
     });
 });
 
+describe('Setting vector values', function() {
+   it('should set values of vectors with the assign operator', function() {
+       expect(parse('[1,2][1]:x').toString()).toEqual('[1,x]');
+   });
+});
+
 describe('Substitutions', function(){
     it('should substitute x', function() {expect(parse('x+1', {x: 4})).toEqual(5);});
     it('should substitute x', function() {expect(parse('2*x+1', {x: 4})).toEqual(9);});

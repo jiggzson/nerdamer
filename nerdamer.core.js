@@ -5239,7 +5239,9 @@ var nerdamer = (function (imports) {
             'intersection': [intersection, 2],
             'difference': [difference, 2],
             'intersects': [intersects, 2],
-            'is_subset': [is_subset, 2]
+            'is_subset': [is_subset, 2],
+            //system support
+            'print': [print, -1]
         };
 
         //error handler
@@ -6067,6 +6069,7 @@ var nerdamer = (function (imports) {
                         }
                         else if (e.type === Token.FUNCTION) {
                             var args = Q.pop();
+                            var parent = args.parent; //make a note of the parent
                             if (!(args instanceof Collection))
                                 args = Collection.create(args);
                             //the return value may be a vector. If it is then we check
@@ -6082,7 +6085,7 @@ var nerdamer = (function (imports) {
                             //call the pre-function peekers
                             this.callPeekers('pre_function', fn_name, fn_args);
                             
-                            var ret = _.callfunction(fn_name, fn_args); 
+                            var ret = _.callfunction(fn_name, fn_args);                             
                             
                             //call the post-function peekers
                             this.callPeekers('post_function', ret, fn_name, fn_args);
@@ -6116,10 +6119,19 @@ var nerdamer = (function (imports) {
                                     if (index < 0 || index >= il) //index should no longer be negative since it's been reset above
                                         //range error
                                         throw new OutOfRangeError('Index out of range ' + (e.column + 1));
-                                    Q.push(item.elements[index]);
+                                    
+                                    var element = item.elements[index];
+                                    //cyclic but we need to mark this for future reference
+                                    item.getter = index;
+                                    element.parent = item; 
+                                    
+                                    Q.push(element);
                                 }
                             }
                             else {
+                                //extend the parent reference
+                                if(parent)
+                                    ret.parent = parent;
                                 Q.push(ret);
                             }
 
@@ -7626,6 +7638,12 @@ var nerdamer = (function (imports) {
             return new Symbol(Number(set1.is_subset(set2)));
         }
         
+        function print() {
+            arguments2Array(arguments).map(function(x) {
+                console.log(x.toString());
+            });
+        }
+        
         function testSQRT(symbol) {
             //wrap the symbol in sqrt. This eliminates one more check down the line.
             if (!isSymbol(symbol.power) && symbol.power.absEquals(0.5)) {
@@ -8800,6 +8818,14 @@ var nerdamer = (function (imports) {
                 });
                 return Vector.fromArray(b.elements);
             }
+            if(a.parent) {
+                //it's referring to the parent instead. The current item can be discarded
+                var e = a.parent;
+                e.elements[e.getter] = b;
+                delete e.getter;
+                return e;
+            }
+            
             if (a.group !== S)
                 throw new NerdamerValueError('Cannot complete operation. Incorrect LH value for ' + a);
             VARS[a.value] = b;
@@ -11031,6 +11057,12 @@ var nerdamer = (function (imports) {
     libExports.removePeeker = function(name, f) {
         remove(_.peekers[name], f);
     };
+    
+    libExports.parse = function(e) {
+        return String(e).split(';').map(function(x) {
+            return _.parse(x);
+        });
+    };
 
     libExports.api();
 
@@ -11049,4 +11081,4 @@ var nerdamer = (function (imports) {
 
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
-}
+};
