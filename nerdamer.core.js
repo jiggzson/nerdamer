@@ -1951,7 +1951,7 @@ var nerdamer = (function (imports) {
                     var str = obj.toString();
                     //verify that the string is actually a fraction
                     var frac = /^-?\d+(?:\/\d+)?$/.exec(str);
-                    if (frac.length == 0)
+                    if (frac.length === 0)
                         return str;
 
                     //split the fraction into the numerator and denominator
@@ -1995,7 +1995,7 @@ var nerdamer = (function (imports) {
                     var str = obj.toString();
                     //verify that the string is actually a fraction
                     var frac = /^-?\d+(?:\/\d+)?$/.exec(str);
-                    if (frac.length == 0)
+                    if (frac.length === 0)
                         return str;
 
                     //split the fraction into the numerator and denominator
@@ -2436,11 +2436,6 @@ var nerdamer = (function (imports) {
     Expression.prototype.toTeX = Expression.prototype.latex;
 
 //Scientific ===================================================================  
-    /*
-    * Javascript has the toExponential method but this allows you to work with string and therefore any number of digits of your choosing
-    * For example Scientific('464589498449496467924197545625247695464569568959124568489548454');
-    */
-
     function Scientific(num) {
         if (!(this instanceof Scientific))
             return new Scientific(num);
@@ -2463,26 +2458,7 @@ var nerdamer = (function (imports) {
         }
         return this;
     }
-    
-    //Static
-    Scientific.isScientific = function (num) {
-        return /\d+\.?\d*e[\+\-]*\d+/i.test(num);
-    };
-    Scientific.leadingZeroes = function (num) {
-        var match = num.match(/^(0*).*$/);
-        return match ? match[1] : '';
-    };
-    Scientific.removeLeadingZeroes = function (num) {
-        var match = num.match(/^0*(.*)$/);
-        return match ? match[1] : '';
-    };
 
-    Scientific.removeTrailingZeroes = function (num) {
-        var match = num.match(/0*$/);
-        return match ? num.substring(0, num.length - match[0].length) : '';
-    };
-    
-    //Prototyped
     Scientific.prototype = {
         fromScientific: function (num) {
             var parts = String(num).toLowerCase().split('e');
@@ -2551,7 +2527,149 @@ var nerdamer = (function (imports) {
         }
     };
 
-    
+    Scientific.isScientific = function (num) {
+        return /\d+\.?\d*e[\+\-]*\d+/i.test(num);
+    };
+    Scientific.leadingZeroes = function (num) {
+        var match = num.match(/^(0*).*$/);
+        return match ? match[1] : '';
+    };
+    Scientific.removeLeadingZeroes = function (num) {
+        var match = num.match(/^0*(.*)$/);
+        return match ? match[1] : '';
+    };
+
+    Scientific.removeTrailingZeroes = function (num) {
+        var match = num.match(/0*$/);
+        return match ? num.substring(0, num.length - match[0].length) : '';
+    };
+    Scientific.round = function (c, n) {
+        var coeff = nround(c, n);
+        var m = String(coeff).split('.').pop();
+        var d = n - m.length;
+        //if we're asking for more significant figures
+        if (d > 0) {
+            coeff = coeff + (new Array(d + 1).join(0));
+        }
+        return coeff;
+    };
+
+//Scientific ===================================================================
+    /*
+     * Javascript has the toExponential method but this allows you to work with string and therefore any number of digits of your choosing
+     * For example Scientific('464589498449496467924197545625247695464569568959124568489548454');
+     */
+
+    function Scientific(num) {
+        if(!(this instanceof Scientific))
+            return new Scientific(num);
+
+        num = String(typeof num === 'undefined' ? 0 : num); //convert to a string
+
+        //remove the sign
+        if(num.startsWith('-')) {
+            this.sign = -1;
+            //remove the sign
+            num = num.substr(1, num.length);
+        }
+        else {
+            this.sign = 1;
+        }
+
+        if(Scientific.isScientific(num)) {
+            this.fromScientific(num);
+        }
+        else {
+            this.convert(num);
+        }
+        return this;
+    }
+
+    Scientific.prototype = {
+        fromScientific: function(num) {
+            var parts = String(num).toLowerCase().split('e');
+            this.coeff = parts[0];
+            this.exponent = parts[1];
+
+            return this;
+        },
+        convert: function(num) {
+            //get wholes and decimals
+            var parts = num.split('.');
+            //make zero go away
+            var w = parts[0] || ''; 
+            var d = parts[1] || '';
+            //convert zero to blank strings
+            w = Scientific.removeLeadingZeroes(w);
+            d = Scientific.removeTrailingZeroes(d);
+            //find the location of the decimal place which is right after the wholes
+            var dot_location = w.length;
+            //add them together so we can move the dot
+            var n = w+d;
+            //find the next number
+            var zeroes = Scientific.leadingZeroes(n).length;
+            //set the exponent
+            this.exponent = dot_location-(zeroes+1);
+            //set the coeff but first remove leading zeroes
+            var coeff = Scientific.removeLeadingZeroes(n);
+            this.coeff = coeff.charAt(0)+'.'+(coeff.substr(1, coeff.length) || '0');
+
+            return this;
+        },
+        round: function(num) {
+            var n = this.copy();
+
+            num = Number(num); //cast to number for safety
+            //since we know it guaranteed to be in the format {digit}{optional dot}{optional digits}
+            //we can round based on this
+            if(num === 0)
+                n.coeff = n.coeff.charAt(0);
+            else {
+                //get up to n-1 digits
+                var rounded = this.coeff.substring(0, num+1);
+                //get the next two
+                var next_two = this.coeff.substring(num+1, num+3);
+                //the extra digit
+                var ed = next_two.charAt(0);
+
+                if(next_two.charAt(1) > 4)
+                    ed++;
+
+                n.coeff = rounded+ed;
+            }
+
+            return n;
+        },
+        copy: function() {
+            var n = new Scientific(0);
+            n.coeff = this.coeff;
+            n.exponent = this.exponent;
+            n.sign = this.sign;
+            return n;
+        },
+        toString: function(n) {
+            var coeff = typeof n === 'undefined' ? this.coeff : Scientific.round(this.coeff, n);
+            return (this.sign === -1 ? '-' : '' )+coeff+'e'+this.exponent;
+        }
+    };
+
+    Scientific.isScientific = function(num) {
+        return /\d+\.?\d*e[\+\-]*\d+/i.test(num);
+    };
+    Scientific.leadingZeroes = function(num) {
+        var match = num.match(/^(0*).*$/);
+        return match ? match[1] : '';
+    }; 
+    Scientific.removeLeadingZeroes = function(num) {
+      var match = num.match(/^0*(.*)$/);
+      return match ? match[1] : '';
+    };
+
+    Scientific.removeTrailingZeroes = function(num) {
+      var match = num.match(/0*$/);
+      return match ? num.substring(0, num.length-match[0].length) : '';
+    };
+
 
 //Frac =========================================================================    
     function Frac(n) {
@@ -3492,7 +3610,7 @@ var nerdamer = (function (imports) {
             var clone = c || new Symbol(0),
                     //list of properties excluding power as this may be a symbol and would also need to be a clone.
                     properties = [
-                        'value', 'group', 'length', 'previousGroup', 'imaginary', 'fname', 'args', 'isInfinity'],
+                        'value', 'group', 'length', 'previousGroup', 'imaginary', 'fname', 'args', 'isInfinity', 'scientific'],
                     l = properties.length, i;
             if (this.symbols) {
                 clone.symbols = {};
@@ -6820,10 +6938,10 @@ var nerdamer = (function (imports) {
         }
         
         function scientific(symbol, sigfigs) {
-            Settings.SIG_FIGS = sigfigs || 14;
-            return block('SCIENTIFIC', function() {
-                return _.parse(symbol);
-            }, true);
+            //Just set the flag and keep it moving. Symbol.toString will deal with how to 
+            //display this
+            symbol.scientific = sigfigs || 10;
+            return symbol;
         }
 
         /**
