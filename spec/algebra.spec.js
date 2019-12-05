@@ -414,7 +414,7 @@ describe('Algebra', function () {
             {
                 given: 'factor(x^2+2*x+1)',
                 expected: '(1+x)^2'
-            }, 
+            },
             {
                 given: 'factor(x^2-y^2)',
                 expected: '-(-x+y)*(x+y)'
@@ -480,6 +480,11 @@ describe('Algebra', function () {
             // then
             expect(result.toString()).toEqual(testCases[i].expected);
         }
+    });
+    
+    it('should not have any regression to factor', function() {
+        //this test will absolutely break as factor improves enough to factor this expression. For now it just serves as a safeguard
+        expect(nerdamer('factor(x^a+2x^(a-1)+1x^(a-2))').toString()).toEqual('2*x^(-1+a)+x^(-2+a)+x^a');
     });
     
     it('should correctly determine the polynomial degree', function () {

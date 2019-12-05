@@ -291,7 +291,17 @@ var nerdamer = (function (imports) {
     var isNumber = function(n) {
         return /^\d+\.?\d*$/.test(n);
     };
-
+    
+    /**
+     * Checks to see if an array contains only numeric values
+     * @param {Array} arr 
+     */
+    var allNumeric = function(arr) {
+        for(var i=0; i<arr.length; i++)
+            if(!isNumber(arr[i]))
+                return false;
+        return true;
+    };
     /**
      * Checks to see if a number or Symbol is a fraction
      * @param {Number|Symbol} num
@@ -5527,13 +5537,15 @@ var nerdamer = (function (imports) {
          * @param {object} operator
          * @param {boolean} shift         
          */
-        this.setOperator = function (operator, shift) {
+        this.setOperator = function (operator, action, shift) {
             var name = operator.operator; //take the name to be the symbol
             operators[name] = operator;
+            if(action)
+                this[operator.action] = action;
             //make the parser aware of the operator
             _[name] = operator.operation;
             //make the action available to the parser if infix
-            if (!(operator.prefix || operator.postif)) {
+            if (!operator.action &&!(operator.prefix || operator.postif)) {
                 operator.action = name;
             }
             //if this operator is exclusive then all successive operators should be shifted
@@ -5549,7 +5561,29 @@ var nerdamer = (function (imports) {
                 ;
             }
         };
-
+        
+        /**
+         * Gets an opererator by its symbol
+         * @param {String} operator
+         * @returns {Object}
+         */
+        this.getOperator = function(operator) {
+            return operators[operator];
+        };
+        
+        this.aliasOperator = function(o, n) {
+            var t = {};
+            var operator = operators[o];
+            //copy everything over to the new operator
+            for(var x in operator) {
+                t[x] = operator[x];
+            }
+            //update the symbol
+            t.operator = n;
+            
+            this.setOperator(t);
+        };
+        
         /**
          * Returns the list of operators. Caution! Can break parser!
          * @returns {object}
@@ -10644,6 +10678,7 @@ var nerdamer = (function (imports) {
 //Core =========================================================================
     var Utils = {
         allSame: allSame,
+        allNumeric: allNumeric,
         arguments2Array: arguments2Array,
         arrayClone: arrayClone,
         arrayMax: arrayMax,
@@ -11149,6 +11184,14 @@ var nerdamer = (function (imports) {
 
     libExports.setOperator = function (operator, shift) {
         _.setOperator(operator, shift);
+    };
+    
+    libExports.getOperator = function(operator) {
+        return _.getOperator(operator);
+    };
+
+    libExports.aliasOperator = function(operator, withOperator) {
+        _.aliasOperator(operator, withOperator);
     };
 
     libExports.tree = function (expression) {

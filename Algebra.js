@@ -2211,8 +2211,8 @@ if((typeof module) !== 'undefined') {
                     return symbol;
                 //expand the symbol to get it in a predictable form. If this step
                 //is skipped some factors are missed.
-                
                 if(symbol.group === CP) {
+                    symbol.distributeMultiplier();
                     var t = new Symbol(0);
                     symbol.each(function(x) {
                         if((x.group === CP && x.power.greaterThan(1) || x.group === CB))
@@ -2220,6 +2220,7 @@ if((typeof module) !== 'undefined') {
                         t = _.add(t, x);
                     });
                     t.power = symbol.power;
+                    
                     symbol = t;
                 }
                 
@@ -2419,14 +2420,22 @@ if((typeof module) !== 'undefined') {
              * @returns {[Symbol, Factor]}
              */
             powerFactor: function(symbol, factors) {
-                if(symbol.group !== PL) return symbol; //only PL need apply
-                var d = core.Utils.arrayMin(keys(symbol.symbols));
+                //only PL need apply
+                if(symbol.group !== PL || symbol.previousGroup === EX) 
+                    return symbol; 
+                var k = keys(symbol.symbols);
+                //we expect only numeric powers so return all else
+                if(!core.Utils.allNumeric(k))
+                    return symbol;
+                
+                var d = core.Utils.arrayMin(k);
                 var retval = new Symbol(0);
                 var q = _.parse(symbol.value+'^'+d);
                 symbol.each(function(x) {
                     x = _.divide(x, q.clone());
                     retval = _.add(retval, x);
                 });
+
                 factors.add(q);
                 return retval;
             },
