@@ -2242,8 +2242,10 @@ if((typeof module) !== 'undefined') {
                             return symbol;
                         nfact = __.Factor.factor(num);
                         dfact = __.Factor.factor(den);
-
-                        return _.divide(__.Simplify.unstrip(num_array, nfact), __.Simplify.unstrip(den_array, dfact));
+                        var n = __.Simplify.unstrip(num_array, nfact);
+                        var d = __.Simplify.unstrip(den_array, dfact);
+                        var retval = _.divide(n, d);
+                        return retval;
                     }
                     if(symbol.group === S) 
                         return symbol; //absolutely nothing to do
@@ -3763,15 +3765,17 @@ if((typeof module) !== 'undefined') {
                 var simplified;
                 symbol = symbol.clone(); //make a copy
                 ////1. Try cos(x)^2+sin(x)^2 
+
                 simplified = __.Simplify.trigSimp(symbol);
-                
+
                 //simplify common denominators
                 simplified = __.Simplify.ratSimp(simplified);
-                
+
                 //first go for the "cheapest" simplification which may eliminate 
                 //your problems right away. factor -> evaluate. Remember
                 //that there's no need to expand since factor already does that
                 simplified = __.Factor.factor(simplified);
+
                 //If the simplfied is a sum then we can make a few more simplifications
                 //e.g. simplify(1/(x-1)+1/(1-x)) as per issue #431
                 if(simplified.group === core.groups.CP && simplified.isLinear()) {
@@ -3916,3 +3920,6 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer('factor((-y^2+2*x+2*x^2)*(x*y+y)^(-1))');
+console.log(x.toString())
