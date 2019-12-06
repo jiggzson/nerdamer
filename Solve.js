@@ -52,7 +52,11 @@ if ((typeof module) !== 'undefined') {
     core.Settings.NON_LINEAR_JUMP_SIZE = 100;
     //the original starting point for nonlinear solving
     core.Settings.NON_LINEAR_START = 0.01;
-
+    //When points are generated as starting points for Newton's method, they are sliced into small
+    //slices to make sure that we have convergence on the right point. This defines the 
+    //size of the slice
+    core.Settings.NEWTON_SLICES = 200;
+    
     core.Symbol.prototype.hasTrig = function () {
         return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
     };
@@ -1192,8 +1196,11 @@ if ((typeof module) !== 'undefined') {
                     var points1 = __.getPoints(eq, 0.1);
                     var points2 = __.getPoints(eq, 0.05);
                     var points3 = __.getPoints(eq, 0.01);
-                    var points = core.Utils.arrayUnique(points1.concat(points2).concat(points3)),
+                    var points = core.Utils.arrayUnique(points1.concat(points2).concat(points3)).sort(function(a, b) { return a-b}),
                             l = points.length;
+
+                    //points = core.Utils.arrayAddSlices(points, 5);
+                    
                     //compile the function and the derivative of the function
                     var f = build(eq.clone());
                     var d = _C.diff(eq.clone());

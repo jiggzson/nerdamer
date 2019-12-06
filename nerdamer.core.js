@@ -673,6 +673,30 @@ var nerdamer = (function (imports) {
     };
 
     /**
+     * Fills numbers between array values
+     * @param {Numbers[]} arr
+     * @param {Integer} slices
+     */
+    var arrayAddSlices = function(arr, slices) {
+        slices = slices || 20;
+        var retval = [];
+        var c, delta, e;
+        retval.push(arr[0]); //push the beginning
+        for(var i=0; i<arr.length-1; i++) {
+            c = arr[i];
+            delta = arr[i+1]-c; //get the difference
+            e = delta/slices; //chop it up in the desired number of slices
+            for(var j=0; j<slices; j++) {
+                c += e; //add the mesh to the last slice
+                retval.push(nround(c,2));
+            }
+        }
+
+        return retval;
+    };
+
+
+    /**
      * Sorts and array given 2 parameters
      * @param {String} a
      * @param {String} b
@@ -10680,6 +10704,7 @@ var nerdamer = (function (imports) {
         allSame: allSame,
         allNumeric: allNumeric,
         arguments2Array: arguments2Array,
+        arrayAddSlices: arrayAddSlices,
         arrayClone: arrayClone,
         arrayMax: arrayMax,
         arrayMin: arrayMin,
