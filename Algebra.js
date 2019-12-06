@@ -2145,14 +2145,16 @@ if((typeof module) !== 'undefined') {
                     }
                     retval.each(function(x) {
                         var factored = __.Factor._factor(x);
+                        
                         if(factored.group === CB) {
                             factored.each(function(y) {
                                 var _factored = __.Factor._factor(y);
                                 t = _.multiply(t, _factored);
                             });
                         }
-                        else
+                        else {
                             t = _.multiply(t, factored);
+                        }
                     });
                     retval = t;
                 }  
@@ -2340,6 +2342,7 @@ if((typeof module) !== 'undefined') {
                         }
                         else {
                             symbol = __.Factor.mfactor(symbol, factors);
+                            
                             //put back the sign of power
                             factors.each(function(x) {
                                 if(sign < 0)
@@ -2752,6 +2755,7 @@ if((typeof module) !== 'undefined') {
                         var neg_numeric_factor = isInt(new_factor) && new_factor.lessThan(0);
                         
                         if(divided[1].equals(0) && !neg_numeric_factor) { //we found at least one factor
+                            
                             //factors.add(new_factor);
                             var d = __.div(symbol.clone(), divided[0].clone());
                             var r = d[0];
@@ -2759,7 +2763,8 @@ if((typeof module) !== 'undefined') {
                             //we don't want to just flip the sign. If the remainder is -1 then we accomplished nothing
                             //and we just return the symbol;
                             //If r equals zero then there's nothing left to do so we're done
-                            if(r.equals(-1))
+                            
+                            if(r.equals(-1) && !symbol.equals(0))
                                 return symbol;
 
                             var factor = divided[0]; 
@@ -3920,6 +3925,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var x = nerdamer('factor((-y^2+2*x+2*x^2)*(x*y+y)^(-1))');
-console.log(x.toString())
