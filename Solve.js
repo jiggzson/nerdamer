@@ -1196,23 +1196,25 @@ if ((typeof module) !== 'undefined') {
                     var points1 = __.getPoints(eq, 0.1);
                     var points2 = __.getPoints(eq, 0.05);
                     var points3 = __.getPoints(eq, 0.01);
-                    var points = core.Utils.arrayUnique(points1.concat(points2).concat(points3)).sort(function(a, b) { return a-b}),
-                            l = points.length;
-
-                    //points = core.Utils.arrayAddSlices(points, 5);
+                    var points = core.Utils.arrayUnique(points1.concat(points2).concat(points3)).sort(function(a, b) { return a-b});
+                    
+                    //generate slices
+                    //add a value of minus 1 to the left
+                    points = core.Utils.arrayAddSlices(points, 200);
+//                    console.log(points)
                     
                     //compile the function and the derivative of the function
                     var f = build(eq.clone());
                     var d = _C.diff(eq.clone());
                     var fp = build(d);
-                    for (var i = 0; i < l; i++) {
+                    for (var i = 0; i < points.length; i++) {
                         var point = points[i];
                         add_to_result(__.Newton(point, f, fp), has_trig);
                     }
                     solutions.sort();
                 }
                 catch(e) {
-                    ;
+                    console.log(e);
                 }   
             }
         }
