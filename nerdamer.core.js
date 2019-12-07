@@ -1088,6 +1088,7 @@ var nerdamer = (function (imports) {
     //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
     //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the 
     //functions within are pretty self-explanatory.
+    //NOTE: DO NOT USE INLINE COMMENTS WITH THE MATH2 OBJECT! THIS BREAK DURING COMPILATION OF BUILDFUNCTION.
     var Math2 = {
         csc: function (x) {
             return 1 / Math.sin(x);
@@ -1116,6 +1117,10 @@ var nerdamer = (function (imports) {
                                                                                     t * (0.17087277)))))))))
                     );
             return x >= 0 ? result : -result;
+        },
+        diff: function() {
+            var h = 0.001;
+            return function(x) { return (f(x + h) - f(x - h)) / (2 * h); };
         },
         median: function (...values) {
             values.sort(function (a, b) {
@@ -1150,11 +1155,11 @@ var nerdamer = (function (imports) {
          */
         continuedFraction: function (n, x) {
             x = x || 20;
-            var sign = Math.sign(n); //store the sign
-            var absn = Math.abs(n); //get the absolute value of the number
-            var whole = Math.floor(absn); //get the whole
-            var ni = absn - whole; //subtract the whole
-            var c = 0; //the counter to keep track of iterations
+            var sign = Math.sign(n); /*store the sign*/
+            var absn = Math.abs(n); /*get the absolute value of the number*/
+            var whole = Math.floor(absn); /*get the whole*/
+            var ni = absn - whole; /*subtract the whole*/
+            var c = 0; /*the counter to keep track of iterations*/
             var done = false;
             var epsilon = 1e-14;
             var max = 1e7;
@@ -1164,31 +1169,31 @@ var nerdamer = (function (imports) {
                 sign: sign,
                 fractions: []
             };
-            //start calculating
+            /*start calculating*/
             while (!done && ni !== 0) {
-                //invert and get the whole
+                /*invert and get the whole*/
                 e = 1 / ni;
                 w = Math.floor(e);
                 if (w > max) {
-                    //this signals that we may have already gone too far
+                    /*this signals that we may have already gone too far*/
                     var d = Math2.fromContinued(retval) - n;
                     if (d <= Number.EPSILON)
                         break;
                 }
-                //add to result
+                /*add to result*/
                 retval.fractions.push(w);
-                //move the ni to the decimal
+                /*move the ni to the decimal*/
                 ni = e - w;
-                //ni should always be a decimal. If we have a whole number then we're in the rounding errors
+                /*ni should always be a decimal. If we have a whole number then we're in the rounding errors*/
                 if (ni <= epsilon || c >= x - 1)
                     done = true;
                 c++;
             }
-            //cleanup 1/(n+1/1) = 1/(n+1) so just move the last digit one over if it's one
+            /*cleanup 1/(n+1/1) = 1/(n+1) so just move the last digit one over if it's one*/
             var idx = retval.fractions.length - 1;
             if (retval.fractions[idx] === 1) {
                 retval.fractions.pop();
-                //increase the last one by one
+                /*increase the last one by one*/
                 retval.fractions[--idx]++;
             }
             return retval;
@@ -1288,11 +1293,11 @@ var nerdamer = (function (imports) {
         dfactorial: function (x) {
             if (isInt(x)) {
                 var even = x % 2 === 0;
-                // If x = even then n = x/2 else n = (x-1)/2
+                /* If x = even then n = x/2 else n = (x-1)/2*/
                 var n = even ? x / 2 : (x + 1) / 2;
-                //the return value
+                /*the return value*/
                 var r = new Frac(1);
-                //start the loop
+                /*start the loop*/
                 if (even)
                     for (var i = 1; i <= n; i++)
                         r = r.multiply(new Frac(2).multiply(new Frac(i)));
@@ -1301,11 +1306,11 @@ var nerdamer = (function (imports) {
                         r = r.multiply(new Frac(2).multiply(new Frac(i)).subtract(new Frac(1)));
             }
             else {
-                //Not yet extended to bigNum
+                /*Not yet extended to bigNum*/
                 r = Math.pow(2, (1 + 2 * x - Math.cos(Math.PI * x)) / 4) * Math.pow(Math.PI, (Math.cos(Math.PI * x) - 1) / 4) * Math2.gamma(1 + x / 2);
             }
 
-            //done
+            /*done*/
             return r;
         },
         GCD: function () {
@@ -1352,7 +1357,7 @@ var nerdamer = (function (imports) {
         pow: function (b, e) {
             if (b < 0) {
                 if (Math.abs(e) < 1) {
-                    //nth root of a negative number is imaginary when n is even
+                    /*nth root of a negative number is imaginary when n is even*/
                     if (1 / e % 2 === 0)
                         return NaN;
                     return -Math.pow(Math.abs(b), e);
@@ -1362,8 +1367,8 @@ var nerdamer = (function (imports) {
         },
         factor: function (n) {
             n = Number(n);
-            var sign = Math.sign(n); //store the sign
-            //move the number to absolute value
+            var sign = Math.sign(n); /*store the sign*/
+            /*move the number to absolute value*/
             n = Math.abs(n);
             var ifactors = Math2.ifactor(n);
             var factors = new Symbol();
@@ -1371,7 +1376,7 @@ var nerdamer = (function (imports) {
             factors.group = CB;
             for (var x in ifactors) {
                 var factor = new Symbol(1);
-                factor.group = P; //cheat a little
+                factor.group = P; /*cheat a little*/
                 factor.value = x;
                 factor.power = new Symbol(ifactors[x]);
                 factors.symbols[x] = factor;
@@ -1382,7 +1387,7 @@ var nerdamer = (function (imports) {
                 factors = new Symbol(n);
             }
             
-            //put back the sign
+            /*put back the sign*/
             if(sign < 0)
                 factors.negate();
             
@@ -1398,14 +1403,14 @@ var nerdamer = (function (imports) {
             factors = factors || {};
             var r = Math.floor(Math.sqrt(n));
             var lcprime = PRIMES[PRIMES.length - 1];
-            //a one-time cost... Hopefully ... And don't bother for more than a million
-            //takes too long
+            /*a one-time cost... Hopefully ... And don't bother for more than a million*/
+            /*takes too long*/
             if (r > lcprime && n < 1e6)
                 generatePrimes(r);
             var l = PRIMES.length;
             for (var i = 0; i < l; i++) {
                 var prime = PRIMES[i];
-                //trial division
+                /*trial division*/
                 while (n % prime === 0) {
                     n = n / prime;
                     factors[prime] = (factors[prime] || 0) + 1;
@@ -1425,11 +1430,11 @@ var nerdamer = (function (imports) {
 
             if (n === '0')
                 return {'0': 1};
-            n = new bigInt(n); //convert to bigInt for safety
+            n = new bigInt(n); /*convert to bigInt for safety*/
             var sign = n.sign ? -1 : 1;
             n = n.abs();
-            var factors = {}; //factor object being returned.
-            if (n.lt('65536')) { //less than 2^16 just use trial division
+            var factors = {}; /*factor object being returned.*/
+            if (n.lt('65536')) { /*less than 2^16 just use trial division*/
                 factors = Math2.sfactor(n, factors);
             }
             else {
@@ -1469,15 +1474,15 @@ var nerdamer = (function (imports) {
                         }
                         var factor = rho(2);
                         add(factor);
-                        //divide out the factor
+                        /*divide out the factor*/
                         n = n.divide(factor);
                     }
                 }
             }
 
-            //put the sign back
+            /*put the sign back*/
             if (sign === -1) {
-                var sm = arrayMin(keys(factors)); ///get the smallest number
+                var sm = arrayMin(keys(factors)); /*/get the smallest number*/
                 factors['-' + sm] = factors[sm];
                 delete factors[sm];
             }
@@ -1582,8 +1587,8 @@ var nerdamer = (function (imports) {
             if (maxdepth < 0)
                 throw new Error('max depth cannot be negative');
 
-            // This algorithm adapted from pseudocode in:
-            // http://www.math.utk.edu/~ccollins/refs/Handouts/rich.pdf
+            /* This algorithm adapted from pseudocode in:*/
+            /* http://www.math.utk.edu/~ccollins/refs/Handouts/rich.pdf*/
             function adsimp(f, a, b, fa, fm, fb, V0, tol, maxdepth, depth, state) {
                 if (state.nanEncountered) {
                     return NaN;
@@ -1592,12 +1597,12 @@ var nerdamer = (function (imports) {
                 h = b - a;
                 f1 = f(a + h * 0.25);
                 f2 = f(b - h * 0.25);
-                // Simple check for NaN:
+                /* Simple check for NaN:*/
                 if (isNaN(f1)) {
                     state.nanEncountered = true;
                     return;
                 }
-                // Simple check for NaN:
+                /* Simple check for NaN:*/
                 if (isNaN(f2)) {
                     state.nanEncountered = true;
                     return;
@@ -1648,8 +1653,8 @@ var nerdamer = (function (imports) {
                     tol = 1e-9;
                 }
                 if (maxdepth === undefined) {
-                    //Issue #458 - This was lowered because of performance issues. 
-                    //This was suspected from before but is now confirmed with this issue
+                    /*Issue #458 - This was lowered because of performance issues. */
+                    /*This was suspected from before but is now confirmed with this issue*/
                     maxdepth = 45;
                 }
 
@@ -1677,7 +1682,7 @@ var nerdamer = (function (imports) {
                 retval = integrate(f, a, b, tol, maxdepth);
             }
             catch (e) {
-                //fallback to non-adaptive
+                /*fallback to non-adaptive*/
                 return Math2.simpson(f, a, b);
             }
             return nround(retval, 12);
@@ -1686,15 +1691,17 @@ var nerdamer = (function (imports) {
         //CosineIntegral
         Ci: function (x) {
             var n = 20,
-                    g = 0.5772156649015329, //roughly Euler–Mascheroni
+                    /*roughly Euler–Mascheroni*/
+                    g = 0.5772156649015329, 
                     sum = 0;
             for (var i = 1; i < n; i++) {
-                var n2 = 2 * i; //cache 2n
+                /*cache 2n*/
+                var n2 = 2 * i; 
                 sum += (Math.pow(-1, i) * Math.pow(x, n2)) / (n2 * Math2.factorial(n2));
             }
             return Math.log(x) + g + sum;
         },
-        //SineIntegral
+        /*SineIntegral*/
         Si: function (x) {
             var n = 20,
                     sum = 0;
@@ -1704,20 +1711,20 @@ var nerdamer = (function (imports) {
             }
             return sum;
         },
-        //ExponentialIntegral
+        /*ExponentialIntegral*/
         Ei: function (x) {
-            if (x.equals(0))
+            if (Number(x) === 0)
                 return -Infinity;
             var n = 30,
-                    g = 0.5772156649015328606, //roughly Euler–Mascheroni
+                    g = 0.5772156649015328606, /*roughly Euler–Mascheroni*/
                     sum = 0;
             for (var i = 1; i < n; i++) {
                 sum += Math.pow(x, i) / (i * Math2.factorial(i));
             }
             return g + Math.abs(Math.log(x)) + sum;
         },
-        //Hyperbolic Sine Integral
-        //http://mathworld.wolfram.com/Shi.html
+        /*Hyperbolic Sine Integral*/
+        /*http://mathworld.wolfram.com/Shi.html*/
         Shi: function (x) {
             var n = 30,
                     sum = 0,
@@ -1729,7 +1736,7 @@ var nerdamer = (function (imports) {
             }
             return sum;
         },
-        //the cosine integral function
+        /*the cosine integral function*/
         Chi: function (x) {
             var dx, g, f;
             dx = 0.001;
@@ -1739,11 +1746,11 @@ var nerdamer = (function (imports) {
             };
             return Math.log(x) + g + Math2.num_integrate(f, 0.002, x, dx);
         },
-        //the log integral
+        /*the log integral*/
         Li: function (x) {
             return Math2.Ei(Math2.bigLog(x));
         },
-        //the gamma incomplete function
+        /*the gamma incomplete function*/
         gamma_incomplete: function (n, x) {
             var t = n - 1,
                     sum = 0,
@@ -1807,15 +1814,15 @@ var nerdamer = (function (imports) {
         },
         //https://en.wikipedia.org/wiki/Nth_root_algorithm
         nthroot: function (A, n) {
-            //make sure the input is of type Frac
+            /*make sure the input is of type Frac*/
             if (!(A instanceof Frac))
                 A = new Frac(A.toString());
             if (!(n instanceof Frac))
                 n = new Frac(n.toString());
             if (n.equals(1))
                 return A;
-            //begin algorithm
-            var xk = A.divide(new Frac(2)); //x0
+            /*begin algorithm*/
+            var xk = A.divide(new Frac(2)); /*x0*/
             var e = new Frac(1e-15);
             var dk, dk0, d0;
             var a = n.clone().invert(),
@@ -1828,7 +1835,7 @@ var nerdamer = (function (imports) {
                     break;
 
                 xk = xk.add(dk);
-                //check to see if there's no change from the last xk
+                /*check to see if there's no change from the last xk*/
                 var dk_dec = dk.toDecimal();
                 d0 = dk0 ? dk0 === dk_dec : false;
                 dk0 = dk_dec;
@@ -1837,34 +1844,34 @@ var nerdamer = (function (imports) {
 
             return xk;
         },
-        //https://gist.github.com/jiggzson/0c5b33cbcd7b52b36132b1e96573285f
-        //Just the square root function but big :)
+        /*https://gist.github.com/jiggzson/0c5b33cbcd7b52b36132b1e96573285f*/
+        /*Just the square root function but big :)*/
         sqrt: function (n) {
             if (!(n instanceof Frac))
                 n = new Frac(n);
             var xn, d, ld, same_delta;
-            var c = 0; //counter
+            var c = 0; /*counter*/
             var done = false;
             var delta = new Frac(1e-20);
             xn = n.divide(new Frac(2));
             var safety = 1000;
             do {
-                //break if we're not converging
+                /*break if we're not converging*/
                 if (c > safety)
                     throw new Error('Unable to calculate square root for ' + n);
                 xn = xn.add(n.divide(xn)).divide(new Frac(2));
                 xn = new Frac(xn.decimal(30));
-                //get the difference from the true square
+                /*get the difference from the true square*/
                 d = n.subtract(xn.multiply(xn));
-                //if the square of the calculated number is close enough to the number
-                //we're getting the square root or the last delta was the same as the new delta
-                //then we're done
+                /*if the square of the calculated number is close enough to the number*/
+                /*we're getting the square root or the last delta was the same as the new delta*/
+                /*then we're done*/
                 same_delta = ld ? ld.equals(d) : false;
                 if (d.clone().abs().lessThan(delta) || same_delta)
                     done = true;
-                //store the calculated delta
+                /*store the calculated delta*/
                 ld = d;
-                c++; //increase the counter
+                c++; /*increase the counter*/
             }
             while (!done)
 
@@ -10536,19 +10543,52 @@ var nerdamer = (function (imports) {
         dependencies: {
             factorial: {
                 'Math2.gamma': Math2.gamma
+            },
+            gamma_incomplete: {
+                'Math2.factorial': Math2.factorial
+            },
+            Li: {
+                'Math2.Ei': Math2.Ei,
+                'Math2.bigLog': Math2.bigLog,
+                'Frac': Frac
+            },
+            Ci: {
+                'Math2.factorial': Math2.factorial
+            },
+            Ei: {
+                'Math2.factorial': Math2.factorial
+            },
+            Si: {
+                'Math2.factorial': Math2.factorial
+            },
+            Shi: {
+                'Math2.factorial': Math2.factorial
+            },
+            Chi: {
+                'isInt': isInt,
+                'nround': nround,
+                'Math2.num_integrate': Math2.num_integrate
+            },
+            factor: {
+                'Math2.ifactor': Math2.ifactor,
+                'Symbol': Symbol
+            },
+            num_integrate: {
+                'Math2.simpson': Math2.simpson,
+                'nround': nround
             }
         },
         getProperName: function(f) {
             var map = {
                 continued_fraction: 'continuedFraction'
-            }
+            };
             return map[f] || f;
         },
         //assumes that dependences are at max 2 levels
         compileDependencies: function(f) {
             //grab the predefined dependiences
             var dependencies = Build.dependencies[f];
-            
+//            console.log(dependencies, f)
             //the dependency string
             var dep_string = '';
             
@@ -10557,8 +10597,9 @@ var nerdamer = (function (imports) {
             
             //loop through them and add them to the list
             for(var x in dependencies) {
-                var components = x.split('.');
-                dep_string += 'var '+components[1]+'='+dependencies[x]+';';
+                var components = x.split('.'); //Math.f becomes f
+                //if the function isn't part of an object then reference the function itself
+                dep_string += 'var '+(components.length > 1 ? components[1] : components[0])+'='+dependencies[x]+';';
                 replacements[x] = components.pop();
             }
             
@@ -10673,7 +10714,7 @@ var nerdamer = (function (imports) {
                 f_array[1] = f_array[1].replace(x, alias);
                 dependencies[1] = dependencies[1].replace(x, alias);
             }
-            
+
             return new Function(args, (dependencies[1] || '') + f_array[1] + ' return ' + f_array[0] + ';');
         }
     };
