@@ -10598,6 +10598,9 @@ var nerdamer = (function (imports) {
             num_integrate: {
                 'Math2.simpson': Math2.simpson,
                 'nround': nround
+            },
+            fib: {
+                'even': even
             }
         },
         /* Some functions need to be made numeric safe. Build checks if there's a 

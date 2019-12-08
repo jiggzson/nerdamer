@@ -756,7 +756,7 @@ if ((typeof module) !== 'undefined') {
                     if (isNaN(val) || !isFinite(val) || hits.length > num_roots) { 
                         continue;
                     }
-//                    console.log(xi, sign, last_sign, val)
+
                     //compare the signs. The have to be different if they cross a zero
                     if (sign !== last_sign) {
                         hits.push(xi); //take note of the possible zero location
@@ -795,7 +795,9 @@ if ((typeof module) !== 'undefined') {
             }
             while (e > Settings.NEWTON_EPSILON)
             
-            return x;
+            //check if the number is indeed zero. 1e-13 seems to give the most accurate results
+            if(Math.abs(f(x)) <= 1e-13)
+                return x;
         },
         rewrite: function (rhs, lhs, for_variable) {
             lhs = lhs || new Symbol(0);
@@ -1229,7 +1231,7 @@ if ((typeof module) !== 'undefined') {
                     solutions.sort();
                 }
                 catch(e) {
-                    console.log(e);
+                    //console.log(e);
                 }   
             }
         }
