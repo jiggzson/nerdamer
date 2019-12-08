@@ -267,7 +267,12 @@ describe('Solve', function () {
         expect(nerdamer.solveEquations("x+1=2", "x").toString()).toEqual('1');
     });
     
-    it('parse equations correctly', function () {
+    it('should parse equations correctly', function () {
         expect(nerdamer("-(a+1)=(a+3)^2").toString()).toEqual('-1-a=(3+a)^2');
+    });
+    
+    //NOTE: contains duplicates
+    it('should solve functions with factorials', function() {
+        expect(nerdamer('solve(x!-x^2,x)').text()).toEqual('[-2.2003917826105948,-2.938361683501947,1,1.0000000000000009,1.0000000000000007,3.5623822853908966,0.9999999999999998]');
     });
 });

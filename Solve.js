@@ -31,6 +31,7 @@ if ((typeof module) !== 'undefined') {
             CB = core.groups.CB,
             CP = core.groups.CP,
             FN = core.groups.FN,
+            Settings = core.Settings,
             isArray = core.Utils.isArray;
 
     
@@ -56,6 +57,8 @@ if ((typeof module) !== 'undefined') {
     //slices to make sure that we have convergence on the right point. This defines the 
     //size of the slice
     core.Settings.NEWTON_SLICES = 200;
+    //The epsilon used in Newton's iteration
+    core.Settings.NEWTON_EPSILON = Number.EPSILON;
     
     core.Symbol.prototype.hasTrig = function () {
         return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
@@ -771,6 +774,7 @@ if ((typeof module) !== 'undefined') {
                     x = 0;
                     break;
                 }
+                
                 iter++;
                 if (iter > maxiter)
                     return; //naximum iterations reached
@@ -779,7 +783,7 @@ if ((typeof module) !== 'undefined') {
                 var e = Math.abs(x - x0);
                 x0 = x;
             }
-            while (e > Number.EPSILON)
+            while (e > Settings.NEWTON_EPSILON)
 
             return x;
         },
@@ -1202,10 +1206,12 @@ if ((typeof module) !== 'undefined') {
                     //add a value of minus 1 to the left
                     points = core.Utils.arrayAddSlices(points, 200);
 //                    console.log(points)
-                    
+
                     //compile the function and the derivative of the function
                     var f = build(eq.clone());
+                    
                     var d = _C.diff(eq.clone());
+                    
                     var fp = build(d);
                     for (var i = 0; i < points.length; i++) {
                         var point = points[i];
@@ -1387,4 +1393,3 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-

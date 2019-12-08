@@ -1118,9 +1118,14 @@ var nerdamer = (function (imports) {
                     );
             return x >= 0 ? result : -result;
         },
-        diff: function() {
+        diff: function(f) {
             var h = 0.001;
-            return function(x) { return (f(x + h) - f(x - h)) / (2 * h); };
+            
+            var derivative = function(x) { 
+                return (f(x + h) - f(x - h)) / (2 * h); 
+            };
+            
+            return derivative;
         },
         median: function (...values) {
             values.sort(function (a, b) {
@@ -10578,6 +10583,19 @@ var nerdamer = (function (imports) {
                 'nround': nround
             }
         },
+        /* Some functions need to be made numeric safe. Build checks if there's a 
+         * reformat option and calls that instead when compiling the function string.
+         */
+        reformat: {
+            //this simply extends the build function
+            diff: function(symbol, deps) {
+                var f = 'var f = '+Build.build(symbol.args[0].toString())+';';
+                deps[1] += 'var diff = '+Math2.diff.toString()+';';
+                deps[1] += f;
+
+                return ['diff(f)('+symbol.args[1].toString()+')', deps];
+            }
+        },
         getProperName: function(f) {
             var map = {
                 continued_fraction: 'continuedFraction'
@@ -10585,15 +10603,15 @@ var nerdamer = (function (imports) {
             return map[f] || f;
         },
         //assumes that dependences are at max 2 levels
-        compileDependencies: function(f) {
+        compileDependencies: function(f, deps) {
             //grab the predefined dependiences
             var dependencies = Build.dependencies[f];
-//            console.log(dependencies, f)
+
             //the dependency string
-            var dep_string = '';
+            var dep_string = deps ? deps[1] : '';
             
             //the functions to be replaced
-            var replacements = {};
+            var replacements = deps? deps[0] : {};
             
             //loop through them and add them to the list
             for(var x in dependencies) {
@@ -10604,6 +10622,16 @@ var nerdamer = (function (imports) {
             }
             
             return [replacements, dep_string];
+        },
+        getArgsDeps: function(symbol, dependencies) {
+            var args = symbol.args;
+            for(var i=0; i<args.length; i++) {
+                symbol.args[i].each(function(x) {
+                    if(x.group === FN)
+                        dependencies = Build.compileDependencies(x.fname, dependencies);
+                });
+            }
+            return dependencies;
         },
         build: function (symbol, arg_array) {
             symbol = block('PARSE2NUMBER', function () {
@@ -10668,8 +10696,17 @@ var nerdamer = (function (imports) {
                 if (group === S || group === P)
                     value = symbol.value;
                 else if (group === FN) {
-                    value = ftext_function(symbol.fname);
                     dependencies = Build.compileDependencies(symbol.fname);
+                    dependencies = Build.getArgsDeps(symbol, dependencies);
+                    if(Build.reformat[symbol.fname]) {
+                        var components = Build.reformat[symbol.fname](symbol, dependencies);
+                        dependencies = components[1];
+                        value = components[0];
+                    }
+                    else {
+                        value =  ftext_function(symbol.fname);
+                    }
+                    
                 }
                 else if (group === EX) {
                     var pg = symbol.previousGroup;
@@ -10678,6 +10715,7 @@ var nerdamer = (function (imports) {
                     else if (pg === FN) {
                         value = ftext_function(symbol.fname);
                         dependencies = Build.compileDependencies(symbol.fname);
+                        dependencies = Build.getArgsDeps(symbol, dependencies);
                     }
                     else
                         value = ftext_complex(symbol.previousGroup);
@@ -10715,7 +10753,9 @@ var nerdamer = (function (imports) {
                 dependencies[1] = dependencies[1].replace(x, alias);
             }
 
-            return new Function(args, (dependencies[1] || '') + f_array[1] + ' return ' + f_array[0] + ';');
+            var f = new Function(args, (dependencies[1] || '') + f_array[1] + ' return ' + f_array[0] + ';');
+            
+            return f;
         }
     };
     
