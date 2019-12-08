@@ -77,7 +77,7 @@ describe('Solve', function () {
             {
                 //NOTE: this test has duplicates
                 given: 'solve(sqrt(x^3)+sqrt(x^2)-sqrt(x)=0,x)',
-                expected: '[0,78202389238903801/240831735646702201,81338951853721/250491080148100]'
+                expected: '[0,78202389238903801/240831735646702201]'
             },
             {
                 given: 'solve(x^3-10x^2+31x-30,x)',
@@ -187,7 +187,7 @@ describe('Solve', function () {
                 //NOTE: 4503599627370497/4503599627370496 result can be safely removed since it has rounding errors
                 //NOTE: this test has duplicate solutions. The last two are duplicates of the first but have rounding errors
                 given: 'solve(sqrt(x)-2x+x^2,x)',
-                expected: '[(1/2)*(-sqrt(5)+3),0,1,4503599627370497/4503599627370496,832040/2178309]'
+                expected: '[(1/2)*(-sqrt(5)+3),0,1,832040/2178309]'
             },
             {
                 given: 'solve((2x+x^2)^2-x,x)',
@@ -273,6 +273,6 @@ describe('Solve', function () {
     
     //NOTE: contains duplicates
     it('should solve functions with factorials', function() {
-        expect(nerdamer('solve(x!-x^2,x)').text()).toEqual('[-2.2003917826105948,-2.938361683501947,1,1.0000000000000009,1.0000000000000007,3.5623822853908966,0.9999999999999998]');
+        expect(nerdamer('solve(x!-x^2,x)').text()).toEqual('[-2.2003917826105948,-4.010232827899529,-2.938361683501947,1,1.0000000000000009,1.0000000000000007,3.5623822853908957,3.5623822853908966,0.9999999999999998,1.0000000000000002]');
     });
 });

@@ -32,6 +32,7 @@ if ((typeof module) !== 'undefined') {
             CP = core.groups.CP,
             FN = core.groups.FN,
             Settings = core.Settings,
+            range = core.Utils.range,
             isArray = core.Utils.isArray;
 
     
@@ -58,7 +59,11 @@ if ((typeof module) !== 'undefined') {
     //size of the slice
     core.Settings.NEWTON_SLICES = 200;
     //The epsilon used in Newton's iteration
-    core.Settings.NEWTON_EPSILON = Number.EPSILON;
+    core.Settings.NEWTON_EPSILON = Number.EPSILON*2;
+    //The distance in which two solutions are deemed the same
+    core.Settings.SOLUTION_PROXIMITY = 1e-14;
+    //Indicate wheter to filter the solutions are not
+    core.Settings.FILTER_SOLUTIONS = true;
     
     core.Symbol.prototype.hasTrig = function () {
         return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
@@ -713,15 +718,18 @@ if ((typeof module) !== 'undefined') {
          * must exist on that interval
          * @param {Symbol} symbol
          * @param {Number} step
+         * @param {Array} points
          * @returns {Array}
          */
-        getPoints: function (symbol, step) {
+        getPoints: function (symbol, step, points) {
             step = step || 0.01;
+            points = points || [];
             var f = build(symbol);
-            var start = Math.round(f(0)),
+            var x0 = 0;
+                
+            var start = Math.round(x0),
                     last = f(start),
                     last_sign = last / Math.abs(last),
-                    points = [],
                     rside = core.Settings.ROOTS_PER_SIDE, // the max number of roots on right side
                     lside = rside * 2 + 1; // the max number of roots on left side
             // check around the starting point
@@ -733,33 +741,35 @@ if ((typeof module) !== 'undefined') {
                 if (x.containsFunction(core.Settings.LOG))
                     points.push(0.1);
             });
-            // Possible issue #1. If the step size exceeds the zeros then they'll be missed. Consider the case
-            // where the function dips to negative and then back the positive with a step size of 0.1. The function
-            // will miss the zeros because it will jump right over it. Think of a case where this can happen.
-            for (var i = start; (i) < core.Settings.SOLVE_RADIUS; i++) {
-                var val = f(i * step),
-                        sign = val / Math.abs(val);
-                if (isNaN(val) || !isFinite(val) || points.length > rside) { 
-                    break;
+            
+            var left = range(-core.Settings.SOLVE_RADIUS, start, step),
+                right = range(start, core.Settings.SOLVE_RADIUS, step);
+            
+            var test_side = function(side, num_roots) {
+                var xi, val, sign;
+                var hits = [];
+                for(var i=0, l=side.length; i<l; i++) {
+                    xi = side[i]; //the point being evaluated
+                    val = f(xi);
+                    sign = val / Math.abs(val);
+                    //Don't add non-numeric values
+                    if (isNaN(val) || !isFinite(val) || hits.length > num_roots) { 
+                        continue;
+                    }
+//                    console.log(xi, sign, last_sign, val)
+                    //compare the signs. The have to be different if they cross a zero
+                    if (sign !== last_sign) {
+                        hits.push(xi); //take note of the possible zero location
+                    }
+                    last_sign = sign;
                 }
-                //compare the signs. The have to be different if they cross a zero
-                if (sign !== last_sign) {
-                    points.push((i - 1) / 2); //take note of the possible zero location
-                }
-                last_sign = sign;
-            }
 
-            //check the other side
-            for (var i = start - 1; i > -core.Settings.SOLVE_RADIUS; i--) {
-                var val = f(i),
-                        sign = val / Math.abs(val);
-                if (isNaN(val) || !isFinite(val) || points.length > lside)
-                    break;
-                //compare the signs. The have to be different if they cross a zero
-                if (sign !== last_sign)
-                    points.push((i - 1) / 2); //take note of the possible zero location
-                last_sign = sign;
-            }
+                points = points.concat(hits);
+            };
+            
+            test_side(left, lside);
+            test_side(right, rside);
+            
             return points;
         },
         Newton: function (point, f, fp) {
@@ -784,7 +794,7 @@ if ((typeof module) !== 'undefined') {
                 x0 = x;
             }
             while (e > Settings.NEWTON_EPSILON)
-
+            
             return x;
         },
         rewrite: function (rhs, lhs, for_variable) {
@@ -1203,9 +1213,7 @@ if ((typeof module) !== 'undefined') {
                     var points = core.Utils.arrayUnique(points1.concat(points2).concat(points3)).sort(function(a, b) { return a-b});
                     
                     //generate slices
-                    //add a value of minus 1 to the left
-                    points = core.Utils.arrayAddSlices(points, 200);
-//                    console.log(points)
+                    //points = core.Utils.arrayAddSlices(points, Settings.NEWTON_SLICES); 
 
                     //compile the function and the derivative of the function
                     var f = build(eq.clone());
@@ -1215,6 +1223,7 @@ if ((typeof module) !== 'undefined') {
                     var fp = build(d);
                     for (var i = 0; i < points.length; i++) {
                         var point = points[i];
+                        
                         add_to_result(__.Newton(point, f, fp), has_trig);
                     }
                     solutions.sort();
@@ -1345,7 +1354,23 @@ if ((typeof module) !== 'undefined') {
                 return _.pow(x, new Symbol(cfact));
             });
         }
-
+        
+//        //test each point to ensure that it's indeed 0
+//        solutions = solutions.filter(function(x) {
+//            if(typeof f === 'undefined')
+//                return x;
+//            if(Math.abs(f(evaluate(x))) <= 1e-13)
+//                return x;
+//        });
+//        
+//        if(solutions.length > 1) {
+//            var t = [];
+//        }
+//        
+//        solutions = solutions.sort(function(a, b) {
+//            return a-b;
+//        });
+        
         return solutions;
     };
     

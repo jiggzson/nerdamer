@@ -573,7 +573,21 @@ var nerdamer = (function (imports) {
 
         return new_str;
     };
-
+    
+    /**
+     * Generates an array with values within a range. Multiplies by a step if provided
+     * @param {Number} start
+     * @param {Number} end
+     * @param {Number} step
+     */
+    var range = function(start, end, step) {
+        var arr = [];
+        step = step || 1;
+        for(var i=start; i<=end; i++) 
+            arr.push(i*step);
+        return arr;
+    };
+    
     /**
      * Returns an array of all the keys in an array
      * @param {Object} obj
@@ -688,7 +702,7 @@ var nerdamer = (function (imports) {
             e = delta/slices; //chop it up in the desired number of slices
             for(var j=0; j<slices; j++) {
                 c += e; //add the mesh to the last slice
-                retval.push(nround(c,2));
+                retval.push(c);
             }
         }
 
@@ -10546,6 +10560,9 @@ var nerdamer = (function (imports) {
 //build ========================================================================
     var Build = {
         dependencies: {
+            _rename: {
+                'Math2.factorial': 'factorial'
+            },
             factorial: {
                 'Math2.gamma': Math2.gamma
             },
@@ -10608,13 +10625,15 @@ var nerdamer = (function (imports) {
             var dependencies = Build.dependencies[f];
 
             //the dependency string
-            var dep_string = deps ? deps[1] : '';
+            var dep_string = deps && deps[1] ? deps[1] : '';
             
             //the functions to be replaced
-            var replacements = deps? deps[0] : {};
+            var replacements = deps && deps[0] ? deps[0] : {};
             
             //loop through them and add them to the list
             for(var x in dependencies) {
+                if(typeof dependencies[x] === 'object')
+                    continue; //skip object
                 var components = x.split('.'); //Math.f becomes f
                 //if the function isn't part of an object then reference the function itself
                 dep_string += 'var '+(components.length > 1 ? components[1] : components[0])+'='+dependencies[x]+';';
@@ -10696,7 +10715,7 @@ var nerdamer = (function (imports) {
                 if (group === S || group === P)
                     value = symbol.value;
                 else if (group === FN) {
-                    dependencies = Build.compileDependencies(symbol.fname);
+                    dependencies = Build.compileDependencies(symbol.fname, dependencies);
                     dependencies = Build.getArgsDeps(symbol, dependencies);
                     if(Build.reformat[symbol.fname]) {
                         var components = Build.reformat[symbol.fname](symbol, dependencies);
@@ -10714,7 +10733,7 @@ var nerdamer = (function (imports) {
                         value = symbol.value;
                     else if (pg === FN) {
                         value = ftext_function(symbol.fname);
-                        dependencies = Build.compileDependencies(symbol.fname);
+                        dependencies = Build.compileDependencies(symbol.fname, dependencies);
                         dependencies = Build.getArgsDeps(symbol, dependencies);
                     }
                     else
@@ -10827,6 +10846,7 @@ var nerdamer = (function (imports) {
         keys: keys,
         remove: remove,
         reserveNames: reserveNames,
+        range: range,
         round: nround,
         sameSign: sameSign,
         scientificToDecimal: scientificToDecimal,
