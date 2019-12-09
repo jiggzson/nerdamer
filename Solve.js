@@ -1009,6 +1009,8 @@ if ((typeof module) !== 'undefined') {
         var eq = core.Utils.isSymbol(eqns) ? eqns : __.toLHS(eqns),
                 vars = core.Utils.variables(eq), //get a list of all the variables
                 numvars = vars.length;//how many variables are we dealing with
+        
+        
         //if we're dealing with a single variable then we first check if it's a 
         //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.     
         //Don't waste time
@@ -1231,7 +1233,7 @@ if ((typeof module) !== 'undefined') {
                     solutions.sort();
                 }
                 catch(e) {
-                    //console.log(e);
+                    console.log(e);
                 }   
             }
         }
@@ -1240,41 +1242,51 @@ if ((typeof module) !== 'undefined') {
             //place them in an array and call the quad or cubic function to get the results
             if (!eq.hasFunc(solve_for) && eq.isComposite()) {
                 try {
-                    var coeffs = core.Utils.getCoeffs(eq, solve_for);
-
-                    var l = coeffs.length,
-                            deg = l - 1; //the degree of the polynomial
-                    //get the denominator and make sure it doesn't have x
-                    
-                    //handle the problem based on the degree
-                    switch (deg) {
-                        case 0:
-                            var separated = separate(eq);
-                            var lhs = separated[0],
-                                    rhs = separated[1];
-                            if (lhs.group === core.groups.EX) {
-                                add_to_result(_.parse(core.Utils.format(core.Settings.LOG+'(({0})/({2}))/'+core.Settings.LOG+'({1})', rhs, lhs.value, lhs.multiplier)));
-                            }
-                            break;
-                        case 1:
-                            //nothing to do but to return the quotient of the constant and the LT
-                            //e.g. 2*x-1
-                            add_to_result(_.divide(coeffs[0], coeffs[1].negate()));
-                            break;
-                        case 2:
-                            add_to_result(__.quad.apply(undefined, coeffs));
-                            break;
-                        case 3:
-                            add_to_result(__.cubic.apply(undefined, coeffs));
-                            break;
-                        case 4:
-                            add_to_result(__.quartic.apply(undefined, coeffs));
-                            break;
-                        default:
-                            add_to_result(__.csolve(eq, solve_for));
-                            if (solutions.length === 0)
-                                add_to_result(__.divideAndConquer(eq, solve_for));
+                    var factored = core.Algebra.Factor.factor(eq.clone());
+ 
+                    if(factored.group === CB) {
+                        factored.each(function(x) {
+                            add_to_result(solve(x, solve_for));
+                        });
                     }
+                    else {
+                        var coeffs = core.Utils.getCoeffs(eq, solve_for);
+
+                        var l = coeffs.length,
+                                deg = l - 1; //the degree of the polynomial
+                        //get the denominator and make sure it doesn't have x
+
+                        //handle the problem based on the degree
+                        switch (deg) {
+                            case 0:
+                                var separated = separate(eq);
+                                var lhs = separated[0],
+                                        rhs = separated[1];
+                                if (lhs.group === core.groups.EX) {
+                                    add_to_result(_.parse(core.Utils.format(core.Settings.LOG+'(({0})/({2}))/'+core.Settings.LOG+'({1})', rhs, lhs.value, lhs.multiplier)));
+                                }
+                                break;
+                            case 1:
+                                //nothing to do but to return the quotient of the constant and the LT
+                                //e.g. 2*x-1
+                                add_to_result(_.divide(coeffs[0], coeffs[1].negate()));
+                                break;
+                            case 2:
+                                add_to_result(__.quad.apply(undefined, coeffs));
+                                break;
+                            case 3:
+                                add_to_result(__.cubic.apply(undefined, coeffs));
+                                break;
+                            case 4:
+                                add_to_result(__.quartic.apply(undefined, coeffs));
+                                break;
+                            default:
+                                add_to_result(__.csolve(eq, solve_for));
+                                if (solutions.length === 0)
+                                    add_to_result(__.divideAndConquer(eq, solve_for));
+                        }
+                    }    
+                    
                 }
                 catch (e) { /*something went wrong. EXITING*/
                     ;
@@ -1357,22 +1369,6 @@ if ((typeof module) !== 'undefined') {
             });
         }
         
-//        //test each point to ensure that it's indeed 0
-//        solutions = solutions.filter(function(x) {
-//            if(typeof f === 'undefined')
-//                return x;
-//            if(Math.abs(f(evaluate(x))) <= 1e-13)
-//                return x;
-//        });
-//        
-//        if(solutions.length > 1) {
-//            var t = [];
-//        }
-//        
-//        solutions = solutions.sort(function(a, b) {
-//            return a-b;
-//        });
-        
         return solutions;
     };
     
@@ -1420,3 +1416,5 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+console.log(nerdamer('solve(-a*c*x-a*x^2-c*x-x^2+x^3+a*c+a*x+c*x^2,x)').toString()); //Infinite loop

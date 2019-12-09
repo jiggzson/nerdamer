@@ -5,7 +5,7 @@
  * Source : https://github.com/jiggzson/nerdamer
  */
 
-/* global trig, trigh, Infinity, define */
+/* global trig, trigh, Infinity, define, arguments2Array, NaN */
 //externals ====================================================================
 /* BigInterger.js v1.6.40 https://github.com/peterolson/BigInteger.js/blob/master/LICENSE */
 //var nerdamerBigInt = typeof nerdamerBigInt !== 'undefined' ? nerdamerBigInt : require("big-integer");
@@ -1114,8 +1114,12 @@ var nerdamer = (function (imports) {
             return 1 / Math.tan(x);
         },
 		acsc: function(x) { return Math.asin(1/x); },
-        asec: function(x) { return Math.acos(1/x); },
-        acot: function(x) { return (Math.PI / 2) - Math.atan(x)},
+        asec: function(x) { 
+            return Math.acos(1/x); 
+        },
+        acot: function(x) { 
+            return (Math.PI / 2) - Math.atan(x);
+        },
         // https://gist.github.com/jiggzson/df0e9ae8b3b06ff3d8dc2aa062853bd8
         erf: function (x) {
             var t = 1 / (1 + 0.5 * Math.abs(x));
@@ -4184,6 +4188,7 @@ var nerdamer = (function (imports) {
         },
         /**
          * Returns the latex representation of the symbol
+         * @param {String} option
          * @returns {String}
          */
         latex: function (option) {
@@ -4191,6 +4196,7 @@ var nerdamer = (function (imports) {
         },
         /**
          * Returns the text representation of a symbol
+         * @param {String} option
          * @returns {String}
          */
         text: function (option) {
@@ -5761,7 +5767,7 @@ var nerdamer = (function (imports) {
             post_operator: [],
             pre_function: [],
             post_function: []
-        }
+        };
         
         this.callPeekers = function(name) {
             var peekers = this.peekers[name];
@@ -6250,7 +6256,7 @@ var nerdamer = (function (imports) {
                                 if (typeof a === 'undefined')
                                     throw new OperatorError(e + ' is not a valid postfix operator at ' + e.column);
 
-                                var is_comma = e.action === 'comma'
+                                var is_comma = e.action === 'comma';
                                 //convert Sets to Vectors on all operations at this point. Sets are only recognized functions or individually
                                 if(a instanceof Set && !is_comma)
                                     a = Vector.fromSet(a);
@@ -6392,9 +6398,7 @@ var nerdamer = (function (imports) {
          * character of the string and placing the operators on the stack and values on the output. When an operator
          * having a lower order than the last is reached then the stack is processed from the last operator on the 
          * stack.
-         * @param {String} e
-         * @param {Object} substitutions
-         * @returns {Symbol}
+         * @param {String} token
          */
 
         function Node(token) {
@@ -7853,7 +7857,7 @@ var nerdamer = (function (imports) {
                 //don't devide the power directly. Notice the use of toString. This makes it possible
                 //to use a bigNumber library in the future
                 var retval = sqrt(symbol.group === P ? new Symbol(symbol.value) : symbol.toLinear());
-//place back the sign of the power
+                //place back the sign of the power
                 if (sign < 0)
                     retval.invert();
                 return retval;
@@ -8515,10 +8519,6 @@ var nerdamer = (function (imports) {
                 //back convert group P to a simpler group N if possible
                 if (result.group === P && isInt(result.power.toDecimal()))
                     result = result.convert(N);
-
-//                //put back the sign
-//                if(sign < 0)
-//                    result.negate();
 
                 return result;
             }
