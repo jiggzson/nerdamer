@@ -2714,7 +2714,7 @@ if((typeof module) !== 'undefined') {
                     symbol = __.Factor.mSqfrFactor(symbol, factors);
                     
                     //try factor out common factors
-                    symbol = __.Factor.common(symbol, factors);
+                    //symbol = __.Factor.common(symbol, factors);
                     
                     var vars = variables(symbol),
                         symbols = symbol.collectSymbols().map(function(x) {

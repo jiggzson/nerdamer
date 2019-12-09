@@ -1243,7 +1243,7 @@ if ((typeof module) !== 'undefined') {
             if (!eq.hasFunc(solve_for) && eq.isComposite()) {
                 try {
                     var factored = core.Algebra.Factor.factor(eq.clone());
- 
+                    
                     if(factored.group === CB) {
                         factored.each(function(x) {
                             add_to_result(solve(x, solve_for));
@@ -1416,5 +1416,3 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-console.log(nerdamer('solve(-a*c*x-a*x^2-c*x-x^2+x^3+a*c+a*x+c*x^2,x)').toString()); //Infinite loop
