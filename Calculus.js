@@ -36,7 +36,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         CB = core.groups.CB,
         EX = core.groups.EX,
         P = core.groups.P,
-        LOG = 'log', 
+        LOG = Settings.LOG, 
         EXP = 'exp', 
         ABS = 'abs', 
         SQRT = 'sqrt',
@@ -568,7 +568,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             break;
                         case 'Li':
                             var arg = symbol.args[0];
-                            symbol = _.parse('1/log('+arg+')');
+                            symbol = _.parse('1/'+Settings.LOG+'('+arg+')');
                             break;
                         case 'erf':
                             symbol = _.parse('(2*e^(-('+symbol.args[0]+')^2))/sqrt(pi)');
@@ -581,8 +581,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         case 'sign':
                             symbol = new Symbol(0);
                             break;
-                        case 'log10':
-                            symbol = _.parse('1/(('+symbol.args[0]+')*log(10))');
+                        case Settings.LOG10:
+                            symbol = _.parse('1/(('+symbol.args[0]+')*'+Settings.LOG+'(10))');
                             break;
                         default:
                             symbol = _.symfunction('diff', [symbol, wrt]);
@@ -959,6 +959,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         retval = __.integration.poly_integrate(symbol, dx, depth);
                     }
                     else if(g === EX) { 
+                        if(symbol.previousGroup === FN && !(symbol.fname === 'sqrt' || symbol.fname === Settings.PARENTHESIS))
+                            __.integration.stop();
                         //check the base
                         if(symbol.contains(dx) && symbol.previousGroup !== FN) {
                             //if the symbol also contains dx then we stop since we currently 
@@ -1232,16 +1234,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             retval.negate();
                                             break;
                                         case TAN:
-                                            retval = _.parse(format('log(sec({0}))', arg));
+                                            retval = _.parse(format(Settings.LOG+'(sec({0}))', arg));
                                             break;
                                         case SEC:
-                                            retval = _.parse(format('log(tan({0})+sec({0}))', arg));
+                                            retval = _.parse(format(Settings.LOG+'(tan({0})+sec({0}))', arg));
                                             break;
                                         case CSC:
-                                            retval = _.parse(format('-log(csc({0})+cot({0}))', arg));
+                                            retval = _.parse(format('-'+Settings.LOG+'(csc({0})+cot({0}))', arg));
                                             break;
                                         case COT:
-                                            retval = _.parse(format('log(sin({0}))', arg));
+                                            retval = _.parse(format(Settings.LOG+'(sin({0}))', arg));
                                             break;
                                         case SINH:
                                             retval = _.symfunction(COSH, [arg]);
@@ -1250,7 +1252,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             retval = _.symfunction(SINH, [arg]);
                                             break;
                                         case TANH:
-                                            retval = _.parse(format('log(cosh({0}))', arg));
+                                            retval = _.parse(format(Settings.LOG+'(cosh({0}))', arg));
                                             break;
                                         case ASEC:
                                             retval = __.integration.by_parts(symbol, dx, depth, opt);
@@ -1277,10 +1279,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             retval = _.parse(format('atan(sinh({0}))', arg));
                                             break;
                                         case CSCH:
-                                            retval = _.parse(format('log(tanh(({0})/2))', arg));
+                                            retval = _.parse(format(Settings.LOG+'(tanh(({0})/2))', arg));
                                             break;
                                         case COTH:
-                                            retval = _.parse(format('log(sinh({0}))', arg));
+                                            retval = _.parse(format(Settings.LOG+'(sinh({0}))', arg));
                                             break;
                                         //end htrig
                                         case EXP:
@@ -1968,6 +1970,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 retval = _.subtract(a, b);
             }
             else if(vars.length === 1 && from.isConstant() && to.isConstant()) {
+                
                 var f = core.Utils.build(symbol); 
                     retval = new Symbol(core.Math2.num_integrate(f, Number(from), Number(to)));
             }
@@ -2046,7 +2049,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             rewriteToLog: function(symbol) {
                 var p = symbol.power.clone();
                 symbol.toLinear();
-                return _.pow(new Symbol('e'), _.multiply(p, _.symfunction('log', [symbol])));
+                return _.pow(new Symbol('e'), _.multiply(p, _.symfunction(Settings.LOG+'', [symbol])));
             },
             getSubbed: function(f, x, lim) {
                 var retval;
@@ -2376,4 +2379,5 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     ]);
     //link registered functions externally
     nerdamer.api();
+   
 })();

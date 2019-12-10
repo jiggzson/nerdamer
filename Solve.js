@@ -31,6 +31,8 @@ if ((typeof module) !== 'undefined') {
             CB = core.groups.CB,
             CP = core.groups.CP,
             FN = core.groups.FN,
+            Settings = core.Settings,
+            range = core.Utils.range,
             isArray = core.Utils.isArray;
 
     
@@ -52,7 +54,17 @@ if ((typeof module) !== 'undefined') {
     core.Settings.NON_LINEAR_JUMP_SIZE = 100;
     //the original starting point for nonlinear solving
     core.Settings.NON_LINEAR_START = 0.01;
-
+    //When points are generated as starting points for Newton's method, they are sliced into small
+    //slices to make sure that we have convergence on the right point. This defines the 
+    //size of the slice
+    core.Settings.NEWTON_SLICES = 200;
+    //The epsilon used in Newton's iteration
+    core.Settings.NEWTON_EPSILON = Number.EPSILON*2;
+    //The distance in which two solutions are deemed the same
+    core.Settings.SOLUTION_PROXIMITY = 1e-14;
+    //Indicate wheter to filter the solutions are not
+    core.Settings.FILTER_SOLUTIONS = true;
+    
     core.Symbol.prototype.hasTrig = function () {
         return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
     };
@@ -90,7 +102,9 @@ if ((typeof module) !== 'undefined') {
         },
         toLHS: function () {
             var eqn = this.removeDenom();
-            return _.expand(_.subtract(eqn.LHS, eqn.RHS));;
+            var _t = _.subtract(eqn.LHS, eqn.RHS);
+            var retval = _.expand(_t);
+            return retval;
         },
         removeDenom: function () { 
             var a = this.LHS.clone();
@@ -163,7 +177,26 @@ if ((typeof module) !== 'undefined') {
     };
     
     core.Expression.prototype.solveFor = function (x) {
-        return solve(core.Utils.isSymbol(this.symbol) ? this.symbol : this.symbol.toLHS(), x).map(function (x) {
+        var symbol;
+        if(this.symbol instanceof Equation) {
+            //exit right away if we already have the answer
+            //check the LHS
+            if(this.symbol.LHS.isConstant() && this.symbol.RHS.equals(x))
+                return new core.Expression(this.symbol.LHS);
+            
+            //check the RHS
+            if(this.symbol.RHS.isConstant() && this.symbol.LHS.equals(x))
+                return new core.Expression(this.symbol.RHS);
+            
+            //otherwise just bring it to LHS
+            symbol = this.symbol.toLHS();
+        }
+        else  {
+            symbol = this.symbol;
+        }
+            
+        
+        return solve(symbol, x).map(function (x) {
             return new core.Expression(x);
         });
     };
@@ -685,15 +718,18 @@ if ((typeof module) !== 'undefined') {
          * must exist on that interval
          * @param {Symbol} symbol
          * @param {Number} step
+         * @param {Array} points
          * @returns {Array}
          */
-        getPoints: function (symbol, step) {
+        getPoints: function (symbol, step, points) {
             step = step || 0.01;
+            points = points || [];
             var f = build(symbol);
-            var start = Math.round(f(0)),
+            var x0 = 0;
+                
+            var start = Math.round(x0),
                     last = f(start),
                     last_sign = last / Math.abs(last),
-                    points = [],
                     rside = core.Settings.ROOTS_PER_SIDE, // the max number of roots on right side
                     lside = rside * 2 + 1; // the max number of roots on left side
             // check around the starting point
@@ -705,33 +741,35 @@ if ((typeof module) !== 'undefined') {
                 if (x.containsFunction(core.Settings.LOG))
                     points.push(0.1);
             });
-            // Possible issue #1. If the step size exceeds the zeros then they'll be missed. Consider the case
-            // where the function dips to negative and then back the positive with a step size of 0.1. The function
-            // will miss the zeros because it will jump right over it. Think of a case where this can happen.
-            for (var i = start; (i) < core.Settings.SOLVE_RADIUS; i++) {
-                var val = f(i * step),
-                        sign = val / Math.abs(val);
-                if (isNaN(val) || !isFinite(val) || points.length > rside) { 
-                    break;
-                }
-                //compare the signs. The have to be different if they cross a zero
-                if (sign !== last_sign) {
-                    points.push((i - 1) / 2); //take note of the possible zero location
-                }
-                last_sign = sign;
-            }
+            
+            var left = range(-core.Settings.SOLVE_RADIUS, start, step),
+                right = range(start, core.Settings.SOLVE_RADIUS, step);
+            
+            var test_side = function(side, num_roots) {
+                var xi, val, sign;
+                var hits = [];
+                for(var i=0, l=side.length; i<l; i++) {
+                    xi = side[i]; //the point being evaluated
+                    val = f(xi);
+                    sign = val / Math.abs(val);
+                    //Don't add non-numeric values
+                    if (isNaN(val) || !isFinite(val) || hits.length > num_roots) { 
+                        continue;
+                    }
 
-            //check the other side
-            for (var i = start - 1; i > -core.Settings.SOLVE_RADIUS; i--) {
-                var val = f(i),
-                        sign = val / Math.abs(val);
-                if (isNaN(val) || !isFinite(val) || points.length > lside)
-                    break;
-                //compare the signs. The have to be different if they cross a zero
-                if (sign !== last_sign)
-                    points.push((i - 1) / 2); //take note of the possible zero location
-                last_sign = sign;
-            }
+                    //compare the signs. The have to be different if they cross a zero
+                    if (sign !== last_sign) {
+                        hits.push(xi); //take note of the possible zero location
+                    }
+                    last_sign = sign;
+                }
+
+                points = points.concat(hits);
+            };
+            
+            test_side(left, lside);
+            test_side(right, rside);
+            
             return points;
         },
         Newton: function (point, f, fp) {
@@ -746,6 +784,7 @@ if ((typeof module) !== 'undefined') {
                     x = 0;
                     break;
                 }
+                
                 iter++;
                 if (iter > maxiter)
                     return; //naximum iterations reached
@@ -754,9 +793,11 @@ if ((typeof module) !== 'undefined') {
                 var e = Math.abs(x - x0);
                 x0 = x;
             }
-            while (e > Number.EPSILON)
-
-            return x;
+            while (e > Settings.NEWTON_EPSILON)
+            
+            //check if the number is indeed zero. 1e-13 seems to give the most accurate results
+            if(Math.abs(f(x)) <= 1e-13)
+                return x;
         },
         rewrite: function (rhs, lhs, for_variable) {
             lhs = lhs || new Symbol(0);
@@ -883,7 +924,6 @@ if ((typeof module) !== 'undefined') {
      * @returns {Array}
      */
     var solve = function (eqns, solve_for, solutions) {
-        
         //make preparations if it's an Equation
         if (eqns instanceof Equation) {
             //if it's zero then we're done
@@ -969,6 +1009,8 @@ if ((typeof module) !== 'undefined') {
         var eq = core.Utils.isSymbol(eqns) ? eqns : __.toLHS(eqns),
                 vars = core.Utils.variables(eq), //get a list of all the variables
                 numvars = vars.length;//how many variables are we dealing with
+        
+        
         //if we're dealing with a single variable then we first check if it's a 
         //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.     
         //Don't waste time
@@ -1172,20 +1214,26 @@ if ((typeof module) !== 'undefined') {
                     var points1 = __.getPoints(eq, 0.1);
                     var points2 = __.getPoints(eq, 0.05);
                     var points3 = __.getPoints(eq, 0.01);
-                    var points = core.Utils.arrayUnique(points1.concat(points2).concat(points3)),
-                            l = points.length;
+                    var points = core.Utils.arrayUnique(points1.concat(points2).concat(points3)).sort(function(a, b) { return a-b});
+                    
+                    //generate slices
+                    //points = core.Utils.arrayAddSlices(points, Settings.NEWTON_SLICES); 
+
                     //compile the function and the derivative of the function
                     var f = build(eq.clone());
+                    
                     var d = _C.diff(eq.clone());
+                    
                     var fp = build(d);
-                    for (var i = 0; i < l; i++) {
+                    for (var i = 0; i < points.length; i++) {
                         var point = points[i];
+                        
                         add_to_result(__.Newton(point, f, fp), has_trig);
                     }
                     solutions.sort();
                 }
                 catch(e) {
-                    ;
+                    console.log(e);
                 }   
             }
         }
@@ -1194,41 +1242,51 @@ if ((typeof module) !== 'undefined') {
             //place them in an array and call the quad or cubic function to get the results
             if (!eq.hasFunc(solve_for) && eq.isComposite()) {
                 try {
-                    var coeffs = core.Utils.getCoeffs(eq, solve_for);
-
-                    var l = coeffs.length,
-                            deg = l - 1; //the degree of the polynomial
-                    //get the denominator and make sure it doesn't have x
+                    var factored = core.Algebra.Factor.factor(eq.clone());
                     
-                    //handle the problem based on the degree
-                    switch (deg) {
-                        case 0:
-                            var separated = separate(eq);
-                            var lhs = separated[0],
-                                    rhs = separated[1];
-                            if (lhs.group === core.groups.EX) {
-                                add_to_result(_.parse(core.Utils.format(core.Settings.LOG+'(({0})/({2}))/'+core.Settings.LOG+'({1})', rhs, lhs.value, lhs.multiplier)));
-                            }
-                            break;
-                        case 1:
-                            //nothing to do but to return the quotient of the constant and the LT
-                            //e.g. 2*x-1
-                            add_to_result(_.divide(coeffs[0], coeffs[1].negate()));
-                            break;
-                        case 2:
-                            add_to_result(__.quad.apply(undefined, coeffs));
-                            break;
-                        case 3:
-                            add_to_result(__.cubic.apply(undefined, coeffs));
-                            break;
-                        case 4:
-                            add_to_result(__.quartic.apply(undefined, coeffs));
-                            break;
-                        default:
-                            add_to_result(__.csolve(eq, solve_for));
-                            if (solutions.length === 0)
-                                add_to_result(__.divideAndConquer(eq, solve_for));
+                    if(factored.group === CB) {
+                        factored.each(function(x) {
+                            add_to_result(solve(x, solve_for));
+                        });
                     }
+                    else {
+                        var coeffs = core.Utils.getCoeffs(eq, solve_for);
+
+                        var l = coeffs.length,
+                                deg = l - 1; //the degree of the polynomial
+                        //get the denominator and make sure it doesn't have x
+
+                        //handle the problem based on the degree
+                        switch (deg) {
+                            case 0:
+                                var separated = separate(eq);
+                                var lhs = separated[0],
+                                        rhs = separated[1];
+                                if (lhs.group === core.groups.EX) {
+                                    add_to_result(_.parse(core.Utils.format(core.Settings.LOG+'(({0})/({2}))/'+core.Settings.LOG+'({1})', rhs, lhs.value, lhs.multiplier)));
+                                }
+                                break;
+                            case 1:
+                                //nothing to do but to return the quotient of the constant and the LT
+                                //e.g. 2*x-1
+                                add_to_result(_.divide(coeffs[0], coeffs[1].negate()));
+                                break;
+                            case 2:
+                                add_to_result(__.quad.apply(undefined, coeffs));
+                                break;
+                            case 3:
+                                add_to_result(__.cubic.apply(undefined, coeffs));
+                                break;
+                            case 4:
+                                add_to_result(__.quartic.apply(undefined, coeffs));
+                                break;
+                            default:
+                                add_to_result(__.csolve(eq, solve_for));
+                                if (solutions.length === 0)
+                                    add_to_result(__.divideAndConquer(eq, solve_for));
+                        }
+                    }    
+                    
                 }
                 catch (e) { /*something went wrong. EXITING*/
                     ;
@@ -1310,7 +1368,7 @@ if ((typeof module) !== 'undefined') {
                 return _.pow(x, new Symbol(cfact));
             });
         }
-
+        
         return solutions;
     };
     

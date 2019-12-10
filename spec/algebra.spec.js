@@ -393,7 +393,7 @@ describe('Algebra', function () {
       var result = nerdamer(formula).toString();
 
       // then
-      expect(result).toBe('(1+2*x)^2*(1/4)');
+      expect(result).toBe('(1/4)*(1+2*x)^2');
     });
 
     /** #43: Formula not expanded. */
@@ -414,10 +414,10 @@ describe('Algebra', function () {
             {
                 given: 'factor(x^2+2*x+1)',
                 expected: '(1+x)^2'
-            }, 
+            },
             {
                 given: 'factor(x^2-y^2)',
-                expected: '(-y+x)*(x+y)'
+                expected: '-(-x+y)*(x+y)'
             }, 
             {
                 given: 'factor(a^2*x^2-b^2*y^2)',
@@ -457,11 +457,19 @@ describe('Algebra', function () {
             },
             {
                 given: 'factor(sqrt(4*x^2*y+4*x^2))',
-                expected: '(2)*(abs(x))*(sqrt(1+y))'
+                expected: '2*abs(x)*sqrt(1+y)'
             },
             {
                 given: 'factor(x^3-1/2x^2-13/2x-3)',
-                expected: '(-3+x)*(1+2*x)*(1/2)*(2+x)'
+                expected: '(1/2)*(-3+x)*(1+2*x)*(2+x)'
+            },
+            {
+                given: 'factor(x^16-1)',
+                expected: '(-1+x)*(1+x)*(1+x^2)*(1+x^4)*(1+x^8)'
+            },
+            {
+                given: 'factor(-1866240-311040*x^2-3265920*x+1120*x^8+150080*x^6+17610*x^7+2026080*x^4+2509920*x^3+30*x^9+738360*x^5)',
+                expected: '10*(-1+x)*(1+x)*(3*x+4)*(6+x)^6'
             }
         ];
 
@@ -472,6 +480,11 @@ describe('Algebra', function () {
             // then
             expect(result.toString()).toEqual(testCases[i].expected);
         }
+    });
+    
+    it('should not have any regression to factor', function() {
+        //this test will absolutely break as factor improves enough to factor this expression. For now it just serves as a safeguard
+        expect(nerdamer('factor(x^a+2x^(a-1)+1x^(a-2))').toString()).toEqual('2*x^(-1+a)+x^(-2+a)+x^a');
     });
     
     it('should correctly determine the polynomial degree', function () {
@@ -695,7 +708,7 @@ describe('Algebra', function () {
             }, 
             {
                 given: 'simplify(cos(x)^2+sin(x)^2+cos(x)-tan(x)-1+sin(x^2)^2+cos(x^2)^2)',
-                expected: '-(-1-cos(x)+tan(x))'
+                expected: '-tan(x)+1+cos(x)'
             },
             {
                 given: 'simplify((x^2+4*x-45)/(x^2+x-30))',
@@ -725,6 +738,10 @@ describe('Algebra', function () {
             {
                 given: 'simplify((-2*i+7)^(-1)*(3*i+4))',
                 expected: '(29/53)*i+22/53'
+            },
+            {
+                given: 'simplify(((17/2)*(-5*K+32)^(-1)*K^2+(5/2)*K-125*(-5*K+32)^(-1)*K-16+400*(-5*K+32)^(-1))*(-17*(-5*K+32)^(-1)*K+80*(-5*K+32)^(-1))^(-1))',
+                expected: '-(-112-4*K^2+35*K)*(-80+17*K)^(-1)'
             }
         ];
 

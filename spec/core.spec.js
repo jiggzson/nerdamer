@@ -489,7 +489,7 @@ describe('Nerdamer core', function () {
             {
                 given: 'expand((9*y*x+1)^2)',
                 expected: '1+18*x*y+81*x^2*y^2',
-                expectedValue: '4015.7568999999994'
+                expectedValue: '4015.756899999999'
             }, 
             {
                 given: 'expand((x+5)*(x-3)-x^2)',
@@ -651,6 +651,31 @@ describe('Nerdamer core', function () {
             expect(value).toEqual(testCases[i].expectedValue);
         }
     });
+    it('should handle large exponents', function() {
+        expect(nerdamer("((0.06/3650))^(365)").toString()).toEqual('1410126170338158616048224728371571380367482072097134683678107761'+
+                '52508851857709566371341862240808591002757985609412198322971415396168976254349069'+
+                '9072942506404339112922628405843/22958690276909851695578696288325771692413979062611'+
+                '991343897836236337139161946070457727457304403772796893304635803331160164612018173513'+
+                '31134891165302696107379996154818718135122744754040421370203240041207474864695474953483'+
+                '0902803016857824896441156744745927014013655670039876606817604403974679132586661890547851'+
+                '679296531769750182377028054935351721036749094036432130424970214049875323757624442119121774'+
+                '055322139084444881193088085062373618050647934648517067336395372063877340185058649456212635239'+
+                '066781525382959311599987961299501210179615619443916881386730704082805297329446411862362398493471'+
+                '826680176950800344487654991092708947796616392537184126525313140738179830882678244141981560034679553'+
+                '975783364407913480224860273677558689624530555494789243375386735721249700734052057353034685422151396642'+
+                '918026922556798918041766876185384884777704756416389503981017717926985777672007862927270802670740330468020'+
+                '802233942408161027975787463864142754167881620056649731281986417206144622511945116440478852141832742043753412'+
+                '722079707428689254358366463206869962206219178342509475906640460010907598207195708896768921596249362559252745779'+
+                '251530796907715219008462775395896084216357246887696419435087591409683227539062500000000000000000000000000000000000'+
+                '000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'+
+                '000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'+
+                '000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'+
+                '000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'+
+                '000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'+
+                '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
+                );
+        expect(nerdamer("1000*(1+(0.06/365))^(365*3)").evaluate().text()).toEqual('1197.1996529367539');
+    });
     it('should compute factorials', function () {
         // given
        var testCases = [
@@ -794,7 +819,7 @@ describe('Nerdamer core', function () {
             {
                 given: 'sqrt(a/x)',
                 expected: 'sqrt(a)*sqrt(x)^(-1)',
-                expectedValue: '1.8797162906495577'
+                expectedValue: '1.879716290649558'
             },
             {
                 given: 'sqrt(-x)',
@@ -1695,6 +1720,32 @@ describe('Nerdamer core', function () {
             expect(result.toString()).toEqual(testCases[i].expected);
       }
     });
+    it('should add vectors correctly', function() {
+        expect(nerdamer('1+[a,b]').toString()).toEqual('[1+a,1+b]');
+        expect(nerdamer('[a,b]+1').toString()).toEqual('[1+a,1+b]');
+        expect(nerdamer('[a,b]+[a,b]').toString()).toEqual('[2*a,2*b]');
+    });
+    it('should subtract vectors correctly', function() {
+        expect(nerdamer('1-[a,b]').toString()).toEqual('[-a+1,-b+1]');
+        expect(nerdamer('[a,b]-1').toString()).toEqual('[-1+a,-1+b]');
+        expect(nerdamer('[a,b]-[a,b]').toString()).toEqual('[0,0]');
+    });
+    it('should multiply vectors correctly', function() {
+        expect(nerdamer('3*[a,b]').toString()).toEqual('[3*a,3*b]');
+        expect(nerdamer('[a,b]*x').toString()).toEqual('[a*x,b*x]');
+        expect(nerdamer('[a,b]*[a,b]').toString()).toEqual('[a^2,b^2]');
+    });
+    it('should divide vectors correctly', function() {
+        expect(nerdamer('12/[3,4]').toString()).toEqual('[4,3]');
+        expect(nerdamer('[21,15]/3').toString()).toEqual('[7,5]');
+        expect(nerdamer('[a^2, b^2]/[a,b]').toString()).toEqual('[a,b]');
+    });
+    it('should get slices correctly', function() {
+        expect(nerdamer('[1,2,3][0:2]').toString()).toEqual('[1,2]');
+    });
+    it('should get elements correctly', function() {
+        expect(nerdamer('[1,2,3][1]').toString()).toEqual('2');
+    });
 });
 
 describe('Further arithmetic test cases', function () {
@@ -1860,7 +1911,7 @@ describe('Further arithmetic test cases', function () {
             {
                 given: '(y+y^2)^6+y',
                 expected: '(y+y^2)^6+y',
-                expectedValue: '8163841.198203676'
+                expectedValue: '8163841.198203677'
             },
             {
                 given: '2*(x+x^2)+(y+y^2)^6+y',
@@ -2069,7 +2120,7 @@ describe('Further arithmetic test cases', function () {
             {
                 given: 'y^y^y',
                 expected: 'y^y^y',
-                expectedValue: '4.568487550256372e+26'
+                expectedValue: '456848755025637200000000000'
             },
             {
                 given: '(x^4)^(1/4)',
@@ -2154,7 +2205,7 @@ describe('Further arithmetic test cases', function () {
             {
                 given: '(81*(x*y)^2+9*x*y)+(9*x*y)',
                 expected: '18*x*y+81*x^2*y^2',
-                expectedValue: '4014.7568999999994'
+                expectedValue: '4014.7569'
             },
             {
                 given: '((x)^(1/2)*x^(1/3))-x^(5/6)',
@@ -2169,7 +2220,7 @@ describe('Further arithmetic test cases', function () {
             {
                 given: '(81*(x*y)^2+9*x*y)*(9*x*y)',
                 expected: '9*(81*x^2*y^2+9*x*y)*x*y',
-                expectedValue: '246510.37095299995'
+                expectedValue: '246510.37095299998'
             },
             {
                 given: '2*((81*(x*y)^2+9*x*y))*(5*(9*x*y))',
@@ -2432,7 +2483,7 @@ describe('trigonometric functions', function () {
             {
                 given: 'x^x*cos(x)*sin(x)/x',
                 expected: 'cos(x)*sin(x)*x^(-1+x)',
-                expectedValue: '-0.9856355924988681'
+                expectedValue: '-0.985635592498868'
             },
             {
                 given: '2*cos(x)+5*cos(2*x)',
@@ -2543,7 +2594,7 @@ describe('hyperbolic trigonometric functions', function () {
             {
                 given: 'sech(0.1)',
                 expected: 'sech(1/10)',
-                expectedValue: '0.9950207489532266'
+                expectedValue: '0.9950207489532267'
             },
             {
                 given: 'csch(0.1)',
@@ -2726,5 +2777,32 @@ describe('hyperbolic trigonometric functions', function () {
     });
     it('should not overflow', function() {
         expect(nerdamer('(x+1)+((x+1)^2+(x+1)^3)').toString()).toEqual('(1+x)^2+(1+x)^3+1+x');
+    });
+});
+
+describe('omit brackets for functions', function() {
+    it('should add functions with coefficients', function() {
+        expect(nerdamer('2 sin x + 4 sin x').toString()).toEqual('6*sin(x)');
+    });
+    it('should add functions without coefficients', function() {
+        expect(nerdamer('sin x + sin x').toString()).toEqual('2*sin(x)');
+    });
+    it('should multiply and divide functions with "random" spaces', function() {
+        expect(nerdamer('3sin x /6+sin x').toString()).toEqual('(3/2)*sin(x)');
+    });
+    it('should recognize functions with multiple arguments', function() {
+        expect(nerdamer('2 max 1,2,3 +1').toString()).toEqual('7');
+    });
+    it('should recognize functions with arguments containing coefficients', function() {
+        expect(nerdamer('sin 2x').toString()).toEqual('sin(2*x)');
+    });
+    it('should recognize functions with arguments containing coefficients', function() {
+        expect(nerdamer('sin 2x').toString()).toEqual('sin(2*x)');
+        expect(nerdamer('sin a x').toString()).toEqual('sin(a)*x');
+    });
+    it('should multiply functions without brackets', function() {
+        expect(nerdamer('sin 2a cos 2b').toString()).toEqual('cos(2*b)*sin(2*a)');
+        expect(nerdamer('sin x + sin x + 1 ').toString()).toEqual('1+2*sin(x)');
+        expect(nerdamer('5 x y sin x').toString()).toEqual('5*sin(x)*x*y');
     });
 });

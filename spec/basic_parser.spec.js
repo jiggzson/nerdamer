@@ -51,6 +51,7 @@ describe('Modulus', function() {
     it('should add and multiply with modulus', function(){expect(parse('2+10%4*8')).toEqual(18);});
     it('should respect modulus in functions', function(){expect(parse('max(3,2+10%4*8,5)')).toEqual(18);});
     it('should respect modulus with percentages', function(){expect(parse('8000%%8')).toEqual(0);});
+    it('should correctly handle modulus left assoc', function(){expect(parse('3*3%9')).toEqual(0);});
 });
 
 describe('Brackets', function() {
@@ -119,6 +120,12 @@ describe('Accessing vectors', function(){
     it('should not confuse vector wit accessor', function(){
         expect(parse('[[1,2],[3,4],[5,6]]').toString()).toEqual('[[1,2],[3,4],[5,6]]');
     });
+});
+
+describe('Setting vector values', function() {
+   it('should set values of vectors with the assign operator', function() {
+       expect(parse('[1,2][1]:x').toString()).toEqual('[1,x]');
+   });
 });
 
 describe('Substitutions', function(){
