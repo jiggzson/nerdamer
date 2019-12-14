@@ -1746,6 +1746,16 @@ describe('Nerdamer core', function () {
     it('should get elements correctly', function() {
         expect(nerdamer('[1,2,3][1]').toString()).toEqual('2');
     });
+    it('should remove near duplicates from vectors', function() {
+        expect(nerdamer('vectrim([cos(0), 1, 1.000000000000001])').toString()).toEqual('[1]');
+        expect(nerdamer('vectrim([cos(0), 1, 1.000000000000001], 0)').text()).toEqual('[1,1.000000000000001]');
+    });
+    it('should convert degrees to radians', function() {
+        expect(nerdamer('radians(45)').toString()).toEqual('(1/4)*pi');
+    });
+    it('should convert radians to degrees', function() {
+        expect(nerdamer('degrees(pi/4)').toString()).toEqual('45');
+    });
 });
 
 describe('Further arithmetic test cases', function () {
@@ -2806,3 +2816,4 @@ describe('omit brackets for functions', function() {
         expect(nerdamer('5 x y sin x').toString()).toEqual('5*sin(x)*x*y');
     });
 });
+

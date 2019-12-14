@@ -176,6 +176,18 @@ if ((typeof module) !== 'undefined') {
         return new Equation(a, b);
     };
     
+    /**
+     * Sets two expressions equal
+     * @param {Symbol} symbol
+     * @returns {Expression}
+     */
+    core.Expression.prototype.equals = function(symbol) {
+        if(symbol instanceof core.Expression)
+            symbol = symbol.symbol; //grab the symbol if it's an expression
+        var eq = new Equation(this.symbol, symbol);
+        return eq;
+    };
+    
     core.Expression.prototype.solveFor = function (x) {
         var symbol;
         if(this.symbol instanceof Equation) {
@@ -270,7 +282,7 @@ if ((typeof module) !== 'undefined') {
     
     //version solve
     var __ = core.Solve = {
-        version: '2.0.2',
+        version: '2.0.3',
         solutions: [],
         solve: function (eq, variable) {
             var solution = solve(eq, String(variable));

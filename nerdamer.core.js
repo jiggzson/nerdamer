@@ -16,7 +16,7 @@ var nerdamer = (function (imports) {
     "use strict";
 
 //version ====================================================================== 
-    var version = '1.1.0';
+    var version = '1.1.1';
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
@@ -869,7 +869,45 @@ var nerdamer = (function (imports) {
         }
         return a;
     };
+    
+    /**
+     * Removes duplicates from an array. Returns a new array
+     * @param {Array} arr
+     * @param {Function} condition
+     */
+    var removeDuplicates = function(arr, condition) {
+        var conditionType = typeof condition;
 
+        if(conditionType !== 'function' || conditionType === 'undefined') {
+            condition = function(a, b) {
+                return a === b;
+            };
+        }
+
+        var seen = [];
+
+        while(arr.length) {
+            var a = arr[0];
+            //only one element left so we're done
+            if(arr.length === 1) {
+                seen.push(a);
+                break;
+            }
+            var temp = [];
+            seen.push(a); //we already scanned these
+            for(var i=1; i<arr.length; i++) {
+                var b = arr[i];
+                //if the number is outside the specified tolerance
+                if(!condition(a, b))
+                    temp.push(b);
+            }
+            //start over with the remainder
+            arr = temp;
+        }
+
+        return seen;
+    };
+    
     /**
      * Reserves the names in an object so they cannot be used as function names
      * @param {Object} obj
@@ -5356,6 +5394,8 @@ var nerdamer = (function (imports) {
             'atanh': [trigh.atanh, 1],
             'log10': [, 1],
             'exp': [exp, 1],
+            'radians': [radians, 1],
+            'degrees': [degrees, 1],
             'min': [min, -1],
             'max': [max, -1],
             'erf': [, 1],
@@ -5401,6 +5441,7 @@ var nerdamer = (function (imports) {
             'cross': [cross, 2],
             'vecget': [vecget, 2],
             'vecset': [vecset, 3],
+            'vectrim': [vectrim, [1, 2]],
             'matget': [matget, 3],
             'matset': [matset, 4],
             'matgetrow': [matgetrow, 2],
@@ -6885,6 +6926,24 @@ var nerdamer = (function (imports) {
         function exp(symbol) {
             return _.parse(format('e^({0})', symbol));
         }
+        
+        /**
+         * Converts value degrees to radians
+         * @param {Symbol} symbol
+         * @returns {Symbol}
+         */
+        function radians(symbol) {
+            return _.parse(format('({0})*pi/180', symbol));
+        }
+        
+        /**
+         * Converts value from radians to degrees
+         * @param {Symbol} symbol
+         * @returns {Symbol}
+         */
+        function degrees(symbol) {
+            return _.parse(format('({0})*180/pi', symbol));
+        }
 
         /**
          * The square root function
@@ -7688,17 +7747,61 @@ var nerdamer = (function (imports) {
 
             return symbol;
         }
-
+        
+        /**
+         * Returns an identity matrix of nxn
+         * @param {Number} n
+         * @returns {Matrix}
+         */
         function imatrix(n) {
             return Matrix.identity(n);
         }
-
+        
+        /**
+         * Retrieves and item from a vector
+         * @param {Vector} vector
+         * @param {Number} index
+         * @returns {Vector|Symbol}
+         */
         function vecget(vector, index) {
             if (index.isConstant() && isInt(index))
                 return vector.elements[index];
             return _.symfunction('vecget', arguments);
         }
-
+        
+        /**
+         * Removes duplicates from a vector
+         * @param {Vector} vector
+         * @param {Number} tolerance
+         * @returns {Vector}
+         */
+        function vectrim(vector, tolerance) {
+            tolerance = typeof tolerance === 'undefined' ? 1e-14 : tolerance;
+            
+            vector = vector.clone();
+            
+            tolerance = Number(tolerance);
+            //place algebraic solutions first
+            vector.elements.sort(function(a, b) {
+                return b.group - a.group;
+            });
+            //depending on the start point we may have duplicates so we need to clean those up a bit.
+            //start by creating an object with the solution and the numeric value. This way we don't destroy algebraic values
+            vector.elements = removeDuplicates(vector.elements, function(a, b) {
+                var diff = Number(_.subtract(evaluate(a), evaluate(b)).abs());
+                return diff <= tolerance;
+            });
+            
+            return vector;
+        }
+        
+        /**
+         * Set a value for a vector at a given index
+         * @param {Vector} vector
+         * @param {Number} index
+         * @param {Symbol} value
+         * @returns {Vector}
+         */
         function vecset(vector, index, value) {
             if (!index.isConstant)
                 return _.symfunction('vecset', arguments);
