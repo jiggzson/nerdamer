@@ -1308,10 +1308,10 @@ var nerdamer = (function (imports) {
         },
         //factorial
         bigfactorial: function (x) {
-            var retval = new Frac(1);
+            var retval = new bigInt(1);
             for (var i = 2; i <= x; i++)
-                retval = retval.multiply(new Frac(i));
-            return retval;
+                retval = retval.times(i);
+            return new Frac(retval);
         },
         //https://en.wikipedia.org/wiki/Logarithm#Calculation
         bigLog: function (x) {
