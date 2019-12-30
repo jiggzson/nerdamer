@@ -288,7 +288,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate((22/7)^x,x)',
-                expected: '(-log(7)+log(22))^(-1)*22^x*7^(-x)'
+                expected: '(log(1/7)+log(22))^(-1)*22^x*7^(-x)'
             },
             {
                 given: 'integrate(cos(x), x)',

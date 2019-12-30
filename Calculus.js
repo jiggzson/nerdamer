@@ -1888,7 +1888,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             var symb = sym2.clone().toLinear();
                                             if(g1 === EX && g2 === EX && sym1.power.contains(dx) && sym2.power.contains(dx) 
                                                     && !syma.contains(dx) && !symb.contains(dx)) {
-                                                retval = _.parse(format('(({0})^(({2})*({4}))*({1})^(({3})*({4})))/(log(({0}))-log(({1})))',
+                                                retval = _.parse(format('(({0})^(({2})*({4}))*({1})^(({3})*({4})))/(log(({0})^({2}))+log(({1})^({3})))',
                                                     syma.toString(),
                                                     symb.toString(),
                                                     sym1.power.multiplier.toString(),
