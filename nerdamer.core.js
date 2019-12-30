@@ -6956,13 +6956,14 @@ var nerdamer = (function (imports) {
                 a = Symbol.unwrapPARENS(_.parse(symbol).toLinear());
                 b = _.parse(symbol.power);
             }
-            if(symbol.group === P) {
+            else if(symbol.group === P) {
                 a = _.parse(symbol.value);
                 b = _.parse(symbol.power);
             }
             
             if(a && b && a.group === N && b.group === N) {
                 var _roots = [];
+                var parts = Symbol.toPolarFormArray(symbol);
                 var r = _.parse(a).abs().toString();
                 //https://en.wikipedia.org/wiki/De_Moivre%27s_formula
                 var x = arg(a).toString();
@@ -6976,9 +6977,23 @@ var nerdamer = (function (imports) {
                 }
                 return Vector.fromArray(_roots);
             }
-            else {
-                return Vector.fromArray([_.parse(symbol)]);
+            else if(symbol.isConstant(true)) {
+                var sign = symbol.sign();
+                var x = evaluate(symbol.abs());
+                var root = _.sqrt(x);
+                
+                var _roots = [root.clone(), root.negate()];
+                
+                if(sign < 0)
+                    _roots = _roots.map(function(x) {
+                        return _.multiply(x, Symbol.imaginary());
+                    });
             }
+            else {
+                _roots = [_.parse(symbol)];
+            }
+            
+            return Vector.fromArray(_roots);
         }
         
         /**
@@ -11534,3 +11549,7 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+
+var x = nerdamer('nroots(4+2i)');
+console.log(x.text());
