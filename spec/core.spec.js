@@ -191,7 +191,7 @@ describe('Nerdamer core', function () {
             },
             {
                 given: '(-1)^(3/4)',
-                expected: '(-1)^(3/4)'
+                expected: '(93222358/131836323)*i-93222358/131836323'
             }
         ];
 
@@ -582,7 +582,7 @@ describe('Nerdamer core', function () {
             }, 
             {
                 given: 'polarform(i-1)',
-                expected: '(-1)^(1/4)*sqrt(2)'
+                expected: '(i*sqrt(2)^(-1)+sqrt(2)^(-1))*sqrt(2)'
             }, 
             {
                 given: 'polarform(i+1)',
@@ -1746,6 +1746,16 @@ describe('Nerdamer core', function () {
     it('should get elements correctly', function() {
         expect(nerdamer('[1,2,3][1]').toString()).toEqual('2');
     });
+    it('should remove near duplicates from vectors', function() {
+        expect(nerdamer('vectrim([cos(0), 1, 1.000000000000001])').toString()).toEqual('[1]');
+        expect(nerdamer('vectrim([cos(0), 1, 1.000000000000001], 0)').text()).toEqual('[1,1.000000000000001]');
+    });
+    it('should convert degrees to radians', function() {
+        expect(nerdamer('radians(45)').toString()).toEqual('(1/4)*pi');
+    });
+    it('should convert radians to degrees', function() {
+        expect(nerdamer('degrees(pi/4)').toString()).toEqual('45');
+    });
 });
 
 describe('Further arithmetic test cases', function () {
@@ -2166,6 +2176,11 @@ describe('Further arithmetic test cases', function () {
                 given: '(-25)^(1/5)',
                 expected: '(-1)^(1/5)*5^(2/5)',
                 expectedValue: '-1.9036539387158786'
+            },
+            {
+                given: '-24.160787001838543^1.3^(-1)',
+                expected: '-108007829^(-10/13)*2609554151^(10/13)',
+                expectedValue: '-11.585948599615737'
             },
             {
                 given: '(x+y)--(x+y)',
@@ -2806,3 +2821,4 @@ describe('omit brackets for functions', function() {
         expect(nerdamer('5 x y sin x').toString()).toEqual('5*sin(x)*x*y');
     });
 });
+

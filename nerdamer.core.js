@@ -16,7 +16,7 @@ var nerdamer = (function (imports) {
     "use strict";
 
 //version ====================================================================== 
-    var version = '1.1.0';
+    var version = '1.1.1';
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
@@ -869,7 +869,45 @@ var nerdamer = (function (imports) {
         }
         return a;
     };
+    
+    /**
+     * Removes duplicates from an array. Returns a new array
+     * @param {Array} arr
+     * @param {Function} condition
+     */
+    var removeDuplicates = function(arr, condition) {
+        var conditionType = typeof condition;
 
+        if(conditionType !== 'function' || conditionType === 'undefined') {
+            condition = function(a, b) {
+                return a === b;
+            };
+        }
+
+        var seen = [];
+
+        while(arr.length) {
+            var a = arr[0];
+            //only one element left so we're done
+            if(arr.length === 1) {
+                seen.push(a);
+                break;
+            }
+            var temp = [];
+            seen.push(a); //we already scanned these
+            for(var i=1; i<arr.length; i++) {
+                var b = arr[i];
+                //if the number is outside the specified tolerance
+                if(!condition(a, b))
+                    temp.push(b);
+            }
+            //start over with the remainder
+            arr = temp;
+        }
+
+        return seen;
+    };
+    
     /**
      * Reserves the names in an object so they cannot be used as function names
      * @param {Object} obj
@@ -1270,10 +1308,10 @@ var nerdamer = (function (imports) {
         },
         //factorial
         bigfactorial: function (x) {
-            var retval = new Frac(1);
+            var retval = new bigInt(1);
             for (var i = 2; i <= x; i++)
-                retval = retval.multiply(new Frac(i));
-            return retval;
+                retval = retval.times(i);
+            return new Frac(retval);
         },
         //https://en.wikipedia.org/wiki/Logarithm#Calculation
         bigLog: function (x) {
@@ -2244,16 +2282,17 @@ var nerdamer = (function (imports) {
             var remainder = quotient - whole;
             if (remainder <= epsilon && i > 1) {
                 if (PRIMES.indexOf(i) !== -1)
-                    factors.push(i);
+                    PRIMES[i]=i;
+                factors.push(i);
                 l = whole;
             }
             i++;
         }
+        
         return factors.sort(function (a, b) {
             return a - b;
         });
-    }
-    ;
+    };
 
 //Expression ===================================================================   
     /** 
@@ -5356,6 +5395,8 @@ var nerdamer = (function (imports) {
             'atanh': [trigh.atanh, 1],
             'log10': [, 1],
             'exp': [exp, 1],
+            'radians': [radians, 1],
+            'degrees': [degrees, 1],
             'min': [min, -1],
             'max': [max, -1],
             'erf': [, 1],
@@ -5401,6 +5442,7 @@ var nerdamer = (function (imports) {
             'cross': [cross, 2],
             'vecget': [vecget, 2],
             'vecset': [vecset, 3],
+            'vectrim': [vectrim, [1, 2]],
             'matget': [matget, 3],
             'matset': [matset, 4],
             'matgetrow': [matgetrow, 2],
@@ -6885,6 +6927,24 @@ var nerdamer = (function (imports) {
         function exp(symbol) {
             return _.parse(format('e^({0})', symbol));
         }
+        
+        /**
+         * Converts value degrees to radians
+         * @param {Symbol} symbol
+         * @returns {Symbol}
+         */
+        function radians(symbol) {
+            return _.parse(format('({0})*pi/180', symbol));
+        }
+        
+        /**
+         * Converts value from radians to degrees
+         * @param {Symbol} symbol
+         * @returns {Symbol}
+         */
+        function degrees(symbol) {
+            return _.parse(format('({0})*180/pi', symbol));
+        }
 
         /**
          * The square root function
@@ -7286,6 +7346,10 @@ var nerdamer = (function (imports) {
          * @returns {Symbol}
          */
         function log(symbol, base) {
+            if(symbol.equals(1)) {
+                return new Symbol(0);
+            }
+            
             var retval;
             if (symbol.fname === SQRT && symbol.multiplier.equals(1)) {
                 return _.divide(log(symbol.args[0]), new Symbol(2));
@@ -7688,17 +7752,61 @@ var nerdamer = (function (imports) {
 
             return symbol;
         }
-
+        
+        /**
+         * Returns an identity matrix of nxn
+         * @param {Number} n
+         * @returns {Matrix}
+         */
         function imatrix(n) {
             return Matrix.identity(n);
         }
-
+        
+        /**
+         * Retrieves and item from a vector
+         * @param {Vector} vector
+         * @param {Number} index
+         * @returns {Vector|Symbol}
+         */
         function vecget(vector, index) {
             if (index.isConstant() && isInt(index))
                 return vector.elements[index];
             return _.symfunction('vecget', arguments);
         }
-
+        
+        /**
+         * Removes duplicates from a vector
+         * @param {Vector} vector
+         * @param {Number} tolerance
+         * @returns {Vector}
+         */
+        function vectrim(vector, tolerance) {
+            tolerance = typeof tolerance === 'undefined' ? 1e-14 : tolerance;
+            
+            vector = vector.clone();
+            
+            tolerance = Number(tolerance);
+            //place algebraic solutions first
+            vector.elements.sort(function(a, b) {
+                return b.group - a.group;
+            });
+            //depending on the start point we may have duplicates so we need to clean those up a bit.
+            //start by creating an object with the solution and the numeric value. This way we don't destroy algebraic values
+            vector.elements = removeDuplicates(vector.elements, function(a, b) {
+                var diff = Number(_.subtract(evaluate(a), evaluate(b)).abs());
+                return diff <= tolerance;
+            });
+            
+            return vector;
+        }
+        
+        /**
+         * Set a value for a vector at a given index
+         * @param {Vector} vector
+         * @param {Number} index
+         * @param {Symbol} value
+         * @returns {Vector}
+         */
         function vecset(vector, index, value) {
             if (!index.isConstant)
                 return _.symfunction('vecset', arguments);
@@ -7868,10 +7976,19 @@ var nerdamer = (function (imports) {
         //try to reduce a symbol by pulling its power
         function testPow(symbol) {
             if (symbol.group === P) {
-                var v = symbol.group === N ? symbol.multiplier.toDecimal() : symbol.value,
-                        fct = primeFactors(v)[0],
-                        n = new Frac(Math.log(v) / Math.log(fct)),
-                        p = n.multiply(symbol.power);
+                var v = symbol.value;
+                
+                var fct = primeFactors(v)[0];
+                
+                //safety
+                if(!fct) {
+                    warn('Unable to compute prime factors. This should not happen. Please review and report.');
+                    return symbol;
+                }
+                
+                var n = new Frac(Math.log(v) / Math.log(fct)),
+                    p = n.multiply(symbol.power);
+                
                 //we don't want a more complex number than before 
                 if (p.den > symbol.power.den)
                     return symbol;
@@ -8750,6 +8867,7 @@ var nerdamer = (function (imports) {
                         return _.add(nre, _.multiply(Symbol.imaginary(), nim));
                     }
                 }
+
                 /*
                  if(a.isImaginary() && bIsConstant && b.multiplier.num.abs().equals(1) && !b.multiplier.den.equals(1)) { 
                  var sign = b.sign();
@@ -8795,6 +8913,7 @@ var nerdamer = (function (imports) {
                         //move the sign back the exterior and let nerdamer handle the rest
                         result.negate();
                     }
+                    
                     result.multiplyPower(b);
                 }
 
@@ -8812,17 +8931,16 @@ var nerdamer = (function (imports) {
                                 else
                                     c = new Symbol(-1);
                             }
-                            else if (!even(b.multiplier.den)) {
-                                sign = Math.pow(sign, b.multiplier.num);
-                                c = new Symbol(Math.pow(a, b) * sign);
+                            else if (!even(b.multiplier.den)) { 
+                                c = new Symbol(Math.pow(sign, b.multiplier.num));
                             }
                             else {
                                 c = _.pow(_.symfunction(PARENTHESIS, [new Symbol(sign)]), b.clone());
                             }
-
                         }
 
                         result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
+                        
                         //result = new Symbol(Math2.bigpow(a.multiplier, b.multiplier));
                         //put the back sign
                         if (c)
@@ -8849,7 +8967,7 @@ var nerdamer = (function (imports) {
                         result.multiplier = result.multiplier.multiply(multiplier);
                     }
                 }
-                else {
+                else { 
                     var sign = a.sign();
                     if (b.isConstant() && a.isConstant() && !b.multiplier.den.equals(1) && sign < 0) {
                         //we know the sign is negative so if the denominator for b == 2 then it's i
@@ -8865,13 +8983,19 @@ var nerdamer = (function (imports) {
                             result = _.multiply(_.pow(a, b), i);
                         }
                         else {
-                            var aa = a.clone();
-                            aa.multiplier.negate();
-                            result = _.pow(_.symfunction(PARENTHESIS, [new Symbol(-1)]), b.clone());
-                            var _a = _.pow(new Symbol(aa.multiplier.num), b.clone());
-                            var _b = _.pow(new Symbol(aa.multiplier.den), b.clone());
-                            var r = _.divide(_a, _b);
-                            result = _.multiply(result, r);
+                            if(a.equals(-1)) {
+                                var theta = _.multiply(b, _.parse('pi'));
+                                result = evaluate(_.add(trig.cos(theta), _.multiply(Symbol.imaginary(), trig.sin(theta))));
+                            }
+                            else {
+                                var aa = a.clone();
+                                aa.multiplier.negate();
+                                result = _.pow(_.symfunction(PARENTHESIS, [new Symbol(sign)]), b.clone());
+                                var _a = _.pow(new Symbol(aa.multiplier.num), b.clone());
+                                var _b = _.pow(new Symbol(aa.multiplier.den), b.clone());
+                                var r = _.divide(_a, _b);
+                                result = _.multiply(result, r);
+                            }  
                         }
                     }
                     else if (Settings.PARSE2NUMBER && b.isImaginary()) {
@@ -8943,7 +9067,7 @@ var nerdamer = (function (imports) {
                 }
 
                 result = testSQRT(result);
-                
+
                 //don't multiply until we've tested the remaining symbol
                 if (num && den)
                     result = _.multiply(result, testPow(_.multiply(num, den)));
@@ -8962,12 +9086,15 @@ var nerdamer = (function (imports) {
                 //detect Euler's identity
                 else if (!Settings.IGNORE_E && result.isE() && result.group === EX && result.power.contains('pi')
                         && result.power.contains(Settings.IMAGINARY)) {
-                    //we have a match
-                    var m1 = result.multiplier,
-                            m2 = result.power.multiplier;
-                    result = new Symbol(even(m2.num) ? m1 : m1.negate());
-                    result = _.pow(result, new Symbol(m2.den).invert());
+                    var theta = b.stripVar(Settings.IMAGINARY);
+                    result = _.add(trig.cos(theta), _.multiply(Symbol.imaginary(), trig.sin(theta)));
+//                    //we have a match
+//                    var m1 = result.multiplier,
+//                            m2 = result.power.multiplier;
+//                    result = new Symbol(even(m2.num) ? m1 : m1.negate());
+//                    result = _.pow(result, new Symbol(m2.den).invert());
                 }
+                
                 return result;
             }
             else {

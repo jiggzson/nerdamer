@@ -1396,6 +1396,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             cfsymbol = _.multiply(cfsymbol, coeff);
                             coeff = new Symbol(1);
                         }
+                        
                         //if we only have one symbol left then let's not waste time. Just pull the integral
                         //and let the chips fall where they may
                         if(cfsymbol.group !== CB) {
@@ -1883,7 +1884,20 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             }
                                         }
                                         else { 
-                                            retval = __.integration.by_parts(symbol, dx, depth, opt);
+                                            var syma = sym1.clone().toLinear();
+                                            var symb = sym2.clone().toLinear();
+                                            if(g1 === EX && g2 === EX && sym1.power.contains(dx) && sym2.power.contains(dx) 
+                                                    && !syma.contains(dx) && !symb.contains(dx)) {
+                                                retval = _.parse(format('(({0})^(({2})*({4}))*({1})^(({3})*({4})))/(log(({0})^({2}))+log(({1})^({3})))',
+                                                    syma.toString(),
+                                                    symb.toString(),
+                                                    sym1.power.multiplier.toString(),
+                                                    sym2.power.multiplier.toString(),
+                                                    dx
+                                                ));
+                                            }
+                                            else 
+                                                retval = __.integration.by_parts(symbol, dx, depth, opt);
                                         }
                                     }
                                 }
