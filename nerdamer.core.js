@@ -1133,7 +1133,10 @@ var nerdamer = (function (imports) {
 //Big ========================================================================== 
     var Big = {
         cos: function (x) {
-            return new Symbol(bigDec.cos(x.toString()));
+            return new Symbol(bigDec.cos(x.multiplier.toDecimal()));
+        },
+        sin: function (x) {
+            return new Symbol(bigDec.sin(x.multiplier.toDecimal()));
         }
     };
 //Math2 ======================================================================== 
@@ -5467,7 +5470,8 @@ var nerdamer = (function (imports) {
             'intersects': [intersects, 2],
             'is_subset': [is_subset, 2],
             //system support
-            'print': [print, -1]
+            'print': [print, -1],
+            'nroots': [nroots, 1]
         };
 
         //error handler
@@ -6945,7 +6949,38 @@ var nerdamer = (function (imports) {
         function degrees(symbol) {
             return _.parse(format('({0})*180/pi', symbol));
         }
-
+        
+        function nroots(symbol) {
+            var a, b;
+            if(symbol.group === FN && symbol.fname === '') {
+                a = Symbol.unwrapPARENS(_.parse(symbol).toLinear());
+                b = _.parse(symbol.power);
+            }
+            if(symbol.group === P) {
+                a = _.parse(symbol.value);
+                b = _.parse(symbol.power);
+            }
+            
+            if(a && b && a.group === N && b.group === N) {
+                var _roots = [];
+                var r = _.parse(a).abs().toString();
+                //https://en.wikipedia.org/wiki/De_Moivre%27s_formula
+                var x = arg(a).toString();
+                var n = b.multiplier.den.toString();
+                var p = b.multiplier.num.toString();
+                
+                var formula = "(({0})^({1})*(cos({3})+({2})*sin({3})))^({4})";
+                for(var i=0; i<n; i++) {
+                    var t = evaluate(_.parse(format("(({0})+2*pi*({1}))/({2})", x, i, n))).multiplier.toDecimal();
+                    _roots.push(evaluate(_.parse(format(formula, r, n, Settings.IMAGINARY, t, p))));
+                }
+                return Vector.fromArray(_roots);
+            }
+            else {
+                return Vector.fromArray([_.parse(symbol)]);
+            }
+        }
+        
         /**
          * The square root function
          * @param {Symbol} symbol
@@ -8983,19 +9018,19 @@ var nerdamer = (function (imports) {
                             result = _.multiply(_.pow(a, b), i);
                         }
                         else {
-                            if(a.equals(-1)) {
-                                var theta = _.multiply(b, _.parse('pi'));
-                                result = evaluate(_.add(trig.cos(theta), _.multiply(Symbol.imaginary(), trig.sin(theta))));
-                            }
-                            else {
-                                var aa = a.clone();
-                                aa.multiplier.negate();
-                                result = _.pow(_.symfunction(PARENTHESIS, [new Symbol(sign)]), b.clone());
-                                var _a = _.pow(new Symbol(aa.multiplier.num), b.clone());
-                                var _b = _.pow(new Symbol(aa.multiplier.den), b.clone());
-                                var r = _.divide(_a, _b);
-                                result = _.multiply(result, r);
-                            }  
+//                            if(a.equals(-1)) {
+//                                var theta = _.multiply(b, _.parse('pi'));
+//                                result = evaluate(_.add(trig.cos(theta), _.multiply(Symbol.imaginary(), trig.sin(theta))));
+//                            }
+//                            else {
+                            var aa = a.clone();
+                            aa.multiplier.negate();
+                            result = _.pow(_.symfunction(PARENTHESIS, [new Symbol(sign)]), b.clone());
+                            var _a = _.pow(new Symbol(aa.multiplier.num), b.clone());
+                            var _b = _.pow(new Symbol(aa.multiplier.den), b.clone());
+                            var r = _.divide(_a, _b);
+                            result = _.multiply(result, r);
+//                            }  
                         }
                     }
                     else if (Settings.PARSE2NUMBER && b.isImaginary()) {

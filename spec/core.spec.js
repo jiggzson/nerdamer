@@ -191,7 +191,7 @@ describe('Nerdamer core', function () {
             },
             {
                 given: '(-1)^(3/4)',
-                expected: '(93222358/131836323)*i-93222358/131836323'
+                expected: '(-1)^(3/4)'
             }
         ];
 
