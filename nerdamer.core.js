@@ -2282,16 +2282,17 @@ var nerdamer = (function (imports) {
             var remainder = quotient - whole;
             if (remainder <= epsilon && i > 1) {
                 if (PRIMES.indexOf(i) !== -1)
-                    factors.push(i);
+                    PRIMES[i]=i;
+                factors.push(i);
                 l = whole;
             }
             i++;
         }
+        
         return factors.sort(function (a, b) {
             return a - b;
         });
-    }
-    ;
+    };
 
 //Expression ===================================================================   
     /** 
@@ -7345,6 +7346,10 @@ var nerdamer = (function (imports) {
          * @returns {Symbol}
          */
         function log(symbol, base) {
+            if(symbol.equals(1)) {
+                return new Symbol(0);
+            }
+            
             var retval;
             if (symbol.fname === SQRT && symbol.multiplier.equals(1)) {
                 return _.divide(log(symbol.args[0]), new Symbol(2));
@@ -7971,10 +7976,19 @@ var nerdamer = (function (imports) {
         //try to reduce a symbol by pulling its power
         function testPow(symbol) {
             if (symbol.group === P) {
-                var v = symbol.group === N ? symbol.multiplier.toDecimal() : symbol.value,
-                        fct = primeFactors(v)[0],
-                        n = new Frac(Math.log(v) / Math.log(fct)),
-                        p = n.multiply(symbol.power);
+                var v = symbol.value;
+                
+                var fct = primeFactors(v)[0];
+                
+                //safety
+                if(!fct) {
+                    warn('Unable to compute prime factors. This should not happen. Please review and report.');
+                    return symbol;
+                }
+                
+                var n = new Frac(Math.log(v) / Math.log(fct)),
+                    p = n.multiply(symbol.power);
+                
                 //we don't want a more complex number than before 
                 if (p.den > symbol.power.den)
                     return symbol;
@@ -8853,6 +8867,7 @@ var nerdamer = (function (imports) {
                         return _.add(nre, _.multiply(Symbol.imaginary(), nim));
                     }
                 }
+
                 /*
                  if(a.isImaginary() && bIsConstant && b.multiplier.num.abs().equals(1) && !b.multiplier.den.equals(1)) { 
                  var sign = b.sign();
@@ -8898,6 +8913,7 @@ var nerdamer = (function (imports) {
                         //move the sign back the exterior and let nerdamer handle the rest
                         result.negate();
                     }
+                    
                     result.multiplyPower(b);
                 }
 
@@ -8915,7 +8931,7 @@ var nerdamer = (function (imports) {
                                 else
                                     c = new Symbol(-1);
                             }
-                            else if (!even(b.multiplier.den)) {
+                            else if (!even(b.multiplier.den)) { 
                                 sign = Math.pow(sign, b.multiplier.num);
                                 c = new Symbol(Math.pow(a, b) * sign);
                             }
@@ -8926,6 +8942,7 @@ var nerdamer = (function (imports) {
                         }
 
                         result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
+                        
                         //result = new Symbol(Math2.bigpow(a.multiplier, b.multiplier));
                         //put the back sign
                         if (c)
@@ -8952,7 +8969,7 @@ var nerdamer = (function (imports) {
                         result.multiplier = result.multiplier.multiply(multiplier);
                     }
                 }
-                else {
+                else { 
                     var sign = a.sign();
                     if (b.isConstant() && a.isConstant() && !b.multiplier.den.equals(1) && sign < 0) {
                         //we know the sign is negative so if the denominator for b == 2 then it's i
@@ -8968,13 +8985,19 @@ var nerdamer = (function (imports) {
                             result = _.multiply(_.pow(a, b), i);
                         }
                         else {
-                            var aa = a.clone();
-                            aa.multiplier.negate();
-                            result = _.pow(_.symfunction(PARENTHESIS, [new Symbol(-1)]), b.clone());
-                            var _a = _.pow(new Symbol(aa.multiplier.num), b.clone());
-                            var _b = _.pow(new Symbol(aa.multiplier.den), b.clone());
-                            var r = _.divide(_a, _b);
-                            result = _.multiply(result, r);
+                            if(a.equals(-1)) {
+                                var theta = _.multiply(b, _.parse('pi'));
+                                result = evaluate(_.add(trig.cos(theta), _.multiply(Symbol.imaginary(), trig.sin(theta))));
+                            }
+                            else {
+                                var aa = a.clone();
+                                aa.multiplier.negate();
+                                result = _.pow(_.symfunction(PARENTHESIS, [new Symbol(sign)]), b.clone());
+                                var _a = _.pow(new Symbol(aa.multiplier.num), b.clone());
+                                var _b = _.pow(new Symbol(aa.multiplier.den), b.clone());
+                                var r = _.divide(_a, _b);
+                                result = _.multiply(result, r);
+                            }  
                         }
                     }
                     else if (Settings.PARSE2NUMBER && b.isImaginary()) {
@@ -9046,7 +9069,7 @@ var nerdamer = (function (imports) {
                 }
 
                 result = testSQRT(result);
-                
+
                 //don't multiply until we've tested the remaining symbol
                 if (num && den)
                     result = _.multiply(result, testPow(_.multiply(num, den)));
@@ -9065,12 +9088,15 @@ var nerdamer = (function (imports) {
                 //detect Euler's identity
                 else if (!Settings.IGNORE_E && result.isE() && result.group === EX && result.power.contains('pi')
                         && result.power.contains(Settings.IMAGINARY)) {
-                    //we have a match
-                    var m1 = result.multiplier,
-                            m2 = result.power.multiplier;
-                    result = new Symbol(even(m2.num) ? m1 : m1.negate());
-                    result = _.pow(result, new Symbol(m2.den).invert());
+                    var theta = b.stripVar(Settings.IMAGINARY);
+                    result = _.add(trig.cos(theta), _.multiply(Symbol.imaginary(), trig.sin(theta)));
+//                    //we have a match
+//                    var m1 = result.multiplier,
+//                            m2 = result.power.multiplier;
+//                    result = new Symbol(even(m2.num) ? m1 : m1.negate());
+//                    result = _.pow(result, new Symbol(m2.den).invert());
                 }
+                
                 return result;
             }
             else {

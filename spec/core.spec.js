@@ -191,7 +191,7 @@ describe('Nerdamer core', function () {
             },
             {
                 given: '(-1)^(3/4)',
-                expected: '(-1)^(3/4)'
+                expected: '(93222358/131836323)*i-93222358/131836323'
             }
         ];
 
@@ -582,7 +582,7 @@ describe('Nerdamer core', function () {
             }, 
             {
                 given: 'polarform(i-1)',
-                expected: '(-1)^(1/4)*sqrt(2)'
+                expected: '(i*sqrt(2)^(-1)+sqrt(2)^(-1))*sqrt(2)'
             }, 
             {
                 given: 'polarform(i+1)',
@@ -2176,6 +2176,11 @@ describe('Further arithmetic test cases', function () {
                 given: '(-25)^(1/5)',
                 expected: '(-1)^(1/5)*5^(2/5)',
                 expectedValue: '-1.9036539387158786'
+            },
+            {
+                given: '-24.160787001838543^1.3^(-1)',
+                expected: '-108007829^(-10/13)*2609554151^(10/13)',
+                expectedValue: '-11.585948599615737'
             },
             {
                 given: '(x+y)--(x+y)',
