@@ -8932,13 +8932,11 @@ var nerdamer = (function (imports) {
                                     c = new Symbol(-1);
                             }
                             else if (!even(b.multiplier.den)) { 
-                                sign = Math.pow(sign, b.multiplier.num);
-                                c = new Symbol(Math.pow(a, b) * sign);
+                                c = new Symbol(Math.pow(sign, b.multiplier.num));
                             }
                             else {
                                 c = _.pow(_.symfunction(PARENTHESIS, [new Symbol(sign)]), b.clone());
                             }
-
                         }
 
                         result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
