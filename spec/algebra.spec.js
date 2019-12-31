@@ -753,4 +753,9 @@ describe('Algebra', function () {
             expect(result.toString()).toEqual(testCases[i].expected);
         }
     });
+    
+    it('should calculate nth roots correctly', function() {
+        expect(nerdamer('roots((-1)^(1/5))').evaluate().text()).toEqual('[0.5877852522924731*i+0.8090169943749475,-0.3090169943749474+0.9510565162951536*i,-1+1.2246467991473532e-16*i,-0.30901699437494756-0.9510565162951535*i,-0.5877852522924734*i+0.8090169943749473]');
+        expect(nerdamer('roots((2)^(1/3))').evaluate().text()).toEqual('[1.1224620483093812,-1.1224620483093812]');
+    });
 });

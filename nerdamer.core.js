@@ -5,7 +5,7 @@
  * Source : https://github.com/jiggzson/nerdamer
  */
 
-/* global trig, trigh, Infinity, define, arguments2Array, NaN, evaluate */
+/* global trig, trigh, Infinity, define, arguments2Array, NaN */
 //externals ====================================================================
 /* BigInterger.js v1.6.40 https://github.com/peterolson/BigInteger.js/blob/master/LICENSE */
 //var nerdamerBigInt = typeof nerdamerBigInt !== 'undefined' ? nerdamerBigInt : require("big-integer");
@@ -709,7 +709,7 @@ var nerdamer = (function (imports) {
         return retval;
     };
 
-    /**
+     /**
      * Gets nth roots of a number
      * @param {Symbol} symbol
      * @returns {Vector}
@@ -726,11 +726,13 @@ var nerdamer = (function (imports) {
             b = _.parse(symbol.power);
         }
 
-        if(a && b && (a.group === N || a.group === CP) && b.group === N) {
+        if(a && b && (a.group === N) && b.group === N && a.multiplier.isNegative()) {
             var _roots = [];
+            
             var parts = Symbol.toPolarFormArray(evaluate(symbol));
-
             var r = parts[0];
+            
+            //var r = _.parse(a).abs().toString();
 
             //https://en.wikipedia.org/wiki/De_Moivre%27s_formula
             var x = _.arg(a);
@@ -756,6 +758,7 @@ var nerdamer = (function (imports) {
                 _roots = _roots.map(function(x) {
                     return _.multiply(x, Symbol.imaginary());
                 });
+                
         }
         else {
             _roots = [_.parse(symbol)];
@@ -763,7 +766,7 @@ var nerdamer = (function (imports) {
 
         return Vector.fromArray(_roots);
     };
-    
+
     /**
      * Sorts and array given 2 parameters
      * @param {String} a
@@ -3174,6 +3177,7 @@ var nerdamer = (function (imports) {
     Symbol.toPolarFormArray = function (symbol) {
         var re, im, r, theta;
         re = symbol.realpart();
+        im = symbol.imagpart();
         r = Symbol.hyp(re, im);
         theta = re.equals(0) ? _.parse('pi/2') : _.trig.atan(_.divide(im, re));
         return [r, theta];
@@ -7008,6 +7012,52 @@ var nerdamer = (function (imports) {
             return _.parse(format('({0})*180/pi', symbol));
         }
         
+        function nroots(symbol) {
+            var a, b;
+            if(symbol.group === FN && symbol.fname === '') {
+                a = Symbol.unwrapPARENS(_.parse(symbol).toLinear());
+                b = _.parse(symbol.power);
+            }
+            else if(symbol.group === P) {
+                a = _.parse(symbol.value);
+                b = _.parse(symbol.power);
+            }
+            
+            if(a && b && a.group === N && b.group === N) {
+                var _roots = [];
+                var parts = Symbol.toPolarFormArray(symbol);
+                var r = _.parse(a).abs().toString();
+                //https://en.wikipedia.org/wiki/De_Moivre%27s_formula
+                var x = arg(a).toString();
+                var n = b.multiplier.den.toString();
+                var p = b.multiplier.num.toString();
+                
+                var formula = "(({0})^({1})*(cos({3})+({2})*sin({3})))^({4})";
+                for(var i=0; i<n; i++) {
+                    var t = evaluate(_.parse(format("(({0})+2*pi*({1}))/({2})", x, i, n))).multiplier.toDecimal();
+                    _roots.push(evaluate(_.parse(format(formula, r, n, Settings.IMAGINARY, t, p))));
+                }
+                return Vector.fromArray(_roots);
+            }
+            else if(symbol.isConstant(true)) {
+                var sign = symbol.sign();
+                var x = evaluate(symbol.abs());
+                var root = _.sqrt(x);
+                
+                var _roots = [root.clone(), root.negate()];
+                
+                if(sign < 0)
+                    _roots = _roots.map(function(x) {
+                        return _.multiply(x, Symbol.imaginary());
+                    });
+            }
+            else {
+                _roots = [_.parse(symbol)];
+            }
+            
+            return Vector.fromArray(_roots);
+        }
+        
         /**
          * The square root function
          * @param {Symbol} symbol
@@ -7268,16 +7318,29 @@ var nerdamer = (function (imports) {
         function arg(symbol) {
             var re = symbol.realpart();
             var im = symbol.imagpart();
+            if (re.isConstant() && im.isConstant())
+                return new Symbol(Math.atan2(im, re));
+            return _.symfunction('atan2', [im, re]);
+        }
+
+        /**
+         * Returns the arugment of a complex number
+         * @param {Symbol} symbol
+         * @returns {Symbol}
+         */
+        function arg(symbol) {
+            var re = symbol.realpart();
+            var im = symbol.imagpart();
             if (re.isConstant() && im.isConstant()) {
-//                if(im.equals(0) && re.equals(-1)) {
-//                    return _.parse('pi');
-//                }
-//                else if(im.equals(1) && re.equals(0)) {
-//                    return _.parse('pi/2');
-//                }
-//                else if(im.equals(1) && re.equals(1)) {
-//                    return _.parse('pi/4');
-//                }
+                if(im.equals(0) && re.equals(-1)) {
+                    return _.parse('pi');
+                }
+                else if(im.equals(1) && re.equals(0)) {
+                    return _.parse('pi/2');
+                }
+                else if(im.equals(1) && re.equals(1)) {
+                    return _.parse('pi/4');
+                }
                 return new Symbol(Math.atan2(im, re));
             }
             return _.symfunction('atan2', [im, re]);
@@ -8085,7 +8148,6 @@ var nerdamer = (function (imports) {
         this.conjugate = conjugate;
         this.imagpart = imagpart;
         this.realpart = realpart;
-        
 
 //Parser.methods ===============================================================
         this.addPreprocessor = function (name, action, order, shift_cells) {
