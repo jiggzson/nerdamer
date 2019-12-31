@@ -1787,6 +1787,10 @@ if((typeof module) !== 'undefined') {
             } 
          },
         roots: function(symbol) {
+            
+            if(symbol.isConstant(true, true)) {
+                return core.Utils.nroots(symbol);
+            }
             var roots = __.proots(symbol).map(function(x) {
                 return _.parse(x);
             });
