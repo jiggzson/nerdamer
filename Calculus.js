@@ -380,7 +380,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }
 
             if(symbol.group === FN && !isSymbol(symbol.power)) {
-                var a = derive(symbol); 
+                var a = derive(_.parse(symbol)); 
                 var b = __.diff(symbol.args[0].clone(), d); 
                 symbol = _.multiply(a, b);//chain rule
             }
