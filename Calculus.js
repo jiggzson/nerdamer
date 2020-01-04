@@ -1200,7 +1200,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                 var du = __.diff(arg, dx);
                                 var u_du = _.multiply(f, du);
                                 var integral = __.integrate(u_du, u, depth, opt);
-                                retval = integral.sub(u, arg);
+                                retval = _.multiply(_.parse(m),integral.sub(u, arg));
                             }
 
                         }
