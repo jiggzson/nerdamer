@@ -1190,14 +1190,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             var p = symbol.power.toString(); 
                             if(isInt(p))
                                 depth = depth - p; //it needs more room to find the integral
-                            retval = __.integration.by_parts(symbol, dx, depth, opt); 
+                            retval = _.multiply(_.parse(m),__.integration.by_parts(symbol, dx, depth, opt)); 
                         }
                         else if(fname === TAN && symbol.power.lessThan(0)) {
                             //convert to cotangent
                             var sym  = symbol.clone();
                             sym.power.negate();
                             sym.fname = COT;
-                            return __.integrate(sym, dx, depth);
+                            return _.multiply(_.parse(m),__.integrate(sym, dx, depth));
                         }
                         else {
                             if(!a.contains(dx, true) && symbol.isLinear()) { //perform a deep search for safety

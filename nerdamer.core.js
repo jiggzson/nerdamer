@@ -5092,8 +5092,9 @@ var nerdamer = (function (imports) {
             sech: function (symbol) {
                 var retval;
                 if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
+                    if (symbol.isConstant()) {
                         return new Symbol(Math.sech(symbol.valueOf()));
+                    }
                     if (symbol.isImaginary()) {
                         return complex.evaluate(symbol, 'sech');
                     }
