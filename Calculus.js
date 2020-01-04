@@ -1190,7 +1190,19 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             var p = symbol.power.toString(); 
                             if(isInt(p))
                                 depth = depth - p; //it needs more room to find the integral
-                            retval = _.multiply(_.parse(m),__.integration.by_parts(symbol, dx, depth, opt)); 
+                            
+                            if(!arg.isComposite())
+                                retval = _.multiply(_.parse(m),__.integration.by_parts(symbol, dx, depth, opt)); 
+                            else {
+                                //integral u du
+                                var u = core.Utils.getU(symbol);
+                                var f = _.pow(_.parse(LOG+inBrackets(u)),new Symbol(p));
+                                var du = __.diff(arg, dx);
+                                var u_du = _.multiply(f, du);
+                                var integral = __.integrate(u_du, u, depth, opt);
+                                retval = integral.sub(u, arg);
+                            }
+
                         }
                         else if(fname === TAN && symbol.power.lessThan(0)) {
                             //convert to cotangent

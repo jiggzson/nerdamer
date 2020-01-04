@@ -400,7 +400,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(log(a*x+b),x)',
-                expected: '-(-a^(-2)*b*log(a*x+b)+a^(-1)*x)*a+log(a*x+b)*x'
+                expected: '((a*x+b)*log(a*x+b)-a*x-b)*a'
             },
             {
                 given: 'integrate(x*log(x),x)',
