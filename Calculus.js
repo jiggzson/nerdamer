@@ -1399,6 +1399,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         retval = __.integration.partial_fraction(symbol, dx, depth);
                     }
                     else if(g === CB) {
+                        var den = symbol.getDenom();
+                        if(den.group === S)
+                            symbol = _.expand(symbol);
+                        
                         //separate the coefficient since all we care about are symbols containing dx
                         var coeff = symbol.stripVar(dx); 
                         //now get only those that apply

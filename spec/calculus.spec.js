@@ -600,7 +600,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(sin(x)^3/x,x)',
-                expected: '(1/4)*(-Si(3*x)+3*Si(x))'
+                expected: '(-1/4)*Si(3*x)+(3/4)*Si(x)'
             },
             {
                 given: 'integrate(tan(x)/sec(x)*sin(x)/tan(x),x)',
