@@ -3351,10 +3351,10 @@ var nerdamer = (function (imports) {
              */
         },
         //removes the requested variable from the symbol and returns the remainder
-        stripVar: function (x) {
+        stripVar: function (x, exclude_x) {
             var retval;
             if ((this.group === PL || this.group === S) && this.value === x)
-                retval = new Symbol(this.multiplier);
+                retval = new Symbol(exclude_x ? 0 : this.multiplier);
             else if (this.group === CB && this.isLinear()) {
                 retval = new Symbol(1);
                 this.each(function (s) {
