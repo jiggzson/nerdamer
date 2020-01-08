@@ -16,7 +16,7 @@ var nerdamer = (function (imports) {
     "use strict";
 
 //version ====================================================================== 
-    var version = '1.1.2';
+    var version = '1.1.3';
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
@@ -8631,7 +8631,14 @@ var nerdamer = (function (imports) {
                     }
                     if (a.fname === FACTORIAL && b.fname === FACTORIAL) {
                         if (a.power.equals(1) && b.power.equals(-1) && _.subtract(v.clone(), u.clone()).equals(1)) {
-                            result = _.divide(u, v);
+                            if(u.isConstant(true) && v.isConstant(true)) {
+                                var _a = evaluate(a.clone());
+                                var _b = evaluate(b.clone());
+                                result = _.multiply(_a, _b);
+                            }
+                            else {
+                                result = _.divide(u, v);
+                            }
                             b = new Symbol(1);
                         }
                     }
