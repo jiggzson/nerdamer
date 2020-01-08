@@ -511,7 +511,7 @@ if ((typeof module) !== 'undefined') {
                     //start with the symbol and remove each variable and its coefficient
                     var num = e.clone();
                     vars.map(function(e) {
-                        num = num.stripVar(e);
+                        num = num.stripVar(e, true);
                     });
                     c.set(i, 0, num.negate());
                 }

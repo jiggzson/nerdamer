@@ -16,7 +16,7 @@ var nerdamer = (function (imports) {
     "use strict";
 
 //version ====================================================================== 
-    var version = '1.1.1';
+    var version = '1.1.2';
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
@@ -3351,10 +3351,10 @@ var nerdamer = (function (imports) {
              */
         },
         //removes the requested variable from the symbol and returns the remainder
-        stripVar: function (x) {
+        stripVar: function (x, exclude_x) {
             var retval;
             if ((this.group === PL || this.group === S) && this.value === x)
-                retval = new Symbol(this.multiplier);
+                retval = new Symbol(exclude_x ? 0 : this.multiplier);
             else if (this.group === CB && this.isLinear()) {
                 retval = new Symbol(1);
                 this.each(function (s) {
@@ -5092,8 +5092,9 @@ var nerdamer = (function (imports) {
             sech: function (symbol) {
                 var retval;
                 if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
+                    if (symbol.isConstant()) {
                         return new Symbol(Math.sech(symbol.valueOf()));
+                    }
                     if (symbol.isImaginary()) {
                         return complex.evaluate(symbol, 'sech');
                     }

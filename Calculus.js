@@ -380,7 +380,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }
 
             if(symbol.group === FN && !isSymbol(symbol.power)) {
-                var a = derive(symbol); 
+                var a = derive(_.parse(symbol)); 
                 var b = __.diff(symbol.args[0].clone(), d); 
                 symbol = _.multiply(a, b);//chain rule
             }
@@ -1190,14 +1190,26 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                             var p = symbol.power.toString(); 
                             if(isInt(p))
                                 depth = depth - p; //it needs more room to find the integral
-                            retval = __.integration.by_parts(symbol, dx, depth, opt); 
+                            
+                            if(!arg.isComposite())
+                                retval = _.multiply(_.parse(m),__.integration.by_parts(symbol, dx, depth, opt)); 
+                            else {
+                                //integral u du
+                                var u = core.Utils.getU(symbol);
+                                var f = _.pow(_.parse(LOG+inBrackets(u)),new Symbol(p));
+                                var du = __.diff(arg, dx);
+                                var u_du = _.multiply(f, du);
+                                var integral = __.integrate(u_du, u, depth, opt);
+                                retval = _.multiply(_.parse(m),integral.sub(u, arg));
+                            }
+
                         }
                         else if(fname === TAN && symbol.power.lessThan(0)) {
                             //convert to cotangent
                             var sym  = symbol.clone();
                             sym.power.negate();
                             sym.fname = COT;
-                            return __.integrate(sym, dx, depth);
+                            return _.multiply(_.parse(m),__.integrate(sym, dx, depth));
                         }
                         else {
                             if(!a.contains(dx, true) && symbol.isLinear()) { //perform a deep search for safety
@@ -1387,6 +1399,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         retval = __.integration.partial_fraction(symbol, dx, depth);
                     }
                     else if(g === CB) {
+                        var den = symbol.getDenom();
+                        if(den.group === S)
+                            symbol = _.expand(symbol);
+                        
                         //separate the coefficient since all we care about are symbols containing dx
                         var coeff = symbol.stripVar(dx); 
                         //now get only those that apply
