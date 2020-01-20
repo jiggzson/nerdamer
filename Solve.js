@@ -100,10 +100,17 @@ if ((typeof module) !== 'undefined') {
         text: function (option) {
             return this.LHS.text(option) + '=' + this.RHS.text(option);
         },
-        toLHS: function () {
-            var eqn = this.removeDenom();
+        toLHS: function (expand) {
+            expand = typeof expand === 'undefined' ? true : false;
+            var eqn;
+            if(!expand) {
+                eqn = this.clone();
+            }
+            else {
+                eqn = this.removeDenom();
+            }
             var _t = _.subtract(eqn.LHS, eqn.RHS);
-            var retval = _.expand(_t);
+            var retval = expand ? _.expand(_t) : _t;
             return retval;
         },
         removeDenom: function () { 
@@ -294,7 +301,7 @@ if ((typeof module) !== 'undefined') {
          * @param {Equation|String} eqn
          * @returns {Symbol}
          */
-        toLHS: function (eqn) {
+        toLHS: function (eqn, expand) {            
             if(isSymbol(eqn))
                 return eqn;
             //If it's an equation then call its toLHS function instead
@@ -304,7 +311,7 @@ if ((typeof module) !== 'undefined') {
                 es[1] = es[1] || '0';
                 eqn = new Equation(_.parse(es[0]), _.parse(es[1]));
             }
-            return eqn.toLHS();
+            return eqn.toLHS(expand);
         },
         getSystemVariables: function(eqns) {
             vars = variables(eqns[0], null, null, true);
@@ -1017,12 +1024,16 @@ if ((typeof module) !== 'undefined') {
         if(eqns.group === FN && eqns.fname === 'sqrt') {
             eqns = _.pow(Symbol.unwrapSQRT(eqns), new Symbol(2));
         }
-
-        var eq = core.Utils.isSymbol(eqns) ? eqns : __.toLHS(eqns),
+        //pass in false to not expand equations such as (x+y)^5
+        var eq = core.Utils.isSymbol(eqns) ? eqns : __.toLHS(eqns, false),
                 vars = core.Utils.variables(eq), //get a list of all the variables
                 numvars = vars.length;//how many variables are we dealing with
         
-        
+        //it sufficient to solve (x+y) if eq is (x+y)^n since 0^n
+        if(core.Utils.isInt(eq.power) && eq.power > 0) {
+            eq = _.parse(eq).toLinear();
+        }
+       
         //if we're dealing with a single variable then we first check if it's a 
         //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.     
         //Don't waste time
@@ -1184,6 +1195,7 @@ if ((typeof module) !== 'undefined') {
                         }
 
                         if (!was_calculated) {
+                            eqns = _.parse(eqns);
                             //we can solve algebraically for degrees 1, 2, 3. The remainder we switch to Jenkins-
                             if (deg === 1)
                                 add_to_result(_.divide(coeffs[0], coeffs[1].negate()));
@@ -1297,7 +1309,7 @@ if ((typeof module) !== 'undefined') {
                                 if (solutions.length === 0)
                                     add_to_result(__.divideAndConquer(eq, solve_for));
                         }
-                    }    
+                    }  
                     
                 }
                 catch (e) { /*something went wrong. EXITING*/
