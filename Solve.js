@@ -64,6 +64,8 @@ if ((typeof module) !== 'undefined') {
     core.Settings.SOLUTION_PROXIMITY = 1e-14;
     //Indicate wheter to filter the solutions are not
     core.Settings.FILTER_SOLUTIONS = true;
+    //the maximum number of recursive calls
+    core.Settings.MAX_SOLVE_DEPTH = 10;
     
     core.Symbol.prototype.hasTrig = function () {
         return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
@@ -942,7 +944,13 @@ if ((typeof module) !== 'undefined') {
      * @param {type} solve_for
      * @returns {Array}
      */
-    var solve = function (eqns, solve_for, solutions) {
+    var solve = function (eqns, solve_for, solutions, depth) {
+        depth = depth || 0;
+        
+        if(depth++ > Settings.MAX_SOLVE_DEPTH) {
+            return solutions;
+        }
+        
         //make preparations if it's an Equation
         if (eqns instanceof Equation) {
             //if it's zero then we're done
@@ -1311,6 +1319,11 @@ if ((typeof module) !== 'undefined') {
                                 add_to_result(__.csolve(eq, solve_for));
                                 if (solutions.length === 0)
                                     add_to_result(__.divideAndConquer(eq, solve_for));
+                        }
+                        
+                        if(solutions.length === 0) {
+                            //try factoring
+                            add_to_result(solve(factored, solve_for, solutions, depth));
                         }
                     }  
                     
