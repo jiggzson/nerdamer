@@ -750,7 +750,7 @@ if ((typeof module) !== 'undefined') {
                     last = f(start),
                     last_sign = last / Math.abs(last),
                     rside = core.Settings.ROOTS_PER_SIDE, // the max number of roots on right side
-                    lside = rside * 2 + 1; // the max number of roots on left side
+                    lside = rside; // the max number of roots on left side
             // check around the starting point
             points.push(Math.floor(start / 2)); //half way from zero might be a good start
             points.push(Math.abs(start)); //|f(0)| could be a good start
@@ -1196,6 +1196,9 @@ if ((typeof module) !== 'undefined') {
 
                         if (!was_calculated) {
                             eqns = _.parse(eqns);
+                            if(eqns instanceof core.Equation)
+                                eqns = eqns.toLHS();
+                            
                             //we can solve algebraically for degrees 1, 2, 3. The remainder we switch to Jenkins-
                             if (deg === 1)
                                 add_to_result(_.divide(coeffs[0], coeffs[1].negate()));

@@ -2133,6 +2133,7 @@ if((typeof module) !== 'undefined') {
             factor: function(symbol, factors) {
                 var _symbol = _.parse(symbol);
                 var retval = __.Factor._factor(_symbol, factors);
+                
                 if(retval.equals(symbol)) {
                     return retval;
                 }

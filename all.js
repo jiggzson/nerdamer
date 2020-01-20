@@ -14,4 +14,3 @@ require('./Extra.js');
 
 //export nerdamer
 module.exports = nerdamer;
-
