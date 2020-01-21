@@ -639,7 +639,7 @@ FUNCTIONS = {
         parameters: {
             option: {
                 type: 'String',
-                description: "Pass in the string 'decimals' to get back numers as decimals. Pass in the string 'fractions' to get back number as fractions. Defaults to decimals."
+                description: "Pass in the string 'decimals' to get back the number as decimals. Pass in the string 'recurring' to get back the number as a recurring decimal. Pass in the string 'fractions' to get back the number as fractions. Defaults to decimals."
             },
             n: {
                 type: 'String',
@@ -649,6 +649,9 @@ FUNCTIONS = {
         examples: [
             "var x = nerdamer('1/12+1/2*cos(x)-0.5');",
             "console.log(x.text('decimals'));",
+            "console.log(x.text('decimals', 1));",
+            "console.log(x.text('decimals', 7));",
+            "console.log(x.text('recurring'));",
             "console.log(x.text('fractions'));"
         ],
         returns: 'String'
