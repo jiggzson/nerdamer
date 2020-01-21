@@ -651,8 +651,8 @@ FUNCTIONS = {
             "console.log(x.text('decimals'));",
             "console.log(x.text('decimals', 1));",
             "console.log(x.text('decimals', 7));",
-            "console.log(x.text('fractions'));",
-            "console.log(x.text('recurring'));"
+            "console.log(x.text('recurring'));",
+            "console.log(x.text('fractions'));"
         ],
         returns: 'String'
     },
