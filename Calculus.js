@@ -163,6 +163,19 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         
         return _.multiply(retval, m);
     };
+    
+    Symbol.prototype.hasTrig = function() {
+        if(this.isConstant(true) || this.group === S)
+            return false;
+        if(this.fname && (core.Utils.in_trig(this.fname) || core.Utils.in_inverse_trig(this.fname)))
+            return true;
+        if(this.symbols) {
+            for(var x in this.symbols)
+                if(this.symbols[x].hasTrig())
+                    return true;
+        }
+        return false;
+    };
 
     core.Expression.prototype.hasIntegral = function() {
         return this.symbol.hasIntegral();
@@ -1983,12 +1996,15 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             };
             
             var vars = core.Utils.variables(symbol),
-                integral = __.integrate(symbol, dx),
-                retval;
-        
+                hasTrig = symbol.hasTrig();
+            var retval, integral;
             if(vars.length === 1)
                 dx = vars[0];
-            if(!integral.hasIntegral()) { 
+            if(!hasTrig) {
+                integral = __.integrate(symbol, dx);
+            }
+            
+            if(!hasTrig && !integral.hasIntegral()) { 
                 var upper = {},
                     lower = {},
                     a, b;
@@ -2411,3 +2427,4 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     nerdamer.api();
    
 })();
+

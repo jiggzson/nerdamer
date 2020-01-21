@@ -198,11 +198,11 @@ describe('calculus', function () {
         var testCases = [
             {
                 given: 'defint(cos(x),1,2,x)',
-                expected: '0.06782644201778515'
+                expected: '0.067826442018'
             },
             {
-                given: 'defint(cos(x),1,2,x)',
-                expected: '0.06782644201778515'
+                given: 'defint(cos(x)^3*x^2-1,-1,9)',
+                expected: '8.543016466395'
             },
             {
                 given: 'defint(cos(x^x),1,2,x)',
