@@ -649,6 +649,7 @@ FUNCTIONS = {
         examples: [
             "var x = nerdamer('1/12+1/2*cos(x)-0.5');",
             "console.log(x.text('decimals'));",
+            "console.log(x.text('decimals', 1));",
             "console.log(x.text('decimals', 7));",
             "console.log(x.text('fractions'));",
             "console.log(x.text('recurring'));"
