@@ -2090,7 +2090,7 @@ var nerdamer = (function (imports) {
      * @param {int} useGroup
      * @returns {String}
      */
-    function text(obj, option, useGroup) {
+    function text(obj, option, useGroup, decp) {
         var asHash = option === 'hash',
                 //whether to wrap numbers in brackets
                 wrapCondition = undefined,
@@ -2217,16 +2217,24 @@ var nerdamer = (function (imports) {
             switch (group) {
                 case N:
                     multiplier = '';
-
+                    var m = toString(obj.multiplier);
+                    //round if requested
+                    if(decp && (opt === 'decimal' || opt === 'decimals')) {
+                        m = nround(m, decp);
+                    }
                     //if it's numerical then all we need is the multiplier
-                    value = obj.multiplier == '-1' ? '1' : toString(obj.multiplier);
+                    value = obj.multiplier == '-1' ? '1' : m;
                     power = '';
                     break;
                 case PL:
-                    value = obj.collectSymbols(text, opt).join('+').replace(/\+\-/g, '-');
+                    value = obj.collectSymbols().map(function(x) {
+                        return text(x, opt, useGroup, decp);
+                    }).sort().join('+').replace(/\+\-/g, '-');
                     break;
                 case CP:
-                    value = obj.collectSymbols(text, opt).join('+').replace(/\+\-/g, '-');
+                    value = obj.collectSymbols().map(function(x) {
+                        return text(x, opt, useGroup, decp);
+                    }).sort().join('+').replace(/\+\-/g, '-');
                     break;
                 case CB:
                     value = obj.collectSymbols(function (symbol) {
@@ -2286,15 +2294,23 @@ var nerdamer = (function (imports) {
 
                 value = inBrackets(value);
             }
-
+            
+            if(decp && (option === 'decimal' || option === 'decimals' && multiplier))
+                multiplier = nround(multiplier, decp)
+            
+            //add the sign back
             var c = sign + multiplier;
+            
             if (multiplier && wrapCondition(multiplier))
                 c = inBrackets(c);
 
             if (power < 0)
                 power = inBrackets(power);
+            
+            //add the multiplication back
             if (multiplier)
                 c = c + '*';
+            
             if (power)
                 power = Settings.POWER_OPERATOR + power;
 
@@ -2390,7 +2406,7 @@ var nerdamer = (function (imports) {
          */
         text: function (opt, n) {
             var round = typeof n === 'undefined';
-            n = n || 24; 
+            n = (n || 18)+1; 
             opt = opt || 'decimals';
             if (this.symbol.text_)
                 return this.symbol.text_(opt);
@@ -2400,10 +2416,10 @@ var nerdamer = (function (imports) {
                 
                 //round as not to have a breaking change but only do so if no significant figures were specified
                 if(round && !isInt(txt)) 
-                    txt = nround(txt, 19).toString();
+                    txt = nround(txt, n).toString();
                 return txt;
             }
-            return text(this.symbol, opt);
+            return text(this.symbol, opt, undefined, n);
         },
         /**
          * Returns the latex representation of the expression

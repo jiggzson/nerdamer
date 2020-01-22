@@ -198,7 +198,7 @@ describe('calculus', function () {
         var testCases = [
             {
                 given: 'defint(cos(x),1,2,x)',
-                expected: '0.067826442018'
+                expected: '0.06782644201799999'
             },
             {
                 given: 'defint(cos(x)^3*x^2-1,-1,9)',

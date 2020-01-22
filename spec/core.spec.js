@@ -957,7 +957,7 @@ describe('Nerdamer core', function () {
             {
                 given: '(256*i)^(1/8)',
                 expected: '2*(-1)^(1/16)',
-                expectedValue: '0.39018064403225655*i+1.9615705608064609'
+                expectedValue: '0.39018064403225655*i+1.961570560806461'
             },
             {
                 given: 'i/i',
@@ -1601,19 +1601,19 @@ describe('Nerdamer core', function () {
             },
             {
                 given: 'tanh(3*i+5)',
-                expected: '0.00002536867620768396*i+0.9999128201513536'
+                expected: '0.000025368676207684*i+0.9999128201513535'
             },
             {
                 given: 'sech(3*i+5)',
-                expected: '-0.0019014661516951706*i-0.013340476530549645'
+                expected: '-0.0019014661516951708*i-0.013340476530549645'
             },
             {
                 given: 'csch(3*i+5)',
-                expected: '-0.0019019704237010974*i-0.013341591397996653'
+                expected: '-0.0019019704237010977*i-0.013341591397996653'
             },
             {
                 given: 'coth(3*i+5)',
-                expected: '0.000025373100044513725*i+1.000087186805897'
+                expected: '0.0000253731000445137*i+1.000087186805897'
             },
             {
                 given: 'acosh(3*i+5)',
@@ -2604,7 +2604,7 @@ describe('hyperbolic trigonometric functions', function () {
             {
                 given: 'acosh(1/23.12)',
                 expected: 'acosh(25/578)',
-                expectedValue: '-4.440892098500627e-16+1.5275302342078616*i'
+                expectedValue: '-4.441e-16+1.5275302342078616*i'
             },
             {
                 given: 'sech(0.1)',
