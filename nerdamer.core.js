@@ -2406,7 +2406,7 @@ var nerdamer = (function (imports) {
          */
         text: function (opt, n) {
             var round = typeof n === 'undefined';
-            n = (n || 18)+1; 
+            n = n || 18; 
             opt = opt || 'decimals';
             if (this.symbol.text_)
                 return this.symbol.text_(opt);
