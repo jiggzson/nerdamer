@@ -7,6 +7,7 @@ var nerdamer = require('../nerdamer.core.js');
 var utils = require('./support/utils');
 var _ = utils.toFixed;
 var run = utils.run;
+var round = nerdamer.getCore().Utils.round;
 
 
 //, x=2.1, y=3.3, z=1, a=7.42
@@ -75,7 +76,7 @@ describe('Nerdamer core', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value), 14).toEqual(round(testCases[i].expectedValue) ,14);
         }
     });   
     it('should handle minus sign properly', function () {
@@ -305,7 +306,7 @@ describe('Nerdamer core', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value), 14).toEqual(round(testCases[i].expectedValue) ,14);
         }
     });
     it('should handle errors', function () {
@@ -489,7 +490,7 @@ describe('Nerdamer core', function () {
             {
                 given: 'expand((9*y*x+1)^2)',
                 expected: '1+18*x*y+81*x^2*y^2',
-                expectedValue: '4015.756899999999'
+                expectedValue: '4015.7568999999994'
             }, 
             {
                 given: 'expand((x+5)*(x-3)-x^2)',
@@ -510,7 +511,7 @@ describe('Nerdamer core', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value), 14).toEqual(round(testCases[i].expectedValue) ,14);
         }
     });    
     it('should handle imaginary log arguments', function () {
@@ -522,11 +523,11 @@ describe('Nerdamer core', function () {
             }, 
             {
                 given: 'log(8+5*i)',
-                expected: '0.5585993153435624*i+2.24431818486607'
+                expected: '0.5585993153435624*i+2.2443181848660699'
             }, 
             {
                 given: 'log(123-2*i)',
-                expected: '-0.01625872980512958*i+4.8123165343435135'
+                expected: '-0.01625872980512958*i+4.8123165343435139'
             }, 
             {
                 given: 'log(123-2*i+a)',
@@ -547,7 +548,7 @@ describe('Nerdamer core', function () {
         for (var i = 0; i < testCases.length; ++i) {
             // when
             var parsed = nerdamer(testCases[i].given);
-            var value = parsed.evaluate().text('decimals');
+            var value = parsed.evaluate().text('decimals', 17);
 
             // then
             expect(value).toEqual(testCases[i].expected);
@@ -648,7 +649,7 @@ describe('Nerdamer core', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value), 14).toEqual(round(testCases[i].expectedValue) ,14);
         }
     });
     it('should handle large exponents', function() {
@@ -674,7 +675,7 @@ describe('Nerdamer core', function () {
                 '000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'+
                 '00000000000000000000000000000000000000000000000000000000000000000000000000000000'
                 );
-        expect(nerdamer("1000*(1+(0.06/365))^(365*3)").evaluate().text()).toEqual('1197.1996529367539');
+        expect(nerdamer("1000*(1+(0.06/365))^(365*3)").evaluate().text()).toEqual('1197.199652936753887236');
     });
     it('should compute factorials', function () {
         // given
@@ -718,7 +719,7 @@ describe('Nerdamer core', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value), 14).toEqual(round(testCases[i].expectedValue) ,14);
         }
     });   
     it('should compute symbolic factorials', function () {
@@ -905,7 +906,7 @@ describe('Nerdamer core', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value), 14).toEqual(round(testCases[i].expectedValue) ,14);
         }
     });
     it('should simplify square roots', function() {
@@ -957,7 +958,7 @@ describe('Nerdamer core', function () {
             {
                 given: '(256*i)^(1/8)',
                 expected: '2*(-1)^(1/16)',
-                expectedValue: '0.39018064403225655*i+1.961570560806461'
+                expectedValue: '0.39018064403225655*i+1.9615705608064609'
             },
             {
                 given: 'i/i',
@@ -999,7 +1000,7 @@ describe('Nerdamer core', function () {
         for (var i = 0; i < testCases.length; ++i) {
             // when
             var parsed = nerdamer(testCases[i].given);
-            var value = parsed.evaluate().text('decimals');
+            var value = parsed.evaluate().text('decimals', 17);
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
@@ -1054,7 +1055,7 @@ describe('Nerdamer core', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value, 14)).toEqual(round(testCases[i].expectedValue), 14);
         }
     });
     it('should check for equality', function () {
@@ -1158,7 +1159,7 @@ describe('Nerdamer core', function () {
           },
           {
               given: 'round(1.23423534e-12,-2)',
-              expected: '1.23e-12'
+              expected: '0.00000000000123'
           },
           {
               given: 'round(1.23423534e12,-2)',
@@ -1483,7 +1484,7 @@ describe('Nerdamer core', function () {
         var result = nerdamer('sin(' + testCases[i].given + ')').evaluate().text('decimals');
 
         // then
-        expect(result).toEqual(testCases[i].expected, testCases[i].given);
+        expect(round(result, 14)).toEqual(round(testCases[i].expected),14);
       }
     });   
     it('should compute complex numbers', function() {
@@ -1643,7 +1644,7 @@ describe('Nerdamer core', function () {
         
         for (var i = 0; i < testCases.length; ++i) {
             var result = nerdamer(testCases[i].given, null, 'numer').text();
-            expect(result.toString()).toEqual(testCases[i].expected);
+            expect(round(result, 14)).toEqual(round(testCases[i].expected),14);
       }
     });
     it('should correctly get the numerator', function() {
@@ -1897,7 +1898,7 @@ describe('Further arithmetic test cases', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value, 14)).toEqual(round(testCases[i].expectedValue),14);
         }
     });
     it('Batch 2', function () {
@@ -2082,7 +2083,7 @@ describe('Further arithmetic test cases', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value, 14)).toEqual(round(testCases[i].expectedValue),14);
         }
     });
     it('Batch 3', function () {
@@ -2220,7 +2221,7 @@ describe('Further arithmetic test cases', function () {
             {
                 given: '(81*(x*y)^2+9*x*y)+(9*x*y)',
                 expected: '18*x*y+81*x^2*y^2',
-                expectedValue: '4014.7569'
+                expectedValue: '4014.7568999999994'
             },
             {
                 given: '((x)^(1/2)*x^(1/3))-x^(5/6)',
@@ -2235,7 +2236,7 @@ describe('Further arithmetic test cases', function () {
             {
                 given: '(81*(x*y)^2+9*x*y)*(9*x*y)',
                 expected: '9*(81*x^2*y^2+9*x*y)*x*y',
-                expectedValue: '246510.37095299998'
+                expectedValue: '246510.37095299995'
             },
             {
                 given: '2*((81*(x*y)^2+9*x*y))*(5*(9*x*y))',
@@ -2247,11 +2248,11 @@ describe('Further arithmetic test cases', function () {
         for (var i = 0; i < testCases.length; ++i) {
             // when
             var parsed = nerdamer(testCases[i].given);
-            var value = parsed.evaluate(values).text('decimals');
+            var value = parsed.evaluate(values).text('decimals', 18);
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value, 14)).toEqual(round(testCases[i].expectedValue),14);
         }
     });
     it('Batch 4', function() {
@@ -2412,7 +2413,7 @@ describe('trigonometric functions', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value, 14)).toEqual(round(testCases[i].expectedValue),14);
         }
     });
     it('should throw for wrong trigonometric arguments', function () {
@@ -2554,7 +2555,7 @@ describe('trigonometric functions', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value, 14)).toEqual(round(testCases[i].expectedValue),14);
         }
     });
     it('should cancel inverses correctly', function () {
@@ -2665,7 +2666,7 @@ describe('hyperbolic trigonometric functions', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value, 14)).toEqual(round(testCases[i].expectedValue),14);
         }
     });
     xit('should throw for wrong trigonometric arguments', function () {
@@ -2721,37 +2722,37 @@ describe('hyperbolic trigonometric functions', function () {
             {
                 given: 'x^2+2*cosh(x)+cosh(x+8+5*x)+4*x^2',
                 expected: '2*cosh(x)+5*x^2+cosh(6*x+8)',
-                expectedValue: '442014342.26428396'
+                expectedValue: '442014342.264283977631810'
             },
             {
                 given: 'cosh(x)*cosh(x)',
                 expected: 'cosh(x)^2',
-                expectedValue: '17.175331654436402'
+                expectedValue: '17.17533165443640'
             },
             {
                 given: 'x^x*cosh(x)*sinh(x)/x',
                 expected: 'cosh(x)*sinh(x)*x^(-1+x)',
-                expectedValue: '37.698180303290115'
+                expectedValue: '37.69818030329012'
             },
             {
                 given: '2*cosh(x)+5*cosh(2*x)',
                 expected: '2*cosh(x)+5*cosh(2*x)',
-                expectedValue: '175.0419428851847'
+                expectedValue: '175.04194288518471'
             },
             {
                 given: '2*cosh(x)*5*cosh(2*x)',
                 expected: '10*cosh(2*x)*cosh(x)',
-                expectedValue: '1382.155931928817'
+                expectedValue: '1382.15593192881703'
             },
             {
                 given: 'cosh(x)+(x+x^2+x)',
                 expected: '2*x+x^2+cosh(x)',
-                expectedValue: '12.754313170410315'
+                expectedValue: '12.75431317041032'
             },
             {
                 given: 'cosh(x)+(x+x^2+7)',
                 expected: '7+cosh(x)+x+x^2',
-                expectedValue: '17.654313170410315'
+                expectedValue: '17.65431317041032'
             },
             {
                 given: 'x/cosh(x)*cosh(x)',
@@ -2761,33 +2762,33 @@ describe('hyperbolic trigonometric functions', function () {
             {
                 given: 'tanh(x)*tanh(x)',
                 expected: 'tanh(x)^2',
-                expectedValue: '0.9417769612768031'
+                expectedValue: '0.94177696127680'
             },
             {
                 given: '2*(tanh(x)+tanh(2*x)+7)-6*tanh(x)',
                 expected: '-4*tanh(x)+14+2*tanh(2*x)',
-                expectedValue: '12.117292986465252'
+                expectedValue: '12.11729298646525'
             },
             {
                 given: '((3+y)*2-(cosh(x)*4+z))',
                 expected: '-4*cosh(x)-z+2*y+6',
-                expectedValue: '-4.9772526816412626'
+                expectedValue: '-4.97725268164126'
             },
             {
                 given: 'cosh(x^2)*cosh(x^2)^x',
                 expected: 'cosh(x^2)^(1+x)',
-                expectedValue: '100982.42051309341'
+                expectedValue: '100982.42051309341241'
             }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
             // when
             var parsed = nerdamer(testCases[i].given);
-            var value = parsed.evaluate(values).text('decimals');
+            var value = parsed.evaluate(values).text('decimals', 15);
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(value).toEqual(testCases[i].expectedValue);
+            expect(round(value, 14)).toEqual(round(testCases[i].expectedValue),14);
         }
     });
     it('should not overflow', function() {

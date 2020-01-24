@@ -29,7 +29,7 @@ var run = function(o, dec) {
  * @param {object} subs The substitution object
  */
 var parse = function(e, subs) {
-    var r = nerdamer(e, subs).evaluate().text('decimal');
+    var r = nerdamer(e, subs).evaluate().text('decimals');
     if(!isNaN(r))
         r = Number(r);
     return r;

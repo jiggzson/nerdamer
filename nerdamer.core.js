@@ -837,7 +837,7 @@ var nerdamer = (function (imports) {
         s = typeof s === 'undefined' ? 14 : s;
         return Math.round(x * Math.pow(10, s)) / Math.pow(10, s);
     };
-
+    
     /**
      * Is used for u-substitution. Gets a suitable u for substitution. If for
      * instance a is used in the symbol then it keeps going down the line until
@@ -2092,9 +2092,13 @@ var nerdamer = (function (imports) {
      */
     function text(obj, option, useGroup, decp) {
         var asHash = option === 'hash',
-                //whether to wrap numbers in brackets
-                wrapCondition = undefined,
-                opt = asHash ? undefined : option;
+            //whether to wrap numbers in brackets
+            wrapCondition = undefined,
+            opt = asHash ? undefined : option,
+            asDecimal = opt === 'decimal' || opt === 'decimals';
+    
+        if(asDecimal && typeof decp === 'undefined')
+            decp = 16;
 
         function toString(obj) {
             switch (option)
@@ -2217,23 +2221,27 @@ var nerdamer = (function (imports) {
             switch (group) {
                 case N:
                     multiplier = '';
-                    var m = toString(obj.multiplier);
                     //round if requested
-                    if(decp && (opt === 'decimal' || opt === 'decimals')) {
-                        m = nround(m, decp);
-                    }
+                    var m = decp && asDecimal ? obj.multiplier.toDecimal(decp) : toString(obj.multiplier);
+
                     //if it's numerical then all we need is the multiplier
                     value = obj.multiplier == '-1' ? '1' : m;
                     power = '';
                     break;
                 case PL:
                     value = obj.collectSymbols().map(function(x) {
-                        return text(x, opt, useGroup, decp);
+                        var txt = text(x, opt, useGroup, decp);
+                        if(txt == '0')
+                            txt = '';
+                        return txt;
                     }).sort().join('+').replace(/\+\-/g, '-');
                     break;
                 case CP:
                     value = obj.collectSymbols().map(function(x) {
-                        return text(x, opt, useGroup, decp);
+                        var txt = text(x, opt, useGroup, decp);
+                        if(txt == '0')
+                            txt = '';
+                        return txt;
                     }).sort().join('+').replace(/\+\-/g, '-');
                     break;
                 case CB:
@@ -2405,20 +2413,11 @@ var nerdamer = (function (imports) {
          * @returns {String}
          */
         text: function (opt, n) {
-            var round = typeof n === 'undefined';
             n = n || 19; 
             opt = opt || 'decimals';
             if (this.symbol.text_)
                 return this.symbol.text_(opt);
             
-            if(this.symbol.group === N && (opt === 'decimals' || opt === 'decimal')) {
-                var txt = this.symbol.multiplier.toDecimal(n);
-                
-                //round as not to have a breaking change but only do so if no significant figures were specified
-                if(round && !isInt(txt)) 
-                    txt = nround(txt, n).toString();
-                return txt;
-            }
             return text(this.symbol, opt, undefined, n);
         },
         /**
@@ -8157,6 +8156,7 @@ var nerdamer = (function (imports) {
         //Linke the functions to the parse so they're available outside of the library
         //This is strictly for convenience and may be deprecated.
         this.expand = expand;
+        this.round = round;
         this.clean = clean;
         this.sqrt = sqrt;
         this.log = log;

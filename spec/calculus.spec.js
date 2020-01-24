@@ -3,6 +3,7 @@
 'use strict';
 
 var nerdamer = require('../nerdamer.core.js');
+var round = nerdamer.getCore().Utils.round;
 
 describe('calculus', function () {
 
@@ -198,7 +199,7 @@ describe('calculus', function () {
         var testCases = [
             {
                 given: 'defint(cos(x),1,2,x)',
-                expected: '0.06782644201799999'
+                expected: '0.067826442018'
             },
             {
                 given: 'defint(cos(x)^3*x^2-1,-1,9)',
@@ -235,7 +236,7 @@ describe('calculus', function () {
             var parsed = nerdamer(testCases[i].given, null, 'numer');
 
             // then
-            expect(parsed.text()).toEqual(testCases[i].expected);
+            expect(round(parsed.text(), 14)).toEqual(round(testCases[i].expected), 14);
         }
     });
     
