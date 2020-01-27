@@ -9226,6 +9226,14 @@ var nerdamer = (function (imports) {
                                     result = result.args[0];
                             }
                         }
+                        //multiply out sqrt
+                        if(b.equals(2) && result.group === CB) {
+                            var _result = new Symbol(1);
+                            result.each(function(sym) {
+                                _result = _.multiply(_result, _.pow(sym, b));
+                            });
+                            result = _result;
+                        }
                     }
                 }
 

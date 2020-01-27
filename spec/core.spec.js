@@ -2155,8 +2155,8 @@ describe('Further arithmetic test cases', function () {
             },
             {
                 given: '(x^2*y)^2',
-                expected: '(x^2*y)^2',
-                expectedValue: '211.78980900000002'
+                expected: 'x^4*y^2',
+                expectedValue: '211.78980899999996'
             },
             {
                 given: '(x+1)^(z+1)*(1+x)^(1+z)',

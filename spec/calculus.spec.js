@@ -309,7 +309,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(asin(a*x), x)',
-                expected: 'a^(-1)*sqrt(-(a*x)^2+1)+asin(a*x)*x'
+                expected: 'a^(-1)*sqrt(-a^2*x^2+1)+asin(a*x)*x'
             },
             {
                 given: 'integrate(a/x, x)',
