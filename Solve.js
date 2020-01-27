@@ -1177,7 +1177,7 @@ if ((typeof module) !== 'undefined') {
                 //if the equation has more than one symbolic factor then solve those individually
                 if(factors.getNumberSymbolics() > 1) {
                     for(var x in factors.factors) {
-                        add_to_result(solve(factors.factors[x]));
+                        add_to_result(solve(factors.factors[x], solve_for));
                     }
                 }
                 else {
