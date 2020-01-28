@@ -1032,8 +1032,9 @@ if ((typeof module) !== 'undefined') {
         if(eqns.group === FN && eqns.fname === 'sqrt') {
             eqns = _.pow(Symbol.unwrapSQRT(eqns), new Symbol(2));
         }
-        //pass in false to not expand equations such as (x+y)^5
-        var eq = core.Utils.isSymbol(eqns) ? eqns : __.toLHS(eqns, false),
+        //pass in false to not expand equations such as (x+y)^5.
+        //It suffices to solve for the numerator since there's no value in the denominator which yields a zero for the function
+        var eq = (core.Utils.isSymbol(eqns) ? eqns : __.toLHS(eqns, false)).getNum(),
                 vars = core.Utils.variables(eq), //get a list of all the variables
                 numvars = vars.length;//how many variables are we dealing with
         
