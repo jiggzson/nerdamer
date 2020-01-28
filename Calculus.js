@@ -1484,7 +1484,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             fn2 = sym2.fname; 
                                         //reset the symbol minus the coeff
                                         symbol = _.multiply(sym1.clone(), sym2.clone());
-
                                         if(g1 === FN && g2 === FN) { 
                                             if(fn1 === LOG || fn2 === LOG) { 
                                                 retval = __.integration.by_parts(symbol.clone(), dx, depth, opt);
@@ -1704,6 +1703,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 });
                                                 t.multiplier = sym1.multiplier;
                                                 symbol = _.divide(sym2, t);
+                                            }
+                                            else {
+                                                symbol = _.expand(symbol);
                                             }
                                             retval = __.integration.partial_fraction(symbol, dx, depth);
                                         }
