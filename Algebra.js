@@ -721,9 +721,11 @@ if((typeof module) !== 'undefined') {
         
         for(var i=0, l=factors.length; i<l; i++) {
             var f = factors[i];
+
             //don't wrap group S or FN
-            var factor = f.power.equals(1)? 
+            var factor = f.power.equals(1) && f.fname !== '' /* don't wrap it twice */? 
                 _.symfunction(core.PARENTHESIS, [f]) : f;
+
             factored = _.multiply(factored, factor);
         }
         if(factored.fname === '')
@@ -2216,6 +2218,7 @@ if((typeof module) !== 'undefined') {
                 }
                 else if(symbol.group === S && symbol.isSimple())
                     return symbol;
+                
                 //expand the symbol to get it in a predictable form. If this step
                 //is skipped some factors are missed.
                 if(symbol.group === CP) {
@@ -2456,7 +2459,6 @@ if((typeof module) !== 'undefined') {
              * @returns {Symbol}
              */
             coeffFactor: function(symbol, factors) {
-                
                 if(symbol.isComposite()) {
                     var gcd = core.Math2.QGCD.apply(null, symbol.coeffs());
                     if(!gcd.equals(1)) { 
@@ -2468,6 +2470,7 @@ if((typeof module) !== 'undefined') {
                             }
                             else x.multiplier = x.multiplier.divide(gcd);
                         });
+                        
                     }
                     symbol.updateHash();
                     if(factors) 

@@ -228,6 +228,14 @@ describe('calculus', function () {
             {
                 given: 'defint(log(x), 0, 1, x)',
                 expected: '-1'
+            },
+            {
+                given: 'defint((x^2-3)/(-x^3+9x+1), 1, 3, x)',
+                expected: '0.732408192445406585'
+            },
+            {
+                given: 'defint(x*(x-5)^(1/2),5,8)',
+                expected: '23.555890982936999348'
             }
         ];
 

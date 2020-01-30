@@ -662,7 +662,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         integration: {
             u_substitution: function(symbols, dx) { 
                 function try_combo(a, b, f) {
-                    var q = f ? f(a, b) : _.divide(a.clone(), __.diff(b, dx));
+                    var d = __.diff(b, dx);
+                    var q = f ? f(a, b) : _.divide(a.clone(), d);
                     if(!q.contains(dx, true)) 
                         return q;
                     return null;
@@ -741,8 +742,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 }
                 else if(a.isComposite() || b.isComposite()) { 
                     var f = function(a, b) {
+                        var d = __.diff(b, dx);
                         var A = core.Algebra.Factor.factor(a),
-                            B = core.Algebra.Factor.factor(__.diff(b, dx));
+                            B = core.Algebra.Factor.factor(d);
                         var q = _.divide(A, B);
                         return q;
                     };
@@ -777,10 +779,17 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 //TODO: This whole thing needs to be rolled into one but for now I'll leave it as two separate parts
                 if(!isSymbol(dx))
                     dx = _.parse(dx);
+                
                 var result, partial_fractions;
                 result = new Symbol(0);
                 partial_fractions = core.Algebra.PartFrac.partfrac(input, dx);
+
                 if(partial_fractions.group === CB && partial_fractions.isLinear()) {
+                    //perform a quick check to make sure that all partial fractions are linear
+                    partial_fractions.each(function(x) {
+                        if(!x.isLinear())
+                            __.integration.stop();
+                    })
                     partial_fractions.each(function(x) {
                         result = _.add(result, __.integrate(x, dx, depth, opt));
                     });
