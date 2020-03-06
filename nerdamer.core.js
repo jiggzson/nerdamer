@@ -11179,6 +11179,7 @@ var nerdamer = (function (imports) {
         Settings: Settings,
         err: err,
         bigInt: bigInt,
+        bigDec: bigDec,
         exceptions: exceptions
     };
 
@@ -11671,3 +11672,4 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+

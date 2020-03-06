@@ -157,6 +157,7 @@ if ((typeof module) !== 'undefined') {
                         //get the numerator and denominator
                         num = symbol.getNum();
                         den = symbol.getDenom().toUnitMultiplier();
+
                         //TODO: Make it so factor doesn't destroy pi
                         //num = core.Algebra.Factor.factor(symbol.getNum());
                         //den = core.Algebra.Factor.factor(symbol.getDenom().invert(null, true));
@@ -167,7 +168,7 @@ if ((typeof module) !== 'undefined') {
                         }
                         else
                             den_p = new core.Frac(1);
-
+                        
                         //convert s to a string
                         s = s_.toString();
                         //split up the denominator if in the form ax+b
@@ -188,9 +189,10 @@ if ((typeof module) !== 'undefined') {
                         }
                         else if (den.group === CP && den_p.equals(1)) {
                             // a/(b*s-c) -> ae^(-bt)
-                            if (f.x.isLinear() && !num.contains(s)) {
+                            if (f.x.isLinear() && !num.contains(s)) {console.log(f.a.toString(), f.b.toString())
                                 t = _.divide(t, f.a.clone());
-                                retval = _.pow(new Symbol('e'), _.multiply(t, f.b.negate()));
+                                retval = _.parse(format('(({0})^({3}-1)*e^(-(({2})*({0}))/({1})))/(({3}-1)!*({1})^({3}))', t, f.a, f.b, den_p))
+//                                retval = _.pow(new Symbol('e'), _.multiply(t, f.b.negate()));
                                 //wrap it up
                                 finalize();
                             }

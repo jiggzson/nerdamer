@@ -1360,7 +1360,7 @@ if ((typeof module) !== 'undefined') {
                             //check if x is by itself
                             var x = parts[1];
                             if(x.group === S) {
-                                rhs = _.divide(_.subtract(_.pow(new Symbol('e'), _.divide(rhs, _.parse(lhs.multiplier))), parts[3]), parts[0]);
+                                rhs = _.divide(_.subtract(_.pow(lhs.args.length > 1 ? lhs.args[1] : new Symbol('e'), _.divide(rhs, _.parse(lhs.multiplier))), parts[3]), parts[0]);
                                 var eq = new Equation(x, rhs).toLHS();
                                 add_to_result(solve(eq, solve_for));
                             }
