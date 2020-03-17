@@ -6132,8 +6132,9 @@ var nerdamer = (function (imports) {
                             //assume multiplication if it's not an operator except for minus
                             var is_operator = nxt in operators;
 
-                            if((is_operator && operators[nxt].value === MINUS) || !is_operator)
+                            if((is_operator && operators[nxt].value === MINUS) || !is_operator) {
                                 target.push(new Token(MULT, Token.OPERATOR, col));
+                            }
                         }
                         has_space = false; //remove the space
                     }
@@ -10006,7 +10007,7 @@ var nerdamer = (function (imports) {
             var retval = '';
             var tokens = this.filterTokens(raw_tokens);
             var replace = {
-                'cdot': '*',
+                'cdot': '',
                 'times': '*',
                 'infty': 'Infinity'
             };
@@ -11672,4 +11673,3 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
