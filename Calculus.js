@@ -368,9 +368,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             if(core.Utils.isVector(symbol)) {
                 var vector = new core.Vector([]);
                 symbol.each(function(x) {
-                    vector.elements.push(__.diff(x, wrt));
+                    vector.elements.push(__.diff(x, wrt, nth));
                 });
                 return vector;
+            }
+            else if(core.Utils.isMatrix(symbol)) {
+                var matrix = new core.Matrix();
+                symbol.each(function(x, j, i) {
+                    matrix.set(i, j, __.diff(x, wrt, nth));
+                });
+                return matrix;
             }
 
             var d = isSymbol(wrt) ? wrt.text() : wrt; 
