@@ -64,6 +64,8 @@ if ((typeof module) !== 'undefined') {
     core.Settings.SOLUTION_PROXIMITY = 1e-14;
     //Indicate wheter to filter the solutions are not
     core.Settings.FILTER_SOLUTIONS = true;
+    //the maximum number of recursive calls
+    core.Settings.MAX_SOLVE_DEPTH = 10;
     
     core.Symbol.prototype.hasTrig = function () {
         return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
@@ -100,10 +102,17 @@ if ((typeof module) !== 'undefined') {
         text: function (option) {
             return this.LHS.text(option) + '=' + this.RHS.text(option);
         },
-        toLHS: function () {
-            var eqn = this.removeDenom();
+        toLHS: function (expand) {
+            expand = typeof expand === 'undefined' ? true : false;
+            var eqn;
+            if(!expand) {
+                eqn = this.clone();
+            }
+            else {
+                eqn = this.removeDenom();
+            }
             var _t = _.subtract(eqn.LHS, eqn.RHS);
-            var retval = _.expand(_t);
+            var retval = expand ? _.expand(_t) : _t;
             return retval;
         },
         removeDenom: function () { 
@@ -294,7 +303,7 @@ if ((typeof module) !== 'undefined') {
          * @param {Equation|String} eqn
          * @returns {Symbol}
          */
-        toLHS: function (eqn) {
+        toLHS: function (eqn, expand) {            
             if(isSymbol(eqn))
                 return eqn;
             //If it's an equation then call its toLHS function instead
@@ -304,7 +313,7 @@ if ((typeof module) !== 'undefined') {
                 es[1] = es[1] || '0';
                 eqn = new Equation(_.parse(es[0]), _.parse(es[1]));
             }
-            return eqn.toLHS();
+            return eqn.toLHS(expand);
         },
         getSystemVariables: function(eqns) {
             vars = variables(eqns[0], null, null, true);
@@ -743,7 +752,7 @@ if ((typeof module) !== 'undefined') {
                     last = f(start),
                     last_sign = last / Math.abs(last),
                     rside = core.Settings.ROOTS_PER_SIDE, // the max number of roots on right side
-                    lside = rside * 2 + 1; // the max number of roots on left side
+                    lside = rside; // the max number of roots on left side
             // check around the starting point
             points.push(Math.floor(start / 2)); //half way from zero might be a good start
             points.push(Math.abs(start)); //|f(0)| could be a good start
@@ -935,7 +944,13 @@ if ((typeof module) !== 'undefined') {
      * @param {type} solve_for
      * @returns {Array}
      */
-    var solve = function (eqns, solve_for, solutions) {
+    var solve = function (eqns, solve_for, solutions, depth) {
+        depth = depth || 0;
+        
+        if(depth++ > Settings.MAX_SOLVE_DEPTH) {
+            return solutions;
+        }
+        
         //make preparations if it's an Equation
         if (eqns instanceof Equation) {
             //if it's zero then we're done
@@ -1017,12 +1032,17 @@ if ((typeof module) !== 'undefined') {
         if(eqns.group === FN && eqns.fname === 'sqrt') {
             eqns = _.pow(Symbol.unwrapSQRT(eqns), new Symbol(2));
         }
-
-        var eq = core.Utils.isSymbol(eqns) ? eqns : __.toLHS(eqns),
+        //pass in false to not expand equations such as (x+y)^5.
+        //It suffices to solve for the numerator since there's no value in the denominator which yields a zero for the function
+        var eq = (core.Utils.isSymbol(eqns) ? eqns : __.toLHS(eqns, false)).getNum(),
                 vars = core.Utils.variables(eq), //get a list of all the variables
                 numvars = vars.length;//how many variables are we dealing with
         
-        
+        //it sufficient to solve (x+y) if eq is (x+y)^n since 0^n
+        if(core.Utils.isInt(eq.power) && eq.power > 0) {
+            eq = _.parse(eq).toLinear();
+        }
+       
         //if we're dealing with a single variable then we first check if it's a 
         //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.     
         //Don't waste time
@@ -1158,7 +1178,7 @@ if ((typeof module) !== 'undefined') {
                 //if the equation has more than one symbolic factor then solve those individually
                 if(factors.getNumberSymbolics() > 1) {
                     for(var x in factors.factors) {
-                        add_to_result(solve(factors.factors[x]));
+                        add_to_result(solve(factors.factors[x], solve_for));
                     }
                 }
                 else {
@@ -1184,6 +1204,10 @@ if ((typeof module) !== 'undefined') {
                         }
 
                         if (!was_calculated) {
+                            eqns = _.parse(eqns);
+                            if(eqns instanceof core.Equation)
+                                eqns = eqns.toLHS();
+                            
                             //we can solve algebraically for degrees 1, 2, 3. The remainder we switch to Jenkins-
                             if (deg === 1)
                                 add_to_result(_.divide(coeffs[0], coeffs[1].negate()));
@@ -1297,7 +1321,12 @@ if ((typeof module) !== 'undefined') {
                                 if (solutions.length === 0)
                                     add_to_result(__.divideAndConquer(eq, solve_for));
                         }
-                    }    
+                        
+                        if(solutions.length === 0) {
+                            //try factoring
+                            add_to_result(solve(factored, solve_for, solutions, depth));
+                        }
+                    }  
                     
                 }
                 catch (e) { /*something went wrong. EXITING*/
@@ -1331,7 +1360,7 @@ if ((typeof module) !== 'undefined') {
                             //check if x is by itself
                             var x = parts[1];
                             if(x.group === S) {
-                                rhs = _.divide(_.subtract(_.pow(new Symbol('e'), _.divide(rhs, _.parse(lhs.multiplier))), parts[3]), parts[0]);
+                                rhs = _.divide(_.subtract(_.pow(lhs.args.length > 1 ? lhs.args[1] : new Symbol('e'), _.divide(rhs, _.parse(lhs.multiplier))), parts[3]), parts[0]);
                                 var eq = new Equation(x, rhs).toLHS();
                                 add_to_result(solve(eq, solve_for));
                             }

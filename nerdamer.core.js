@@ -16,7 +16,7 @@ var nerdamer = (function (imports) {
     "use strict";
 
 //version ====================================================================== 
-    var version = '1.1.2';
+    var version = '1.1.3';
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
@@ -837,7 +837,7 @@ var nerdamer = (function (imports) {
         s = typeof s === 'undefined' ? 14 : s;
         return Math.round(x * Math.pow(10, s)) / Math.pow(10, s);
     };
-
+    
     /**
      * Is used for u-substitution. Gets a suitable u for substitution. If for
      * instance a is used in the symbol then it keeps going down the line until
@@ -2090,11 +2090,15 @@ var nerdamer = (function (imports) {
      * @param {int} useGroup
      * @returns {String}
      */
-    function text(obj, option, useGroup) {
+    function text(obj, option, useGroup, decp) {
         var asHash = option === 'hash',
-                //whether to wrap numbers in brackets
-                wrapCondition = undefined,
-                opt = asHash ? undefined : option;
+            //whether to wrap numbers in brackets
+            wrapCondition = undefined,
+            opt = asHash ? undefined : option,
+            asDecimal = opt === 'decimal' || opt === 'decimals';
+    
+        if(asDecimal && typeof decp === 'undefined')
+            decp = 16;
 
         function toString(obj) {
             switch (option)
@@ -2217,16 +2221,28 @@ var nerdamer = (function (imports) {
             switch (group) {
                 case N:
                     multiplier = '';
+                    //round if requested
+                    var m = decp && asDecimal ? obj.multiplier.toDecimal(decp) : toString(obj.multiplier);
 
                     //if it's numerical then all we need is the multiplier
-                    value = obj.multiplier == '-1' ? '1' : toString(obj.multiplier);
+                    value = obj.multiplier == '-1' ? '1' : m;
                     power = '';
                     break;
                 case PL:
-                    value = obj.collectSymbols(text, opt).join('+').replace(/\+\-/g, '-');
+                    value = obj.collectSymbols().map(function(x) {
+                        var txt = text(x, opt, useGroup, decp);
+                        if(txt == '0')
+                            txt = '';
+                        return txt;
+                    }).sort().join('+').replace(/\+\-/g, '-');
                     break;
                 case CP:
-                    value = obj.collectSymbols(text, opt).join('+').replace(/\+\-/g, '-');
+                    value = obj.collectSymbols().map(function(x) {
+                        var txt = text(x, opt, useGroup, decp);
+                        if(txt == '0')
+                            txt = '';
+                        return txt;
+                    }).sort().join('+').replace(/\+\-/g, '-');
                     break;
                 case CB:
                     value = obj.collectSymbols(function (symbol) {
@@ -2286,15 +2302,23 @@ var nerdamer = (function (imports) {
 
                 value = inBrackets(value);
             }
-
+            
+            if(decp && (option === 'decimal' || option === 'decimals' && multiplier))
+                multiplier = nround(multiplier, decp)
+            
+            //add the sign back
             var c = sign + multiplier;
+            
             if (multiplier && wrapCondition(multiplier))
                 c = inBrackets(c);
 
             if (power < 0)
                 power = inBrackets(power);
+            
+            //add the multiplication back
             if (multiplier)
                 c = c + '*';
+            
             if (power)
                 power = Settings.POWER_OPERATOR + power;
 
@@ -2389,21 +2413,12 @@ var nerdamer = (function (imports) {
          * @returns {String}
          */
         text: function (opt, n) {
-            var round = typeof n === 'undefined';
-            n = n || 24; 
+            n = n || 19; 
             opt = opt || 'decimals';
             if (this.symbol.text_)
                 return this.symbol.text_(opt);
             
-            if(this.symbol.group === N && (opt === 'decimals' || opt === 'decimal')) {
-                var txt = this.symbol.multiplier.toDecimal(n);
-                
-                //round as not to have a breaking change but only do so if no significant figures were specified
-                if(round && !isInt(txt)) 
-                    txt = nround(txt, 19).toString();
-                return txt;
-            }
-            return text(this.symbol, opt);
+            return text(this.symbol, opt, undefined, n);
         },
         /**
          * Returns the latex representation of the expression
@@ -6117,8 +6132,9 @@ var nerdamer = (function (imports) {
                             //assume multiplication if it's not an operator except for minus
                             var is_operator = nxt in operators;
 
-                            if((is_operator && operators[nxt].value === MINUS) || !is_operator)
+                            if((is_operator && operators[nxt].value === MINUS) || !is_operator) {
                                 target.push(new Token(MULT, Token.OPERATOR, col));
+                            }
                         }
                         has_space = false; //remove the space
                     }
@@ -8141,6 +8157,7 @@ var nerdamer = (function (imports) {
         //Linke the functions to the parse so they're available outside of the library
         //This is strictly for convenience and may be deprecated.
         this.expand = expand;
+        this.round = round;
         this.clean = clean;
         this.sqrt = sqrt;
         this.log = log;
@@ -8631,7 +8648,14 @@ var nerdamer = (function (imports) {
                     }
                     if (a.fname === FACTORIAL && b.fname === FACTORIAL) {
                         if (a.power.equals(1) && b.power.equals(-1) && _.subtract(v.clone(), u.clone()).equals(1)) {
-                            result = _.divide(u, v);
+                            if(u.isConstant(true) && v.isConstant(true)) {
+                                var _a = evaluate(a.clone());
+                                var _b = evaluate(b.clone());
+                                result = _.multiply(_a, _b);
+                            }
+                            else {
+                                result = _.divide(u, v);
+                            }
                             b = new Symbol(1);
                         }
                     }
@@ -9202,6 +9226,14 @@ var nerdamer = (function (imports) {
                                 if (Settings.POSITIVE_MULTIPLIERS && result.fname === ABS)
                                     result = result.args[0];
                             }
+                        }
+                        //multiply out sqrt
+                        if(b.equals(2) && result.group === CB) {
+                            var _result = new Symbol(1);
+                            result.each(function(sym) {
+                                _result = _.multiply(_result, _.pow(sym, b));
+                            });
+                            result = _result;
                         }
                     }
                 }
@@ -9975,7 +10007,7 @@ var nerdamer = (function (imports) {
             var retval = '';
             var tokens = this.filterTokens(raw_tokens);
             var replace = {
-                'cdot': '*',
+                'cdot': '',
                 'times': '*',
                 'infty': 'Infinity'
             };
@@ -11148,6 +11180,7 @@ var nerdamer = (function (imports) {
         Settings: Settings,
         err: err,
         bigInt: bigInt,
+        bigDec: bigDec,
         exceptions: exceptions
     };
 

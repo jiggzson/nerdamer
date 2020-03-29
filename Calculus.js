@@ -163,6 +163,19 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         
         return _.multiply(retval, m);
     };
+    
+    Symbol.prototype.hasTrig = function() {
+        if(this.isConstant(true) || this.group === S)
+            return false;
+        if(this.fname && (core.Utils.in_trig(this.fname) || core.Utils.in_inverse_trig(this.fname)))
+            return true;
+        if(this.symbols) {
+            for(var x in this.symbols)
+                if(this.symbols[x].hasTrig())
+                    return true;
+        }
+        return false;
+    };
 
     core.Expression.prototype.hasIntegral = function() {
         return this.symbol.hasIntegral();
@@ -355,9 +368,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             if(core.Utils.isVector(symbol)) {
                 var vector = new core.Vector([]);
                 symbol.each(function(x) {
-                    vector.elements.push(__.diff(x, wrt));
+                    vector.elements.push(__.diff(x, wrt, nth));
                 });
                 return vector;
+            }
+            else if(core.Utils.isMatrix(symbol)) {
+                var matrix = new core.Matrix();
+                symbol.each(function(x, j, i) {
+                    matrix.set(i, j, __.diff(x, wrt, nth));
+                });
+                return matrix;
             }
 
             var d = isSymbol(wrt) ? wrt.text() : wrt; 
@@ -649,7 +669,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         integration: {
             u_substitution: function(symbols, dx) { 
                 function try_combo(a, b, f) {
-                    var q = f ? f(a, b) : _.divide(a.clone(), __.diff(b, dx));
+                    var d = __.diff(b, dx);
+                    var q = f ? f(a, b) : _.divide(a.clone(), d);
                     if(!q.contains(dx, true)) 
                         return q;
                     return null;
@@ -728,8 +749,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 }
                 else if(a.isComposite() || b.isComposite()) { 
                     var f = function(a, b) {
+                        var d = __.diff(b, dx);
                         var A = core.Algebra.Factor.factor(a),
-                            B = core.Algebra.Factor.factor(__.diff(b, dx));
+                            B = core.Algebra.Factor.factor(d);
                         var q = _.divide(A, B);
                         return q;
                     };
@@ -764,10 +786,17 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 //TODO: This whole thing needs to be rolled into one but for now I'll leave it as two separate parts
                 if(!isSymbol(dx))
                     dx = _.parse(dx);
+                
                 var result, partial_fractions;
                 result = new Symbol(0);
                 partial_fractions = core.Algebra.PartFrac.partfrac(input, dx);
+
                 if(partial_fractions.group === CB && partial_fractions.isLinear()) {
+                    //perform a quick check to make sure that all partial fractions are linear
+                    partial_fractions.each(function(x) {
+                        if(!x.isLinear())
+                            __.integration.stop();
+                    })
                     partial_fractions.each(function(x) {
                         result = _.add(result, __.integrate(x, dx, depth, opt));
                     });
@@ -1471,7 +1500,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             fn2 = sym2.fname; 
                                         //reset the symbol minus the coeff
                                         symbol = _.multiply(sym1.clone(), sym2.clone());
-
                                         if(g1 === FN && g2 === FN) { 
                                             if(fn1 === LOG || fn2 === LOG) { 
                                                 retval = __.integration.by_parts(symbol.clone(), dx, depth, opt);
@@ -1691,6 +1719,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 });
                                                 t.multiplier = sym1.multiplier;
                                                 symbol = _.divide(sym2, t);
+                                            }
+                                            else {
+                                                symbol = _.expand(symbol);
                                             }
                                             retval = __.integration.partial_fraction(symbol, dx, depth);
                                         }
@@ -1983,12 +2014,15 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             };
             
             var vars = core.Utils.variables(symbol),
-                integral = __.integrate(symbol, dx),
-                retval;
-        
+                hasTrig = symbol.hasTrig();
+            var retval, integral;
             if(vars.length === 1)
                 dx = vars[0];
-            if(!integral.hasIntegral()) { 
+            if(!hasTrig) {
+                integral = __.integrate(symbol, dx);
+            }
+            
+            if(!hasTrig && !integral.hasIntegral()) { 
                 var upper = {},
                     lower = {},
                     a, b;

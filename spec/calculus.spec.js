@@ -3,6 +3,7 @@
 'use strict';
 
 var nerdamer = require('../nerdamer.core.js');
+var round = nerdamer.getCore().Utils.round;
 
 describe('calculus', function () {
 
@@ -198,11 +199,11 @@ describe('calculus', function () {
         var testCases = [
             {
                 given: 'defint(cos(x),1,2,x)',
-                expected: '0.06782644201778515'
+                expected: '0.067826442018'
             },
             {
-                given: 'defint(cos(x),1,2,x)',
-                expected: '0.06782644201778515'
+                given: 'defint(cos(x)^3*x^2-1,-1,9)',
+                expected: '8.543016466395'
             },
             {
                 given: 'defint(cos(x^x),1,2,x)',
@@ -227,6 +228,14 @@ describe('calculus', function () {
             {
                 given: 'defint(log(x), 0, 1, x)',
                 expected: '-1'
+            },
+            {
+                given: 'defint((x^2-3)/(-x^3+9x+1), 1, 3, x)',
+                expected: '0.732408192445406585'
+            },
+            {
+                given: 'defint(x*(x-5)^(1/2),5,8)',
+                expected: '23.555890982936999348'
             }
         ];
 
@@ -235,7 +244,7 @@ describe('calculus', function () {
             var parsed = nerdamer(testCases[i].given, null, 'numer');
 
             // then
-            expect(parsed.text()).toEqual(testCases[i].expected);
+            expect(round(parsed.text(), 14)).toEqual(round(testCases[i].expected), 14);
         }
     });
     
@@ -308,7 +317,7 @@ describe('calculus', function () {
             },
             {
                 given: 'integrate(asin(a*x), x)',
-                expected: 'a^(-1)*sqrt(-(a*x)^2+1)+asin(a*x)*x'
+                expected: 'a^(-1)*sqrt(-a^2*x^2+1)+asin(a*x)*x'
             },
             {
                 given: 'integrate(a/x, x)',

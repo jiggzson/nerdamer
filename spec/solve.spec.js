@@ -198,7 +198,11 @@ describe('Solve', function () {
             },
             {
                 given: 'solve((5*x^4-2)/(x+1)/(x^2-1),x)',
-                expected: '[(-316684236/398209345)*i,(316684236/398209345)*i,-72425485/91070226,72425485/91070226]'
+                expected: '[72425485/91070226,-72425485/91070226,(316684236/398209345)*i,(-316684236/398209345)*i]'
+            },
+            {
+                given: 'solve(0=(x^(2)-2)/(e^(x)-1), x)',
+                expected: '[-sqrt(2),sqrt(2)]'
             }
         ];
 
@@ -273,7 +277,11 @@ describe('Solve', function () {
     
     //NOTE: contains duplicates
     it('should solve functions with factorials', function() {
-        expect(nerdamer('solve(x!-x^2,x)').text()).toEqual('[-2.2003917826105948,-4.010232827899529,-2.938361683501947,1,1.0000000000000009,1.0000000000000007,3.5623822853908957,3.5623822853908966,0.9999999999999998,1.0000000000000002]');
+        expect(nerdamer('solve(x!-x^2,x)').text('decimals', 20)).toEqual('[-2.200391782610595,-4.010232827899529,-2.938361683501947,1,1.000000000000001,1.000000000000001,3.562382285390896,3.562382285390897,0.9999999999999910,1.000000000000000]');
+    });
+    
+    it('should solve for variables other than x', function() {
+        expect(nerdamer('solve(2*a^(2)+4*a*6=128, a)').toString()).toEqual('[4,-16]');
     });
     
     xit('should solve factors', function() {
