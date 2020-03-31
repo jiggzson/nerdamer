@@ -49,7 +49,7 @@ FUNCTIONS = {
                 description: 'The variable to be set as the constant'
             },
             value: {
-                type: "Number|expression|string",
+                type: "Number|Expression|string",
                 description: "The value for the expression to be set to."
             }
         },
@@ -74,7 +74,7 @@ FUNCTIONS = {
                 description: 'The known value to be set'
             },
             value: {
-                type: "Number|expression string",
+                type: "Number|Expression|string",
                 description: "The value for the expression to be set to."
             }
         },
