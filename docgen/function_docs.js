@@ -594,12 +594,12 @@ FUNCTIONS = {
             "x = nerdamer.solve('x^2+2*x+1', 'x');",
             "console.log(x.toString());",
             "x = nerdamer.solve('3*(x+a)*(x-b)', 'x');",
-            "console.log(x.toString());"
+            "console.log(x.toString());",
             "x = nerdamer.solve('3*(x+a)*(x-b)', 'x');",
             "console.log(x.toString());",
             "// Full equations are also supported.",
             "x = nerdamer('solve(x^4=1,x)');",
-            "console.log(x.toString());"
+            "console.log(x.toString());",
             "x = nerdamer('solve(y=m*x+c, x)');",
             "console.log(x.toString());"
         ],
