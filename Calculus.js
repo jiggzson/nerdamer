@@ -374,7 +374,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }
             else if(core.Utils.isMatrix(symbol)) {
                 var matrix = new core.Matrix();
-                symbol.each(function(x, j, i) {
+                symbol.each(function(x, i, j) {
                     matrix.set(i, j, __.diff(x, wrt, nth));
                 });
                 return matrix;
@@ -2073,12 +2073,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 do {
                     var lim1 = evaluate(__.Limit.limit(f, x, lim));
                     var lim2 = evaluate(__.Limit.limit(g, x, lim));
+
                     //if it's in indeterminate form apply L'Hospital's rule
                     var indeterminate = isInfinity(lim1) && isInfinity(lim2) || equals(lim1, 0) && equals(lim2, 0);
                     //pull the derivatives
                     if(indeterminate) {
-                        var ft = __.diff(f.clone(), x);
-                        var gt = __.diff(g.clone(), x);
+                        var ft = __.diff(fin.clone(), x);
+                        var gt = __.diff(gin.clone(), x);
                         var t_symbol = _.expand(_.divide(ft, gt));
                         f = t_symbol.getNum();
                         g = t_symbol.getDenom();
@@ -2287,7 +2288,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         }   
                                     }
                                 }
-                                else if(symbol.group === CB) {
+                                else if(symbol.group === CB) { 
                                     symbol = _.expand(symbol);
                                     //if the group no longer is CB then feed it back to this function
                                     if(symbol.group !== CB) {
@@ -2334,11 +2335,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         symbol = _.expand(symbol);
                                     //Apply lim f+g = (lim f)+(lim g)
                                     retval = new Symbol(0);
+
                                     symbol.each(function(sym) {
                                         //If the addition of the limits is undefined then the limit diverges so return -infinity to infinity
                                         try {
                                             _lim = __.Limit.limit(sym, x, lim);
-                                            
                                         }
                                         catch(e) {
                                             _lim = __.Limit.diverges();
@@ -2348,10 +2349,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             retval = _.add(retval, _lim);
                                         }
                                         catch(e) {
+                                            retval = __.Limit.limit(__.diff(symbol, x), x, lim);
                                             //rewrite the function to have a common denominator. 
                                             //TODO: This is soooo slow at the moment.
-                                            symbol = core.Utils.toCommonDenominator(original);
-                                            retval = __.Limit.limit(symbol, x, lim);
+//                                            symbol = core.Utils.toCommonDenominator(original);
+//                                            retval = __.Limit.limit(symbol, x, lim);
                                         }
                                     });
                                 } 
@@ -2445,3 +2447,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     nerdamer.api();
    
 })();
+
+
+var ans = nerdamer('limit(x/abs(x),x,0)');
+console.log(ans.toString())
