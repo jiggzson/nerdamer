@@ -267,6 +267,14 @@ describe('calculus', function () {
                 given: 'limit(cos(sin(x)+2), x, Infinity)',
                 expected: '[cos(1),cos(3)]'
             },
+            {
+                given: 'limit(x/(3*abs(4*x)),x, 0)',
+                expected: '[-1/12,1/12]'
+            },
+            {
+                given: 'limit((4x^2-x)/(3x^2+x),x,∞)',
+                expected: '4/3'
+            },
             /*
             {
                 given: 'limit((x+1)^(1+1/x)-x^(1+x),x, Infinity)',

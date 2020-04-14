@@ -3502,7 +3502,9 @@ var nerdamer = (function (imports) {
             else if (this.group === CB || this.previousGroup === CB) {
                 retval = new Symbol(1);
                 this.each(function (x) {
-                    retval = _.multiply(retval, x.sub(a, b));
+                    var subbed = _.parse(x.sub(a, b)); //parse it again for safety
+                    retval = _.multiply(retval, subbed);
+                    
                 });
             }
             else if (this.isComposite()) {
@@ -6827,8 +6829,14 @@ var nerdamer = (function (imports) {
         }
 
         function abs(symbol) {
+            
+            //|-∞| = ∞ 
+            if(symbol.isInfinity) {
+                return Symbol.infinity();
+            }
             if (symbol.multiplier.lessThan(0))
                 symbol.multiplier.negate();
+            
             if (symbol.isImaginary()) {
                 var re = symbol.realpart();
                 var im = symbol.imagpart();
@@ -6838,6 +6846,7 @@ var nerdamer = (function (imports) {
             else if (isNumericSymbol(symbol) || even(symbol.power)) {
                 return symbol;
             }
+            
             if (symbol.isComposite()) {
                 var ms = [];
                 symbol.each(function (x) {
@@ -6849,7 +6858,12 @@ var nerdamer = (function (imports) {
                     symbol.distributeMultiplier();
                 }
             }
-            return _.symfunction(ABS, [symbol]);
+            
+            //convert |n*x| to n*|x|
+            var m = _.parse(symbol.multiplier);
+            symbol.toUnitMultiplier();
+            
+            return _.multiply(m, _.symfunction(ABS, [symbol]));
         }
         /**
          * The factorial function
@@ -8160,6 +8174,7 @@ var nerdamer = (function (imports) {
         this.round = round;
         this.clean = clean;
         this.sqrt = sqrt;
+        this.abs = abs;
         this.log = log;
         this.nthroot = nthroot;
         this.arg = arg;

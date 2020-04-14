@@ -2009,7 +2009,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 }
                 catch(e) {
                     //it failed for some reason so return the limit
-                    return __.Limit.limit(integral, dx, point);
+                    var lim = __.Limit.limit(integral, dx, point);
+                    return lim;
                 }
             };
             
@@ -2051,7 +2052,31 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 return __.Limit.interval('-Infinity', 'Infinity');
             },
             divide: function(f, g, x, lim) { 
+                
                 var fin = f.clone(), gin = g.clone();
+                
+                //But first a little "cheating". x/|x| ends up in an infinite loop since the d/dx |x| -> x/|x|
+                //To break this loop we simply provide the answer. Keep in mind that currently limit only provides
+                //the two-sided limit.
+                //Known limit
+                if(g.fname === ABS) {
+                    var sign = f.sign();
+                    var lim_sign = lim.sign();
+
+                    if(lim.isInfinity)
+                        return _.multiply(new Symbol(sign), new Symbol(lim_sign));
+                    
+                    else if(lim.equals(0)) {
+                        var fm = _.parse(f.multiplier);
+                        var gm = _.parse(g.multiplier);
+                        return _.divide(_.multiply(fm,__.Limit.interval('-1', '1')), gm);
+                    }
+                    else {
+                        //TODO: Support more limits
+                        __.Limit.diverges();
+                    }
+                }
+                
                 var isInfinity = function(L) {
                     if(core.Utils.isVector(L)) {
                         for(var i=0; i<L.elements.length; i++)
@@ -2168,10 +2193,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         try {
                             //evaluate the function at the given limit
                             var t = _.parse(symbol.sub(x, lim), point);
+
                             //a constant or infinity is known so we're done
                             if(t.isConstant(true) || t.isInfinity)
                                 retval = t;
-
                         }
                         catch(e){ /*Nothing. Maybe we tried to divide by zero.*/};
 
@@ -2205,7 +2230,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     }
                                 }
                                 else if(symbol.group === FN && symbol.args.length === 1 ) {
-                                    
+                                    var evaluates;
                                     //Squeeze theorem lim f(g(x)) = lim f(lim g))
                                     var arg = __.Limit.limit(symbol.args[0], x, lim);
                                     if(core.Utils.isVector(arg)) {
@@ -2216,11 +2241,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             return __.Limit.limit(_.symfunction(symbol.fname, [e]), x, lim);
                                         });
                                         
-                                        return _.multiply(m, retval)
+                                        return _.multiply(m, retval);
                                     }
                                     //if the argument is constant then we're done
                                     else if(arg.isConstant(true)) {
-                                        var evaluates;
+                                    
                                         //double check that it evaluates
                                         var trial = _.symfunction(symbol.fname, [arg]);
                                         //trial evaluation
@@ -2229,6 +2254,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             evaluates = true;
                                         }
                                         catch(e) {
+                                            
                                             evaluates = false;
                                         }
                                     }
@@ -2302,15 +2328,18 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         var symbols = symbol.collectSymbols().sort(function(a, b) {
                                             return a.group - b.group;
                                         });
+                                        
                                         var f = symbols.pop();
                                         //calculate the first limit so we can keep going down the list
                                         lim1 = evaluate(__.Limit.limit(f, x, lim));
+                                        
                                         //reduces all the limits one at a time
                                         while(symbols.length) {
                                             //get the second limit
                                             var g = symbols.pop();
                                             //get the limit of g
                                             lim2 = evaluate(__.Limit.limit(g, x, lim));
+                                            
                                             //if the limit is in indeterminate form aplly L'Hospital by inverting g and then f/(1/g)
                                             if((lim1.isInfinity || !__.Limit.isConvergent(lim1) && lim2.equals(0) || lim1.equals(0) && __.Limit.isConvergent(lim2))) { 
                                                 //invert the symbol
@@ -2448,6 +2477,3 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
    
 })();
 
-
-var ans = nerdamer('limit(x/abs(x),x,0)');
-console.log(ans.toString())
