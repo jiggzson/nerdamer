@@ -1757,6 +1757,12 @@ describe('Nerdamer core', function () {
     it('should convert radians to degrees', function() {
         expect(nerdamer('degrees(pi/4)').toString()).toEqual('45');
     });
+    it('should rationalize correctly', function() {
+        expect(nerdamer('rationalize(a/b+c/d+e/f)').toString()).toEqual('(a*d*f+b*c*f+b*d*e)*(b*d*f)^(-1)');
+        expect(nerdamer('rationalize(1/x+x)').toString()).toEqual('(1+x^2)*x^(-1)');
+        expect(nerdamer('rationalize((x+1)/x-1)').toString()).toEqual('x^(-1)');
+        expect(nerdamer('rationalize((a*x^2+b)/x^2-1)').toString()).toEqual('(-x^2+a*x^2+b)*x^(-2)');
+    });
 });
 
 describe('Further arithmetic test cases', function () {

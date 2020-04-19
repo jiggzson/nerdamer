@@ -708,7 +708,7 @@ var nerdamer = (function (imports) {
 
         return retval;
     };
-
+    
      /**
      * Gets nth roots of a number
      * @param {Symbol} symbol
@@ -4326,6 +4326,7 @@ var nerdamer = (function (imports) {
         },
         /**
          * Checks if the function evaluates to 1. e.g. x^0 or 1 :)
+         * @@param {bool} abs Compares the absolute value 
          */
         isOne: function (abs) {
             var f = abs ? 'absEquals' : 'equals';
@@ -5449,109 +5450,110 @@ var nerdamer = (function (imports) {
         // Supported functions.
         // Format: function_name: [mapped_function, number_of_parameters]
         var functions = this.functions = {
-            'cos': [trig.cos, 1],
-            'sin': [trig.sin, 1],
-            'tan': [trig.tan, 1],
-            'sec': [trig.sec, 1],
-            'csc': [trig.csc, 1],
-            'cot': [trig.cot, 1],
-            'acos': [trig.acos, 1],
-            'asin': [trig.asin, 1],
-            'atan': [trig.atan, 1],
-            'arccos': [trig.acos, 1],
-            'arcsin': [trig.asin, 1],
-            'arctan': [trig.atan, 1],
-            'asec': [trig.asec, 1],
-            'acsc': [trig.acsc, 1],
-            'acot': [trig.acot, 1],
-            'atan2': [trig.atan2, 2],
-            'acoth': [trigh.acoth, 1],
-            'asech': [trigh.asech, 1],
-            'acsch': [trigh.acsch, 1],
-            'sinh': [trigh.sinh, 1],
-            'cosh': [trigh.cosh, 1],
-            'tanh': [trigh.tanh, 1],
-            'asinh': [trigh.asinh, 1],
-            'sech': [trigh.sech, 1],
-            'csch': [trigh.csch, 1],
-            'coth': [trigh.coth, 1],
-            'acosh': [trigh.acosh, 1],
-            'atanh': [trigh.atanh, 1],
-            'log10': [, 1],
-            'exp': [exp, 1],
-            'radians': [radians, 1],
-            'degrees': [degrees, 1],
-            'min': [min, -1],
-            'max': [max, -1],
-            'erf': [, 1],
-            'floor': [, 1],
-            'ceil': [, 1],
-            'trunc': [, 1],
-            'Si': [, 1],
-            'step': [, 1],
-            'rect': [, 1],
-            'sinc': [sinc, 1],
-            'tri': [, 1],
-            'sign': [sign, 1],
-            'Ci': [, 1],
-            'Ei': [, 1],
-            'Shi': [, 1],
-            'Chi': [, 1],
-            'Li': [, 1],
-            'fib': [, 1],
-            'fact': [factorial, 1],
-            'factorial': [factorial, 1],
-            'continued_fraction': [continued_fraction, [1, 2]],
-            'dfactorial': [, 1],
-            'gamma_incomplete': [, [1, 2]],
-            'round': [round, [1, 2]],
-            'scientific': [scientific, [1, 2]],
-            'mod': [mod, 2],
-            'pfactor': [pfactor, 1],
-            'vector': [vector, -1],
-            'matrix': [matrix, -1],
-            'Set': [set, -1],
-            'imatrix': [imatrix, -1],
-            'parens': [parens, -1],
-            'sqrt': [sqrt, 1],
-            'nthroot': [nthroot, 2],
-            'log': [log, [1, 2]],
-            'expand': [expand, 1],
-            'abs': [abs, 1],
-            'invert': [invert, 1],
-            'determinant': [determinant, 1],
-            'size': [size, 1],
-            'transpose': [transpose, 1],
-            'dot': [dot, 2],
-            'cross': [cross, 2],
-            'vecget': [vecget, 2],
-            'vecset': [vecset, 3],
-            'vectrim': [vectrim, [1, 2]],
-            'matget': [matget, 3],
-            'matset': [matset, 4],
-            'matgetrow': [matgetrow, 2],
-            'matsetrow': [matsetrow, 3],
-            'matgetcol': [matgetcol, 2],
-            'matsetcol': [matsetcol, 3],
-            'IF': [IF, 3],
-            'is_in': [is_in, 2],
+            'cos':                  [trig.cos, 1],
+            'sin':                  [trig.sin, 1],
+            'tan':                  [trig.tan, 1],
+            'sec':                  [trig.sec, 1],
+            'csc':                  [trig.csc, 1],
+            'cot':                  [trig.cot, 1],
+            'acos':                 [trig.acos, 1],
+            'asin':                 [trig.asin, 1],
+            'atan':                 [trig.atan, 1],
+            'arccos':               [trig.acos, 1],
+            'arcsin':               [trig.asin, 1],
+            'arctan':               [trig.atan, 1],
+            'asec':                 [trig.asec, 1],
+            'acsc':                 [trig.acsc, 1],
+            'acot':                 [trig.acot, 1],
+            'atan2':                [trig.atan2, 2],
+            'acoth':                [trigh.acoth, 1],
+            'asech':                [trigh.asech, 1],
+            'acsch':                [trigh.acsch, 1],
+            'sinh':                 [trigh.sinh, 1],
+            'cosh':                 [trigh.cosh, 1],
+            'tanh':                 [trigh.tanh, 1],
+            'asinh':                [trigh.asinh, 1],
+            'sech':                 [trigh.sech, 1],
+            'csch':                 [trigh.csch, 1],
+            'coth':                 [trigh.coth, 1],
+            'acosh':                [trigh.acosh, 1],
+            'atanh':                [trigh.atanh, 1],
+            'log10':                [, 1],
+            'exp':                  [exp, 1],
+            'radians':              [radians, 1],
+            'degrees':              [degrees, 1],
+            'min':                  [min, -1],
+            'max':                  [max, -1],
+            'erf':                  [, 1],
+            'floor':                [, 1],
+            'ceil':                 [, 1],
+            'trunc':                [, 1],
+            'Si':                   [, 1],
+            'step':                 [, 1],
+            'rect':                 [, 1],
+            'sinc':                 [sinc, 1],
+            'tri':                  [, 1],
+            'sign':                 [sign, 1],
+            'Ci':                   [, 1],
+            'Ei':                   [, 1],
+            'Shi':                  [, 1],
+            'Chi':                  [, 1],
+            'Li':                   [, 1],
+            'fib':                  [, 1],
+            'fact':                 [factorial, 1],
+            'factorial':            [factorial, 1],
+            'continued_fraction':   [continued_fraction, [1, 2]],
+            'dfactorial':           [, 1],
+            'gamma_incomplete':     [, [1, 2]],
+            'round':                [round, [1, 2]],
+            'scientific':           [scientific, [1, 2]],
+            'mod':                  [mod, 2],
+            'pfactor':              [pfactor, 1],
+            'vector':               [vector, -1],
+            'matrix':               [matrix, -1],
+            'Set':                  [set, -1],
+            'imatrix':              [imatrix, -1],
+            'parens':               [parens, -1],
+            'sqrt':                 [sqrt, 1],
+            'nthroot':              [nthroot, 2],
+            'log':                  [log, [1, 2]],
+            'expand':               [expand, 1],
+            'abs':                  [abs, 1],
+            'invert':               [invert, 1],
+            'determinant':          [determinant, 1],
+            'size':                 [size, 1],
+            'transpose':            [transpose, 1],
+            'dot':                  [dot, 2],
+            'cross':                [cross, 2],
+            'vecget':               [vecget, 2],
+            'vecset':               [vecset, 3],
+            'vectrim':              [vectrim, [1, 2]],
+            'matget':               [matget, 3],
+            'matset':               [matset, 4],
+            'matgetrow':            [matgetrow, 2],
+            'matsetrow':            [matsetrow, 3],
+            'matgetcol':            [matgetcol, 2],
+            'matsetcol':            [matsetcol, 3],
+            'rationalize':          [rationalize, 1],
+            'IF':                   [IF, 3],
+            'is_in':                [is_in, 2],
             //imaginary support
-            'realpart': [realpart, 1],
-            'imagpart': [imagpart, 1],
-            'conjugate': [conjugate, 1],
-            'arg': [arg, 1],
-            'polarform': [polarform, 1],
-            'rectform': [rectform, 1],
-            'sort': [sort, [1, 2]],
-            'integer_part': [, 1],
-            'union': [union, 2],
-            'contains': [contains, 2],
-            'intersection': [intersection, 2],
-            'difference': [difference, 2],
-            'intersects': [intersects, 2],
-            'is_subset': [is_subset, 2],
+            'realpart':             [realpart, 1],
+            'imagpart':             [imagpart, 1],
+            'conjugate':            [conjugate, 1],
+            'arg':                  [arg, 1],
+            'polarform':            [polarform, 1],
+            'rectform':             [rectform, 1],
+            'sort':                 [sort, [1, 2]],
+            'integer_part':         [, 1],
+            'union':                [union, 2],
+            'contains':             [contains, 2],
+            'intersection':         [intersection, 2],
+            'difference':           [difference, 2],
+            'intersects':           [intersects, 2],
+            'is_subset':            [is_subset, 2],
             //system support
-            'print': [print, -1]
+            'print':                [print, -1]
         };
 
         //error handler
@@ -7090,6 +7092,32 @@ var nerdamer = (function (imports) {
         }
         
         /**
+         * Rationalizes a symbol
+         * @param {Symbol} symbol
+         * @returns {Symbol}
+         */
+        function rationalize(symbol) {
+            if(symbol.isComposite()) {
+                var retval = new Symbol(0);
+                var num, den, retnum, retden, a, b, n, d;
+                symbol.each(function(x) {
+                    num = x.getNum();
+                    den = x.getDenom();
+                    retnum = retval.getNum();
+                    retden = retval.getDenom();
+                    a = _.multiply(den, retnum);
+                    b = _.multiply(num, retden);
+                    n = _.expand(_.add(a, b));
+                    d = _.multiply(retden, den);
+                    retval = _.divide(n, d);
+                }, true);
+                
+                return retval;
+            }
+            return symbol;
+        }
+        
+        /**
          * The square root function
          * @param {Symbol} symbol
          * @returns {Symbol}
@@ -8168,7 +8196,7 @@ var nerdamer = (function (imports) {
             return symbol;
         }
 
-        //Linke the functions to the parse so they're available outside of the library
+        //Link the functions to the parse so they're available outside of the library.
         //This is strictly for convenience and may be deprecated.
         this.expand = expand;
         this.round = round;
@@ -8176,11 +8204,18 @@ var nerdamer = (function (imports) {
         this.sqrt = sqrt;
         this.abs = abs;
         this.log = log;
+        this.rationalize = rationalize;
         this.nthroot = nthroot;
         this.arg = arg;
         this.conjugate = conjugate;
         this.imagpart = imagpart;
         this.realpart = realpart;
+        
+        //TODO:
+        //Utilize the function below instead of the linked function
+        this.getFunction = function(name) {
+            return functions[name][0];
+        };
 
 //Parser.methods ===============================================================
         this.addPreprocessor = function (name, action, order, shift_cells) {
