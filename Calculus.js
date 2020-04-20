@@ -62,7 +62,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         ACSCH = 'acsch',
         ACOTH = 'acoth';
         
-        
     //custom errors
     function NoIntegralFound(msg){
         this.message = msg || "";
@@ -306,9 +305,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     
     core.Settings.integration_depth = 10;
     
+    core.Settings.max_lim_depth = 10;
+    
     var __ = core.Calculus = {
 
-        version: '1.4.5',
+        version: '1.4.6',
 
         sum: function(fn, index, start, end) {
             if(!(index.group === core.groups.S)) throw new core.exceptions.NerdamerTypeError('Index must be symbol. '+text(index)+' provided');
@@ -374,7 +375,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             }
             else if(core.Utils.isMatrix(symbol)) {
                 var matrix = new core.Matrix();
-                symbol.each(function(x, j, i) {
+                symbol.each(function(x, i, j) {
                     matrix.set(i, j, __.diff(x, wrt, nth));
                 });
                 return matrix;
@@ -2009,7 +2010,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 }
                 catch(e) {
                     //it failed for some reason so return the limit
-                    return __.Limit.limit(integral, dx, point);
+                    var lim = __.Limit.limit(integral, dx, point);
+                    return lim;
                 }
             };
             
@@ -2050,8 +2052,35 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             diverges: function() {
                 return __.Limit.interval('-Infinity', 'Infinity');
             },
-            divide: function(f, g, x, lim) { 
+            divide: function(f, g, x, lim, depth) { 
+                if(depth++ > Settings.max_lim_depth) {
+                    return;
+                }
+
                 var fin = f.clone(), gin = g.clone();
+                
+                //But first a little "cheating". x/|x| ends up in an infinite loop since the d/dx |x| -> x/|x|
+                //To break this loop we simply provide the answer. Keep in mind that currently limit only provides
+                //the two-sided limit.
+                //Known limit
+                if(g.fname === ABS) {
+                    var sign = f.sign();
+                    var lim_sign = lim.sign();
+
+                    if(lim.isInfinity)
+                        return _.multiply(new Symbol(sign), new Symbol(lim_sign));
+                    
+                    else if(lim.equals(0)) {
+                        var fm = _.parse(f.multiplier);
+                        var gm = _.parse(g.multiplier);
+                        return _.divide(_.multiply(fm,__.Limit.interval('-1', '1')), gm);
+                    }
+                    else {
+                        //TODO: Support more limits
+                        __.Limit.diverges();
+                    }
+                }
+                
                 var isInfinity = function(L) {
                     if(core.Utils.isVector(L)) {
                         for(var i=0; i<L.elements.length; i++)
@@ -2071,42 +2100,48 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
                 var retval;
                 do {
-                    var lim1 = evaluate(__.Limit.limit(f, x, lim));
-                    var lim2 = evaluate(__.Limit.limit(g, x, lim));
+                    var lim1 = evaluate(__.Limit.limit(f, x, lim, depth));
+                    var lim2 = evaluate(__.Limit.limit(g, x, lim, depth));
+
                     //if it's in indeterminate form apply L'Hospital's rule
                     var indeterminate = isInfinity(lim1) && isInfinity(lim2) || equals(lim1, 0) && equals(lim2, 0);
                     //pull the derivatives
                     if(indeterminate) {
-                        var ft = __.diff(f.clone(), x);
-                        var gt = __.diff(g.clone(), x);
+                        var ft = __.diff(fin.clone(), x);
+                        var gt = __.diff(gin.clone(), x);
                         var t_symbol = _.expand(_.divide(ft, gt));
                         f = t_symbol.getNum();
                         g = t_symbol.getDenom();
+
                     }
                 }
                 while(indeterminate)  
-                    
-                if(lim1.isInfinity && lim2.equals(0))
-                    retval = lim1;
-                else if(lim1.equals(0) && lim2.isInfinity)
-                    retval = lim1;
-                else if(lim1.isInfinity) {
-                    retval = lim1;
-                }
-                else if(lim2.isInfinity){
-                    retval = new Symbol(0);
-                }
-                else {
-                    //TODO: 
-                    //REMEMBER: 
-                    //- 1/cos(x)
-                    //n/0 is still possible since we only checked for 0/0
-                    if(lim2.equals(0)) {
+
+                //TODO: 
+                //REMEMBER: 
+                //- 1/cos(x)
+                //n/0 is still possible since we only checked for 0/0
+                var den_is_zero = lim2.equals(0);
+                var p = Number(gin.power);
+
+                if(lim1.isConstant(true) && den_is_zero && core.Utils.isInt(p)) {
+                    if(core.Utils.even(p)) {
+                        retval = core.Symbol.infinity();
+                        //Add the correct sign to infinity based on the sign of the constant
+                        if(lim1.lessThan(0)) {
+                            retval.negate();
+                        }
+                    }
+                    else {
+                        //The limit diverges for odd powers
                         retval = __.Limit.diverges();
                     }
-                    else
-                        retval = _.divide(lim1, lim2);
                 }
+                else if(den_is_zero) {
+                    retval = __.Limit.diverges();
+                }
+                else
+                    retval = _.divide(lim1, lim2);
                 
                 return retval;
             },
@@ -2147,7 +2182,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 }
                 return true; //It is
             },
-            limit: function(symbol, x, lim) {
+            limit: function(symbol, x, lim, depth) {
+                //Simplify the symbol
+                symbol = core.Algebra.Simplify.simplify(symbol);
+                
+                depth = depth || 1;
+                
+                if(depth++ > Settings.max_lim_depth) {
+                    return;
+                }
+                
                 //store the multiplier
                 var m = _.parse(symbol.multiplier);
                 //strip the multiplier
@@ -2167,10 +2211,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         try {
                             //evaluate the function at the given limit
                             var t = _.parse(symbol.sub(x, lim), point);
+
                             //a constant or infinity is known so we're done
                             if(t.isConstant(true) || t.isInfinity)
                                 retval = t;
-
                         }
                         catch(e){ /*Nothing. Maybe we tried to divide by zero.*/};
 
@@ -2198,28 +2242,28 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         //get the base
                                         var pow = symbol_.power.clone();
                                         var base = symbol_.clone().toLinear();
-                                        var lim_base = __.Limit.limit(base, x, lim);
-                                        var lim_pow = __.Limit.limit(pow, x, lim);
+                                        var lim_base = __.Limit.limit(base, x, lim, depth);
+                                        var lim_pow = __.Limit.limit(pow, x, lim, depth);
                                         retval = _.pow(lim_base, lim_pow);
                                     }
                                 }
                                 else if(symbol.group === FN && symbol.args.length === 1 ) {
-                                    
+                                    var evaluates;
                                     //Squeeze theorem lim f(g(x)) = lim f(lim g))
-                                    var arg = __.Limit.limit(symbol.args[0], x, lim);
+                                    var arg = __.Limit.limit(symbol.args[0], x, lim, depth);
                                     if(core.Utils.isVector(arg)) {
                                         //get the limit over that interval
                                         retval = arg.map(function(e) {
                                             var clone = symbol.clone();
                                             clone.args[0] = e;
-                                            return __.Limit.limit(_.symfunction(symbol.fname, [e]), x, lim);
+                                            return __.Limit.limit(_.symfunction(symbol.fname, [e]), x, lim, depth);
                                         });
                                         
-                                        return _.multiply(m, retval)
+                                        return _.multiply(m, retval);
                                     }
                                     //if the argument is constant then we're done
                                     else if(arg.isConstant(true)) {
-                                        var evaluates;
+                                    
                                         //double check that it evaluates
                                         var trial = _.symfunction(symbol.fname, [arg]);
                                         //trial evaluation
@@ -2228,6 +2272,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             evaluates = true;
                                         }
                                         catch(e) {
+                                            
                                             evaluates = false;
                                         }
                                     }
@@ -2287,11 +2332,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         }   
                                     }
                                 }
-                                else if(symbol.group === CB) {
-                                    symbol = _.expand(symbol);
+                                else if(symbol.group === CB) { 
+
                                     //if the group no longer is CB then feed it back to this function
                                     if(symbol.group !== CB) {
-                                        retval = __.Limit.limit(symbol, x, lim);
+                                        retval = __.Limit.limit(symbol, x, lim, depth);
                                     }
                                     else {
                                         var lim1, lim2;
@@ -2301,20 +2346,28 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         var symbols = symbol.collectSymbols().sort(function(a, b) {
                                             return a.group - b.group;
                                         });
+
                                         var f = symbols.pop();
                                         //calculate the first limit so we can keep going down the list
-                                        lim1 = evaluate(__.Limit.limit(f, x, lim));
+                                        lim1 = evaluate(__.Limit.limit(f, x, lim, depth));
+                                        
                                         //reduces all the limits one at a time
                                         while(symbols.length) {
                                             //get the second limit
                                             var g = symbols.pop();
                                             //get the limit of g
-                                            lim2 = evaluate(__.Limit.limit(g, x, lim));
+                                            lim2 = evaluate(__.Limit.limit(g, x, lim, depth));
+
                                             //if the limit is in indeterminate form aplly L'Hospital by inverting g and then f/(1/g)
                                             if((lim1.isInfinity || !__.Limit.isConvergent(lim1) && lim2.equals(0) || lim1.equals(0) && __.Limit.isConvergent(lim2))) { 
+                                                if(g.containsFunction(LOG)) {
+                                                    //swap them
+                                                    g = [f, f = g][0];
+                                                }
                                                 //invert the symbol
                                                 g.invert();
-                                                lim1 = __.Limit.divide(f, g, x, lim);
+
+                                                lim1 = __.Limit.divide(f, g, x, lim, depth);
                                             }
                                             else {
                                                 //lim f*g = (lim f)*(lim g)
@@ -2328,17 +2381,39 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     }
                                 }
                                 else if(symbol.isComposite()) { 
-                                    var original = symbol.clone();
                                     var _lim;
                                     if(!symbol.isLinear())
                                         symbol = _.expand(symbol);
                                     //Apply lim f+g = (lim f)+(lim g)
                                     retval = new Symbol(0);
-                                    symbol.each(function(sym) {
+                                    
+                                    var symbols = symbol.collectSymbols().sort(function(a, b) {
+                                        return b.group - a.group;
+                                    });
+
+                                    var _symbols = [];
+                                    //Analyze the functions first
+                                    var fns = new Symbol(0);
+                                    for(var i=0, l=symbols.length; i<l; i++) {
+                                        var sym = symbols[i].clone();
+                                        if(sym.group === FN || sym.group === CB && sym.hasFunc()) {
+                                            fns = _.add(fns, sym);
+                                        }
+                                        else
+                                            _symbols.push(sym);
+                                    }
+                                    _symbols.unshift(fns);
+                                    
+                                    //make sure that we didn't just repackage the exact same symbol
+                                    if(_symbols.length !== 1) {
+                                        symbols = _symbols;
+                                    }
+                                    
+                                    for(var i=0, l=symbols.length; i<l; i++) {
+                                        var sym = symbols[i];
                                         //If the addition of the limits is undefined then the limit diverges so return -infinity to infinity
                                         try {
-                                            _lim = __.Limit.limit(sym, x, lim);
-                                            
+                                            _lim = __.Limit.limit(sym, x, lim, depth);
                                         }
                                         catch(e) {
                                             _lim = __.Limit.diverges();
@@ -2348,16 +2423,20 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             retval = _.add(retval, _lim);
                                         }
                                         catch(e) {
+                                            if(depth++ > Settings.max_lim_depth) {
+                                                return;
+                                            };
+                                            retval = __.Limit.limit(__.diff(symbol, x), x, lim, depth);
                                             //rewrite the function to have a common denominator. 
                                             //TODO: This is soooo slow at the moment.
-                                            symbol = core.Utils.toCommonDenominator(original);
-                                            retval = __.Limit.limit(symbol, x, lim);
+//                                            symbol = core.Utils.toCommonDenominator(original);
+//                                            retval = __.Limit.limit(symbol, x, lim);
                                         }
-                                    });
+                                    }
                                 } 
                             }
                             else {
-                                retval = __.Limit.divide(num, den, x, lim);
+                                retval = __.Limit.divide(num, den, x, lim, depth);
                             }    
                         }
                     }
@@ -2365,11 +2444,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     //if we still don't have a solution
                     if(!retval)
                         //return it symbolically
-                        retval = _.symfunction('limit', arguments); 
+                        retval = _.symfunction('limit', [symbol, x, lim]); 
                 }
                 catch(e) {
                     //if all else fails return the symbolic function
-                    retval = _.symfunction('limit', arguments); 
+                    retval = _.symfunction('limit', [symbol, x, lim]); 
                 }
                 
                 return _.multiply(m, retval);

@@ -1757,6 +1757,26 @@ describe('Nerdamer core', function () {
     it('should convert radians to degrees', function() {
         expect(nerdamer('degrees(pi/4)').toString()).toEqual('45');
     });
+    it('should rationalize correctly', function() {
+        expect(nerdamer('rationalize(a/b+c/d+e/f)').toString()).toEqual('(a*d*f+b*c*f+b*d*e)*(b*d*f)^(-1)');
+        expect(nerdamer('rationalize(1/x+x)').toString()).toEqual('(1+x^2)*x^(-1)');
+        expect(nerdamer('rationalize((x+1)/x-1)').toString()).toEqual('x^(-1)');
+        expect(nerdamer('rationalize((a*x^2+b)/x^2-1)').toString()).toEqual('(-x^2+a*x^2+b)*x^(-2)');
+    });
+    it('should handle matrix operations', function() {
+        expect(nerdamer('matrix([3,4])^2').toString()).toEqual('matrix([9,16])');
+        expect(nerdamer('2^matrix([3,4])').toString()).toEqual('matrix([8,16])');
+        expect(nerdamer('2^matrix([3,4])').toString()).toEqual('matrix([8,16])');
+        expect(nerdamer('2*matrix([3,4])').toString()).toEqual('matrix([6,8])');
+        expect(nerdamer('matrix([1,2])+matrix([8,4])').toString()).toEqual('matrix([9,6])');
+        expect(nerdamer('2+matrix([3,4])').toString()).toEqual('matrix([5,6])');
+        expect(nerdamer('2-matrix([3,4])').toString()).toEqual('matrix([-1,-2])');
+        expect(nerdamer('matrix([1,2])-matrix([8,4])').toString()).toEqual('matrix([-7,-2])');
+        expect(nerdamer('matrix([3,4])-2').toString()).toEqual('matrix([1,2])');
+        expect(nerdamer('matrix([8,4])/2').toString()).toEqual('matrix([4,2])');
+        expect(nerdamer('matrix([1,2])/matrix([8,4])').toString()).toEqual('matrix([1/8,1/2])');
+        expect(nerdamer('16/matrix([8,4])').toString()).toEqual('matrix([2,4])');
+    });
 });
 
 describe('Further arithmetic test cases', function () {
