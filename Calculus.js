@@ -2100,15 +2100,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
                 var retval;
                 do {
-                    var lim1 = evaluate(__.Limit.limit(f, x, lim, depth));
-                    var lim2 = evaluate(__.Limit.limit(g, x, lim, depth));
+                    var lim1 = evaluate(__.Limit.limit(f.clone(), x, lim, depth));
+                    var lim2 = evaluate(__.Limit.limit(g.clone(), x, lim, depth));
 
                     //if it's in indeterminate form apply L'Hospital's rule
                     var indeterminate = isInfinity(lim1) && isInfinity(lim2) || equals(lim1, 0) && equals(lim2, 0);
                     //pull the derivatives
                     if(indeterminate) {
-                        var ft = __.diff(fin.clone(), x);
-                        var gt = __.diff(gin.clone(), x);
+                        var ft = __.diff(f.clone(), x);
+                        var gt = __.diff(g.clone(), x);
+
                         var t_symbol = _.expand(_.divide(ft, gt));
                         f = t_symbol.getNum();
                         g = t_symbol.getDenom();
@@ -2184,7 +2185,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             },
             limit: function(symbol, x, lim, depth) {
                 //Simplify the symbol
-                symbol = core.Algebra.Simplify.simplify(symbol);
                 
                 depth = depth || 1;
                 
@@ -2208,6 +2208,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         var point = {};
                         point[x] = lim;
                         //lim x as x->c = c where c
+                        
                         try {
                             //evaluate the function at the given limit
                             var t = _.parse(symbol.sub(x, lim), point);
@@ -2333,52 +2334,46 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     }
                                 }
                                 else if(symbol.group === CB) { 
+                                    
+                                    var lim1, lim2;
+                                    //loop through all the symbols
+                                    //thus => lim f*g*h = lim (f*g)*h = (lim f*g)*(lim h)
+                                    //symbols of lower groups are generally easier to differentiatee so get them to the right by first sorting
+                                    var symbols = symbol.collectSymbols().sort(function(a, b) {
+                                        return a.group - b.group;
+                                    });
 
-                                    //if the group no longer is CB then feed it back to this function
-                                    if(symbol.group !== CB) {
-                                        retval = __.Limit.limit(symbol, x, lim, depth);
-                                    }
-                                    else {
-                                        var lim1, lim2;
-                                        //loop through all the symbols
-                                        //thus => lim f*g*h = lim (f*g)*h = (lim f*g)*(lim h)
-                                        //symbols of lower groups are generally easier to differentiatee so get them to the right by first sorting
-                                        var symbols = symbol.collectSymbols().sort(function(a, b) {
-                                            return a.group - b.group;
-                                        });
+                                    var f = symbols.pop();
+                                    //calculate the first limit so we can keep going down the list
+                                    lim1 = evaluate(__.Limit.limit(f, x, lim, depth));
 
-                                        var f = symbols.pop();
-                                        //calculate the first limit so we can keep going down the list
-                                        lim1 = evaluate(__.Limit.limit(f, x, lim, depth));
-                                        
-                                        //reduces all the limits one at a time
-                                        while(symbols.length) {
-                                            //get the second limit
-                                            var g = symbols.pop();
-                                            //get the limit of g
-                                            lim2 = evaluate(__.Limit.limit(g, x, lim, depth));
+                                    //reduces all the limits one at a time
+                                    while(symbols.length) {
+                                        //get the second limit
+                                        var g = symbols.pop();
+                                        //get the limit of g
+                                        lim2 = evaluate(__.Limit.limit(g, x, lim, depth));
 
-                                            //if the limit is in indeterminate form aplly L'Hospital by inverting g and then f/(1/g)
-                                            if((lim1.isInfinity || !__.Limit.isConvergent(lim1) && lim2.equals(0) || lim1.equals(0) && __.Limit.isConvergent(lim2))) { 
-                                                if(g.containsFunction(LOG)) {
-                                                    //swap them
-                                                    g = [f, f = g][0];
-                                                }
-                                                //invert the symbol
-                                                g.invert();
-
-                                                lim1 = __.Limit.divide(f, g, x, lim, depth);
+                                        //if the limit is in indeterminate form aplly L'Hospital by inverting g and then f/(1/g)
+                                        if((lim1.isInfinity || !__.Limit.isConvergent(lim1) && lim2.equals(0) || lim1.equals(0) && __.Limit.isConvergent(lim2))) { 
+                                            if(g.containsFunction(LOG)) {
+                                                //swap them
+                                                g = [f, f = g][0];
                                             }
-                                            else {
-                                                //lim f*g = (lim f)*(lim g)
-                                                lim1 = _.multiply(lim1, lim2);
-                                                //let f*g equal f and h equal g 
-                                                f = _.multiply(f, g);
-                                            }
+                                            //invert the symbol
+                                            g.invert();
+
+                                            lim1 = __.Limit.divide(f, g, x, lim, depth);
                                         }
-                                        //Done, lim1 is the limit we're looking for     
-                                        retval = lim1;
+                                        else {
+                                            //lim f*g = (lim f)*(lim g)
+                                            lim1 = _.multiply(lim1, lim2);
+                                            //let f*g equal f and h equal g 
+                                            f = _.multiply(f, g);
+                                        }
                                     }
+                                    //Done, lim1 is the limit we're looking for     
+                                    retval = lim1;
                                 }
                                 else if(symbol.isComposite()) { 
                                     var _lim;
