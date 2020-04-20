@@ -1097,7 +1097,7 @@ FUNCTIONS = {
         full_name: 'cosine',
         description: 'This function will return some known values for multiples of pi, pi/2, pi/3, etc. \n\
                       For numeric values it returns the javascript value for pi. In all other cases it returns \n\
-                      a symbolic function.',
+                      a symbolic function.  Expects radians.',
         parameters: {
             x: {
                 type: 'expression',
@@ -1148,7 +1148,7 @@ FUNCTIONS = {
         full_name: 'sine',
         description: 'This function will return some known values for multiples of pi, pi/2, pi/3, etc. \n\
                       For numeric values it returns the javascript value for pi. In all other cases it returns \n\
-                      a symbolic function.',
+                      a symbolic function. Expects radians.',
         parameters: {
             x: {
                 type: 'expression',
@@ -1198,7 +1198,7 @@ FUNCTIONS = {
         full_name: 'tangent',
         description: 'This function will return some known values for multiples of pi, pi/2, pi/3, etc. \n\
                       For numeric values it returns the javascript value for pi. In all other cases it returns \n\
-                      a symbolic function.',
+                      a symbolic function.  Expects radians.',
         parameters: {
             x: {
                 type: 'expression',
@@ -1226,7 +1226,7 @@ FUNCTIONS = {
         full_name: 'secant',
         description: 'This function will return some known values for multiples of pi, pi/2, pi/3, etc. \n\
                       For numeric values it returns the javascript value for pi. In all other cases it returns \n\
-                      a symbolic function.',
+                      a symbolic function.  Expects radians.',
         parameters: {
             x: {
                 type: 'expression',
@@ -1275,7 +1275,7 @@ FUNCTIONS = {
         full_name: 'cosecant',
         description: 'This function will return some known values for multiples of pi, pi/2, pi/3, etc. \n\
                       For numeric values it returns the javascript value for pi. In all other cases it returns \n\
-                      a symbolic function.',
+                      a symbolic function.  Expects radians.',
         parameters: {
             x: {
                 type: 'expression',
@@ -1326,7 +1326,7 @@ FUNCTIONS = {
         full_name: 'cotangent',
         description: 'This function will return some known values for multiples of pi, pi/2, pi/3, etc. \n\
                       For numeric values it returns the javascript value for pi. In all other cases it returns \n\
-                      a symbolic function.',
+                      a symbolic function.  Expects radians.',
         parameters: {
             x: {
                 type: 'expression',
