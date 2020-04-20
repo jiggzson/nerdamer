@@ -2369,7 +2369,6 @@ if((typeof module) !== 'undefined') {
                     return symbol;    
                 }
                 catch(e) {
-                    //console.log(e);
                     //no need to stop the show because something went wrong :). Just return the unfactored.
                     return untouched;
                 }
@@ -3712,11 +3711,16 @@ if((typeof module) !== 'undefined') {
                 //try a quick simplify of imaginary numbers
                 var den = symbol.getDenom();
                 var num = symbol.getNum();
+
                 if(num.isImaginary() && den.isImaginary())
                     symbol = __.Simplify.complexSimp(num, den);
                 
                 if(symbol.isComposite()) {
-                    var symbols = symbol.collectSymbols();
+                    if(symbol.power > 1) {
+                        symbol = _.expand(symbol);
+                    }
+                    
+                    var symbols = symbol.collectSymbols(); 
                     //assumption 1.
                     //since it's a composite, it has a length of at least 1
                     var retval, a, b, d1, d2, n1, n2, x, y, c, den, num;
@@ -3745,8 +3749,9 @@ if((typeof module) !== 'undefined') {
                     }
 
                     //we've already hit the simplest form so return that
-                    if(retval.equals(symbol))
-                        return retval;
+                    if(retval.equals(symbol)) {
+                        return symbol;
+                    }
                     //otherwise simplify it some more
                     return __.Simplify.simplify(retval);
                 }
