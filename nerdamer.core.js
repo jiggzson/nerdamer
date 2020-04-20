@@ -8475,9 +8475,12 @@ var nerdamer = (function (imports) {
                 var bIsMatrix = isMatrix(b);
 
                 if (aIsSymbol && bIsMatrix) {
-                    b.eachElement(function (e) {
-                        return _.add(a.clone(), e);
+                    var M = new Matrix();
+                    b.eachElement(function (e, i, j) {
+                        M.set(i, j, _.add(a.clone(), e));
                     });
+                    
+                    b = M
                 }
                 else {
                     if (isMatrix(a) && bIsMatrix) {
@@ -8575,6 +8578,20 @@ var nerdamer = (function (imports) {
                 }
                 else if (isMatrix(a) && isMatrix(b)) {
                     b = a.subtract(b);
+                }
+                else if(isMatrix(a) && bIsSymbol) {
+                    var M = new Matrix();
+                    a.each(function(x, i, j) {
+                        M.set(i, j, _.subtract(x, b.clone()));
+                    });
+                    b = M;
+                }
+                else if(aIsSymbol && isMatrix(b)) {
+                    var M = new Matrix();
+                    b.each(function(x, i, j) {
+                        M.set(i, j, _.subtract(a.clone(), x));
+                    });
+                    b = M;
                 }
                 return b;
             }
@@ -8866,9 +8883,12 @@ var nerdamer = (function (imports) {
 
                 var isMatrixB = isMatrix(b), isMatrixA = isMatrix(a);
                 if (aIsSymbol && isMatrixB) {
-                    b.eachElement(function (e) {
-                        return _.multiply(a.clone(), e);
+                    var M = new Matrix();
+                    b.eachElement(function (e, i, j) {
+                        M.set(i, j, _.multiply(a.clone(), e));
                     });
+                    
+                    b = M;
                 }
                 else {
                     if (isMatrixA && isMatrixB) {
@@ -8966,16 +8986,26 @@ var nerdamer = (function (imports) {
                 else {
                     var isMatrixA = isMatrix(a), isMatrixB = isMatrix(b);
                     if (isMatrixA && bIsSymbol) {
-                        a.eachElement(function (x) {
-                            return _.divide(x, b.clone());
+                        var M = new Matrix();
+                        a.eachElement(function (x, i, j) {
+                            M.set(i, j, _.divide(x, b.clone()));
                         });
-                        b = a;
+                        b = M;
+                    }
+                    else if(aIsSymbol && isMatrixB) {
+                        var M = new Matrix();
+                        b.eachElement(function (x, i, j) {
+                            M.set(i, j, _.divide(a.clone(), x));
+                        });
+                        b = M;
                     }
                     else if (isMatrixA && isMatrixB) {
+                        var M = new Matrix();
                         if (a.rows() === b.rows() && a.cols() === b.cols()) {
                             a.eachElement(function (x, i, j) {
-                                return _.divide(x, b.elements[i][j]);
+                                M.set(i, j, _.divide(x, b.elements[i][j]));
                             });
+                            b = M;
                         }
                         else {
                             _.error('Dimensions do not match!');
@@ -8983,10 +9013,11 @@ var nerdamer = (function (imports) {
                     }
                     else if (isMatrixA && isVectorB) {
                         if (a.cols() === b.dimensions()) {
+                            var M = new Matrix();
                             a.eachElement(function (x, i, j) {
-                                return _.divide(x, b.elements[i].clone());
+                                M.set(i, j, _.divide(x, b.elements[i].clone()));
                             });
-                            b = a;
+                            b = M;
                         }
                         else {
                             _.error('Unable to divide matrix by vector.');
@@ -9326,9 +9357,18 @@ var nerdamer = (function (imports) {
                     });
                 }
                 else if (isMatrix(a) && bIsSymbol) {
-                    a.eachElement(function (x) {
-                        return _.pow(x, b.clone());
+                    var M = new Matrix();
+                    a.eachElement(function (x, i, j) {
+                        M.set(i, j, _.pow(x, b.clone()));
                     });
+                    a = M;
+                }
+                else if(aIsSymbol && isMatrix(b)) {
+                    var M = new Matrix();
+                    b.eachElement(function (x, i, j) {
+                        M.set(i, j, _.pow(a.clone(), x));
+                    });
+                    a = M;
                 }
                 return a;
             }
@@ -10058,7 +10098,7 @@ var nerdamer = (function (imports) {
             var tokens = this.filterTokens(raw_tokens);
             var replace = {
                 'cdot': '',
-                'times': '*',
+                'times': '',
                 'infty': 'Infinity'
             };
             //get the next token

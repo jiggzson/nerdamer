@@ -1763,6 +1763,20 @@ describe('Nerdamer core', function () {
         expect(nerdamer('rationalize((x+1)/x-1)').toString()).toEqual('x^(-1)');
         expect(nerdamer('rationalize((a*x^2+b)/x^2-1)').toString()).toEqual('(-x^2+a*x^2+b)*x^(-2)');
     });
+    it('should handle matrix operations', function() {
+        expect(nerdamer('matrix([3,4])^2').toString()).toEqual('matrix([9,16])');
+        expect(nerdamer('2^matrix([3,4])').toString()).toEqual('matrix([8,16])');
+        expect(nerdamer('2^matrix([3,4])').toString()).toEqual('matrix([8,16])');
+        expect(nerdamer('2*matrix([3,4])').toString()).toEqual('matrix([6,8])');
+        expect(nerdamer('matrix([1,2])+matrix([8,4])').toString()).toEqual('matrix([9,6])');
+        expect(nerdamer('2+matrix([3,4])').toString()).toEqual('matrix([5,6])');
+        expect(nerdamer('2-matrix([3,4])').toString()).toEqual('matrix([-1,-2])');
+        expect(nerdamer('matrix([1,2])-matrix([8,4])').toString()).toEqual('matrix([-7,-2])');
+        expect(nerdamer('matrix([3,4])-2').toString()).toEqual('matrix([1,2])');
+        expect(nerdamer('matrix([8,4])/2').toString()).toEqual('matrix([4,2])');
+        expect(nerdamer('matrix([1,2])/matrix([8,4])').toString()).toEqual('matrix([1/8,1/2])');
+        expect(nerdamer('16/matrix([8,4])').toString()).toEqual('matrix([2,4])');
+    });
 });
 
 describe('Further arithmetic test cases', function () {

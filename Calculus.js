@@ -2362,7 +2362,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             if((lim1.isInfinity || !__.Limit.isConvergent(lim1) && lim2.equals(0) || lim1.equals(0) && __.Limit.isConvergent(lim2))) { 
                                                 if(g.containsFunction(LOG)) {
                                                     //swap them
-                                                    g = [f, f = g][0]
+                                                    g = [f, f = g][0];
                                                 }
                                                 //invert the symbol
                                                 g.invert();
