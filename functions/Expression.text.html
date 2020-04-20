@@ -110,7 +110,7 @@
         <span class="parameter-type">String </span>
         <span class="parameter-name">option </span>
     </td>
-    <td><span class="parameter-description">Pass in the string 'decimals' to get back numers as decimals. Pass in the string 'fractions' to get back number as fractions. Defaults to decimals.</span></td>
+    <td><span class="parameter-description">Pass in the string 'decimals' to get back the number as decimals. Pass in the string 'recurring' to get back the number as a recurring decimal. Pass in the string 'fractions' to get back the number as fractions. Defaults to decimals.</span></td>
 </tr><tr>
     <td>
         <span class="parameter-type">String </span>
@@ -120,12 +120,19 @@
 </tr>
                         </table>
                     </div>
+                    <h4 class="returns">Returns</h4>
+                    <div>
+                        String
+                    </div>
                 </div>
                 <hr>
                 EXAMPLES:
                 <div>
                     <pre><code class="javascript">var x = nerdamer('1/12+1/2*cos(x)-0.5');
 console.log(x.text('decimals'));
+console.log(x.text('decimals', 1));
+console.log(x.text('decimals', 7));
+console.log(x.text('recurring'));
 console.log(x.text('fractions'));</code></pre>
                 </div>
                 OUTPUT:
@@ -190,6 +197,9 @@ console.log(x.text('fractions'));</code></pre>
             try {
                 var x = nerdamer('1/12+1/2*cos(x)-0.5');
 oprint(x.text('decimals'));
+oprint(x.text('decimals', 1));
+oprint(x.text('decimals', 7));
+oprint(x.text('recurring'));
 oprint(x.text('fractions'));
             }
             catch(e) {

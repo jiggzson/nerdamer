@@ -120,15 +120,27 @@
 </tr>
                         </table>
                     </div>
+                    <h4 class="returns">Returns</h4>
+                    <div>
+                        Symbol[]
+                    </div>
                 </div>
                 <hr>
                 EXAMPLES:
                 <div>
-                    <pre><code class="javascript">var x = nerdamer('solve(x^3+1, x)');
+                    <pre><code class="javascript">// If a formula is provided, then it will be assumed to equal zero.
+var x = nerdamer('solve(x^3+1, x)');
 console.log(x.toString());
 x = nerdamer.solve('x^2+2*x+1', 'x');
 console.log(x.toString());
 x = nerdamer.solve('3*(x+a)*(x-b)', 'x');
+console.log(x.toString());
+x = nerdamer.solve('3*(x+a)*(x-b)', 'x');
+console.log(x.toString());
+// Full equations are also supported.
+x = nerdamer('solve(x^4=1,x)');
+console.log(x.toString());
+x = nerdamer('solve(y=m*x+c, x)');
 console.log(x.toString());</code></pre>
                 </div>
                 OUTPUT:
@@ -191,11 +203,19 @@ console.log(x.toString());</code></pre>
         
         $(function() {
             try {
-                var x = nerdamer('solve(x^3+1, x)');
+                // If a formula is provided, then it will be assumed to equal zero.
+var x = nerdamer('solve(x^3+1, x)');
 oprint(x.toString());
 x = nerdamer.solve('x^2+2*x+1', 'x');
 oprint(x.toString());
 x = nerdamer.solve('3*(x+a)*(x-b)', 'x');
+oprint(x.toString());
+x = nerdamer.solve('3*(x+a)*(x-b)', 'x');
+oprint(x.toString());
+// Full equations are also supported.
+x = nerdamer('solve(x^4=1,x)');
+oprint(x.toString());
+x = nerdamer('solve(y=m*x+c, x)');
 oprint(x.toString());
             }
             catch(e) {

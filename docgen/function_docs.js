@@ -40,8 +40,8 @@ FUNCTIONS = {
     },
     nerdamer__setConstant: {
         type: 'nerdamer',
-        usage: 'nerdamer.setContant(name, value)',
-        full_name: 'setContant',
+        usage: 'nerdamer.setConstant(name, value)',
+        full_name: 'setConstant',
         description: 'Sets a constant value which nerdamer will automatically substitute when parsing expression/equation. Set to "delete" or "" to unset.',
         parameters: {
             name: {
@@ -3324,7 +3324,7 @@ FUNCTIONS = {
         usage: 'laplace(expression, t, s)',
         full_name: 'Laplace',
         description: 'Attempts to calculate the Laplace transform of an expression. Currently computes transforms of most common expressions.'+
-                ' Throws and error if no transform could be calculated.',
+                ' Throws an error if no transform could be calculated.',
         parameters: {
             expression: {
                 type: 'expression',
