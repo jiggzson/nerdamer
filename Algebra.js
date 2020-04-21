@@ -958,8 +958,7 @@ if((typeof module) !== 'undefined') {
         return subs;
     };
     var __ = core.Algebra = {
-        version: '1.4.5',
-        init: (function() {})(),
+        version: '1.4.6',
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
             //if this causes trouble you can explicitly pass in a different number of places
@@ -2142,6 +2141,9 @@ if((typeof module) !== 'undefined') {
                 
                 if(retval.group === CB) {
                     var t = new Symbol(1);
+                    //store the multiplier and strip it
+                    var m = _.parse(retval.multiplier);
+                    retval.toUnitMultiplier();
                     /* 
                      * NOTE: for sign issues with factor START DEBUGGING HERE
                      */
@@ -2163,7 +2165,8 @@ if((typeof module) !== 'undefined') {
                             t = _.multiply(t, factored);
                         }
                     });
-                    retval = t;
+                    //put back the multiplier
+                    retval = _.multiply(m, t);
                 }  
                 return retval;
             },
@@ -2244,6 +2247,7 @@ if((typeof module) !== 'undefined') {
                         //grab the denominator and strip the multiplier and power. Store them in an array
                         den_array = __.Simplify.strip(symbol.getDenom());
                         num_array = __.Simplify.strip(symbol.getNum());
+                        
                         den = den_array.pop();
                         num = num_array.pop();
 
@@ -2252,9 +2256,12 @@ if((typeof module) !== 'undefined') {
                             return symbol;
                         nfact = __.Factor.factor(num);
                         dfact = __.Factor.factor(den);
+
                         var n = __.Simplify.unstrip(num_array, nfact);
                         var d = __.Simplify.unstrip(den_array, dfact);
+ 
                         var retval = _.divide(n, d);
+
                         return retval;
                     }
                     if(symbol.group === S) 
@@ -3739,7 +3746,7 @@ if((typeof module) !== 'undefined') {
                     }
                     den = _.expand(a.getDenom());
                     num = _.expand(a.getNum());
-                    
+
                     //simplify imaginary
                     if(num.isImaginary() && den.isImaginary()) {
                         retval = __.Simplify.complexSimp(num, den);
@@ -3752,6 +3759,7 @@ if((typeof module) !== 'undefined') {
                     if(retval.equals(symbol)) {
                         return symbol;
                     }
+                    
                     //otherwise simplify it some more
                     return __.Simplify.simplify(retval);
                 }
