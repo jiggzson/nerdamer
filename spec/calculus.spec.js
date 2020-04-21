@@ -283,7 +283,14 @@ describe('calculus', function () {
                 given: 'limit((2sin(x)-sin(2x))/(x-sin(x)),x,0)',
                 expected: '6'
             },
-            /*
+            {
+                given: 'limit((3*sin(x)-sin(2*x))/(x-sin(x)),x,0)',
+                expected: 'Infinity'
+            },
+            {
+                given: 'limit(x/(x+1)^2, x, -1)',
+                expected: '-Infinity'
+            },
             {
                 given: 'limit((x+1)^(1+1/x)-x^(1+x),x, Infinity)',
                 expected: '-Infinity'
@@ -291,8 +298,7 @@ describe('calculus', function () {
             {
                 given: 'limit(log(x),x, 0)',
                 expected: 'Infinity'
-            },
-            */
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

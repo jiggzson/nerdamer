@@ -2118,32 +2118,20 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 }
                 while(indeterminate)  
 
-                //TODO: 
                 //REMEMBER: 
                 //- 1/cos(x)
                 //n/0 is still possible since we only checked for 0/0
                 var den_is_zero = lim2.equals(0);
                 var p = Number(gin.power);
-
-                if(lim1.isConstant(true) && den_is_zero && core.Utils.isInt(p)) {
-                    if(core.Utils.even(p)) {
-                        retval = core.Symbol.infinity();
-                        //Add the correct sign to infinity based on the sign of the constant
-                        if(lim1.lessThan(0)) {
-                            retval.negate();
-                        }
-                    }
-                    else {
-                        //The limit diverges for odd powers
-                        retval = __.Limit.diverges();
-                    }
+                
+                if(lim.isConstant(true) && den_is_zero) {
+                    retval = Symbol.infinity(core.Utils.even(p) && lim1.lessThan(0) ? -1 : undefined);
                 }
                 else if(den_is_zero) {
                     retval = __.Limit.diverges();
                 }
                 else {
                     retval = _.divide(lim1, lim2);
-//                    retval = __.Limit.limit(_.divide(f, g, x, lim, depth), x, lim, depth);
                 }
                 
                 return retval;
@@ -2425,10 +2413,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 return;
                                             };
                                             retval = __.Limit.limit(__.diff(symbol, x), x, lim, depth);
-                                            //rewrite the function to have a common denominator. 
-                                            //TODO: This is soooo slow at the moment.
-//                                            symbol = core.Utils.toCommonDenominator(original);
-//                                            retval = __.Limit.limit(symbol, x, lim);
                                         }
                                     }
                                 } 
@@ -2522,3 +2506,4 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     nerdamer.api();
    
 })();
+    
