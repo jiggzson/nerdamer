@@ -142,6 +142,10 @@ describe('calculus', function () {
             {
                 given: 'diff([sin(x), x^2, x],x)',
                 expected: '[cos(x),2*x,1]'
+            },
+            {
+                given: 'diff(sinc(a*x^3+b),x)',
+                expected: '3*((a*x^3+b)*cos(a*x^3+b)-sin(a*x^3+b))*(a*x^3+b)^(-2)*a*x^2'
             }
         ];
 

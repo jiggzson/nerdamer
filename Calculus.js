@@ -602,6 +602,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         case 'sign':
                             symbol = new Symbol(0);
                             break;
+                        case 'sinc':
+                            symbol = _.parse(format('(({0})*cos({0})-sin({0}))*({0})^(-2)', symbol.args[0]));
+                            break;
                         case Settings.LOG10:
                             symbol = _.parse('1/(('+symbol.args[0]+')*'+Settings.LOG+'(10))');
                             break;
@@ -2506,4 +2509,3 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     nerdamer.api();
    
 })();
-    
