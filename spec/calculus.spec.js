@@ -275,6 +275,14 @@ describe('calculus', function () {
                 given: 'limit((4x^2-x)/(3x^2+x),x,∞)',
                 expected: '4/3'
             },
+            {
+                given: 'limit((x^(1/2)+x^(-1/2))/(x^(1/2)-x^(-1/2)),x,Infinity)',
+                expected: '1'
+            },
+            {
+                given: 'limit((2sin(x)-sin(2x))/(x-sin(x)),x,0)',
+                expected: '6'
+            },
             /*
             {
                 given: 'limit((x+1)^(1+1/x)-x^(1+x),x, Infinity)',

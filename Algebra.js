@@ -3767,9 +3767,11 @@ if((typeof module) !== 'undefined') {
             },
             ratSimp: function(symbol) {
                 if(symbol.group === CB) {
-                    var den = __.Simplify.fracSimp(symbol.getDenom());
-                    var num = __.Simplify.fracSimp(symbol.getNum());
-                    symbol = _.divide(num, den);
+                    var den = symbol.getDenom();
+                    var num = symbol.getNum().distributeMultiplier();
+                    var d = __.Simplify.fracSimp(den);
+                    var n = __.Simplify.fracSimp(num);
+                    symbol = _.divide(n, d);
                 }
                 return symbol;
             },
@@ -3793,7 +3795,7 @@ if((typeof module) !== 'undefined') {
                 ////1. Try cos(x)^2+sin(x)^2 
 
                 simplified = __.Simplify.trigSimp(symbol);
-
+           
                 //simplify common denominators
                 simplified = __.Simplify.ratSimp(simplified);
 

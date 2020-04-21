@@ -2113,7 +2113,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         var t_symbol = _.expand(_.divide(ft, gt));
                         f = t_symbol.getNum();
                         g = t_symbol.getDenom();
-
+                        
                     }
                 }
                 while(indeterminate)  
@@ -2141,8 +2141,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 else if(den_is_zero) {
                     retval = __.Limit.diverges();
                 }
-                else
+                else {
                     retval = _.divide(lim1, lim2);
+//                    retval = __.Limit.limit(_.divide(f, g, x, lim, depth), x, lim, depth);
+                }
                 
                 return retval;
             },
@@ -2185,6 +2187,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             },
             limit: function(symbol, x, lim, depth) {
                 //Simplify the symbol
+                symbol = core.Algebra.Simplify.simplify(symbol);
                 
                 depth = depth || 1;
                 
