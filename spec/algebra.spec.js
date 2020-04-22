@@ -562,6 +562,10 @@ describe('Algebra', function () {
                 given: 'partfrac((3*x^2-3*x-8)/((x-5)*(x^2+x-4)),x)',
                 expected: '(-4+x+x^2)^(-1)*x+2*(-5+x)^(-1)'
             },
+            {
+                given: 'partfrac(15*(9+s^2)^(-1)*cos(1)+5*(9+s^2)^(-1)*s*sin(1),s)',
+                expected: '(15*cos(1)+5*s*sin(1))*(9+s^2)^(-1)'
+            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

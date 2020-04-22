@@ -3974,6 +3974,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var x = nerdamer('partfrac(15*(9+s^2)^(-1)*cos(1)+5*(9+s^2)^(-1)*s*sin(1),s)');
-console.log(x.toString())

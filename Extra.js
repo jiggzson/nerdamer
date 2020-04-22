@@ -54,6 +54,8 @@ if ((typeof module) !== 'undefined') {
         LaPlace: {
             //Using: integral_0^oo f(t)*e^(-s*t) dt
             transform: function (symbol, t, s) {
+                symbol = symbol.clone();
+                
                 t = t.toString();
                 //First try a lookup for a speed boost
                 symbol = Symbol.unwrapSQRT(symbol, true);
@@ -121,7 +123,8 @@ if ((typeof module) !== 'undefined') {
                             var integration_expr = _.parse('e^(-' + s + '*' + u + ')*' + sym);
                             retval = core.Calculus.integrate(integration_expr, u);
                             if (retval.hasIntegral())
-                                _.error('Unable to compute transform');
+                                return _.symfunction('laplace', arguments);
+//                                _.error('Unable to compute transform');
                             retval = retval.sub(t, 0);
                             retval = _.expand(_.multiply(retval, new Symbol(-1)));
                             retval = retval.sub(u, t);
@@ -586,10 +589,3 @@ if ((typeof module) !== 'undefined') {
     //link registered functions externally
     nerdamer.api();
 }());
-
-//Holding
-//var ans = nerdamer('ilt(((s+1)*(s+2)*(s+3))^(-1), s, t)')
-
-var ans = nerdamer('ilt(8*(2*s^2+3)^(-2)*s^2,s,t)')
-//var ans = nerdamer('ilt(4*(2*s^2+3)^(-1),s,t)')
-console.log(ans.toString())
