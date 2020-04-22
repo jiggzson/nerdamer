@@ -4679,6 +4679,34 @@ var nerdamer = (function (imports) {
                 im = _.parse(Math.atan2(i, r));
                 return _.add(re, _.multiply(Symbol.imaginary(), im));
             },
+            erf(symbol, n) {
+                //Do nothing for now. Revisit this in the future.
+                return _.symfunction('erf', [symbol]);
+                
+                n = n || 30;
+
+                var f = function(R, I) {
+                    return block('PARSE2NUMBER', function() {
+                        var retval = new Symbol(0);
+                        for(var i=0; i<n; i++) {
+                            var a, b;
+                            a = _.parse(bigDec.exp(bigDec(i).toPower(2).neg().dividedBy(bigDec(n).pow(2).plus(bigDec(R).toPower(2).times(4)))));
+                            b = _.parse(format('2*({1})-e^(-(2*{0}*{1}*{2}))*(2*{1}*cosh({2}*{3})-{0}*{3}*sinh({3}*{2}))', Settings.IMAGINARY, R, I, i));
+                            retval = _.add(retval, _.multiply(a, b));
+                        }
+                        return _.multiply(retval, new Symbol(2));
+                    }, true);
+                };
+                var re, im, a, b, c, k;
+                re = symbol.realpart();
+                im = symbol.imagpart();
+                
+                k = _.parse(format('(e^(-{0}^2))/pi', re));
+                a = _.parse(format('(1-e^(-(2*{0}*{1}*{2})))/(2*{1})', Settings.IMAGINARY, re, im));
+                b = f(re.toString(), im.toString());
+
+                return _.add(_.parse(Math2.erf(re.toString())), _.multiply(k, _.add(a, b)));
+            },
             removeDen: function (symbol) {
                 var den, r, i, re, im;
                 if (isArray(symbol)) {
@@ -6979,6 +7007,22 @@ var nerdamer = (function (imports) {
                 return Vector.fromArray([new Symbol(cf.sign), new Symbol(cf.whole), fractions]);
             }
             return _.symfunction('continued_fraction', arguments);
+        }
+        /**
+         * Returns the error function
+         * @param {Symbol} symbol
+         * @returns {Symbol}
+         */
+        function erf(symbol) {
+            var _symbol = evaluate(symbol);
+
+            if (_symbol.isConstant()) {
+                return Math2.erf(_symbol);
+            }
+            else if(_symbol.isImaginary()) {
+                return complex.erf(symbol);
+            }
+            return _.symfunction('erf', arguments);
         }
         ;
         /**
@@ -11804,3 +11848,5 @@ if ((typeof module) !== 'undefined') {
 
 //complex erf
 //force simpson defint
+var ans = nerdamer('erf(1+i)');
+console.log(ans.toString());
