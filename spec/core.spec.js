@@ -1777,6 +1777,10 @@ describe('Nerdamer core', function () {
         expect(nerdamer('matrix([1,2])/matrix([8,4])').toString()).toEqual('matrix([1/8,1/2])');
         expect(nerdamer('16/matrix([8,4])').toString()).toEqual('matrix([2,4])');
     });
+    it('should perform scientific rounding', function() {
+        expect(nerdamer('12/7*x+cos(33333333333333333)-11/17').text('scientific')).toEqual('-6.47058823529412e-1+1.71428571428571*x+cos(3.33333333333333e16)');
+        expect(nerdamer('7/(11*x-24*x^2)+cos(13/44)^(300/21)').text('scientific')).toEqual('7*(-2.4e1*x^2+1.1e1*x)^(-1)+cos(2.95454545454545e-1)^1.42857142857143e1');
+    });
 });
 
 describe('Further arithmetic test cases', function () {

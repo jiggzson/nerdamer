@@ -105,7 +105,11 @@ var nerdamer = (function (imports) {
         LOG: 'log', 
         LOG10: 'log10',
         LOG10_LATEX: 'log_{10}',
-        MAX_EXP: 200000
+        MAX_EXP: 200000,
+        //The number of scientific place to round to
+        SCIENTIFIC_MAX_DECIMAL_PLACES: 14,
+        //True if ints should not be converted to 
+        SCIENTIFIC_IGNORE_ZERO_EXPONENTS: true
     };
 
     (function () {
@@ -2099,7 +2103,7 @@ var nerdamer = (function (imports) {
     
         if(asDecimal && typeof decp === 'undefined')
             decp = 16;
-
+        
         function toString(obj) {
             switch (option)
             {
@@ -2177,6 +2181,11 @@ var nerdamer = (function (imports) {
                     var remainder = divmod.remainder;
                     var operator = parts[0][0] === '-' || quotient.equals(0) || remainder.equals(0) ? '' : '+';
                     return (quotient.equals(0) ? '' : quotient.toString()) + operator + (remainder.equals(0) ? '' : (remainder.toString() + '/' + parts[1]));
+                case 'scientific':
+                    wrapCondition = wrapCondition || function(str) {
+                        return false;
+                    }
+                    return new Scientific(obj.valueOf()).toString(Settings.SCIENTIFIC_MAX_DECIMAL_PLACES);
                 default:
                     wrapCondition = wrapCondition || function (str) {
                         return str.indexOf('/') !== -1;
@@ -2701,7 +2710,15 @@ var nerdamer = (function (imports) {
         },
         toString: function (n) {
             var coeff = typeof n === 'undefined' ? this.coeff : Scientific.round(this.coeff, n);
-            return (this.sign === -1 ? '-' : '') + coeff + 'e' + this.exponent;
+            
+            var c;
+            if(this.exponent === 0 && Settings.SCIENTIFIC_IGNORE_INTS) {
+                c = this.coeff;
+            }
+            else  {
+                c = coeff + 'e' + this.exponent;
+            }
+            return (this.sign === -1 ? '-' : '') + c;
         }
     };
 
@@ -2791,6 +2808,15 @@ var nerdamer = (function (imports) {
             //set the coeff but first remove leading zeroes
             var coeff = Scientific.removeLeadingZeroes(n);
             this.coeff = coeff.charAt(0)+'.'+(coeff.substr(1, coeff.length) || '0');
+            
+            //the coeff decimal places
+            var dec = this.coeff.split('.')[1] || ''; //if it's undefined or zero it's going to blank
+
+            this.decp = dec === '0' ? 0 : dec.length;
+            //decimals
+            this.dec = d;
+            //wholes
+            this.wholes = w;
 
             return this;
         },
@@ -2826,8 +2852,20 @@ var nerdamer = (function (imports) {
             return n;
         },
         toString: function(n) {
-            var coeff = typeof n === 'undefined' ? this.coeff : Scientific.round(this.coeff, n);
-            return (this.sign === -1 ? '-' : '' )+coeff+'e'+this.exponent;
+            var retval;
+            
+            if(Settings.SCIENTIFIC_IGNORE_ZERO_EXPONENTS && this.exponent === 0 && this.decp < n) {
+                if(this.decp === 0)
+                    retval = this.wholes;
+                else
+                    retval = this.coeff;
+            }
+            else {
+                var coeff = typeof n === 'undefined' ? this.coeff : Scientific.round(this.coeff, Math.min(n, this.decp || 1));
+                retval = this.exponent === 0 ? coeff : coeff+'e'+this.exponent;
+            }
+            
+            return (this.sign === -1 ? '-' : '' )+retval;
         }
     };
 
