@@ -800,7 +800,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     partial_fractions.each(function(x) {
                         if(!x.isLinear())
                             __.integration.stop();
-                    })
+                    });
                     partial_fractions.each(function(x) {
                         result = _.add(result, __.integrate(x, dx, depth, opt));
                     });
@@ -2509,3 +2509,4 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
     nerdamer.api();
    
 })();
+

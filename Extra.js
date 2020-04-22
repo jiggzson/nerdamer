@@ -142,7 +142,11 @@ if ((typeof module) !== 'undefined') {
             inverse: function (symbol, s_, t) {
                 var input_symbol = symbol.clone();
                 return core.Utils.block('POSITIVE_MULTIPLIERS', function () {
-                    if (symbol.group === S || symbol.group === CB || symbol.group === CP) {
+                    //expand and get partial fractions
+                    if(symbol.group === CB)
+                        symbol = core.Algebra.PartFrac.partfrac(_.expand(symbol), s_);
+
+                    if (symbol.group === S || symbol.group === CB || symbol.isComposite()) {
                         var finalize = function () {
                             //put back the numerator
                             retval = _.multiply(retval, num);
@@ -189,10 +193,9 @@ if ((typeof module) !== 'undefined') {
                         }
                         else if (den.group === CP && den_p.equals(1)) {
                             // a/(b*s-c) -> ae^(-bt)
-                            if (f.x.isLinear() && !num.contains(s)) {console.log(f.a.toString(), f.b.toString())
+                            if (f.x.isLinear() && !num.contains(s)) {
                                 t = _.divide(t, f.a.clone());
-                                retval = _.parse(format('(({0})^({3}-1)*e^(-(({2})*({0}))/({1})))/(({3}-1)!*({1})^({3}))', t, f.a, f.b, den_p))
-//                                retval = _.pow(new Symbol('e'), _.multiply(t, f.b.negate()));
+                                retval = _.parse(format('(({0})^({3}-1)*e^(-(({2})*({0}))/({1})))/(({3}-1)!*({1})^({3}))', t, f.a, f.b, den_p));
                                 //wrap it up
                                 finalize();
                             }
@@ -323,6 +326,13 @@ if ((typeof module) !== 'undefined') {
                                     }
                                 }
                             }
+                        }
+                        else if(symbol.isComposite()) {
+                            retval = new Symbol(0);
+                            
+                            symbol.each(function(x) {
+                                retval = _.add(retval, __.LaPlace.inverse(x, s_, t));
+                            }, true);
                         }
                     }
 
@@ -576,3 +586,10 @@ if ((typeof module) !== 'undefined') {
     //link registered functions externally
     nerdamer.api();
 }());
+
+//Holding
+//var ans = nerdamer('ilt(((s+1)*(s+2)*(s+3))^(-1), s, t)')
+
+var ans = nerdamer('ilt(8*(2*s^2+3)^(-2)*s^2,s,t)')
+//var ans = nerdamer('ilt(4*(2*s^2+3)^(-1),s,t)')
+console.log(ans.toString())

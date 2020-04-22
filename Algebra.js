@@ -3435,7 +3435,9 @@ if((typeof module) !== 'undefined') {
                 return [f_array, factors_vec, degrees];
             },
             partfrac: function(symbol, v, as_array) { 
+                
                 var vars = variables(symbol);
+                
                 v = v || _.parse(vars[0]); //make wrt optional and assume first variable
                 try {
                     var num, den, factors, tfactors, ofactors, nterms, degrees,
@@ -3519,11 +3521,35 @@ if((typeof module) !== 'undefined') {
                         else 
                             retval = _.add(retval, term);
                     });
-
+                    
                     //done
                     return retval;
                 }
-                catch(e){};
+                catch(e){
+                    //try to group symbols
+                    try {
+                        if(symbol.isComposite()) {
+                            //group denominators
+                            var denominators = {};
+
+                            symbol.each(function(x) {
+                                var d = x.getDenom();
+                                var n = x.getNum();
+                                var e = denominators[d];
+                                denominators[d] = e ? _.add(e, n) : n;
+                            });
+
+                            var t = new Symbol(0);
+
+                            for(var x in denominators) {
+                                t = _.add(t, _.divide(denominators[x], _.parse(x)));
+                            }
+
+                            symbol = t;
+                        }
+                    }
+                    catch(e2) {};
+                };
 
                 return symbol;
             }
@@ -3948,3 +3974,6 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer('partfrac(15*(9+s^2)^(-1)*cos(1)+5*(9+s^2)^(-1)*s*sin(1),s)');
+console.log(x.toString())
