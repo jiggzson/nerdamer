@@ -2141,8 +2141,10 @@ if((typeof module) !== 'undefined') {
                 
                 if(retval.group === CB) {
                     var t = new Symbol(1);
+                    var p = _.parse(retval.power);
                     //store the multiplier and strip it
                     var m = _.parse(retval.multiplier);
+                    
                     retval.toUnitMultiplier();
                     /* 
                      * NOTE: for sign issues with factor START DEBUGGING HERE
@@ -2165,9 +2167,10 @@ if((typeof module) !== 'undefined') {
                             t = _.multiply(t, factored);
                         }
                     });
-                    //put back the multiplier
-                    retval = _.multiply(m, t);
+                    //put back the multiplier and power
+                    retval = _.pow(_.multiply(m, t), p);
                 }  
+                
                 return retval;
             },
             quadFactor: function(symbol, factors) {
@@ -2242,7 +2245,9 @@ if((typeof module) !== 'undefined') {
                 //make a copy of the symbol to return if something goes wrong
                 var untouched = symbol.clone();
                 try {
-                    if(symbol.group === CB) { 
+                    if(symbol.group === CB) {
+                        var p = _.parse(symbol.power);
+                        
                         var den_array, num_array, den, num, dfact, nfact;
                         //grab the denominator and strip the multiplier and power. Store them in an array
                         den_array = __.Simplify.strip(symbol.getDenom());
@@ -2250,7 +2255,7 @@ if((typeof module) !== 'undefined') {
                         
                         den = den_array.pop();
                         num = num_array.pop();
-
+                        
                         //if the numerator equals the symbol then we've hit the simplest form and then we're done
                         if(num.equals(symbol))
                             return symbol;
@@ -3715,9 +3720,21 @@ if((typeof module) !== 'undefined') {
                         retval = _.pow(_.multiply(new Symbol(symbol.multiplier), sym), new Symbol(symbol.power));
                     }
                     else if(symbol.group === CB) {
-                        //try for tangent
+                        
                         var n = symbol.getNum();
                         var d = symbol.getDenom();
+                        
+//                        if(n.isComposite() || d.isComposite()) {
+//                            if(n.isComposite())
+//                                n = __.Simplify.trigSimp(n);
+//                            
+//                            if(d.isComposite())
+//                                d = __.Simplify.trigSimp(d);
+//                            
+//                            sym_array = __.Simplify.strip(_.divide(n, d));
+//                        }
+                        
+                        //try for tangent
                         if(n.fname === 'sin' && d.fname === 'cos' && n.args[0].equals(d.args[0]) && n.power.equals(d.power)) {
                             retval =_.parse(core.Utils.format('({0})*({1})*tan({2})^({3})', d.multiplier, n.multiplier, n.args[0], n.power));
                         }
@@ -3821,7 +3838,7 @@ if((typeof module) !== 'undefined') {
                 ////1. Try cos(x)^2+sin(x)^2 
 
                 simplified = __.Simplify.trigSimp(symbol);
-           
+         
                 //simplify common denominators
                 simplified = __.Simplify.ratSimp(simplified);
 

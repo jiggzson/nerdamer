@@ -11845,8 +11845,3 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-//complex erf
-//force simpson defint
-var ans = nerdamer('erf(1+i)');
-console.log(ans.toString());
