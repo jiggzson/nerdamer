@@ -1570,39 +1570,55 @@ var nerdamer = (function (imports) {
                     else
                         factors[e] = (factors[e] || 0) + 1;
                 };
-
-                while (!n.abs().equals(1)) {
-                    if (n.isPrime()) {
-                        add(n);
-                        break;
-                    }
-                    else {
-                        function rho(c) {
-                            var xf = new bigInt(c),
-                                    cz = 2,
-                                    x = new bigInt(c),
-                                    factor = new bigInt(1);
-
-                            while (factor.equals(1)) {
-                                for (var i = 0; i <= cz && factor.equals(1); i++) {
-                                    x = x.pow(2).add(1).mod(n);
-                                    factor = bigInt.gcd(x.minus(xf).abs(), n);
-                                }
-
-                                cz = cz * 2;
-                                xf = x;
-                            }
-                            if (factor.equals(n)) {
-                                return rho(c + 1);
-                            }
-                            return factor;
+                
+                try {
+                    //set a safety
+                    var max = 1e3;
+                    var safety = 0;
+                    
+                    while (!n.abs().equals(1)) {
+                        if (n.isPrime()) {
+                            add(n);
+                            break;
                         }
-                        var factor = rho(2);
-                        add(factor);
-                        /*divide out the factor*/
-                        n = n.divide(factor);
+                        else {
+                            function rho(c) {
+                                var xf = new bigInt(c),
+                                        cz = 2,
+                                        x = new bigInt(c),
+                                        factor = new bigInt(1);
+
+                                while (factor.equals(1)) {
+                                    for (var i = 0; i <= cz && factor.equals(1); i++) {
+                                        //trigger the safety
+                                        if(safety++ > max)
+                                            throw new Error('stopping');
+                                        
+                                        x = x.pow(2).add(1).mod(n);
+                                        factor = bigInt.gcd(x.minus(xf).abs(), n);
+                                    }
+
+                                    cz = cz * 2;
+                                    xf = x;
+                                }
+                                if (factor.equals(n)) {
+                                    return rho(c + 1);
+                                }
+                                return factor;
+                            }
+                            var factor = rho(2);
+                            add(factor);
+                            /*divide out the factor*/
+                            n = n.divide(factor);
+                        }
                     }
                 }
+                catch(e) {
+                    //reset factors
+                    factors = {};
+                    add(n);
+                }
+                    
             }
 
             /*put the sign back*/
@@ -11845,3 +11861,4 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+

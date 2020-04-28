@@ -2502,7 +2502,7 @@ if((typeof module) !== 'undefined') {
                 var poly = new Polynomial(symbol, variable),
                     cnst = poly.coeffs[0],
                     cfactors = core.Math2.ifactor(cnst),
-                    roots = __.proots(symbol);
+                    roots = __.proots(symbol); 
                 for(var i=0; i<roots.length; i++) {
                     var r = roots[i],
                         p = 1;
@@ -2527,6 +2527,7 @@ if((typeof module) !== 'undefined') {
                         }
                     }
                 }
+                
                 if(!poly.equalsNumber(1)) {
                     poly = __.Factor.search(poly, factors);
                 }
@@ -2556,15 +2557,16 @@ if((typeof module) !== 'undefined') {
                     }
                     return null;
                 };
-                var cnst = poly.coeffs[0],
-                    cfactors = core.Math2.ifactor(cnst),
-                    lc = poly.lc(),
-                    ltfactors = core.Math2.ifactor(lc),
-                    subbed = poly.sub(base),
-                    nfactors = __.Factor.mix(core.Math2.ifactor(subbed), subbed < 0),
-                    cp = Math.ceil(poly.coeffs.length/2),
-                    lc_is_neg = lc.lessThan(0),
-                    cnst_is_neg = cnst.lessThan(0);
+                var cnst = poly.coeffs[0];
+                var cfactors = core.Math2.ifactor(cnst);
+                var lc = poly.lc();
+                var ltfactors = core.Math2.ifactor(lc);
+                var subbed = poly.sub(base);
+                var isubbed = core.Math2.ifactor(subbed);
+                var nfactors = __.Factor.mix(isubbed, subbed < 0);
+                var cp = Math.ceil(poly.coeffs.length/2);
+                var lc_is_neg = lc.lessThan(0);
+                var cnst_is_neg = cnst.lessThan(0);
                 ltfactors['1'] = 1;
                 cfactors['1'] = 1;
                 while(cp--) {
