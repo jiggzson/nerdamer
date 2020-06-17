@@ -5984,13 +5984,15 @@ var nerdamer = (function (imports) {
         };
         
         this.callPeekers = function(name) {
-            var peekers = this.peekers[name];
-            //remove the first items and stringify
-            var args = arguments2Array(arguments).slice(1).map(stringify);
-            //call each one of the peekers
-            for(var i=0; i<peekers.length; i++) {
-                peekers[i].apply(null, args);
-            }
+			if (settings.callPeekers) {
+				var peekers = this.peekers[name];
+				//remove the first items and stringify
+				var args = arguments2Array(arguments).slice(1).map(stringify);
+				//call each one of the peekers
+				for(var i=0; i<peekers.length; i++) {
+					peekers[i].apply(null, args);
+				}
+			}
         };
         /*
          * Tokenizes the string
