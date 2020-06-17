@@ -51,6 +51,10 @@ var nerdamer = (function (imports) {
     var CUSTOM_OPERATORS = {};
 
     var Settings = {
+		//Enables/Disables call peekers. False means callPeekers are disabled and true means callPeekers are enabled.
+		callPeekers: false,
+		
+		
         //the max number up to which to cache primes. Making this too high causes performance issues
         init_primes: 1000,
 
