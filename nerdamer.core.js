@@ -5984,7 +5984,7 @@ var nerdamer = (function (imports) {
         };
         
         this.callPeekers = function(name) {
-			if (settings.callPeekers) {
+			if (Settings.callPeekers) {
 				var peekers = this.peekers[name];
 				//remove the first items and stringify
 				var args = arguments2Array(arguments).slice(1).map(stringify);
