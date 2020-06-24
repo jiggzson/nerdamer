@@ -2210,7 +2210,7 @@ var nerdamer = (function (imports) {
                     wrapCondition = wrapCondition || function (str) {
                         return str.indexOf('/') !== -1;
                     };
-
+                    
                     return obj.toString();
             }
         }
@@ -2222,11 +2222,12 @@ var nerdamer = (function (imports) {
                     sign = '',
                     group = obj.group || useGroup,
                     value = obj.value;
+            
             //if the value is to be used as a hash then the power and multiplier need to be suppressed
             if (!asHash) {
                 //use asDecimal to get the object back as a decimal
                 var om = toString(obj.multiplier);
-                if (om == '-1') {
+                if (om == '-1' && String(obj.multiplier) === '-1') {
                     sign = '-';
                     om = '1';
                 }
@@ -2252,9 +2253,8 @@ var nerdamer = (function (imports) {
                     multiplier = '';
                     //round if requested
                     var m = decp && asDecimal ? obj.multiplier.toDecimal(decp) : toString(obj.multiplier);
-
                     //if it's numerical then all we need is the multiplier
-                    value = obj.multiplier == '-1' ? '1' : m;
+                    value = String(obj.multiplier) == '-1' ? '1' : m;
                     power = '';
                     break;
                 case PL:
@@ -2332,8 +2332,9 @@ var nerdamer = (function (imports) {
                 value = inBrackets(value);
             }
             
-            if(decp && (option === 'decimal' || option === 'decimals' && multiplier))
-                multiplier = nround(multiplier, decp)
+            if(decp && (option === 'decimal' || option === 'decimals' && multiplier)) {
+                multiplier = nround(multiplier, decp);
+            }
             
             //add the sign back
             var c = sign + multiplier;
@@ -2470,7 +2471,9 @@ var nerdamer = (function (imports) {
          * @returns {Expression}
          */
         evaluate: function () {
+
             var first_arg = arguments[0], expression, idx = 1;
+
             //Enable getting of expressions using the % so for example %1 should get the first expression
             if (typeof first_arg === 'string') {
                 expression = (first_arg.charAt(0) === '%') ? Expression.getExpression(first_arg.substr(1)).text() : first_arg;
@@ -2484,10 +2487,12 @@ var nerdamer = (function (imports) {
             }
 
             var subs = arguments[idx] || {};
-
-            return new Expression(block('PARSE2NUMBER', function () {
+            
+            var retval = new Expression(block('PARSE2NUMBER', function () {
                 return _.parse(expression, subs);
             }, true));
+            
+            return retval;
         },
         /**
          * Converts a symbol to a JS function. Pass in an array of variables to use that order instead of 
@@ -11867,4 +11872,3 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
