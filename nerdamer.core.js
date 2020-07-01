@@ -7274,6 +7274,11 @@ var nerdamer = (function (imports) {
                 symbol.setPower(symbol.power.multiply(new Frac(0.5)));
                 retval = symbol;
             }
+            else if(symbol.multiplier < 0 && symbol.group === S) {
+                var a = _.parse(symbol.multiplier).negate();
+                var b = _.parse(symbol).toUnitMultiplier().negate();
+                retval = _.multiply(_.symfunction(Settings.SQRT, [b]), sqrt(a));
+            }
             else {
                 //Related to issue #401. Since sqrt(a)*sqrt(b^-1) relates in issues, we'll change the form
                 //to sqrt(a)*sqrt(b)^1 for better simplification
@@ -7362,6 +7367,7 @@ var nerdamer = (function (imports) {
 
             if (is_negative && Settings.PARSE2NUMBER)
                 return _.parse(retval);
+            
             return retval;
         }
         

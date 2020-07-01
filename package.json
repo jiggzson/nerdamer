@@ -49,6 +49,6 @@
     "test": "jasmine"
   },
   "devDependencies": {
-    "jasmine": "^2.6.0"
+    "jasmine": "^2.99.0"
   }
 }
