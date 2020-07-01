@@ -915,6 +915,11 @@ describe('Nerdamer core', function () {
         expect(nerdamer('expand((sqrt(7)+3sqrt(2))(sqrt(7)-3sqrt(2)))').toString()).toEqual('-11');
         expect(nerdamer('3sqrt(2)*2sqrt(6)').toString()).toEqual('12*sqrt(3)');
     });
+    it('should handle square roots of negative values', function() {
+        expect(nerdamer('sqrt(-x)').evaluate().text()).toEqual('sqrt(-x)');
+        expect(nerdamer('sqrt(-0.5*x)').evaluate().text()).toEqual('0.7071067811865475*sqrt(-x)');
+        expect(nerdamer('sqrt(-4)').evaluate().text()).toEqual('2*i');
+    });
     it('expand square roots', function () {
         // given
         var testCases = [

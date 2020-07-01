@@ -7244,6 +7244,9 @@ var nerdamer = (function (imports) {
                 else if (symbol.isImaginary()) {
                     return complex.sqrt(symbol);
                 }
+                else {
+                    return _.symfunction('sqrt', [symbol]);
+                }
             }
 
             var img, retval,
@@ -7425,7 +7428,7 @@ var nerdamer = (function (imports) {
         function pfactor(symbol) {
             //Fix issue #458 | nerdamer("sqrt(1-(3.3333333550520926e-7)^2)").evaluate().text()
             //More Big Number issues >:(
-            if (symbol.greaterThan(9.999999999998891e+41))
+            if (symbol.greaterThan(9.999999999998891e+41) || symbol.equals(-1))
                 return symbol;
             //Fix issue #298
             if (symbol.equals(Math.PI))
