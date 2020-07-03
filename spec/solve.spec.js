@@ -277,7 +277,7 @@ describe('Solve', function () {
     
     //NOTE: contains duplicates
     it('should solve functions with factorials', function() {
-        expect(nerdamer('solve(x!-x^2,x)').text('decimals', 20)).toEqual('[-2.200391782610595,-4.010232827899529,-2.938361683501947,1,1.000000000000001,1.000000000000001,3.562382285390896,3.562382285390897,1.000000000000000]');
+        expect(nerdamer('solve(x!-x^2,x)').text('decimals', 20)).toEqual('[-2.200391782610595,-4.010232827899529,-2.938361683501947,1,1.000000000000001,1.000000000000001,3.562382285390896,3.562382285390897,0.9999999999999910,1.000000000000000]');
     });
     
     it('should solve for variables other than x', function() {

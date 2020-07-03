@@ -919,6 +919,7 @@ describe('Nerdamer core', function () {
         expect(nerdamer('sqrt(-x)').evaluate().text()).toEqual('sqrt(-x)');
         expect(nerdamer('sqrt(-0.5*x)').evaluate().text()).toEqual('0.7071067811865475*sqrt(-x)');
         expect(nerdamer('sqrt(-4)').evaluate().text()).toEqual('2*i');
+        expect(nerdamer('sqrt(-pi)').evaluate().text()).toEqual('1.7724538509055163*i');
     });
     it('expand square roots', function () {
         // given

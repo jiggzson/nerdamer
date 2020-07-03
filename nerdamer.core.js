@@ -7244,7 +7244,7 @@ var nerdamer = (function (imports) {
                 else if (symbol.isImaginary()) {
                     return complex.sqrt(symbol);
                 }
-                else {
+                else if(symbol.group === S) {
                     return _.symfunction('sqrt', [symbol]);
                 }
             }
@@ -7391,14 +7391,20 @@ var nerdamer = (function (imports) {
          */
         //TODO: this method needs serious optimization
         function nthroot(num, p, prec, asbig) {
+            if(num < 0 && even(p)) 
+                throw new Error('Cannot calculate nthroot of negative number for even powers');
+            
             if (typeof asbig === 'undefined')
                 asbig = true;
             prec = prec || 25;
+            
             if (!isSymbol(p))
                 p = _.parse(p);
+            
             if (isInt(num) && p.isConstant()) {
                 var sign = num.sign(),
                         x;
+                
                 num = abs(num); //remove the sign
                 var idx = num + '-' + p;
                 if (idx in Settings.CACHE.roots) {
@@ -7413,9 +7419,11 @@ var nerdamer = (function (imports) {
                         x = Math2.nthroot(num, p);
                 }
                 if (isInt(x) || Settings.PARSE2NUMBER) {
-                    if (asbig)
-                        return new Symbol(x);
-                    return new Symbol(x.toDecimal(prec));
+                    if (asbig) {
+                        console.log(sign)
+                        return _.multiply(new Symbol(sign), new Symbol(x));
+                    }
+                    return _.multiply(new Symbol(sign), new Symbol(x.toDecimal(prec)));
                 }
             }
 
