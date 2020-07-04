@@ -5606,6 +5606,7 @@ var nerdamer = (function (imports) {
             'imatrix':              [imatrix, -1],
             'parens':               [parens, -1],
             'sqrt':                 [sqrt, 1],
+            'cbrt':                 [cbrt, 1],
             'nthroot':              [nthroot, 2],
             'log':                  [log, [1, 2]],
             'expand':               [expand, 1],
@@ -7374,6 +7375,42 @@ var nerdamer = (function (imports) {
             return retval;
         }
         
+        /**
+         * The cube root function
+         * @param {Symbol} symbol
+         * @returns {Symbol}
+         */
+        function cbrt(symbol) {
+            if(!symbol.isConstant(true)) {
+                var retval;
+                
+                var n = symbol.power/3;
+                //take the cube root of the multplier
+                var m = _.pow(_.parse(symbol.multiplier), new Symbol(1/3));
+                //strip the multiplier
+                var sym = symbol.toUnitMultiplier();
+                
+                //simplify the power
+                if(isInt(n)) {
+                    retval = _.pow(sym.toLinear(), _.parse(n));
+                }
+                else {
+                    if(sym.group === CB) {
+                        retval = new Symbol(1);
+                        sym.each(function(x) {
+                            retval = _.multiply(retval, cbrt(x));
+                        });
+                    }
+                    else {
+                        retval = _.symfunction('cbrt', [sym]);
+                    }
+                }
+                
+                return _.multiply(m, retval);
+            }
+            return nthroot(symbol, new Symbol(3));
+        }
+        
         function scientific(symbol, sigfigs) {
             //Just set the flag and keep it moving. Symbol.toString will deal with how to 
             //display this
@@ -7389,48 +7426,61 @@ var nerdamer = (function (imports) {
          * @param {bool} asbig - true if a bigDecimal is wanted
          * @returns {Symbol}
          */
-        //TODO: this method needs serious optimization
         function nthroot(num, p, prec, asbig) {
+            //clone p and convert to a number if possible
+            p = evaluate(_.parse(p));
+            
+            //cannot calculate if p = 0. nthroot(0, 0) => 0^(1/0) => undefined
+            if(p.equals(0)) {
+                throw new UndefinedError('Unable to calculate nthroots of zero');
+            }
+            
+            //Stop computation if it negative and even since we have an imaginary result
             if(num < 0 && even(p)) 
                 throw new Error('Cannot calculate nthroot of negative number for even powers');
             
+            //return non numeric values unevaluated
+            if(!num.isConstant(true)) {
+                return _.symfunction('nthroot', arguments);
+            }
+            
+            //evaluate numeric values
+            if(num.group !== N) {
+                num = evaluate(num);
+            }
+            
+            //default is to return a big value
             if (typeof asbig === 'undefined')
                 asbig = true;
+            
             prec = prec || 25;
             
-            if (!isSymbol(p))
-                p = _.parse(p);
+            var sign = num.sign();
+            var retval;
+            var ans;
+            
+            if(sign < 0) {
+                num = abs(num); //remove the sign
+            }
             
             if (isInt(num) && p.isConstant()) {
-                var sign = num.sign(),
-                        x;
-                
-                num = abs(num); //remove the sign
-                var idx = num + '-' + p;
-                if (idx in Settings.CACHE.roots) {
-                    x = new bigInt(Settings.CACHE.roots[idx]);
-                    if (!even(p))
-                        x = x.multiply(sign);
+
+                if (num < 18446744073709551616) {
+                    //2^64
+                    ans = Frac.create(Math.pow(num, 1 / p));
                 }
                 else {
-                    if (num < 18446744073709551616) //2^64
-                        x = Frac.create(Math.pow(num, 1 / p));
-                    else
-                        x = Math2.nthroot(num, p);
+                    ans = Math2.nthroot(num, p);
                 }
-                if (isInt(x) || Settings.PARSE2NUMBER) {
-                    if (asbig) {
-                        console.log(sign)
-                        return _.multiply(new Symbol(sign), new Symbol(x));
-                    }
-                    return _.multiply(new Symbol(sign), new Symbol(x.toDecimal(prec)));
+
+                var retval;
+                if (asbig) {
+                    retval =  new Symbol(ans);
                 }
+                retval = new Symbol(ans.toDecimal(prec));
+
+                return _.multiply(new Symbol(sign), retval);
             }
-
-            if (Number(p) === 2)
-                return _.sqrt(num);
-
-            return _.symfunction('nthroot', arguments);
         }
 
         function pfactor(symbol) {
@@ -8328,6 +8378,7 @@ var nerdamer = (function (imports) {
         this.round = round;
         this.clean = clean;
         this.sqrt = sqrt;
+        this.cbrt = cbrt;
         this.abs = abs;
         this.log = log;
         this.rationalize = rationalize;

@@ -157,6 +157,21 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         else if(this.fname === COS && this.power.equals(3)) {
             retval = _.parse(format('(cos(3*({0}))+3*cos({0}))/4', this.args[0]));
         }
+        //cos(a*x)^(2*n) or sin(a*x)^(2*n)
+        else if((this.fname === COS || this.fname === SIN) && even(this.power)) {
+            var n = this.power/2; 
+            //convert to a double angle
+            var double_angle = _.pow(this.clone().toLinear(), _.parse(2)).fnTransform();
+            //raise to the n and expand
+            var transformed = _.expand(_.pow(double_angle, _.parse(n)));
+            
+            retval = new Symbol(0);
+            
+            transformed.each(function(s) {
+                var t = s.fnTransform();
+                retval = _.add(retval, t);
+            }, true);
+        }
         else
             retval = sym;
         
@@ -253,9 +268,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             retval = new Symbol(1);
         for(var i=0, l=arr.length; i<l; i++) {
             symbol = arr[i]; 
+
             if(symbol.group === FN) {
                 var fname = symbol.fname;
+                
                 if(fname === COS && map[SIN]) { 
+                    
                     if(map[SIN].args[0].toString() !== symbol.args[0].toString()) {
                         t = cosAsinBtransform(symbol, map[SIN]);
                     }
@@ -263,6 +281,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         t = cosAsinAtransform(symbol, map[SIN]);
                     }
                     delete map[SIN];
+                    
                     retval = _.multiply(retval, t);
                 }
                 else if(fname === SIN && map[COS]) { 
@@ -273,6 +292,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         t = cosAsinAtransform(symbol, map[COS]);
                     }
                     delete map[COS];
+                    
                     retval = _.multiply(retval, t);
                 }
                 else if(fname === SIN && map[SIN]) {
@@ -288,8 +308,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                          
                     retval = t;
                 }
-                else
+                else {
                     map[fname] = symbol;
+                }
             }
             else
                 retval = _.multiply(retval, symbol);
@@ -1643,12 +1664,27 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                         retval = __.integrate(_.expand(t), dx, depth);
                                                     }
                                                 }
-                                                //TODO: REVISIT AT SOME POINT
-                                                else if((fn1 === SIN || fn1 === COS) && (fn2 === SIN || fn2 === COS)) { 
-                                                    var transformed = trigTransform(symbols);
-                                                    retval = __.integrate(_.expand(transformed), dx, depth);
-                                                }
+                                                //TODO: In progress
+                                                else if((fn1 === SIN || fn1 === COS) && (fn2 === SIN || fn2 === COS)) {
+                                                    if(symbols[1].isLinear() && symbols[0].isLinear()) {
+                                                        var transformed = trigTransform(symbols);
+                                                        retval = __.integrate(_.expand(transformed), dx, depth);
+                                                    }
+                                                    else {
+                                                        var transformed = new Symbol(1);
+                                                        symbols.map(function(sym) {
+                                                            var s = sym.fnTransform();
+                                                            transformed = _.multiply(transformed, s);
+                                                        });
+                                                        var t = _.expand(transformed);
 
+                                                        retval = __.integrate(t, dx, depth);
+
+                                                        if(retval.hasIntegral()) {
+                                                            retval = __.integrate(trigTransform(transformed.collectSymbols()), dx, depth);
+                                                        }
+                                                    }
+                                                }
                                                 else {
                                                     __.integration.stop();
                                                 }

@@ -1787,6 +1787,25 @@ describe('Nerdamer core', function () {
         expect(nerdamer('12/7*x+cos(33333333333333333)-11/17').text('scientific')).toEqual('-6.47058823529412e-1+1.71428571428571*x+cos(3.33333333333333e16)');
         expect(nerdamer('7/(11*x-24*x^2)+cos(13/44)^(300/21)').text('scientific')).toEqual('7*(-2.4e1*x^2+1.1e1*x)^(-1)+cos(2.95454545454545e-1)^1.42857142857143e1');
     });
+    it('should throw for even negative powers in nthroots', function() {
+        expect(function() {nerdamer('nthroot(-9, 2)').evaluate(); }).toThrowError();
+    });
+    it('should throw for zero powers in nthroots', function() {
+        expect(function() {nerdamer('nthroot(-9, 0)').evaluate(); }).toThrowError();
+    });
+    it('should calculate nthroots', function() {
+        expect(nerdamer('nthroot(-8, 3)').evaluate().text()).toEqual('-2');
+        expect(nerdamer('nthroot(sqrt(64), sqrt(9))').evaluate().text()).toEqual('2');
+        expect(nerdamer('nthroot(-1, 3)').evaluate().text()).toEqual('-1');
+        expect(nerdamer('nthroot(-7, 3)').evaluate().text()).toEqual('-1.912931182772388873');
+        expect(nerdamer('nthroot(-x*8, 3)').evaluate().text()).toEqual('nthroot(-8*x,3)');
+    });
+    it('should calculate cube roots', function () {
+        expect(nerdamer('cbrt(8)').evaluate().text()).toEqual('2');
+        expect(nerdamer('cbrt(x)').evaluate().text()).toEqual('cbrt(x)');
+        expect(nerdamer('cbrt(27*x^3)').evaluate().text()).toEqual('3*x');
+        expect(nerdamer('cbrt((y^3*x^3))').evaluate().text()).toEqual('x*y');
+    });
 });
 
 describe('Further arithmetic test cases', function () {
