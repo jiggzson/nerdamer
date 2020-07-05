@@ -3725,17 +3725,7 @@ if((typeof module) !== 'undefined') {
                         
                         var n = symbol.getNum();
                         var d = symbol.getDenom();
-                        
-//                        if(n.isComposite() || d.isComposite()) {
-//                            if(n.isComposite())
-//                                n = __.Simplify.trigSimp(n);
-//                            
-//                            if(d.isComposite())
-//                                d = __.Simplify.trigSimp(d);
-//                            
-//                            sym_array = __.Simplify.strip(_.divide(n, d));
-//                        }
-                        
+
                         //try for tangent
                         if(n.fname === 'sin' && d.fname === 'cos' && n.args[0].equals(d.args[0]) && n.power.equals(d.power)) {
                             retval =_.parse(core.Utils.format('({0})*({1})*tan({2})^({3})', d.multiplier, n.multiplier, n.args[0], n.power));

@@ -736,7 +736,7 @@ describe('Algebra', function () {
             },
             {
                 given: 'simplify(n!/(n+1)!)',
-                expected: '(1+n)^(-1)*n'
+                expected: '(1+n)^(-1)'
             },
             //imaginary number
             {

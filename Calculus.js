@@ -1666,9 +1666,31 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 }
                                                 //TODO: In progress
                                                 else if((fn1 === SIN || fn1 === COS) && (fn2 === SIN || fn2 === COS)) {
-                                                    if(symbols[1].isLinear() && symbols[0].isLinear()) {
-                                                        var transformed = trigTransform(symbols);
-                                                        retval = __.integrate(_.expand(transformed), dx, depth);
+                                                    
+                                                    if(sym1.isLinear() && sym2.isLinear()) {
+                                                        //if in the form cos(a*x)*sin(b*x)
+                                                        if(sym1.args[0].isLinear() && sym2.args[0].isLinear()) {
+                                                            //use identity (sin(b*x+a*x)+sin(b*x-a*x))/2
+                                                            var ax, bx;
+                                                            if(fn2 === SIN) {
+                                                                ax = sym1.args[0];
+                                                                bx = sym2.args[0];
+                                                            }
+                                                            else {
+                                                                bx = sym1.args[0];
+                                                                ax = sym2.args[0];
+                                                            }
+                                                            
+                                                            //make the transformation
+                                                            f = _.parse(format('(sin(({1})+({0}))+sin(({1})-({0})))/2', ax.toString(), bx.toString()));
+
+                                                            //integrate it
+                                                            retval = __.integrate(f, dx, depth);
+                                                        }
+                                                        else {
+                                                            var transformed = trigTransform(symbols);
+                                                            retval = __.integrate(_.expand(transformed), dx, depth);
+                                                        }
                                                     }
                                                     else {
                                                         var transformed = new Symbol(1);

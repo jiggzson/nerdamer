@@ -8890,17 +8890,43 @@ var nerdamer = (function (imports) {
                             b = new Symbol(1);
                         }
                     }
-                    if (a.fname === FACTORIAL && b.fname === FACTORIAL) {
-                        if (a.power.equals(1) && b.power.equals(-1) && _.subtract(v.clone(), u.clone()).equals(1)) {
-                            if(u.isConstant(true) && v.isConstant(true)) {
-                                var _a = evaluate(a.clone());
-                                var _b = evaluate(b.clone());
-                                result = _.multiply(_a, _b);
+                    //simplify factorial but only if 
+                    //1 - It's division so b will have a negative power
+                    //2 - We're not dealing with factorials of numbers
+                    else if (a.fname === FACTORIAL && b.fname === FACTORIAL && !u.isConstant() && !v.isConstant() && b.power < 0) {                         
+                        //assume that n = positive
+                        var d = _.subtract(u.clone(), v.clone());
+                        
+                        //if it's not numeric then we don't know if we can simplify so just return
+                        if(!d.isConstant()) {
+                            b = new Symbol(1);
+                        }
+                        else {
+                            //there will never be a case where d == 0 since this will already have 
+                            //been handled at the beginning of this function
+                            t = new Symbol(1);
+                            if(d < 0) {
+                                //If d is negative then the numerator is larger so expand that
+                                for(var i=0, n = Math.abs(d); i<=n; i++) {
+                                    var s = _.add(u.clone(), new Symbol(i));
+                                    t = _.multiply(t, s);
+                                }
+                               
+                                result = _.multiply(_.pow(u, new Symbol(a.power)), _.pow(t, new Symbol(b.power)));
+                                
+                                b = new Symbol(1);
                             }
                             else {
-                                result = _.divide(u, v);
+                                //Otherwise the denominator is larger so expand that
+                                for(var i=0, n = Math.abs(d); i<=n; i++) {
+                                    var s = _.add(v.clone(), new Symbol(i));
+                                    t = _.multiply(t, s);
+                                }
+                                
+                                result = _.multiply(_.pow(t, new Symbol(a.power)), _.pow(v, new Symbol(b.power)));
+                                
+                                b = new Symbol(1);
                             }
-                            b = new Symbol(1);
                         }
                     }
                 }
