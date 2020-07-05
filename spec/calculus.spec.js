@@ -142,6 +142,10 @@ describe('calculus', function () {
             {
                 given: 'diff([sin(x), x^2, x],x)',
                 expected: '[cos(x),2*x,1]'
+            },
+            {
+                given: 'diff(sinc(a*x^3+b),x)',
+                expected: '3*((a*x^3+b)*cos(a*x^3+b)-sin(a*x^3+b))*(a*x^3+b)^(-2)*a*x^2'
             }
         ];
 
@@ -275,7 +279,22 @@ describe('calculus', function () {
                 given: 'limit((4x^2-x)/(3x^2+x),x,∞)',
                 expected: '4/3'
             },
-            /*
+            {
+                given: 'limit((x^(1/2)+x^(-1/2))/(x^(1/2)-x^(-1/2)),x,Infinity)',
+                expected: '1'
+            },
+            {
+                given: 'limit((2sin(x)-sin(2x))/(x-sin(x)),x,0)',
+                expected: '6'
+            },
+            {
+                given: 'limit((3*sin(x)-sin(2*x))/(x-sin(x)),x,0)',
+                expected: 'Infinity'
+            },
+            {
+                given: 'limit(x/(x+1)^2, x, -1)',
+                expected: '-Infinity'
+            },
             {
                 given: 'limit((x+1)^(1+1/x)-x^(1+x),x, Infinity)',
                 expected: '-Infinity'
@@ -283,8 +302,7 @@ describe('calculus', function () {
             {
                 given: 'limit(log(x),x, 0)',
                 expected: 'Infinity'
-            },
-            */
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

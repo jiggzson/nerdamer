@@ -63,6 +63,10 @@ describe('calculus', function () {
                 expected: '-2*(-s+a)^(-3)'
             },
             {
+                given: 'laplace(6*t*e^(-9*t)*sin(6*t), t, s)',
+                expected: '-72*(-9-s)^(-3)*(1+36*(-9-s)^(-2))^(-2)'
+            },
+            {
                 //NOTE: this unit test was incorrect before. I don't know how this was missed.
                 given: 'laplace(sinh(t)*e^t, t, s)',
                 expected: '(-1/2)*(-s+2)^(-1)+(-1/2)*s^(-1)'
@@ -120,6 +124,11 @@ describe('calculus', function () {
             {
                 given: 'ilt((5*(sin(1)*s+3*cos(1)))/(s^2+9),s, t)',
                 expected: '5*cos(1)*sin(3*t)+5*cos(3*t)*sin(1)'
+            },
+            {
+                //TODO: Although this is computed correctly we need to get rid of the silly factorial(0)^(-1)
+                given: 'ilt(((s+1)*(s+2)*(s+3))^(-1), s, t)',
+                expected: '(1/2)*e^(-3*t)*factorial(0)^(-1)+(1/2)*e^(-t)*factorial(0)^(-1)-e^(-2*t)*factorial(0)^(-1)'
             }
         ];
 

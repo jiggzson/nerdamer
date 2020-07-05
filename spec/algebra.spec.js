@@ -470,6 +470,10 @@ describe('Algebra', function () {
             {
                 given: 'factor(-1866240-311040*x^2-3265920*x+1120*x^8+150080*x^6+17610*x^7+2026080*x^4+2509920*x^3+30*x^9+738360*x^5)',
                 expected: '10*(-1+x)*(1+x)*(3*x+4)*(6+x)^6'
+            },
+            {
+                given: 'factor((7x^3+4x^2+x)/(12x^3+6x^2-2x))',
+                expected: '(1/2)*(-1+3*x+6*x^2)^(-1)*(1+4*x+7*x^2)'
             }
         ];
 
@@ -557,6 +561,10 @@ describe('Algebra', function () {
             {
                 given: 'partfrac((3*x^2-3*x-8)/((x-5)*(x^2+x-4)),x)',
                 expected: '(-4+x+x^2)^(-1)*x+2*(-5+x)^(-1)'
+            },
+            {
+                given: 'partfrac(15*(9+s^2)^(-1)*cos(1)+5*(9+s^2)^(-1)*s*sin(1),s)',
+                expected: '(15*cos(1)+5*s*sin(1))*(9+s^2)^(-1)'
             },
         ];
 
@@ -728,7 +736,7 @@ describe('Algebra', function () {
             },
             {
                 given: 'simplify(n!/(n+1)!)',
-                expected: '(1+n)^(-1)*n'
+                expected: '(1+n)^(-1)'
             },
             //imaginary number
             {

@@ -958,8 +958,7 @@ if((typeof module) !== 'undefined') {
         return subs;
     };
     var __ = core.Algebra = {
-        version: '1.4.5',
-        init: (function() {})(),
+        version: '1.4.6',
         proots: function(symbol, decp) { 
             //the roots will be rounded up to 7 decimal places.
             //if this causes trouble you can explicitly pass in a different number of places
@@ -2142,6 +2141,11 @@ if((typeof module) !== 'undefined') {
                 
                 if(retval.group === CB) {
                     var t = new Symbol(1);
+                    var p = _.parse(retval.power);
+                    //store the multiplier and strip it
+                    var m = _.parse(retval.multiplier);
+                    
+                    retval.toUnitMultiplier();
                     /* 
                      * NOTE: for sign issues with factor START DEBUGGING HERE
                      */
@@ -2163,8 +2167,10 @@ if((typeof module) !== 'undefined') {
                             t = _.multiply(t, factored);
                         }
                     });
-                    retval = t;
+                    //put back the multiplier and power
+                    retval = _.pow(_.multiply(m, t), p);
                 }  
+                
                 return retval;
             },
             quadFactor: function(symbol, factors) {
@@ -2239,22 +2245,28 @@ if((typeof module) !== 'undefined') {
                 //make a copy of the symbol to return if something goes wrong
                 var untouched = symbol.clone();
                 try {
-                    if(symbol.group === CB) { 
+                    if(symbol.group === CB) {
+                        var p = _.parse(symbol.power);
+                        
                         var den_array, num_array, den, num, dfact, nfact;
                         //grab the denominator and strip the multiplier and power. Store them in an array
                         den_array = __.Simplify.strip(symbol.getDenom());
                         num_array = __.Simplify.strip(symbol.getNum());
+                        
                         den = den_array.pop();
                         num = num_array.pop();
-
+                        
                         //if the numerator equals the symbol then we've hit the simplest form and then we're done
                         if(num.equals(symbol))
                             return symbol;
                         nfact = __.Factor.factor(num);
                         dfact = __.Factor.factor(den);
+
                         var n = __.Simplify.unstrip(num_array, nfact);
                         var d = __.Simplify.unstrip(den_array, dfact);
+ 
                         var retval = _.divide(n, d);
+
                         return retval;
                     }
                     if(symbol.group === S) 
@@ -2490,7 +2502,7 @@ if((typeof module) !== 'undefined') {
                 var poly = new Polynomial(symbol, variable),
                     cnst = poly.coeffs[0],
                     cfactors = core.Math2.ifactor(cnst),
-                    roots = __.proots(symbol);
+                    roots = __.proots(symbol); 
                 for(var i=0; i<roots.length; i++) {
                     var r = roots[i],
                         p = 1;
@@ -2515,6 +2527,7 @@ if((typeof module) !== 'undefined') {
                         }
                     }
                 }
+                
                 if(!poly.equalsNumber(1)) {
                     poly = __.Factor.search(poly, factors);
                 }
@@ -2544,15 +2557,16 @@ if((typeof module) !== 'undefined') {
                     }
                     return null;
                 };
-                var cnst = poly.coeffs[0],
-                    cfactors = core.Math2.ifactor(cnst),
-                    lc = poly.lc(),
-                    ltfactors = core.Math2.ifactor(lc),
-                    subbed = poly.sub(base),
-                    nfactors = __.Factor.mix(core.Math2.ifactor(subbed), subbed < 0),
-                    cp = Math.ceil(poly.coeffs.length/2),
-                    lc_is_neg = lc.lessThan(0),
-                    cnst_is_neg = cnst.lessThan(0);
+                var cnst = poly.coeffs[0];
+                var cfactors = core.Math2.ifactor(cnst);
+                var lc = poly.lc();
+                var ltfactors = core.Math2.ifactor(lc);
+                var subbed = poly.sub(base);
+                var isubbed = core.Math2.ifactor(subbed);
+                var nfactors = __.Factor.mix(isubbed, subbed < 0);
+                var cp = Math.ceil(poly.coeffs.length/2);
+                var lc_is_neg = lc.lessThan(0);
+                var cnst_is_neg = cnst.lessThan(0);
                 ltfactors['1'] = 1;
                 cfactors['1'] = 1;
                 while(cp--) {
@@ -3428,7 +3442,9 @@ if((typeof module) !== 'undefined') {
                 return [f_array, factors_vec, degrees];
             },
             partfrac: function(symbol, v, as_array) { 
+                
                 var vars = variables(symbol);
+                
                 v = v || _.parse(vars[0]); //make wrt optional and assume first variable
                 try {
                     var num, den, factors, tfactors, ofactors, nterms, degrees,
@@ -3512,11 +3528,35 @@ if((typeof module) !== 'undefined') {
                         else 
                             retval = _.add(retval, term);
                     });
-
+                    
                     //done
                     return retval;
                 }
-                catch(e){};
+                catch(e){
+                    //try to group symbols
+                    try {
+                        if(symbol.isComposite()) {
+                            //group denominators
+                            var denominators = {};
+
+                            symbol.each(function(x) {
+                                var d = x.getDenom();
+                                var n = x.getNum();
+                                var e = denominators[d];
+                                denominators[d] = e ? _.add(e, n) : n;
+                            });
+
+                            var t = new Symbol(0);
+
+                            for(var x in denominators) {
+                                t = _.add(t, _.divide(denominators[x], _.parse(x)));
+                            }
+
+                            symbol = t;
+                        }
+                    }
+                    catch(e2) {};
+                };
 
                 return symbol;
             }
@@ -3682,9 +3722,11 @@ if((typeof module) !== 'undefined') {
                         retval = _.pow(_.multiply(new Symbol(symbol.multiplier), sym), new Symbol(symbol.power));
                     }
                     else if(symbol.group === CB) {
-                        //try for tangent
+                        
                         var n = symbol.getNum();
                         var d = symbol.getDenom();
+
+                        //try for tangent
                         if(n.fname === 'sin' && d.fname === 'cos' && n.args[0].equals(d.args[0]) && n.power.equals(d.power)) {
                             retval =_.parse(core.Utils.format('({0})*({1})*tan({2})^({3})', d.multiplier, n.multiplier, n.args[0], n.power));
                         }
@@ -3739,7 +3781,7 @@ if((typeof module) !== 'undefined') {
                     }
                     den = _.expand(a.getDenom());
                     num = _.expand(a.getNum());
-                    
+
                     //simplify imaginary
                     if(num.isImaginary() && den.isImaginary()) {
                         retval = __.Simplify.complexSimp(num, den);
@@ -3752,6 +3794,7 @@ if((typeof module) !== 'undefined') {
                     if(retval.equals(symbol)) {
                         return symbol;
                     }
+                    
                     //otherwise simplify it some more
                     return __.Simplify.simplify(retval);
                 }
@@ -3759,9 +3802,11 @@ if((typeof module) !== 'undefined') {
             },
             ratSimp: function(symbol) {
                 if(symbol.group === CB) {
-                    var den = __.Simplify.fracSimp(symbol.getDenom());
-                    var num = __.Simplify.fracSimp(symbol.getNum());
-                    symbol = _.divide(num, den);
+                    var den = symbol.getDenom();
+                    var num = symbol.getNum().distributeMultiplier();
+                    var d = __.Simplify.fracSimp(den);
+                    var n = __.Simplify.fracSimp(num);
+                    symbol = _.divide(n, d);
                 }
                 return symbol;
             },
@@ -3785,7 +3830,7 @@ if((typeof module) !== 'undefined') {
                 ////1. Try cos(x)^2+sin(x)^2 
 
                 simplified = __.Simplify.trigSimp(symbol);
-
+         
                 //simplify common denominators
                 simplified = __.Simplify.ratSimp(simplified);
 

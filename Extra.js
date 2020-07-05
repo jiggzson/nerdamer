@@ -54,6 +54,8 @@ if ((typeof module) !== 'undefined') {
         LaPlace: {
             //Using: integral_0^oo f(t)*e^(-s*t) dt
             transform: function (symbol, t, s) {
+                symbol = symbol.clone();
+                
                 t = t.toString();
                 //First try a lookup for a speed boost
                 symbol = Symbol.unwrapSQRT(symbol, true);
@@ -121,7 +123,8 @@ if ((typeof module) !== 'undefined') {
                             var integration_expr = _.parse('e^(-' + s + '*' + u + ')*' + sym);
                             retval = core.Calculus.integrate(integration_expr, u);
                             if (retval.hasIntegral())
-                                _.error('Unable to compute transform');
+                                return _.symfunction('laplace', arguments);
+//                                _.error('Unable to compute transform');
                             retval = retval.sub(t, 0);
                             retval = _.expand(_.multiply(retval, new Symbol(-1)));
                             retval = retval.sub(u, t);
@@ -142,7 +145,11 @@ if ((typeof module) !== 'undefined') {
             inverse: function (symbol, s_, t) {
                 var input_symbol = symbol.clone();
                 return core.Utils.block('POSITIVE_MULTIPLIERS', function () {
-                    if (symbol.group === S || symbol.group === CB || symbol.group === CP) {
+                    //expand and get partial fractions
+                    if(symbol.group === CB)
+                        symbol = core.Algebra.PartFrac.partfrac(_.expand(symbol), s_);
+
+                    if (symbol.group === S || symbol.group === CB || symbol.isComposite()) {
                         var finalize = function () {
                             //put back the numerator
                             retval = _.multiply(retval, num);
@@ -189,10 +196,9 @@ if ((typeof module) !== 'undefined') {
                         }
                         else if (den.group === CP && den_p.equals(1)) {
                             // a/(b*s-c) -> ae^(-bt)
-                            if (f.x.isLinear() && !num.contains(s)) {console.log(f.a.toString(), f.b.toString())
+                            if (f.x.isLinear() && !num.contains(s)) {
                                 t = _.divide(t, f.a.clone());
-                                retval = _.parse(format('(({0})^({3}-1)*e^(-(({2})*({0}))/({1})))/(({3}-1)!*({1})^({3}))', t, f.a, f.b, den_p))
-//                                retval = _.pow(new Symbol('e'), _.multiply(t, f.b.negate()));
+                                retval = _.parse(format('(({0})^({3}-1)*e^(-(({2})*({0}))/({1})))/(({3}-1)!*({1})^({3}))', t, f.a, f.b, den_p));
                                 //wrap it up
                                 finalize();
                             }
@@ -323,6 +329,13 @@ if ((typeof module) !== 'undefined') {
                                     }
                                 }
                             }
+                        }
+                        else if(symbol.isComposite()) {
+                            retval = new Symbol(0);
+                            
+                            symbol.each(function(x) {
+                                retval = _.add(retval, __.LaPlace.inverse(x, s_, t));
+                            }, true);
                         }
                     }
 

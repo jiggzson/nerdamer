@@ -1053,6 +1053,7 @@ if ((typeof module) !== 'undefined') {
         //if the power is a fractional we divide by the fractional power
         var fractionals = {},
                 cfact;
+        
         var correct_denom = function (symbol) {
             symbol = _.expand(symbol);
             var original = symbol.clone(); //preserve the original
@@ -1174,6 +1175,7 @@ if ((typeof module) !== 'undefined') {
             if (eq.isPoly(true)) {
                 //try to factor and solve
                 var factors = new core.Algebra.Classes.Factors();
+
                 core.Algebra.Factor.factor(eq, factors);
                 //if the equation has more than one symbolic factor then solve those individually
                 if(factors.getNumberSymbolics() > 1) {
@@ -1239,6 +1241,7 @@ if ((typeof module) !== 'undefined') {
                         }
                     }
                 }
+                
             }
             else {
                 try {
@@ -1272,6 +1275,7 @@ if ((typeof module) !== 'undefined') {
                     console.log(e);
                 }   
             }
+            
         }
         else {
             //The idea here is to go through the equation and collect the coefficients

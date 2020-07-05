@@ -157,6 +157,21 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         else if(this.fname === COS && this.power.equals(3)) {
             retval = _.parse(format('(cos(3*({0}))+3*cos({0}))/4', this.args[0]));
         }
+        //cos(a*x)^(2*n) or sin(a*x)^(2*n)
+        else if((this.fname === COS || this.fname === SIN) && even(this.power)) {
+            var n = this.power/2; 
+            //convert to a double angle
+            var double_angle = _.pow(this.clone().toLinear(), _.parse(2)).fnTransform();
+            //raise to the n and expand
+            var transformed = _.expand(_.pow(double_angle, _.parse(n)));
+            
+            retval = new Symbol(0);
+            
+            transformed.each(function(s) {
+                var t = s.fnTransform();
+                retval = _.add(retval, t);
+            }, true);
+        }
         else
             retval = sym;
         
@@ -253,9 +268,12 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             retval = new Symbol(1);
         for(var i=0, l=arr.length; i<l; i++) {
             symbol = arr[i]; 
+
             if(symbol.group === FN) {
                 var fname = symbol.fname;
+                
                 if(fname === COS && map[SIN]) { 
+                    
                     if(map[SIN].args[0].toString() !== symbol.args[0].toString()) {
                         t = cosAsinBtransform(symbol, map[SIN]);
                     }
@@ -263,6 +281,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         t = cosAsinAtransform(symbol, map[SIN]);
                     }
                     delete map[SIN];
+                    
                     retval = _.multiply(retval, t);
                 }
                 else if(fname === SIN && map[COS]) { 
@@ -273,6 +292,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         t = cosAsinAtransform(symbol, map[COS]);
                     }
                     delete map[COS];
+                    
                     retval = _.multiply(retval, t);
                 }
                 else if(fname === SIN && map[SIN]) {
@@ -288,8 +308,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                          
                     retval = t;
                 }
-                else
+                else {
                     map[fname] = symbol;
+                }
             }
             else
                 retval = _.multiply(retval, symbol);
@@ -602,6 +623,9 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         case 'sign':
                             symbol = new Symbol(0);
                             break;
+                        case 'sinc':
+                            symbol = _.parse(format('(({0})*cos({0})-sin({0}))*({0})^(-2)', symbol.args[0]));
+                            break;
                         case Settings.LOG10:
                             symbol = _.parse('1/(('+symbol.args[0]+')*'+Settings.LOG+'(10))');
                             break;
@@ -797,7 +821,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     partial_fractions.each(function(x) {
                         if(!x.isLinear())
                             __.integration.stop();
-                    })
+                    });
                     partial_fractions.each(function(x) {
                         result = _.add(result, __.integrate(x, dx, depth, opt));
                     });
@@ -1640,12 +1664,49 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                         retval = __.integrate(_.expand(t), dx, depth);
                                                     }
                                                 }
-                                                //TODO: REVISIT AT SOME POINT
-                                                else if((fn1 === SIN || fn1 === COS) && (fn2 === SIN || fn2 === COS)) { 
-                                                    var transformed = trigTransform(symbols);
-                                                    retval = __.integrate(_.expand(transformed), dx, depth);
-                                                }
+                                                //TODO: In progress
+                                                else if((fn1 === SIN || fn1 === COS) && (fn2 === SIN || fn2 === COS)) {
+                                                    
+                                                    if(sym1.isLinear() && sym2.isLinear()) {
+                                                        //if in the form cos(a*x)*sin(b*x)
+                                                        if(sym1.args[0].isLinear() && sym2.args[0].isLinear()) {
+                                                            //use identity (sin(b*x+a*x)+sin(b*x-a*x))/2
+                                                            var ax, bx;
+                                                            if(fn2 === SIN) {
+                                                                ax = sym1.args[0];
+                                                                bx = sym2.args[0];
+                                                            }
+                                                            else {
+                                                                bx = sym1.args[0];
+                                                                ax = sym2.args[0];
+                                                            }
+                                                            
+                                                            //make the transformation
+                                                            f = _.parse(format('(sin(({1})+({0}))+sin(({1})-({0})))/2', ax.toString(), bx.toString()));
 
+                                                            //integrate it
+                                                            retval = __.integrate(f, dx, depth);
+                                                        }
+                                                        else {
+                                                            var transformed = trigTransform(symbols);
+                                                            retval = __.integrate(_.expand(transformed), dx, depth);
+                                                        }
+                                                    }
+                                                    else {
+                                                        var transformed = new Symbol(1);
+                                                        symbols.map(function(sym) {
+                                                            var s = sym.fnTransform();
+                                                            transformed = _.multiply(transformed, s);
+                                                        });
+                                                        var t = _.expand(transformed);
+
+                                                        retval = __.integrate(t, dx, depth);
+
+                                                        if(retval.hasIntegral()) {
+                                                            retval = __.integrate(trigTransform(transformed.collectSymbols()), dx, depth);
+                                                        }
+                                                    }
+                                                }
                                                 else {
                                                     __.integration.stop();
                                                 }
@@ -2100,48 +2161,39 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
                 var retval;
                 do {
-                    var lim1 = evaluate(__.Limit.limit(f, x, lim, depth));
-                    var lim2 = evaluate(__.Limit.limit(g, x, lim, depth));
+                    var lim1 = evaluate(__.Limit.limit(f.clone(), x, lim, depth));
+                    var lim2 = evaluate(__.Limit.limit(g.clone(), x, lim, depth));
 
                     //if it's in indeterminate form apply L'Hospital's rule
                     var indeterminate = isInfinity(lim1) && isInfinity(lim2) || equals(lim1, 0) && equals(lim2, 0);
                     //pull the derivatives
                     if(indeterminate) {
-                        var ft = __.diff(fin.clone(), x);
-                        var gt = __.diff(gin.clone(), x);
+                        var ft = __.diff(f.clone(), x);
+                        var gt = __.diff(g.clone(), x);
+
                         var t_symbol = _.expand(_.divide(ft, gt));
                         f = t_symbol.getNum();
                         g = t_symbol.getDenom();
-
+                        
                     }
                 }
                 while(indeterminate)  
 
-                //TODO: 
                 //REMEMBER: 
                 //- 1/cos(x)
                 //n/0 is still possible since we only checked for 0/0
                 var den_is_zero = lim2.equals(0);
                 var p = Number(gin.power);
-
-                if(lim1.isConstant(true) && den_is_zero && core.Utils.isInt(p)) {
-                    if(core.Utils.even(p)) {
-                        retval = core.Symbol.infinity();
-                        //Add the correct sign to infinity based on the sign of the constant
-                        if(lim1.lessThan(0)) {
-                            retval.negate();
-                        }
-                    }
-                    else {
-                        //The limit diverges for odd powers
-                        retval = __.Limit.diverges();
-                    }
+                
+                if(lim.isConstant(true) && den_is_zero) {
+                    retval = Symbol.infinity(core.Utils.even(p) && lim1.lessThan(0) ? -1 : undefined);
                 }
                 else if(den_is_zero) {
                     retval = __.Limit.diverges();
                 }
-                else
+                else {
                     retval = _.divide(lim1, lim2);
+                }
                 
                 return retval;
             },
@@ -2208,6 +2260,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         var point = {};
                         point[x] = lim;
                         //lim x as x->c = c where c
+                        
                         try {
                             //evaluate the function at the given limit
                             var t = _.parse(symbol.sub(x, lim), point);
@@ -2333,52 +2386,46 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     }
                                 }
                                 else if(symbol.group === CB) { 
+                                    
+                                    var lim1, lim2;
+                                    //loop through all the symbols
+                                    //thus => lim f*g*h = lim (f*g)*h = (lim f*g)*(lim h)
+                                    //symbols of lower groups are generally easier to differentiatee so get them to the right by first sorting
+                                    var symbols = symbol.collectSymbols().sort(function(a, b) {
+                                        return a.group - b.group;
+                                    });
 
-                                    //if the group no longer is CB then feed it back to this function
-                                    if(symbol.group !== CB) {
-                                        retval = __.Limit.limit(symbol, x, lim, depth);
-                                    }
-                                    else {
-                                        var lim1, lim2;
-                                        //loop through all the symbols
-                                        //thus => lim f*g*h = lim (f*g)*h = (lim f*g)*(lim h)
-                                        //symbols of lower groups are generally easier to differentiatee so get them to the right by first sorting
-                                        var symbols = symbol.collectSymbols().sort(function(a, b) {
-                                            return a.group - b.group;
-                                        });
+                                    var f = symbols.pop();
+                                    //calculate the first limit so we can keep going down the list
+                                    lim1 = evaluate(__.Limit.limit(f, x, lim, depth));
 
-                                        var f = symbols.pop();
-                                        //calculate the first limit so we can keep going down the list
-                                        lim1 = evaluate(__.Limit.limit(f, x, lim, depth));
-                                        
-                                        //reduces all the limits one at a time
-                                        while(symbols.length) {
-                                            //get the second limit
-                                            var g = symbols.pop();
-                                            //get the limit of g
-                                            lim2 = evaluate(__.Limit.limit(g, x, lim, depth));
+                                    //reduces all the limits one at a time
+                                    while(symbols.length) {
+                                        //get the second limit
+                                        var g = symbols.pop();
+                                        //get the limit of g
+                                        lim2 = evaluate(__.Limit.limit(g, x, lim, depth));
 
-                                            //if the limit is in indeterminate form aplly L'Hospital by inverting g and then f/(1/g)
-                                            if((lim1.isInfinity || !__.Limit.isConvergent(lim1) && lim2.equals(0) || lim1.equals(0) && __.Limit.isConvergent(lim2))) { 
-                                                if(g.containsFunction(LOG)) {
-                                                    //swap them
-                                                    g = [f, f = g][0];
-                                                }
-                                                //invert the symbol
-                                                g.invert();
-
-                                                lim1 = __.Limit.divide(f, g, x, lim, depth);
+                                        //if the limit is in indeterminate form aplly L'Hospital by inverting g and then f/(1/g)
+                                        if((lim1.isInfinity || !__.Limit.isConvergent(lim1) && lim2.equals(0) || lim1.equals(0) && __.Limit.isConvergent(lim2))) { 
+                                            if(g.containsFunction(LOG)) {
+                                                //swap them
+                                                g = [f, f = g][0];
                                             }
-                                            else {
-                                                //lim f*g = (lim f)*(lim g)
-                                                lim1 = _.multiply(lim1, lim2);
-                                                //let f*g equal f and h equal g 
-                                                f = _.multiply(f, g);
-                                            }
+                                            //invert the symbol
+                                            g.invert();
+
+                                            lim1 = __.Limit.divide(f, g, x, lim, depth);
                                         }
-                                        //Done, lim1 is the limit we're looking for     
-                                        retval = lim1;
+                                        else {
+                                            //lim f*g = (lim f)*(lim g)
+                                            lim1 = _.multiply(lim1, lim2);
+                                            //let f*g equal f and h equal g 
+                                            f = _.multiply(f, g);
+                                        }
                                     }
+                                    //Done, lim1 is the limit we're looking for     
+                                    retval = lim1;
                                 }
                                 else if(symbol.isComposite()) { 
                                     var _lim;
@@ -2427,10 +2474,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                                 return;
                                             };
                                             retval = __.Limit.limit(__.diff(symbol, x), x, lim, depth);
-                                            //rewrite the function to have a common denominator. 
-                                            //TODO: This is soooo slow at the moment.
-//                                            symbol = core.Utils.toCommonDenominator(original);
-//                                            retval = __.Limit.limit(symbol, x, lim);
                                         }
                                     }
                                 } 
