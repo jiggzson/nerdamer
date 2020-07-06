@@ -8896,12 +8896,10 @@ var nerdamer = (function (imports) {
                     else if (a.fname === FACTORIAL && b.fname === FACTORIAL && !u.isConstant() && !v.isConstant() && b.power < 0) {                         
                         //assume that n = positive
                         var d = _.subtract(u.clone(), v.clone());
-                        
+
                         //if it's not numeric then we don't know if we can simplify so just return
-                        if(!d.isConstant()) {
-                            b = new Symbol(1);
-                        }
-                        else {
+                        if(d.isConstant()) {
+                            
                             //there will never be a case where d == 0 since this will already have 
                             //been handled at the beginning of this function
                             t = new Symbol(1);
@@ -11966,3 +11964,6 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+var ans = nerdamer('((n+2)*(n-1))!/(n+4)!');
+console.log(ans.toString());
