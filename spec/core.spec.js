@@ -1806,6 +1806,15 @@ describe('Nerdamer core', function () {
         expect(nerdamer('cbrt(27*x^3)').evaluate().text()).toEqual('3*x');
         expect(nerdamer('cbrt((y^3*x^3))').evaluate().text()).toEqual('x*y');
     });
+    it('should correctly build a JS function', function () {
+        expect(nerdamer('acos((-x)^(1/6))').buildFunction()(0)).toEqual(1.5707963267948966);
+        //factorials
+        expect(nerdamer('x^2+x!').buildFunction()(4)).toEqual(40);
+    });
+    it('should correctly build for a nerdamer defined function', function () {
+        //Note: this may break at some point when big numbers are implemented 
+        expect(nerdamer('Ci(x)+x').buildFunction()(4)).toEqual(3.8590183021130704);
+    });
 });
 
 describe('Further arithmetic test cases', function () {

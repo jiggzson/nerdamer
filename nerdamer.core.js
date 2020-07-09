@@ -11253,6 +11253,10 @@ var nerdamer = (function (imports) {
             var supplements = [];
             var dependencies = [];
             var ftext = function (symbol, xports) {
+                //Fix for #545 - Parentheses confuse build.
+                if(symbol.fname === '') {
+                    symbol = Symbol.unwrapPARENS(symbol);
+                }
                 xports = xports || [];
                 var c = [],
                         group = symbol.group,
@@ -11964,6 +11968,3 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-var ans = nerdamer('((n+2)*(n-1))!/(n+4)!');
-console.log(ans.toString());
