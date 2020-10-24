@@ -2702,9 +2702,11 @@ if((typeof module) !== 'undefined') {
                                     a = remove_square(a);
                                     b = remove_square(b);
                                 }
-                                factors.add(_.subtract(a.clone(), b.clone()));
-                                factors.add(_.add(a, b));
-                                symbol = new Symbol(1);
+                                if(a.sign() !== b.sign()) { //we need to make sure it's actually a difference of squares and not a sum of squares
+                                    factors.add(_.subtract(a.clone(), b.clone()));
+                                    factors.add(_.add(a, b));
+                                    symbol = new Symbol(1);
+                                }
                             }
                         }
                     }
