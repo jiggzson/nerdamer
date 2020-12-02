@@ -2137,6 +2137,7 @@ if((typeof module) !== 'undefined') {
                 if(symbol.isConstant()) {
                     return symbol;
                 }
+                
                 var _symbol = _.parse(symbol);
                 var retval = __.Factor._factor(_symbol, factors);
                 
@@ -2809,11 +2810,14 @@ if((typeof module) !== 'undefined') {
                                 return symbol;
 
                             var factor = divided[0]; 
+                            
                             if(symbol.equals(factor)) {
                                 var rem = __.Factor.reduce(factor, factors);
                                 
                                 if(!symbol.equals(rem)) 
                                     return __.Factor.mfactor(rem, factors);
+                                
+                                return rem;
                             }
                             else {
                                 factors.add(factor); 
@@ -3851,7 +3855,7 @@ if((typeof module) !== 'undefined') {
                 var simplified;
                 symbol = symbol.clone(); //make a copy
                 ////1. Try cos(x)^2+sin(x)^2 
-
+                
                 simplified = __.Simplify.trigSimp(symbol);
                 
                 //simplify common denominators
@@ -4006,6 +4010,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var x = nerdamer('factor(0)');
-console.log(x.toString())
