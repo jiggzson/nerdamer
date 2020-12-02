@@ -2133,6 +2133,10 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             factor: function(symbol, factors) {
+                // Don't try to factor constants
+                if(symbol.isConstant()) {
+                    return symbol;
+                }
                 var _symbol = _.parse(symbol);
                 var retval = __.Factor._factor(_symbol, factors);
                 
@@ -3728,13 +3732,14 @@ if((typeof module) !== 'undefined') {
                     var retval = symbol.clone();
 
                     //rewrite the symbol
-                    if(symbol.group === CP) {
+                    if(symbol.group === CP) { 
                         var sym = new Symbol(0);
                         symbol.each(function(x) {
                             //rewrite the function
                             var tr = __.Simplify.trigSimp(x.fnTransform());
                             sym = _.add(sym, tr);
                         }, true);
+                        
                         //put back the power and multiplier and return
                         retval = _.pow(_.multiply(new Symbol(symbol.multiplier), sym), new Symbol(symbol.power));
                     }
@@ -3758,7 +3763,8 @@ if((typeof module) !== 'undefined') {
                             retval = t;
                         }
                     }
-
+                    
+                    
                     retval = __.Simplify.unstrip(sym_array, retval).distributeMultiplier();
                     
                     symbol = retval;
@@ -3847,7 +3853,7 @@ if((typeof module) !== 'undefined') {
                 ////1. Try cos(x)^2+sin(x)^2 
 
                 simplified = __.Simplify.trigSimp(symbol);
-         
+                
                 //simplify common denominators
                 simplified = __.Simplify.ratSimp(simplified);
 
@@ -4000,3 +4006,6 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var x = nerdamer('factor(0)');
+console.log(x.toString())
