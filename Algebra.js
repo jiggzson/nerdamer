@@ -28,6 +28,7 @@ if((typeof module) !== 'undefined') {
         CP = core.groups.CP,
         CB = core.groups.CB,
         keys = core.Utils.keys,
+        even = core.Utils.even,
         variables = core.Utils.variables,
         format = core.Utils.format,
         round = core.Utils.round,
@@ -2656,6 +2657,7 @@ if((typeof module) !== 'undefined') {
             },
             //difference of squares factorization
             sqdiff: function(symbol, factors) { 
+
                 try {
                     var remove_square = function(x) {
                         return core.Utils.block('POSITIVE_MULTIPLIERS', function() {
@@ -2663,6 +2665,7 @@ if((typeof module) !== 'undefined') {
                         }, true);
                     }; 
                     var separated = core.Utils.separate(symbol.clone());
+                    
                     var obj_array = [];
                     //get the unique variables
                     for(var x in separated) {
@@ -2679,6 +2682,13 @@ if((typeof module) !== 'undefined') {
                         var a, b;
                         a = obj_array.pop();
                         b = obj_array.pop();
+                        
+                        if(even(a.power) && even(b.power) 
+                                && a.sign() === b.sign()
+                                && a.group === S && b.group === S) {
+                            throw new Error('Unable to factor');
+                        };
+                        
                         if(a.isComposite() && b.power.equals(2)) {
                             //remove the square from b
                             b = remove_square(b);
@@ -2702,6 +2712,12 @@ if((typeof module) !== 'undefined') {
                                     a = remove_square(a);
                                     b = remove_square(b);
                                 }
+                                
+//                                if(a.sign() !== b.sign()) { //we need to make sure it's actually a difference of squares and not a sum of squares
+//                                    factors.add(_.subtract(a.clone(), b.clone()));
+//                                    factors.add(_.add(a, b));
+//                                    symbol = new Symbol(1);
+//                                }
                                 factors.add(_.subtract(a.clone(), b.clone()));
                                 factors.add(_.add(a, b));
                                 symbol = new Symbol(1);
@@ -2815,6 +2831,7 @@ if((typeof module) !== 'undefined') {
                 
                 //difference of squares factorization
                 symbol = __.Factor.sqdiff(symbol, factors);
+                
                 //factors by fishing for zeroes
                 symbol = __.Factor.zeroes(symbol, factors);
                 

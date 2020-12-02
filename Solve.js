@@ -34,8 +34,8 @@ if ((typeof module) !== 'undefined') {
             Settings = core.Settings,
             range = core.Utils.range,
             isArray = core.Utils.isArray;
-
     
+
     // The search radius for the roots
     core.Settings.SOLVE_RADIUS = 1000;
     // The maximum number to fish for on each side of the zero

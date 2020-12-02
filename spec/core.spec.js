@@ -511,7 +511,7 @@ describe('Nerdamer core', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(round(value), 14).toEqual(round(testCases[i].expectedValue) ,14);
+            expect(round(value, 12)).toEqual(round(testCases[i].expectedValue, 12)) ;
         }
     });    
     it('should handle imaginary log arguments', function () {
@@ -906,7 +906,7 @@ describe('Nerdamer core', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(round(value), 14).toEqual(round(testCases[i].expectedValue) ,14);
+            expect(round(value, 12)).toEqual(round(testCases[i].expectedValue ,12));
         }
     });
     it('should simplify square roots', function() {
@@ -2141,7 +2141,7 @@ describe('Further arithmetic test cases', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(round(value, 14)).toEqual(round(testCases[i].expectedValue),14);
+            expect(round(value, 8)).toEqual(round(testCases[i].expectedValue ,8));
         }
     });
     it('Batch 3', function () {
@@ -2310,7 +2310,7 @@ describe('Further arithmetic test cases', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(round(value, 14)).toEqual(round(testCases[i].expectedValue),14);
+            expect(round(value, 12)).toEqual(round(testCases[i].expectedValue ,12));
         }
     });
     it('Batch 4', function() {
