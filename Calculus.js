@@ -2236,6 +2236,17 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             },
             limit: function(symbol, x, lim, depth) {
                 //Simplify the symbol
+                if(symbol.isLinear() && symbol.isComposite()) {
+                    
+                    //Apply sum of limits
+                    var limit = new Symbol(0);
+                    symbol.each(function(s) {
+                        limit = _.add(limit, __.Limit.limit(s, x, lim, depth));
+                    }, true);
+                    
+                    return limit;
+                };
+                
                 symbol = core.Algebra.Simplify.simplify(symbol);
                 
                 depth = depth || 1;
@@ -2262,12 +2273,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         //lim x as x->c = c where c
                         
                         try {
+                            
                             //evaluate the function at the given limit
                             var t = _.parse(symbol.sub(x, lim), point);
 
                             //a constant or infinity is known so we're done
                             if(t.isConstant(true) || t.isInfinity)
                                 retval = t;
+                            
                         }
                         catch(e){ /*Nothing. Maybe we tried to divide by zero.*/};
 
