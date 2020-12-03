@@ -2275,8 +2275,9 @@ if((typeof module) !== 'undefined') {
 
                         return retval;
                     }
-                    if(symbol.group === S) 
+                    if(symbol.group === S) {
                         return symbol; //absolutely nothing to do
+                    }
 
                     if(symbol.isConstant()) {
                         if(symbol.equals(1))
@@ -2667,6 +2668,10 @@ if((typeof module) !== 'undefined') {
             },
             //difference of squares factorization
             sqdiff: function(symbol, factors) { 
+                if(symbol.isConstant('all')) {
+                    // Nothing to do
+                    return symbol;
+                }
 
                 try {
                     var remove_square = function(x) {
@@ -2677,6 +2682,7 @@ if((typeof module) !== 'undefined') {
                     var separated = core.Utils.separate(symbol.clone());
                     
                     var obj_array = [];
+                    
                     //get the unique variables
                     for(var x in separated) {
                         if(x !== 'constants') {
@@ -2714,7 +2720,7 @@ if((typeof module) !== 'undefined') {
                             a = a.powSimp();
                             b = b.powSimp();
                             
-                            if((a.group === S || a.fname === '') && a.power.equals(2) && (b.group === S || b.fname === '') && b.power.equals(2)) {
+                            if((a.group === S || a.fname === '') && a.power.equals(2) && (b.group === S || b.fname === '') && b.power.equals(2) && !separated.constants) {
                                 if(a.multiplier.lessThan(0)) {
                                     var t = b; b = a; a = t;
                                 }
@@ -2794,6 +2800,7 @@ if((typeof module) !== 'undefined') {
                         if(new_factor.equals(1))
                             break; //why divide by one. Just move 
                         var divided = __.div(symbol.clone(), new_factor); 
+                        
                         if(divided[0].equals(0)) { 
                             //cant factor anymore
                             break;
@@ -4015,4 +4022,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-

@@ -1462,3 +1462,9 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+//
+////var x = nerdamer('solve(4/y^2=x^2+1,y)');
+//var x = nerdamer('solve(4*((-1/4)*x^2-1/4+y^(-2)),y)');
+//console.log(x.toString())
+
+
