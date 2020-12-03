@@ -1278,6 +1278,7 @@ if ((typeof module) !== 'undefined') {
             
         }
         else {
+            
             //The idea here is to go through the equation and collect the coefficients
             //place them in an array and call the quad or cubic function to get the results
             if (!eq.hasFunc(solve_for) && eq.isComposite()) {

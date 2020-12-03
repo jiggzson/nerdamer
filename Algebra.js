@@ -2609,6 +2609,8 @@ if((typeof module) !== 'undefined') {
             mSqfrFactor: function(symbol, factors) {
                 if(symbol.group !== FN) {
                     var vars = variables(symbol).reverse();
+
+                    // Loop through all the variable and remove the partial derivatives
                     for(var i=0; i<vars.length; i++) {
                         do {
                             if(vars[i] === symbol.value){
@@ -2617,9 +2619,11 @@ if((typeof module) !== 'undefined') {
                                 symbol = new Symbol(1);
                                 continue;
                             }
+                            
                             var diff = core.Calculus.diff(symbol, vars[i]);
+                            
                             var d = __.Factor.coeffFactor(diff);
-
+                            
                             if(d.equals(0)) 
                                 break;
                             
@@ -2638,9 +2642,10 @@ if((typeof module) !== 'undefined') {
                             
                             //if we can divide then do so
                             if(can_divide) {
+                                
                                 var div = __.div(symbol, d.clone()),
                                 is_factor = div[1].equals(0);
-
+                                
                                 if(div[0].isConstant()) {
                                     factors.add(div[0]);
                                     break;
@@ -3104,7 +3109,7 @@ if((typeof module) !== 'undefined') {
         },
         div: function(symbol1, symbol2) {
             //division by constants
-            if(symbol2.isConstant()) {
+            if(symbol2.isConstant('all')) {
                 symbol1.each(function(x) { 
                     x.multiplier = x.multiplier.divide(symbol2.multiplier);
                 });
@@ -4010,3 +4015,4 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+

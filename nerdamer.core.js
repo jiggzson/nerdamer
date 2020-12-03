@@ -3660,8 +3660,9 @@ var nerdamer = (function (imports) {
                 }
             }
 
-            if (check_all === 'all' && (this.isPi() || this.isE()))
+            if (check_all === 'all' && (this.isPi() || this.isE())) {
                 return true;
+            }
 
             if (check_all && this.group === FN) {
                 for (var i = 0; i < this.args.length; i++) {
