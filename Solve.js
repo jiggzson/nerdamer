@@ -595,10 +595,12 @@ if ((typeof module) !== 'undefined') {
         quad: function (c, b, a) {
             var discriminant = _.subtract(_.pow(b.clone(), Symbol(2)), _.multiply(_.multiply(a.clone(), c.clone()), Symbol(4)))/*b^2 - 4ac*/;
             var det = _.pow(discriminant, Symbol(0.5));
+            var den = _.parse(_.multiply(new Symbol(2), a.clone()));
             var retval = [
-                _.parse(_.divide(_.add(b.clone().negate(), det.clone()), _.multiply(new Symbol(2), a.clone()))),
-                _.parse(_.divide(_.subtract(b.clone().negate(), det.clone()), _.multiply(new Symbol(2), a.clone())))
+                _.parse(format('(-({0})+({1}))/({2})', b, det, den)),
+                _.parse(format('(-({0})-({1}))/({2})', b, det, den))
             ];
+
             return retval;
         },
         /**
@@ -1278,7 +1280,6 @@ if ((typeof module) !== 'undefined') {
             
         }
         else {
-            
             //The idea here is to go through the equation and collect the coefficients
             //place them in an array and call the quad or cubic function to get the results
             if (!eq.hasFunc(solve_for) && eq.isComposite()) {
@@ -1462,9 +1463,4 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-//
-////var x = nerdamer('solve(4/y^2=x^2+1,y)');
-//var x = nerdamer('solve(4*((-1/4)*x^2-1/4+y^(-2)),y)');
-//console.log(x.toString())
-
 

@@ -420,8 +420,9 @@ var nerdamer = (function (imports) {
             o[key] = _.add(o[key], sym.clone());
         };
         symbol.each(function (x) {
-            if (x.isConstant('all'))
+            if (x.isConstant('all')) {
                 insert('constants', x);
+            }
             else if (x.group === S) {
                 insert(x.value, x);
             }
@@ -1051,11 +1052,12 @@ var nerdamer = (function (imports) {
     };
 
     /**
-     * Returns the coefficients of a symbol
+     * Returns the coefficients of a symbol given a variable. Given ax^2+b^x+c, it divides
+     * each nth term by x^n.
      * @param {Symbol} symbol
      * @param {Symbol} wrt
      */
-    var getCoeffs = function (symbol, wrt) {
+    var getCoeffs = function (symbol, wrt, info) {
         var coeffs = [];
         //we loop through the symbols and stick them in their respective
         //containers e.g. y*x^2 goes to index 2
@@ -3658,6 +3660,18 @@ var nerdamer = (function (imports) {
                     if(this.symbols[x].isConstant(true))
                         return true;
                 }
+            }
+            
+            if(check_all === 'functions' && this.isComposite()) {
+                var isConstant = true;
+                
+                this.each(function(x) {
+                    if(!x.isConstant(check_all, check_symbols)) {
+                        isConstant = false;
+                    }
+                }, true);
+                
+                return isConstant;
             }
 
             if (check_all === 'all' && (this.isPi() || this.isE())) {
@@ -11972,4 +11986,3 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
