@@ -207,6 +207,14 @@ describe('Solve', function () {
             {
                 given: 'solve(4/y^2=x^2+1,y)',
                 expected: '[(1/2)*(-1-x^2)^(-1)*sqrt(16+16*x^2),(-1/2)*(-1-x^2)^(-1)*sqrt(16+16*x^2)]'
+            },
+            {
+                given: 'solve(1/(x+x^2), x)',
+                expected: '[]'
+            },
+            {
+                given: 'solve(1/(x+x^2-1), x)',
+                expected: '[]'
             }
         ];
 

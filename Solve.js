@@ -982,6 +982,15 @@ if ((typeof module) !== 'undefined') {
         solutions = solutions || [];
         //mark existing solutions as not to have duplicates
         var existing = {}; 
+        
+        // Easy fail. If it's a rational function and the denominator is zero
+        // the we're done. Issue #555
+        var known = {};
+        known[solve_for] = 0;
+        if(isSymbol(eqns) && evaluate(eqns.getDenom(), known).equals(0) === true) {
+            return solutions;
+        }
+        
         //Is usued to add solutions to set. 
         //TODO: Set is now implemented and should be utilized
         var add_to_result = function (r, has_trig) {
@@ -1463,4 +1472,3 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
