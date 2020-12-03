@@ -300,8 +300,16 @@ describe('calculus', function () {
                 expected: '-Infinity'
             },
             {
+                given: 'limit((2*x+log(x))/(x*log(x)),x,Infinity)',
+                expected: '0'
+            },
+            {
                 given: 'limit(log(x),x, 0)',
                 expected: 'Infinity'
+            },
+            {
+                given: 'limit(e^(-x)+2,x,Infinity)',
+                expected: '2'
             }
         ];
 
