@@ -2320,7 +2320,8 @@ if((typeof module) !== 'undefined') {
                             symbol.each(function(x) {
                                 if(x.group !== S) all_S = false;
                                 if(!x.multiplier.equals(1)) all_unit = false;
-                            });       
+                            });   
+                            
                             if(all_S && all_unit) {
                                 return _.pow(_.parse(symbol, core.Utils.getFunctionsSubs(map)), _.parse(p));
                             }
@@ -2382,6 +2383,7 @@ if((typeof module) !== 'undefined') {
                         factors.add(_.pow(symbol, _.parse(p)));
                         
                         var retval = factors.toSymbol();
+                        
                         return retval;
                     }
                     
@@ -2811,8 +2813,14 @@ if((typeof module) !== 'undefined') {
                         if(divided[1].equals(0) && !neg_numeric_factor) { //we found at least one factor
                             
                             //factors.add(new_factor);
-                            var d = __.div(symbol.clone(), divided[0].clone());
+                            var d = __.div(symbol.clone(), divided[0].clone());  
                             var r = d[0];
+                            
+                            // Nothing left to do since we didn't get a reduction
+                            if(r.equals(0)) {
+                                return symbol;
+                            }
+                            
                             symbol = d[1];
                             //we don't want to just flip the sign. If the remainder is -1 then we accomplished nothing
                             //and we just return the symbol;
