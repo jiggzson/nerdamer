@@ -2160,8 +2160,12 @@ if((typeof module) !== 'undefined') {
                         t.negate();
                         retval.negate();
                     }
+                    
                     retval.each(function(x) {
-                        var factored = __.Factor._factor(x);
+                        // Related to #566. Since the symbol's group may not have been properly
+                        // updated, it's easier to just parse the symbol and have the parser 
+                        // do the update for us.
+                        var factored = _.parse(__.Factor._factor(x));
                         
                         if(factored.group === CB) {
                             factored.each(function(y) {
@@ -2380,6 +2384,7 @@ if((typeof module) !== 'undefined') {
                         
                         //last minute clean up
                         symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
+                        
                         factors.add(_.pow(symbol, _.parse(p)));
                         
                         var retval = factors.toSymbol();
@@ -2481,6 +2486,7 @@ if((typeof module) !== 'undefined') {
             coeffFactor: function(symbol, factors) {
                 if(symbol.isComposite()) {
                     var gcd = core.Math2.QGCD.apply(null, symbol.coeffs());
+
                     if(!gcd.equals(1)) { 
                         symbol.each(function(x) {
                             if(x.isComposite()) {
@@ -2493,8 +2499,9 @@ if((typeof module) !== 'undefined') {
                         
                     }
                     symbol.updateHash();
-                    if(factors) 
+                    if(factors) {
                         factors.add(new Symbol(gcd));
+                    }
                 }
                 
                 return symbol;

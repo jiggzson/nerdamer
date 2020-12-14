@@ -417,7 +417,7 @@ describe('Algebra', function () {
             },
             {
                 given: 'factor(x^2-y^2)',
-                expected: '-(-x+y)*(x+y)'
+                expected: '(-y+x)*(x+y)'
             }, 
             {
                 given: 'factor(a^2*x^2-b^2*y^2)',
@@ -449,7 +449,7 @@ describe('Algebra', function () {
             }, 
             {
                 given: 'factor(x^2*y*z+x*z+t*x^2*y+t*x)',
-                expected: '(1+x*y)*(t+z)*(x)'
+                expected: '(1+x*y)*(t+z)*x'
             },
             {
                 given: 'factor(x^2*y+x^2)',
@@ -474,6 +474,10 @@ describe('Algebra', function () {
             {
                 given: 'factor((7x^3+4x^2+x)/(12x^3+6x^2-2x))',
                 expected: '(1/2)*(-1+3*x+6*x^2)^(-1)*(1+4*x+7*x^2)'
+            },
+            {
+                given: 'factor((-2x-2x^2-2))',
+                expected: '-2*(1+x+x^2)'
             }
         ];
 
