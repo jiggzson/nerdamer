@@ -766,6 +766,10 @@ describe('Algebra', function () {
             {
                 given: 'simplify((-1/2)*(1+x^2)^(-1)*sqrt(16+16*x^2))',
                 expected: '-2*sqrt(1+x^2)^(-1)'
+            },
+            {
+                given: 'simplify(-(-5*x - 9 + 2*y))',
+                expected: '-2*y+5*x+9'
             }
         ];
 

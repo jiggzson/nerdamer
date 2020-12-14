@@ -7808,7 +7808,7 @@ var nerdamer = (function (imports) {
                 //move the negative outside but keep the positive inside :)
                 retval = log(symbol).negate();
             }
-            else if (symbol.value === 'e' && symbol.multiplier.equals(1)) {
+            else if (symbol.value === 'e' && symbol.multiplier.equals(1)) { 
                 var p = symbol.power;
                 retval = isSymbol(p) ? p : new Symbol(p);
             }
@@ -7831,16 +7831,18 @@ var nerdamer = (function (imports) {
             }
             else {
                 var s;
-                if (!symbol.power.equals(1)) {
+                if (!symbol.power.equals(1) && !symbol.contains('e')) {
                     s = symbol.group === EX ? symbol.power : new Symbol(symbol.power);
                     symbol.toLinear();
                 }
                 //log(a,a) = 1 since the base is allowed to be changed.
                 //This was pointed out by Happypig375 in issue #280
-                if (arguments.length > 1 && allSame(arguments))
+                if (arguments.length > 1 && allSame(arguments)) {
                     retval = new Symbol(1);
-                else
+                }
+                else {
                     retval = _.symfunction(Settings.LOG, arguments);
+                }
 
                 if (s)
                     retval = _.multiply(s, retval);
