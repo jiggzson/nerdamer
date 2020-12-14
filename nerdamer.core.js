@@ -7770,13 +7770,22 @@ var nerdamer = (function (imports) {
          * @returns {Symbol}
          */
         function log(symbol, base) {
+            
             if(symbol.equals(1)) {
                 return new Symbol(0);
             }
 
             var retval;
+            
             if (symbol.fname === SQRT && symbol.multiplier.equals(1)) {
-                return _.divide(log(symbol.args[0]), new Symbol(2));
+                retval = _.divide(log(symbol.args[0]), new Symbol(2));
+                
+                if(symbol.power.sign() < 0) {
+                    retval.negate();
+                }
+                
+                // Exit early
+                return retval;
             }
 
             //log(0) is undefined so complain
@@ -7787,20 +7796,9 @@ var nerdamer = (function (imports) {
             //deal with imaginary values
             if (symbol.isImaginary()) {
                 return complex.evaluate(symbol, Settings.LOG);
-                /*
-                 var a = format('log(sqrt(({0})^2+({1})^2))-({2})*atan2(({1}),({0}))', symbol.imagpart(), symbol.realpart(), Settings.IMAGINARY),
-                 b = format('({0})*PI/2', Settings.IMAGINARY);
-
-                 return _.add(_.parse(a), _.parse(b));
-                 */
             }
 
             if (symbol.isConstant() && typeof base !== 'undefined' && base.isConstant()) {
-                /*
-                 var log_sym = Math2.bigLog(symbol.multiplier);
-                 var log_base = Math2.bigLog(base.multiplier);
-                 retval = new Symbol(log_sym.divide());
-                 */
                 var log_sym = Math.log(symbol);
                 var log_base = Math.log(base);
                 retval = new Symbol(log_sym / log_base);
@@ -7847,6 +7845,7 @@ var nerdamer = (function (imports) {
                 if (s)
                     retval = _.multiply(s, retval);
             }
+  
             return retval;
         }
 
@@ -9484,11 +9483,6 @@ var nerdamer = (function (imports) {
                             result = _.multiply(_.pow(a, b), i);
                         }
                         else {
-//                            if(a.equals(-1)) {
-//                                var theta = _.multiply(b, _.parse('pi'));
-//                                result = evaluate(_.add(trig.cos(theta), _.multiply(Symbol.imaginary(), trig.sin(theta))));
-//                            }
-//                            else {
                             var aa = a.clone();
                             aa.multiplier.negate();
                             result = _.pow(_.symfunction(PARENTHESIS, [new Symbol(sign)]), b.clone());
@@ -9496,7 +9490,6 @@ var nerdamer = (function (imports) {
                             var _b = _.pow(new Symbol(aa.multiplier.den), b.clone());
                             var r = _.divide(_a, _b);
                             result = _.multiply(result, r);
-//                            }
                         }
                     }
                     else if (Settings.PARSE2NUMBER && b.isImaginary()) {
@@ -9597,11 +9590,6 @@ var nerdamer = (function (imports) {
                         && result.power.contains(Settings.IMAGINARY)) {
                     var theta = b.stripVar(Settings.IMAGINARY);
                     result = _.add(trig.cos(theta), _.multiply(Symbol.imaginary(), trig.sin(theta)));
-//                    //we have a match
-//                    var m1 = result.multiplier,
-//                            m2 = result.power.multiplier;
-//                    result = new Symbol(even(m2.num) ? m1 : m1.negate());
-//                    result = _.pow(result, new Symbol(m2.den).invert());
                 }
 
                 return result;
@@ -10166,12 +10154,12 @@ var nerdamer = (function (imports) {
             else if (group === CB || previousGroup === EX || previousGroup === CB) {
                 if (group === CB)
                     symbol.distributeExponent();
-                //this almost feels a little like cheating but I need to know if I should be wrapping the symbol
-                //in brackets or not. We'll do this by checking the value of the numerator and then comparing it
-                //to whether the symbol value is "simple" or not.
+                // This almost feels a little like cheating but I need to know if I should be wrapping the symbol
+                // in brackets or not. We'll do this by checking the value of the numerator and then comparing it
+                // to whether the symbol value is "simple" or not.
                 var denominator = [],
                         numerator = [];
-                //generate a profile
+                // Generate a profile
                 var den_map = [], num_map = [], num_c = 0, den_c = 0;
                 var setBrackets = function (container, map, counter) {
                     if (counter > 1 && map.length > 0) {
@@ -10186,7 +10174,7 @@ var nerdamer = (function (imports) {
                     return container;
                 };
 
-                //generate latex for each of them
+                // Generate latex for each of them
                 symbol.each(function (x) {
                     var isDenom = isNegative(x.power),
                             laTex;
@@ -10214,7 +10202,7 @@ var nerdamer = (function (imports) {
                     }
                 });
 
-                //apply brackets
+                // Apply brackets
                 setBrackets(numerator, num_map, num_c);
                 v[0] = numerator.join(this.dot); //collapse the numerator into one string
 

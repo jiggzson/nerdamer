@@ -1059,6 +1059,11 @@ describe('Nerdamer core', function () {
                 given: 'log(1/e^e)',
                 expected: '-e',
                 expectedValue: '-2.718281828459045'
+            },
+            {
+                given: 'log(1/sqrt(2))',
+                expected: '(-1/2)*log(2)',
+                expectedValue: '-0.34657359027997'
             }
         ];
 
