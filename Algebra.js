@@ -3853,13 +3853,15 @@ if((typeof module) !== 'undefined') {
                 if(symbol.isSQRT()) {
                     var factored = __.Factor.factor(symbol.args[0].clone());
                     
-                    if(factored.group === CB) {
-                        var m = _.parse(factored.multiplier);
-                        var sign = m.sign();
+                    var m = _.parse(factored.multiplier);
+                    var sign = m.sign();
+
+                    var retval = _.sqrt(m.abs());
+                    var arg;
+                    
+                    if(isInt(retval)) {
                         
-                        var retval = _.sqrt(m.abs());
-                        
-                        if(isInt(retval)) {
+                        if(factored.group === CB) {
                             var rem = new Symbol(1);
                             
                             factored.each(function(x) {
@@ -3880,15 +3882,20 @@ if((typeof module) !== 'undefined') {
                                 
                             });
                             var t = _.multiply(rem, _.parse(sign));
-                            var arg = _.sqrt(t.clone());
+                            arg = _.sqrt(t.clone());
                             
                             // Expand if it's imaginary
                             if(arg.isImaginary) {
                                 arg = _.sqrt(_.expand(t.clone()));
                             }
                             
-                            return _.multiply(retval, arg);
+                            
                         }
+                        else {
+                            // Strip the multiplier
+                            arg = factored.clone().toUnitMultiplier();
+                        }
+                        return _.multiply(retval, arg);
                             
                     }
                         
@@ -4086,6 +4093,7 @@ if((typeof module) !== 'undefined') {
     nerdamer.api();
 })();
 
+////var ans = nerdamer('simplify((1/2)*sqrt(-4*x^2+16))');
 //var ans = nerdamer('simplify((-1/2)*(1+x^2)^(-1)*sqrt(16+16*x^2))');
 //
 //console.log(ans.toString())
