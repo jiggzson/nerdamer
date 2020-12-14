@@ -3854,7 +3854,10 @@ if((typeof module) !== 'undefined') {
                     var factored = __.Factor.factor(symbol.args[0].clone());
                     
                     if(factored.group === CB) {
-                        var retval = _.sqrt(_.parse(factored.multiplier));
+                        var m = _.parse(factored.multiplier);
+                        var sign = m.sign();
+                        
+                        var retval = _.sqrt(m.abs());
                         
                         if(isInt(retval)) {
                             var rem = new Symbol(1);
@@ -3876,12 +3879,33 @@ if((typeof module) !== 'undefined') {
                                 }
                                 
                             });
+                            var t = _.multiply(rem, _.parse(sign));
+                            var arg = _.sqrt(t.clone());
                             
-                            return _.multiply(retval, _.sqrt(rem));
+                            // Expand if it's imaginary
+                            if(arg.isImaginary) {
+                                arg = _.sqrt(_.expand(t.clone()));
+                            }
+                            
+                            return _.multiply(retval, arg);
                         }
                             
                     }
                         
+                }
+                else if(symbol.isComposite()) {
+                    var retval = new Symbol(0);
+                    symbol.each(function(x) {
+                        retval = _.add(retval, __.Simplify.sqrtSimp(x));
+                    }, true);
+                    return retval;
+                }
+                else if(symbol.group === CB) {
+                    var retval = new Symbol(1);
+                    symbol.each(function(x) {
+                        retval = _.multiply(retval, __.Simplify.sqrtSimp(x));
+                    }, true);
+                    return retval;
                 }
                 return symbol;
             },
@@ -4062,6 +4086,6 @@ if((typeof module) !== 'undefined') {
     nerdamer.api();
 })();
 
-//var ans = nerdamer('simplify((1/2)*sqrt(-4*x^2+16))');
+//var ans = nerdamer('simplify((-1/2)*(1+x^2)^(-1)*sqrt(16+16*x^2))');
 //
 //console.log(ans.toString())
