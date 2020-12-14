@@ -3850,6 +3850,7 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             sqrtSimp: function(symbol) {
+                var retval;
                 if(symbol.isSQRT()) {
                     var factored = __.Factor.factor(symbol.args[0].clone());
                     
@@ -3888,33 +3889,34 @@ if((typeof module) !== 'undefined') {
                             if(arg.isImaginary) {
                                 arg = _.sqrt(_.expand(t.clone()));
                             }
-                            
-                            
                         }
                         else {
                             // Strip the multiplier
-                            arg = factored.clone().toUnitMultiplier();
+                            arg = _.sqrt(factored.clone().toUnitMultiplier());
                         }
                         return _.multiply(retval, arg);
                             
                     }
                         
                 }
-                else if(symbol.isComposite()) {
-                    var retval = new Symbol(0);
+                else if(symbol.isComposite() && symbol.isLinear()) {
+                    retval = new Symbol(0);
                     symbol.each(function(x) {
                         retval = _.add(retval, __.Simplify.sqrtSimp(x));
                     }, true);
-                    return retval;
+                    // Put back the multiplier
+                    retval = _.multiply(retval, _.parse(symbol.multiplier));
                 }
                 else if(symbol.group === CB) {
-                    var retval = new Symbol(1);
+                    retval = _.parse(symbol.multiplier);
                     symbol.each(function(x) {
-                        retval = _.multiply(retval, __.Simplify.sqrtSimp(x));
+                        var simp = __.Simplify.sqrtSimp(x);
+                        retval = _.multiply(retval, simp);
+                        
                     }, true);
-                    return retval;
                 }
-                return symbol;
+                
+                return retval ? retval : symbol.clone();
             },
             simplify: function(symbol) { 
                 //remove the multiplier to make calculation easier;
@@ -3934,7 +3936,7 @@ if((typeof module) !== 'undefined') {
                 var simplified = symbol.clone(); //make a copy
                 
                 // Simplify sqrt within the symbol
-//                simplified = __.Simplify.sqrtSimp(simplified);
+                simplified = __.Simplify.sqrtSimp(simplified);
                 
                 // Try trig simplificatons e.g. cos(x)^2+sin(x)^2
                 simplified = __.Simplify.trigSimp(simplified);
@@ -4092,8 +4094,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-////var ans = nerdamer('simplify((1/2)*sqrt(-4*x^2+16))');
-//var ans = nerdamer('simplify((-1/2)*(1+x^2)^(-1)*sqrt(16+16*x^2))');
-//
-//console.log(ans.toString())

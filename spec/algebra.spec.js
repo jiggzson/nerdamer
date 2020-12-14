@@ -755,14 +755,18 @@ describe('Algebra', function () {
                 given: 'simplify(((a+b)^2)/c)',
                 expected: '(a+b)^2*c^(-1)'
             },
-//            {
-//                given: 'simplify((1/2)*sqrt(-4*x^2+16)*x)',
-//                expected: 'sqrt(-x^2+4)*x'
-//            },
-//            {
-//                given: 'simplify((-1/2)*(1+x^2)^(-1)*sqrt(16+16*x^2))',
-//                expected: '-2*sqrt(1+x^2)^(-1)'
-//            }
+            {
+                given: 'simplify((-1/2)*(1+x^2)^(-1)*sqrt(16+16*x^2))',
+                expected: '-2*sqrt(1+x^2)^(-1)'
+            },
+            {
+                given: 'simplify((1/2)*sqrt(-4*x^2+16)*x)',
+                expected: 'sqrt(-x^2+4)*x'
+            },
+            {
+                given: 'simplify((-1/2)*(1+x^2)^(-1)*sqrt(16+16*x^2))',
+                expected: '-2*sqrt(1+x^2)^(-1)'
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

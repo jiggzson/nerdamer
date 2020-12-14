@@ -8911,7 +8911,8 @@ var nerdamer = (function (imports) {
                 if (g1 === FN && a.fname === SQRT && !b.isConstant() && a.args[0].value === b.value && !a.args[0].multiplier.lessThan(0)) {
                     //unwrap sqrt
                     var a_pow = a.power;
-                    a = a.args[0].clone();
+                    var a_multiplier = _.parse(a.multiplier);
+                    a = _.multiply(a_multiplier, a.args[0].clone());
                     a.setPower(new Frac(0.5).multiply(a_pow));
                     g1 = a.group;
                 }
