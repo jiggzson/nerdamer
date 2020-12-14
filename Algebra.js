@@ -47,14 +47,14 @@ if((typeof module) !== 'undefined') {
     * @param {String} variable The variable name of the polynomial
     * @param {int} order
     */
-    function Polynomial(symbol, variable, order) { 
+    function Polynomial(symbol, variable, order) {
         if(core.Utils.isSymbol(symbol)) {
             this.parse(symbol);
             this.variable = this.variable || variable;
         }
-        else if(!isNaN(symbol)) { 
+        else if(!isNaN(symbol)) {
             order = order || 0;
-            if(variable === undefined) 
+            if(variable === undefined)
                 throw new core.exceptions.InvalidVariableNameError('Polynomial expects a variable name when creating using order');
             this.coeffs = [];
             this.coeffs[order] = symbol;
@@ -3849,6 +3849,42 @@ if((typeof module) !== 'undefined') {
                 }
                 return symbol;
             },
+            sqrtSimp: function(symbol) {
+                if(symbol.isSQRT()) {
+                    var factored = __.Factor.factor(symbol.args[0].clone());
+                    
+                    if(factored.group === CB) {
+                        var retval = _.sqrt(_.parse(factored.multiplier));
+                        
+                        if(isInt(retval)) {
+                            var rem = new Symbol(1);
+                            
+                            factored.each(function(x) {
+                                if(x.group === N) {
+                                    var trial = _.sqrt(x.clone());
+                                    
+                                    // Multiply back sqrt if it's an integer otherwise just put back the number
+                                    if(isInt(trial)) {
+                                        retval = _.multiply(retval, trial);
+                                    }
+                                    else {
+                                        rem = _.multiply(rem, x);
+                                    }
+                                }
+                                else {
+                                    rem = _.multiply(rem, x);
+                                }
+                                
+                            });
+                            
+                            return _.multiply(retval, _.sqrt(rem));
+                        }
+                            
+                    }
+                        
+                }
+                return symbol;
+            },
             simplify: function(symbol) { 
                 //remove the multiplier to make calculation easier;
                 var sym_array = __.Simplify.strip(symbol);
@@ -3864,18 +3900,20 @@ if((typeof module) !== 'undefined') {
                     return ret;
                 }
                     
-                var simplified;
-                symbol = symbol.clone(); //make a copy
-                ////1. Try cos(x)^2+sin(x)^2 
+                var simplified = symbol.clone(); //make a copy
                 
-                simplified = __.Simplify.trigSimp(symbol);
+                // Simplify sqrt within the symbol
+//                simplified = __.Simplify.sqrtSimp(simplified);
                 
-                //simplify common denominators
+                // Try trig simplificatons e.g. cos(x)^2+sin(x)^2
+                simplified = __.Simplify.trigSimp(simplified);
+                
+                // Simplify common denominators
                 simplified = __.Simplify.ratSimp(simplified);
 
-                //first go for the "cheapest" simplification which may eliminate 
-                //your problems right away. factor -> evaluate. Remember
-                //that there's no need to expand since factor already does that
+                // First go for the "cheapest" simplification which may eliminate 
+                // your problems right away. factor -> evaluate. Remember
+                // that there's no need to expand since factor already does that
                 simplified = __.Factor.factor(simplified);
 
                 //If the simplfied is a sum then we can make a few more simplifications
@@ -3893,8 +3931,9 @@ if((typeof module) !== 'undefined') {
                     //put back the multiplier
                     r.multiplier = r.multiplier.multiply(m);
                 }
+                
                 //place back multiplier and return
-                var retval = __.Simplify.unstrip(sym_array, evaluate(simplified));
+                var retval = __.Simplify.unstrip(sym_array, simplified);
 
                 return retval;
             }
@@ -4022,3 +4061,7 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+//var ans = nerdamer('simplify((1/2)*sqrt(-4*x^2+16))');
+//
+//console.log(ans.toString())

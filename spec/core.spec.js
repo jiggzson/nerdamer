@@ -921,7 +921,7 @@ describe('Nerdamer core', function () {
         expect(nerdamer('sqrt(-4)').evaluate().text()).toEqual('2*i');
         expect(nerdamer('sqrt(-pi)').evaluate().text()).toEqual('1.7724538509055163*i');
     });
-    it('expand square roots', function () {
+    it('should expand square roots', function () {
         // given
         var testCases = [
             {
@@ -942,7 +942,15 @@ describe('Nerdamer core', function () {
             expect(parsed.toString()).toEqual(testCases[i].expected);
         }
     });
-    
+    it('should correctly test for squareness', function() {
+        expect(nerdamer('16x^2*y^2').symbol.isSquare()).toBe(true);
+        expect(nerdamer('16x^2*y^2-1').symbol.isSquare()).toBe(false);
+        expect(nerdamer('9').symbol.isSquare()).toBe(true);
+        expect(nerdamer('(5+x)^6').symbol.isSquare()).toBe(true);
+        expect(nerdamer('(x+y)^2').symbol.isSquare()).toBe(true);
+        expect(nerdamer('9^(1/4)').symbol.isSquare()).toBe(false);
+        expect(nerdamer('x^(1/2)').symbol.isSquare()).toBe(false);
+    });
     it('should support the imaginary number i', function () {
         // given
         var testCases = [

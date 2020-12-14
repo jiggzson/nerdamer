@@ -3282,10 +3282,42 @@ var nerdamer = (function (imports) {
         return _.parse('(' + value + ')^(' + power + ')');
     };
     Symbol.prototype = {
+        /**
+         * Checks if symbol is square
+         * @returns {undefined}
+         */
+        isSquare: function() {
+            // Start by check in the multiplier for squareness
+            var squareMultiplier = isInt(_.sqrt(this.multiplier));
+            
+            var evenPower;
+            
+            if(this.group === CB) {
+                // Start by assuming that all will be square.
+                evenPower = true;
+                // All it takes is for one of the symbols to not have an even power
+                // e.g. x^n1*y^n2 requires that both n1 and n2 are even
+                this.each(function(x) {
+                    var isSquare = x.isSquare();
+
+                    if(!isSquare) {
+                        evenPower = false;
+                    }
+                });
+            }
+            else {
+                evenPower = this.group === N ? true : even(this.power);
+            }
+                        
+            return squareMultiplier && evenPower;
+        },
         isSimple: function () {
             return this.power.equals(1) && this.multiplier.equals(1);
         },
-        //returns a clone.
+        /**
+         * Simplifies the power of the symbol
+         * @returns {Symbol} a clone of the symbol
+         */
         powSimp: function () {
             if (this.group === CB) {
                 var powers = [],
@@ -7250,6 +7282,10 @@ var nerdamer = (function (imports) {
          * @returns {Symbol}
          */
         function sqrt(symbol) {
+            if(!isSymbol(symbol)) {
+                symbol = _.parse(symbol);
+            }
+            
             if (symbol.fname === '' && symbol.power.equals(1))
                 symbol = symbol.args[0];
 
