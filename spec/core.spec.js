@@ -951,6 +951,17 @@ describe('Nerdamer core', function () {
         expect(nerdamer('9^(1/4)').symbol.isSquare()).toBe(false);
         expect(nerdamer('x^(1/2)').symbol.isSquare()).toBe(false);
     });
+    it('should correctly test for cubeness', function() {
+        expect(nerdamer('64x^3*y^3').symbol.isCube()).toBe(true);
+        expect(nerdamer('64x^3*y^3-1').symbol.isCube()).toBe(false);
+        expect(nerdamer('7').symbol.isCube()).toBe(false);
+        expect(nerdamer('27').symbol.isCube()).toBe(true);
+        expect(nerdamer('(5+x)^6').symbol.isCube()).toBe(true);
+        expect(nerdamer('(x+y)^2').symbol.isCube()).toBe(false);
+        expect(nerdamer('9^(1/4)').symbol.isCube()).toBe(false);
+        expect(nerdamer('x^(1/2)').symbol.isCube()).toBe(false);
+        expect(nerdamer('216*z^6').symbol.isCube()).toBe(true);
+    });
     it('should support the imaginary number i', function () {
         // given
         var testCases = [

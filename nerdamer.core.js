@@ -3283,34 +3283,73 @@ var nerdamer = (function (imports) {
     };
     Symbol.prototype = {
         /**
-         * Checks if symbol is square
-         * @returns {undefined}
+         * Gets nth root accounting for rounding errors
+         * @param {Number} n
+         * @return {Number}
          */
-        isSquare: function() {
+        getNth: function(n) {
+            // First calculate the root
+            var root = evaluate(_.pow(_.parse(this.multiplier), _.parse(n).invert()));
+            // Round of any errors
+            var rounded = _.parse(nround(root));
+            // Reverse the root
+            var e = evaluate(_.pow(rounded, _.parse(n)));
+            // If the rounded root equals the original number then we're good 
+            if(e.equals(_.parse(this.multiplier))) {
+                return rounded;
+            }
+            // Otherwise return the unrounded version
+            return root;
+        },
+        /**
+         * Checks if symbol is to the nth power
+         * @returns {Boolean}
+         */
+        isToNth: function(n) {
             // Start by check in the multiplier for squareness
-            var squareMultiplier = isInt(_.sqrt(this.multiplier));
-            
-            var evenPower;
+            // First get the root but round it because currently we still depend 
+            var root = this.getNth(n);
+            var nthMultiplier = isInt(root);
+            var nthPower;
             
             if(this.group === CB) {
                 // Start by assuming that all will be square.
-                evenPower = true;
+                nthPower = true;
                 // All it takes is for one of the symbols to not have an even power
                 // e.g. x^n1*y^n2 requires that both n1 and n2 are even
                 this.each(function(x) {
-                    var isSquare = x.isSquare();
+                    var isNth = x.isToNth(n);
 
-                    if(!isSquare) {
-                        evenPower = false;
+                    if(!isNth) {
+                        nthPower = false;
                     }
                 });
             }
             else {
-                evenPower = this.group === N ? true : even(this.power);
+                // Check if the power is divisible by n if it's not a number.
+                nthPower = this.group === N ? true : isInt(_.divide(_.parse(this.power), _.parse(n)));
             }
                         
-            return squareMultiplier && evenPower;
+            return nthMultiplier && nthPower;
         },
+        /**
+         * Checks if a symbol is square
+         * @return {Boolean}
+         */
+        isSquare: function() {
+            return this.isToNth(2);
+        },
+        /**
+         * Checks if a symbol is cube
+         * @return {Boolean}
+         */
+        isCube: function() {
+            return this.isToNth(3);
+        },
+        /**
+         * Checks if a symbol is a bare variable
+         * @return {Boolean}
+         */
         isSimple: function () {
             return this.power.equals(1) && this.multiplier.equals(1);
         },
@@ -7547,7 +7586,6 @@ var nerdamer = (function (imports) {
                 return new Symbol(Math.PI);
             //evaluate the symbol to merge constants
             symbol = evaluate(symbol.clone());
-
 
             if (symbol.isConstant()) {
                 var retval = new Symbol(1);
