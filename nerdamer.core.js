@@ -1156,32 +1156,34 @@ var nerdamer = (function (imports) {
 //Exceptions ===================================================================
     //Is thrown for division by zero
     var DivisionByZero = customError('DivisionByZero');
-    //Is throw if an error occured during parsing
+    // Is throw if an error occured during parsing
     var ParseError = customError('ParseError');
-    //Is thrown if the expression results in undefined
+    // Is thrown if the expression results in undefined
     var UndefinedError = customError('UndefinedError');
-    //Is throw if a function exceeds x amount of iterations
+    // Is throw if a function exceeds x amount of iterations
     var MaximumIterationsReached = customError('MaximumIterationsReached');
-    //Is thrown if the parser receives an incorrect type
+    // Is thrown if the parser receives an incorrect type
     var NerdamerTypeError = customError('NerdamerTypeError');
-    //Is thrown if bracket parity is not correct
+    // Is thrown if bracket parity is not correct
     var ParityError = customError('ParityError');
-    //Is thrown if an unexpectd or incorrect operator is encountered
+    // Is thrown if an unexpectd or incorrect operator is encountered
     var OperatorError = customError('OperatorError');
-    //Is thrown if an index is out of range.
+    // Is thrown if an index is out of range.
     var OutOfRangeError = customError('OutOfRangeError');
-    //Is thrown if dimensions are incorrect. Mostly for matrices
+    // Is thrown if dimensions are incorrect. Mostly for matrices
     var DimensionError = customError('DimensionError');
-    //Is thrown if variable name violates naming rule
+    // Is thrown if variable name violates naming rule
     var InvalidVariableNameError = customError('InvalidVariableNameError');
-    //Is thrown if the limits of the library are exceeded for a function
-    //This can be that the function become unstable passed a value
+    // Is thrown if the limits of the library are exceeded for a function
+    // This can be that the function become unstable passed a value
     var ValueLimitExceededError = customError('ValueLimitExceededError');
-    //Is throw if the value is an incorrect LH or RH value
+    // Is throw if the value is an incorrect LH or RH value
     var NerdamerValueError = customError('NerdamerValueError');
-    //Is throw if the value is an incorrect LH or RH value
+    // Is throw if the value is an incorrect LH or RH value
     var SolveError = customError('SolveError');
-
+    // Is thrown for an infinite loop
+    var InfiniteLoopError = customError('InfiniteLoopError');
+    
     var exceptions = {
         DivisionByZero: DivisionByZero,
         ParseError: ParseError,
@@ -1195,7 +1197,8 @@ var nerdamer = (function (imports) {
         InvalidVariableNameError: InvalidVariableNameError,
         ValueLimitExceededError: ValueLimitExceededError,
         NerdamerValueError: NerdamerValueError,
-        SolveError: SolveError
+        SolveError: SolveError,
+        InfiniteLoopError: InfiniteLoopError
     };
 //Big ==========================================================================
     var Big = {
