@@ -511,7 +511,7 @@ describe('Nerdamer core', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(round(value), 14).toEqual(round(testCases[i].expectedValue) ,14);
+            expect(round(value, 12)).toEqual(round(testCases[i].expectedValue, 12)) ;
         }
     });    
     it('should handle imaginary log arguments', function () {
@@ -906,7 +906,7 @@ describe('Nerdamer core', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(round(value), 14).toEqual(round(testCases[i].expectedValue) ,14);
+            expect(round(value, 12)).toEqual(round(testCases[i].expectedValue ,12));
         }
     });
     it('should simplify square roots', function() {
@@ -921,7 +921,7 @@ describe('Nerdamer core', function () {
         expect(nerdamer('sqrt(-4)').evaluate().text()).toEqual('2*i');
         expect(nerdamer('sqrt(-pi)').evaluate().text()).toEqual('1.7724538509055163*i');
     });
-    it('expand square roots', function () {
+    it('should expand square roots', function () {
         // given
         var testCases = [
             {
@@ -942,7 +942,26 @@ describe('Nerdamer core', function () {
             expect(parsed.toString()).toEqual(testCases[i].expected);
         }
     });
-    
+    it('should correctly test for squareness', function() {
+        expect(nerdamer('16x^2*y^2').symbol.isSquare()).toBe(true);
+        expect(nerdamer('16x^2*y^2-1').symbol.isSquare()).toBe(false);
+        expect(nerdamer('9').symbol.isSquare()).toBe(true);
+        expect(nerdamer('(5+x)^6').symbol.isSquare()).toBe(true);
+        expect(nerdamer('(x+y)^2').symbol.isSquare()).toBe(true);
+        expect(nerdamer('9^(1/4)').symbol.isSquare()).toBe(false);
+        expect(nerdamer('x^(1/2)').symbol.isSquare()).toBe(false);
+    });
+    it('should correctly test for cubeness', function() {
+        expect(nerdamer('64x^3*y^3').symbol.isCube()).toBe(true);
+        expect(nerdamer('64x^3*y^3-1').symbol.isCube()).toBe(false);
+        expect(nerdamer('7').symbol.isCube()).toBe(false);
+        expect(nerdamer('27').symbol.isCube()).toBe(true);
+        expect(nerdamer('(5+x)^6').symbol.isCube()).toBe(true);
+        expect(nerdamer('(x+y)^2').symbol.isCube()).toBe(false);
+        expect(nerdamer('9^(1/4)').symbol.isCube()).toBe(false);
+        expect(nerdamer('x^(1/2)').symbol.isCube()).toBe(false);
+        expect(nerdamer('216*z^6').symbol.isCube()).toBe(true);
+    });
     it('should support the imaginary number i', function () {
         // given
         var testCases = [
@@ -1051,6 +1070,11 @@ describe('Nerdamer core', function () {
                 given: 'log(1/e^e)',
                 expected: '-e',
                 expectedValue: '-2.718281828459045'
+            },
+            {
+                given: 'log(1/sqrt(2))',
+                expected: '(-1/2)*log(2)',
+                expectedValue: '-0.34657359027997'
             }
         ];
 
@@ -1806,6 +1830,15 @@ describe('Nerdamer core', function () {
         expect(nerdamer('cbrt(27*x^3)').evaluate().text()).toEqual('3*x');
         expect(nerdamer('cbrt((y^3*x^3))').evaluate().text()).toEqual('x*y');
     });
+    it('should correctly build a JS function', function () {
+        expect(nerdamer('acos((-x)^(1/6))').buildFunction()(0)).toEqual(1.5707963267948966);
+        //factorials
+        expect(nerdamer('x^2+x!').buildFunction()(4)).toEqual(40);
+    });
+    it('should correctly build for a nerdamer defined function', function () {
+        //Note: this may break at some point when big numbers are implemented 
+        expect(nerdamer('Ci(x)+x').buildFunction()(4)).toEqual(3.8590183021130704);
+    });
 });
 
 describe('Further arithmetic test cases', function () {
@@ -2132,7 +2165,7 @@ describe('Further arithmetic test cases', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(round(value, 14)).toEqual(round(testCases[i].expectedValue),14);
+            expect(round(value, 8)).toEqual(round(testCases[i].expectedValue ,8));
         }
     });
     it('Batch 3', function () {
@@ -2301,7 +2334,7 @@ describe('Further arithmetic test cases', function () {
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
-            expect(round(value, 14)).toEqual(round(testCases[i].expectedValue),14);
+            expect(round(value, 12)).toEqual(round(testCases[i].expectedValue ,12));
         }
     });
     it('Batch 4', function() {

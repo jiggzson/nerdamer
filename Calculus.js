@@ -2236,6 +2236,17 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             },
             limit: function(symbol, x, lim, depth) {
                 //Simplify the symbol
+                if(symbol.isLinear() && symbol.isComposite()) {
+                    
+                    //Apply sum of limits
+                    var limit = new Symbol(0);
+                    symbol.each(function(s) {
+                        limit = _.add(limit, __.Limit.limit(s, x, lim, depth));
+                    }, true);
+                    
+                    return limit;
+                };
+                
                 symbol = core.Algebra.Simplify.simplify(symbol);
                 
                 depth = depth || 1;
@@ -2262,12 +2273,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         //lim x as x->c = c where c
                         
                         try {
+                            
                             //evaluate the function at the given limit
                             var t = _.parse(symbol.sub(x, lim), point);
 
                             //a constant or infinity is known so we're done
                             if(t.isConstant(true) || t.isInfinity)
                                 retval = t;
+                            
                         }
                         catch(e){ /*Nothing. Maybe we tried to divide by zero.*/};
 
@@ -2405,7 +2418,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                         var g = symbols.pop();
                                         //get the limit of g
                                         lim2 = evaluate(__.Limit.limit(g, x, lim, depth));
-
+                                        
                                         //if the limit is in indeterminate form aplly L'Hospital by inverting g and then f/(1/g)
                                         if((lim1.isInfinity || !__.Limit.isConvergent(lim1) && lim2.equals(0) || lim1.equals(0) && __.Limit.isConvergent(lim2))) { 
                                             if(g.containsFunction(LOG)) {
@@ -2414,8 +2427,14 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             }
                                             //invert the symbol
                                             g.invert();
-
-                                            lim1 = __.Limit.divide(f, g, x, lim, depth);
+                                            
+                                            // Product of infinities
+                                            if(lim1.isInfinity && lim2.isInfinity) {
+                                                lim1 = Symbol.infinity()
+                                            }
+                                            else {
+                                                lim1 = __.Limit.divide(f, g, x, lim, depth);
+                                            }
                                         }
                                         else {
                                             //lim f*g = (lim f)*(lim g)
@@ -2424,6 +2443,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                             f = _.multiply(f, g);
                                         }
                                     }
+
                                     //Done, lim1 is the limit we're looking for     
                                     retval = lim1;
                                 }

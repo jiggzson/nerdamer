@@ -417,7 +417,7 @@ describe('Algebra', function () {
             },
             {
                 given: 'factor(x^2-y^2)',
-                expected: '-(-x+y)*(x+y)'
+                expected: '(-y+x)*(x+y)'
             }, 
             {
                 given: 'factor(a^2*x^2-b^2*y^2)',
@@ -449,7 +449,7 @@ describe('Algebra', function () {
             }, 
             {
                 given: 'factor(x^2*y*z+x*z+t*x^2*y+t*x)',
-                expected: '(1+x*y)*(t+z)*(x)'
+                expected: '(1+x*y)*(t+z)*x'
             },
             {
                 given: 'factor(x^2*y+x^2)',
@@ -474,6 +474,26 @@ describe('Algebra', function () {
             {
                 given: 'factor((7x^3+4x^2+x)/(12x^3+6x^2-2x))',
                 expected: '(1/2)*(-1+3*x+6*x^2)^(-1)*(1+4*x+7*x^2)'
+            },
+            {
+                given: 'factor((-2x-2x^2-2))',
+                expected: '-2*(1+x+x^2)'
+            }, 
+            {
+                given: 'factor(1331*x^3*y^3+216*z^6)',
+                expected: '(-66*x*y*z^2+121*x^2*y^2+36*z^4)*(11*x*y+6*z^2)'
+            }, 
+            {
+                given: 'factor(1331*x^3*y^3-216*z^6)',
+                expected: '(-6*z^2+11*x*y)*(121*x^2*y^2+36*z^4+66*x*y*z^2)'
+            }, 
+            {
+                given: 'factor(64a^3-27b^3)',
+                expected: '(-3*b+4*a)*(12*a*b+16*a^2+9*b^2)'
+            }, 
+            {
+                given: 'factor(64*x^3+125)',
+                expected: '(-20*x+16*x^2+25)*(4*x+5)'
             }
         ];
 
@@ -754,6 +774,22 @@ describe('Algebra', function () {
             {
                 given: 'simplify(((a+b)^2)/c)',
                 expected: '(a+b)^2*c^(-1)'
+            },
+            {
+                given: 'simplify((-1/2)*(1+x^2)^(-1)*sqrt(16+16*x^2))',
+                expected: '-2*sqrt(1+x^2)^(-1)'
+            },
+            {
+                given: 'simplify((1/2)*sqrt(-4*x^2+16)*x)',
+                expected: 'sqrt(-x^2+4)*x'
+            },
+            {
+                given: 'simplify((-1/2)*(1+x^2)^(-1)*sqrt(16+16*x^2))',
+                expected: '-2*sqrt(1+x^2)^(-1)'
+            },
+            {
+                given: 'simplify(-(-5*x - 9 + 2*y))',
+                expected: '-2*y+5*x+9'
             }
         ];
 

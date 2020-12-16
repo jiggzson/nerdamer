@@ -34,8 +34,8 @@ if ((typeof module) !== 'undefined') {
             Settings = core.Settings,
             range = core.Utils.range,
             isArray = core.Utils.isArray;
-
     
+
     // The search radius for the roots
     core.Settings.SOLVE_RADIUS = 1000;
     // The maximum number to fish for on each side of the zero
@@ -595,10 +595,12 @@ if ((typeof module) !== 'undefined') {
         quad: function (c, b, a) {
             var discriminant = _.subtract(_.pow(b.clone(), Symbol(2)), _.multiply(_.multiply(a.clone(), c.clone()), Symbol(4)))/*b^2 - 4ac*/;
             var det = _.pow(discriminant, Symbol(0.5));
+            var den = _.parse(_.multiply(new Symbol(2), a.clone()));
             var retval = [
-                _.parse(_.divide(_.add(b.clone().negate(), det.clone()), _.multiply(new Symbol(2), a.clone()))),
-                _.parse(_.divide(_.subtract(b.clone().negate(), det.clone()), _.multiply(new Symbol(2), a.clone())))
+                _.parse(format('(-({0})+({1}))/({2})', b, det, den)),
+                _.parse(format('(-({0})-({1}))/({2})', b, det, den))
             ];
+
             return retval;
         },
         /**
@@ -980,6 +982,15 @@ if ((typeof module) !== 'undefined') {
         solutions = solutions || [];
         //mark existing solutions as not to have duplicates
         var existing = {}; 
+        
+        // Easy fail. If it's a rational function and the denominator is zero
+        // the we're done. Issue #555
+        var known = {};
+        known[solve_for] = 0;
+        if(isSymbol(eqns) && evaluate(eqns.getDenom(), known).equals(0) === true) {
+            return solutions;
+        }
+        
         //Is usued to add solutions to set. 
         //TODO: Set is now implemented and should be utilized
         var add_to_result = function (r, has_trig) {
