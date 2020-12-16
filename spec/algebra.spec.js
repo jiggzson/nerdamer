@@ -479,22 +479,22 @@ describe('Algebra', function () {
                 given: 'factor((-2x-2x^2-2))',
                 expected: '-2*(1+x+x^2)'
             }, 
-//            {
-//                given: 'factor(1331*x^3*y^3+216*z^6)',
-//                expected: '(-66*x*y*z^2+121*x^2*y^2+36*z^4)*(11*x*y+6*z^2)'
-////            }, 
-//            {
-//                given: 'factor(1331*x^3*y^3-216*z^6)',
-//                expected: '(-6*z^2+11*x*y)*(121*x^2*y^2+36*z^4+66*x*y*z^2)'
-//            }, 
-//            {
-//                given: 'factor(64a^3-27b^3)',
-//                expected: '(-3*b+4*a)*(12*a*b+16*a^2+9*b^2)'
-//            }, 
-//            {
-//                given: 'factor(64*x^3+125)',
-//                expected: '(-20*x+16*x^2+25)*(4*x+5)'
-//            }
+            {
+                given: 'factor(1331*x^3*y^3+216*z^6)',
+                expected: '(-66*x*y*z^2+121*x^2*y^2+36*z^4)*(11*x*y+6*z^2)'
+            }, 
+            {
+                given: 'factor(1331*x^3*y^3-216*z^6)',
+                expected: '(-6*z^2+11*x*y)*(121*x^2*y^2+36*z^4+66*x*y*z^2)'
+            }, 
+            {
+                given: 'factor(64a^3-27b^3)',
+                expected: '(-3*b+4*a)*(12*a*b+16*a^2+9*b^2)'
+            }, 
+            {
+                given: 'factor(64*x^3+125)',
+                expected: '(-20*x+16*x^2+25)*(4*x+5)'
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
