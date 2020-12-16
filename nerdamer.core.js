@@ -3656,8 +3656,10 @@ var nerdamer = (function (imports) {
 
                 });
             }
-            else if (this.isComposite()) {
-                if (a.isComposite() && this.isComposite() && this.isLinear() && a.isLinear()) {
+            else if (this.isComposite()) {                   
+                var symbol = this.clone();
+                
+                if (a.isComposite() && symbol.isComposite() && symbol.isLinear() && a.isLinear()) {
                     var find = function (stack, needle) {
                         for (var x in stack.symbols) {
                             var sym = stack.symbols[x];
@@ -3669,14 +3671,14 @@ var nerdamer = (function (imports) {
                     };
                     //go fish
                     for (var x in a.symbols) {
-                        if (!find(this, a.symbols[x]))
-                            return this.clone();
+                        if (!find(symbol, a.symbols[x]))
+                            return symbol.clone();
                     }
-                    retval = _.add(_.subtract(this.clone(), a), b);
+                    retval = _.add(_.subtract(symbol.clone(), a), b);
                 }
                 else {
                     retval = new Symbol(0);
-                    this.each(function (x) {
+                    symbol.each(function (x) {
                         retval = _.add(retval, x.sub(a, b));
                     });
                 }
@@ -3706,6 +3708,7 @@ var nerdamer = (function (imports) {
 
                 //transfer the multiplier
                 retval.multiplier = retval.multiplier.multiply(m);
+                
                 //done
                 return retval;
             }
@@ -12042,3 +12045,4 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+

@@ -4026,6 +4026,11 @@ if((typeof module) !== 'undefined') {
                 
                 return retval ? retval : symbol.clone();
             },
+            /**
+             * Unused. The goal is to substitute out patterns but it currently doesn't work.
+             * @param {Symbol} symbol
+             * @return {Array} The symbol and the matched patterns
+             */
             patternSub: function(symbol) {
                 var patterns = {};
                 
@@ -4059,8 +4064,10 @@ if((typeof module) !== 'undefined') {
                         }
                         else {
                             if(!patterns[x.value]) {
+                                var u = core.Utils.getU(symbol);
                                 // Get a u value and mark it for subsitution
-                                patterns[x.value] = core.Utils.getU(symbol);
+                                patterns[x.value] = u;
+                                symbol = symbol.sub(x.value, u);
                             }
                         }
                     }, true);
@@ -4068,12 +4075,8 @@ if((typeof module) !== 'undefined') {
                 
                 // Collect a list of patterns
                 collect(symbol);
-                
-                for(x in patterns) {
-                    symbol = symbol.sub(x, patterns[x]);
-                    //((-1+x)^(-2)*x^4*z+(-1+x)^(-2)*z-(-1+x)^(-1)*x*z-(-1+x)^(-1)*x^3*z-(-1+x)^(-1)*z-4*(-1+x)^(-2)*x^3*z+2*(-1+x)^(-2)*x^2*z+3*(-1+x)^(-1)*x^2*z+4*(-1+x)^(-2)*x*z)*(-2*u^(-1)*x-u^(-1)+u^(-1)*x^2)^(-1)
-                }
-                console.log(symbol.toString())
+
+                return [symbol, patterns];
             },
             simplify: function(symbol) {
                 //remove the multiplier to make calculation easier;
@@ -4090,11 +4093,11 @@ if((typeof module) !== 'undefined') {
                     return ret;
                 }
                 
-                var patterns;
+                //var patterns;
                     
                 var simplified = symbol.clone(); //make a copy
                 
-//                [simplified, patterns] = __.Simplify.patternSub(symbol);
+                //[simplified, patterns] = __.Simplify.patternSub(symbol);
                 
                 // Simplify sqrt within the symbol
                 simplified = __.Simplify.sqrtSimp(simplified);
@@ -4129,6 +4132,13 @@ if((typeof module) !== 'undefined') {
                 
                 //place back multiplier and return
                 var retval = __.Simplify.unstrip(sym_array, simplified);
+                
+                // Back substitute
+                /*
+                for(var x in patterns) {
+                    retval = retval.sub(patterns[x], x);
+                }
+                */
 
                 return retval;
             }
