@@ -16,7 +16,7 @@ var nerdamer = (function (imports) {
     "use strict";
 
 //version ======================================================================
-    var version = '1.1.6';
+    var version = '1.1.7';
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
@@ -4141,7 +4141,7 @@ var nerdamer = (function (imports) {
                 }
                 this.toUnitMultiplier();
             }
-
+            
             return this;
         },
         /**

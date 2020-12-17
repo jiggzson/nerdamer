@@ -2140,7 +2140,6 @@ if((typeof module) !== 'undefined') {
                 
                 var _symbol = _.parse(symbol);
                 var retval = __.Factor._factor(_symbol, factors);
-                
                 if(retval.equals(symbol)) {
                     return retval;
                 }
@@ -2152,6 +2151,7 @@ if((typeof module) !== 'undefined') {
                     var m = _.parse(retval.multiplier);
                     
                     retval.toUnitMultiplier();
+                    
                     /* 
                      * NOTE: for sign issues with factor START DEBUGGING HERE
                      */
@@ -2177,6 +2177,7 @@ if((typeof module) !== 'undefined') {
                             t = _.multiply(t, factored);
                         }
                     });
+                    
                     //put back the multiplier and power
                     retval = _.pow(_.multiply(m, t), p);
                 }  
@@ -2276,16 +2277,19 @@ if((typeof module) !== 'undefined') {
                 //some items cannot be factored any further so return those right away
                 if(symbol.group === FN) {
                     var arg = symbol.args[0];
-                    if(arg.group === S && arg.isSimple())
+                    if(arg.group === S && arg.isSimple()) {
                         return symbol;
+                    }
                 }
-                else if(symbol.group === S && symbol.isSimple())
+                else if(symbol.group === S && symbol.isSimple()) {
                     return symbol;
-                
-                //expand the symbol to get it in a predictable form. If this step
-                //is skipped some factors are missed.
+                }
+               
+                // Expand the symbol to get it in a predictable form. If this step
+                // is skipped some factors are missed.
+                //if(symbol.group === CP && !(even(symbol.power) && symbol.multiplier.lessThan(0))) {
                 if(symbol.group === CP) {
-                    symbol.distributeMultiplier();
+                    symbol.distributeMultiplier(true);
                     var t = new Symbol(0);
                     symbol.each(function(x) {
                         if((x.group === CP && x.power.greaterThan(1) || x.group === CB))
@@ -2295,10 +2299,13 @@ if((typeof module) !== 'undefined') {
                     t.power = symbol.power;
                     
                     symbol = t;
+                    
                 }
                 
-                if(symbol.group === FN && symbol.fname !== 'sqrt')
+                if(symbol.group === FN && symbol.fname !== 'sqrt') {
                     symbol = core.Utils.evaluate(symbol);
+                }
+                
                 //make a copy of the symbol to return if something goes wrong
                 var untouched = symbol.clone();
                 try {
@@ -2314,8 +2321,9 @@ if((typeof module) !== 'undefined') {
                         num = num_array.pop();
                         
                         //if the numerator equals the symbol then we've hit the simplest form and then we're done
-                        if(num.equals(symbol))
+                        if(num.equals(symbol)) {
                             return symbol;
+                        }
                         nfact = __.Factor.factor(num);
                         dfact = __.Factor.factor(den);
 
@@ -2388,6 +2396,7 @@ if((typeof module) !== 'undefined') {
                                 x.invert();
                             factors.add(x);
                         });
+                        
                         //factor the power
                         var power_factors = new Factors();
                         symbol = __.Factor.powerFactor(symbol, power_factors);  
@@ -2400,24 +2409,27 @@ if((typeof module) !== 'undefined') {
                         if(!multiVar) { 
                             //pass in vars[0] for safety
                             var v = vars[0];
+//                            var before = `(${symbol})*(${factors})`
                             symbol = __.Factor.squareFree(symbol, factors, v);
-                            
                             var t_factors = new Factors();
+                            
                             symbol = __.Factor.trialAndError(symbol, t_factors, v);
                             
                             //generate a symbol based off the last factors
                             var tf_symbol = t_factors.toSymbol();
                             //if nothing was factored then return the factors
-                            if(tf_symbol.equals(untouched))
+                            if(tf_symbol.equals(untouched)) {
                                 return tf_symbol;
+                            }
                             for(var x in t_factors.factors) {
                                 //store the current factor in t_factor
                                 var t_factor = t_factors.factors[x];
                                 factors.add(_.pow(t_factor, _.parse(p)));
                             }
                             //if we still don't have a factor and it's quadratic then let's just do a quad factor
-                            if(symbol.equals(untouched))
+                            if(symbol.equals(untouched)) {
                                 symbol = __.Factor.quadFactor(symbol, factors);
+                            }
                            
                         }
                         else {
@@ -2432,7 +2444,7 @@ if((typeof module) !== 'undefined') {
                                     x.power.negate();
                             });
                         }
-                        
+
                         //last minute clean up
                         symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
                         
@@ -2487,7 +2499,9 @@ if((typeof module) !== 'undefined') {
              * @returns {[Symbol, Factor]}
              */
             squareFree: function(symbol, factors, variable) {
+                var before = `(${symbol})*(${factors})`
                 if(symbol.isConstant() || symbol.group === S) return symbol;
+                
                 var poly = new Polynomial(symbol, variable);
                 var sqfr = poly.squareFree();
                 var p = sqfr[2];
@@ -2498,8 +2512,12 @@ if((typeof module) !== 'undefined') {
                     t.power = t.power.multiply(new Frac(p));
                     //send the factor to be fatored to be sure it's completely factored
                     factors.add(__.Factor.factor(t));
-                    return __.Factor.squareFree(sqfr[0].toSymbol(), factors);
+                    
+                    var retval = __.Factor.squareFree(sqfr[0].toSymbol(), factors);
+                    
+                    return retval;
                 }
+                
                 return symbol;
             },
             /**
@@ -2537,7 +2555,7 @@ if((typeof module) !== 'undefined') {
             coeffFactor: function(symbol, factors) {
                 if(symbol.isComposite()) {
                     var gcd = core.Math2.QGCD.apply(null, symbol.coeffs());
-
+                    
                     if(!gcd.equals(1)) { 
                         symbol.each(function(x) {
                             if(x.isComposite()) {
@@ -2547,9 +2565,48 @@ if((typeof module) !== 'undefined') {
                             }
                             else x.multiplier = x.multiplier.divide(gcd);
                         });
-                        
+                        symbol.updateHash();
                     }
-                    symbol.updateHash();
+                    else {
+                        // TODO: This should probably go to the prototype
+                        var power = function(symbol) {
+                            var p ;
+                            if(symbol.group === CB) {
+                                p = 0;
+                                symbol.each(function(x) {
+                                    p += x.power;
+                                });
+                            }
+                            else {
+                                p = Number(symbol.power);
+                            }
+                            return p;
+                        };
+                        // Factor out negatives from the lead term
+                        var terms = symbol.collectSymbols(null, null, null, true).sort(function(a, b) {
+                            // Push constants to the back
+                            if(a.isConstant(true))
+                                return 1;
+                            return b.power - a.power;
+                        });
+                        
+                        var LT = terms[0];
+                        
+                        // Check if the LT is indeed the greatest
+                        if(power(LT) > power(terms[1]) || terms[1].isConstant(true)) {
+                            if(LT.multiplier.lessThan(0)) {
+                                // Although the symbol should always be linear at this point, remove the negative for squares
+                                // to be safe.
+                                factors.add(_.parse('parens('+(even(symbol.power) ? 1 : -1)+')'));
+                                
+                                symbol.each(function(x) {
+                                    x.negate();
+                                }, true);
+                            }
+                        }
+
+                    }
+                    
                     if(factors) {
                         factors.add(new Symbol(gcd));
                     }
@@ -4111,7 +4168,7 @@ if((typeof module) !== 'undefined') {
                 // First go for the "cheapest" simplification which may eliminate 
                 // your problems right away. factor -> evaluate. Remember
                 // that there's no need to expand since factor already does that
-                
+
                 simplified = __.Factor.factor(simplified);
 
                 //If the simplfied is a sum then we can make a few more simplifications
@@ -4266,3 +4323,10 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+console.log(nerdamer('simplify(((17/2)*(-5*K+32)^(-1)*K^2+(5/2)*K-125*(-5*K+32)^(-1)*K-16+400*(-5*K+32)^(-1))*(-17*(-5*K+32)^(-1)*K+80*(-5*K+32)^(-1))^(-1))').toString())
+//console.log(nerdamer('factor(-400*K^4-72384*K^2+286720*K+8620*K^3-458752)').toString())
+
+
+
+//console.log(nerdamer('simplify((- x + x^2 + 1)/(x - x^2 - 1))').toString())
+//console.log(nerdamer('factor(-112-4*K^2+35*K)').toString())
