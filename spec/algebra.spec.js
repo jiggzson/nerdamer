@@ -494,6 +494,10 @@ describe('Algebra', function () {
             {
                 given: 'factor(64*x^3+125)',
                 expected: '(-20*x+16*x^2+25)*(4*x+5)'
+            },
+            {
+                given: 'factor((-5*K+32)^2)',
+                expected: '(-32+5*K)^2'
             }
         ];
 
@@ -773,7 +777,7 @@ describe('Algebra', function () {
             },
             {
                 given: 'simplify(((17/2)*(-5*K+32)^(-1)*K^2+(5/2)*K-125*(-5*K+32)^(-1)*K-16+400*(-5*K+32)^(-1))*(-17*(-5*K+32)^(-1)*K+80*(-5*K+32)^(-1))^(-1))',
-                expected: '-(-112-4*K^2+35*K)*(-80+17*K)^(-1)'
+                expected: '(-35*K+4*K^2+112)*(-80+17*K)^(-1)'
             },
             {
                 given: 'simplify(((a+b)^2)/c)',

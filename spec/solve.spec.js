@@ -89,7 +89,7 @@ describe('Solve', function () {
             },
             {
                 given: 'solve(x=2/(3-x),x)',
-                expected: '[2,1]'
+                expected: '[1,2]'
             },
             {
                 given: 'solve(1/x=a,x)',

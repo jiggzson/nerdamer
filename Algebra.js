@@ -447,6 +447,7 @@ if((typeof module) !== 'undefined') {
          * @returns {Array}
          */
         squareFree: function() { 
+            
             var a = this.clone(),
                 i = 1,
                 b = a.clone().diff(),
@@ -469,6 +470,7 @@ if((typeof module) !== 'undefined') {
                 w = y;
                 c = c.divide(y)[0];
             }
+            
             return [output, w, i];
         },
         /**
@@ -2299,7 +2301,6 @@ if((typeof module) !== 'undefined') {
                     t.power = symbol.power;
                     
                     symbol = t;
-                    
                 }
                 
                 if(symbol.group === FN && symbol.fname !== 'sqrt') {
@@ -2392,6 +2393,11 @@ if((typeof module) !== 'undefined') {
                         symbol = __.Factor.coeffFactor(symbol, coeff_factors);
                         
                         coeff_factors.each(function(x) {
+                            // If the factor was negative but was within a square then it becomes positive
+                            if(even(p) && x.lessThan(0)) {
+                                x.negate();
+                            }
+                            
                             if(sign < 0)
                                 x.invert();
                             factors.add(x);
@@ -2409,8 +2415,9 @@ if((typeof module) !== 'undefined') {
                         if(!multiVar) { 
                             //pass in vars[0] for safety
                             var v = vars[0];
-//                            var before = `(${symbol})*(${factors})`
+
                             symbol = __.Factor.squareFree(symbol, factors, v);
+                            
                             var t_factors = new Factors();
                             
                             symbol = __.Factor.trialAndError(symbol, t_factors, v);
@@ -2421,6 +2428,7 @@ if((typeof module) !== 'undefined') {
                             if(tf_symbol.equals(untouched)) {
                                 return tf_symbol;
                             }
+                            
                             for(var x in t_factors.factors) {
                                 //store the current factor in t_factor
                                 var t_factor = t_factors.factors[x];
@@ -2499,7 +2507,6 @@ if((typeof module) !== 'undefined') {
              * @returns {[Symbol, Factor]}
              */
             squareFree: function(symbol, factors, variable) {
-                var before = `(${symbol})*(${factors})`
                 if(symbol.isConstant() || symbol.group === S) return symbol;
                 
                 var poly = new Polynomial(symbol, variable);
@@ -2597,14 +2604,14 @@ if((typeof module) !== 'undefined') {
                             if(LT.multiplier.lessThan(0)) {
                                 // Although the symbol should always be linear at this point, remove the negative for squares
                                 // to be safe.
-                                factors.add(_.parse('parens('+(even(symbol.power) ? 1 : -1)+')'));
+                                factors.add(new Symbol(-1));
                                 
                                 symbol.each(function(x) {
                                     x.negate();
                                 }, true);
                             }
                         }
-
+                        
                     }
                     
                     if(factors) {
@@ -2846,11 +2853,6 @@ if((typeof module) !== 'undefined') {
                                     b = remove_square(b);
                                 }
                                 
-//                                if(a.sign() !== b.sign()) { //we need to make sure it's actually a difference of squares and not a sum of squares
-//                                    factors.add(_.subtract(a.clone(), b.clone()));
-//                                    factors.add(_.add(a, b));
-//                                    symbol = new Symbol(1);
-//                                }
                                 factors.add(_.subtract(a.clone(), b.clone()));
                                 factors.add(_.add(a, b));
                                 symbol = new Symbol(1);
@@ -4323,10 +4325,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-console.log(nerdamer('simplify(((17/2)*(-5*K+32)^(-1)*K^2+(5/2)*K-125*(-5*K+32)^(-1)*K-16+400*(-5*K+32)^(-1))*(-17*(-5*K+32)^(-1)*K+80*(-5*K+32)^(-1))^(-1))').toString())
-//console.log(nerdamer('factor(-400*K^4-72384*K^2+286720*K+8620*K^3-458752)').toString())
-
-
-
-//console.log(nerdamer('simplify((- x + x^2 + 1)/(x - x^2 - 1))').toString())
-//console.log(nerdamer('factor(-112-4*K^2+35*K)').toString())
