@@ -2135,6 +2135,7 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             factor: function(symbol, factors) {
+                var before = symbol.toString();
                 // Don't try to factor constants
                 if(symbol.isConstant()) {
                     return symbol;
@@ -2170,9 +2171,14 @@ if((typeof module) !== 'undefined') {
                         var factored = _.parse(__.Factor._factor(x));
                         
                         if(factored.group === CB) {
+                            // Include the multiplier
+                            m = _.multiply(m, Symbol.create(factored.multiplier));
                             factored.each(function(y) {
-                                var _factored = __.Factor._factor(y);
+                                var _factored = _.parse(__.Factor._factor(y));
                                 t = _.multiply(t, _factored);
+                                if(_factored.group === CB) {
+                                    m = _.multiply(m, Symbol.create(_factored.multiplier));
+                                }
                             });
                         }
                         else {
@@ -2391,7 +2397,7 @@ if((typeof module) !== 'undefined') {
                         var coeff_factors = new Factors();
                         
                         symbol = __.Factor.coeffFactor(symbol, coeff_factors);
-                        
+                         
                         coeff_factors.each(function(x) {
                             // If the factor was negative but was within a square then it becomes positive
                             if(even(p) && x.lessThan(0)) {
@@ -2419,9 +2425,9 @@ if((typeof module) !== 'undefined') {
                             symbol = __.Factor.squareFree(symbol, factors, v);
                             
                             var t_factors = new Factors();
-                            
+                          
                             symbol = __.Factor.trialAndError(symbol, t_factors, v);
-                            
+                             
                             //generate a symbol based off the last factors
                             var tf_symbol = t_factors.toSymbol();
                             //if nothing was factored then return the factors
@@ -2629,41 +2635,57 @@ if((typeof module) !== 'undefined') {
              * @returns {Symbol}
              */
             trialAndError: function(symbol, factors, variable) {
-                if(symbol.isConstant() || symbol.group === S) return symbol;
-                var poly = new Polynomial(symbol, variable),
-                    cnst = poly.coeffs[0],
-                    cfactors = core.Math2.ifactor(cnst),
-                    roots = __.proots(symbol); 
-                for(var i=0; i<roots.length; i++) {
-                    var r = roots[i],
-                        p = 1;
-                    if(!isNaN(r)) { //if it's a number
-                        for(var x in cfactors) {
-                            //check it's raised to a power
-                            var n = core.Utils.round(Math.log(x)/Math.log(Math.abs(r)), 8);
-                            if(isInt(n)) {
-                                r = x; //x must be the root since n gave us a whole
-                                p = n; break;
+                var untouched = symbol.clone();
+                try {
+                    // At temp holder for the factors. If all goes well then
+                    // they'll be moved to the actual factors.
+                    var factor_array = [];
+                    
+                    if(symbol.isConstant() || symbol.group === S) return symbol;
+                    var poly = new Polynomial(symbol, variable),
+                        cnst = poly.coeffs[0],
+                        cfactors = core.Math2.ifactor(cnst),
+                        roots = __.proots(symbol); 
+                    for(var i=0; i<roots.length; i++) {
+                        var r = roots[i],
+                            p = 1;
+                        if(!isNaN(r)) { //if it's a number
+                            for(var x in cfactors) {
+                                //check it's raised to a power
+                                var n = core.Utils.round(Math.log(x)/Math.log(Math.abs(r)), 8);
+                                if(isInt(n)) {
+                                    r = x; //x must be the root since n gave us a whole
+                                    p = n; break;
+                                }
+                            }
+                            var root = new Frac(r),
+                                terms = [new Frac(root.num).negate()];
+                            terms[p] = new Frac(root.den);
+                                //convert to Frac. The den is coeff of LT and the num is coeff of constant
+                            var div = Polynomial.fromArray(terms, poly.variable).fill(),
+                                t = poly.divide(div);
+                            if(t[1].equalsNumber(0)) { //if it's zero we have a root and divide it out
+                                poly = t[0];
+                                // factors.add(div.toSymbol());
+                                factor_array.push(div.toSymbol());
                             }
                         }
-                        var root = new Frac(r),
-                            terms = [new Frac(root.num).negate()];
-                        terms[p] = new Frac(root.den);
-                            //convert to Frac. The den is coeff of LT and the num is coeff of constant
-                        var div = Polynomial.fromArray(terms, poly.variable).fill(),
-                            t = poly.divide(div);
-                        if(t[1].equalsNumber(0)) { //if it's zero we have a root and divide it out
-                            poly = t[0];
-                            factors.add(div.toSymbol());
-                        }
                     }
-                }
-                
-                if(!poly.equalsNumber(1)) {
-                    poly = __.Factor.search(poly, factors);
-                }
 
-                return poly.toSymbol();
+                    if(!poly.equalsNumber(1)) {
+                        poly = __.Factor.search(poly, factors);
+                    }
+                    
+                    // Move the factors over since all went well.
+                    factor_array.forEach(function(x) {
+                        factors.add(x);
+                    });
+                    
+                    return poly.toSymbol();
+                }
+                catch(e) {
+                    return untouched;
+                }
             },
             search: function(poly, factors, base) {
                 base = base || 10; //I like 10 because numbers exhibit similar behaviours at 10
