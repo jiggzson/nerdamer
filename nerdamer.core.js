@@ -3910,8 +3910,9 @@ var nerdamer = (function (imports) {
         },
         setPower: function (p, retainSign) {
             //leave out 1
-            if (this.group === N && this.multiplier.equals(1))
+            if (this.group === N && this.multiplier.equals(1)) {
                 return this;
+            }
             if (this.group === EX && !isSymbol(p)) {
                 this.group = this.previousGroup;
                 delete this.previousGroup;
@@ -4003,6 +4004,10 @@ var nerdamer = (function (imports) {
          * @returns {Symbol}
          */
         toLinear: function () {
+            // Do nothing if it's already linear
+            if(this.power.equals(1)) {
+                return this;
+            }
             this.setPower(new Frac(1));
             return this;
         },
@@ -7876,14 +7881,21 @@ var nerdamer = (function (imports) {
                     retval = _.symfunction(Settings.LOG, [symbol]);
             }
             else if (Settings.PARSE2NUMBER && isNumericSymbol(symbol)) {
+                // Parse for safety.
+                symbol = _.parse(symbol);
+                
                 var img_part;
                 if (symbol.multiplier.lessThan(0)) {
                     symbol.negate();
                     img_part = _.multiply(new Symbol(Math.PI), new Symbol('i'));
                 }
+                
                 retval = new Symbol(Math.log(symbol.multiplier.toDecimal()));
-                if (img_part)
+                
+                if (img_part) {
                     retval = _.add(retval, img_part);
+                }
+                
             }
             else {
                 var s;
@@ -9532,15 +9544,28 @@ var nerdamer = (function (imports) {
                     }
                     else if (Settings.PARSE2NUMBER && b.isImaginary()) {
                         //4^(i + 2) = e^(- (2 - 4 i) π n + (2 + i) log(4))
-                        var re, im, aa, a1, b1, c1;
-                        aa = a.clone().toLinear();
-                        re = b.realpart();
-                        im = b.imagpart();
-                        a1 = _.pow(aa.clone(), re);
-                        b1 = trig.cos(_.multiply(im.clone(), log(aa.clone())));
-                        c1 = _.multiply(trig.sin(_.multiply(im, log(aa))), Symbol.imaginary());
-                        result = _.multiply(a1, _.add(b1, c1));
-                        result = _.expand(_.parse(result));
+                        
+                        var re = b.realpart();
+                        var im = b.imagpart();
+                        /*
+                        if(b.group === CP && false) {
+                            var ex = _.pow(a.clone(), re);
+                            var xi = _.multiply(_.multiply(ex.clone(), trig.sin(im.clone())), Symbol.imaginary());
+                            var xa = _.multiply(trig.cos(im), ex);
+                            result = _.add(xi, xa);
+                        }
+                        else {
+                        */   
+                            var aa = a.clone().toLinear();
+                            var a1 = _.pow(aa.clone(), re);
+                            var log_a = log(aa.clone());
+                            var b1 = trig.cos(_.multiply(im.clone(), log_a));
+                            var c1 = _.multiply(trig.sin(_.multiply(im, log(aa))), Symbol.imaginary());
+                            result = _.multiply(a1, _.add(b1, c1));
+                            result = _.expand(_.parse(result));
+                        /*
+                        }   
+                        */
                     }
                     else {
                         //b is a symbol

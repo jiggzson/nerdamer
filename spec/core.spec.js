@@ -1020,13 +1020,18 @@ describe('Nerdamer core', function () {
                 given: 'e^(i*pi)+e^(2*i*pi)',
                 expected: '0',
                 expectedValue: '0'
+            },
+            {
+                given: 'exp(i + x pi)',
+                expected: 'e^(i+pi*x)',
+                expectedValue: '396.1203590827245535+616.9209071285088*i'
             }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
             // when
             var parsed = nerdamer(testCases[i].given);
-            var value = parsed.evaluate().text('decimals', 17);
+            var value = parsed.evaluate(values).text('decimals', 17);
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
@@ -1971,11 +1976,6 @@ describe('Further arithmetic test cases', function () {
                 given: '2*(x+x^2)+3*(x^2+x^3)^2+(x^2+x)',
                 expected: '3*(x^2+x^3)^2+3*x+3*x^2',
                 expectedValue: '580.218723'
-            },
-            {
-                given: 'exp(i + x pi)',
-                expected: 'e^(i+pi*x)',
-                expectedValue: ''
             }
         ];
 
