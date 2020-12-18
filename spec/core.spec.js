@@ -1015,6 +1015,7 @@ describe('Nerdamer core', function () {
                 expected: '-i',
                 expectedValue: '-i'
             },
+            // Euler's identity
             {
                 given: 'e^(i*pi)+e^(2*i*pi)',
                 expected: '0',
@@ -1970,6 +1971,11 @@ describe('Further arithmetic test cases', function () {
                 given: '2*(x+x^2)+3*(x^2+x^3)^2+(x^2+x)',
                 expected: '3*(x^2+x^3)^2+3*x+3*x^2',
                 expectedValue: '580.218723'
+            },
+            {
+                given: 'exp(i + x pi)',
+                expected: 'e^(i+pi*x)',
+                expectedValue: ''
             }
         ];
 

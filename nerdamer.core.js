@@ -9625,7 +9625,7 @@ var nerdamer = (function (imports) {
                 }
                 // Detect Euler's identity
                 else if (!Settings.IGNORE_E && result.isE() && result.group === EX && result.power.contains('pi')
-                        && result.power.contains(Settings.IMAGINARY)) {
+                        && result.power.contains(Settings.IMAGINARY) && b.group === CB) {
                     var theta = b.stripVar(Settings.IMAGINARY);
                     result = _.add(trig.cos(theta), _.multiply(Symbol.imaginary(), trig.sin(theta)));
                 }
