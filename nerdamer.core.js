@@ -6888,6 +6888,9 @@ var nerdamer = (function (imports) {
          */
         this.toTeX = function (expression_or_obj, opt) {
             opt = opt || {};
+            // Add decimal option as per issue #579. Consider passing an object to Latex.latex as option instead of string
+            var decimals = opt.decimals === true ? 'decimals' : undefined;
+            
             var obj = typeof expression_or_obj === 'string' ? this.toObject(expression_or_obj) : expression_or_obj,
                     TeX = [],
                     cdot = typeof opt.cdot === 'undefined' ? '\\cdot' : opt.cdot; //set omit cdot to true by default
@@ -6997,14 +7000,16 @@ var nerdamer = (function (imports) {
                         else if (fname === FACTORIAL || fname === DOUBLEFACTORIAL)
                             f = this.toTeX(e.args) + (fname === FACTORIAL ? '!' : '!!');
                         else {
-                            f = LaTeX.latex(e);
+                            
+                            f = LaTeX.latex(e, decimals);
                             //f = '\\mathrm'+LaTeX.braces(fname.replace(/_/g, '\\_')) + LaTeX.brackets(this.toTeX(e.args), 'parens');
                         }
 
                         TeX.push(f);
                     }
-                    else
-                        TeX.push(LaTeX.latex(e));
+                    else {
+                        TeX.push(LaTeX.latex(e, decimals));
+                    }
                 }
                 else if (isArray(e)) {
                     TeX.push(LaTeX.brackets(this.toTeX(e)));
@@ -9949,6 +9954,7 @@ var nerdamer = (function (imports) {
             }
 
             symbol = symbol.clone();
+            
             var decimal = (option === 'decimal' || option === 'decimals'),
                     power = symbol.power,
                     invert = isNegative(power),
