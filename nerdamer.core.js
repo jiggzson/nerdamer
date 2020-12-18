@@ -7237,6 +7237,9 @@ var nerdamer = (function (imports) {
          * @returns {Symbol}
          */
         function exp(symbol) {
+            if(symbol.fname === Settings.LOG && symbol.isLinear()) {
+                return _.pow(symbol.args[0], Symbol.create(symbol.multiplier));
+            }
             return _.parse(format('e^({0})', symbol));
         }
 
@@ -12046,4 +12049,3 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
