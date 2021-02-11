@@ -2234,7 +2234,7 @@ if((typeof module) !== 'undefined') {
                 }
                 return symbol;    
             },
-            nthPowerFactor: function(symbol, factors) {
+            cubeFactor: function(symbol, factors) {
                 if (symbol.isComposite()) {
                     var symbols = symbol.collectSymbols();
                     // The symbol should be in the form of a^3+-b^3. The length
@@ -2246,18 +2246,16 @@ if((typeof module) !== 'undefined') {
                         var a = symbols[0].clone().abs();
                         var sign_b = symbols[1].sign();
                         var b = symbols[1].clone().abs();
-                        
-                        // Keep the negative sign on the right, meaning b is always negative.
-                        if (sign_a < sign_b) {
-                            // Swap the signs and then the values
-                            [sign_a, sign_b] = [sign_b, sign_a];
-                            [a, b] = [b, a];
-                        }
-                        
-                        
                         // Check if they're cube
                         if (a.isCube() && b.isCube()) {
-                            // Get the roots
+                            // Keep the negative sign on the right, meaning b is always negative.
+                            if (sign_a < sign_b) {
+                                // Swap the signs and then the values
+                                [sign_a, sign_b] = [sign_b, sign_a];
+                                [a, b] = [b, a];
+                            }
+                            
+                            // Get teh roots
                             var m_root_a = _.parse(a.getNth(3));
                             var m_root_b = _.parse(b.getNth(3));
                             
@@ -2267,19 +2265,14 @@ if((typeof module) !== 'undefined') {
                             
                             if (sign_a === 1 && sign_b === -1) {
                                 // Apply difference of cubes rule
-                                var f1 = __.Factor.factor(_.parse(format('(({0})-({1}))', x, y)), factors);
-                                var f2 = __.Factor.factor(_.parse(format('(({0})^2+({0})*({1})+({1})^2)', x, y)))
-                                factors.add(f1);
-                                factors.add(f2);
+                                factors.add(_.parse(format('(({0})-({1}))', x, y)));
+                                factors.add(_.parse(format('(({0})^2+({0})*({1})+({1})^2)', x, y)));
                                 symbol = Symbol(1);
                             }
                             else if (sign_a === 1 && sign_b === 1) {
                                 // Apply sum of cubes rule
-                                
-                                var f1 = __.Factor.factor(_.parse(format('(({0})+({1}))', x, y)), factors);
-                                var f2 = __.Factor.factor(_.parse(format('(({0})^2-({0})*({1})+({1})^2)', x, y)), factors);
-                                factors.add(f1);
-                                factors.add(f2);
+                                factors.add(_.parse(format('(({0})+({1}))', x, y)));
+                                factors.add(_.parse(format('(({0})^2-({0})*({1})+({1})^2)', x, y)));
                                 symbol = Symbol(1);
                             }
                         }
@@ -2391,12 +2384,8 @@ if((typeof module) !== 'undefined') {
                         if(multiVar) { 
                             var all_S = true, all_unit = true;
                             symbol.each(function(x) {
-                                if(x.group !== S) {
-                                    all_S = false;
-                                }
-                                if(!(x.multiplier.equals(1) && x.power.equals(1))) {
-                                    all_unit = false;
-                                }
+                                if(x.group !== S) all_S = false;
+                                if(!x.multiplier.equals(1)) all_unit = false;
                             });   
                             
                             if(all_S && all_unit) {
@@ -2459,7 +2448,7 @@ if((typeof module) !== 'undefined') {
                         }
                         else {
                             // Try sum and difference of cubes
-                            symbol = __.Factor.nthPowerFactor(symbol, factors);
+                            symbol = __.Factor.cubeFactor(symbol, factors);
                             
                             symbol = __.Factor.mfactor(symbol, factors);
                             
@@ -4358,6 +4347,3 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var ans = nerdamer('factor(x^6+y^6)');
-console.log(ans.toString())

@@ -5717,7 +5717,7 @@ var nerdamer = (function (imports) {
             'cbrt':                 [cbrt, 1],
             'nthroot':              [nthroot, 2],
             'log':                  [log, [1, 2]],
-            'expand':               [expand, 1],
+            'expand':               [_expand, 1],
             'abs':                  [abs, 1],
             'invert':               [invert, 1],
             'determinant':          [determinant, 1],
@@ -8066,12 +8066,20 @@ var nerdamer = (function (imports) {
 
             return retval;
         }
-
+        
+        /**
+         * A wrapper for the expand function
+         * @param {Symbol} symbol
+         * @returns {Symbol}
+         */
+        function _expand(symbol) {
+            return expand(symbol, true);
+        }
         /**
          * Expands a symbol
          * @param symbol
          */
-        function expand(symbol) {
+        function expand(symbol, all) {
             //deal with parenthesis
             if (symbol.group === FN && symbol.fname === '') {
                 return _.expand(symbol.args[0]);
@@ -8700,7 +8708,7 @@ var nerdamer = (function (imports) {
                 else if (valEQ && g1 !== PL) {
                     //break the tie for e.g. (x+1)+((x+1)^2+(x+1)^3)
                     if (g1 === CP && g2 === PL) {
-                        b.insert(a);
+                        b.insert(a, 'add');
                         result = b;
                     }
                     else {
@@ -12080,3 +12088,5 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+console.log(nerdamer('((1+x)^(-2))+((1+x)^(-1))+((1+x)^(-1))+(1)').toString())

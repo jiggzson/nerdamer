@@ -296,6 +296,11 @@ describe('Nerdamer core', function () {
                 given: '(-5(x/2-5)/4)^0',
                 expected: '1',
                 expectedValue: '1'
+            },
+            {
+                given: '((1+x)^(-2))+((1+x)^(-1))+((1+x)^(-1))+(1)',
+                expected: '(1+x)^(-2)+2*(1+x)^(-1)+1',
+                expectedValue: '1.74921956295526'
             }
         ];
 
