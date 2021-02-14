@@ -519,6 +519,22 @@ describe('Nerdamer core', function () {
             expect(round(value, 12)).toEqual(round(testCases[i].expectedValue, 12)) ;
         }
     });    
+    it('should expand correctly', function() {
+       expect(nerdamer('expand((a^2*b*c)^(-1))').toString()).toEqual('a^(-2)*b^(-1)*c^(-1)'); 
+       expect(nerdamer('expand(((a^2*b)(x+1))^2)').toString()).toEqual('2*a^4*b^2*x+a^4*b^2+a^4*b^2*x^2'); 
+       expect(nerdamer('expand(5*x/(c+d)^2)').toString()).toEqual('5*(2*c*d+c^2+d^2)^(-1)*x'); 
+       expect(nerdamer('expand((a+b)*(c+d))').toString()).toEqual('a*c+a*d+b*c+b*d'); 
+       expect(nerdamer('expand(5*(a+b)*(c+d))').toString()).toEqual('5*a*c+5*a*d+5*b*c+5*b*d'); 
+       expect(nerdamer('expand(4*parens(x+1)^2)').toString()).toEqual('4+4*x^2+8*x'); 
+       expect(nerdamer('expand(4*(a*b)*(c*b))').toString()).toEqual('4*a*b^2*c'); 
+       expect(nerdamer('expand(4*(a*b)*(c*b)+1)').toString()).toEqual('1+4*a*b^2*c'); 
+       expect(nerdamer('expand(3*(a+b)*(g+i)*(x*k))').toString()).toEqual('3*a*g*k*x+3*a*i*k*x+3*b*g*k*x+3*b*i*k*x'); 
+       expect(nerdamer('expand(2*x*(x+1)^3)').toString()).toEqual('2*x+2*x^4+6*x^2+6*x^3'); 
+       expect(nerdamer('expand((2*(a*b)*(x+1)^3)^2)').toString()).toEqual('24*a^2*b^2*x+24*a^2*b^2*x^5+4*a^2*b^2+4*a^2*b^2*x^6+60*a^2*b^2*x^2+60*a^2*b^2*x^4+80*a^2*b^2*x^3'); 
+       expect(nerdamer('expand((2*(a*b)*(x+1)^3)^2+1)').toString()).toEqual('1+24*a^2*b^2*x+24*a^2*b^2*x^5+4*a^2*b^2+4*a^2*b^2*x^6+60*a^2*b^2*x^2+60*a^2*b^2*x^4+80*a^2*b^2*x^3'); 
+       expect(nerdamer('expand((d/(x+1)+1)^2)').toString()).toEqual('(1+2*x+x^2)^(-1)*d^2+1+2*(1+x)^(-1)*d'); 
+       expect(nerdamer('expand(2*cos((d/(x+1)+1)^2)^2)').toString()).toEqual('2*cos((1+2*x+x^2)^(-1)*d^2+1+2*(1+x)^(-1)*d)^2'); 
+    });
     it('should handle imaginary log arguments', function () {
         // given
         var testCases = [

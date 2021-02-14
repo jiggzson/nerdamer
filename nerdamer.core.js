@@ -1152,7 +1152,47 @@ var nerdamer = (function (imports) {
         }
         return true;
     };
-
+    
+    /**
+     * Used to multiply two expression in expanded form
+     * @param {Symbol} a
+     * @param {Symbol} b
+     */
+    var mix = function (a, b, opt) {
+        // Flip them if b is a CP or PL and a is not
+        if(b.isComposite() && !a.isComposite() || b.isLinear() && !a.isLinear()) {
+            [a, b] = [b, a];
+        }
+        // A temporary variable to hold the expanded terms
+        var t = new Symbol(0);
+        if(a.isLinear()) {
+            a.each(function (x) {
+                // If b is not a PL or a CP then simply multiply it
+                if(!b.isComposite()) {
+                    var term = _.multiply(_.parse(x), _.parse(b));
+                    t = _.add(t, _.expand(term, opt));
+                }
+                // Otherwise multiply out each term.
+                else if(b.isLinear()){
+                    b.each(function (y) {
+                        var term = _.multiply(_.parse(x), _.parse(y));
+                        var expanded = _.expand(_.parse(term), opt);
+                        t = _.add(t, expanded);
+                    }, true);
+                }
+                else {
+                    t = _.add(t, _.multiply(x, _.parse(b)));
+                }
+            }, true);
+        }
+        else {
+            // Just multiply them together
+            t = _.multiply(a, b);
+        }
+        
+        // The expanded function is now t
+        return t;
+    };
 
 //Exceptions ===================================================================
     //Is thrown for division by zero
@@ -5717,7 +5757,7 @@ var nerdamer = (function (imports) {
             'cbrt':                 [cbrt, 1],
             'nthroot':              [nthroot, 2],
             'log':                  [log, [1, 2]],
-            'expand':               [_expand, 1],
+            'expand':               [expandall, 1],
             'abs':                  [abs, 1],
             'invert':               [invert, 1],
             'determinant':          [determinant, 1],
@@ -8072,191 +8112,156 @@ var nerdamer = (function (imports) {
          * @param {Symbol} symbol
          * @returns {Symbol}
          */
-        function _expand(symbol) {
-            return expand(symbol, true);
+        function expandall(symbol, opt) {
+            opt = opt || {
+                expand_denominator: true, 
+                expand_functions: true
+            };
+            return expand(symbol, opt);
         }
         /**
          * Expands a symbol
          * @param symbol
          */
-        function expand(symbol, all) {
-            //deal with parenthesis
-            if (symbol.group === FN && symbol.fname === '') {
-                return _.expand(symbol.args[0]);
+        // Old expand
+        function expand(symbol, opt) {
+            var _in = symbol.toString()
+            if(Array.isArray(symbol)) {
+                return symbol.map(function(x) {
+                    return expand(x, opt);
+                });
             }
-
-            //TODO - some test need to be verified in order to implement this
-            /*
-             if(symbol.group === FN) {
-             symbol.args[0] = _.expand(symbol.args[0]);
-             symbol.updateHash();
-             return symbol;
-             }
-             */
-
-            if (!symbol.symbols)
+            opt = opt || {};
+            //deal with parenthesis
+            if(symbol.group === FN && symbol.fname === '') {
+                var f = expand(symbol.args[0], opt);
+                var x = expand(_.pow(f, _.parse(symbol.power)), opt);
+                return _.multiply(_.parse(symbol.multiplier), x).distributeMultiplier();
+            }
+            // We can expand these groups so no need to waste time. Just return and be done.
+            if([N, P, S].indexOf(symbol.group) !== -1) { 
                 return symbol; //nothing to do
+            }
 
             var original = symbol.clone();
+
+            // Set up a try-catch block. If anything goes wrong then we simply return the original symbol
             try {
-
-                if (!symbol.symbols)
-                    return symbol;
-
-                //expand all the symbols
-                for (var s in symbol.symbols) {
-                    var x = symbol.symbols[s];
-                    symbol.symbols[s] = expand(x);
-                }
-
-                symbol = _.parse(symbol);
-
-                var p = symbol.power,
-                        m = symbol.multiplier.clone(),
-                        pn = Number(p);
-                if (isInt(pn) && pn > 0 && symbol.isComposite()) {
+                // Store the power and multiplier
+                var m = symbol.multiplier.toString();
+                var p = Number(symbol.power);
+                var retval = symbol;
+                
+                // Handle (a+b)^2 | (x+x^2)^2
+                if(symbol.isComposite() && isInt(symbol.power) && symbol.power > 0) {
+                    var n = p-1;
+                    // Strip the expression of it's multiplier and power. We'll call it f. The power will be p and the multiplier m.
                     var f = new Symbol(0);
-                    //we loop through the f and make sure that it's fully expanded
-                    for (var x in symbol.symbols) {
-                        var sym = symbol.symbols[x];
-                        if (sym.power.greaterThan(1))
-                            sym = _.expand(sym);
-                        f = _.add(f, sym);
-                    }
-
-                    //assume (a+b)^3 = (a+b)(a+b)(a+b) = (b^2+2*a*b+a^2)(a+b)
-                    //we have n=p-1=2 iterations where p=3 in this case
-                    var n = pn - 1;
-                    //Initiate with the first term. Remember that we have p-1 iterations because
-                    //the first iteration is equal to P where p is the polynomial
-                    var result = f.clone(); //initiate this as the first term
-                    //the first loop is the top iterator and remains untouched. No sub-symbols
-                    //from this symbol are allowed to be touched
-                    for (var i = 0; i < n; i++) {
-                        var t = new Symbol(0);
-                        for (var x in f.symbols) {
-                            var a = f.symbols[x];
-                            //we now loop through the
-                            for (var y in result.symbols) {
-                                var b = _.multiply(a.clone(), result.symbols[y]);
-                                //the result must always be a composite. If not expand
-                                if (b.group === CB)
-                                    b = _.expand(b);
-                                t = _.add(t, b);
-                            }
-                        }
-                        ;
-                        result = t;
-                    }
-
-                    //put back the multiplier
-                    if (!m.equals(1)) {
-                        for (var s in result.symbols) {
-                            var x = result.symbols[s];
-                            x.multiplier = x.multiplier.multiply(m);
-                            if (x.isComposite())
-                                x.distributeMultiplier();
-                            symbol.symbols[s] = x;
-                        }
-                    }
-
-                    return result;
-                }
-                else if (symbol.group === CB) {
-                    //check if the symbol has composites
-                    var hascomposites = false,
-                            sp = symbol.power.clone(),
-                            sign = symbol.power.sign();
-
-                    for (var x in symbol.symbols) {
-                        var sub = symbol.symbols[x];
-                        if (sub.isComposite()) {
-                            hascomposites = true;
-                            break;
-                        }
-
-                        if (isSymbol(sub.power) || isSymbol(sp)) {
-                            sub.power = _.multiply(sub.power, Symbol(sp));
-                            sub.group = EX;
-                        }
-                        else
-                            sub.power = sub.power.multiply(sp);
-                    }
-
-                    symbol.toLinear();
-
-                    //I'm going to be super lazy here and take the easy way out. TODO: do this without re-parsing
-                    symbol = _.parse(symbol.text());
-
-                    if (!hascomposites)
-                        return symbol; //nothing to do here
-
-                    var result = new Symbol(0);
-                    var composites = [],
-                            non_composites = new Symbol(symbol.multiplier);
-
-                    //sort them out
-                    for (var s in symbol.symbols) {
-                        var x = symbol.symbols[s];
-
-                        if (x.group === EX)
-                            continue;
-                        if (x.isComposite()) {
-                            var p = x.power, isDenom = false;
-                            ;
-                            if (isInt(p)) {
-                                if (p < 0) {
-                                    x.power.negate();
-                                    isDenom = true;
-                                }
-                            }
-
-                            if (isDenom) {
-                                x.power.negate();
-                                non_composites = _.multiply(non_composites, x);
-                            }
-                            else
-                                composites.push(x);
-                        }
-                        else
-                            non_composites = _.multiply(non_composites, x);
-                    }
-
-                    //grab the first symbol since we'll loop over that one to begin
-                    result = composites.pop();
-
-                    while (composites.length) {
-                        var s = composites.pop();
-                        var t = new Symbol(0);
-                        result.each(function (x) {
-                            s.each(function (y) {
-                                var prod = _.multiply(x.clone(), y.clone());
-                                t = _.add(t, prod);
-                            });
-                        });
-
-                        result = t;
-                    }
-
-                    var finalResult = new Symbol(0);
-                    //put back the multiplier
-                    result.each(function (x) {
-                        finalResult = _.add(finalResult, expand(_.multiply(non_composites, x)));
+                    
+                    symbol.each(function(x) {
+                        f = _.add(f, expand(_.parse(x), opt));
                     });
-                    //expand the power
-                    finalResult.power = finalResult.power.multiply(sp.abs());
-
-                    symbol = _.expand(finalResult);
-
-                    if (sign < 0)
-                        symbol.invert();
+                    
+                    var expanded = _.parse(f);
+                    
+                    for(var i=0; i<n; i++) {
+                        expanded = mix(expanded, f, opt);
+                    }
+                    
+                    retval = _.multiply(_.parse(m), expanded).distributeMultiplier();
                 }
+                else if(symbol.group === FN && opt.expand_functions === true) {
+                    var args = [];
+                    // Expand function the arguments
+                    symbol.args.forEach(function(x) {
+                        args.push(expand(x, opt));
+                    });
+                    // Put back the power and multiplier
+                    retval = _.pow(_.symfunction(symbol.fname, args), _.parse(symbol.power));
+                    retval = _.multiply(retval, _.parse(symbol.multiplier));
+                }
+                else if(symbol.isComposite() && isInt(symbol.power) && symbol.power < 0 && opt.expand_denominator === true) {
+                    // Invert it. Expand it and then re-invert it.
+                    symbol = symbol.invert();
+                    retval = expand(symbol, opt);
+                    retval.invert();
+                }
+                else if(symbol.group === CB) {
+                    var rank = function (s) {
+                        switch(s.group) {
+                            case CP:
+                                return 0;
+                            case PL:
+                                return 1;
+                            case CB:
+                                return 2;
+                            case FN:
+                                return 3;
+                            default:
+                                return 4;
+                        }
+                    };
+                    // Consider (a+b)(c+d). The result will be (a*c+a*d)+(b*c+b*d).
+                    // We start by moving collecting the symbols. We want others>FN>CB>PL>CP
+                    var symbols = symbol.collectSymbols().sort(function (a, b) {
+                        return rank(b) - rank(a);
+                    })
+                    // Distribute the power to each symbol and expand
+                    .map(function(s) {
+                        var x = _.pow(s, _.parse(p));
+                        var e = expand(x, opt);
+                        return e;
+                    });
+                    
+                    var f = symbols.pop();
+
+                    // If the first symbols isn't a composite then we're done
+                    if(f.isComposite() && f.isLinear()) {
+                        symbols.forEach(function(s) {
+                            f = mix(f, s, opt);
+                        });
+                        
+                        // If f is of group PL or CP then we can expand some more
+                        if(f.isComposite()) {
+                            if(f.power > 1) {
+                                f = expand(_.pow(f, _.parse(f.power)), opt);
+                            }
+                            // Put back the multiplier
+                            retval = _.multiply(_.parse(m), f).distributeMultiplier();;
+                        }
+                        else {
+                            // Everything is expanded at this point so if it's still a CB
+                            // then just return the symbol
+                            retval = f;
+                        }
+                    }
+                    else {
+                        // Just multiply back in the expanded form of each
+                        retval = f;
+                        symbols.forEach(function(s) {
+                            retval = _.multiply(retval, s);
+                        });
+                        // Put back the multiplier
+                        retval = _.multiply(retval, _.parse(m)).distributeMultiplier();
+                    }
+                    
+                    // TODO: This exists solely as a quick fix for sqrt(11)*sqrt(33) not simplifying.
+                    if(retval.group === CB) {
+                        retval = _.parse(retval);
+                    }
+                }
+                else {
+                    // Otherwise just return the expression
+                    retval = symbol;
+                }
+                // Final cleanup and return
+                return retval;
             }
-            catch (e) {
+            catch(e) {
                 return original;
             }
 
-            return symbol;
+            return original;
         }
 
         /**
@@ -12088,5 +12093,3 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-console.log(nerdamer('((1+x)^(-2))+((1+x)^(-1))+((1+x)^(-1))+(1)').toString())

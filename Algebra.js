@@ -3234,6 +3234,7 @@ if((typeof module) !== 'undefined') {
                 //[a,b,c] => [a*b, b*c, a*c]
                 //[a,b,c,d] => [a*b*c, a*b*d, a*c*d, b*c*d]
                 (function(input, size) {
+                    size = Number(size);
                     var results = [], result, mask, i, total = Math.pow(2, input.length);
                     for (mask = size; mask < total; mask++) {
                         result = [];
@@ -3245,22 +3246,23 @@ if((typeof module) !== 'undefined') {
                             }
                         } while (i--);
 
-                        if (result.length == size) {
+                        if (result.length === size) {
                         results.push(result);
                     }
                 }
                 return results; 
                 //start with new Symbol(1) so that prev.clone() which makes unnessesary clones can be avoided
             })(arguments,arguments.length-1).map(function(x){return x.reduce(function(prev,curr){return _.multiply(prev,curr.clone())},new Symbol(1))});
-             
+            
+            var denom;
             //don't eat the gcd term if all arguments are symbols
             if(args.every(function(x){return core.Utils.isVariableSymbol(x)}))
-                var denom = _.symfunction('gcd', core.Utils.arrayUnique(denom_args));
+                denom = _.symfunction('gcd', core.Utils.arrayUnique(denom_args));
             else
-                var denom = __.gcd.apply(null, denom_args);
-            
+                denom = __.gcd.apply(null, denom_args);
             //divide product of all arguments by gcd of complementary terms
-            return _.divide(numer, denom);
+            var div = _.divide(numer, denom);
+            return div;
         },
         /**
          * Divides one expression by another

@@ -60,7 +60,7 @@ describe('Solve', function () {
             },
             {
                 given: 'solve(-5 sqrt(14)x-14x^2 sqrt(83)-10=0,x)',
-                expected: '[(-1/28)*(5*sqrt(14)+sqrt(-560*sqrt(83)+350))*sqrt(83)^(-1),(-1/28)*(-sqrt(-560*sqrt(83)+350)+5*sqrt(14))*sqrt(83)^(-1)]'
+                expected: '[(-1/28)*sqrt(-560*sqrt(83)+350)*sqrt(83)^(-1)+(-5/28)*sqrt(14)*sqrt(83)^(-1),(-5/28)*sqrt(14)*sqrt(83)^(-1)+(1/28)*sqrt(-560*sqrt(83)+350)*sqrt(83)^(-1)]'
             },
             {
                 given: 'solve(-5*sqrt(14)x-14x^2*sqrt(83)-10x=0,x)',
@@ -107,8 +107,10 @@ describe('Solve', function () {
             },
             {
                 given: 'solve(sqrt(97)x^2-sqrt(13)x+sqrt(14)x+sqrt(43)x^2+sqrt(3)*sqrt(101)=0,x)',
-                expected: '[(1/2)*(-sqrt(14)+sqrt((-sqrt(13)+sqrt(14))^2-4*(sqrt(43)+sqrt(97))*sqrt(101)*sqrt(3))+sqrt(13))*(sqrt(43)+sqrt(97))^(-1),'+
-                        '(1/2)*(-sqrt((-sqrt(13)+sqrt(14))^2-4*(sqrt(43)+sqrt(97))*sqrt(101)*sqrt(3))-sqrt(14)+sqrt(13))*(sqrt(43)+sqrt(97))^(-1)]'
+                expected: '[(-1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(14)+(1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt((-sqrt(13)+sqrt(14))^2-'+
+                        '4*(sqrt(43)+sqrt(97))*sqrt(101)*sqrt(3))+(1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(13),'+
+                        '(-1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt((-sqrt(13)+sqrt(14))^2-4*(sqrt(43)+sqrt(97))*sqrt(101)*sqrt(3))+'+
+                        '(-1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(14)+(1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(13)]'
             },
             //The tests below were disabled. Too verbose.
             /*
@@ -177,7 +179,7 @@ describe('Solve', function () {
             },
             {
                 given: 'solve(x/(x^2+2*x+1)+4,x)',
-                expected: '[(1/8)*(-9+sqrt(17)),(1/8)*(-9-sqrt(17))]'
+                expected: '[(1/8)*sqrt(17)-9/8,(-1/8)*sqrt(17)-9/8]'
             },
             {
                 given: 'solve((a*x^2+1),x)',
@@ -187,7 +189,7 @@ describe('Solve', function () {
                 //NOTE: 4503599627370497/4503599627370496 result can be safely removed since it has rounding errors
                 //NOTE: this test has duplicate solutions. The last two are duplicates of the first but have rounding errors
                 given: 'solve(sqrt(x)-2x+x^2,x)',
-                expected: '[(1/2)*(-sqrt(5)+3),0,1,832040/2178309]'
+                expected: '[(-1/2)*sqrt(5)+3/2,0,1,832040/2178309]'
             },
             {
                 given: 'solve((2x+x^2)^2-x,x)',
