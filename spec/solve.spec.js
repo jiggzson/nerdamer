@@ -217,6 +217,10 @@ describe('Solve', function () {
             {
                 given: 'solve(1/(x+x^2-1), x)',
                 expected: '[]'
+            },
+            {
+                given: 'solve(-1+11000*(-100*(10+x)^(-1)+20)^(-2)*(10+x)^(-2), x)',
+                expected: '[(-1/2)*sqrt(110)-5,(1/2)*sqrt(110)-5]'
             }
         ];
 

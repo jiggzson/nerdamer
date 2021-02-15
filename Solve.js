@@ -66,6 +66,8 @@ if ((typeof module) !== 'undefined') {
     core.Settings.FILTER_SOLUTIONS = true;
     //the maximum number of recursive calls
     core.Settings.MAX_SOLVE_DEPTH = 10;
+    // The tolerance that's considered close enough to zero
+    core.Settings.ZERO_EPSILON = 1e-9;
     
     core.Symbol.prototype.hasTrig = function () {
         return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
@@ -1066,7 +1068,10 @@ if ((typeof module) !== 'undefined') {
                 cfact;
         
         var correct_denom = function (symbol) {
-            symbol = _.expand(symbol);
+            symbol = _.expand(symbol, {
+                expand_denominator: true, 
+                expand_functions: true
+            });
             var original = symbol.clone(); //preserve the original
             
             if (symbol.symbols) {
@@ -1286,7 +1291,6 @@ if ((typeof module) !== 'undefined') {
                     console.log(e);
                 }   
             }
-            
         }
         else {
             //The idea here is to go through the equation and collect the coefficients
@@ -1418,10 +1422,30 @@ if ((typeof module) !== 'undefined') {
                 }
             }
         }
-
+        
         if (cfact) {
             solutions = solutions.map(function (x) {
                 return _.pow(x, new Symbol(cfact));
+            });
+        }
+        
+        // Perform some cleanup but don't do it agains arrays, etc
+        // Check it actually evaluates to zero
+        if(isSymbol(eqns)) {
+            var knowns = {};
+            solutions = solutions.filter(function(x) {
+                try {
+                    knowns[solve_for] = x;
+                    var zero = Number(evaluate(eqns, knowns));
+                    // Allow symbolic answers
+                    if(isNaN(zero)) {
+                        return true;
+                    }
+                    return Math.abs(zero) <= core.Settings.ZERO_EPSILON;
+                }
+                catch(e) {
+                    return false;
+                }
             });
         }
         

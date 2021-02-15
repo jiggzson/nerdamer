@@ -8125,7 +8125,6 @@ var nerdamer = (function (imports) {
          */
         // Old expand
         function expand(symbol, opt) {
-            var _in = symbol.toString()
             if(Array.isArray(symbol)) {
                 return symbol.map(function(x) {
                     return expand(x, opt);
