@@ -677,6 +677,10 @@ describe('calculus', function () {
                 given: 'integrate(1/(sqrt(1-1/x^2)*x), x)',
                 expected: '(-1/2)*log(1+sqrt(-x^(-2)+1))+(1/2)*log(-1+sqrt(-x^(-2)+1))'
             },
+            {
+                given: 'integrate(exp(2*log(x)),x)',
+                expected: '(1/3)*x^3'
+            }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {

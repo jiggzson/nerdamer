@@ -7,7 +7,8 @@ var nerdamer = require('../nerdamer.core.js');
 var utils = require('./support/utils');
 var _ = utils.toFixed;
 var run = utils.run;
-var round = nerdamer.getCore().Utils.round;
+var core = nerdamer.getCore();
+var round = core.Utils.round;
 
 
 //, x=2.1, y=3.3, z=1, a=7.42
@@ -296,6 +297,11 @@ describe('Nerdamer core', function () {
                 given: '(-5(x/2-5)/4)^0',
                 expected: '1',
                 expectedValue: '1'
+            },
+            {
+                given: '((1+x)^(-2))+((1+x)^(-1))+((1+x)^(-1))+(1)',
+                expected: '(1+x)^(-2)+2*(1+x)^(-1)+1',
+                expectedValue: '1.74921956295526'
             }
         ];
 
@@ -514,6 +520,22 @@ describe('Nerdamer core', function () {
             expect(round(value, 12)).toEqual(round(testCases[i].expectedValue, 12)) ;
         }
     });    
+    it('should expand correctly', function() {
+       expect(nerdamer('expand((a^2*b*c)^(-1))').toString()).toEqual('a^(-2)*b^(-1)*c^(-1)'); 
+       expect(nerdamer('expand(((a^2*b)(x+1))^2)').toString()).toEqual('2*a^4*b^2*x+a^4*b^2+a^4*b^2*x^2'); 
+       expect(nerdamer('expand(5*x/(c+d)^2)').toString()).toEqual('5*(2*c*d+c^2+d^2)^(-1)*x'); 
+       expect(nerdamer('expand((a+b)*(c+d))').toString()).toEqual('a*c+a*d+b*c+b*d'); 
+       expect(nerdamer('expand(5*(a+b)*(c+d))').toString()).toEqual('5*a*c+5*a*d+5*b*c+5*b*d'); 
+       expect(nerdamer('expand(4*parens(x+1)^2)').toString()).toEqual('4+4*x^2+8*x'); 
+       expect(nerdamer('expand(4*(a*b)*(c*b))').toString()).toEqual('4*a*b^2*c'); 
+       expect(nerdamer('expand(4*(a*b)*(c*b)+1)').toString()).toEqual('1+4*a*b^2*c'); 
+       expect(nerdamer('expand(3*(a+b)*(g+i)*(x*k))').toString()).toEqual('3*a*g*k*x+3*a*i*k*x+3*b*g*k*x+3*b*i*k*x'); 
+       expect(nerdamer('expand(2*x*(x+1)^3)').toString()).toEqual('2*x+2*x^4+6*x^2+6*x^3'); 
+       expect(nerdamer('expand((2*(a*b)*(x+1)^3)^2)').toString()).toEqual('24*a^2*b^2*x+24*a^2*b^2*x^5+4*a^2*b^2+4*a^2*b^2*x^6+60*a^2*b^2*x^2+60*a^2*b^2*x^4+80*a^2*b^2*x^3'); 
+       expect(nerdamer('expand((2*(a*b)*(x+1)^3)^2+1)').toString()).toEqual('1+24*a^2*b^2*x+24*a^2*b^2*x^5+4*a^2*b^2+4*a^2*b^2*x^6+60*a^2*b^2*x^2+60*a^2*b^2*x^4+80*a^2*b^2*x^3'); 
+       expect(nerdamer('expand((d/(x+1)+1)^2)').toString()).toEqual('(1+2*x+x^2)^(-1)*d^2+1+2*(1+x)^(-1)*d'); 
+       expect(nerdamer('expand(2*cos((d/(x+1)+1)^2)^2)').toString()).toEqual('2*cos((1+2*x+x^2)^(-1)*d^2+1+2*(1+x)^(-1)*d)^2'); 
+    });
     it('should handle imaginary log arguments', function () {
         // given
         var testCases = [
@@ -1015,17 +1037,23 @@ describe('Nerdamer core', function () {
                 expected: '-i',
                 expectedValue: '-i'
             },
+            // Euler's identity
             {
                 given: 'e^(i*pi)+e^(2*i*pi)',
                 expected: '0',
                 expectedValue: '0'
+            },
+            {
+                given: 'exp(i + x pi)',
+                expected: 'e^(i+pi*x)',
+                expectedValue: '396.1203590827245535+616.9209071285088*i'
             }
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
             // when
             var parsed = nerdamer(testCases[i].given);
-            var value = parsed.evaluate().text('decimals', 17);
+            var value = parsed.evaluate(values).text('decimals', 17);
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
@@ -2520,20 +2548,13 @@ describe('trigonometric functions', function () {
         }
     });
     it('should throw for malformed expression', function () {
-        // given
-        var testCases = [
-            '5+'
-        ];
-
-        for (var i = 0; i < testCases.length; ++i) {
-            var threwError = false;
-            try {
-                nerdamer(testCases[i]);
-            } catch (e) {
-                threwError = true;
-            }
-            expect(threwError).toBe(true);
-        }
+        expect(function(){nerdamer('+')}).toThrowError();
+        expect(function(){nerdamer('(+)')}).toThrowError();
+        expect(function(){nerdamer('cos(')}).toThrowError();
+        expect(function(){nerdamer('(x+1))')}).toThrowError();
+        expect(function(){nerdamer('/2')}).toThrowError();
+        expect(function(){nerdamer('()')}).toThrowError();
+        expect(function(){nerdamer('5+')}).toThrowError();
     });
     it('should calculate correctly with variables', function () {
         // given

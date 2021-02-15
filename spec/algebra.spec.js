@@ -494,6 +494,10 @@ describe('Algebra', function () {
             {
                 given: 'factor(64*x^3+125)',
                 expected: '(-20*x+16*x^2+25)*(4*x+5)'
+            },
+            {
+                given: 'factor((-5*K+32)^2)',
+                expected: '(-32+5*K)^2'
             }
         ];
 
@@ -755,6 +759,10 @@ describe('Algebra', function () {
                 expected: '1+x'
             },
             {
+                given: 'simplify((- x + x^2 + 1)/(x - x^2 - 1))',
+                expected: '-1'
+            },
+            {
                 given: 'simplify(n!/(n+1)!)',
                 expected: '(1+n)^(-1)'
             },
@@ -769,7 +777,7 @@ describe('Algebra', function () {
             },
             {
                 given: 'simplify(((17/2)*(-5*K+32)^(-1)*K^2+(5/2)*K-125*(-5*K+32)^(-1)*K-16+400*(-5*K+32)^(-1))*(-17*(-5*K+32)^(-1)*K+80*(-5*K+32)^(-1))^(-1))',
-                expected: '-(-112-4*K^2+35*K)*(-80+17*K)^(-1)'
+                expected: '(-35*K+4*K^2+112)*(-80+17*K)^(-1)'
             },
             {
                 given: 'simplify(((a+b)^2)/c)',
@@ -805,5 +813,17 @@ describe('Algebra', function () {
     it('should calculate nth roots correctly', function() {
         expect(nerdamer('roots((-1)^(1/5))').evaluate().text()).toEqual('[0.5877852522924731*i+0.809016994374947,-0.309016994374947+0.9510565162951536*i,-1+1e-16*i,-0.309016994374948-0.9510565162951536*i,-0.5877852522924734*i+0.809016994374947]');
         expect(nerdamer('roots((2)^(1/3))').evaluate().text()).toEqual('[1.122462048309381,-1.122462048309381]');
+    });
+    
+    // As mentioned by @Happypig375 in issue #219
+    it('should also factor correctly', function() {
+        expect(nerdamer('factor((x^2+4x+4)-y^2)').toString()).toEqual('(-y+2+x)*(2+x+y)');
+        expect(nerdamer('factor(81-(16a^2-56a+49))').toString()).toEqual('-8*(-4+a)*(1+2*a)');
+        expect(nerdamer('factor((9x^2-12x+4)-25)').toString()).toEqual('3*(-7+3*x)*(1+x)');
+        expect(nerdamer('factor((x^2+4x+4)+x*y+2y)').toString()).toEqual('(2+x)*(2+x+y)');
+        expect(nerdamer('factor((4x^2+24x+36)-14x*y-42y)').toString()).toEqual('2*(-7*y+2*x+6)*(3+x)');
+        expect(nerdamer('factor(35a*b-15b+(49a^2-42a+9))').toString()).toEqual('(-3+5*b+7*a)*(-3+7*a)');
+        expect(nerdamer('factor(1-6a^2+9a^4)').toString()).toEqual('(-1+3*a^2)^2');
+        expect(nerdamer('factor(1-6a^2+9a^4-49b^2)').toString()).toEqual('(-1+3*a^2+7*b)*(-1-7*b+3*a^2)');
     });
 });
