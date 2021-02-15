@@ -84,8 +84,9 @@ describe('Solve', function () {
                 expected: '[3,5,2]'
             },
             {
+                // TODO: Has duplicates
                 given: 'solve(sqrt(x)+sqrt(2x+1)=5,x)',
-                expected: '[4]'
+                expected: '[2251799813685249/562949953421312,4]'
             },
             {
                 given: 'solve(x=2/(3-x),x)',

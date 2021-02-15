@@ -655,14 +655,16 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     symbol = _.multiply(polydiff(symbol.clone()), derive(b));  
                 }
                 else if( g === CP || g === PL ) { 
+                    var c = _.parse(symbol);
                     var result = new Symbol(0);
                     for(var x in symbol.symbols) {
                         result = _.add(result, __.diff(symbol.symbols[x].clone(), d));
                     }
-                    symbol = _.multiply(polydiff(symbol.clone()), result);
+                    symbol = _.multiply(polydiff(c), result);
                 }
 
                 symbol.updateHash();
+                
                 return symbol;
             };
 
