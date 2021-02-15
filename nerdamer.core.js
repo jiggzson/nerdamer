@@ -1220,10 +1220,12 @@ var nerdamer = (function (imports) {
     var ValueLimitExceededError = customError('ValueLimitExceededError');
     // Is throw if the value is an incorrect LH or RH value
     var NerdamerValueError = customError('NerdamerValueError');
-    // Is throw if the value is an incorrect LH or RH value
+    // Is thrown if the value is an incorrect LH or RH value
     var SolveError = customError('SolveError');
     // Is thrown for an infinite loop
     var InfiniteLoopError = customError('InfiniteLoopError');
+    // Is thrown if an operator is found when there shouldn't be one
+    var UnexpectedTokenError = customError('UnexpectedTokenError');
     
     var exceptions = {
         DivisionByZero: DivisionByZero,
@@ -1239,7 +1241,8 @@ var nerdamer = (function (imports) {
         ValueLimitExceededError: ValueLimitExceededError,
         NerdamerValueError: NerdamerValueError,
         SolveError: SolveError,
-        InfiniteLoopError: InfiniteLoopError
+        InfiniteLoopError: InfiniteLoopError,
+        UnexpectedTokenError: UnexpectedTokenError
     };
 //Big ==========================================================================
     var Big = {
@@ -6764,8 +6767,14 @@ var nerdamer = (function (imports) {
                         }
                     }
                 }
+                
+                var retval = Q[0];
 
-                return Q[0];
+                if(['undefined', 'string', 'number'].indexOf(typeof retval) !== -1) {
+                    throw new UnexpectedTokenError('Unexpected token!');
+                }
+                
+                return retval;
             }
             catch(error) {
                 throw new ParseError(error.message+': '+e.column);

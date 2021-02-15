@@ -7,7 +7,8 @@ var nerdamer = require('../nerdamer.core.js');
 var utils = require('./support/utils');
 var _ = utils.toFixed;
 var run = utils.run;
-var round = nerdamer.getCore().Utils.round;
+var core = nerdamer.getCore();
+var round = core.Utils.round;
 
 
 //, x=2.1, y=3.3, z=1, a=7.42
@@ -2547,20 +2548,13 @@ describe('trigonometric functions', function () {
         }
     });
     it('should throw for malformed expression', function () {
-        // given
-        var testCases = [
-            '5+'
-        ];
-
-        for (var i = 0; i < testCases.length; ++i) {
-            var threwError = false;
-            try {
-                nerdamer(testCases[i]);
-            } catch (e) {
-                threwError = true;
-            }
-            expect(threwError).toBe(true);
-        }
+        expect(function(){nerdamer('+')}).toThrowError();
+        expect(function(){nerdamer('(+)')}).toThrowError();
+        expect(function(){nerdamer('cos(')}).toThrowError();
+        expect(function(){nerdamer('(x+1))')}).toThrowError();
+        expect(function(){nerdamer('/2')}).toThrowError();
+        expect(function(){nerdamer('()')}).toThrowError();
+        expect(function(){nerdamer('5+')}).toThrowError();
     });
     it('should calculate correctly with variables', function () {
         // given
