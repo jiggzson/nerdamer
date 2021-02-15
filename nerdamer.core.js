@@ -16,7 +16,7 @@ var nerdamer = (function (imports) {
     "use strict";
 
 //version ======================================================================
-    var version = '1.1.7';
+    var version = '1.1.8';
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
@@ -10496,6 +10496,38 @@ var nerdamer = (function (imports) {
                     var nxt = next();
                     retval += 'limit' + inBrackets([parse_next(), get(nxt[0]), get(nxt[2])].join(','));
                 }
+                else if(token.value === 'begin') {
+                    console.log(_.pretty_print(raw_tokens))
+                    // Get the constructor
+                    var obj_type = tokens[i+1][0].value;
+                    if(obj_type === 'matrix') {
+                        
+                        var m = [];
+                        var row = [];
+                        var expr_tokens = [];
+                        for(var j=i+2; j<tokens.length; j++) {
+                            var sub_token = tokens[j];
+                            var next_token = tokens[j+1];
+                            // Implicit multiplication issue. Skip * if followed by a &
+                            if(sub_token.value === '*' && next_token.value === '&') {console.log(99)
+                                // Parse the tokens
+                                var e = LaTeX.parse(expr_tokens);
+                                // Reset the expression tokens
+                                expr_tokens = [];
+                                // Move the cursor
+                                j += 2;
+                                console.log(e.toString())
+                            }
+                            else {
+                                expr_tokens.push(sub_token);
+                            }
+//                            console.log(sub_token.value, sub_token)
+                            if(sub_token.value === 'end' && tokens[j+1][0].value === obj_type) {
+                                break;
+                            }
+                        }
+                    }
+                }
                 else {
                     if(Array.isArray(token)) {
                         retval += get(LaTeX.parse(token));
@@ -12110,3 +12142,6 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+//let expStr = '\\begin{matrix}1 & 2 \\\\ 7 & 8\\end{matrix}';
+//let expression = nerdamer.convertFromLaTeX(expStr);
