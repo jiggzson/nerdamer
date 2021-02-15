@@ -2436,14 +2436,17 @@ var nerdamer = (function (imports) {
      */
 
     function primeFactors(num) {
-        if (isPrime(num))
+        if (isPrime(num)) {
             return [num];
+        }
+        
         var l = num, i = 1, factors = [],
                 epsilon = 2.2204460492503130808472633361816E-16;
         while (i < l) {
             var quotient = num / i;
             var whole = Math.floor(quotient);
             var remainder = quotient - whole;
+            
             if (remainder <= epsilon && i > 1) {
                 // If the prime wasn't found but calculated then save it and
                 // add it as a factor.
@@ -2453,17 +2456,23 @@ var nerdamer = (function (imports) {
                     }
                     factors.push(i);
                 }
-                    
+                
+                // Check if the remainder is a prime
+                if(isPrime(whole)) {
+                    factors.push(whole);
+                    break;
+                }
+                
                 l = whole;
             }
             i++;
         }
-
+        
         return factors.sort(function (a, b) {
             return a - b;
         });
     };
-
+    primeFactors(314146179365)
 //Expression ===================================================================
     /**
      * This is what nerdamer returns. It's sort of a wrapper around the symbol class and

@@ -217,8 +217,7 @@ if ((typeof module) !== 'undefined') {
         else  {
             symbol = this.symbol;
         }
-            
-        
+
         return solve(symbol, x).map(function (x) {
             return new core.Expression(x);
         });
@@ -1185,7 +1184,7 @@ if ((typeof module) !== 'undefined') {
         
         //try for nested sqrts as per issue #486
         add_to_result(__.sqrtSolve(eq, solve_for));
-        
+
         //polynomial single variable
         if (numvars === 1) {
             if (eq.isPoly(true)) {

@@ -11,6 +11,10 @@ describe('Solve', function () {
         // given
         var testCases = [
             {
+                given: 'solve(x=y/3416.3333333333344, y)',
+                expected: '[(1073228064103962/314146179365)*x]'
+            },
+            {
                 given: 'solve(x, x)',
                 expected: '[0]'
             },
