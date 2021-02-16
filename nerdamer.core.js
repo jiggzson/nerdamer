@@ -10463,8 +10463,13 @@ var nerdamer = (function (imports) {
                 }
                 // A quirk with implicit multiplication forces us to check for *
                 if(token === '*' && tokens[i+1].value === '&') {
-                    next(2);
+                    next(2); // skip this and the &
                     return ',';
+                }
+                
+                if(token === '&') {
+                    next();
+                    return ','; // Skip the *
                 }
                 // If it's the end of a row, return the row separator
                 if(token === '\\') {
@@ -10527,7 +10532,7 @@ var nerdamer = (function (imports) {
                     if(Array.isArray(nxt)) {
                         var v = nxt[0].value;
                         if(v === 'matrix') {
-                            // Start a matrix
+                            // End a matrix
                             retval += '])';
                         }
                     }
@@ -10541,7 +10546,7 @@ var nerdamer = (function (imports) {
                     }
                 }
             }
-            
+            console.log(retval)
             return inBrackets(retval);
         }
     };
