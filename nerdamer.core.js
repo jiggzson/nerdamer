@@ -656,11 +656,14 @@ var nerdamer = (function (imports) {
         validateName(name);
         if (!isReserved(name)) {
             params_array = params_array || variables(_.parse(body));
+            // The function gets set to PARSER.mapped function which is just
+            // a generic function call.
             _.functions[name] = [_.mapped_function, params_array.length, {
                     name: name,
                     params: params_array,
                     body: body
                 }];
+            
             return body;
         }
         return null;
@@ -6605,6 +6608,7 @@ var nerdamer = (function (imports) {
                 //we first parse them out as-is
                 for (var x in substitutions)
                     substitutions[x] = _.parse(substitutions[x], {});
+
                 //Although technically constants,
                 //pi and e are only available when evaluating the expression so add to the subs.
                 //Doing this avoids rounding errors
@@ -6750,7 +6754,7 @@ var nerdamer = (function (imports) {
                             //next substitutions. This allows declared variable to be overridden
                             //check if the values match to avoid erasing the multiplier.
                             //Example:/e = 3*a. substutiting a for a will wipe out the multiplier.
-                            else if (v in substitutions && v !== substitutions[v].value) {
+                            else if (v in substitutions && v !== substitutions[v].toString()) {
                                 subbed = e;
                                 e = substitutions[v].clone();
                             }
@@ -8601,9 +8605,11 @@ var nerdamer = (function (imports) {
         //The loader for functions which are not part of Math2
         this.mapped_function = function () {
             var subs = {},
-                    params = this.params;
-            for (var i = 0; i < params.length; i++)
-                subs[params[i]] = arguments[i];
+                params = this.params;
+
+            for (var i = 0; i < params.length; i++) {
+                subs[params[i]] = String(arguments[i]);
+            }
 
             return _.parse(this.body, subs);
         };
@@ -10546,7 +10552,7 @@ var nerdamer = (function (imports) {
                     }
                 }
             }
-            console.log(retval)
+            
             return inBrackets(retval);
         }
     };
@@ -12153,3 +12159,4 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
