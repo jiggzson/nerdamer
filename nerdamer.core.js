@@ -10423,10 +10423,16 @@ var nerdamer = (function (imports) {
             var d = ['\\', 'left', 'right', 'big', 'Big', 'large', 'Large'];
             for (var i = 0, l = tokens.length; i < l; i++) {
                 var token = tokens[i];
-                if (isArray(token))
-                    filtered.push(LaTeX.filterTokens(token));
-                else if (d.indexOf(token.value) === -1)
+                var next_token = tokens[i+1];
+                if(token.value === '\\' && next_token.value === '\\') {
                     filtered.push(token);
+                }
+                else if (isArray(token)) {
+                    filtered.push(LaTeX.filterTokens(token));
+                }
+                else if (d.indexOf(token.value) === -1) {
+                    filtered.push(token);
+                }
             }
             return filtered;
         },
@@ -10445,15 +10451,25 @@ var nerdamer = (function (imports) {
                 'infty': 'Infinity'
             };
             // get the next token
-            var next = function () {
-                return tokens[++i];
+            var next = function (n) {
+                return tokens[(typeof n === 'undefined' ? ++i : i+=n)];
             };
             var parse_next = function () {
                 return LaTeX.parse(next());
             };
             var get = function (token) {
-                if (token in replace)
+                if (token in replace) {
                     return replace[token];
+                }
+                // A quirk with implicit multiplication forces us to check for *
+                if(token === '*' && tokens[i+1].value === '&') {
+                    next(2);
+                    return ',';
+                }
+                // If it's the end of a row, return the row separator
+                if(token === '\\') {
+                    return '],[';
+                }
                 return token;
             };
 
@@ -10497,34 +10513,22 @@ var nerdamer = (function (imports) {
                     retval += 'limit' + inBrackets([parse_next(), get(nxt[0]), get(nxt[2])].join(','));
                 }
                 else if(token.value === 'begin') {
-                    console.log(_.pretty_print(raw_tokens))
-                    // Get the constructor
-                    var obj_type = tokens[i+1][0].value;
-                    if(obj_type === 'matrix') {
-                        
-                        var m = [];
-                        var row = [];
-                        var expr_tokens = [];
-                        for(var j=i+2; j<tokens.length; j++) {
-                            var sub_token = tokens[j];
-                            var next_token = tokens[j+1];
-                            // Implicit multiplication issue. Skip * if followed by a &
-                            if(sub_token.value === '*' && next_token.value === '&') {console.log(99)
-                                // Parse the tokens
-                                var e = LaTeX.parse(expr_tokens);
-                                // Reset the expression tokens
-                                expr_tokens = [];
-                                // Move the cursor
-                                j += 2;
-                                console.log(e.toString())
-                            }
-                            else {
-                                expr_tokens.push(sub_token);
-                            }
-//                            console.log(sub_token.value, sub_token)
-                            if(sub_token.value === 'end' && tokens[j+1][0].value === obj_type) {
-                                break;
-                            }
+                    var nxt = next();
+                    if(Array.isArray(nxt)) {
+                        var v = nxt[0].value;
+                        if(v === 'matrix') {
+                            // Start a matrix
+                            retval += 'matrix([';
+                        }
+                    }
+                }
+                else if(token.value === 'end') {
+                    var nxt = next();
+                    if(Array.isArray(nxt)) {
+                        var v = nxt[0].value;
+                        if(v === 'matrix') {
+                            // Start a matrix
+                            retval += '])';
                         }
                     }
                 }
@@ -10532,10 +10536,12 @@ var nerdamer = (function (imports) {
                     if(Array.isArray(token)) {
                         retval += get(LaTeX.parse(token));
                     }
-                    else
+                    else {
                         retval += get(token.value.toString());
+                    }
                 }
             }
+            
             return inBrackets(retval);
         }
     };
@@ -12142,6 +12148,3 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-//let expStr = '\\begin{matrix}1 & 2 \\\\ 7 & 8\\end{matrix}';
-//let expression = nerdamer.convertFromLaTeX(expStr);
