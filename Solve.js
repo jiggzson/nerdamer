@@ -497,6 +497,46 @@ if ((typeof module) !== 'undefined') {
                     //core.err('System must contain all linear equations!');
                 
                 vars = __.getSystemVariables(eqns);
+                
+                // Deal with redundant equations as expressed in #562
+                // The fix is to remove all but the number of equations equal to the number
+                // of variables. We then solve those and then evaluate the remaining equations
+                // with those solutions. If the all equal true then those are just redundant
+                // equations and we can return the solution set.
+                if(vars.length < eqns.length) {
+                    var reduced = [];
+                    var n = eqns.length;
+                    for(var i=0; i<n-1; i++) {
+                        reduced.push(_.parse(eqns[i]));
+                    }
+                    
+                    var knowns = {};
+                    var solutions = __.solveSystem(reduced, vars);
+                    // The solutions may have come back as an array
+                    if(Array.isArray(solutions)) {
+                        solutions.forEach(function(sol) {
+                            knowns[sol[0]] = sol[1];
+                        });
+                    }
+                    else {
+                        knowns = solutions;
+                    }
+
+                    // Start by assuming they will all evaluate to zero. If even one fails
+                    // then all zero will be false
+                    var all_zero = true;
+                    // Check if the last solution evalutes to zero given these solutions
+                    for(var i=n-1; i<n; i++) {
+                        if(!_.parse(eqns[i], knowns).equals(0)) {
+                            all_zero = false;
+                        }
+                    }
+                    
+                    if(all_zero) {
+                        return solutions;
+                    }
+                }
+                
                 // deletes only the variables of the linear equations in the nerdamer namespace
                 for (var i = 0; i < vars.length; i++) {
                     nerdamer.setVar(vars[i], "delete");
@@ -570,10 +610,12 @@ if ((typeof module) !== 'undefined') {
                 }
                 //consider case (a+b)*I+u
             }
-
+            
             //check if the system has a distinct solution
-            if(m.determinant().equals(0))
+            if(m.determinant().equals(0)) {
                 throw new core.exceptions.SolveError('System does not have a distinct solution');
+            }
+            
             // Use M^-1*c to solve system
             m = m.invert();
             var result = m.multiply(c);
