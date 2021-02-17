@@ -329,8 +329,10 @@ if ((typeof module) !== 'undefined') {
             return vars;
         },
         solveNonLinearSystem: function(eqns, tries, start) {
-            if(tries < 0)
+            if(tries < 0) {
                 return [];//can't find a solution
+            }
+            
             start = typeof start === 'undefined' ? core.Settings.NON_LINEAR_START : start;
 
             //the maximum number of times to jump
@@ -374,7 +376,8 @@ if ((typeof module) !== 'undefined') {
                 return build(e, vars);
             }, true);
             //initial values
-            xn1 = core.Matrix.cMatrix(0, vars);;
+            xn1 = core.Matrix.cMatrix(0, vars);
+            
             //initialize the c matrix with something close to 0. 
             var c = core.Matrix.cMatrix(start, vars);
             
@@ -399,12 +402,23 @@ if ((typeof module) !== 'undefined') {
                     c.set(i, 0, f.apply(null, o));
                 });
                 
+                var fail = false;
+                
                 var m = new core.Matrix();
                 J.each(function(fn, i, j) {
                     var ans = fn.apply(null, o);
+                    //If it evaluated to NaN then we have a failed point
+                    if(isNaN(ans)) {
+                        fail = true;
+                    }
                     m.set(i, j, ans);
                 });
-
+                
+                // If any of the answers failed then we increment and start over
+                if(fail) {
+                    continue;
+                }
+                
                 m = m.invert();
                 
                 //preform the elimination
@@ -476,7 +490,23 @@ if ((typeof module) !== 'undefined') {
             //done
             return solutions;
         },
+        /**
+         * Solves a system of equations by substitution. This is useful when
+         * no distinct solution exists. e.g. a line, plane, etc.
+         * @param {Array} eqns
+         * @param {Array} var_array
+         * @returns {Array|object}
+         */
+        solveSystemBySubstitution: function(eqns, var_array, m, c) {
+            
+        },
         //https://www.lakeheadu.ca/sites/default/files/uploads/77/docs/RemaniFinal.pdf
+        /**
+         * Solves a systems of equations
+         * @param {Array} eqns An array of equations
+         * @param {Array} var_array An array of variables
+         * @returns {Array|object}
+         */
         solveSystem: function (eqns, var_array) {
             //check if a var_array was specified
             //nerdamer.clearVars();// this deleted ALL variables: not what we want
@@ -541,10 +571,12 @@ if ((typeof module) !== 'undefined') {
                 for (var i = 0; i < vars.length; i++) {
                     nerdamer.setVar(vars[i], "delete");
                 }
+                // TODO: move this to cMatrix or something similar
                 // populate the matrix
                 for (var i = 0; i < l; i++) {
                     var e = eqns[i]; //store the expression
-                    for (var j = 0; j < l; j++) {
+                    // Iterate over the columns
+                    for (var j = 0; j < vars.length; j++) {
                         var v = vars[j];
                         var coeffs = [];
                         e.each(function(x) {
@@ -612,7 +644,9 @@ if ((typeof module) !== 'undefined') {
             }
             
             //check if the system has a distinct solution
-            if(m.determinant().equals(0)) {
+            if(vars.length !== eqns.length || m.determinant().equals(0)) {
+                // solve the system by hand
+                //return __.solveSystemBySubstitution(eqns, vars, m, c);
                 throw new core.exceptions.SolveError('System does not have a distinct solution');
             }
             
@@ -624,8 +658,7 @@ if ((typeof module) !== 'undefined') {
                 result.each(function (x) {
                     return x.negate();
                 });
-            
-            
+
             return __.systemSolutions(result, vars, expand_result);
         },
         /**
@@ -1537,3 +1570,14 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+//nerdamer.set('SOLUTIONS_AS_OBJECT', true);
+//
+//var ans = nerdamer.solveEquations([
+//   `y=x*2`,
+//   `z=y + max (y * 0.1, 23)`,
+//   `j=y + max (y * 0.1, 23)`,
+//   `6694.895373 = j + z + (max(j * 0.280587, z * 0.280587, 176))`
+//]);
+//
+//console.log(ans)
