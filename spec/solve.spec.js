@@ -6,7 +6,6 @@ var nerdamer = require('../nerdamer.core.js');
 require('../Solve');
 
 describe('Solve', function () {
-    
     it('should solve correctly', function () {
         // given
         var testCases = [
@@ -237,7 +236,6 @@ describe('Solve', function () {
             expect(parsed.toString()).toEqual(testCases[i].expected);
         }
     });
-    
     it('should solve system of equations correctly', function () {
         // given
         var testCases = [
@@ -286,27 +284,32 @@ describe('Solve', function () {
             expect(parsed.toString()).toEqual(testCases[i].expected);
         }
     });
-
     /** #55: nerdamer.solveEquation quits working */
     it('should handle text("fractions") without later impact', function () {
         expect(nerdamer.solveEquations("x+1=2", "x").toString()).toEqual('1');
         expect(nerdamer('x=1').text("fractions")).toEqual('x=1');
         expect(nerdamer.solveEquations("x+1=2", "x").toString()).toEqual('1');
-    });
-    
+    });  
     it('should parse equations correctly', function () {
         expect(nerdamer("-(a+1)=(a+3)^2").toString()).toEqual('-1-a=(3+a)^2');
     });
-    
     //NOTE: contains duplicates
     it('should solve functions with factorials', function() {
         expect(nerdamer('solve(x!-x^2,x)').text('decimals', 20)).toEqual('[-2.200391782610595,-4.010232827899529,-2.938361683501947,1,1.000000000000001,1.000000000000001,3.562382285390896,3.562382285390897,0.9999999999999910,1.000000000000000]');
-    });
-    
+    });   
     it('should solve for variables other than x', function() {
         expect(nerdamer('solve(2*a^(2)+4*a*6=128, a)').toString()).toEqual('[4,-16]');
     });
-    
+    it('should solve nonlinear system of equations with multiple parameter functions', function() {
+        var ans = nerdamer.solveEquations([
+            `y=x * 2`,
+            `z=y + max (y * 0.1, 23)`,
+            `j=y + max (y * 0.1, 23)`,
+            `6694.895373 = j + z + (max(j * 0.280587, z * 0.280587, 176))`
+        ]);
+        expect(ans.toString()).toEqual('j,2935.601831019821,x,1334.3644686453729,y,2668.7289372907458,z,2935.601831019821');
+    });
+
     xit('should solve factors', function() {
         expect(nerdamer('solve((x-1)*(-a*c-a*x+c*x+x^2),x)').text()).toEqual('[1,-c,a]');
     });

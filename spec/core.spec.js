@@ -1867,6 +1867,12 @@ describe('Nerdamer core', function () {
         //Note: this may break at some point when big numbers are implemented 
         expect(nerdamer('Ci(x)+x').buildFunction()(4)).toEqual(3.8590183021130704);
     });
+    it('should handle nested functions', function() {
+        nerdamer.setFunction("a", ["x"], "2*x")
+        nerdamer.setFunction("b", ["x"], "x^2")
+
+        expect(nerdamer("a(b(x))").text()).toEqual('2*x^2');
+    });
 });
 
 describe('Further arithmetic test cases', function () {
