@@ -12166,19 +12166,3 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-function anonymous(j, x, y, z) {
-    var diff = function (f) {
-        var h = 0.001;
-
-        var derivative = function (x) {
-            return (f(x + h) - f(x - h)) / (2 * h);
-        };
-
-        return derivative;
-    };
-    var f = function anonymous(j, z) {
-        return -1000000 * Math.max(0.280587 * j, 0.280587 * z, 176);
-    };
-    return 0.078729064569 * diff(f)(j) + -1000000;
-}
