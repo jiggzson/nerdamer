@@ -401,24 +401,13 @@ if ((typeof module) !== 'undefined') {
                 f_eqns.forEach(function(f, i) {
                     c.set(i, 0, f.apply(null, o));
                 });
-                
-                var fail = false;
-                
+               
                 var m = new core.Matrix();
                 J.each(function(fn, i, j) {
                     var ans = fn.apply(null, o);
-                    //If it evaluated to NaN then we have a failed point
-                    if(isNaN(ans)) {
-                        fail = true;
-                    }
                     m.set(i, j, ans);
                 });
-                
-                // If any of the answers failed then we increment and start over
-                if(fail) {
-                    continue;
-                }
-                
+
                 m = m.invert();
                 
                 //preform the elimination
@@ -458,9 +447,9 @@ if ((typeof module) !== 'undefined') {
                 norm = d.max();
                 
                 //exit early. Revisit if we get bugs
-                if(Number(norm) === Number(lnorm))
+                if(Number(norm) === Number(lnorm)) {
                     break;
-                
+                }
             }
             while(Number(norm) >= Number.EPSILON)
             
@@ -1570,14 +1559,3 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-//nerdamer.set('SOLUTIONS_AS_OBJECT', true);
-//
-//var ans = nerdamer.solveEquations([
-//   `y=x*2`,
-//   `z=y + max (y * 0.1, 23)`,
-//   `j=y + max (y * 0.1, 23)`,
-//   `6694.895373 = j + z + (max(j * 0.280587, z * 0.280587, 176))`
-//]);
-//
-//console.log(ans)

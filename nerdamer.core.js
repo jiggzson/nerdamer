@@ -11390,11 +11390,12 @@ var nerdamer = (function (imports) {
         reformat: {
             // this simply extends the build function
             diff: function(symbol, deps) {
-                var f = 'var f = '+Build.build(symbol.args[0].toString())+';';
+                var v = symbol.args[1].toString();
+                var f = 'var f = '+Build.build(symbol.args[0].toString(), [v])+';';
                 deps[1] += 'var diff = '+Math2.diff.toString()+';';
                 deps[1] += f;
-
-                return ['diff(f)('+symbol.args[1].toString()+')', deps];
+                
+                return ['diff(f)('+v+')', deps];
             }
         },
         getProperName: function(f) {
@@ -11543,11 +11544,17 @@ var nerdamer = (function (imports) {
                 return [c.join('*'), xports.join('').replace(/\n+\s+/g, ' ')];
             };
             if (arg_array) {
+                // Fix for issue #546
+                // Disable argument checking since it's a bit presumptuous.
+                // Consider f(x) = 5; If I explicitely pass in an argument array contain x 
+                // this check will fail and complain since the function doesn't contain x.
+                /*
                 for (var i = 0; i < args.length; i++) {
                     var arg = args[i];
                     if (arg_array.indexOf(arg) === -1)
                         err(arg + ' not found in argument array');
                 }
+                */
                 args = arg_array;
             }
 
@@ -12159,3 +12166,19 @@ var nerdamer = (function (imports) {
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+function anonymous(j, x, y, z) {
+    var diff = function (f) {
+        var h = 0.001;
+
+        var derivative = function (x) {
+            return (f(x + h) - f(x - h)) / (2 * h);
+        };
+
+        return derivative;
+    };
+    var f = function anonymous(j, z) {
+        return -1000000 * Math.max(0.280587 * j, 0.280587 * z, 176);
+    };
+    return 0.078729064569 * diff(f)(j) + -1000000;
+}
