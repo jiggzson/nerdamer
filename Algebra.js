@@ -6,7 +6,7 @@
 * Source : https://github.com/jiggzson/nerdamer
 */
 
-/* global module */
+/* global module, Function */
 
 if((typeof module) !== 'undefined') {
     var nerdamer = require('./nerdamer.core.js');
@@ -3866,8 +3866,9 @@ if((typeof module) !== 'undefined') {
                 throw new core.exceptions.ValueLimitExceededError(msg);
             };
             //if not CP then nothing to do
-            if(!symbol.isPoly()) 
+            if(!symbol.isPoly(true)) 
                 stop('Must be a polynomial!');
+
             //declare vars
             var deg, a, b, c, d, e, coeffs, sign, br, sym, sqrt_a;
 
