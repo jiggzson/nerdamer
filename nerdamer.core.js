@@ -81,6 +81,8 @@ var nerdamer = (function (imports) {
         //The variable validation regex
         //VALIDATION_REGEX: /^[a-z_][a-z\d\_]*$/i
         VALIDATION_REGEX: /^[a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ∞][0-9a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ]*$/i,
+        // The regex used to determine which characters should be included in implied multiplication
+        IMPLIED_MULTIPLICATION_REGEX: /([\+\-\/\*]*[0-9]+)([a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ]+[\+\-\/\*]*)/gi,
         //Aliases
         ALIASES: {
             'π': 'pi',
@@ -6051,26 +6053,6 @@ var nerdamer = (function (imports) {
             for (var i = 0; i < preprocessors.actions.length; i++)
                 e = preprocessors.actions[i].call(this, e);
 
-            /* //NO LONGER NEEDED SINCE IMPLIED MULTIPLICATION IS NOW HANDLED LATER IN TOKENIZER
-            var match;
-            //add support for spaces between variables
-            while (true) {
-                match = _.operator_filter_regex.exec(e);
-                if (!match)
-                    break;
-                try {
-                    var a = match[1],
-                            b = match[2];
-                    validateName(a);
-                    validateName(b);
-                    e = e.replace(match[0], a + '*' + b);
-                }
-                catch (e) {
-                    break;
-                }
-            }
-            */
-
             //e = e.split(' ').join('');//strip empty spaces
             //replace multiple spaces with one space
             e = e.replace(/\s+/g, ' ');
@@ -6084,7 +6066,7 @@ var nerdamer = (function (imports) {
             //replace scientific numbers
 
             //allow omission of multiplication after coefficients
-            e = e.replace(/([\+\-\/\*]*[0-9]+)([a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ]+[\+\-\/\*]*)/gi, function () {
+            e = e.replace(Settings.IMPLIED_MULTIPLICATION_REGEX, function () {
                 var str = arguments[4],
                         group1 = arguments[1],
                         group2 = arguments[2],
