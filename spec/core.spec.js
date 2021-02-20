@@ -1873,6 +1873,15 @@ describe('Nerdamer core', function () {
 
         expect(nerdamer("a(b(x))").text()).toEqual('2*x^2');
     });
+    it('should handle percent', function() {
+        expect(nerdamer('10%+20%').toString()).toEqual('3/10');
+        expect(nerdamer('a%/10%').toString()).toEqual('(1/10)*a');
+        expect(nerdamer('x%-x%').toString()).toEqual('0');
+        expect(nerdamer('x%*x%').toString()).toEqual('(1/10000)*x^2');
+    });
+    it('should recognize the mod and percent operator', function() {
+        expect(nerdamer('3*(a%%b%)').toString()).toEqual('3*mod((1/100)*a,(1/100)*b)')
+    })
 });
 
 describe('Further arithmetic test cases', function () {

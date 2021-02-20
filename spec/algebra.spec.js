@@ -788,6 +788,10 @@ describe('Algebra', function () {
             {
                 given: 'simplify(-(-5*x - 9 + 2*y))',
                 expected: '-2*y+5*x+9'
+            },
+            {
+                given: 'simplify(a/b+b/a)',
+                expected: '(a*b)^(-1)*(a^2+b^2)'
             }
         ];
 

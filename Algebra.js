@@ -960,6 +960,7 @@ if((typeof module) !== 'undefined') {
         for(var x in map) subs[map[x]] = _.parse(x);
         return subs;
     };
+
     var __ = core.Algebra = {
         version: '1.4.6',
         proots: function(symbol, decp) { 
@@ -4106,9 +4107,11 @@ if((typeof module) !== 'undefined') {
                         retval = _.multiply(retval, simp);
                         
                     }, true);
+                    // Put back the power
+                    retval = _.pow(retval, _.parse(symbol.power));
                 }
                 
-                return retval ? retval : symbol.clone();
+                return retval ? retval : _.parse(symbol);
             },
             /**
              * Unused. The goal is to substitute out patterns but it currently doesn't work.
@@ -4178,7 +4181,7 @@ if((typeof module) !== 'undefined') {
                 }
                 
                 //var patterns;
-                    
+                
                 var simplified = symbol.clone(); //make a copy
                 
                 //[simplified, patterns] = __.Simplify.patternSub(symbol);
@@ -4233,6 +4236,11 @@ if((typeof module) !== 'undefined') {
             Factors: Factors,
             MVTerm: MVTerm
         }
+    };
+    
+    // Add a link to simplify
+    core.Expression.prototype.simplify = function() {
+        return __.Simplify.simplify(this.symbol);
     };
 
     nerdamer.useAlgebraDiv = function() {
