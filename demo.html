@@ -104,9 +104,9 @@
                 <h1>Demo</h1>
                 <h5><span class="text-muted">Using nerdamer version: </span><strong><span id="version" style="color: #222;"></span></strong> 
                     <a href="./demo_dev.html" style="margin-left: 10px;">( switch to dev mode )</a></h5>
-<!--                    <div class="pull-right" style="margin-top: -60px;">
+                    <div class="pull-right" style="margin-top: -60px;">
                         Select version: <select id="version-selector"></select>
-                    </div>-->
+                    </div>
                         
                 <div class="alert alert-danger demo-alert">
                     <p>
@@ -219,11 +219,11 @@
         $('.date').html(new Date().getFullYear());
     </script>
     
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/nerdamer.core.js" class="version"></script>
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Algebra.js" class="version"></script>
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Calculus.js" class="version"></script>
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Extra.js" class="version"></script>
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Solve.js" class="version"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/nerdamer.core.js" id="core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Algebra.js" class="module" data-name="Algebra"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Calculus.js" class="module" data-name="Calculus"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Extra.js" class="module" data-name="Extra"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Solve.js" class="module" data-name="Solve"></script>
 
     <script src="plugins/guppy/build/guppy.min.js"></script>
     <script src="plugins/guppy/build/guppy_osk.js"></script>
