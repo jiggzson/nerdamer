@@ -2136,10 +2136,9 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             factor: function(symbol, factors) {
-                var before = symbol.toString();
                 // Don't try to factor constants
                 if(symbol.isConstant()) {
-                    return symbol;
+                    return core.Math2.factor(symbol);
                 }
                 
                 var _symbol = _.parse(symbol);
@@ -4042,11 +4041,10 @@ if((typeof module) !== 'undefined') {
                 }
                 return symbol;
             },
-            sqrtSimp: function(symbol) {
+            sqrtSimp: function(symbol, sym_array) {
                 var retval;
-                if(symbol.isSQRT()) {
+                if(symbol.isSQRT()) {                    
                     var factored = __.Factor.factor(symbol.args[0].clone());
-                    
                     var m = _.parse(factored.multiplier);
                     var sign = m.sign();
 
@@ -4169,7 +4167,6 @@ if((typeof module) !== 'undefined') {
                 //remove the multiplier to make calculation easier;
                 var sym_array = __.Simplify.strip(symbol);
                 symbol = sym_array.pop();
-
                 //remove gcd from denominator
                 symbol = __.Simplify.fracSimp(symbol);
 
@@ -4187,7 +4184,7 @@ if((typeof module) !== 'undefined') {
                 //[simplified, patterns] = __.Simplify.patternSub(symbol);
                 
                 // Simplify sqrt within the symbol
-                simplified = __.Simplify.sqrtSimp(simplified);
+                simplified = __.Simplify.sqrtSimp(simplified, sym_array);
                 
                 // Try trig simplificatons e.g. cos(x)^2+sin(x)^2
                 simplified = __.Simplify.trigSimp(simplified);

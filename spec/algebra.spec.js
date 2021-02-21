@@ -495,6 +495,14 @@ describe('Algebra', function () {
             {
                 given: 'factor((-5*K+32)^2)',
                 expected: '(-32+5*K)^2'
+            },
+            {
+                given: 'factor(100)',
+                expected: '2^2*5^2'
+            },
+            {
+                given: 'factor(100*x)',
+                expected: '100*x'
             }
         ];
 
@@ -802,6 +810,9 @@ describe('Algebra', function () {
             // then
             expect(result.toString()).toEqual(testCases[i].expected);
         }
+    });
+    it('should also simplify', function() {
+        expect(nerdamer('6/sqrt(3)')).toEqual();
     });
     it('should calculate nth roots correctly', function() {
         expect(nerdamer('roots((-1)^(1/5))').evaluate().text()).toEqual('[0.5877852522924731*i+0.809016994374947,-0.309016994374947+0.9510565162951536*i,-1+1e-16*i,-0.309016994374948-0.9510565162951536*i,-0.5877852522924734*i+0.809016994374947]');
