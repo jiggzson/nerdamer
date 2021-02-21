@@ -44,9 +44,6 @@
     <!-- katex -->
     <script src="./plugins/katex/katex.min.js"></script> 
 
-    <!--<link rel="stylesheet" href="./plugins/katex/katex.min.css">-->
-    <!-- c3 -->
-    <!--<link rel="stylesheet" href="./plugins/c3/c3.min.css">-->
     <script>
         (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
         (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -107,9 +104,11 @@
                 <h1>Demo</h1>
                 <h5><span class="text-muted">Using nerdamer version: </span><strong><span id="version" style="color: #222;"></span></strong> 
                     <a href="./demo_dev.html" style="margin-left: 10px;">( switch to dev mode )</a></h5>
+<!--                    <div class="pull-right" style="margin-top: -60px;">
+                        Select version: <select id="version-selector"></select>
+                    </div>-->
+                        
                 <div class="alert alert-danger demo-alert">
-                    <!--<button type="button" class="close" data-dismiss="alert">&times;</button>-->
-<!--                    Make sure to enter multiplication explicitly. e.g. <strong>use 3*x not 3x or 2*(x+1) not 2(x+1);</strong>-->
                     <p>
                         <a class="collapse-a" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
                           Click show/hide instructions and supported functions
@@ -130,14 +129,10 @@
                         </div>
                     </div>
                 </div>
-<!--                <div class="text-right">
-                    <a href="javascript:void(0)" id="input-switch"><small>Use visual editor</small></a>
-                </div>-->
                 
                 <div id="nerdamer-demo">
                     
                     <div id="demo-input" class="demo-input" style="display: none;"></div>
-                    <!--<input id="text-input" class="demo-input" type="text" placeholder="Text editor. Enter expression here"/>-->
                     <textarea id="codemirror"></textarea>
                 </div>
                 <button class="btn btn-primary" id="process-btn">ENTER</button>
@@ -224,23 +219,15 @@
         $('.date').html(new Date().getFullYear());
     </script>
     
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/nerdamer.core.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Algebra.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Calculus.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Extra.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Solve.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/nerdamer.core.js" class="version"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Algebra.js" class="version"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Calculus.js" class="version"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Extra.js" class="version"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@latest/Solve.js" class="version"></script>
 
-<!--    <script src="./js/nerdamer.core.js"></script>
-    <script src="./js/Algebra.js"></script>
-    <script src="./js/Calculus.js"></script>
-    <script src="./js/Extra.js"></script>
-    <script src="./js/Solve.js"></script>-->
-    
-<!--    <script src="./js/nerdamer.all.min.js"></script>-->
     <script src="plugins/guppy/build/guppy.min.js"></script>
     <script src="plugins/guppy/build/guppy_osk.js"></script>
     <script src="./plugins/d3/d3.min.js"></script>
-    <!--<script src="./plugins/c3/c3.min.js"></script>-->
     <script src="./plugins/function-plot/function-plot.min.js"></script>
     <script>
         var USE_GUPPY = false;
@@ -302,19 +289,28 @@
     <script src="./js/demo.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
     <script>
-        //display the version of nerdamer being used
-        $('#version').html(nerdamer.version());
-        //load the list of supported functions
-        var supported = nerdamer.supported().sort(),
-            l = supported.length,
-            supportlist = $('#supported-functions');
-        var excluded = ['sort', 'setEquation', 'IF'];
-        for(var i=0; i<supported.length; i++) {
-            var name = supported[i];
-            if(excluded.indexOf(name) === -1)
-                supportlist.append($('<a href="./functions/'+name+'.html">'+name+'</a>'));
+        function setVersion() {
+            //display the version of nerdamer being used
+            $('#version').html(nerdamer.version());
         }
+        
+        function setSupported() {
+            //load the list of supported functions
+            var supported = nerdamer.supported().sort(),
+                supportlist = $('#supported-functions');
+            // Clear the list
+            supportlist.html('');
+            var excluded = ['sort', 'setEquation', 'IF'];
+            for(var i=0; i<supported.length; i++) {
+                var name = supported[i];
+                if(excluded.indexOf(name) === -1)
+                    supportlist.append($('<a href="./functions/'+name+'.html">'+name+'</a>'));
+            }
+        }
+        setVersion();
+        setSupported();
     </script>
+    <script src="./js/version.switcher.js"></script>
     <script type="text/javascript">
         var editor = CodeMirror.fromTextArea(document.getElementById("codemirror"), {
             matchBrackets: true,
