@@ -9013,7 +9013,7 @@ var nerdamer = (function (imports) {
                     a = _.symfunction(SQRT,[b.clone()]);
                     b = new Symbol(1);
                 };
-console.log(result.toString())
+
                 var v1 = a.value,
                         v2 = b.value,
                         sign = new Frac(a.sign()),
@@ -12148,6 +12148,3 @@ console.log(result.toString())
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-var x = nerdamer('3/sqrt(3)');
-console.log(x.toString())
