@@ -28,7 +28,18 @@
  *  Brosnan Yuen for his contributions to graphing
  *  Guppy for graphical input
  */
-
+//define how the user is being notified.
+function notify(msg, time) {
+    var modal = $('#alertModal');
+    modal.find('.modal-body').html(msg);
+    modal.modal('show');
+    
+    if(typeof time !== 'undefined') {
+        setTimeout(function() {
+            modal.modal('hide');
+        }, time);
+    }
+}
 (function(){
     $(function() {
         var chartNumber = 0;
@@ -76,7 +87,7 @@
             empty_content: "\\color{gray}{\\text{Visual editor. Enter your expression here}}"
             //done_callback: process
         });
-        
+
         //store the validation regex
         var validation_regex_str = nerdamer.getCore().Settings.VALIDATION_REGEX.toString();
         //create the regex for extracting variables
@@ -94,12 +105,7 @@
                 });
             return result;
         };
-        //define how the user is being notified.
-        function notify(msg) {
-            var modal = $('#alertModal');
-            modal.find('.modal-body').html(msg);
-            modal.modal('show');
-        }
+        
         //the graphing method. This method builds on Brosnan Yuen's idea and work.
         //the biggest change is no longer graphing everything to one graph but it's own graph
         function graph(expression, element) {
@@ -216,6 +222,9 @@
                         '<div class="input-expression">{{text}} : </div>'+
                         '<div class="expression-delete expression-btn">'+
                             '<a href="javascript:void(0)" title="Remove expression"><i class="fa fa-close"></i></a>'+
+                        '</div>'+
+                        '<div class="expression-link expression-btn">'+
+                            '<a href="javascript:void(0)" title="Copy link"><i class="fa fa-link"></i></a>'+
                         '</div>'+
                         '<div class="expression-graph expression-btn">'+
                             '<a href="javascript:void(0)" title="Graph expression" data-expression="{{expression}}"><i class="fa fa-line-chart"></i></a>'+
@@ -338,7 +347,8 @@
                         notify('A variable object was provided but is ignored for function declaration.');
                     
                     //add the LaTeX to the panel
-                    panelExpression = addToPanel(LaTeX, expression, undefined, undefined, txt);   
+                    panelExpression = addToPanel(LaTeX, expression, undefined, undefined, txt); 
+                    
                     clear();
                 }
                 catch(e) { 
@@ -390,6 +400,12 @@
                     } 
                 }  
             }
+            
+            try {
+                panelExpression.find('.expression-link').data('expression', expression);
+            }
+            catch(e) {}
+            
             return panelExpression;
         }
         function draw_graph(e) {
@@ -439,6 +455,13 @@
         $('#demo-panel').on('click', '.remove-graph', function(e) { 
             $(this).parents().eq(0).remove();
         });
+    });
+    $('body').on('click', '.expression-link', function() {
+        var $this = $(this);
+        var expression = $this.data('expression');
+        var e = encodeURI(expression);
+        $.copy('http://www.nerdamer.com/demo.html?eq='+e);
+        notify('Link copied', 1000);
     });
 })();
 //Π

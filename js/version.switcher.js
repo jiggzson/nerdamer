@@ -34,11 +34,11 @@ var Switcher = {
                 // Set an interval and check if it's loaded before moving on
                 Switcher.load(m);
                 var interval = setInterval(function() {
-                    if(typeof core[name] !== undefined) {
+                    if(typeof core[name] !== 'undefined') {
                         clearInterval(interval);
                         return loadModules(arr);
                     }
-                });
+                }, 100);
             }
             catch(e) {
                 alert('Error loading '+name+'. Please pick a different version.');
