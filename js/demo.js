@@ -28,6 +28,8 @@
  *  Brosnan Yuen for his contributions to graphing
  *  Guppy for graphical input
  */
+/* global nerdamer, editor, USE_GUPPY, katex, Guppy */
+
 //define how the user is being notified.
 function notify(msg, time) {
     var modal = $('#alertModal');
@@ -50,7 +52,7 @@ function notify(msg, time) {
         //the id of the button to trigger processing
         var buttonId = "process-btn";
         //caches the process button
-        var processBtn = $('#'+buttonId)
+        var processBtn = $('#'+buttonId);
         //bind the button for processing
         processBtn.click(process);
         //text input
@@ -376,6 +378,11 @@ function notify(msg, time) {
                     try {
                         //store the user expression so modifications don't get added
                         var user_expression = expression;
+                        // Extract solve
+                        var expr_w_solve = user_expression.match(/solve\((.+),\w\)/);
+                        if(expr_w_solve) {
+                            user_expression = expr_w_solve[1];
+                        }
                         //wrap the expression in expand if expand is checked
                         if(expandIsChecked())
                             expression = 'expand('+expression+')';
@@ -395,7 +402,7 @@ function notify(msg, time) {
                         clear();
                     }
                     catch(e){
-                        console.log(e.stack)
+                        console.log(e.stack);
                         notify('Something went wrong. Nerdamer could not parse expression!</br>'+e.toString());
                     } 
                 }  
