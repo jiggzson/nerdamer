@@ -379,10 +379,11 @@ function notify(msg, time) {
                         //store the user expression so modifications don't get added
                         var user_expression = expression;
                         // Extract solve
-                        var expr_w_solve = user_expression.match(/solve\((.+),\w\)/);
+                        var expr_w_solve = user_expression.match(/solve\((.+),\s+\w\)/);
                         if(expr_w_solve) {
                             user_expression = expr_w_solve[1];
                         }
+                        
                         //wrap the expression in expand if expand is checked
                         if(expandIsChecked())
                             expression = 'expand('+expression+')';
