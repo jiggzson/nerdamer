@@ -38,6 +38,7 @@ var Switcher = {
                         clearInterval(interval);
                         return loadModules(arr);
                     }
+                    console.log('loading', name)
                 }, 100);
             }
             catch(e) {
