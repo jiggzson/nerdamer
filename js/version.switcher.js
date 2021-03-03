@@ -5,6 +5,7 @@ var Switcher = {
         // Bind the change event
         this.selector.change(function () {
             var version = $(this).val();
+            $('.loader').show();
             Switcher.setVersion(version);
         });
     },
@@ -87,6 +88,8 @@ var Switcher = {
                 clearInterval(watchModules);
                 setVersion();
                 setSupported();
+                // Hide the loader
+                $('.loader').hide();
             }
         }, 100);
     }
