@@ -83,6 +83,7 @@ function notify(msg, time) {
                 attach:"focus"
             });
         }
+        
         //initialize guppy
         Guppy.init(guppySettings);
         var guppy = new Guppy(inputId, {

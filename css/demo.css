@@ -151,9 +151,6 @@
     font-size: 0.6em;
 }
 
-.expression-body .katex .mfrac .frac-line {
-    border-bottom-style: none !important;
-}
 
 .input-expression {
     /*background: #3d3d3d;*/
