@@ -4184,7 +4184,7 @@ if((typeof module) !== 'undefined') {
                 //[simplified, patterns] = __.Simplify.patternSub(symbol);
                 
                 // Simplify sqrt within the symbol
-                simplified = __.Simplify.sqrtSimp(simplified, sym_array);
+//                simplified = __.Simplify.sqrtSimp(simplified, sym_array);
                 
                 // Try trig simplificatons e.g. cos(x)^2+sin(x)^2
                 simplified = __.Simplify.trigSimp(simplified);

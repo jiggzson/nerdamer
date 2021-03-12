@@ -679,34 +679,21 @@ if ((typeof module) !== 'undefined') {
          */
         cubic:function (d_o, c_o, b_o, a_o) {
             //convert everything to text
-            var a = a_o.text(), b = b_o.text(), c = c_o.text(), d = d_o.text();
-            var d0s = '({1})^2-3*({0})*({2})',
-                    d0 = _.parse(format(d0s, a, b, c)),
-                    Q = _.parse(format('((2*({1})^3-9*({0})*({1})*({2})+27*({0})^2*({3}))^2-4*(({1})^2-3*({0})*({2}))^3)^(1/2)', a, b, c, d)),
-                    C = _.parse(format('((1/2)*(({4})+2*({1})^3-9*({0})*({1})*({2})+27*({0})^2*({3})))^(1/3)', a, b, c, d, Q));
-            //check if C equals 0
-            var scope = {};
-            //populate the scope object
-            variables(C).map(function (x) {
-                scope[x] = 1;
-            });
-
-            var Ct = core.Utils.block('PARSE2NUMBER', function () {
-                return _.parse(C, scope);
-            });
-
-            if (Number(d0) === 0 && Number(Ct) === 0) //negate Q such that C != 0
-                C = _.parse(format('((1/2)*(-({4})+2*({1})^3-9*({0})*({1})*({2})+27*({0})^2*({3})))^(1/3)', a, b, c, d, Q));
-
-            var xs = [
-                '-(b/(3*a))-C/(3*a)-(((b^2-3*a*c))/(3*a*C))',
-                '-(b/(3*a))+(C*(1+i*sqrt(3)))/(6*a)+((1-i*sqrt(3))*(b^2-3*a*c))/(6*a*C)'.replace(/i/g, core.Settings.IMAGINARY),
-                '-(b/(3*a))+(C*(1-i*sqrt(3)))/(6*a)+((1+i*sqrt(3))*(b^2-3*a*c))/(6*a*C)'.replace(/i/g, core.Settings.IMAGINARY)
-            ];
-
-            return xs.map(function (e, i) {
-                var o = {a: a_o.clone(), b: b_o.clone(), c: c_o.clone(), d: d_o.clone(), C: C.clone()};
-                return _.parse(e, o);
+            var a = a_o.text();
+            var b = b_o.text();
+            var c = c_o.text();
+            var d = d_o.text();
+            
+            var p = `-(${b})/(3*(${a}))`;
+            var q = `(${p})^3 + ((${b})*(${c})-3*(${a})*(${d}))/(6*(${a})^2)`;
+            var r = `(${c})/(3*(${a}))`;
+            
+            var x = `((${q})+((${q})^2+((${r})-(${p})^2)^3)^(1/2))^(1/3)+((${q})-((${q})^2+((${r})-(${p})^2)^3)^(1/2))^(1/3)+(${p})`;
+            // Cube ro
+            var u = ['1', '(((-1-sqrt(-3))/2))', '(((-1+sqrt(-3))/2))'];
+            
+            return u.map(function(y) {
+                return _.parse(`(${x})*(${y})`);
             });
         },
         /**
@@ -1559,3 +1546,6 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var sol = nerdamer('solve(a*x^3+b*x+c, x)');
+console.log(sol.toString())

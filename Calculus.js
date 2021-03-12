@@ -2081,8 +2081,11 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
             var vars = core.Utils.variables(symbol),
                 hasTrig = symbol.hasTrig();
             var retval, integral;
-            if(vars.length === 1)
+            
+            // Fix #593 - Only assume the first variable if dx is not defined.
+            if(vars.length === 1 && !dx)
                 dx = vars[0];
+            
             if(!hasTrig) {
                 integral = __.integrate(symbol, dx);
             }
