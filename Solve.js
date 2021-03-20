@@ -44,6 +44,8 @@ if ((typeof module) !== 'undefined') {
     core.Settings.make_pi_conversions = true;
     // The step size
     core.Settings.STEP_SIZE = 0.1;
+    // The epsilon size
+    core.Settings.EPSILON = 1e-13;
     //the maximum iterations for Newton's method
     core.Settings.MAX_NEWTON_ITERATIONS = 200;
     //the maximum number of time non-linear solve tries another jump point
@@ -68,6 +70,11 @@ if ((typeof module) !== 'undefined') {
     core.Settings.MAX_SOLVE_DEPTH = 10;
     // The tolerance that's considered close enough to zero
     core.Settings.ZERO_EPSILON = 1e-9;
+    // The maximum iteration for the bisection method incase of some JS strangeness
+    core.Settings.MAX_BISECTION_ITER = 2000;
+    // The tolerance for the bisection method
+    core.Settings.BI_SECTION_EPSILON = 1e-12;
+    
     
     core.Symbol.prototype.hasTrig = function () {
         return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
@@ -845,6 +852,58 @@ if ((typeof module) !== 'undefined') {
             
             return points;
         },
+        /**
+         * Implements the bisection method. Returns undefined in no solution is found
+         * @param {number} point
+         * @param {function} f
+         * @returns {undefined | number}
+         */
+        bisection: function (point, f) {
+            var left = point - 1;
+            var right = point + 1;
+            // First test if this point is even worth evaluating. It should
+            // be crossing the x axis so the signs should be different
+            if(Math.sign(f(left)) !== Math.sign(f(right))) {
+                var safety = 0;
+           
+                var epsilon, middle;
+
+                do {
+                    epsilon = Math.abs(right - left);
+                    // Safety against an infinite loop
+                    if(safety++ > core.Settings.MAX_BISECTION_ITER || isNaN(epsilon)) {
+                        return;
+                    }
+                    // Calculate the middle point
+                    middle = (left + right) / 2;
+
+                    if(f(left) * f(middle) > 0) {
+                        left = middle;
+                    }
+                    else {
+                        right = middle;
+                    }
+                }
+                while(epsilon >= Settings.EPSILON);
+
+                var solution = (left + right) / 2;
+                
+                // Test the solution to make sure that it's within tolerance
+                var x_point = f(solution);
+                
+                if(!isNaN(x_point) && Math.abs(x_point) <= core.Settings.BI_SECTION_EPSILON) {
+                    // Returns too many junk solutions if not rounded at 13th place.
+                    return core.Utils.round(solution, 13);
+                }
+            }
+        },
+        /**
+         * Implements Newton's iterations. Returns undefined if no solutions if found
+         * @param {number} point
+         * @param {function} f
+         * @param {function} fp
+         * @returns {undefined|number}
+         */
         Newton: function (point, f, fp) {
             var maxiter = core.Settings.MAX_NEWTON_ITERATIONS,
                     iter = 0;
@@ -869,7 +928,7 @@ if ((typeof module) !== 'undefined') {
             while (e > Settings.NEWTON_EPSILON)
             
             //check if the number is indeed zero. 1e-13 seems to give the most accurate results
-            if(Math.abs(f(x)) <= 1e-13)
+            if(Math.abs(f(x)) <= Settings.EPSILON)
                 return x;
         },
         rewrite: function (rhs, lhs, for_variable) {
@@ -1048,15 +1107,21 @@ if ((typeof module) !== 'undefined') {
             if (r === undefined || typeof r === 'number' && isNaN(r))
                 return;
             if (isArray(r)) {
-                r.map(function(sol) {
+                r.forEach(function(sol) {
                     add_to_result(sol);
                 });
             }
             else {
                 if (r.valueOf() !== 'null') {
-                    if (!r_is_symbol)
+                    // Call the pre-add function if defined. This could be useful for rounding
+                    if(typeof core.Settings.PRE_ADD_SOLUTION === 'function') {
+                        r = core.Settings.PRE_ADD_SOLUTION(r);
+                    }
+                    
+                    if (!r_is_symbol) {
                         r = _.parse(r);
-                    //try to convert the number to multiples of pi
+                    }
+                    // try to convert the number to multiples of pi
                     if (core.Settings.make_pi_conversions && has_trig) {
                         var temp = _.divide(r.clone(), new Symbol(Math.PI)),
                                 m = temp.multiplier,
@@ -1065,16 +1130,19 @@ if ((typeof module) !== 'undefined') {
                         if (a < 10 && b < 10)
                             r = _.multiply(temp, new Symbol('pi'));
                     }
-                    //convert to a string so we can mark it as a known solution
-                    var r_str = r.toString();
-                    if (!existing[r_str])
-                        solutions.push(r); /*NO*/
-                    //mark the answer as seen
+
+                    // And check if we get a number otherwise we might be throwing out symbolic solutions.
+                    var r_str = r.toString() 
+                    if (!existing[r_str]) {
+                        solutions.push(r); 
+                    }
+                    // Mark the answer as seen
                     existing[r_str] = true;
                 }
             }
         };
-        //maybe we get lucky
+        
+        // Maybe we get lucky
         if (eqns.group === S && eqns.contains(solve_for)) {
             add_to_result(new Symbol(0));
             return solutions;
@@ -1309,27 +1377,45 @@ if ((typeof module) !== 'undefined') {
             }
             else {
                 try {
-                    //Attempt Newton
-                    //since it's not a polynomial then we'll try to look for a solution using Newton's method
-                    //this is not a very broad search but takes the positions that something is better than nothing
+                    // Attempt Newton
+                    // Since it's not a polynomial then we'll try to look for a solution using Newton's method
                     var has_trig = eq.hasTrig();
                     // we get all the points where a possible zero might exist.
                     var points1 = __.getPoints(eq, 0.1);
                     var points2 = __.getPoints(eq, 0.05);
                     var points3 = __.getPoints(eq, 0.01);
                     var points = core.Utils.arrayUnique(points1.concat(points2).concat(points3)).sort(function(a, b) { return a-b});
-                    
-                    //generate slices
-                    //points = core.Utils.arrayAddSlices(points, Settings.NEWTON_SLICES); 
+                    var i, point, solution;
 
-                    //compile the function and the derivative of the function
+                    // Compile the function
                     var f = build(eq.clone());
                     
-                    var d = _C.diff(eq.clone());
+                    // First try to eliminate some points using bisection
+                    var t_points = [];
+                    for(i=0; i<points.length; i++) {
+                        point = points[i];
+                        
+                        // See if there's a solution at this point
+                        solution = __.bisection(point, f);
+                        
+                        // If there's no solution then add it to the array for further investigation
+                        if(typeof solution === 'undefined') {
+                            t_points.push(point);
+                            continue;
+                        }
+                        
+                        // Add the solution to the solution set
+                        add_to_result(solution, has_trig);
+                    }
+
+                    // Reset the points to the remaining points
+                    points = t_points;
                     
+                    // Build the derivative and compile a function
+                    var d = _C.diff(eq.clone());
                     var fp = build(d);
-                    for (var i = 0; i < points.length; i++) {
-                        var point = points[i];
+                    for (i = 0; i < points.length; i++) {
+                        point = points[i];
                         
                         add_to_result(__.Newton(point, f, fp), has_trig);
                     }
@@ -1431,7 +1517,6 @@ if ((typeof module) !== 'undefined') {
                                 var eq = new Equation(x, rhs).toLHS();
                                 add_to_result(solve(eq, solve_for));
                             }
-                            
                         }
                         else
                             add_to_result(_.subtract(lhs, rhs));
@@ -1525,14 +1610,6 @@ if ((typeof module) !== 'undefined') {
                 return core.Solve.solve;
             }
         },
-        /*
-         {
-         name: 'polysolve',
-         parent: 'Solve',
-         visible: true,
-         build: function(){ return polysolve; }
-         },
-         */
         {
             name: 'setEquation',
             parent: 'Solve',
@@ -1544,8 +1621,3 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-// First solve for y
-var sol = nerdamer('x^3+y^3=3').solveFor('y').map((s) => nerdamer.simplify(s));
-
-console.log(sol.toString()); 
