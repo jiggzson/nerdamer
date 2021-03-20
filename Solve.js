@@ -679,22 +679,20 @@ if ((typeof module) !== 'undefined') {
          */
         cubic:function (d_o, c_o, b_o, a_o) {
             //convert everything to text
-            var a = a_o.text();
-            var b = b_o.text();
-            var c = c_o.text();
-            var d = d_o.text();
+            var a = a_o.text(), b = b_o.text(), c = c_o.text(), d = d_o.text();
+            var t = `(-(${b})^3/(27*(${a})^3)+(${b})*(${c})/(6*(${a})^2)-(${d})/(2*(${a})))`;
+            var u = `((${c})/(3*(${a}))-(${b})^2/(9*(${a})^2))`;
+            var v = `(${b})/(3*(${a}))`;
+            var x = `((${t})+sqrt((${t})^2)+(${u})^3)^(1/3)+((${t})-sqrt((${t})^2)+(${u})^3)^(1/3)+(${v})`;
             
-            var p = `-(${b})/(3*(${a}))`;
-            var q = `(${p})^3 + ((${b})*(${c})-3*(${a})*(${d}))/(6*(${a})^2)`;
-            var r = `(${c})/(3*(${a}))`;
+            // Convert a to one
+            var w = '1/2+sqrt(3)/2*i'; // Cube root of unity
             
-            var x = `((${q})+((${q})^2+((${r})-(${p})^2)^3)^(1/2))^(1/3)+((${q})-((${q})^2+((${r})-(${p})^2)^3)^(1/2))^(1/3)+(${p})`;
-            // Cube ro
-            var u = ['1', '(((-1-sqrt(-3))/2))', '(((-1+sqrt(-3))/2))'];
-            
-            return u.map(function(y) {
-                return _.parse(`(${x})*(${y})`);
-            });
+            return [
+                _.parse(x),
+                _.parse(`(${x})(${w})`),
+                _.parse(`(${x})(${w})^2`)
+            ];
         },
         /**
          * The quartic equation
@@ -1547,5 +1545,7 @@ if ((typeof module) !== 'undefined') {
     nerdamer.api();
 })();
 
-var sol = nerdamer('solve(a*x^3+b*x+c, x)');
-console.log(sol.toString())
+// First solve for y
+var sol = nerdamer('x^3+y^3=3').solveFor('y').map((s) => nerdamer.simplify(s));
+
+console.log(sol.toString()); 
