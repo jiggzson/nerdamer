@@ -202,7 +202,7 @@ describe('Solve', function () {
             },
             {
                 given: 'solve(0=(x^(2)-2)/(e^(x)-1), x)',
-                expected: '[-sqrt(2),sqrt(2)]'
+                expected: '[sqrt(2),-sqrt(2)]'
             },
             {
                 given: 'solve(4/y^2=x^2+1,y)',

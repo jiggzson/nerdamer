@@ -120,7 +120,13 @@ if ((typeof module) !== 'undefined') {
             else {
                 eqn = this.removeDenom();
             }
-            var _t = _.subtract(eqn.LHS, eqn.RHS);
+            var a = eqn.LHS;
+            var b = eqn.RHS;
+            if(a.isConstant(true) && !b.isConstant(true)) {
+                // Swap them to avoid confusing parser and cause an infinite loop
+                [a, b] = [b, a];
+            }
+            var _t = _.subtract(a, b);
             var retval = expand ? _.expand(_t) : _t;
             return retval;
         },
@@ -687,6 +693,7 @@ if ((typeof module) !== 'undefined') {
         cubic:function (d_o, c_o, b_o, a_o) {
             //convert everything to text
             var a = a_o.text(), b = b_o.text(), c = c_o.text(), d = d_o.text();
+
             var t = `(-(${b})^3/(27*(${a})^3)+(${b})*(${c})/(6*(${a})^2)-(${d})/(2*(${a})))`;
             var u = `((${c})/(3*(${a}))-(${b})^2/(9*(${a})^2))`;
             var v = `(${b})/(3*(${a}))`;
