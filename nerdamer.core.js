@@ -94,7 +94,7 @@ var nerdamer = (function (imports) {
         //Print out warnings or not
         SILENCE_WARNINGS: false,
         //Precision
-        PRECISION: 80,
+        PRECISION: 21,
         //function mappings
         VECTOR: 'vector',
         PARENTHESIS: 'parens',
@@ -12148,3 +12148,6 @@ var nerdamer = (function (imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+var ans = nerdamer('1/3');
+console.log(ans.toTeX('decimal'))
