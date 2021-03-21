@@ -1132,7 +1132,8 @@ if ((typeof module) !== 'undefined') {
                     }
 
                     // And check if we get a number otherwise we might be throwing out symbolic solutions.
-                    var r_str = r.toString() 
+                    var r_str = r.toString();
+                    
                     if (!existing[r_str]) {
                         solutions.push(r); 
                     }
@@ -1373,7 +1374,6 @@ if ((typeof module) !== 'undefined') {
                         }
                     }
                 }
-                
             }
             else {
                 try {
@@ -1574,7 +1574,7 @@ if ((typeof module) !== 'undefined') {
                     if(isNaN(zero)) {
                         return true;
                     }
-                    return Math.abs(zero) <= core.Settings.ZERO_EPSILON;
+                    return true;
                 }
                 catch(e) {
                     return false;

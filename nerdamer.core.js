@@ -12148,6 +12148,3 @@ var nerdamer = (function (imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-var ans = nerdamer('1/3');
-console.log(ans.toTeX('decimal'))
