@@ -223,7 +223,35 @@ describe('Solve', function () {
             {
                 given: 'solve(x^3+y^3=3, x)',
                 expected: '[((-1/2)*y^3+3/2+abs((-1/2)*y^3+3/2))^(1/3)+((-1/2)*y^3-abs((-1/2)*y^3+3/2)+3/2)^(1/3),(((-1/2)*y^3+3/2+abs((-1/2)*y^3+3/2))^(1/3)+((-1/2)*y^3-abs((-1/2)*y^3+3/2)+3/2)^(1/3))*((1/2)*i*sqrt(3)+1/2),(((-1/2)*y^3+3/2+abs((-1/2)*y^3+3/2))^(1/3)+((-1/2)*y^3-abs((-1/2)*y^3+3/2)+3/2)^(1/3))*((1/2)*i*sqrt(3)+1/2)^2]'
-            }
+            },
+            {
+                given: 'solve(sqrt(10x+186)=x+9,x)',
+                expected: '[7]'
+            },
+            {
+                given: 'solve(x^3+8=x^2+6,x)',
+                expected: '[-1,1+i,-i+1]'
+            },
+            {
+                given: 'solve(x^3-10x^2+31x-30,x)',
+                expected: '[3,5,2]'
+            },
+            {
+                given: 'solve(8x^3-26x^2+3x+9,x)',
+                expected: '[3/4,-1/2,3]'
+            },
+            {
+                given: 'solve(x^3-1/2x^2-13/2x-3,x)',
+                expected: '[-2,3,-1/2]'
+            },
+//            {
+//                given: '',
+//                expected: ''
+//            },
+//            {
+//                given: '',
+//                expected: ''
+//            },
         ];
 
         for (var i = 0; i < testCases.length; ++i) {
