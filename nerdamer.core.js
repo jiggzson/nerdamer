@@ -2590,6 +2590,13 @@ var nerdamer = (function (imports) {
             return Math.abs(this.symbol.multiplier) === Infinity;
         },
         /**
+         * Checks to see if the expression contains imaginary numbers
+         * @returns {boolean}
+         */
+        isImaginary: function() {
+            return evaluate(_.parse(this.symbol)).isImaginary();
+        },
+        /**
          * Returns all the variables in the expression
          * @returns {Array}
          */
@@ -12148,3 +12155,4 @@ var nerdamer = (function (imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
