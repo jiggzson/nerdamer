@@ -41,7 +41,7 @@ if ((typeof module) !== 'undefined') {
     // The maximum number to fish for on each side of the zero
     core.Settings.ROOTS_PER_SIDE = 10;
     // Covert the number to multiples of pi if possible
-    core.Settings.make_pi_conversions = true;
+    core.Settings.make_pi_conversions = false;
     // The step size
     core.Settings.STEP_SIZE = 0.1;
     // The epsilon size
@@ -1628,3 +1628,6 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+var sol = nerdamer('solve(x^22+1,x)');
+console.log(sol.toString())
