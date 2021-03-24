@@ -10493,7 +10493,7 @@ var nerdamer = (function (imports) {
                     if(token.value === SQRT && tokens[i+1].type === 'vector' && tokens[i+2].type === 'Set') {
                         var base = parse_next();
                         var expr = parse_next();
-                        retval += (expr+'^'+inBrackets('1/'+inBrackets(base)));
+                        retval += (expr+'^'+inBrackets('1/'+base));
                     }
                     else {
                         retval += token.value + parse_next();
@@ -11748,7 +11748,7 @@ var nerdamer = (function (imports) {
      * @param {String} e
      * @returns {String}
      */
-    libExports.convertFromLaTeX = function (e) {console.log(e)
+    libExports.convertFromLaTeX = function (e) {
         var txt = LaTeX.parse(_.tokenize(e));
         return new Expression(_.parse(txt));
     };
