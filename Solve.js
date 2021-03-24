@@ -1628,6 +1628,3 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-var sol = nerdamer('solve(x^22+1,x)');
-console.log(sol.toString())

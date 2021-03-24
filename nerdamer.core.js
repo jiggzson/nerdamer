@@ -10414,6 +10414,12 @@ var nerdamer = (function (imports) {
          */
         filterTokens: function (tokens) {
             var filtered = [];
+            
+            // Copy over the type of the scope
+            if(isArray(tokens)) {
+                filtered.type = tokens.type;
+            }
+                
             // the items that need to be disposed
             var d = ['\\', 'left', 'right', 'big', 'Big', 'large', 'Large'];
             for (var i = 0, l = tokens.length; i < l; i++) {
@@ -10484,7 +10490,14 @@ var nerdamer = (function (imports) {
                     retval += n + '/' + d;
                 }
                 else if (token.value in LaTeX.symbols) {
-                    retval += token.value + parse_next();
+                    if(token.value === SQRT && tokens[i+1].type === 'vector' && tokens[i+2].type === 'Set') {
+                        var base = parse_next();
+                        var expr = parse_next();
+                        retval += (expr+'^'+inBrackets('1/'+inBrackets(base)));
+                    }
+                    else {
+                        retval += token.value + parse_next();
+                    }
                 }
                 else if (token.value === 'int') {
                     var f = parse_next();
@@ -11735,7 +11748,7 @@ var nerdamer = (function (imports) {
      * @param {String} e
      * @returns {String}
      */
-    libExports.convertFromLaTeX = function (e) {
+    libExports.convertFromLaTeX = function (e) {console.log(e)
         var txt = LaTeX.parse(_.tokenize(e));
         return new Expression(_.parse(txt));
     };
@@ -12155,4 +12168,3 @@ var nerdamer = (function (imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
