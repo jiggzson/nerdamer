@@ -6909,7 +6909,8 @@ var nerdamer = (function (imports) {
             };
             return objectify(_.tokenize(expression_string));
         };
-        //helper method for toTeX
+        
+        // A helper method for toTeX
         var chunkAtCommas = function (arr) {
             var j, k = 0, chunks = [[]];
             for (var j = 0, l = arr.length; j < l; j++) {
@@ -6923,13 +6924,60 @@ var nerdamer = (function (imports) {
             }
             return chunks;
         };
-        //helper method for toTeX
+        
+        // Helper method for toTeX
         var rem_brackets = function (str) {
             return str.replace(/^\\left\((.+)\\right\)$/g, function (str, a) {
                 if (a)
                     return a;
                 return str;
             });
+        };
+        
+        var remove_neg_powers = function(arr) {
+            // The filtered array
+            var narr = [];
+            
+            while(arr.length) {
+                // Remove the element from the front
+                var e = arr.shift();
+                var next = arr[0];
+                
+                // Check if it's a negative power
+                if(e === '^' && isArray(next) && next[0] === '-') {
+                    // If so:
+                    // - Remove it from the new array, place a one and a division sign in that array and put it back
+                    var last = narr.pop();
+                    // Check if it's something multiplied by
+                    var before = narr[narr.length-1];
+                    var before_last = '1';
+                    
+                    if(before === '*') {
+                        narr.pop();
+                        // For simplicity we just pop it. 
+                        before_last = narr.pop();
+                    }
+                    // Implied multiplication
+                    else if(isArray(before)) {
+                        before_last = narr.pop();
+                    }
+                    
+                    narr.push(before_last, '/', last, e);
+                    
+                    // Remove the negative sign from the power 
+                    next.shift();
+                    
+                    // Remove it from the array so we don't end up with redundant parentheses if we can
+                    if(next.length === 1) {
+                        narr.push(arr.shift()[0]);
+                    }
+                }
+                else {
+                    narr.push(e);
+                }
+            }
+            
+            return narr;
         };
         /*
          * Convert expression or object to LaTeX
@@ -6945,7 +6993,10 @@ var nerdamer = (function (imports) {
             var obj = typeof expression_or_obj === 'string' ? this.toObject(expression_or_obj) : expression_or_obj,
                     TeX = [],
                     cdot = typeof opt.cdot === 'undefined' ? '\\cdot' : opt.cdot; //set omit cdot to true by default
-
+           
+           // Remove negative powers as per issue #570
+           obj = remove_neg_powers(obj);
+           
             if (isArray(obj)) {
                 var nobj = [], a, b;
                 //first handle ^
@@ -6957,15 +7008,17 @@ var nerdamer = (function (imports) {
                         nobj.push(LaTeX.braces(this.toTeX([a])) + '^' + LaTeX.braces(this.toTeX([b])));
                         i += 2;
                     }
-                    else
+                    else {
                         nobj.push(a);
+                    }
                 }
                 obj = nobj;
             }
 
             for (var i = 0, l = obj.length; i < l; i++) {
                 var e = obj[i];
-                //convert * to cdot
+                
+                // Convert * to cdot
                 if (e === '*') {
                     e = cdot;
                 }

@@ -282,6 +282,10 @@ describe('TeX features', function () {
             {
                 given: '2*(sqrt(3)+sqrt(2))',
                 expected: '2 \\cdot \\left(\\sqrt{3} + \\sqrt{2}\\right)'
+            },
+            {
+                given: '(a+1)(x+a)^(-5)+1',
+                expected: '\\frac{a + 1}{{\\left(x + a\\right)}^{5}} + 1'
             }
         ];
 
