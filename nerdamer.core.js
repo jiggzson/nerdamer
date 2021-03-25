@@ -6934,7 +6934,7 @@ var nerdamer = (function (imports) {
             });
         };
         
-        var remove_neg_powers = function(arr) {
+        var remove_redundant_powers = function(arr) {
             // The filtered array
             var narr = [];
             
@@ -6942,9 +6942,26 @@ var nerdamer = (function (imports) {
                 // Remove the element from the front
                 var e = arr.shift();
                 var next = arr[0];
+                var next_is_array = isArray(next);
+                var next_is_minus = next === '-';
+                
+                // Remove redundant plusses 
+                if(e === '^') {
+                    if(next === '+') {
+                        arr.shift();
+                    }
+                    else if(next_is_array && next[0] === '+') {
+                        next.shift();
+                    }
+                    
+                    // Remove redundant parentheses
+                    if(next_is_array && next.length === 1) {
+                        arr.unshift(arr.shift()[0]);
+                    }
+                }
                 
                 // Check if it's a negative power
-                if(e === '^' && isArray(next) && next[0] === '-') {
+                if(e === '^' && (next_is_array && next[0] === '-') || next_is_minus) {
                     // If so:
                     // - Remove it from the new array, place a one and a division sign in that array and put it back
                     var last = narr.pop();
@@ -6965,10 +6982,15 @@ var nerdamer = (function (imports) {
                     narr.push(before_last, '/', last, e);
                     
                     // Remove the negative sign from the power 
-                    next.shift();
+                    if(next_is_array) {
+                        next.shift();
+                    }
+                    else {
+                        arr.shift();
+                    }
                     
                     // Remove it from the array so we don't end up with redundant parentheses if we can
-                    if(next.length === 1) {
+                    if(next_is_array && next.length === 1) {
                         narr.push(arr.shift()[0]);
                     }
                 }
@@ -6995,7 +7017,7 @@ var nerdamer = (function (imports) {
                     cdot = typeof opt.cdot === 'undefined' ? '\\cdot' : opt.cdot; //set omit cdot to true by default
            
            // Remove negative powers as per issue #570
-           obj = remove_neg_powers(obj);
+           obj = remove_redundant_powers(obj);
            
             if (isArray(obj)) {
                 var nobj = [], a, b;

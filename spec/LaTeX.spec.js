@@ -47,12 +47,12 @@ describe('TeX features', function () {
                 given: '5/8*2^(2/3)*4',
                 TeX: '\\frac{5}{2^{\\frac{1}{3}}}',
                 decimalTeX: '3.968502629920499'
-            }, 
+            },
             {
                 given: '3*x^(2/3)/4',
                 TeX: '\\frac{3 \\cdot x^{\\frac{2}{3}}}{4}',
                 decimalTeX: '0.75 \\cdot x^{0.66666666666666666667}'
-            }, 
+            },
             {
                 given: '4*cos(x)',
                 TeX: '4 \\cdot \\mathrm{cos}\\left(x\\right)',
@@ -283,9 +283,18 @@ describe('TeX features', function () {
                 given: '2*(sqrt(3)+sqrt(2))',
                 expected: '2 \\cdot \\left(\\sqrt{3} + \\sqrt{2}\\right)'
             },
+            // Redundant sign in powers
             {
                 given: '(a+1)(x+a)^(-5)+1',
                 expected: '\\frac{a + 1}{{\\left(x + a\\right)}^{5}} + 1'
+            },
+            {
+                given: 'a*x^-3+1/a',
+                expected: '\\frac{a}{{x}^{3}} + \\frac{1}{a}'
+            },
+            {
+                given: 'a*x^+3+1/a',
+                expected: 'a \\cdot {x}^{3} + \\frac{1}{a}'
             }
         ];
 
