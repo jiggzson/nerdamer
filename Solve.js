@@ -41,9 +41,11 @@ if ((typeof module) !== 'undefined') {
     // The maximum number to fish for on each side of the zero
     core.Settings.ROOTS_PER_SIDE = 10;
     // Covert the number to multiples of pi if possible
-    core.Settings.make_pi_conversions = true;
+    core.Settings.make_pi_conversions = false;
     // The step size
     core.Settings.STEP_SIZE = 0.1;
+    // The epsilon size
+    core.Settings.EPSILON = 1e-13;
     //the maximum iterations for Newton's method
     core.Settings.MAX_NEWTON_ITERATIONS = 200;
     //the maximum number of time non-linear solve tries another jump point
@@ -68,6 +70,11 @@ if ((typeof module) !== 'undefined') {
     core.Settings.MAX_SOLVE_DEPTH = 10;
     // The tolerance that's considered close enough to zero
     core.Settings.ZERO_EPSILON = 1e-9;
+    // The maximum iteration for the bisection method incase of some JS strangeness
+    core.Settings.MAX_BISECTION_ITER = 2000;
+    // The tolerance for the bisection method
+    core.Settings.BI_SECTION_EPSILON = 1e-12;
+    
     
     core.Symbol.prototype.hasTrig = function () {
         return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
@@ -113,7 +120,13 @@ if ((typeof module) !== 'undefined') {
             else {
                 eqn = this.removeDenom();
             }
-            var _t = _.subtract(eqn.LHS, eqn.RHS);
+            var a = eqn.LHS;
+            var b = eqn.RHS;
+            if(a.isConstant(true) && !b.isConstant(true)) {
+                // Swap them to avoid confusing parser and cause an infinite loop
+                [a, b] = [b, a];
+            }
+            var _t = _.subtract(a, b);
             var retval = expand ? _.expand(_t) : _t;
             return retval;
         },
@@ -329,8 +342,10 @@ if ((typeof module) !== 'undefined') {
             return vars;
         },
         solveNonLinearSystem: function(eqns, tries, start) {
-            if(tries < 0)
+            if(tries < 0) {
                 return [];//can't find a solution
+            }
+            
             start = typeof start === 'undefined' ? core.Settings.NON_LINEAR_START : start;
 
             //the maximum number of times to jump
@@ -374,7 +389,8 @@ if ((typeof module) !== 'undefined') {
                 return build(e, vars);
             }, true);
             //initial values
-            xn1 = core.Matrix.cMatrix(0, vars);;
+            xn1 = core.Matrix.cMatrix(0, vars);
+            
             //initialize the c matrix with something close to 0. 
             var c = core.Matrix.cMatrix(start, vars);
             
@@ -398,7 +414,7 @@ if ((typeof module) !== 'undefined') {
                 f_eqns.forEach(function(f, i) {
                     c.set(i, 0, f.apply(null, o));
                 });
-                
+               
                 var m = new core.Matrix();
                 J.each(function(fn, i, j) {
                     var ans = fn.apply(null, o);
@@ -444,9 +460,9 @@ if ((typeof module) !== 'undefined') {
                 norm = d.max();
                 
                 //exit early. Revisit if we get bugs
-                if(Number(norm) === Number(lnorm))
+                if(Number(norm) === Number(lnorm)) {
                     break;
-                
+                }
             }
             while(Number(norm) >= Number.EPSILON)
             
@@ -476,7 +492,23 @@ if ((typeof module) !== 'undefined') {
             //done
             return solutions;
         },
+        /**
+         * Solves a system of equations by substitution. This is useful when
+         * no distinct solution exists. e.g. a line, plane, etc.
+         * @param {Array} eqns
+         * @param {Array} var_array
+         * @returns {Array|object}
+         */
+        solveSystemBySubstitution: function(eqns, var_array, m, c) {
+            
+        },
         //https://www.lakeheadu.ca/sites/default/files/uploads/77/docs/RemaniFinal.pdf
+        /**
+         * Solves a systems of equations
+         * @param {Array} eqns An array of equations
+         * @param {Array} var_array An array of variables
+         * @returns {Array|object}
+         */
         solveSystem: function (eqns, var_array) {
             //check if a var_array was specified
             //nerdamer.clearVars();// this deleted ALL variables: not what we want
@@ -497,14 +529,56 @@ if ((typeof module) !== 'undefined') {
                     //core.err('System must contain all linear equations!');
                 
                 vars = __.getSystemVariables(eqns);
+                
+                // Deal with redundant equations as expressed in #562
+                // The fix is to remove all but the number of equations equal to the number
+                // of variables. We then solve those and then evaluate the remaining equations
+                // with those solutions. If the all equal true then those are just redundant
+                // equations and we can return the solution set.
+                if(vars.length < eqns.length) {
+                    var reduced = [];
+                    var n = eqns.length;
+                    for(var i=0; i<n-1; i++) {
+                        reduced.push(_.parse(eqns[i]));
+                    }
+                    
+                    var knowns = {};
+                    var solutions = __.solveSystem(reduced, vars);
+                    // The solutions may have come back as an array
+                    if(Array.isArray(solutions)) {
+                        solutions.forEach(function(sol) {
+                            knowns[sol[0]] = sol[1];
+                        });
+                    }
+                    else {
+                        knowns = solutions;
+                    }
+
+                    // Start by assuming they will all evaluate to zero. If even one fails
+                    // then all zero will be false
+                    var all_zero = true;
+                    // Check if the last solution evalutes to zero given these solutions
+                    for(var i=n-1; i<n; i++) {
+                        if(!_.parse(eqns[i], knowns).equals(0)) {
+                            all_zero = false;
+                        }
+                    }
+                    
+                    if(all_zero) {
+                        return solutions;
+                    }
+                }
+                
                 // deletes only the variables of the linear equations in the nerdamer namespace
                 for (var i = 0; i < vars.length; i++) {
                     nerdamer.setVar(vars[i], "delete");
                 }
+                // TODO: move this to cMatrix or something similar
                 // populate the matrix
                 for (var i = 0; i < l; i++) {
                     var e = eqns[i]; //store the expression
-                    for (var j = 0; j < l; j++) {
+                    // Iterate over the columns
+                    for (var j = 0; j < vars.length; j++) {
                         var v = vars[j];
                         var coeffs = [];
                         e.each(function(x) {
@@ -570,10 +644,14 @@ if ((typeof module) !== 'undefined') {
                 }
                 //consider case (a+b)*I+u
             }
-
+            
             //check if the system has a distinct solution
-            if(m.determinant().equals(0))
+            if(vars.length !== eqns.length || m.determinant().equals(0)) {
+                // solve the system by hand
+                //return __.solveSystemBySubstitution(eqns, vars, m, c);
                 throw new core.exceptions.SolveError('System does not have a distinct solution');
+            }
+            
             // Use M^-1*c to solve system
             m = m.invert();
             var result = m.multiply(c);
@@ -582,8 +660,7 @@ if ((typeof module) !== 'undefined') {
                 result.each(function (x) {
                     return x.negate();
                 });
-            
-            
+
             return __.systemSolutions(result, vars, expand_result);
         },
         /**
@@ -616,34 +693,20 @@ if ((typeof module) !== 'undefined') {
         cubic:function (d_o, c_o, b_o, a_o) {
             //convert everything to text
             var a = a_o.text(), b = b_o.text(), c = c_o.text(), d = d_o.text();
-            var d0s = '({1})^2-3*({0})*({2})',
-                    d0 = _.parse(format(d0s, a, b, c)),
-                    Q = _.parse(format('((2*({1})^3-9*({0})*({1})*({2})+27*({0})^2*({3}))^2-4*(({1})^2-3*({0})*({2}))^3)^(1/2)', a, b, c, d)),
-                    C = _.parse(format('((1/2)*(({4})+2*({1})^3-9*({0})*({1})*({2})+27*({0})^2*({3})))^(1/3)', a, b, c, d, Q));
-            //check if C equals 0
-            var scope = {};
-            //populate the scope object
-            variables(C).map(function (x) {
-                scope[x] = 1;
-            });
 
-            var Ct = core.Utils.block('PARSE2NUMBER', function () {
-                return _.parse(C, scope);
-            });
-
-            if (Number(d0) === 0 && Number(Ct) === 0) //negate Q such that C != 0
-                C = _.parse(format('((1/2)*(-({4})+2*({1})^3-9*({0})*({1})*({2})+27*({0})^2*({3})))^(1/3)', a, b, c, d, Q));
-
-            var xs = [
-                '-(b/(3*a))-C/(3*a)-(((b^2-3*a*c))/(3*a*C))',
-                '-(b/(3*a))+(C*(1+i*sqrt(3)))/(6*a)+((1-i*sqrt(3))*(b^2-3*a*c))/(6*a*C)'.replace(/i/g, core.Settings.IMAGINARY),
-                '-(b/(3*a))+(C*(1-i*sqrt(3)))/(6*a)+((1+i*sqrt(3))*(b^2-3*a*c))/(6*a*C)'.replace(/i/g, core.Settings.IMAGINARY)
+            var t = `(-(${b})^3/(27*(${a})^3)+(${b})*(${c})/(6*(${a})^2)-(${d})/(2*(${a})))`;
+            var u = `((${c})/(3*(${a}))-(${b})^2/(9*(${a})^2))`;
+            var v = `(${b})/(3*(${a}))`;
+            var x = `((${t})+sqrt((${t})^2)+(${u})^3)^(1/3)+((${t})-sqrt((${t})^2)+(${u})^3)^(1/3)+(${v})`;
+            
+            // Convert a to one
+            var w = '1/2+sqrt(3)/2*i'; // Cube root of unity
+            
+            return [
+                _.parse(x),
+                _.parse(`(${x})(${w})`),
+                _.parse(`(${x})(${w})^2`)
             ];
-
-            return xs.map(function (e, i) {
-                var o = {a: a_o.clone(), b: b_o.clone(), c: c_o.clone(), d: d_o.clone(), C: C.clone()};
-                return _.parse(e, o);
-            });
         },
         /**
          * The quartic equation
@@ -796,6 +859,58 @@ if ((typeof module) !== 'undefined') {
             
             return points;
         },
+        /**
+         * Implements the bisection method. Returns undefined in no solution is found
+         * @param {number} point
+         * @param {function} f
+         * @returns {undefined | number}
+         */
+        bisection: function (point, f) {
+            var left = point - 1;
+            var right = point + 1;
+            // First test if this point is even worth evaluating. It should
+            // be crossing the x axis so the signs should be different
+            if(Math.sign(f(left)) !== Math.sign(f(right))) {
+                var safety = 0;
+           
+                var epsilon, middle;
+
+                do {
+                    epsilon = Math.abs(right - left);
+                    // Safety against an infinite loop
+                    if(safety++ > core.Settings.MAX_BISECTION_ITER || isNaN(epsilon)) {
+                        return;
+                    }
+                    // Calculate the middle point
+                    middle = (left + right) / 2;
+
+                    if(f(left) * f(middle) > 0) {
+                        left = middle;
+                    }
+                    else {
+                        right = middle;
+                    }
+                }
+                while(epsilon >= Settings.EPSILON);
+
+                var solution = (left + right) / 2;
+                
+                // Test the solution to make sure that it's within tolerance
+                var x_point = f(solution);
+                
+                if(!isNaN(x_point) && Math.abs(x_point) <= core.Settings.BI_SECTION_EPSILON) {
+                    // Returns too many junk solutions if not rounded at 13th place.
+                    return core.Utils.round(solution, 13);
+                }
+            }
+        },
+        /**
+         * Implements Newton's iterations. Returns undefined if no solutions if found
+         * @param {number} point
+         * @param {function} f
+         * @param {function} fp
+         * @returns {undefined|number}
+         */
         Newton: function (point, f, fp) {
             var maxiter = core.Settings.MAX_NEWTON_ITERATIONS,
                     iter = 0;
@@ -820,7 +935,7 @@ if ((typeof module) !== 'undefined') {
             while (e > Settings.NEWTON_EPSILON)
             
             //check if the number is indeed zero. 1e-13 seems to give the most accurate results
-            if(Math.abs(f(x)) <= 1e-13)
+            if(Math.abs(f(x)) <= Settings.EPSILON)
                 return x;
         },
         rewrite: function (rhs, lhs, for_variable) {
@@ -999,15 +1114,21 @@ if ((typeof module) !== 'undefined') {
             if (r === undefined || typeof r === 'number' && isNaN(r))
                 return;
             if (isArray(r)) {
-                r.map(function(sol) {
+                r.forEach(function(sol) {
                     add_to_result(sol);
                 });
             }
             else {
                 if (r.valueOf() !== 'null') {
-                    if (!r_is_symbol)
+                    // Call the pre-add function if defined. This could be useful for rounding
+                    if(typeof core.Settings.PRE_ADD_SOLUTION === 'function') {
+                        r = core.Settings.PRE_ADD_SOLUTION(r);
+                    }
+                    
+                    if (!r_is_symbol) {
                         r = _.parse(r);
-                    //try to convert the number to multiples of pi
+                    }
+                    // try to convert the number to multiples of pi
                     if (core.Settings.make_pi_conversions && has_trig) {
                         var temp = _.divide(r.clone(), new Symbol(Math.PI)),
                                 m = temp.multiplier,
@@ -1016,16 +1137,20 @@ if ((typeof module) !== 'undefined') {
                         if (a < 10 && b < 10)
                             r = _.multiply(temp, new Symbol('pi'));
                     }
-                    //convert to a string so we can mark it as a known solution
+
+                    // And check if we get a number otherwise we might be throwing out symbolic solutions.
                     var r_str = r.toString();
-                    if (!existing[r_str])
-                        solutions.push(r); /*NO*/
-                    //mark the answer as seen
+                    
+                    if (!existing[r_str]) {
+                        solutions.push(r); 
+                    }
+                    // Mark the answer as seen
                     existing[r_str] = true;
                 }
             }
         };
-        //maybe we get lucky
+        
+        // Maybe we get lucky
         if (eqns.group === S && eqns.contains(solve_for)) {
             add_to_result(new Symbol(0));
             return solutions;
@@ -1256,31 +1381,48 @@ if ((typeof module) !== 'undefined') {
                         }
                     }
                 }
-                
             }
             else {
                 try {
-                    //Attempt Newton
-                    //since it's not a polynomial then we'll try to look for a solution using Newton's method
-                    //this is not a very broad search but takes the positions that something is better than nothing
+                    // Attempt Newton
+                    // Since it's not a polynomial then we'll try to look for a solution using Newton's method
                     var has_trig = eq.hasTrig();
                     // we get all the points where a possible zero might exist.
                     var points1 = __.getPoints(eq, 0.1);
                     var points2 = __.getPoints(eq, 0.05);
                     var points3 = __.getPoints(eq, 0.01);
                     var points = core.Utils.arrayUnique(points1.concat(points2).concat(points3)).sort(function(a, b) { return a-b});
-                    
-                    //generate slices
-                    //points = core.Utils.arrayAddSlices(points, Settings.NEWTON_SLICES); 
+                    var i, point, solution;
 
-                    //compile the function and the derivative of the function
+                    // Compile the function
                     var f = build(eq.clone());
                     
-                    var d = _C.diff(eq.clone());
+                    // First try to eliminate some points using bisection
+                    var t_points = [];
+                    for(i=0; i<points.length; i++) {
+                        point = points[i];
+                        
+                        // See if there's a solution at this point
+                        solution = __.bisection(point, f);
+                        
+                        // If there's no solution then add it to the array for further investigation
+                        if(typeof solution === 'undefined') {
+                            t_points.push(point);
+                            continue;
+                        }
+                        
+                        // Add the solution to the solution set
+                        add_to_result(solution, has_trig);
+                    }
+
+                    // Reset the points to the remaining points
+                    points = t_points;
                     
+                    // Build the derivative and compile a function
+                    var d = _C.diff(eq.clone());
                     var fp = build(d);
-                    for (var i = 0; i < points.length; i++) {
-                        var point = points[i];
+                    for (i = 0; i < points.length; i++) {
+                        point = points[i];
                         
                         add_to_result(__.Newton(point, f, fp), has_trig);
                     }
@@ -1382,7 +1524,6 @@ if ((typeof module) !== 'undefined') {
                                 var eq = new Equation(x, rhs).toLHS();
                                 add_to_result(solve(eq, solve_for));
                             }
-                            
                         }
                         else
                             add_to_result(_.subtract(lhs, rhs));
@@ -1440,7 +1581,7 @@ if ((typeof module) !== 'undefined') {
                     if(isNaN(zero)) {
                         return true;
                     }
-                    return Math.abs(zero) <= core.Settings.ZERO_EPSILON;
+                    return true;
                 }
                 catch(e) {
                     return false;
@@ -1476,14 +1617,6 @@ if ((typeof module) !== 'undefined') {
                 return core.Solve.solve;
             }
         },
-        /*
-         {
-         name: 'polysolve',
-         parent: 'Solve',
-         visible: true,
-         build: function(){ return polysolve; }
-         },
-         */
         {
             name: 'setEquation',
             parent: 'Solve',

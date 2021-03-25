@@ -47,11 +47,13 @@ describe('TeX features', function () {
                 given: '5/8*2^(2/3)*4',
                 TeX: '\\frac{5}{2^{\\frac{1}{3}}}',
                 decimalTeX: '3.968502629920499'
-            }, {
+            },
+            {
                 given: '3*x^(2/3)/4',
                 TeX: '\\frac{3 \\cdot x^{\\frac{2}{3}}}{4}',
-                decimalTeX: '0.75 \\cdot x^{0.6666666666666666666666666666666666666666666666666666666666666666666666666666667}'
-            }, {
+                decimalTeX: '0.75 \\cdot x^{0.66666666666666666667}'
+            },
+            {
                 given: '4*cos(x)',
                 TeX: '4 \\cdot \\mathrm{cos}\\left(x\\right)',
                 decimalTeX: '4 \\cdot \\mathrm{cos}\\left(x\\right)'
@@ -147,7 +149,7 @@ describe('TeX features', function () {
                 given: '(x+1)!',
                 TeX: '\\left(x+1\\right)!',
                 decimalTeX: '\\left(x+1\\right)!'
-            }, 
+            },
             {
                 given: 'x!+(x+1)!',
                 TeX: '\\left(x+1\\right)!+x!',
@@ -185,7 +187,7 @@ describe('TeX features', function () {
             }
         ];
 
-        for (var i = 0; i < testCases.length; ++i) {
+        for(var i = 0; i < testCases.length; ++i) {
             // when
             var teX = nerdamer(testCases[i].given).toTeX();
             var decimalTex = nerdamer(testCases[i].given).toTeX('decimal');
@@ -198,120 +200,133 @@ describe('TeX features', function () {
 
     /** #36: Weird results with sqrt */
     it('should render square roots properly', function () {
-      // given
-      var formula = '2*sqrt(x)';
+        // given
+        var formula = '2*sqrt(x)';
 
-      // when
-      var teX = nerdamer(formula).toTeX();
+        // when
+        var teX = nerdamer(formula).toTeX();
 
-      // then
-      expect(teX).toEqual('2 \\cdot \\sqrt{x}');
+        // then
+        expect(teX).toEqual('2 \\cdot \\sqrt{x}');
     });
 
     /** #39: Terms multiplied in brackets not rendered correctly */
     it('should render parentheses', function () {
-      // given
-      var formula = '(x+1)*(x+2)';
+        // given
+        var formula = '(x+1)*(x+2)';
 
-      // when
-      var teX = nerdamer(formula).toTeX();
+        // when
+        var teX = nerdamer(formula).toTeX();
 
-      // then
-      expect(teX).toEqual('\\left(x+1\\right) \\cdot \\left(x+2\\right)');
+        // then
+        expect(teX).toEqual('\\left(x+1\\right) \\cdot \\left(x+2\\right)');
     });
 
     /** #41: Latex output should use descending order */
     it('should use descending order of polynomials', function () {
-      // given
-      var formula = 'x^2+x+1';
+        // given
+        var formula = 'x^2+x+1';
 
-      // when
-      var teX = nerdamer(formula).toTeX();
+        // when
+        var teX = nerdamer(formula).toTeX();
 
-      // then
-      expect(teX).toEqual('x^{2}+x+1');
+        // then
+        expect(teX).toEqual('x^{2}+x+1');
     });
 
     it('should support Greek letters', function () {
-      // given
-      var testCases = [
-        {
-          given: 'alpha + beta',
-          expected: '\\alpha+\\beta'
-        },
-        {
-          given: '5 * 3 / psi',
-          expected: '\\frac{15}{\\psi}'
-        },
-        {
-          given: 'Xi ^ tau - 8*nu',
-          expected: '\\Xi^{\\tau}-8 \\cdot \\nu'
+        // given
+        var testCases = [
+            {
+                given: 'alpha + beta',
+                expected: '\\alpha+\\beta'
+            },
+            {
+                given: '5 * 3 / psi',
+                expected: '\\frac{15}{\\psi}'
+            },
+            {
+                given: 'Xi ^ tau - 8*nu',
+                expected: '\\Xi^{\\tau}-8 \\cdot \\nu'
+            }
+        ];
+
+        for(var i = 0; i < testCases.length; ++i) {
+            // when
+            var teX = nerdamer(testCases[i].given).toTeX();
+
+            // then
+            expect(teX).toEqual(testCases[i].expected);
         }
-      ];
-
-      for (var i = 0; i < testCases.length; ++i) {
-        // when
-        var teX = nerdamer(testCases[i].given).toTeX();
-
-        // then
-        expect(teX).toEqual(testCases[i].expected);
-      }
     });
-    
+
     it('should explicitly convert to LaTeX', function () {
-      // given
-      var testCases = [
-        {
-          given: 'realpart(a)',
-          expected: '\\operatorname{Re}\\left(a\\right)'
-        },
-        {
-          given: 'imagpart(a)',
-          expected: '\\operatorname{Im}\\left(a\\right)'
-        },
-        {
-          given: 'diff(cos(x),x)',
-          expected: '\\frac{d}{d x}\\left({\\mathrm{cos}\\left(x\\right)}\\right)'
-        },
-        {
-          given: 'integrate(cos(x),x)',
-          expected: '\\int {\\mathrm{cos}\\left(x\\right)}\\, dx'
-        },
-        {
-          given: '2*(sqrt(3)+sqrt(2))',
-          expected: '2 \\cdot \\left(\\sqrt{3} + \\sqrt{2}\\right)'
+        // given
+        var testCases = [
+            {
+                given: 'realpart(a)',
+                expected: '\\operatorname{Re}\\left(a\\right)'
+            },
+            {
+                given: 'imagpart(a)',
+                expected: '\\operatorname{Im}\\left(a\\right)'
+            },
+            {
+                given: 'diff(cos(x),x)',
+                expected: '\\frac{d}{d x}\\left({\\mathrm{cos}\\left(x\\right)}\\right)'
+            },
+            {
+                given: 'integrate(cos(x),x)',
+                expected: '\\int {\\mathrm{cos}\\left(x\\right)}\\, dx'
+            },
+            {
+                given: '2*(sqrt(3)+sqrt(2))',
+                expected: '2 \\cdot \\left(\\sqrt{3} + \\sqrt{2}\\right)'
+            },
+            // Redundant sign in powers
+            {
+                given: '(a+1)(x+a)^(-5)+1',
+                expected: '\\frac{a + 1}{{\\left(x + a\\right)}^{5}} + 1'
+            },
+            {
+                given: 'a*x^-3+1/a',
+                expected: '\\frac{a}{{x}^{3}} + \\frac{1}{a}'
+            },
+            {
+                given: 'a*x^+3+1/a',
+                expected: 'a \\cdot {x}^{3} + \\frac{1}{a}'
+            }
+        ];
+
+        for(var i = 0; i < testCases.length; ++i) {
+            // when
+            var teX = nerdamer.convertToLaTeX(testCases[i].given);
+
+            // then
+            expect(teX).toEqual(testCases[i].expected);
         }
-      ];
-
-      for (var i = 0; i < testCases.length; ++i) {
-        // when
-        var teX = nerdamer.convertToLaTeX(testCases[i].given);
-
-        // then
-        expect(teX).toEqual(testCases[i].expected);
-      }
     });
-    
+
     it('should display integrals', function () {
-      // given
-      var testCases = [
-        {
-          given: 'defint(log(2cos(x/2)),-π,π,x)',
-          expected: '\\int\\limits_{-\\pi}^{\\pi} \\mathrm{log}\\left(2 \\cdot \\mathrm{cos}\\left(\\frac{x}{2}\\right)\\right) dx'
-        },
-        {
-          given: 'integrate(sin(x^x),x)',
-          expected: '\\int{\\mathrm{sin}\\left(x^{x}\\right)}{dx}'
-        },
-      ];
+        // given
+        var testCases = [
+            {
+                given: 'defint(log(2cos(x/2)),-π,π,x)',
+                expected: '\\int\\limits_{-\\pi}^{\\pi} \\mathrm{log}\\left(2 \\cdot \\mathrm{cos}\\left(\\frac{x}{2}\\right)\\right) dx'
+            },
+            {
+                given: 'integrate(sin(x^x),x)',
+                expected: '\\int{\\mathrm{sin}\\left(x^{x}\\right)}{dx}'
+            },
+        ];
 
-      for (var i = 0; i < testCases.length; ++i) {
-        // when
-        var teX = nerdamer(testCases[i].given).toTeX();
+        for(var i = 0; i < testCases.length; ++i) {
+            // when
+            var teX = nerdamer(testCases[i].given).toTeX();
 
-        // then
-        expect(teX).toEqual(testCases[i].expected);
-      }
+            // then
+            expect(teX).toEqual(testCases[i].expected);
+        }
     });
-    
+
 });

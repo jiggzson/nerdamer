@@ -6,7 +6,7 @@
 * Source : https://github.com/jiggzson/nerdamer
 */
 
-/* global module */
+/* global module, Function */
 
 if((typeof module) !== 'undefined') {
     var nerdamer = require('./nerdamer.core.js');
@@ -960,6 +960,7 @@ if((typeof module) !== 'undefined') {
         for(var x in map) subs[map[x]] = _.parse(x);
         return subs;
     };
+
     var __ = core.Algebra = {
         version: '1.4.6',
         proots: function(symbol, decp) { 
@@ -2135,10 +2136,9 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             factor: function(symbol, factors) {
-                var before = symbol.toString();
                 // Don't try to factor constants
                 if(symbol.isConstant()) {
-                    return symbol;
+                    return core.Math2.factor(symbol);
                 }
                 
                 var _symbol = _.parse(symbol);
@@ -3866,8 +3866,9 @@ if((typeof module) !== 'undefined') {
                 throw new core.exceptions.ValueLimitExceededError(msg);
             };
             //if not CP then nothing to do
-            if(!symbol.isPoly()) 
+            if(!symbol.isPoly(true)) 
                 stop('Must be a polynomial!');
+
             //declare vars
             var deg, a, b, c, d, e, coeffs, sign, br, sym, sqrt_a;
 
@@ -4040,11 +4041,10 @@ if((typeof module) !== 'undefined') {
                 }
                 return symbol;
             },
-            sqrtSimp: function(symbol) {
+            sqrtSimp: function(symbol, sym_array) {
                 var retval;
-                if(symbol.isSQRT()) {
+                if(symbol.isSQRT()) {                    
                     var factored = __.Factor.factor(symbol.args[0].clone());
-                    
                     var m = _.parse(factored.multiplier);
                     var sign = m.sign();
 
@@ -4105,9 +4105,11 @@ if((typeof module) !== 'undefined') {
                         retval = _.multiply(retval, simp);
                         
                     }, true);
+                    // Put back the power
+                    retval = _.pow(retval, _.parse(symbol.power));
                 }
                 
-                return retval ? retval : symbol.clone();
+                return retval ? retval : _.parse(symbol);
             },
             /**
              * Unused. The goal is to substitute out patterns but it currently doesn't work.
@@ -4165,7 +4167,6 @@ if((typeof module) !== 'undefined') {
                 //remove the multiplier to make calculation easier;
                 var sym_array = __.Simplify.strip(symbol);
                 symbol = sym_array.pop();
-
                 //remove gcd from denominator
                 symbol = __.Simplify.fracSimp(symbol);
 
@@ -4177,13 +4178,13 @@ if((typeof module) !== 'undefined') {
                 }
                 
                 //var patterns;
-                    
+                
                 var simplified = symbol.clone(); //make a copy
                 
                 //[simplified, patterns] = __.Simplify.patternSub(symbol);
                 
                 // Simplify sqrt within the symbol
-                simplified = __.Simplify.sqrtSimp(simplified);
+//                simplified = __.Simplify.sqrtSimp(simplified, sym_array);
                 
                 // Try trig simplificatons e.g. cos(x)^2+sin(x)^2
                 simplified = __.Simplify.trigSimp(simplified);
@@ -4232,6 +4233,11 @@ if((typeof module) !== 'undefined') {
             Factors: Factors,
             MVTerm: MVTerm
         }
+    };
+    
+    // Add a link to simplify
+    core.Expression.prototype.simplify = function() {
+        return __.Simplify.simplify(this.symbol);
     };
 
     nerdamer.useAlgebraDiv = function() {
