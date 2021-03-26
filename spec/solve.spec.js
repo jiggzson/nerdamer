@@ -192,10 +192,10 @@ describe('Solve', function () {
                 given: 'solve(sqrt(x)-2x+x^2,x)',
                 expected: '[(-1/2)*sqrt(5)+3/2,0,1,832040/2178309]'
             },
-//            {
-//                given: 'solve((2x+x^2)^2-x,x)',
-//                expected: '[0,1097^(1/3)*729^(-1/3)+4*(-1)^(1/3)*729^(-1/3)+4/3,((1/2)*i*sqrt(3)+1/2)*(1097^(1/3)*729^(-1/3)+4*(-1)^(1/3)*729^(-1/3)+4/3),((1/2)*i*sqrt(3)+1/2)^2*(1097^(1/3)*729^(-1/3)+4*(-1)^(1/3)*729^(-1/3)+4/3)]'
-//            },
+            {
+                given: 'solve((2x+x^2)^2-x,x)',
+                expected: '[0,((-1/6)*sqrt(3)^(-1)*sqrt(59)+43/54)^(1/3)+((1/6)*sqrt(3)^(-1)*sqrt(59)+43/54)^(1/3)-4/3,(((-1/6)*sqrt(3)^(-1)*sqrt(59)+43/54)^(1/3)+((1/6)*sqrt(3)^(-1)*sqrt(59)+43/54)^(1/3)-4/3)*((1/2)*i*sqrt(3)+1/2),(((-1/6)*sqrt(3)^(-1)*sqrt(59)+43/54)^(1/3)+((1/6)*sqrt(3)^(-1)*sqrt(59)+43/54)^(1/3)-4/3)*((1/2)*i*sqrt(3)+1/2)^2]'
+            },
             {
                 given: 'solve((5*x^4-2)/(x+1)/(x^2-1),x)',
                 expected: '[72425485/91070226,-72425485/91070226,(316684236/398209345)*i,(-316684236/398209345)*i]'
@@ -244,10 +244,11 @@ describe('Solve', function () {
                 given: 'solve(x^3-1/2x^2-13/2x-3,x)',
                 expected: '[-2,3,-1/2]'
             },
-//            {
-//                given: '',
-//                expected: ''
-//            },
+            {
+                given: 'solve(x^3+2x^2+3x-4=0,x)',
+                expected: '[0.776045435028538,0.388022717514269+0.6720750612256601*i,-0.388022717514269+0.6720750612256599*i]',
+                evaluate: true
+            },
 //            {
 //                given: '',
 //                expected: ''
@@ -257,6 +258,10 @@ describe('Solve', function () {
         for (var i = 0; i < testCases.length; ++i) {
             // when
             var parsed = nerdamer(testCases[i].given);
+            
+            if(testCases[i].evaluate) {
+                parsed = parsed.evaluate().text();
+            }
 
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
