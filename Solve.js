@@ -697,7 +697,8 @@ if ((typeof module) !== 'undefined') {
             var t = `(-(${b})^3/(27*(${a})^3)+(${b})*(${c})/(6*(${a})^2)-(${d})/(2*(${a})))`;
             var u = `((${c})/(3*(${a}))-(${b})^2/(9*(${a})^2))`;
             var v = `(${b})/(3*(${a}))`;
-            var x = `((${t})+sqrt((${t})^2)+(${u})^3)^(1/3)+((${t})-sqrt((${t})^2)+(${u})^3)^(1/3)+(${v})`;
+            var x = `((${t})+sqrt((${t})^2)+(${u})^3)^(1/3)+((${t})-sqrt((${t})^2)+(${u})^3)^(1/3)-(${v})`;
+            var x = `(((-((${b}))^3/(27*((${a}))^3)+((${b}))*((${c}))/(6*((${a}))^2)-((${d}))/(2*((${a})))))+sqrt(((-((${b}))^3/(27*((${a}))^3)+((${b}))*((${c}))/(6*((${a}))^2)-((${d}))/(2*((${a})))))^2)+((((${c}))/(3*((${a})))-((${b}))^2/(9*((${a}))^2)))^(3/2))^(1/3)+(((-((${b}))^3/(27*((${a}))^3)+((${b}))*((${c}))/(6*((${a}))^2)-((${d}))/(2*((${a})))))-sqrt(((-((${b}))^3/(27*((${a}))^3)+((${b}))*((${c}))/(6*((${a}))^2)-((${d}))/(2*((${a})))))^2)+((((${c}))/(3*((${a})))-((${b}))^2/(9*((${a}))^2)))^(3/2))^(1/3)-(((${b}))/(3*((${a}))))`
             
             // Convert a to one
             var w = '1/2+sqrt(3)/2*i'; // Cube root of unity
@@ -1356,6 +1357,7 @@ if ((typeof module) !== 'undefined') {
                             else if (deg === 2) {
                                 add_to_result(_.expand(__.quad.apply(undefined, coeffs)));
                             }
+                            /*
                             else if (deg === 3) {
                                 var solutions = []; //set to blank
                                 //first try to factor and solve
@@ -1367,6 +1369,7 @@ if ((typeof module) !== 'undefined') {
                                 else
                                     add_to_result(__.cubic.apply(undefined, coeffs));
                             }
+                            */
                             else {
                                 /*
                                  var sym_roots = csolve(eq, solve_for); 
@@ -1628,3 +1631,9 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+//var sol = nerdamer('solve(a*x^3+b*x^2+c*x+d=0,x)').evaluate();
+//console.log(sol.text())
+
+var sol = nerdamer('solve(x^3+2x^2+3x-4=0,x)').evaluate();
+console.log(sol.text())
