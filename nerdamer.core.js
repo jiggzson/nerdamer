@@ -16,7 +16,7 @@ var nerdamer = (function (imports) {
     "use strict";
 
 //version ======================================================================
-    var version = '1.1.8';
+    var version = '1.1.9';
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
