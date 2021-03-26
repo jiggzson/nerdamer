@@ -1631,9 +1631,3 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-//var sol = nerdamer('solve(a*x^3+b*x^2+c*x+d=0,x)').evaluate();
-//console.log(sol.text())
-
-var sol = nerdamer('solve(x^3+2x^2+3x-4=0,x)').evaluate();
-console.log(sol.text())
