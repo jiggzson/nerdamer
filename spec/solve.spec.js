@@ -249,6 +249,43 @@ describe('Solve', function () {
                 expected: '[0.776045435028538,0.388022717514269+0.6720750612256601*i,-0.388022717514269+0.6720750612256599*i]',
                 evaluate: true
             },
+            {
+                given: 'solve(x*log(x),x)',
+                expected: '[1]'
+            },
+            {
+                given: 'solve((9x+x^2)^3+10800x+40x^4+4440x^2+720x^3+20(9*x+x^2)^2+8000,x) ',
+                expected: '[-5,-4]'
+            },
+            {
+                given: 'solve((x^3-4)/(x^3+7x-11),x)',
+                expected: '[1.587401051968199,0.7937005259840910+1.3747296369986024*i,-0.793700525984099+1.374729636998602*i]',
+                evaluate: true
+            },
+            {
+                given: 'solve((93222358/131836323)*(-2*y+549964829/38888386)=10, y)',
+                expected: '[1/3625267041734188]'
+            },
+            {
+                given: 'solve(sqrt(x)+sqrt(2x+1)=5,x) ',
+                expected: '[4]'
+            },
+            {
+                given: 'solve(sqrt(x)-1,x) ',
+                expected: '[1]'
+            },
+            {
+                given: 'solve(sqrt(x)+1,x)',
+                expected: '[]'
+            },
+//            {
+//                given: '',
+//                expected: ''
+//            },
+//            {
+//                given: '',
+//                expected: ''
+//            },
 //            {
 //                given: '',
 //                expected: ''

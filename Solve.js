@@ -499,9 +499,11 @@ if ((typeof module) !== 'undefined') {
          * @param {Array} var_array
          * @returns {Array|object}
          */
+        /*
         solveSystemBySubstitution: function(eqns, var_array, m, c) {
             
         },
+        */
         //https://www.lakeheadu.ca/sites/default/files/uploads/77/docs/RemaniFinal.pdf
         /**
          * Solves a systems of equations
@@ -1059,10 +1061,13 @@ if ((typeof module) !== 'undefined') {
     /*
      * 
      * @param {String[]|String|Equation} eqns
-     * @param {type} solve_for
+     * @param {String} solve_for
+     * @param {Array} solutions
+     * @param {Number} depth
+     * @param {String|Equation} fn
      * @returns {Array}
      */
-    var solve = function (eqns, solve_for, solutions, depth) {
+    var solve = function (eqns, solve_for, solutions, depth, fn) {
         depth = depth || 0;
         
         if(depth++ > Settings.MAX_SOLVE_DEPTH) {
@@ -1072,8 +1077,9 @@ if ((typeof module) !== 'undefined') {
         //make preparations if it's an Equation
         if (eqns instanceof Equation) {
             //if it's zero then we're done
-            if (eqns.isZero())
+            if (eqns.isZero()) {
                 return [new Symbol(0)];
+            }
             //if the lhs = x then we're done
             if (eqns.LHS.equals(solve_for) && !eqns.RHS.contains(solve_for)) {
                 return [eqns.RHS];
@@ -1093,8 +1099,8 @@ if ((typeof module) !== 'undefined') {
             return __.solveSystem.apply(undefined, arguments);
         }
         
-        //parse out functions. Fix for issue #300
-        //eqns = core.Utils.evaluate(eqns);
+        // Parse out functions. Fix for issue #300
+        // eqns = core.Utils.evaluate(eqns);
         solutions = solutions || [];
         //mark existing solutions as not to have duplicates
         var existing = {}; 
@@ -1107,8 +1113,8 @@ if ((typeof module) !== 'undefined') {
             return solutions;
         }
         
-        //Is usued to add solutions to set. 
-        //TODO: Set is now implemented and should be utilized
+        // Is usued to add solutions to set. 
+        // TODO: Set is now implemented and should be utilized
         var add_to_result = function (r, has_trig) {
             var r_is_symbol = isSymbol(r);
             if (r === undefined || typeof r === 'number' && isNaN(r))
@@ -1150,20 +1156,36 @@ if ((typeof module) !== 'undefined') {
             }
         };
         
-        // Maybe we get lucky
+        // Maybe we get lucky. Try the point at the function. If it works we have a point
+        // If not it failed
         if (eqns.group === S && eqns.contains(solve_for)) {
-            add_to_result(new Symbol(0));
+            try {
+                var o = {}; o[solve_for] = 0;
+                evaluate(fn, o, 'numer');
+                add_to_result(new Symbol(0));
+            }
+            catch(e) {
+                // Do nothing;
+            }
+            
             return solutions;
         }
-        if (eqns.group === CB) {
-            var sf = String(solve_for); //everything else belongs to the coeff
-            //get the denominator and make sure it doesn't have x since we don't know how to solve for those
-            eqns.each(function (x) {
-                if (x.contains(sf))
-                    solve(x, solve_for, solutions);
-            });
+        if (eqns.group === CB) { 
+            // It suffices to solve for the numerator
+            var num = eqns.getNum();
+            
+            if(num.group === CB) {
+                var sf = String(solve_for); //everything else belongs to the coeff
+                //get the denominator and make sure it doesn't have x since we don't know how to solve for those
+                num.each(function (x) {
+                    if (x.contains(sf))
+                        solve(x, solve_for, solutions, depth, eqns);
+                });
 
-            return solutions;
+                return solutions;
+            }
+            
+            return solve(num, solve_for, solutions, depth, fn);
         }
         
         if(eqns.group === FN && eqns.fname === 'sqrt') {
@@ -1183,8 +1205,9 @@ if ((typeof module) !== 'undefined') {
         //if we're dealing with a single variable then we first check if it's a 
         //polynomial (including rationals).If it is then we use the Jenkins-Traubb algorithm.     
         //Don't waste time
-        if (eq.group === S || eq.group === CB && eq.contains(solve_for))
+        if (eq.group === S || eq.group === CB && eq.contains(solve_for)) {
             return [new Symbol(0)];
+        }
         //force to polynomial. We go through each and then we look at what it would 
         //take for its power to be an integer
         //if the power is a fractional we divide by the fractional power
@@ -1393,7 +1416,7 @@ if ((typeof module) !== 'undefined') {
                     var points1 = __.getPoints(eq, 0.1);
                     var points2 = __.getPoints(eq, 0.05);
                     var points3 = __.getPoints(eq, 0.01);
-                    var points = core.Utils.arrayUnique(points1.concat(points2).concat(points3)).sort(function(a, b) { return a-b});
+                    var points = core.Utils.arrayUnique(points1.concat(points2).concat(points3)).sort(function(a, b) { return a-b; });
                     var i, point, solution;
 
                     // Compile the function
@@ -1579,6 +1602,7 @@ if ((typeof module) !== 'undefined') {
                 try {
                     knowns[solve_for] = x;
                     var zero = Number(evaluate(eqns, knowns));
+                    
                     // Allow symbolic answers
                     if(isNaN(zero)) {
                         return true;

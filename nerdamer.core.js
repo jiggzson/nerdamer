@@ -2545,6 +2545,11 @@ var nerdamer = (function (imports) {
          */
         evaluate: function () {
 
+            // Don't evaluate an empty vector
+            if(isVector(this.symbol) && this.symbol.dimensions() === 0) {
+                return this;
+            }
+            
             var first_arg = arguments[0], expression, idx = 1;
 
             //Enable getting of expressions using the % so for example %1 should get the first expression
