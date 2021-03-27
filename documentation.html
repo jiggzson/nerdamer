@@ -99,12 +99,18 @@
                 <p>
                     Parsing is performed with the use of the <strong>nerdamer</strong> object which takes a string as it's main parameter.
                 </p>
-                <p>
-                    See the <a href="./quickstart.html">Quick start</a> to get up and running quickly.
-                    Note that you can now use internal functions through the new API. For example
-                </p>
-<pre><code>var x = nerdamer.diff('sin(x)/x', 'x');              
-</code></pre>
+                <div class="alert alert-info text-center">
+                    <h3><i class="fas fa-warning"></i>Note</h3>
+                    
+                    <p class="text-info">
+                        See the <a href="./quickstart.html">Quick start</a> to get up and running quickly.
+                        Note that you can now use internal functions through the new API. For example as an alternative to doing:
+                    </p>
+                    <pre><code>var x = nerdamer('diff(sin(x)/x, x)');</code></pre>
+                    you can also do:
+                    <pre><code>var x = nerdamer.diff('sin(x)/x', 'x');</code></pre>
+                </div>
+                
                 <h1>Functions</h1>
                 <h3 class="text-muted">Core</h3>
                 <h4>nerdamer</h4>
