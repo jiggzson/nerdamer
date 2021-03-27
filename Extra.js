@@ -48,7 +48,7 @@ if ((typeof module) !== 'undefined') {
     };
 
     var __ = core.Extra = {
-        version: '1.4.1',
+        version: '1.4.2',
         //http://integral-table.com/downloads/LaplaceTable.pdf
         //Laplace assumes all coefficients to be positive
         LaPlace: {
@@ -146,8 +146,9 @@ if ((typeof module) !== 'undefined') {
                 var input_symbol = symbol.clone();
                 return core.Utils.block('POSITIVE_MULTIPLIERS', function () {
                     //expand and get partial fractions
-                    if(symbol.group === CB)
+                    if(symbol.group === CB) {
                         symbol = core.Algebra.PartFrac.partfrac(_.expand(symbol), s_);
+                    }
 
                     if (symbol.group === S || symbol.group === CB || symbol.isComposite()) {
                         var finalize = function () {
@@ -173,8 +174,9 @@ if ((typeof module) !== 'undefined') {
                             den_p = den.power.clone();
                             den.toLinear();
                         }
-                        else
+                        else {
                             den_p = new core.Frac(1);
+                        }
                         
                         //convert s to a string
                         s = s_.toString();
@@ -195,58 +197,75 @@ if ((typeof module) !== 'undefined') {
                             finalize();
                         }
                         else if (den.group === CP && den_p.equals(1)) {
-                            // a/(b*s-c) -> ae^(-bt)
-                            if (f.x.isLinear() && !num.contains(s)) {
-                                t = _.divide(t, f.a.clone());
-                                retval = _.parse(format('(({0})^({3}-1)*e^(-(({2})*({0}))/({1})))/(({3}-1)!*({1})^({3}))', t, f.a, f.b, den_p));
-                                //wrap it up
-                                finalize();
-                            }
+                            if(f.x.group === core.groups.PL && core.Algebra.degree(den).equals(2)) {
+                                // Possibly in the form 1/(s^2+2*s+1)
+                                // Try factoring to get it in a more familiar form{
+                                // Apply inverse of F(s-a)
+                                var completed = core.Algebra.sqComplete(den, s);
+                                var u = core.Utils.getU(den);
+                                // Get a for the function above
+                                var a = core.Utils.decompose_fn(completed.a, s, true).b;
+                                var tf = __.LaPlace.inverse(_.parse(`1/((${u})^2+(${completed.c}))`), u, t);
+                                retval = _.multiply(tf, _.parse(`(${m})*e^(-${a})*(${t})`));
+                            }   
                             else {
-                                if (f.x.group === S && f.x.power.equals(2)) {
-                                    if (!num.contains(s)) {
-                                        retval = _.parse(format('(({1})*sin((sqrt(({2})*({3}))*({0}))/({2})))/sqrt(({2})*({3}))', t, num, f.a, f.b));
-                                    }
-                                    // a*s/(b*s^2+c^2)
-                                    else {
-                                        var a = new Symbol(1);
-                                        if (num.group === CB) {
-                                            var new_num = new Symbol(1);
-                                            num.each(function (x) {
-                                                if (x.contains(s))
-                                                    new_num = _.multiply(new_num, x);
-                                                else
-                                                    a = _.multiply(a, x);
-                                            });
-                                            num = new_num;
+                                // a/(b*s-c) -> ae^(-bt)
+                                if (f.x.isLinear() && !num.contains(s)) {
+                                    t = _.divide(t, f.a.clone());
+                                    
+                                    // Don't add factorial of one or zero
+                                    var p = den_p-1;
+                                    var fact = p === 0 || p === 1 ? '1': `(${den_p}-1)!`
+                                    retval = _.parse(format('(({0})^({3}-1)*e^(-(({2})*({0}))/({1})))/(({4})*({1})^({3}))', t, f.a, f.b, den_p, fact));
+                                    //wrap it up
+                                    finalize();
+                                }
+                                else {
+                                    if (f.x.group === S && f.x.power.equals(2)) {
+                                        if (!num.contains(s)) {
+                                            retval = _.parse(format('(({1})*sin((sqrt(({2})*({3}))*({0}))/({2})))/sqrt(({2})*({3}))', t, num, f.a, f.b));
                                         }
-
-                                        //we need more information about the denominator to decide
-                                        var f2 = core.Utils.decompose_fn(num, s, true);
-                                        var fn1, fn2, a_has_sin, b_has_cos, a_has_cos, b_has_sin;
-                                        fn1 = f2.a;
-                                        fn2 = f2.b;
-                                        a_has_sin = fn1.containsFunction('sin');
-                                        a_has_cos = fn1.containsFunction('cos');
-                                        b_has_cos = fn2.containsFunction('cos');
-                                        b_has_sin = fn2.containsFunction('sin');
-                                        if (f2.x.value === s && f2.x.isLinear() && !((a_has_sin && b_has_cos) || (a_has_cos || b_has_sin))) {
-                                            retval = _.parse(format('(({1})*cos((sqrt(({2})*({3}))*({0}))/({2})))/({2})', t, f2.a, f.a, f.b));
-                                        }
+                                        // a*s/(b*s^2+c^2)
                                         else {
-                                            if (a_has_sin && b_has_cos) {
-                                                var sin, cos;
-                                                sin = fn1.findFunction('sin');
-                                                cos = fn2.findFunction('cos');
-                                                //who has the s?
-                                                if (sin.args[0].equals(cos.args[0]) && !sin.args[0].contains(s)) {
-                                                    var b, c, d, e;
-                                                    b = _.divide(fn2, cos.toUnitMultiplier()).toString();
-                                                    c = sin.args[0].toString();
-                                                    d = f.b;
-                                                    e = _.divide(fn1, sin.toUnitMultiplier());
-                                                    exp = '(({1})*({2})*cos({3})*sin(sqrt({4})*({0})))/sqrt({4})+({1})*sin({3})*({5})*cos(sqrt({4})*({0}))';
-                                                    retval = _.parse(format(exp, t, a, b, c, d, e));
+                                            var a = new Symbol(1);
+                                            if (num.group === CB) {
+                                                var new_num = new Symbol(1);
+                                                num.each(function (x) {
+                                                    if (x.contains(s))
+                                                        new_num = _.multiply(new_num, x);
+                                                    else
+                                                        a = _.multiply(a, x);
+                                                });
+                                                num = new_num;
+                                            }
+
+                                            //we need more information about the denominator to decide
+                                            var f2 = core.Utils.decompose_fn(num, s, true);
+                                            var fn1, fn2, a_has_sin, b_has_cos, a_has_cos, b_has_sin;
+                                            fn1 = f2.a;
+                                            fn2 = f2.b;
+                                            a_has_sin = fn1.containsFunction('sin');
+                                            a_has_cos = fn1.containsFunction('cos');
+                                            b_has_cos = fn2.containsFunction('cos');
+                                            b_has_sin = fn2.containsFunction('sin');
+                                            if (f2.x.value === s && f2.x.isLinear() && !((a_has_sin && b_has_cos) || (a_has_cos || b_has_sin))) {
+                                                retval = _.parse(format('(({1})*cos((sqrt(({2})*({3}))*({0}))/({2})))/({2})', t, f2.a, f.a, f.b));
+                                            }
+                                            else {
+                                                if (a_has_sin && b_has_cos) {
+                                                    var sin, cos;
+                                                    sin = fn1.findFunction('sin');
+                                                    cos = fn2.findFunction('cos');
+                                                    //who has the s?
+                                                    if (sin.args[0].equals(cos.args[0]) && !sin.args[0].contains(s)) {
+                                                        var b, c, d, e;
+                                                        b = _.divide(fn2, cos.toUnitMultiplier()).toString();
+                                                        c = sin.args[0].toString();
+                                                        d = f.b;
+                                                        e = _.divide(fn1, sin.toUnitMultiplier());
+                                                        exp = '(({1})*({2})*cos({3})*sin(sqrt({4})*({0})))/sqrt({4})+({1})*sin({3})*({5})*cos(sqrt({4})*({0}))';
+                                                        retval = _.parse(format(exp, t, a, b, c, d, e));
+                                                    }
                                                 }
                                             }
                                         }
@@ -266,7 +285,7 @@ if ((typeof module) !== 'undefined') {
                                 retval = _.parse(format(exp, t, a, f.a, f.b));
                             }
                             else {
-                                //decompose the numerator to check value of s
+                                // Decompose the numerator to check value of s
                                 f2 = core.Utils.decompose_fn(_.expand(num.clone()), s, true);
                                 if (f2.x.isComposite()) {
                                     var s_terms = [];
@@ -285,7 +304,7 @@ if ((typeof module) !== 'undefined') {
                                                 return p2 - p1;
                                             });
                                     a = new Symbol(-1);
-                                    //grab only the ones which have s
+                                    // Grab only the ones which have s
                                     for (var i = 0; i < symbols.length; i++) {
                                         var fc = symbols[i];
                                         if (fc.x.value === s)
@@ -293,11 +312,11 @@ if ((typeof module) !== 'undefined') {
                                         else
                                             a = _.multiply(a, fc.symbol);
                                     }
-                                    //the following 2 assumptions are made
-                                    //1. since the numerator was factored above then each s_term has a unique power
-                                    //2. because the terms are sorted by descending powers then the first item 
-                                    //   has the highest power
-                                    //we can now check for the next type s(s^2-a^2)/(s^2+a^2)^2
+                                    // The following 2 assumptions are made
+                                    // 1. since the numerator was factored above then each s_term has a unique power
+                                    // 2. because the terms are sorted by descending powers then the first item 
+                                    //    has the highest power
+                                    // We can now check for the next type s(s^2-a^2)/(s^2+a^2)^2
                                     if (s_terms[0].x.power.equals(2) && s_terms[1].x.power.equals(1) && s_terms[1].b.equals(0) && !s_terms[0].b.equals(0)) {
                                         b = s_terms[0].a.negate();
                                         exp = '-(({1})*({2})*({5})*({0})*sin((sqrt(({4})*({5}))*({0}))/({4})))/' +
@@ -331,16 +350,23 @@ if ((typeof module) !== 'undefined') {
                             }
                         }
                         else if(symbol.isComposite()) {
-                            retval = new Symbol(0);
-                            
-                            symbol.each(function(x) {
-                                retval = _.add(retval, __.LaPlace.inverse(x, s_, t));
-                            }, true);
+                            // 1/(s+1)^2
+                            if(den_p.equals(2) && f.x.group === S) {
+                                retval = _.parse(`(${m})*(${t})*e^(-(${f.b})*(${t}))`);
+                            }
+                            else {
+                                retval = new Symbol(0);
+
+                                symbol.each(function(x) {
+                                    retval = _.add(retval, __.LaPlace.inverse(x, s_, t));
+                                }, true);
+                            }  
                         }
                     }
 
-                    if (!retval)
+                    if (!retval) {
                         retval = _.symfunction('ilt', [input_symbol, s_, t]);
+                    }
 
                     return retval;
                 }, true);

@@ -107,7 +107,7 @@ describe('Solve', function () {
         expect(ans.toString()).toEqual('j,2935.601831019821,x,1334.3644686453729,y,2668.7289372907458,z,2935.601831019821');
     });
 
-    xit('should solve factors', function () {
+    it('should solve factors', function () {
         expect(nerdamer('solve((x-1)*(-a*c-a*x+c*x+x^2),x)').text()).toEqual('[1,-c,a]');
     });
 });
