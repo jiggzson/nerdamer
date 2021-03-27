@@ -1384,8 +1384,9 @@ if ((typeof module) !== 'undefined') {
                                 var solutions = []; //set to blank
                                 //first try to factor and solve
                                 var factored = core.Algebra.Factor.factor(eqns);
+
                                 //if it was successfully factored
-                                var solutions = !factored.equals(eqns) ? solve(factored, solve_for) : [];
+                                var solutions = [];
                                 if(solutions.length > 0)
                                     add_to_result(solutions);
                                 else
