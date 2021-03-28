@@ -6939,7 +6939,7 @@ var nerdamer = (function (imports) {
             });
         };
         
-        var remove_redundant_powers = function(arr) {
+        var remove_redundant_powers = function(arr) { 
             // The filtered array
             var narr = [];
             
@@ -6966,7 +6966,7 @@ var nerdamer = (function (imports) {
                 }
                 
                 // Check if it's a negative power
-                if(e === '^' && (next_is_array && next[0] === '-') || next_is_minus) {
+                if(e === '^' && (next_is_array && next[0] === '-' || next_is_minus) ) {
                     // If so:
                     // - Remove it from the new array, place a one and a division sign in that array and put it back
                     var last = narr.pop();
