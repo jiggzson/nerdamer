@@ -1,431 +1,480 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
+    <head>
 
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="A symbolic math expression evaluator library for JavaScript. Nerdamer can also integrate, differentiate, partial fractions, solver, simplify, factor and some other CAS (Computer Algebra System) abilities.">
-    <meta name="keywords" content="nerdamer documentation symbolic math mathematics javascript js online computation algebra intergration integral differentiation derivative formula engine CAS trigonometry solver solve solvefor equation equations linear nonlinear library functions vector matrix partial fractions latex parse tree parser continued fraction gcd lcm laplace limit">
-    <meta name="author" content="Martin Donk">
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="A symbolic math expression evaluator library for JavaScript. Nerdamer can also integrate, differentiate, partial fractions, solver, simplify, factor and some other CAS (Computer Algebra System) abilities.">
+        <meta name="keywords" content="nerdamer documentation symbolic math mathematics javascript js online computation algebra intergration integral differentiation derivative formula engine CAS trigonometry solver solve solvefor equation equations linear nonlinear library functions vector matrix partial fractions latex parse tree parser continued fraction gcd lcm laplace limit">
+        <meta name="author" content="Martin Donk">
 
-    <title>Nerdamer | Documentation</title>
+        <title>Nerdamer | Documentation</title>
 
-    <!-- Bootstrap Core CSS -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
+        <!-- Bootstrap Core CSS -->
+        <link href="css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Custom CSS -->
-    <link href="css/site.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-    <link rel="stylesheet" href="./plugins/highlightjs/styles/vs.css"> 
-    <script src="./plugins/highlightjs/highlight.pack.js"></script> 
-    <script>
-        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        <!-- Custom CSS -->
+        <link href="css/site.css" rel="stylesheet">
+        <link href="css/style.css" rel="stylesheet">
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <link rel="stylesheet" href="./plugins/highlightjs/styles/vs.css"> 
+        <script src="./plugins/highlightjs/highlight.pack.js"></script> 
+        <script>
+            (function (i, s, o, g, r, a, m) {
+                i['GoogleAnalyticsObject'] = r;
+                i[r] = i[r] || function () {
+                    (i[r].q = i[r].q || []).push(arguments)
+                }, i[r].l = 1 * new Date();
+                a = s.createElement(o),
+                        m = s.getElementsByTagName(o)[0];
+                a.async = 1;
+                a.src = g;
+                m.parentNode.insertBefore(a, m)
+            })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
 
-        ga('create', 'UA-58729441-1', 'auto');
-        ga('send', 'pageview');
-    </script>
-    <style>
-        .functions > li {
-            padding-top: 5px;
-            padding-bottom: 5px;
-        }
-    </style>
-</head>
+            ga('create', 'UA-58729441-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+        <style>
+            .functions > li {
+                padding-top: 5px;
+                padding-bottom: 5px;
+            }
+        </style>
+    </head>
 
-<body>
+    <body>
 
-    <!-- Navigation -->
-    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <!-- Navigation -->
+        <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+            <div class="container">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="./"><img src="./img/logo.png" alt="Nerdamer"/></a>
+                </div>
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav">
+                        <li>
+                            <a href="./">Home</a>
+                        </li>
+                        <li class="active">
+                            <a href="./documentation.html">Documentation</a>
+                        </li>
+                        <li>
+                            <a href="./demo.html">Demo</a>
+                        </li>
+                        <li>
+                            <a href="./quickstart.html">Quick Start</a>
+                        </li>
+                        <li class="visible-sm visible-xs"><a href="./extending_core.html">Extending the core</a></li>
+                        <li class="visible-sm visible-xs"><a href="./digging_deeper.html">Digging deeper</a></li>
+                        <li class="visible-sm visible-xs"><a href="./examples.html">Examples</a></li>
+                    </ul>
+                </div>
+                <!-- /.navbar-collapse -->
+            </div>
+            <!-- /.container -->
+        </nav>
+
+        <!-- Page Content -->
         <div class="container">
-            <!-- Brand and toggle get grouped for better mobile display -->
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="./"><img src="./img/logo.png" alt="Nerdamer"/></a>
+
+            <hr>
+
+            <div class="row">
+                <div class="col-sm-9">
+                    <h1>Documentation</h1>
+                    <h3>The basics</h3>
+                    <p>
+                        The library is split into several modules, the core and several add-ons. This allows you to load only the functions needed. 
+                        The core houses the parser and most of the function found the JavaScript Math object. The additional modules are Algebra, Calculus, Solve, and Special.
+                    </p>
+                    <p>
+                        Parsing is performed with the use of the <strong>nerdamer</strong> object which takes a string as it's main parameter.
+                    </p>
+                    <div class="alert alert-info text-center">
+                        <h3><i class="fas fa-warning"></i>Note</h3>
+
+                        <p class="text-info">
+                            See the <a href="./quickstart.html">Quick start</a> to get up and running quickly.
+                            Note that you can now use internal functions through the new API. For example as an alternative to doing:
+                        </p>
+                        <pre><code>var x = nerdamer('diff(sin(x)/x, x)');</code></pre>
+                        you can also do:
+                        <pre><code>var x = nerdamer.diff('sin(x)/x', 'x');</code></pre>
+                    </div>
+
+                    <h1>Functions</h1>
+                    <h3 class="text-muted">Core</h3>
+                    <h4>nerdamer</h4>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/nerdamer.html">nerdamer</a></li>
+                                <li><a href="./functions/nerdamer.version.html">nerdamer.version</a></li>
+                                <li><a href="./functions/nerdamer.setConstant.html">nerdamer.setConstant</a></li>
+                                <li><a href="./functions/nerdamer.setFunction.html">nerdamer.setFunction</a></li>
+                                <li><a href="./functions/nerdamer.getCore.html">nerdamer.getCore</a></li>
+                                <li><a href="./functions/nerdamer.reserved.html">nerdamer.reserved</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/nerdamer.expressions.html">nerdamer.expressions</a></li>
+                                <li><a href="./functions/nerdamer.register.html">nerdamer.register</a></li>
+                                <li><a href="./functions/nerdamer.validVarName.html">nerdamer.validVarName</a></li>
+                                <li><a href="./functions/nerdamer.setVar.html">nerdamer.setVar</a></li>
+                                <li><a href="./functions/nerdamer.clearVars.html">nerdamer.clearVars</a></li>
+                                <li><a href="./functions/nerdamer.getVars.html">nerdamer.getVars</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/nerdamer.set.html">nerdamer.set</a></li>
+                                <li><a href="./functions/nerdamer.tree.html">nerdamer.tree</a></li>
+                                <li><a href="./functions/nerdamer.htmlTree.html">nerdamer.htmlTree</a></li>
+                                <li><a href="./functions/nerdamer.flush.html">nerdamer.flush</a></li>
+                                <li><a href="./functions/nerdamer.convertToLaTeX.html">nerdamer.convertToLaTeX</a></li>
+                                <li><a href="./functions/nerdamer.convertFromLaTeX.html">nerdamer.convertFromLaTeX</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <hr>
+                    <h4>trigonometric</h4>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/cos.html">cos</a></li>
+                                <li><a href="./functions/sin.html">sin</a></li>
+                                <li><a href="./functions/tan.html">tan</a></li>
+                                <li><a href="./functions/sec.html">sec</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/csc.html">csc</a></li>
+                                <li><a href="./functions/cot.html">cot</a></li>
+                                <li><a href="./functions/acos.html">acos</a></li>
+                                <li><a href="./functions/asin.html">asin</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/atan.html">atan</a></li>
+                                <li><a href="./functions/atan2.html">atan2</a></li>
+                                <li><a href="./functions/acsc.html">acsc</a></li>
+                                <li><a href="./functions/acot.html">acot</a></li>
+                                <li><a href="./functions/asec.html">asec</a></li>
+                            </ul>
+                        </div>
+
+                    </div>
+                    <h4>hyperbolic trig</h4>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/cosh.html">cosh</a></li>
+                                <li><a href="./functions/sinh.html">sinh</a></li>
+                                <li><a href="./functions/tanh.html">tanh</a></li>
+                                <li><a href="./functions/sech.html">sech</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/csch.html">csch</a></li>
+                                <li><a href="./functions/coth.html">coth</a></li>
+                                <li><a href="./functions/acosh.html">acosh</a></li>
+                                <li><a href="./functions/asinh.html">asinh</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/atanh.html">atanh</a></li>
+                                <li><a href="./functions/asech.html">asech</a></li>
+                                <li><a href="./functions/acsch.html">acsch</a></li>
+                                <li><a href="./functions/acoth.html">acoth</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <hr>
+                    <h4>matrix and vector</h4>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/matrix.html">matrix</a></li>
+                                <li><a href="./functions/imatrix.html">imatrix</a></li>
+                                <li><a href="./functions/determinant.html">determinant</a></li>
+                                <li><a href="./functions/matget.html">matget</a></li>
+                                <li><a href="./functions/matset.html">matset</a></li>
+                                <li><a href="./functions/invert.html">invert</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/transpose.html">transpose</a></li>
+                                <li><a href="./functions/matgetcol.html">matgetcol</a></li>
+                                <li><a href="./functions/matgetrow.html">matgetrow</a></li>
+                                <li><a href="./functions/vector.html">vector</a></li>
+                                <li><a href="./functions/vecget.html">vecget</a></li>
+                                <li><a href="./functions/vecset.html">vecset</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/cross.html">cross</a></li>
+                                <li><a href="./functions/dot.html">dot</a></li>
+                                <li><a href="./functions/matsetcol.html">matsetcol</a></li>
+                                <li><a href="./functions/matsetrow.html">matsetrow</a></li>
+                                <li><a href="./functions/size.html">size</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <hr>
+                    <h4>Imaginary</h4>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/polarform.html">polarform</a></li>
+                                <li><a href="./functions/rectform.html">rectform (rectanglar form)</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/arg.html">arg (argument)</a></li>
+                                <li><a href="./functions/imagpart.html">imagpart</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/realpart.html">realpart</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <hr>
+                    <h4>math functions</h4>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/log.html">log</a></li>
+                                <li><a href="./functions/log10.html">log10</a></li>
+                                <li><a href="./functions/min.html">min</a></li>
+                                <li><a href="./functions/max.html">max</a></li>
+                                <li><a href="./functions/abs.html">abs</a></li>
+                                <li><a href="./functions/floor.html">floor</a></li>
+                                <li><a href="./functions/ceil.html">ceil</a></li>
+                                <li><a href="./functions/simplify.html">simplify</a></li>
+                                <li><a href="./functions/Si.html">Si</a></li>
+                                <li><a href="./functions/Ci.html">Ci</a></li>      
+                                <li><a href="./functions/Ei.html">Ei</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/rect.html">rect</a></li>
+                                <li><a href="./functions/step.html">step</a></li>
+                                <li><a href="./functions/sinc.html">sinc</a></li>
+                                <li><a href="./functions/Shi.html">Shi</a></li>
+                                <li><a href="./functions/Chi.html">Chi</a></li>
+                                <li><a href="./functions/fact.html">fact</a></li>
+                                <li><a href="./functions/factorial.html">factorial</a></li>
+                                <li><a href="./functions/dfactorial.html">dfactorial (double factorial)</a></li>
+                                <li><a href="./functions/exp.html">exp</a></li>
+                                <li><a href="./functions/mod.html">mod</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/erf.html">erf</a></li>
+                                <li><a href="./functions/sign.html">sign</a></li>
+                                <li><a href="./functions/round.html">round</a></li>
+                                <li><a href="./functions/pfactor.html">pfactor</a></li>
+                                <li><a href="./functions/sqrt.html">sqrt</a></li>
+                                <li><a href="./functions/expand.html">expand</a></li>
+                                <li><a href="./functions/fib.html">fib</a></li>
+                                <li><a href="./functions/tri.html">tri</a></li>
+                                <li><a href="./functions/parens.html">parens</a></li>
+                                <li><a href="./functions/line.html">line</a></li>
+                                <li><a href="./functions/continued_fraction.html">continued_fraction</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <hr>
+                    <h3 class="text-muted">Calculus</h3>
+                    <h4>functions</h4>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/sum.html">sum</a></li>
+                                <li><a href="./functions/product.html">product</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/diff.html">diff (derivate)</a></li>
+                                <li><a href="./functions/integrate.html">integrate (integral)</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/defint.html">defint (definite integral)</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <hr>
+                    <h3 class="text-muted">Algebra</h3>
+                    <h4>functions</h4>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/divide.html">divide</a></li>
+                                <li><a href="./functions/factor.html">factor</a></li>
+                                <li><a href="./functions/partfrac.html">partfrac (partial fractions)</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/lcm.html">lcm</a></li>
+                                <li><a href="./functions/gcd.html">gcd</a></li>
+                                <li><a href="./functions/roots.html">roots</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/coeffs.html">coeffs (polynomial coefficients)</a></li>
+                                <li><a href="./functions/deg.html">deg (polynomial degree)</a></li>
+                                <li><a href="./functions/sqcomp.html">sqcomp (complete square)</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <hr>
+                    <h3 class="text-muted">Solve</h3>
+                    <h4>functions</h4>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/solve.html">solve</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/solveEquations.html">solveEquations</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/solveFor.html">solveFor</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <h3 class="text-muted">Extra</h3>
+                    <h4>functions</h4>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/laplace.html">laplace</a></li>
+                                <li><a href="./functions/ilt.html">ilt (inverse laplace)</a></li>
+                                <li><a href="./functions/mean.html">mean</a></li>
+                                <li><a href="./functions/mode.html">mode</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/median.html">median</a></li>
+                                <li><a href="./functions/zscore.html">zscore</a></li>
+                                <li><a href="./functions/limit.html">limit</a></li>
+                                <li><a href="./functions/smpvar.html">smpvar (sample variance)</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/variance.html">variance</a></li>
+                                <li><a href="./functions/smpstdev.html">smpstdev</a></li>
+                                <li><a href="./functions/stdev.html">stdev (standard deviation)</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <h3 class="text-muted">Expression</h3>
+                    <h4>API</h4>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><a href="./functions/Expression.buildFunction.html">buildFunction</a></li>
+                                <li><a href="./functions/Expression.evaluate.html">evaluate</a></li>
+                                <li><a href="./functions/Expression.sub.html">sub (substitution)</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><h5 class="text-muted "><u>Operations</u></h5></li>
+                                <li><a href="./functions/Expression.add.html">add</a></li>
+                                <li><a href="./functions/Expression.subtract.html">subtract</a></li>
+                                <li><a href="./functions/Expression.multiply.html">multiply</a></li>
+                                <li><a href="./functions/Expression.divide.html">divide</a></li>
+                                <li><a href="./functions/Expression.pow.html">pow</a></li>
+                                <li><a href="./functions/Expression.variables.html">variables</a></li>
+                                <li><a href="./functions/Expression.toTeX.html">toTeX</a></li>
+                                <li><a href="./functions/Expression.text.html">text</a></li>
+                                <li><a href="./functions/Expression.denominator.html">denominator</a></li>
+                                <li><a href="./functions/Expression.numerator.html">numerator</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <ul class="functions">
+                                <li><h5 class="text-muted "><u>Equality</u></h5></li>
+                                <li><a href="./functions/Expression.eq.html">eq (equals)</a></li>
+                                <li><a href="./functions/Expression.lt.html">lt (less than)</a></li>
+                                <li><a href="./functions/Expression.gt.html">gt (greater than)</a></li>
+                                <li><a href="./functions/Expression.lte.html">lte (less than or equal)</a></li>
+                                <li><a href="./functions/Expression.gte.html">gte (greater than or equal)</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3 hidden-sm hidden-xs">
+                    <ul class="side-bar">
+                        <li><a href="./extending_core.html">Extending the core</a></li>
+                        <li><a href="./digging_deeper.html">Digging deeper</a></li>
+                        <li><a href="./examples.html">Examples</a></li>
+                    </ul>     
+                </div>
             </div>
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                <ul class="nav navbar-nav">
-                    <li>
-                        <a href="./">Home</a>
-                    </li>
-                    <li class="active">
-                        <a href="./documentation.html">Documentation</a>
-                    </li>
-                    <li>
-                        <a href="./demo.html">Demo</a>
-                    </li>
-                    <li>
-                        <a href="./quickstart.html">Quick Start</a>
-                    </li>
-                    <li class="visible-sm visible-xs"><a href="./extending_core.html">Extending the core</a></li>
-                    <li class="visible-sm visible-xs"><a href="./digging_deeper.html">Digging deeper</a></li>
-                    <li class="visible-sm visible-xs"><a href="./examples.html">Examples</a></li>
-                </ul>
-            </div>
-            <!-- /.navbar-collapse -->
+
+            <!-- Footer -->
+            <footer>
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <p>Copyright &copy; Nerdamer.com <span class="date"></span></p>
+                    </div>
+                </div>
+                <!-- /.row -->
+            </footer>
+
         </div>
         <!-- /.container -->
-    </nav>
 
-    <!-- Page Content -->
-    <div class="container">
+        <!-- jQuery -->
+        <script src="js/jquery.js"></script>
 
-        <hr>
-
-        <div class="row">
-            <div class="col-sm-9">
-                <h1>Documentation</h1>
-                <h3>The basics</h3>
-                <p>
-                    The library is split into several modules, the core and several add-ons. This allows you to load only the functions needed. 
-                    The core houses the parser and most of the function found the JavaScript Math object. The additional modules are Algebra, Calculus, Solve, and Special.
-                </p>
-                <p>
-                    Parsing is performed with the use of the <strong>nerdamer</strong> object which takes a string as it's main parameter.
-                </p>
-                <div class="alert alert-info text-center">
-                    <h3><i class="fas fa-warning"></i>Note</h3>
-                    
-                    <p class="text-info">
-                        See the <a href="./quickstart.html">Quick start</a> to get up and running quickly.
-                        Note that you can now use internal functions through the new API. For example as an alternative to doing:
-                    </p>
-                    <pre><code>var x = nerdamer('diff(sin(x)/x, x)');</code></pre>
-                    you can also do:
-                    <pre><code>var x = nerdamer.diff('sin(x)/x', 'x');</code></pre>
-                </div>
-                
-                <h1>Functions</h1>
-                <h3 class="text-muted">Core</h3>
-                <h4>nerdamer</h4>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/nerdamer.html">nerdamer</a></li>
-                            <li><a href="./functions/nerdamer.version.html">nerdamer.version</a></li>
-                            <li><a href="./functions/nerdamer.setConstant.html">nerdamer.setConstant</a></li>
-                            <li><a href="./functions/nerdamer.setFunction.html">nerdamer.setFunction</a></li>
-                            <li><a href="./functions/nerdamer.getCore.html">nerdamer.getCore</a></li>
-                            <li><a href="./functions/nerdamer.reserved.html">nerdamer.reserved</a></li>
-                            <li><a href="./functions/nerdamer.flush.html">nerdamer.flush</a></li>
-                            <li><a href="./functions/nerdamer.convertToLaTeX.html">nerdamer.convertToLaTeX</a></li>
-                            <li><a href="./functions/nerdamer.convertFromLaTeX.html">nerdamer.convertFromLaTeX</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/nerdamer.expressions.html">nerdamer.expressions</a></li>
-                            <li><a href="./functions/nerdamer.register.html">nerdamer.register</a></li>
-                            <li><a href="./functions/nerdamer.validVarName.html">nerdamer.validVarName</a></li>
-                            <li><a href="./functions/nerdamer.setVar.html">nerdamer.setVar</a></li>
-                            <li><a href="./functions/nerdamer.clearVars.html">nerdamer.clearVars</a></li>
-                            <li><a href="./functions/nerdamer.getVars.html">nerdamer.getVars</a></li>
-                            <li><a href="./functions/nerdamer.set.html">nerdamer.set</a></li>
-                            <li><a href="./functions/nerdamer.tree.html">nerdamer.tree</a></li>
-                            <li><a href="./functions/nerdamer.htmlTree.html">nerdamer.htmlTree</a></li>
-                            <!--<li><a href="./functions/nerdamer.solveFor.html">nerdamer.solveFor</a></li>-->
-                        </ul>
-                    </div>
-                </div>
-                <hr>
-                <h4>trigonometric</h4>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/cos.html">cos</a></li>
-                            <li><a href="./functions/sin.html">sin</a></li>
-                            <li><a href="./functions/tan.html">tan</a></li>
-                            <li><a href="./functions/acos.html">acos</a></li>
-                            <li><a href="./functions/asin.html">asin</a></li>
-                            <li><a href="./functions/atan.html">atan</a></li>
-                            <li><a href="./functions/atan2.html">atan2</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/sec.html">sec</a></li>
-                            <li><a href="./functions/csc.html">csc</a></li>
-                            <li><a href="./functions/cot.html">cot</a></li>
-                            <li><a href="./functions/asec.html">asec</a></li>
-                            <li><a href="./functions/acsc.html">acsc</a></li>
-                            <li><a href="./functions/acot.html">acot</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <h4>hyperbolic trig</h4>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/cosh.html">cosh</a></li>
-                            <li><a href="./functions/sinh.html">sinh</a></li>
-                            <li><a href="./functions/tanh.html">tanh</a></li>
-                            <li><a href="./functions/sech.html">sech</a></li>
-                            <li><a href="./functions/csch.html">csch</a></li>
-                            <li><a href="./functions/coth.html">coth</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/acosh.html">acosh</a></li>
-                            <li><a href="./functions/asinh.html">asinh</a></li>
-                            <li><a href="./functions/atanh.html">atanh</a></li>
-                            <li><a href="./functions/asech.html">asech</a></li>
-                            <li><a href="./functions/acsch.html">acsch</a></li>
-                            <li><a href="./functions/acoth.html">acoth</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <hr>
-                <h4>matrix and vector</h4>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/matrix.html">matrix</a></li>
-                            <li><a href="./functions/imatrix.html">imatrix</a></li>
-                            <li><a href="./functions/determinant.html">determinant</a></li>
-                            <li><a href="./functions/matget.html">matget</a></li>
-                            <li><a href="./functions/matset.html">matset</a></li>
-                            <li><a href="./functions/invert.html">invert</a></li>
-                            <li><a href="./functions/transpose.html">transpose</a></li>
-                            <li><a href="./functions/matgetcol.html">matgetcol</a></li>
-                            <li><a href="./functions/matgetrow.html">matgetrow</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/vector.html">vector</a></li>
-                            <li><a href="./functions/vecget.html">vecget</a></li>
-                            <li><a href="./functions/vecset.html">vecset</a></li>
-                            <li><a href="./functions/cross.html">cross</a></li>
-                            <li><a href="./functions/dot.html">dot</a></li>
-                            <li><a href="./functions/matsetcol.html">matsetcol</a></li>
-                            <li><a href="./functions/matsetrow.html">matsetrow</a></li>
-                            <li><a href="./functions/size.html">size</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <hr>
-                <h4>Imaginary</h4>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/polarform.html">polarform</a></li>
-                            <li><a href="./functions/rectform.html">rectform (rectanglar form)</a></li>
-                            
-                        </ul>
-                    </div>
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/arg.html">arg (argument)</a></li>
-                            <li><a href="./functions/imagpart.html">imagpart</a></li>
-                            <li><a href="./functions/realpart.html">realpart</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <hr>
-                <h4>math functions</h4>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/log.html">log</a></li>
-                            <li><a href="./functions/log10.html">log10</a></li>
-                            <li><a href="./functions/min.html">min</a></li>
-                            <li><a href="./functions/max.html">max</a></li>
-                            <li><a href="./functions/abs.html">abs</a></li>
-                            <li><a href="./functions/floor.html">floor</a></li>
-                            <li><a href="./functions/ceil.html">ceil</a></li>
-                            <li><a href="./functions/simplify.html">simplify</a></li>
-                            <li><a href="./functions/Si.html">Si</a></li>
-                            <li><a href="./functions/Ci.html">Ci</a></li>      
-                            <li><a href="./functions/Ei.html">Ei</a></li>
-                            <li><a href="./functions/rect.html">rect</a></li>
-                            <li><a href="./functions/step.html">step</a></li>
-                            <li><a href="./functions/sinc.html">sinc</a></li>
-                            <li><a href="./functions/Shi.html">Shi</a></li>
-                            <li><a href="./functions/Chi.html">Chi</a></li>
-                            <li><a href="./functions/sqcomp.html">sqcomp (complete square)</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/fact.html">fact</a></li>
-                            <li><a href="./functions/factorial.html">factorial</a></li>
-                            <li><a href="./functions/dfactorial.html">dfactorial (double factorial)</a></li>
-                            <li><a href="./functions/exp.html">exp</a></li>
-                            <li><a href="./functions/mod.html">mod</a></li>
-                            <li><a href="./functions/erf.html">erf</a></li>
-                            <li><a href="./functions/sign.html">sign</a></li>
-                            <li><a href="./functions/round.html">round</a></li>
-                            <li><a href="./functions/pfactor.html">pfactor</a></li>
-                            <li><a href="./functions/sqrt.html">sqrt</a></li>
-                            <li><a href="./functions/expand.html">expand</a></li>
-                            <li><a href="./functions/fib.html">fib</a></li>
-                            <li><a href="./functions/tri.html">tri</a></li>
-                            <li><a href="./functions/parens.html">parens</a></li>
-                            <li><a href="./functions/line.html">line</a></li>
-                            <li><a href="./functions/continued_fraction.html">continued_fraction</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <hr>
-                <h3 class="text-muted">Calculus</h3>
-                <h4>functions</h4>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/sum.html">sum</a></li>
-                            <li><a href="./functions/product.html">product</a></li>
-                            
-                        </ul>
-                    </div>
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/diff.html">diff (derivate)</a></li>
-                            <li><a href="./functions/integrate.html">integrate (integral)</a></li>
-                            <li><a href="./functions/defint.html">defint (definite integral)</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <hr>
-                <h3 class="text-muted">Algebra</h3>
-                <h4>functions</h4>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/divide.html">divide</a></li>
-                            <li><a href="./functions/factor.html">factor</a></li>
-                            <li><a href="./functions/partfrac.html">partfrac (partial fractions)</a></li>
-                            <li><a href="./functions/lcm.html">lcm</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/gcd.html">gcd</a></li>
-                            <li><a href="./functions/roots.html">roots</a></li>
-                            <li><a href="./functions/coeffs.html">coeffs (polynomial coefficients)</a></li>
-                            <li><a href="./functions/deg.html">deg (polynomial degree)</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <hr>
-                <h3 class="text-muted">Solve</h3>
-                <h4>functions</h4>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/solve.html">solve</a></li>
-                            <li><a href="./functions/solveFor.html">solveFor</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/solveEquations.html">solveEquations</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <h3 class="text-muted">Extra</h3>
-                <h4>functions</h4>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/laplace.html">laplace</a></li>
-                            <li><a href="./functions/ilt.html">ilt (inverse laplace)</a></li>
-                            <li><a href="./functions/mean.html">mean</a></li>
-                            <li><a href="./functions/mode.html">mode</a></li>
-                            <li><a href="./functions/median.html">median</a></li>
-                            <li><a href="./functions/zscore.html">zscore</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/limit.html">limit</a></li>
-                            <li><a href="./functions/smpvar.html">smpvar (sample variance)</a></li>
-                            <li><a href="./functions/variance.html">variance</a></li>
-                            <li><a href="./functions/smpstdev.html">smpstdev</a></li>
-                            <li><a href="./functions/stdev.html">stdev (standard deviation)</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <h3 class="text-muted">Expression</h3>
-                <h4>API</h4>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/Expression.buildFunction.html">buildFunction</a></li>
-                            <li><a href="./functions/Expression.evaluate.html">evaluate</a></li>
-                            <li><a href="./functions/Expression.sub.html">sub (substitution)</a></li>
-                            <li><h5 class="text-muted "><u>Operations</u></h5></li>
-                            <li><a href="./functions/Expression.add.html">add</a></li>
-                            <li><a href="./functions/Expression.subtract.html">subtract</a></li>
-                            <li><a href="./functions/Expression.multiply.html">multiply</a></li>
-                            <li><a href="./functions/Expression.divide.html">divide</a></li>
-                            <li><a href="./functions/Expression.pow.html">pow</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-lg-6">
-                        <ul class="functions">
-                            <li><a href="./functions/Expression.variables.html">variables</a></li>
-                            <li><a href="./functions/Expression.toTeX.html">toTeX</a></li>
-                            <li><a href="./functions/Expression.text.html">text</a></li>
-                            <li><a href="./functions/Expression.denominator.html">denominator</a></li>
-                            <li><a href="./functions/Expression.numerator.html">numerator</a></li>
-                            <li><h5 class="text-muted "><u>Equality</u></h5></li>
-                            <li><a href="./functions/Expression.eq.html">eq (equals)</a></li>
-                            <li><a href="./functions/Expression.lt.html">lt (less than)</a></li>
-                            <li><a href="./functions/Expression.gt.html">gt (greater than)</a></li>
-                            <li><a href="./functions/Expression.lte.html">lte (less than or equal)</a></li>
-                            <li><a href="./functions/Expression.gte.html">gte (greater than or equal)</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-3 hidden-sm hidden-xs">
-                <ul class="side-bar">
-                    <li><a href="./extending_core.html">Extending the core</a></li>
-                    <li><a href="./digging_deeper.html">Digging deeper</a></li>
-                    <li><a href="./examples.html">Examples</a></li>
-                </ul>     
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <footer>
-            <div class="row">
-                <div class="col-lg-12 text-center">
-                    <p>Copyright &copy; Nerdamer.com <span class="date"></span></p>
-                </div>
-            </div>
-            <!-- /.row -->
-        </footer>
-
-    </div>
-    <!-- /.container -->
-
-    <!-- jQuery -->
-    <script src="js/jquery.js"></script>
-
-    <!-- Bootstrap Core JavaScript -->
-    <script src="js/bootstrap.min.js"></script>
-    <script>
-        $('.date').html(new Date().getFullYear());
-    </script>
-    <script>hljs.initHighlightingOnLoad();</script>
-</body>
+        <!-- Bootstrap Core JavaScript -->
+        <script src="js/bootstrap.min.js"></script>
+        <script>
+            $('.date').html(new Date().getFullYear());
+        </script>
+        <script>hljs.initHighlightingOnLoad();</script>
+    </body>
 
 </html>

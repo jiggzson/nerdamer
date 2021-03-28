@@ -1,489 +1,590 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
+    <head>
 
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
-    <meta name="author" content="">
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
 
-    <title>Nerdamer | Quick Start</title>
+        <title>Nerdamer | Quick Start</title>
 
-    <!-- Bootstrap Core CSS -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
+        <!-- Bootstrap Core CSS -->
+        <link href="css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Custom CSS -->
-    <link href="css/site.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
-    <link rel="icon" type="image/png" href="./img/favicon.png">
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-    <link rel="stylesheet" href="./plugins/highlightjs/styles/vs.css"> 
-    <script src="./plugins/highlightjs/highlight.pack.js"></script> 
-    <script>
-        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        <!-- Custom CSS -->
+        <link href="css/site.css" rel="stylesheet">
+        <link href="css/style.css" rel="stylesheet">
+        <link rel="icon" type="image/png" href="./img/favicon.png">
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <link rel="stylesheet" href="./plugins/highlightjs/styles/vs.css"> 
+        <script src="./plugins/highlightjs/highlight.pack.js"></script> 
+        <script>
+            (function (i, s, o, g, r, a, m) {
+                i['GoogleAnalyticsObject'] = r;
+                i[r] = i[r] || function () {
+                    (i[r].q = i[r].q || []).push(arguments)
+                }, i[r].l = 1 * new Date();
+                a = s.createElement(o),
+                        m = s.getElementsByTagName(o)[0];
+                a.async = 1;
+                a.src = g;
+                m.parentNode.insertBefore(a, m)
+            })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
 
-        ga('create', 'UA-58729441-1', 'auto');
-        ga('send', 'pageview');
-    </script>
-</head>
+            ga('create', 'UA-58729441-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+    </head>
 
-<body>
+    <body>
 
-    <!-- Navigation -->
-    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <!-- Navigation -->
+        <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+            <div class="container">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="./"><img src="./img/logo.png" alt="Nerdamer"/></a>
+                </div>
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav">
+                        <li>
+                            <a href="./">Home</a>
+                        </li>
+                        <li>
+                            <a href="./documentation.html">Documentation</a>
+                        </li>
+                        <li>
+                            <a href="./demo.html">Demo</a>
+                        </li>
+                        <li class="active">
+                            <a href="./quickstart.html">Quick Start</a>
+                        </li>
+                        <li class="visible-sm visible-xs"><a href="./extending_core.html">Extending the core</a></li>
+                        <li class="visible-sm visible-xs"><a href="./digging_deeper.html">Digging deeper</a></li>
+                        <li class="visible-sm visible-xs"><a href="./examples.html">Examples</a></li>
+                    </ul>
+                </div>
+                <!-- /.navbar-collapse -->
+            </div>
+            <!-- /.container -->
+        </nav>
+
+        <!-- Page Content -->
         <div class="container">
-            <!-- Brand and toggle get grouped for better mobile display -->
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="./"><img src="./img/logo.png" alt="Nerdamer"/></a>
-            </div>
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                <ul class="nav navbar-nav">
-                    <li>
-                        <a href="./">Home</a>
-                    </li>
-                    <li>
-                        <a href="./documentation.html">Documentation</a>
-                    </li>
-                    <li>
-                        <a href="./demo.html">Demo</a>
-                    </li>
-                    <li class="active">
-                        <a href="./quickstart.html">Quick Start</a>
-                    </li>
-                    <li class="visible-sm visible-xs"><a href="./extending_core.html">Extending the core</a></li>
-                    <li class="visible-sm visible-xs"><a href="./digging_deeper.html">Digging deeper</a></li>
-                    <li class="visible-sm visible-xs"><a href="./examples.html">Examples</a></li>
-                </ul>
-            </div>
-            <!-- /.navbar-collapse -->
-        </div>
-        <!-- /.container -->
-    </nav>
 
-    <!-- Page Content -->
-    <div class="container">
+            <hr>
 
-        <hr>
+            <div class="row">
+                <div class="col-sm-9">
+                    <div>
+                        <h1>Quick Start</h1>
+                        <p>
+                            <strong>As of version 0.5.0, the library is split into the core and optional modules which can be loaded after the core has been loaded.
+                                Only the core is required to evaluate expressions. The modules provide extra functions. 
+                                See the <a href="./documentation.html">documentation</a> for the list of functions that each module contains. 
+                                Some functions depend on more than one module and some modules depend on other modules. <code>Solve</code> for instance depends on both 
+                                <code>Algebra</code> and <code>Calculus</code>.
+                            </strong>
+                        </p>
+                        <p>
+                            This page serves as a quick guide to get up and running. For more detailed documentation see the <a href="./documentation.html">documentation</a> section.
+                        </p>
+                        <p>
+                            To get started with <code>nerdamer</code> load the library in your html page or require it using
+                        </p>
 
-        <div class="row">
-            <div class="col-sm-9">
-                <div>
-            <h1>Quick Start</h1>
-            <p>
-                <strong>As of version 0.5.0, the library is split into the core and optional add-ons which can be loaded after the core has been loaded.</strong>
-            </p>
-            <p>
-                This page serves as a quick guide to get up and running. For more detailed documentation see the <a href="./documentation.html">documentation</a> section.
-            </p>
-            <p>
-                To get started with nerdamer load the library in your html page or require it using
-            </p>
-           
 
-<pre><code>
-&lt;script src="nerdamer.core.js"&gt;&lt;/script&gt; &lt;!-- assuming you've saved the file in the root of course --&gt;
-&lt;!-- LOAD ADD-ONS --&gt;
+                        <pre><code>&lt;script src="nerdamer.core.js"&gt;&lt;/script&gt; &lt;!-- assuming you've saved the file in the root of course --&gt;
+&lt;!-- LOAD MODULES --&gt;
 &lt;script src="Algebra.js"&gt;&lt;/script&gt;
 &lt;script src="Calculus.js"&gt;&lt;/script&gt;
 &lt;script src="Solve.js"&gt;&lt;/script&gt;
-&lt;script src="Extra.js"&gt;&lt;/script&gt; &lt;!-- again assuming you've saved the files in root --&gt;
+&lt;script src="Extra.js"&gt;&lt;/script&gt; &lt;!-- again assuming you've saved the files in root --&gt;</code></pre>
+                        <p>
+                            or if you're using node.js install it using <code>npm i nerdamer</code> and then
+                        </p>
 
-</code></pre>
+                        <pre><code>// const cannot be used since nerdamer gets modified when other modules are loaded
+var nerdamer = require('nerdamer');
+// Load additional modules. These are not required.
+require('nerdamer/Algebra');
+require('nerdamer/Calculus');
+require('nerdamer/Solve');
+require('nerdamer/Extra');</code></pre>
+                        <p>
+                            If you'll be using all modules, you can use a single import
+                        </p>
+                        <pre><code>const nerdamer = require("nerdamer/all")</code></pre>
+                        <p>
+                            Some functions have dependencies from other modules. 
 
-Some functions have dependencies from other add-ons. 
+                            You can see <code>nerdamer</code> in action at http://www.nerdamer.com/demo
 
-You can see nerdamer in action at http://www.nerdamer.com/demo
+                        All operations are done using the <code>nerdamer</code> object. 
 
-All operations are done using the 'nerdamer' object. 
+                        To add an expression just add it by calling <code>nerdamer</code> object with the expression as the argument.
+                        This will return an <code>Expression</code> object.
+                        </p>
+                        
 
-To add an expression just add it by calling nerdamer object with the expression as the argument.
-This will return an Expression object.
+                        <pre><code>   
+var e = nerdamer('x^2+2*(cos(x)+x*x)');
 
-<pre><code>   
-    var e = nerdamer('x^2+2*(cos(x)+x*x)');
+console.log(e.text());
 
-    console.log(e.text());
-    
-    //result: 
-    //2*cos(x)+3*x^(2)
+//result: 
+//2*cos(x)+3*x^(2)
 </code></pre>            
+
+                        <p>
+                            You can also pass in an object with known values as the second parameter.
+                        </p>
+                        
+
+                        <pre><code>   
         
+var e = nerdamer('x^2+2*(cos(x)+x*x)',{x:6});
 
-You can also pass in an object with known values as the second parameter.
+console.log(e.text());
 
-<pre><code>           
-    var e = nerdamer('x^2+2*(cos(x)+x*x)',{x:6});
-
-    console.log(e.text());
-    
-    //result:
-    //108+2*cos(6)
+//result:
+//108+2*cos(6)
 </code></pre>            
-        
+                        <p>
+                            As you can see only the substitution is performed. To evaluate the result just call <code>evaluate</code>. 
+                        </p>
 
-As you can see only the substitution is performed. To evaluate the result just call evaluate. 
-Note that evaluate returns a text string or a number not an object.
+                        
 
-<pre><code>              
-    var e = nerdamer('x^2+2*(cos(x)+x*x)',{x:6}).evaluate();
+                        <pre><code>              
+var e = nerdamer('x^2+2*(cos(x)+x*x)',{x:6}).evaluate();
 
-    console.log(e);
-    
-    //result:
-    //109.92034057330073
+console.log(e);
+
+//result:
+//109.92034057330073
  </code></pre>           
-        
+                        <p>
+                            Alternatively you can pass an object containing known values into <code>evaluate</code> instead of <code>nerdamer</code> to get back 
+                        the value right away. The values passed in don't have to be number the can be another expression if needed.
+                        </p>
 
-Alternatively you can pass an object containing known values into evaluate instead of nerdamer to get back 
-the value right away. The values passed in don't have to be number the can be another expression if needed.
+                        
 
-<pre><code>              
-    var e = nerdamer('x^2+y',{y:'x^2+8'});
-    console.log(e.text());
-    
-    //result:
-    //2*x^2+8
+                        <pre><code>              
+var e = nerdamer('x^2+y',{y:'x^2+8'});
+console.log(e.text());
+
+//result:
+//2*x^2+8
+</code></pre>            
+                        <p>
+                           or 
+                        </p>
+                        
+
+                        <pre><code>              
+var x = nerdamer('y^2+1');
+var e = nerdamer('4*x+9', {x: x});
+console.log(e.text());
+
+//result:
+//13+4*y^2
+</code></pre>            
+                        <p>
+                            Every time you parse an expression it's stored in nerdamer. To get a list of all the expressions you just call 
+                        <code>nerdamer.expressions()</code>.
+                        </p>
+
+                        
+
+                        <pre><code>              
+var knownValues = {x:'x^2+1'};
+nerdamer('x^2+2*(cos(x)+x*x)', knownValues );
+nerdamer('sin(x)^2+cos(x)^2', knownValues );
+
+console.log(nerdamer.expressions());
+
+//result:
+//[ 46.692712758272776, 1 ]
 </code></pre>            
 
-or
+                        <p>
+                            You can request it as an object as well by passing in true. This can be convenient in some 
+                        situations as the numbering starts at 1;
+                        </p>
+                        
 
-<pre><code>              
-    var x = nerdamer('y^2+1');
-    var e = nerdamer('4*x+9', {x: x});
-    console.log(e.text());
-    
-    //result:
-    //13+4*y^2
+                        <pre><code>              
+var knownValues = {x:'x^2+1'};
+nerdamer('x^2+2*(cos(x)+x*x)', knownValues );
+nerdamer('sin(x)^2+cos(x)^2', knownValues );
+
+console.log(nerdamer.expressions(true));
+
+//{ '1': '2*cos(1+x^(2))+3*(1+x^(2))^(2)',
+//'2': 'cos(1+x^(2))^(2)+sin(1+x^(2))^(2)' }
 </code></pre>            
-        
+                        <p>
+                            Functions aren't always immediately parsed to numbers. For example
+                        </p>
+                        
 
-Every time you parse an expression it's stored in nerdamer. To get a list of all the expressions you just call 
-nerdamer.expressions().
+                        <pre><code>
+var result = nerdamer('cos(x)',{x:6});
+console.log(result.text());
+//cos(6)
+</code></pre>
+                        <p>
+                            will only subsitute out the variable name. To change this behaviour numer should be passed in as the 3rd argument.
+                        </p>
+                        
 
-<pre><code>              
-    var knownValues = {x:'x^2+1'};
-    nerdamer('x^2+2*(cos(x)+x*x)', knownValues );
-    nerdamer('sin(x)^2+cos(x)^2', knownValues );
-    
-    console.log(nerdamer.expressions());
-    
-    //result:
-    //[ 46.692712758272776, 1 ]
+                        <pre><code>
+var result = nerdamer('cos(x)',{x:6}, 'numer');
+console.log(result.text());
+//0.960170286650366
+</code></pre>
+                        <p>
+                            or alternatively
+                        </p>
+                        
+                        <pre><code>
+var result = nerdamer('cos(x)',{x:6}).evaluate();
+console.log(result.text());
+//0.960170286650366
+</code></pre>
+                        <p>
+                            The difference however is that the first option directly substitutes the variables while the second first evaluates
+                        the variable and then makes the substitutions. This library utilizes native javascript functions as much as possible.
+                        As a result it inherits whatever rounding errors they possess. Take this example for instance.
+                        </p>
+                        
+                        <strike>
+                            <pre><code>
+var result = nerdamer('sqrt(x)*sqrt(x)-2', {x:2});
+console.log(result.text());
+//4.440892098500626e-16
+</code></pre>
+                            <p>
+                                Yup, it's not zero. To minimize this error it would be better to first simplify the expression and then make your 
+                            substitutions. The above example would then be</strike> &nbsp;&nbsp;&nbsp;&nbsp;
+                        <strong>This is no longer the case in this particular example.</strong>
+                            </p>
+                            
+
+                        <pre><code>
+var result = nerdamer('sqrt(x)*sqrt(x)-2').evaluate({x:2});
+console.log(result.text());
+//0
+//the expression first becomes x-2 and therefore avoids rounding errors
+</code></pre>
+                            <p>
+                                An expression can be replaced directly by passing in the index of which expression to override. For example
+                            </p>
+                        
+
+                        <pre><code>
+nerdamer('cos(x)',{x:6}, 'numer');
+nerdamer('sin(x)+y',{x:6}, null, 1);
+console.log(nerdamer.expressions());
+//[ 'sin(6)+y' ]
+</code></pre>
+                            <p>
+                                If multiple modifier options need to be passed into nerdamer you can do so using an array. For example, 
+                                if the Algebra module is loaded you can pass in the expand modifier along with the <code>numer</code> modifier.
+                            </p>
+                        
+
+                        <pre><code>
+var e = nerdamer('cos(x)+(y-x)^2', {x:7}, ['expand', 'numer']);
+console.log(e.text());
+//-14*y+y^2+49.7539022543433
+</code></pre>
+                            <p>
+                                If you need the code as latex you can pass in true as the second parameter when requesting the expressions.
+                            </p>
+                        
+
+                        <pre><code>            
+nerdamer('x^2+2*(cos(x)+x*x)');
+nerdamer('sin(x)^0.25+cos(x)^0.5' );
+
+console.log(nerdamer.expressions(true, true));
+
+//{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
+//'2': '\\sin\\left(x\\right)^{\\frac{1}{4}}+\\sqrt{\\cos\\left(x\\right)}' }
 </code></pre>            
-        
 
-You can request it as an object as well by passing in true. This can be convenient in some 
-situations as the numbering starts at 1;
+                            <p>
+                                You can specify a particular location when adding an expression, which is specified with the third parameter.
+                            </p>
+                        
 
-<pre><code>              
-    var knownValues = {x:'x^2+1'};
-    nerdamer('x^2+2*(cos(x)+x*x)', knownValues );
-    nerdamer('sin(x)^2+cos(x)^2', knownValues );
-    
-    console.log(nerdamer.expressions(true));
-    
-    //{ '1': '2*cos(1+x^(2))+3*(1+x^(2))^(2)',
-    //'2': 'cos(1+x^(2))^(2)+sin(1+x^(2))^(2)' }
+                        <pre><code>
+nerdamer('x^2+2*(cos(x)+x*x)');
+nerdamer('sin(x)^0.25+cos(x)^0.5' );
+nerdamer('expr-override', undefined, 2 );
+
+console.log(nerdamer.expressions(true, true));
+
+//{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
+//'2': '-override+expr' 
+</code></pre>
+                            <p>
+                                Here's an example of reserved keywords.
+                            </p>
+                        
+                        <pre><code>
+nerdamer.reserved();
+//result:
+//parens, cos, sin, tan, sec, csc, cot, acos, asin, atan, exp, log, abs, sqrt, diff, 
+//integrate, sec, cot, csc, pi, e
+
+//or as an array
+
+nerdamer.reserved(true);
+//result:
+//[ 'parens','cos','sin','tan','sec','csc','cot','acos','asin','atan','exp','log','abs',
+// 'sqrt','diff','integrate','sec','cot','csc','pi','e' ]
 </code></pre>            
-        
-Functions aren't always immediately parsed to numbers. For example
+                            <p>
+                                A list can and should be generated by calling the reserved method.
 
-<pre><code>
-    var result = nerdamer('cos(x)',{x:6});
-    console.log(result.text());
-    //cos(6)
-</code></pre>
-will only subsitute out the variable name. To change this behaviour numer should be passed in as the 3rd argument.
+                                Most math functions are passed in as part of the expression. If you want to differentiate for instance you just 
+                                use the function diff which is located in the Calculus module as of 0.5.0
+                            </p>
 
-<pre><code>
-    var result = nerdamer('cos(x)',{x:6}, 'numer');
-    console.log(result.text());
-    //0.960170286650366
-</code></pre>
-or alternatively
-<pre><code>
-    var result = nerdamer('cos(x)',{x:6}).evaluate();
-    console.log(result.text());
-    //0.960170286650366
-</code></pre>
-The difference however is that the first option directly substitutes the variables while the second first evaluates
-the variable and then makes the substitutions. This library utilizes native javascript functions as much as possible.
-As a result it inherits whatever rounding errors they possess. Take this example for instance.
-<strike>
-<pre><code>
-    var result = nerdamer('sqrt(x)*sqrt(x)-2', {x:2});
-    console.log(result.text());
-    //4.440892098500626e-16
-</code></pre>
-Yup, it's not zero. To minimize this error it would be better to first simplify the expression and then make your 
-substitutions. The above example would then be</strike> &nbsp;&nbsp;&nbsp;&nbsp;
-<strong>This is no longer the case.</strong>
+                                
 
-<pre><code>
-    var result = nerdamer('sqrt(x)*sqrt(x)-2').evaluate({x:2});
-    console.log(result.text());
-    //0
-    //the expression first becomes x-2 and therefore avoids rounding errors
+                        <pre><code>            
+var e = nerdamer('diff(x^2+2*(cos(x)+x*x),x)');
+
+console.log(e.text());
+
+//result: 
+//-2*sin(x)+6*x
 </code></pre>
 
-An expression can be replaced directly by passing in the index of which expression to override. For example
+                            <p>
+                                Nerdamer can also handle runtime functions. To do this use the method <code>setFunction</code>. 
+                                The runtime functions do have symbolic capabilities and support for imaginary numbers. 
+                                The <code>setfunction</code> method is used as follows:
 
-<pre><code>
-    nerdamer('cos(x)',{x:6}, 'numer');
-    nerdamer('sin(x)+y',{x:6}, null, 1);
-    console.log(nerdamer.expressions());
-    //[ 'sin(6)+y' ]
-</code></pre>
+                                <code>nerdamer.setFunction( function_name, parameter_array, function_body )</code>
 
-If multiple modifier options need to be passed into nerdamer you can do so using an array. For example, 
-if the Algebra add-on is loaded you can pass in the expand modifier along with the numer modifier.
+                                For Example:
+                            </p>
+                                
 
-<pre><code>
-    var e = nerdamer('cos(x)+(y-x)^2', {x:7}, ['expand', 'numer']);
-    console.log(e.text());
-    //-14*y+y^2+49.7539022543433
-</code></pre>
+                        <pre><code>            
+//generate some points
+var f = function(x) { return 5*x-1; }
+console.log(f(1)); //4
+console.log(f(2)); //9 - value to be found
+console.log(f(7)); //34
 
-If you need the code as latex you can pass in true as the second parameter when reuesting the expressions.
+nerdamer.setFunction('interpolate',['y0','x0','y1','x1','x'],'y0+(y1-y0)*((x-x0)/(x1-x0))')
+var answer = nerdamer('interpolate(4,1,34,7,2)').evaluate();
 
-<pre><code>            
-    nerdamer('x^2+2*(cos(x)+x*x)');
-    nerdamer('sin(x)^0.25+cos(x)^0.5' );
-    
-    console.log(nerdamer.expressions(true, true));
-    
-    //{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
-    //'2': '\\sin\\left(x\\right)^{\\frac{1}{4}}+\\sqrt{\\cos\\left(x\\right)}' }
-</code></pre>            
-        
+console.log(answer);
 
-You can specify a particular location when adding an expression, which is specified with the third parameter.
-
-<pre><code>
-    nerdamer('x^2+2*(cos(x)+x*x)');
-    nerdamer('sin(x)^0.25+cos(x)^0.5' );
-    nerdamer('expr-override', undefined, 2 );
-    
-    console.log(nerdamer.expressions(true, true));
-    
-    //{ '1': '3~{x}^{2}+2~\\cos\\left(x\\right)',
-    //'2': '-override+expr' 
-</code></pre>
-
-Here's an example of reserved keywords.
-<pre><code>
-    nerdamer.reserved();
-    //result:
-    //parens, cos, sin, tan, sec, csc, cot, acos, asin, atan, exp, log, abs, sqrt, diff, 
-    //integrate, sec, cot, csc, pi, e
-    
-    //or as an array
-    
-    nerdamer.reserved(true);
-    //result:
-    //[ 'parens','cos','sin','tan','sec','csc','cot','acos','asin','atan','exp','log','abs',
-    // 'sqrt','diff','integrate','sec','cot','csc','pi','e' ]
-</code></pre>            
-        
-
-A list can and should be generated by calling the reserved method.
-
-Most math functions are passed in as part of the expression. If you want to differentiate for instance you just 
-use the function diff which is located in the Calculus add-on as of 0.5.0
-
-<pre><code>            
-    var e = nerdamer('diff(x^2+2*(cos(x)+x*x),x)');
-    
-    console.log(e.text());
-    
-    //result: 
-    //-2*sin(x)+6*x
-</code></pre>
-        
-
-Nerdamer can also handle runtime functions. To do this use the method setFunction. 
-The runtime functions do have symbolic capabilities and support for imaginary numbers. 
-The setfunction method is used as follows:
-
-nerdamer.setFunction( function_name, parameter_array, function_body ) 
-
-For Example:
-
-<pre><code>            
-    //generate some points
-    var f = function(x) { return 5*x-1; }
-    console.log(f(1)); //4
-    console.log(f(2)); //9 - value to be found
-    console.log(f(7)); //34
-    
-    nerdamer.setFunction('interpolate',['y0','x0','y1','x1','x'],'y0+(y1-y0)*((x-x0)/(x1-x0))')
-    var answer = nerdamer('interpolate(4,1,34,7,2)').evaluate();
-    
-    console.log(answer);
-    
-    //result: 9
+//result: 9
 </code></pre> 
-           
-If you need to add a constant use the setConstant method
+                            <p>
+                                If you need to add a constant use the setConstant method
+                            </p>
+                        
 
-<pre><code>            
-    nerdamer.setConstant( 'g', 9.81);
+                        <pre><code>            
+nerdamer.setConstant( 'g', 9.81);
 
-    var weight = nerdamer('100*g').evaluate();
+var weight = nerdamer('100*g').evaluate();
 
-    console.log(weight);
-    
-    //result:
-    //981
+console.log(weight);
+
+//result:
+//981
 </code></pre>            
-        
 
-To delete just set it to delete
+                            <p>
+                                To delete just set it to <code>delete</code>
+                            </p>
+                        
 
-<pre><code>            
-    nerdamer.setConstant( 'g', 'delete');
+                        <pre><code>            
+nerdamer.setConstant( 'g', 'delete');
 </code></pre>            
-        
+                            <p>
+                                You also have the option of exporting your function to a JavaScript function which can be useful if you need some 
+                                filtering from user input. Do keep in mind that the parameters are sorted alphabetically for more than one 
+                                parameter. To use it add the expression to <code>nerdamer</code> and use the <code>buildFunction</code> method.
+                            </p>
 
-You also have the option of exporting your function to a javascript function which can be useful if you need some 
-filtering from user input. Do keep in mind that the parameters are sorted alphabetically for more than one 
-parameter. To use it add the expression to nerdamer and use the buildFunction method.
+                                
 
-<pre><code>            
-    var f = nerdamer('x^2+5').buildFunction();
-    console.log(f(9));
-    
-    //result:
-    //86
+                        <pre><code>            
+var f = nerdamer('x^2+5').buildFunction();
+console.log(f(9));
+
+//result:
+//86
 </code></pre>            
-       
-If you have a particular order in which you need the parameters to be set, then you pass in an array 
-with the variables in the order in which you want them for instance:
+                            <p>
+                                If you have a particular order in which you need the parameters to be set, then you pass in an array 
+                        with the variables in the order in which you want them for instance:
+                            </p>
+                        
 
-<pre><code>  
+                        <pre><code>  
 var f = nerdamer('z+x^2+y').buildFunction(['y', 'x', 'z']);
- console.log(f(9,2,1));
- //result
- //14
+console.log(f(9,2,1));
+//result
+//14
 </code></pre>
+                            <p>
+                                Every time you add an expression to <code>nerdamer</code> it's stored. To list the expressions currently in <code>nerdamer</code> call 
+                                the 'expressions' method. To delete an expression use the 'clear' method and pass in the expression you want to delete. 
+                                To clear everything pass in the string <code>'all'</code>.
+                            </p>
+                                
 
-Every time you add an expression to nerdamer it's stored. To list the expressions currently in nerdamer call 
-the 'expressions' method. To delete an expression use the 'clear' method and pass in the expression you want to delete. 
-To clear everything pass in the string 'all'.
+                        <pre><code>            
+nerdamer('n*R*T/v');
+nerdamer('mc^2');
+nerdamer('G*m1*m2/d^2');
 
-<pre><code>            
-    nerdamer('n*R*T/v');
-    nerdamer('mc^2');
-    nerdamer('G*m1*m2/d^2');
-    
-    nerdamer.clear(2);
-    
-    console.log(nerdamer.expressions(true));
-    
-    //result:
-    //{ '1': 'R*T*n*v^(-1)', '2': 'G*d^(-2)*m1*m2' }
-    
-    nerdamer.clear('all');
-    console.log(nerdamer.expressions(true));
-    
-    //result:
-    //{}
+nerdamer.clear(2);
+
+console.log(nerdamer.expressions(true));
+
+//result:
+//{ '1': 'R*T*n*v^(-1)', '2': 'G*d^(-2)*m1*m2' }
+
+nerdamer.clear('all');
+console.log(nerdamer.expressions(true));
+
+//result:
+//{}
 </code></pre>     
+                            <p>
+                                To get a list of variables call the variables method.
+                            </p>
+                        
+                        <pre><code>            
+var variables = nerdamer('x^2+5*y+bubble_gum').variables();
 
-To get a list of variables call the variables method.
-<pre><code>            
-    var variables = nerdamer('x^2+5*y+bubble_gum').variables();
-
-    console.log(variables);
-    //[ 'bubble_gum', 'x', 'y' ]
+console.log(variables);
+//[ 'bubble_gum', 'x', 'y' ]
 
 </code></pre>    
-<hr>
-<h3>Functions, Operations, and Chaining</h3>
-You can access the built-in functions directly given its name. For example
-<pre><code> 
+                        <hr>
+                        <h3>Functions, Operations, and Chaining</h3>
+                        <p>
+                            You can access the built-in functions directly given its name. For example:
+                        </p>
+                        
+                        <pre><code> 
 var ans = nerdamer.tan('pi/4');
 console.log(ans.toString()); // 1
 </code></pre>  
-Or this if the Calculus add-on is loaded
-<pre><code> 
+                        Or this if the Calculus module is loaded
+                        <pre><code> 
 var ans = nerdamer.diff('log(x)/x', 'x');
 console.log(ans.toString()); // -log(x)*x^(-2)+x^(-2)
 </code></pre>  
-Or expand your expression
-<pre><code> 
+                        Or expand your expression
+                        <pre><code> 
 var ans = nerdamer.expand('(x+1)^3');
 console.log(ans.toString()); // 1+3*x+3*x^2+x^3
 </code></pre>  
-You can see the list of built-in functions here
+                        <p>
+                            You can see the list of built-in functions here
 
-Additionally the expressions can be chained
-<pre><code> 
+                            Additionally the expressions can be chained
+                        </p>
+                            
+                        <pre><code> 
 var ans = nerdamer('a+b').multiply(2).pow(3);
 console.log(ans.toString()); // 8*(a+b)^3
 The supported operations are add, subtract, multiply, divide, pow
 </code></pre>  
 
-<hr>
-<h3>Solving equations</h3>
-To solve equations first load Solve.js. Just remember that Solve also required Algebra.js and Calculus.js to be loaded. 
-You can then solve equations using nerdamer. For example:
-<pre><code>  
+                        <hr>
+                        <h3>Solving equations</h3>
+                        <p>
+                            To solve equations first load <code>Solve.js</code>. Just remember that Solve also required <code>Algebra.js</code> and <code>Calculus.js</code> to be loaded. 
+                            You can then solve equations using <code>nerdamer</code>. For example:
+                        </p>
+                            
+                        <pre><code>  
 var sol = nerdamer.solveEquations('x^3+8=x^2+6','x');
 console.log(sol.toString());
 //1+1.000000000000001*i,-1.000000000000001*i+1,-1
 </code></pre>  
-Notice that we use toString rather than text as this returns a javascript array. <br/>
+                        <p>
+                            Notice that we use <code>toString</code> rather than text as this returns a JavaScript array. <br/>
 
-You can also solve an expression
+                            You can also solve an expression
+                        </p>
+                            
 
-<pre><code>
+                        <pre><code>
 var e = nerdamer.solveEquations('x^2+4-y', 'y');
 console.log(e[0].text());
 //4+x^2
 </code></pre> 
-
-You can also solve multivariate equations
-<pre><code>  
+                        <p>
+                            You can also solve multivariate equations
+                        </p>
+                        
+                        <pre><code>  
 var sol = nerdamer.solveEquations('x^2+8+y=x+6','x');
 console.log(sol.toString());
 //0.5*((-4*y-7)^0.5+1),0.5*(-(-4*y-7)^0.5+1)
 </code></pre>  
-You can do up to 3rd order polynomials for multivariate polynomials.<br/>
-
-Additionally you can try for equations containing functions. This is more of a hit or miss approach but it's there if you want to give it a try
-<pre><code>var sol = nerdamer.solveEquations('cos(x)+cos(3*x)=1','x');
+                        <p>
+                            You can do up to 3rd order polynomials for multivariate polynomials.
+                        </p>
+                        
+                        <p>
+                            Additionally you can try for equations containing functions. This is more of a hit or miss approach but it's there if you want to give it a try
+                        </p>
+                        
+                        <pre><code>var sol = nerdamer.solveEquations('cos(x)+cos(3*x)=1','x');
 console.log(sol.toString());
 //5.7981235959208695,0.4850617112587174
 </code></pre>  
+                        <p>
+                            To solve a system of linear equations pass them in as an array. For example
+                        </p>
+                        
 
-To solve a system of linear equations pass them in as an array. For example
-
-<pre><code>var sol = nerdamer.solveEquations(['x+y=1', '2*x=6', '4*z+y=6']);
+                        <pre><code>var sol = nerdamer.solveEquations(['x+y=1', '2*x=6', '4*z+y=6']);
 console.log(sol);
 //[ [ 'x', 3 ], [ 'y', -2 ], [ 'z', 2 ] ]
 </code></pre>  
+                        <p>
+                            In version 0.7.2 and up the solver can additionally be used in the following way
+                        </p>
+                        
 
-In version 0.7.2 and up the solver can additionally be used in the following way
-
-<pre><code>//first parse the equation
+                        <pre><code>//first parse the equation
 var x = nerdamer('x^2+2=y-7*a');
 //You can make substitutions to the equation
 x = x.evaluate({a: 'x^2-3'});
@@ -492,16 +593,21 @@ var solutions = x.solveFor('x');
 console.log(solutions.toString()); //(1/16)*sqrt(32*y+608),(-1/16)*sqrt(32*y+608)  
 </code></pre>
 
-If no solutions could be found then the array will be empty
+                        If no solutions could be found then the array will be empty
 
-<h3>Logging Steps</h3>
-One of the frequently asked questions is how to log the steps of the parsing. To aid in this I've created a helper. The code can be found below or you can find it at this Github
-<a href="https://gist.github.com/jiggzson/30ebef4a7bf97d2412964ff1b11938b5">gist</a>. This helper creates a function called stepper which can be passed an object containing pre and post
-functions. For instance to log addition the pre_add and post_add functions get passed to the stepper. The operations which can be logged are called add, subtract, multiply, divide, pow, and call_function.
-To override an existing entry pass the object along with true to the stepper function. See examples below
-<br/><br/>
-Below is the stepper method assuming nerdamer is already loaded in your page or node environment.
-<pre><code>var stepper = (function() {
+                        <h3>Logging Steps</h3>
+                        <p>
+                            One of the frequently asked questions is how to log the steps of the parsing. To aid in this I've created a helper. The code can be found below or you can find it at this Github
+                            <a href="https://gist.github.com/jiggzson/30ebef4a7bf97d2412964ff1b11938b5">gist</a>. This helper creates a function called stepper which can be passed an object containing pre and post
+                            functions. For instance to log addition the pre_add and post_add functions get passed to the stepper. The operations which can be logged are called add, subtract, multiply, divide, pow, and call_function.
+                            To override an existing entry pass the object along with true to the stepper function. See examples below
+                        </p>
+                            
+                        <p>
+                            Below is the stepper method assuming <code>nerdamer</code> is already loaded in your page or node environment.
+                        </p>
+                        
+                        <pre><code>var stepper = (function() {
     "use strict";
     var core = nerdamer.getCore(),
         _ = core.PARSER,
@@ -635,9 +741,11 @@ Below is the stepper method assuming nerdamer is already loaded in your page or 
     return xport;
 })();
 </code></pre>
-
-You can then define your step methods
-<pre><code>stepper({
+                        <p>
+                            You can then define your step methods
+                        </p>
+                        
+                        <pre><code>stepper({
     pre_add: function(a, b) {
         console.log('Adding '+a+' to '+b);
     },
@@ -697,54 +805,66 @@ The result of adding 21 to 1 was 22
 Finally the end result was 22
 */
 </code></pre>
-If you would want to override the existing pre_add example for instance you can do so in the following manner
-<pre><code>stepper({
+                        <p>
+                            If you would want to override the existing <code>pre_add</code> example for instance you can do so in the following manner
+                        </p>
+                        
+                        <pre><code>stepper({
     pre_add: function() {
         console.log('Overridden');
     }
 }, true);
 </code></pre>
-To unload the stepper call the unload method
-<pre><code>stepper.unload();</code></pre>
-To reload the stepper call the load method
-<pre><code>stepper.load();</code></pre>
-To clear the stepper call the clear method
-<pre><code>stepper.clear();</code></pre>
+                        <p>
+                            To unload the stepper call the <code>unload</code> method
+                        </p>
+                        
+                        <pre><code>stepper.unload();</code></pre>
+                        <p>
+                            To reload the stepper call the <code>load</code> method
+                        </p>
+                        
+                        <pre><code>stepper.load();</code></pre>
+                        <p>
+                            To clear the stepper call the <code>clear</code> method
+                        </p>
+                        
+                        <pre><code>stepper.clear();</code></pre>
 
-        </div>
+                    </div>
 
-            </div>
-            <div class="col-sm-3 hidden-sm hidden-xs">
-                <ul class="side-bar">
-                    <li><a href="./extending_core.html">Extending the core</a></li>
-                    <li><a href="./digging_deeper.html">Digging deeper</a></li>
-                    <li><a href="./examples.html">Examples</a></li>
-                </ul>     
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <footer>
-            <div class="row">
-                <div class="col-lg-12 text-center">
-                    <p>Copyright &copy; Nerdamer.com <span class="date"></span></p>
+                </div>
+                <div class="col-sm-3 hidden-sm hidden-xs">
+                    <ul class="side-bar">
+                        <li><a href="./extending_core.html">Extending the core</a></li>
+                        <li><a href="./digging_deeper.html">Digging deeper</a></li>
+                        <li><a href="./examples.html">Examples</a></li>
+                    </ul>     
                 </div>
             </div>
-            <!-- /.row -->
-        </footer>
 
-    </div>
-    <!-- /.container -->
+            <!-- Footer -->
+            <footer>
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <p>Copyright &copy; Nerdamer.com <span class="date"></span></p>
+                    </div>
+                </div>
+                <!-- /.row -->
+            </footer>
 
-    <!-- jQuery -->
-    <script src="js/jquery.js"></script>
+        </div>
+        <!-- /.container -->
 
-    <!-- Bootstrap Core JavaScript -->
-    <script src="js/bootstrap.min.js"></script>
-    <script>
-        $('.date').html(new Date().getFullYear());
-    </script>
-    <script>hljs.initHighlightingOnLoad();</script>
-</body>
+        <!-- jQuery -->
+        <script src="js/jquery.js"></script>
+
+        <!-- Bootstrap Core JavaScript -->
+        <script src="js/bootstrap.min.js"></script>
+        <script>
+            $('.date').html(new Date().getFullYear());
+        </script>
+        <script>hljs.initHighlightingOnLoad();</script>
+    </body>
 
 </html>

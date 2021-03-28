@@ -13,7 +13,10 @@
 
     <!-- Bootstrap Core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
-
+    
+    <!-- fontawesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" />
+    
     <!-- Custom CSS -->
     <link href="css/site.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
@@ -115,6 +118,12 @@ console.log(x.toString());
                     inputs to be Symbols. (3) When using a sum or product of a symbol in subsequent calculations always call clone on the symbol for safety. Nerdamer reuses
                     symbols as much as possible so you would not want to accidentally add or multiply the same symbol twice or more. To wrap it all up just register the 
                     the function.
+                </p>
+                <h4 class="text-center"><i class="fas fa-exclamation-triangle"></i> Caution</h4>
+                <p>
+                   Building this function in this way has one major drawback. When your registered function is called, and you use 
+                   <code>nerdamer('yourFunction(t)', {t: blah}, 'numer'};</code>, the parser has already seen the request to convert to a numeric output 
+                   before your function is called. You'll be required to call <code>evaluate</code> to get the desired output.
                 </p>
 <pre><code>(function() {
     var core = nerdamer.getCore(),
