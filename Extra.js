@@ -206,7 +206,7 @@ if ((typeof module) !== 'undefined') {
                                 // Get a for the function above
                                 var a = core.Utils.decompose_fn(completed.a, s, true).b;
                                 var tf = __.LaPlace.inverse(_.parse(`1/((${u})^2+(${completed.c}))`), u, t);
-                                retval = _.multiply(tf, _.parse(`(${m})*e^(-${a})*(${t})`));
+                                retval = _.multiply(tf, _.parse(`(${m})*e^(-(${a})*(${t}))`));
                             }   
                             else {
                                 // a/(b*s-c) -> ae^(-bt)

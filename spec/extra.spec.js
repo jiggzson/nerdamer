@@ -37,7 +37,8 @@ describe('Extra Calculus', function () {
         expect(nerdamer('ilt((6*s^2-1)/(4*s^2+1)^2, s, t)').toString()).toEqual('(1/8)*sin((1/2)*t)+(5/16)*cos((1/2)*t)*t');
         expect(nerdamer('ilt((5*(sin(1)*s+3*cos(1)))/(s^2+9),s, t)').toString()).toEqual('5*cos(1)*sin(3*t)+5*cos(3*t)*sin(1)');
         expect(nerdamer('ilt(((s+1)*(s+2)*(s+3))^(-1), s, t)').toString()).toEqual('(1/2)*e^(-3*t)+(1/2)*e^(-t)-e^(-2*t)');
-        expect(nerdamer('ilt(1/(s^2+s+1),s,t)').toString()).toEqual('2*sin((1/2)*sqrt(3)*t)*sqrt(3)^(-1)*sqrt(e)^(-1)*t');
+        expect(nerdamer('ilt(1/(s^2+s+1),s,t)').toString()).toEqual('2*e^((-1/2)*t)*sin((1/2)*sqrt(3)*t)*sqrt(3)^(-1)');
+        expect(nerdamer('ilt(1/(s^2+2s+1),s,t)').toString()).toEqual('e^(-t)*t');
     });
 
     it('should calculate mode correctly', function () {
