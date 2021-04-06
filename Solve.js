@@ -200,6 +200,20 @@ if ((typeof module) !== 'undefined') {
         return new Equation(a, b);
     };
     
+    // Extend simplify
+    (function() {
+        var simplify = _.functions.simplify[0];
+        _.functions.simplify[0] = function(symbol) {
+            if(symbol instanceof Equation) {
+                symbol.LHS = simplify(symbol.LHS);
+                symbol.RHS = simplify(symbol.RHS);
+                return symbol;
+            }
+            // Just call the original simplify
+            return simplify(symbol);
+        };
+    })();
+    
     /**
      * Sets two expressions equal
      * @param {Symbol} symbol

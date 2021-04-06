@@ -1253,9 +1253,11 @@ var nerdamer = (function (imports) {
     var Big = {
         cos: function (x) {
             return new Symbol(bigDec.cos(x.multiplier.toDecimal()));
+//            return bigDec.cos(x.multiplier.toDecimal());
         },
         sin: function (x) {
             return new Symbol(bigDec.sin(x.multiplier.toDecimal()));
+//            return bigDec.sin(x.multiplier.toDecimal());
         }
     };
 //Math2 ========================================================================

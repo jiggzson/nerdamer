@@ -4163,7 +4163,7 @@ if((typeof module) !== 'undefined') {
 
                 return [symbol, patterns];
             },
-            simplify: function(symbol) {
+            simplify: function(symbol) {  
                 //remove the multiplier to make calculation easier;
                 var sym_array = __.Simplify.strip(symbol);
                 symbol = sym_array.pop();
@@ -4355,3 +4355,4 @@ if((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
