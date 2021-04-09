@@ -11772,22 +11772,40 @@ var nerdamer = (function (imports) {
      * @returns {Expression}
      */
     var libExports = function (expression, subs, option, location) {
-        //is the user declaring a function?
+        // Initiate the numer flag
+        var numer = false;
+        
+        // Is the user declaring a function?
         var fndec = /^([a-z_][a-z\d\_]*)\(([a-z_,\s]*)\):=(.+)$/gi.exec(expression);
         if (fndec)
             return nerdamer.setFunction(fndec[1], fndec[2].split(','), fndec[3]);
 
-        //var variable, fn, args;
-        //convert any expression passed in to a string
+        // var variable, fn, args;
+        // Convert any expression passed in to a string
         if (expression instanceof Expression)
             expression = expression.toString();
-
-        var multi_options = isArray(option),
-                expand = 'expand',
-                numer = multi_options ? option.indexOf('numer') !== -1 : option === 'numer';
-        if ((multi_options ? option.indexOf(expand) !== -1 : option === expand)) {
-            expression = format('{0}({1})', expand, expression);
+        
+        // Convert it to an array for simplicity
+        if(!isArray(option)) {
+            option = typeof option === 'undefined' ? [] : [option];
         }
+        
+        option.forEach(function(o) {
+            // Turn on the numer flag if requested
+            if(o === 'numer') {
+                numer = true;
+                return;
+            }
+            // Wrap it in a function if requested. This only holds true for
+            // functions that take a single argument which is the expression
+            var f = _.functions[option];
+            // If there's a function and it takes a single argument, then wrap
+            // the expression in it
+            if(f && f[1] === 1) {
+                expression = `${o}(${expression})`;
+            }
+        });
+
         var e = block('PARSE2NUMBER', function () {
             return _.parse(expression, subs);
         }, numer || Settings.PARSE2NUMBER);
@@ -11798,12 +11816,7 @@ var nerdamer = (function (imports) {
         else {
             EXPRESSIONS.push(e);
         }
-
-        /*
-         if(variable) libExports.setVar(variable, e);
-         if(fn) libExports.setFunction(fn, args, e);
-         */
-
+        
         return new Expression(e);
     };
     /**
