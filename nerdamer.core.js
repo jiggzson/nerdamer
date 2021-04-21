@@ -1249,17 +1249,6 @@ var nerdamer = (function (imports) {
         InfiniteLoopError: InfiniteLoopError,
         UnexpectedTokenError: UnexpectedTokenError
     };
-//Big ==========================================================================
-    var Big = {
-        cos: function (x) {
-            return new Symbol(bigDec.cos(x.multiplier.toDecimal()));
-//            return bigDec.cos(x.multiplier.toDecimal());
-        },
-        sin: function (x) {
-            return new Symbol(bigDec.sin(x.multiplier.toDecimal()));
-//            return bigDec.sin(x.multiplier.toDecimal());
-        }
-    };
 //Math2 ========================================================================
     //This object holds additional functions for nerdamer. Think of it as an extension of the Math object.
     //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the
@@ -4966,7 +4955,11 @@ var nerdamer = (function (imports) {
                     if (symbol.equals(new Symbol(Settings.PI / 2)))
                         return new Symbol(0);
                     if (symbol.isConstant()) {
-                        return new Symbol(bigDec.cos(symbol.multiplier.toDecimal()));
+                        if(Settings.USE_BIG) {
+                            return new Symbol(bigDec.cos(symbol.multiplier.toDecimal()));
+                        }
+                        
+                        return new Symbol(Math.cos(symbol.valueOf()));
                     }
                     if (symbol.isImaginary()) {
                         return complex.evaluate(symbol, 'cos');
@@ -5021,7 +5014,12 @@ var nerdamer = (function (imports) {
                         if(symbol % Math.PI === 0) {
                             return new Symbol(0);
                         }
-                        return new Symbol(bigDec.sin(symbol.multiplier.toDecimal()));
+                        
+                        if(Settings.USE_BIG) {
+                            return new Symbol(bigDec.sin(symbol.multiplier.toDecimal()));
+                        }
+                        
+                        return new Symbol(Math.sin(symbol.valueOf()));
                     }
                     if (symbol.isImaginary())
                         return complex.evaluate(symbol, 'sin');
@@ -5076,8 +5074,13 @@ var nerdamer = (function (imports) {
             },
             tan: function (symbol) {
                 if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
-                        return new Symbol(bigDec.tan(symbol.multiplier.toDecimal()));
+                    if (symbol.isConstant()) {
+                        if(Settings.USE_BIG) {
+                            return new Symbol(bigDec.tan(symbol.multiplier.toDecimal()));
+                        }
+                        
+                        return new Symbol(Math.tan(symbol.valueOf()));
+                    }
                     if (symbol.isImaginary())
                         return complex.evaluate(symbol, 'tan');
                 }
