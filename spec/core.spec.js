@@ -2541,6 +2541,15 @@ describe('trigonometric functions', function () {
             expect(round(value, 14)).toEqual(round(testCases[i].expectedValue),14);
         }
     });
+    it('should handle inverse trig in complex domain', function() {
+        expect(nerdamer('asin(2)').evaluate().text()).toEqual('-1.3169578969248164*i+1.570796326794896580');
+        expect(nerdamer('asin(2.19549352839451962743423602992)').evaluate().text()).toEqual('-1.423114269539483*i+1.570796326794896580');
+        expect(nerdamer('acos(2)').evaluate().text()).toEqual('1.3169578969248164*i');
+        expect(nerdamer('atan(i)').evaluate().text()).toEqual('Infinity*i');
+        
+        expect(nerdamer('asec(0.89)').evaluate().text()).toEqual('0.000000000000000250+0.4921996534425188*i'); // Has rounding errors
+        expect(nerdamer('acsc(0.23)').evaluate().text()).toEqual('-2.149327811189422*i+1.570796326794897049'); // Has rounding errors
+    });
     it('should throw for wrong trigonometric arguments', function () {
         // given
         var testCases = [

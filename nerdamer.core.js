@@ -1206,6 +1206,8 @@ var nerdamer = (function (imports) {
     var ParseError = customError('ParseError');
     // Is thrown if the expression results in undefined
     var UndefinedError = customError('UndefinedError');
+    // Is throw input is out of the function domain
+    var OutOfFunctionDomainError = customError('OutOfFunctionDomainError');
     // Is throw if a function exceeds x amount of iterations
     var MaximumIterationsReached = customError('MaximumIterationsReached');
     // Is thrown if the parser receives an incorrect type
@@ -1235,6 +1237,7 @@ var nerdamer = (function (imports) {
     var exceptions = {
         DivisionByZero: DivisionByZero,
         ParseError: ParseError,
+        OutOfFunctionDomainError: OutOfFunctionDomainError,
         UndefinedError: UndefinedError,
         MaximumIterationsReached: MaximumIterationsReached,
         NerdamerTypeError: NerdamerTypeError,
@@ -1264,7 +1267,9 @@ var nerdamer = (function (imports) {
         cot: function (x) {
             return 1 / Math.tan(x);
         },
-		acsc: function(x) { return Math.asin(1/x); },
+        acsc: function(x) { 
+            return Math.asin(1/x); 
+        },
         asec: function(x) {
             return Math.acos(1/x);
         },
@@ -2698,7 +2703,6 @@ var nerdamer = (function (imports) {
             catch (e) {
                 return false;
             }
-            ;
         },
         gte: function (value) {
             return this.gt(value) || this.eq(value);
@@ -3151,7 +3155,8 @@ var nerdamer = (function (imports) {
             return sign + dec;
         },
         toDecimal: function (prec) {
-            if (prec || Settings.PRECISION) {
+            prec = prec || Settings.PRECISION;
+            if (prec) {
                 return this.decimal(prec);
             }
             else
@@ -4580,7 +4585,16 @@ var nerdamer = (function (imports) {
             return this.multiplier.lessThan(n);
         },
         greaterThan: function (n) {
-            return this.multiplier.greaterThan(n);
+            if(!isSymbol(n)) {
+                n = new Symbol(n);
+            }
+            
+            // We can't tell for sure if a is greater than be if they're not both numbers
+            if(!this.isConstant(true) || !n.isConstant(true)) {
+                return false;
+            }
+            
+            return this.multiplier.greaterThan(n.multiplier);
         },
         /**
          * Get's the denominator of the symbol if the symbol is of class CB (multiplication)
@@ -4757,9 +4771,10 @@ var nerdamer = (function (imports) {
                 return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
             },
             acos: function (r, i) {
-                var symbol, sq, a, b, c;
+                var symbol, sq, a, b, c, squared;
                 symbol = this.fromArray([r, i]);
-                sq = _.expand(_.pow(symbol.clone(), new Symbol(2))); //z*z
+                squared = _.pow(symbol.clone(), new Symbol(2)); 
+                sq = _.expand(squared); //z*z
                 a = _.multiply(sqrt(_.subtract(new Symbol(1), sq)), Symbol.imaginary());
                 b = _.expand(_.add(symbol.clone(), a));
                 c = log(b);
@@ -4769,6 +4784,11 @@ var nerdamer = (function (imports) {
                 return _.subtract(_.parse('pi/2'), this.acos(r, i));
             },
             atan: function (r, i) {
+                // Handle i and -i
+                if(r.equals(0) && (i.equals(1) || i.equals(-1))) {
+                    // Just copy Wolfram Alpha for now. The parenthesis 
+                    return _.parse(`${Symbol.infinity()}*${Settings.IMAGINARY}*${i}`);
+                }
                 var a, b, c, symbol;
                 symbol = complex.fromArray([r, i]);
                 a = _.expand(_.multiply(Symbol.imaginary(), symbol.clone()));
@@ -4867,9 +4887,10 @@ var nerdamer = (function (imports) {
                 return _.add(_.divide(a.clone(), d.clone()), _.multiply(_.divide(im, d), Symbol.imaginary()));
             },
             log: function (r, i) {
-                var re, im;
+                var re, im, phi;
                 re = log(Symbol.hyp(r, i));
-                im = _.parse(Math.atan2(i, r));
+                phi = Settings.USE_BIG ? Symbol(bigDec.atan2(i.multiplier.toDecimal(), r.multiplier.toDecimal())) : Math.atan2(i, r);
+                im = _.parse(phi);
                 return _.add(re, _.multiply(Symbol.imaginary(), im));
             },
             erf(symbol, n) {
@@ -4941,6 +4962,7 @@ var nerdamer = (function (imports) {
 
                 if (re.isConstant('all') && im.isConstant('all'))
                     return this[f].call(this, re, im);
+           
                 return _.symfunction(f, [symbol]);
             }
         };
@@ -5127,8 +5149,13 @@ var nerdamer = (function (imports) {
             },
             sec: function (symbol) {
                 if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
+                    if (symbol.isConstant()) {
+                        if(Settings.USE_BIG) {
+                            return new Symbol(new bigDec(1).dividedBy(bigDec.cos(symbol.multiplier.toDecimal())));
+                        }
+                        
                         return new Symbol(Math2.sec(symbol.valueOf()));
+                    }
                     if (symbol.isImaginary())
                         return complex.evaluate(symbol, 'sec');
                     return _.parse(format('1/cos({0})', symbol));
@@ -5176,8 +5203,13 @@ var nerdamer = (function (imports) {
             },
             csc: function(symbol) {
                 if(Settings.PARSE2NUMBER) {
-                    if(symbol.isConstant())
+                    if (symbol.isConstant()) {
+                        if(Settings.USE_BIG) {
+                            return new Symbol(new bigDec(1).dividedBy(bigDec.sin(symbol.multiplier.toDecimal())));
+                        }
+                        
                         return new Symbol(Math2.csc(symbol.valueOf()));
+                    }
                     if(symbol.isImaginary())
                         return complex.evaluate(symbol, 'csc');
                     return _.parse(format('1/sin({0})', symbol));
@@ -5223,8 +5255,13 @@ var nerdamer = (function (imports) {
             },
             cot: function (symbol) {
                 if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
+                    if (symbol.isConstant()) {
+                        if(Settings.USE_BIG) {
+                            return new Symbol(new bigDec(1).dividedBy(bigDec.tan(symbol.multiplier.toDecimal())));
+                        }
+                        
                         return new Symbol(Math2.cot(symbol.valueOf()));
+                    }
                     if (symbol.isImaginary())
                         return complex.evaluate(symbol, 'cot');
                     return _.parse(format('1/tan({0})', symbol));
@@ -5272,8 +5309,19 @@ var nerdamer = (function (imports) {
             },
             acos: function (symbol) {
                 if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
+                    if (symbol.isConstant()) {
+                        // Handle values in the complex domain
+                        if(symbol.gt(1) || symbol.lt(-1)) {
+                            var x = symbol.toString();
+                            return expand(evaluate(`pi/2-asin(${x})`));
+                        }
+                        // Handle big numbers
+                        if(Settings.USE_BIG) {
+                            return new Symbol(bigDec.acos(symbol.multiplier.toDecimal()));
+                        }
+                        
                         return new Symbol(Math.acos(symbol.valueOf()));
+                    }
                     if (symbol.isImaginary())
                         return complex.evaluate(symbol, 'acos');
                 }
@@ -5281,8 +5329,20 @@ var nerdamer = (function (imports) {
             },
             asin: function (symbol) {
                 if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
+                    if (symbol.isConstant()) {
+                        // Handle values in the complex domain
+                        if(symbol.gt(1) || symbol.lt(-1)) {
+                            var i = Settings.IMAGINARY;
+                            var x = symbol.multiplier.toDecimal();
+                            return expand(evaluate(`${i}*log(sqrt(1-${x}^2)-${i}*${x})`));
+                        }
+                        // Handle big numbers
+                        if(Settings.USE_BIG) {
+                            return new Symbol(bigDec.asin(symbol.multiplier.toDecimal()));
+                        }
+                        
                         return new Symbol(Math.asin(symbol.valueOf()));
+                    }
                     if (symbol.isImaginary())
                         return complex.evaluate(symbol, 'asin');
                 }
@@ -5293,8 +5353,14 @@ var nerdamer = (function (imports) {
                 if (symbol.equals(0))
                     retval = new Symbol(0);
                 else if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
+                    if (symbol.isConstant()) {
+                        // Handle big numbers
+                        if(Settings.USE_BIG) {
+                            return new Symbol(bigDec.atan(symbol.multiplier.toDecimal()));
+                        }
+                        
                         return new Symbol(Math.atan(symbol.valueOf()));
+                    }
                     if (symbol.isImaginary())
                         return complex.evaluate(symbol, 'atan');
                     return _.symfunction('atan', arguments);
@@ -5307,17 +5373,24 @@ var nerdamer = (function (imports) {
             },
             asec: function (symbol) {
                 if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
-                        return new Symbol(Math.acos(symbol.invert().valueOf()));
-                    if (symbol.isImaginary())
+                    if(symbol.equals(0)) {
+                        throw new OutOfFunctionDomainError('Input is out of the domain of sec!');
+                    }
+                    if (symbol.isConstant()) {
+                        return trig.acos(symbol.invert());
+                    }
+                    if (symbol.isImaginary()) {
                         return complex.evaluate(symbol, 'asec');
+                    }
                 }
                 return _.symfunction('asec', arguments);
             },
             acsc: function (symbol) {
                 if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
-                        return new Symbol(Math.asin(symbol.invert().valueOf()));
+                    if (symbol.isConstant()) {
+                        return trig.asin(symbol.invert());
+                    }
+                        
                     if (symbol.isImaginary())
                         return complex.evaluate(symbol, 'acsc');
                 }
@@ -5957,10 +6030,10 @@ var nerdamer = (function (imports) {
             //check if arguments are all numers
             var numericArgs = allNumbers(args);
             //Big number support. Check if Big number is requested and the arguments are all numeric and, not imaginary
-            if (Settings.USE_BIG && numericArgs) {
-                retval = Big[fn_name].apply(undefined, args);
-            }
-            else {
+//            if (Settings.USE_BIG && numericArgs) {
+//                retval = Big[fn_name].apply(undefined, args);
+//            }
+//            else {
                 if (!fn) {
                     //Remember assumption 1. No function defined so it MUST be numeric in nature
                     fn = findFunction(fn_name);
@@ -5973,7 +6046,7 @@ var nerdamer = (function (imports) {
                     //Remember assumption 2. The function is defined so it MUST handle all aspects including numeric values
                     retval = fn.apply(fn_settings[2], args);
                 }
-            }
+//            }
 
             return retval;
         };
@@ -6783,6 +6856,14 @@ var nerdamer = (function (imports) {
                 return retval;
             }
             catch(error) {
+                var rethrowErrors = [OutOfFunctionDomainError];
+                // Rethrow certain errors in the same class to preserve them
+                rethrowErrors.forEach(function(E) {
+                    if(error instanceof E) {
+                        throw new E(error.message+': '+e.column);
+                    }
+                });
+                    
                 throw new ParseError(error.message+': '+e.column);
             }
         };
@@ -9547,11 +9628,12 @@ var nerdamer = (function (imports) {
 
                 // Imaginary number under negative nthroot or to the n
                 if (Settings.PARSE2NUMBER && a.isImaginary() && bIsConstant && isInt(b) && !b.lessThan(0)) {
-                    var re, im, r, theta, nre, nim;
+                    var re, im, r, theta, nre, nim, phi;
                     re = a.realpart();
                     im = a.imagpart();
                     if (re.isConstant('all') && im.isConstant('all')) {
-                        theta = new Symbol(Math.atan2(im, re) * b);
+                        phi = Settings.USE_BIG ? Symbol(bigDec.atan2(i.multiplier.toDecimal(), r.multiplier.toDecimal()).times(b.toString())) : Math.atan2(im, re)*b;
+                        theta = new Symbol(phi);
                         r = _.pow(Symbol.hyp(re, im), b);
                         nre = _.multiply(r.clone(), _.trig.cos(theta.clone()));
                         nim = _.multiply(r, _.trig.sin(theta));
@@ -12200,8 +12282,15 @@ var nerdamer = (function (imports) {
         if (disallowed.indexOf(setting) !== -1)
             err('Cannot modify setting: ' + setting);
 
-        if (setting === 'PRECISION')
+        if (setting === 'PRECISION') {
             bigDec.set({precision: value});
+            Settings.PRECISION = value;
+            
+            // Avoid that nerdamer puts out garbage after 21 decimal place
+            if(value > 21) {
+                this.set('USE_BIG', true);
+            }
+        }
         else if(setting === 'USE_LN' && value === true) {
             //set log as LN
             Settings.LOG = 'LN';

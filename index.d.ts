@@ -115,19 +115,19 @@ return _.multiply(sum, product)
 }
 	 //register the function with nerdamer
 	 nerdamer.register({
-   name: 'myFunction',
-   numargs: 2,
-   visible: true,
-   build: function(){ return f }
+	 name: 'myFunction',
+	 numargs: 2,
+	 visible: true,
+	 build: function(){ return f }
 })
 
 	 //create an alias for the diff function
 	 var core = nerdamer.getCore()
 	 nerdamer.register({
-    name: 'D',
-    visible: true,
-    numargs: [1, 3],
-    build: function(){ return core.Calculus.diff }
+		name: 'D',
+		visible: true,
+		numargs: [1, 3],
+		build: function(){ return core.Calculus.diff }
 })
 	 */
 	export function register(f: ModuleFunction | ModuleFunction[]): typeof nerdamer
@@ -190,7 +190,7 @@ return _.multiply(sum, product)
 		 * Generates a JavaScript function given the expression. This is perfect for plotting and filtering user input. Plotting for the demo is accomplished using this. The order of the parameters is in alphabetical order by default but an argument array can be provided with the desired order.
 		 * @param args_array The argument array with the order in which they are preferred.
 		 */
-		buildFunction(args_array: string[]): (...args: number[]) => number
+		buildFunction(args_array?: string[]): (...args: number[]) => number
 
 		/**
 		 * Forces evaluation of the expression.
@@ -221,6 +221,11 @@ return _.multiply(sum, product)
 		toTeX(): string
 
 		/**
+		 * Returns the value of the expression as a string or a number
+		 */
+		valueOf(): string | number
+
+		/**
 		 * Gets the list of reserved names. This is a list of names already in use by nerdamer excluding variable names. This is not a static list.
 		 * @param outputType Pass in the string 'decimals' to always get back numers as decimals. Pass in the string 'fractions' to always get back number as fractions. Defaults to decimals.
 		 */
@@ -234,6 +239,122 @@ return _.multiply(sum, product)
 		 * eq.solveFor('x') // ?? TODO
 		 */
 		solveFor(variable: string): Expression
+
+		/**
+		 * Forces the expression to displayed with decimals
+		 */
+		toDecimal(prec?: number): string
+
+		/**
+		 * Checks to see if the expression's value equals a number. Compares the direct value returned.
+		 * The function will not check for all possible cases. To avoid this call evaluate.
+		 * @example
+		 * nerdamer('sqrt(5)').isNumber()
+		 * // false
+		 * nerdamer('sqrt(5)').evaluate().isNumber()
+		 * // true
+		 */
+		isNumber(): boolean
+		
+		/**
+		 * Checks if a number evaluates to an imaginary number
+		 * @example
+		 * nerdamer('sqrt(-5)+8').isImaginary()
+		 * // true
+		 * nerdamer('sqrt(5)+8').isImaginary()
+		 * // false
+		 */
+		isImaginary(): boolean
+
+		/**
+		 * Adds a value to an expression
+		 * @example
+		 * nerdamer('x').add(3)
+		 */
+		add(symbol: number | string | Expression): Expression
+
+		/**
+		 * Subtracts a value from an expression
+		 * @example
+		 * nerdamer('x').subtract(3)
+		 */
+		subtract(symbol: number | string | Expression): Expression
+
+		/**
+		 * Multiplies an expression by a value
+		 * @example
+		 * nerdamer('x').multiply(3)
+		 */
+		multiply(symbol: number | string | Expression): Expression
+
+		/**
+		 * Divides an expression by a valule
+		 * @example
+		 * nerdamer('9*x').divide(3)
+		 */
+		divide(symbol: number | string | Expression): Expression
+
+		/**
+		 * Raises an expression to a power
+		 * @example
+		 * nerdamer('x').pow(3)
+		 */
+		pow(symbol: number | string | Expression): Expression
+
+		/**
+		 * Checks if two values are equal
+		 * @param value The value being tested
+		 * @example
+		 * nerdamer('sqrt(9)').eq(3)
+		 * // true
+		 * nerdamer('x').eq('y')
+		 * // false
+		 */
+		eq(value: number | string | Expression): Expression
+
+		/**
+		 * Checks if a value is less than another
+		 * @param value The value being tested
+		 * @example
+		 * nerdamer('sqrt(9)').lt(3)
+		 * // false
+		 * nerdamer('8').lt(100)
+		 * // true
+		 */
+		 lt(value: number | string | Expression): Expression
+
+		 /**
+		 * Checks if a value is less than or equal to another
+		 * @param value The value being tested
+		 * @example
+		 * nerdamer('sqrt(9)').lte(3)
+		 * // true
+		 * nerdamer('x').lte(100)
+		 * // false
+		 */
+			lte(value: number | string | Expression): Expression
+
+		 /**
+		 * Checks if a value is greater than another
+		 * @param value The value being tested
+		 * @example
+		 * nerdamer('sqrt(9)').gt(3)
+		 * // false
+		 * nerdamer('800').gt(100)
+		 * // true
+		 */
+			gt(value: number | string | Expression): Expression
+
+			/**
+		 * Checks if a value is greater than or equal to another
+		 * @param value The value being tested
+		 * @example
+		 * nerdamer('sqrt(9)').gte(3)
+		 * // true
+		 * nerdamer('x').gte(100)
+		 * // false
+		 */
+			 gte(value: number | string | Expression): Expression
 	}
 
 	////////// CALCULUS
@@ -246,9 +367,9 @@ return _.multiply(sum, product)
 	 * @param upper Ending index.
 	 */
 	export function sum(expression: ExpressionParam,
-					    index: string,
-	  					lower: ExpressionParam, 
-	  					upper: ExpressionParam): Expression
+		index: string,
+		lower: ExpressionParam,
+		upper: ExpressionParam): Expression
 
 	/**
 	 *

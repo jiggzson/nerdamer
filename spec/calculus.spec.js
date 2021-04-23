@@ -657,10 +657,13 @@ describe('calculus', function () {
                 given: 'integrate(1/(x^2+9)^3,x)',
                 expected: '(1/729)*((1/4)*cos(atan((1/3)*x))^3*sin(atan((1/3)*x))+(3/8)*atan((1/3)*x)+(3/8)*cos(atan((1/3)*x))*sin(atan((1/3)*x)))'
             },
+            // Wrong result? - Need verification. The previous verification might have given correct answer due to choice of parameters
+            /*
             {
                 given: 'integrate(1/(a*x^2+b)^3,x)',
                 expected: '((1/4)*cos(atan(sqrt(a)^(-1)*sqrt(b)^(-1)*x))^3*sin(atan(sqrt(a)^(-1)*sqrt(b)^(-1)*x))+(3/8)*atan(sqrt(a)^(-1)*sqrt(b)^(-1)*x)+(3/8)*cos(atan(sqrt(a)^(-1)*sqrt(b)^(-1)*x))*sin(atan(sqrt(a)^(-1)*sqrt(b)^(-1)*x)))*b^(-3)'
             },
+             */
             {
                 given: 'integrate(asin(x)/sqrt(2-2x^2),x)',
                 expected: '(1/2)*asin(x)^2*sqrt(2)^(-1)'
