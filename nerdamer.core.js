@@ -395,14 +395,18 @@ var nerdamer = (function (imports) {
     /**
      * Returns the sum of an array
      * @param {Array} arr
+     * @param {boolean} toNumber
      * @returns {Symbol}
      */
-    var arraySum = function(arr) {
+    var arraySum = function(arr, toNumber) {
         var sum = new Symbol(0);
-        arr.map(function(x) {
-            sum = _.add(sum, x);
-        });
-        return sum;
+        for(var i=0; i<arr.length; i++) {
+            var x = arr[i];
+            // Convert to symbol if not
+            sum = _.add(sum, !isSymbol(x) ? _.parse(x) : x);
+        }
+        
+        return toNumber ? Number(sum) : sum;
     };
 
     /**
@@ -687,6 +691,30 @@ var nerdamer = (function (imports) {
      */
     var arrayMin = function (arr) {
         return Math.min.apply(undefined, arr);
+    };
+    
+    /**
+     * Checks to see if two arrays are equal
+     * @param {Array} arr1 
+     * @param {Array} arr2 
+     */
+    var arrayEqual = function(arr1, arr2) {
+        arr1.sort();
+        arr2.sort();
+        
+        // The must be of the same length
+        if(arr1.length ===  arr2.length) {
+            for(var i=0; i<arr1.length; i++) {
+                // If any two items don't match we're done
+                if(arr1[i] !== arr2[i]) {
+                    return false;
+                }
+            }
+            // Otherwise they're equal
+            return true;
+        }
+        
+        return false;
     };
 
     /**
@@ -11827,6 +11855,7 @@ var nerdamer = (function (imports) {
         arrayClone: arrayClone,
         arrayMax: arrayMax,
         arrayMin: arrayMin,
+        arrayEqual: arrayEqual,
         arrayUnique: arrayUnique,
         arraySum: arraySum,
         block: block,

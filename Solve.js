@@ -355,6 +355,61 @@ if ((typeof module) !== 'undefined') {
             //done
             return vars;
         },
+        /**
+         * Solve a set of circle equations. 
+         * @param {Symbol[]} eqns
+         * @returns {Array}
+         */
+        solveCircle: function(eqns, vars) {
+            // Convert the variables to symbols
+            var svars = vars.map(function(x) {return _.parse(x)});
+            
+            var deg = [];
+            
+            // Get the degree for the equations
+            for(var i=0; i<eqns.length; i++) {
+                var d = [];
+                for(var j=0; j<svars.length; j++) {
+                    d.push(Number(core.Algebra.degree(eqns[i], svars[j])));
+                }
+                // Store the total degree
+                d.push(core.Utils.arraySum(d, true));
+                deg.push(d);
+            }
+            
+            var a = eqns[0];
+            var b = eqns[1];
+            
+            if(deg[0][2] > deg[1][2]) {
+                [b,a]=[a,b];
+                [deg[1], deg[0]] = [deg[0], deg[1]];
+            }
+            
+            // Only solve it's truly a circle
+            if(deg[0][0] === 1 && deg[0][2] === 2 && deg[1][0] === 2 && deg[1][2] === 4) {
+                var s1 = {};
+                s1[vars[0]] = solve(solve(_.parse(a), vars[1])[0], vars[0]); // solve for the first variable of the first point
+                s1[vars[1]] = solve(solve(_.parse(a), vars[0])[0], vars[1]); // solve for the second variable of the first point
+                
+                var known = {};
+                var s2 = {};
+                known[vars[0]] = s1[vars[0]].toString();
+                s2[vars[0]] = solve(solve(_.parse(b, known), vars[1])[0], vars[0]); // solve for the first variable of the first point
+                // clear the first known
+                delete known[vars[0]];
+                known[vars[1]] = s1[vars[1]].toString();
+                s2[vars[1]] = solve(solve(_.parse(b, known), vars[0])[0], vars[1]); // solve for the first variable of the first point
+            }
+            
+            return [];
+        },
+        /**
+         * Solve a system of nonlinear equations
+         * @param {Symbol[]} eqns The array of equations
+         * @param {number} tries The maximum number of tries
+         * @param {number} start The starting point where to start looking for solutions
+         * @returns {Array}
+         */
         solveNonLinearSystem: function(eqns, tries, start) {
             if(tries < 0) {
                 return [];//can't find a solution
@@ -510,14 +565,20 @@ if ((typeof module) !== 'undefined') {
          * Solves a system of equations by substitution. This is useful when
          * no distinct solution exists. e.g. a line, plane, etc.
          * @param {Array} eqns
-         * @param {Array} var_array
-         * @returns {Array|object}
+         * @returns {Array}
          */
-        /*
-        solveSystemBySubstitution: function(eqns, var_array, m, c) {
+        solveSystemBySubstitution: function(eqns) {
+            // Assume at least 2 equations. The function variables will just return an empty array if undefined is provided
+            var vars_a = variables(eqns[0]);
+            var vars_b = variables(eqns[1]);
+            // Check if it's a circle equation
+            if(eqns.length === 2 && vars_a.length === 2 && core.Utils.arrayEqual(vars_a, vars_b)) {
+                return __.solveCircle(eqns, vars_a);
+            }
             
+            return []; // return an empty set
         },
-        */
+        
         //https://www.lakeheadu.ca/sites/default/files/uploads/77/docs/RemaniFinal.pdf
         /**
          * Solves a systems of equations
@@ -540,10 +601,17 @@ if ((typeof module) !== 'undefined') {
 
             if (typeof var_array === 'undefined') {
                 //check to make sure that all the equations are linear
-                if (!_A.allLinear(eqns))
-                    return __.solveNonLinearSystem(eqns);
-                    //core.err('System must contain all linear equations!');
-                
+                if (!_A.allLinear(eqns)) {
+                    try {
+                        return __.solveNonLinearSystem(eqns);
+                    }
+                    catch(e) {
+                        if(e instanceof core.exceptions.DivisionByZero) {
+                            return __.solveSystemBySubstitution(eqns);
+                        }
+                    }
+                }
+                    
                 vars = __.getSystemVariables(eqns);
                 
                 // Deal with redundant equations as expressed in #562
@@ -1669,3 +1737,9 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
+
+let eq1 ="x^2+y^2=1",
+eq2 ="x+y=1";
+nerdamer.solveEquations([eq1, eq2]);
+
+console.log(9)
