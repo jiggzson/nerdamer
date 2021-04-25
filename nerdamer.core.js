@@ -294,6 +294,18 @@ var nerdamer = (function (imports) {
         }
         return true;
     };
+    
+    /**
+     * Generates an object with known variable value for evaluation
+     * @param {String} variable
+     * @param {any} value Any stringifyable object
+     * @returns {Object} 
+     */
+    var knownVariable = function(variable, value) {
+        var o = {};
+        o[variable] = value;
+        return o;
+    };
 
     /**
      * Checks if n is a number
@@ -11892,6 +11904,7 @@ var nerdamer = (function (imports) {
         isVariableSymbol: isVariableSymbol,
         isVector: isVector,
         keys: keys,
+        knownVariable: knownVariable,
         nroots: nroots,
         remove: remove,
         reserveNames: reserveNames,

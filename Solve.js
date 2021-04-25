@@ -23,6 +23,7 @@ if ((typeof module) !== 'undefined') {
             remove = core.Utils.remove,
             format = core.Utils.format,
             build = core.Utils.build,
+            knownVariable = core.Utils.knownVariable,
             Symbol = core.Symbol,
             isSymbol = core.Utils.isSymbol,
             variables = core.Utils.variables,
@@ -366,6 +367,8 @@ if ((typeof module) !== 'undefined') {
             
             var deg = [];
             
+            var solutions = [];
+            
             // Get the degree for the equations
             for(var i=0; i<eqns.length; i++) {
                 var d = [];
@@ -387,21 +390,35 @@ if ((typeof module) !== 'undefined') {
             
             // Only solve it's truly a circle
             if(deg[0][0] === 1 && deg[0][2] === 2 && deg[1][0] === 2 && deg[1][2] === 4) {
-                var s1 = {};
-                s1[vars[0]] = solve(solve(_.parse(a), vars[1])[0], vars[0]); // solve for the first variable of the first point
-                s1[vars[1]] = solve(solve(_.parse(a), vars[0])[0], vars[1]); // solve for the second variable of the first point
+                // For clarity we'll refer to the variables as x and y
+                var x = vars[0];
+                var y = vars[1];
                 
-                var known = {};
-                var s2 = {};
-                known[vars[0]] = s1[vars[0]].toString();
-                s2[vars[0]] = solve(solve(_.parse(b, known), vars[1])[0], vars[0]); // solve for the first variable of the first point
-                // clear the first known
-                delete known[vars[0]];
-                known[vars[1]] = s1[vars[1]].toString();
-                s2[vars[1]] = solve(solve(_.parse(b, known), vars[0])[0], vars[1]); // solve for the first variable of the first point
+                // We can now get the two points for y
+                var y_points = solve(_.parse(b, knownVariable(x, solve(_.parse(a), x)[0])), y).map(function(x) {return x.toString();});
+                
+                // Since we now know y we can get the two x points from the first equation
+                var x_points = [
+                    solve(_.parse(a, knownVariable(y, y_points[0])))[0].toString()
+                ];
+                
+                if(y_points[1]) {
+                    x_points.push(solve(_.parse(a, knownVariable(y, y_points[1])))[0].toString());
+                }
+                
+                if(Settings.SOLUTIONS_AS_OBJECT) {
+                    var solutions = {};
+                    solutions[x] = x_points;
+                    solutions[y] = y_points;
+                }
+                else {
+                    y_points.unshift(y);
+                    x_points.unshift(x);
+                    solutions = [x_points, y_points];
+                }
             }
             
-            return [];
+            return solutions;
         },
         /**
          * Solve a system of nonlinear equations
@@ -1737,9 +1754,3 @@ if ((typeof module) !== 'undefined') {
     ]);
     nerdamer.api();
 })();
-
-let eq1 ="x^2+y^2=1",
-eq2 ="x+y=1";
-nerdamer.solveEquations([eq1, eq2]);
-
-console.log(9)
