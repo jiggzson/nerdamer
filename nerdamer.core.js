@@ -10381,7 +10381,7 @@ var nerdamer = (function (imports) {
                 v[index] = '\\infty';
             }
             else if (group === S || group === P || previousGroup === S || previousGroup === P || previousGroup === N) {
-                var value = symbol.value;
+                var value = this.formatSubscripts(symbol.value);
                 if (value.replace)
                     value = value.replace(/(.+)_$/, '$1\\_');
                 // split it so we can check for instances of alpha as well as alpha_b
@@ -10626,6 +10626,29 @@ var nerdamer = (function (imports) {
             if (d && !n)
                 return d;
             return n + glue + d;
+        },
+        formatSubscripts: function (v) {
+            var arr = v.toString().split('_');
+            
+            // Nothing to do if it doesn't have underscores
+            if(arr.length === 1) {
+                return arr[0];
+            }
+
+            var name = '';
+            var sub;
+
+            while(arr.length) {
+                sub = arr.pop();
+                // Add the subscript to the variable name
+                name = sub + name;
+                // Wrap all in braces except for the last one
+                if(arr.length > 0) {
+                    name = '_' + this.braces(name);
+                }
+            }
+
+            return name;
         },
         formatP: function (p_array) {
             for (var i = 0; i < 2; i++) {
