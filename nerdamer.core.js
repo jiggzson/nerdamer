@@ -2444,31 +2444,38 @@ var nerdamer = (function (imports) {
             if(decp && (option === 'decimal' || option === 'decimals' && multiplier)) {
                 multiplier = nround(multiplier, decp);
             }
-
+            
+            
             //add the sign back
             var c = sign + multiplier;
 
             if (multiplier && wrapCondition(multiplier))
                 c = inBrackets(c);
-
+            
             if (power < 0)
                 power = inBrackets(power);
 
             //add the multiplication back
             if (multiplier)
                 c = c + '*';
-
-            if (power)
+            
+            if (power) {
+                if(value === 'e' && Settings.E_TO_EXP) {
+                    return c+'exp'+inBrackets(power);
+                }
                 power = Settings.POWER_OPERATOR + power;
+            }
 
             //this needs serious rethinking. Must fix
-            if (group === EX && value.charAt(0) === '-')
+            if (group === EX && value.charAt(0) === '-') {
                 value = inBrackets(value);
+            }
 
             var cv = c + value;
 
-            if (obj.parens)
+            if (obj.parens) {
                 cv = inBrackets(cv);
+            }
 
             return cv + power;
         }

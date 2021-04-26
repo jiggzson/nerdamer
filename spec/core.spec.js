@@ -9,6 +9,7 @@ var _ = utils.toFixed;
 var run = utils.run;
 var core = nerdamer.getCore();
 var round = core.Utils.round;
+var block = core.Utils.block;
 
 
 //, x=2.1, y=3.3, z=1, a=7.42
@@ -1881,7 +1882,12 @@ describe('Nerdamer core', function () {
     });
     it('should recognize the mod and percent operator', function() {
         expect(nerdamer('3*(a%%b%)').toString()).toEqual('3*mod((1/100)*a,(1/100)*b)')
-    })
+    });
+    it('should rewrite e as exp', function() {
+        block('E_TO_EXP', function() {
+            expect(nerdamer('(3*e^(e^(x))+tan(-e^x))+a').toString()).toEqual('3*exp(exp(x))+a+tan(-exp(x))');
+        });
+    });
 });
 
 describe('Further arithmetic test cases', function () {
