@@ -184,6 +184,11 @@ describe('TeX features', function () {
                 given: 'nthroot(a,b)',
                 TeX: '\\sqrt[b]{a}',
                 decimalTeX: '\\sqrt[b]{a}'
+            },
+            {
+                given: 'x_aa_bb+y_cc_dd',
+                TeX: 'x_{aa_{bb}}+y_{cc_{dd}}',
+                decimalTeX: 'x_{aa_{bb}}+y_{cc_{dd}}'
             }
         ];
 

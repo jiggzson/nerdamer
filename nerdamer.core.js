@@ -981,6 +981,23 @@ var nerdamer = (function (imports) {
         }
         return a;
     };
+    
+    /**
+     * Gets all the variables in an array of Symbols
+     * @param {Symbol[]} arr 
+     */
+    var arrayGetVariables = function(arr) {
+        var vars = variables(arr[0], null, null, true);
+
+        //get all variables
+        for (var i = 1, l=arr.length; i < l; i++)
+            vars = vars.concat(variables(arr[i]));
+        //remove duplicates
+        vars = arrayUnique(vars).sort();
+
+        //done
+        return vars;
+    };
 
     /**
      * Removes duplicates from an array. Returns a new array
@@ -10627,28 +10644,26 @@ var nerdamer = (function (imports) {
                 return d;
             return n + glue + d;
         },
+        /**
+         * Places subscripts in braces for proper formatting
+         * @param {String} v
+         * @returns {String}
+         */
         formatSubscripts: function (v) {
+            // Split it at the underscore
             var arr = v.toString().split('_');
-            
-            // Nothing to do if it doesn't have underscores
-            if(arr.length === 1) {
-                return arr[0];
-            }
 
             var name = '';
-            var sub;
 
-            while(arr.length) {
-                sub = arr.pop();
-                // Add the subscript to the variable name
-                name = sub + name;
+            // Loop over all entries except the first one
+            while(arr.length > 1) {
                 // Wrap all in braces except for the last one
                 if(arr.length > 0) {
-                    name = '_' + this.braces(name);
+                    name = '_' + this.braces(arr.pop() + name);
                 }
             }
 
-            return name;
+            return arr[0] + name;
         },
         formatP: function (p_array) {
             for (var i = 0; i < 2; i++) {
@@ -11892,6 +11907,7 @@ var nerdamer = (function (imports) {
         arrayMin: arrayMin,
         arrayEqual: arrayEqual,
         arrayUnique: arrayUnique,
+        arrayGetVariables: arrayGetVariables,
         arraySum: arraySum,
         block: block,
         build: Build.build,

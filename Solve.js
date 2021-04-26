@@ -267,41 +267,7 @@ if ((typeof module) !== 'undefined') {
         return variables(this.symbol);
     };
     
-    core.Matrix.jacobian = function(eqns, vars) {
-        var jacobian = new core.Matrix();
-        //get the variables if not supplied
-        if(!vars) {
-            vars = __.getSystemVariables(eqns);
-        }
-        
-        vars.forEach(function(v, i) {
-            eqns.forEach(function(eq, j) {
-                var e = core.Calculus.diff(eq.clone(), v);
-                jacobian.set(j, i, e);
-            });
-        });
-        
-        return jacobian;
-    };
     
-    core.Matrix.prototype.max = function() {
-        var max = new Symbol(0);
-        this.each(function(x) {
-            var e = x.abs();
-            if(e.gt(max))
-                max = e;
-        });
-        return max;
-    };
-    
-    core.Matrix.cMatrix = function(value, vars) {
-        var m = new core.Matrix();
-        //make an initial guess
-        vars.forEach(function(v, i) {
-            m.set(i, 0, _.parse(value));
-        });
-        return m;
-    };
 
     var setEq = function (a, b) {
         return _.equals(a, b);
@@ -344,18 +310,18 @@ if ((typeof module) !== 'undefined') {
             }
             return eqn.toLHS(expand);
         },
-        getSystemVariables: function(eqns) {
-            vars = variables(eqns[0], null, null, true);
-
-            //get all variables
-            for (var i = 1, l=eqns.length; i < l; i++)
-                vars = vars.concat(variables(eqns[i]));
-            //remove duplicates
-            vars = core.Utils.arrayUnique(vars).sort();
-            
-            //done
-            return vars;
-        },
+//        getSystemVariables: function(eqns) {
+//            vars = variables(eqns[0], null, null, true);
+//
+//            //get all variables
+//            for (var i = 1, l=eqns.length; i < l; i++)
+//                vars = vars.concat(variables(eqns[i]));
+//            //remove duplicates
+//            vars = core.Utils.arrayUnique(vars).sort();
+//            
+//            //done
+//            return vars;
+//        },
         /**
          * Solve a set of circle equations. 
          * @param {Symbol[]} eqns
@@ -459,7 +425,7 @@ if ((typeof module) !== 'undefined') {
                 });
             };
             
-            var vars = __.getSystemVariables(eqns);
+            var vars = core.Utils.arrayGetVariables(eqns);
             var jacobian = core.Matrix.jacobian(eqns, vars, function(x) {
                 return build(x, vars);
             }, true);
@@ -629,7 +595,7 @@ if ((typeof module) !== 'undefined') {
                     }
                 }
                     
-                vars = __.getSystemVariables(eqns);
+                vars = core.Utils.arrayGetVariables(eqns);
                 
                 // Deal with redundant equations as expressed in #562
                 // The fix is to remove all but the number of equations equal to the number

@@ -236,6 +236,43 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         return trig_fns.indexOf(x) !== -1;
     };
     
+    // Matrix functions
+    core.Matrix.jacobian = function(eqns, vars) {
+        var jacobian = new core.Matrix();
+        //get the variables if not supplied
+        if(!vars) {
+            vars = core.Utils.arrayGetVariables(eqns);
+        }
+        
+        vars.forEach(function(v, i) {
+            eqns.forEach(function(eq, j) {
+                var e = core.Calculus.diff(eq.clone(), v);
+                jacobian.set(j, i, e);
+            });
+        });
+        
+        return jacobian;
+    };
+    
+    core.Matrix.prototype.max = function() {
+        var max = new Symbol(0);
+        this.each(function(x) {
+            var e = x.abs();
+            if(e.gt(max))
+                max = e;
+        });
+        return max;
+    };
+    
+    core.Matrix.cMatrix = function(value, vars) {
+        var m = new core.Matrix();
+        //make an initial guess
+        vars.forEach(function(v, i) {
+            m.set(i, 0, _.parse(value));
+        });
+        return m;
+    };
+    
     var all_functions = core.Utils.all_functions = function(arr) {
         for(var i=0, l=arr.length; i<l; i++)
             if(arr[i].group !== FN)
