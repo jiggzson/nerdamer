@@ -1888,6 +1888,9 @@ describe('Nerdamer core', function () {
             expect(nerdamer('(3*e^(e^(x))+tan(-e^x))+a').toString()).toEqual('3*exp(exp(x))+a+tan(-exp(x))');
         });
     });
+    it('should unwrap even abs', function() {
+        expect(nerdamer('(3*abs(x))^2').toString()).toEqual('3*x^2');
+    });
 });
 
 describe('Further arithmetic test cases', function () {
