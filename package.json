@@ -49,6 +49,10 @@
         "test": "jasmine"
     },
     "devDependencies": {
+        "gulp": "^4.0.2",
+        "gulp-cli": "^2.3.0",
+        "gulp-concat": "^2.6.1",
+        "gulp-uglify": "^3.0.2",
         "jasmine": "^2.99.0"
     }
 }
