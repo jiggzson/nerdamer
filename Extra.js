@@ -615,3 +615,8 @@ if((typeof module) !== 'undefined') {
     //link registered functions externally
     nerdamer.api();
 }());
+
+// Added for all.min.js
+if((typeof module) !== 'undefined') {
+    module.exports = nerdamer;
+};
