@@ -8879,7 +8879,12 @@ var nerdamer = (function (imports) {
                 if(a.isComposite() && a.isLinear() && b.isComposite() && b.isLinear()) {
                     a.distributeMultiplier();
                     b.distributeMultiplier();
+                    // Fix for issue #606
+                    if(b.length > a.length && a.group === b.group) {
+                        [a, b] = [b, a];
+                    }
                 }
+                
                 //no need to waste time on zeroes
                 if(a.multiplier.equals(0))
                     return b;
