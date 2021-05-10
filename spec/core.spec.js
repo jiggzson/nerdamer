@@ -2581,13 +2581,13 @@ describe('trigonometric functions', function () {
         }
     });
     it('should throw for malformed expression', function () {
-        expect(function(){nerdamer('+')}).toThrowError();
-        expect(function(){nerdamer('(+)')}).toThrowError();
-        expect(function(){nerdamer('cos(')}).toThrowError();
-        expect(function(){nerdamer('(x+1))')}).toThrowError();
-        expect(function(){nerdamer('/2')}).toThrowError();
-        expect(function(){nerdamer('()')}).toThrowError();
-        expect(function(){nerdamer('5+')}).toThrowError();
+        expect(function(){nerdamer('+');}).toThrowError();
+        expect(function(){nerdamer('(+)');}).toThrowError();
+        expect(function(){nerdamer('cos(');}).toThrowError();
+        expect(function(){nerdamer('(x+1))');}).toThrowError();
+        expect(function(){nerdamer('/2');}).toThrowError();
+        expect(function(){nerdamer('()');}).toThrowError();
+        expect(function(){nerdamer('5+');}).toThrowError();
     });
     it('should calculate correctly with variables', function () {
         // given
@@ -2731,6 +2731,10 @@ describe('trigonometric functions', function () {
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
         }
+    });
+    it('should handle known trig cases for `numer`', function() {
+        expect(nerdamer('tan(pi)', {}, 'numer').text()).toEqual('0');
+        expect(nerdamer('cot(90*pi/180)', {}, 'numer').text()).toEqual('0');
     });
 });
 

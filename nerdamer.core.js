@@ -5163,6 +5163,9 @@ var nerdamer = (function (imports) {
             },
             tan: function (symbol) {
                 if(Settings.PARSE2NUMBER) {
+                    if(symbol % Math.PI === 0 && symbol.isLinear()) {
+                        return new Symbol(0);
+                    }
                     if(symbol.isConstant()) {
                         if(Settings.USE_BIG) {
                             return new Symbol(bigDec.tan(symbol.multiplier.toDecimal()));
@@ -5328,6 +5331,9 @@ var nerdamer = (function (imports) {
             },
             cot: function (symbol) {
                 if(Settings.PARSE2NUMBER) {
+                    if(symbol % (Math.PI/2) === 0) {
+                        return new Symbol(0);
+                    }
                     if(symbol.isConstant()) {
                         if(Settings.USE_BIG) {
                             return new Symbol(new bigDec(1).dividedBy(bigDec.tan(symbol.multiplier.toDecimal())));
@@ -7653,6 +7659,9 @@ var nerdamer = (function (imports) {
 
             if(Settings.PARSE2NUMBER) {
                 if(symbol.isConstant() && !is_negative) {
+                    if(Settings.USE_BIG) {
+                        return new Symbol(bigDec.sqrt(symbol.multiplier.toDecimal()));
+                    }
                     return new Symbol(Math.sqrt(symbol.multiplier.toDecimal()));
                 }
                 else if(symbol.isImaginary()) {
