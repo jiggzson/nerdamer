@@ -3324,11 +3324,14 @@ var nerdamer = (function (imports) {
      */
     function Symbol(obj) {
         var isInfinity = obj === 'Infinity';
-        //this enables the class to be instantiated without the new operator
+        // This enables the class to be instantiated without the new operator
         if(!(this instanceof Symbol)) {
             return new Symbol(obj);
         }
-        ;
+        // Convert big numbers to a string
+        if(obj instanceof bigDec) {
+            obj = obj.toString();
+        }
         //define numeric symbols
         if(/^(\-?\+?\d+)\.?\d*e?\-?\+?\d*/i.test(obj) || obj instanceof bigDec) {
             this.group = N;
@@ -7659,10 +7662,7 @@ var nerdamer = (function (imports) {
 
             if(Settings.PARSE2NUMBER) {
                 if(symbol.isConstant() && !is_negative) {
-                    if(Settings.USE_BIG) {
-                        return new Symbol(bigDec.sqrt(symbol.multiplier.toDecimal()));
-                    }
-                    return new Symbol(Math.sqrt(symbol.multiplier.toDecimal()));
+                    return new Symbol(bigDec.sqrt(symbol.multiplier.toDecimal()));
                 }
                 else if(symbol.isImaginary()) {
                     return complex.sqrt(symbol);

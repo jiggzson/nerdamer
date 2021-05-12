@@ -2557,7 +2557,7 @@ describe('trigonometric functions', function () {
         expect(nerdamer('atan(i)').evaluate().text()).toEqual('Infinity*i');
         
         expect(nerdamer('asec(0.89)').evaluate().text()).toEqual('0.000000000000000250+0.4921996534425188*i'); // Has rounding errors
-        expect(nerdamer('acsc(0.23)').evaluate().text()).toEqual('-2.149327811189422*i+1.570796326794897049'); // Has rounding errors
+        expect(nerdamer('acsc(0.23)').evaluate().text()).toEqual('-2.1493278111894223*i+1.570796326794897197'); // Has rounding errors
     });
     it('should throw for wrong trigonometric arguments', function () {
         // given
