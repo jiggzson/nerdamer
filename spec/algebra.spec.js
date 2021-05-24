@@ -698,6 +698,7 @@ describe('Algebra', function () {
     });
     it('should get all coeffs', function () {
         expect(nerdamer('coeffs(x+A+1,x)').toString()).toEqual('[1+A,1]');
+        expect(nerdamer.coeffs('2x+i*x+5', 'x').toString()).toEqual('[5,2+i]');
     });
     it('should calculate the line function', function () {
         // given
