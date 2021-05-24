@@ -184,6 +184,11 @@ describe('TeX features', function () {
                 given: 'nthroot(a,b)',
                 TeX: '\\sqrt[b]{a}',
                 decimalTeX: '\\sqrt[b]{a}'
+            },
+            {
+                given: 'x_aa_bb+y_cc_dd',
+                TeX: 'x_{aa_{bb}}+y_{cc_{dd}}',
+                decimalTeX: 'x_{aa_{bb}}+y_{cc_{dd}}'
             }
         ];
 
@@ -261,50 +266,15 @@ describe('TeX features', function () {
     });
 
     it('should explicitly convert to LaTeX', function () {
-        // given
-        var testCases = [
-            {
-                given: 'realpart(a)',
-                expected: '\\operatorname{Re}\\left(a\\right)'
-            },
-            {
-                given: 'imagpart(a)',
-                expected: '\\operatorname{Im}\\left(a\\right)'
-            },
-            {
-                given: 'diff(cos(x),x)',
-                expected: '\\frac{d}{d x}\\left({\\mathrm{cos}\\left(x\\right)}\\right)'
-            },
-            {
-                given: 'integrate(cos(x),x)',
-                expected: '\\int {\\mathrm{cos}\\left(x\\right)}\\, dx'
-            },
-            {
-                given: '2*(sqrt(3)+sqrt(2))',
-                expected: '2 \\cdot \\left(\\sqrt{3} + \\sqrt{2}\\right)'
-            },
-            // Redundant sign in powers
-            {
-                given: '(a+1)(x+a)^(-5)+1',
-                expected: '\\frac{a + 1}{{\\left(x + a\\right)}^{5}} + 1'
-            },
-            {
-                given: 'a*x^-3+1/a',
-                expected: '\\frac{a}{{x}^{3}} + \\frac{1}{a}'
-            },
-            {
-                given: 'a*x^+3+1/a',
-                expected: 'a \\cdot {x}^{3} + \\frac{1}{a}'
-            }
-        ];
-
-        for(var i = 0; i < testCases.length; ++i) {
-            // when
-            var teX = nerdamer.convertToLaTeX(testCases[i].given);
-
-            // then
-            expect(teX).toEqual(testCases[i].expected);
-        }
+        expect(nerdamer.convertToLaTeX('realpart(a)')).toEqual('\\operatorname{Re}\\left(a\\right)');
+        expect(nerdamer.convertToLaTeX('imagpart(a)')).toEqual('\\operatorname{Im}\\left(a\\right)');
+        expect(nerdamer.convertToLaTeX('diff(cos(x),x)')).toEqual('\\frac{d}{d x}\\left({\\mathrm{cos}\\left(x\\right)}\\right)');
+        expect(nerdamer.convertToLaTeX('integrate(cos(x),x)')).toEqual('\\int {\\mathrm{cos}\\left(x\\right)}\\, dx');
+        expect(nerdamer.convertToLaTeX('2*(sqrt(3)+sqrt(2))')).toEqual('2 \\cdot \\left(\\sqrt{3} + \\sqrt{2}\\right)');
+        expect(nerdamer.convertToLaTeX('(a+1)(x+a)^(-5)+1')).toEqual('\\frac{a + 1}{{\\left(x + a\\right)}^{5}} + 1');
+        expect(nerdamer.convertToLaTeX('a*x^-3+1/a')).toEqual('\\frac{a}{{x}^{3}} + \\frac{1}{a}');
+        expect(nerdamer.convertToLaTeX('a*x^+3+1/a')).toEqual('a \\cdot {x}^{3} + \\frac{1}{a}');
+        expect(nerdamer.convertToLaTeX('x^2/y-x')).toEqual('\\frac{{x}^{2}}{y} - x');
     });
 
     it('should display integrals', function () {

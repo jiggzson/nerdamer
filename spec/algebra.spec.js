@@ -698,6 +698,7 @@ describe('Algebra', function () {
     });
     it('should get all coeffs', function () {
         expect(nerdamer('coeffs(x+A+1,x)').toString()).toEqual('[1+A,1]');
+        expect(nerdamer.coeffs('2x+i*x+5', 'x').toString()).toEqual('[5,2+i]');
     });
     it('should calculate the line function', function () {
         // given
@@ -816,7 +817,7 @@ describe('Algebra', function () {
         //expect(nerdamer('6/sqrt(3)')).toEqual();
     });
     it('should calculate nth roots correctly', function() {
-        expect(nerdamer('roots((-1)^(1/5))').evaluate().text()).toEqual('[0.5877852522924731*i+0.809016994374947,-0.309016994374947+0.9510565162951536*i,-1+1e-16*i,-0.309016994374948-0.9510565162951536*i,-0.5877852522924734*i+0.809016994374947]');
+        expect(nerdamer('roots((-1)^(1/5))').evaluate().text()).toEqual('[0.5877852522924731*i+0.809016994374947,-0.309016994374947+0.9510565162951536*i,-1,-0.309016994374948-0.9510565162951536*i,-0.5877852522924734*i+0.809016994374947]');
         expect(nerdamer('roots((2)^(1/3))').evaluate().text()).toEqual('[1.122462048309381,-1.122462048309381]');
     });
     // As mentioned by @Happypig375 in issue #219

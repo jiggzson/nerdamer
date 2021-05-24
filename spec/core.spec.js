@@ -9,6 +9,7 @@ var _ = utils.toFixed;
 var run = utils.run;
 var core = nerdamer.getCore();
 var round = core.Utils.round;
+var block = core.Utils.block;
 
 
 //, x=2.1, y=3.3, z=1, a=7.42
@@ -918,6 +919,11 @@ describe('Nerdamer core', function () {
                 given: 'sqrt(2/x)',
                 expected: 'sqrt(2)*sqrt(x)^(-1)',
                 expectedValue: '0.9759000729485331'
+            },
+            {
+                given: 'sqrt(3^x)',
+                expected: 'sqrt(3^x)',
+                expectedValue: '3.169401925649'
             }
         ];
 
@@ -1881,7 +1887,15 @@ describe('Nerdamer core', function () {
     });
     it('should recognize the mod and percent operator', function() {
         expect(nerdamer('3*(a%%b%)').toString()).toEqual('3*mod((1/100)*a,(1/100)*b)')
-    })
+    });
+    it('should rewrite e as exp', function() {
+        block('E_TO_EXP', function() {
+            expect(nerdamer('(3*e^(e^(x))+tan(-e^x))+a').toString()).toEqual('3*exp(exp(x))+a+tan(-exp(x))');
+        });
+    });
+    it('should unwrap even abs', function() {
+        expect(nerdamer('(3*abs(x))^2').toString()).toEqual('3*x^2');
+    });
 });
 
 describe('Further arithmetic test cases', function () {
@@ -2541,6 +2555,15 @@ describe('trigonometric functions', function () {
             expect(round(value, 14)).toEqual(round(testCases[i].expectedValue),14);
         }
     });
+    it('should handle inverse trig in complex domain', function() {
+        expect(nerdamer('asin(2)').evaluate().text()).toEqual('-1.3169578969248164*i+1.570796326794896580');
+        expect(nerdamer('asin(2.19549352839451962743423602992)').evaluate().text()).toEqual('-1.423114269539483*i+1.570796326794896580');
+        expect(nerdamer('acos(2)').evaluate().text()).toEqual('1.3169578969248164*i');
+        expect(nerdamer('atan(i)').evaluate().text()).toEqual('Infinity*i');
+        
+        expect(nerdamer('asec(0.89)').evaluate().text()).toEqual('0.000000000000000250+0.4921996534425188*i'); // Has rounding errors
+        expect(nerdamer('acsc(0.23)').evaluate().text()).toEqual('-2.1493278111894223*i+1.570796326794897197'); // Has rounding errors
+    });
     it('should throw for wrong trigonometric arguments', function () {
         // given
         var testCases = [
@@ -2563,13 +2586,13 @@ describe('trigonometric functions', function () {
         }
     });
     it('should throw for malformed expression', function () {
-        expect(function(){nerdamer('+')}).toThrowError();
-        expect(function(){nerdamer('(+)')}).toThrowError();
-        expect(function(){nerdamer('cos(')}).toThrowError();
-        expect(function(){nerdamer('(x+1))')}).toThrowError();
-        expect(function(){nerdamer('/2')}).toThrowError();
-        expect(function(){nerdamer('()')}).toThrowError();
-        expect(function(){nerdamer('5+')}).toThrowError();
+        expect(function(){nerdamer('+');}).toThrowError();
+        expect(function(){nerdamer('(+)');}).toThrowError();
+        expect(function(){nerdamer('cos(');}).toThrowError();
+        expect(function(){nerdamer('(x+1))');}).toThrowError();
+        expect(function(){nerdamer('/2');}).toThrowError();
+        expect(function(){nerdamer('()');}).toThrowError();
+        expect(function(){nerdamer('5+');}).toThrowError();
     });
     it('should calculate correctly with variables', function () {
         // given
@@ -2713,6 +2736,10 @@ describe('trigonometric functions', function () {
             // then
             expect(parsed.toString()).toEqual(testCases[i].expected);
         }
+    });
+    it('should handle known trig cases for `numer`', function() {
+        expect(nerdamer('tan(pi)', {}, 'numer').text()).toEqual('0');
+        expect(nerdamer('cot(90*pi/180)', {}, 'numer').text()).toEqual('0');
     });
 });
 

@@ -1,54 +1,59 @@
 {
-  "author": {
-    "name": "Martin Donk",
-    "email": "martin.r.donk@gmail.com"
-  },
-  "description": "javascript light-weight symbolic math expression evaluator",
-  "name": "nerdamer",
-  "license": "MIT",
-  "version": "1.1.10",
-  "homepage": "http://nerdamer.com/",
-  "directory": {
-    "lib": "./"
-  },
-  "main": "nerdamer.core.js",
-  "typings": "index.d.ts",
-  "keywords": [
-    "math",
-    "matrix",
-    "complex",
-    "number",
-    "parser",
-    "expression",
-    "functions",
-    "numeric",
-    "equation solver",
-    "linear algebra",
-    "vectors",
-    "symbolic",
-    "integration",
-    "differentiation",
-    "derivative",
-    "algebra",
-    "calculus",
-    "mathematics",
-    "constants",
-    "symbolic math"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/jiggzson/nerdamer.git"
-  },
-  "bugs": {
-    "url": "https://github.com/jiggzson/nerdamer/issues"
-  },
-  "engines": {
-    "node": ">=0.10.0"
-  },
-  "scripts": {
-    "test": "jasmine"
-  },
-  "devDependencies": {
-    "jasmine": "^2.99.0"
-  }
+    "author": {
+        "name": "Martin Donk",
+        "email": "martin.r.donk@gmail.com"
+    },
+    "description": "javascript light-weight symbolic math expression evaluator",
+    "name": "nerdamer",
+    "license": "MIT",
+    "version": "1.1.11",
+    "homepage": "http://nerdamer.com/",
+    "directory": {
+        "lib": "./"
+    },
+    "main": "nerdamer.core.js",
+    "typings": "index.d.ts",
+    "keywords": [
+        "math",
+        "matrix",
+        "complex",
+        "number",
+        "parser",
+        "expression",
+        "functions",
+        "numeric",
+        "equation solver",
+        "linear algebra",
+        "vectors",
+        "symbolic",
+        "integration",
+        "differentiation",
+        "derivative",
+        "algebra",
+        "calculus",
+        "mathematics",
+        "constants",
+        "symbolic math"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/jiggzson/nerdamer.git"
+    },
+    "bugs": {
+        "url": "https://github.com/jiggzson/nerdamer/issues"
+    },
+    "engines": {
+        "node": ">=0.10.0"
+    },
+    "scripts": {
+        "test": "jasmine"
+    },
+    "devDependencies": {
+        "gulp": "^4.0.2",
+        "gulp-cli": "^2.3.0",
+        "gulp-concat": "^2.6.1",
+        "gulp-uglify": "^3.0.2",
+        "gulp-watch": "^5.0.1",
+        "jasmine": "^2.99.0"
+    }
 }
