@@ -7654,6 +7654,11 @@ var nerdamer = (function (imports) {
             if(!isSymbol(symbol)) {
                 symbol = _.parse(symbol);
             }
+            
+            // Exit early for EX
+            if(symbol.group === EX) {
+                return _.symfunction(SQRT, [symbol]);
+            }
 
             if(symbol.fname === '' && symbol.power.equals(1))
                 symbol = symbol.args[0];
@@ -12544,3 +12549,8 @@ var nerdamer = (function (imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
+
+
+
+var ans = nerdamer('sqrt(3^x)');
+console.log(ans.toString())

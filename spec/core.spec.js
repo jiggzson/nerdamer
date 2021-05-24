@@ -919,6 +919,11 @@ describe('Nerdamer core', function () {
                 given: 'sqrt(2/x)',
                 expected: 'sqrt(2)*sqrt(x)^(-1)',
                 expectedValue: '0.9759000729485331'
+            },
+            {
+                given: 'sqrt(3^x)',
+                expected: 'sqrt(3^x)',
+                expectedValue: '3.169401925649'
             }
         ];
 

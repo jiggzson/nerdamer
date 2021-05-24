@@ -489,7 +489,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
 
                 return symbol;
             }
-            ;
+            
             function derive(symbol) {
                 var g = symbol.group, a, b, cp;
 
@@ -696,7 +696,8 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     symbol = _.multiply(polydiff(symbol.clone()), derive(b));
                 }
                 else if(g === CP || g === PL) {
-                    var c = _.parse(symbol);
+                    // Note: Do not use `parse` since this puts back the sqrt and causes a bug as in #610. Use clone.
+                    var c = symbol.clone();
                     var result = new Symbol(0);
                     for(var x in symbol.symbols) {
                         result = _.add(result, __.diff(symbol.symbols[x].clone(), d));
