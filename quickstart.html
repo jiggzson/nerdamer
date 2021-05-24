@@ -115,6 +115,8 @@
 &lt;script src="Calculus.js"&gt;&lt;/script&gt;
 &lt;script src="Solve.js"&gt;&lt;/script&gt;
 &lt;script src="Extra.js"&gt;&lt;/script&gt; &lt;!-- again assuming you've saved the files in root --&gt;</code></pre>
+                        <p>Or import everything</p>
+                        <pre><code>&lt;script src="all.min.js"&gt;&lt;/script&gt; &lt;!-- assuming you've saved the file in the root --&gt;;</code></pre>
                         <p>
                             or if you're using node.js install it using <code>npm i nerdamer</code> and then
                         </p>
@@ -129,7 +131,7 @@ require('nerdamer/Extra');</code></pre>
                         <p>
                             If you'll be using all modules, you can use a single import
                         </p>
-                        <pre><code>const nerdamer = require("nerdamer/all")</code></pre>
+                        <pre><code>const nerdamer = require("nerdamer/all.min")</code></pre>
                         <p>
                             Some functions have dependencies from other modules. 
 
