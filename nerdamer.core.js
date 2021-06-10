@@ -10862,18 +10862,25 @@ var nerdamer = (function (imports) {
                     var l = parse_next(); // lower
                     i++; // skip the ^
                     var u = parse_next(); // upper
-                    var f = parse_next();
-                    // skip the comma
-                    i++;
+                    var f = parse_next(); // function
+                    
                     // get the variable of integration
                     var dx = next().value;
+                    // skip the comma
+                    if (dx === ',') {
+                        var dx = next().value;
+                    }
                     // if 'd', skip
                     if (dx === 'differentialD') {
                         // skip the *
                         i++;
                         var dx = next().value;
                     }
-                    // var dx = parse_next();
+                    if (dx === 'mathrm') {
+                        // skip the mathrm{d}
+                        i++;
+                        var dx = next().value;
+                    }
                     retval += 'defint' + inBrackets(f + ',' + l + ',' + u + ',' + dx);
                 }
                 else if(token.value === 'mathrm') {
@@ -12135,11 +12142,7 @@ var nerdamer = (function (imports) {
      * @returns {String}
      */
     libExports.convertFromLaTeX = function (e) {
-        console.log('cFL - e:', e)
-        console.log('cFL - tokenized:', _.tokenize(e))
         var txt = LaTeX.parse(_.tokenize(e));
-        console.log('cFL - LaTeX.parsed:', txt)
-        console.log('cFL - _.parsed:',_.parse(txt))
         return new Expression(_.parse(txt));
     };
 
