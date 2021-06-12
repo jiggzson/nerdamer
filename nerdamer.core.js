@@ -10883,6 +10883,39 @@ var nerdamer = (function (imports) {
                     }
                     retval += 'defint' + inBrackets(f + ',' + l + ',' + u + ',' + dx);
                 }
+                else if(token.value.startsWith('int_')) {
+                    // var l = parse_next(); // lower
+                    var l = token.value.replace('int_', '')
+                    console.log('uppernow')
+                    i++; // skip the ^
+                    var u = next().value; // upper
+                    // if it is in brackets
+                    if (u === undefined) {
+                        i--;
+                        var u = parse_next();
+                    }
+                    console.log('fnnow')
+                    var f = parse_next(); // function
+                    
+                    // get the variable of integration
+                    var dx = next().value;
+                    // skip the comma
+                    if (dx === ',') {
+                        var dx = next().value;
+                    }
+                    // if 'd', skip
+                    if (dx === 'differentialD') {
+                        // skip the *
+                        i++;
+                        var dx = next().value;
+                    }
+                    if (dx === 'mathrm') {
+                        // skip the mathrm{d}
+                        i++;
+                        var dx = next().value;
+                    }
+                    retval += 'defint' + inBrackets(f + ',' + l + ',' + u + ',' + dx);
+                }
                 else if(token.value === 'mathrm') {
                     var f = tokens[++i][0].value;
                     retval += f + parse_next();
@@ -10921,6 +10954,7 @@ var nerdamer = (function (imports) {
                     }
                 }
                 else {
+                    console.log('falling')
                     if(Array.isArray(token)) {
                         retval += get(LaTeX.parse(token));
                     }
@@ -10929,6 +10963,8 @@ var nerdamer = (function (imports) {
                     }
                 }
             }
+
+            console.log('hm')
 
             return inBrackets(retval);
         }
