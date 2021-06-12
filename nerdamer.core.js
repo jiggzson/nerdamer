@@ -10888,7 +10888,7 @@ var nerdamer = (function (imports) {
                     }
                     retval += 'defint' + inBrackets(f + ',' + l + ',' + u + ',' + dx);
                 }
-                else if(token.value.startsWith('int_')) {
+                else if(token.value && token.value.startsWith('int_')) {
                     // var l = parse_next(); // lower
                     var l = token.value.replace('int_', '')
                     console.log('uppernow')
