@@ -10954,7 +10954,6 @@ var nerdamer = (function (imports) {
                     }
                 }
                 else {
-                    console.log('falling')
                     if(Array.isArray(token)) {
                         retval += get(LaTeX.parse(token));
                     }
@@ -10963,8 +10962,6 @@ var nerdamer = (function (imports) {
                     }
                 }
             }
-
-            console.log('hm')
 
             return inBrackets(retval);
         }
