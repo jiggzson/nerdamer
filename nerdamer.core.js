@@ -10861,7 +10861,12 @@ var nerdamer = (function (imports) {
                 else if(token.value === 'int_') {
                     var l = parse_next(); // lower
                     i++; // skip the ^
-                    var u = parse_next(); // upper
+                    var u = next().value; // upper
+                    // if it is in brackets
+                    if (u === undefined) {
+                        i--;
+                        var u = parse_next();
+                    }
                     var f = parse_next(); // function
                     
                     // get the variable of integration
@@ -10894,7 +10899,6 @@ var nerdamer = (function (imports) {
                         i--;
                         var u = parse_next();
                     }
-                    console.log('fnnow')
                     var f = parse_next(); // function
                     
                     // get the variable of integration
