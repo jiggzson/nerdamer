@@ -355,6 +355,16 @@ return _.multiply(sum, product)
 		 * // false
 		 */
 		gte(value: number | string | Expression): Expression
+		
+		/**
+		 * Expands a function or expression.
+		 * @example
+		 * nerdamer('x*(x+1)').expand();
+		 * // x+x^2
+		 * nerdamer('(x+y)*(x-5)*x').expand();
+		 * // -5*x*y-5*x^2+x^3+x^2*y
+		 */
+		expand(): Expression
 	}
 
 	////////// CALCULUS
