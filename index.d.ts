@@ -321,7 +321,7 @@ return _.multiply(sum, product)
 		 * nerdamer('8').lt(100)
 		 * // true
 		 */
-		lt(value: number | string | Expression): Expression
+		lt(value: number | string | Expression): boolean
 
 		 /**
 		 * Checks if a value is less than or equal to another
@@ -332,7 +332,7 @@ return _.multiply(sum, product)
 		 * nerdamer('x').lte(100)
 		 * // false
 		 */
-		lte(value: number | string | Expression): Expression
+		lte(value: number | string | Expression): boolean
 
 		/**
 		 * Checks if a value is greater than another
@@ -343,7 +343,7 @@ return _.multiply(sum, product)
 		 * nerdamer('800').gt(100)
 		 * // true
 		 */
-		gt(value: number | string | Expression): Expression
+		gt(value: number | string | Expression): boolean
 
 		/**
 		 * Checks if a value is greater than or equal to another
@@ -354,7 +354,7 @@ return _.multiply(sum, product)
 		 * nerdamer('x').gte(100)
 		 * // false
 		 */
-		gte(value: number | string | Expression): Expression
+		gte(value: number | string | Expression): boolean
 		
 		/**
 		 * Expands a function or expression.
