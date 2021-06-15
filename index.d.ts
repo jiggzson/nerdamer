@@ -310,7 +310,7 @@ return _.multiply(sum, product)
 		 * nerdamer('x').eq('y')
 		 * // false
 		 */
-		eq(value: number | string | Expression): Expression
+		eq(value: number | string | Expression): boolean
 
 		/**
 		 * Checks if a value is less than another
@@ -321,7 +321,7 @@ return _.multiply(sum, product)
 		 * nerdamer('8').lt(100)
 		 * // true
 		 */
-		 lt(value: number | string | Expression): Expression
+		lt(value: number | string | Expression): boolean
 
 		 /**
 		 * Checks if a value is less than or equal to another
@@ -332,9 +332,9 @@ return _.multiply(sum, product)
 		 * nerdamer('x').lte(100)
 		 * // false
 		 */
-			lte(value: number | string | Expression): Expression
+		lte(value: number | string | Expression): boolean
 
-		 /**
+		/**
 		 * Checks if a value is greater than another
 		 * @param value The value being tested
 		 * @example
@@ -343,9 +343,9 @@ return _.multiply(sum, product)
 		 * nerdamer('800').gt(100)
 		 * // true
 		 */
-			gt(value: number | string | Expression): Expression
+		gt(value: number | string | Expression): boolean
 
-			/**
+		/**
 		 * Checks if a value is greater than or equal to another
 		 * @param value The value being tested
 		 * @example
@@ -354,7 +354,17 @@ return _.multiply(sum, product)
 		 * nerdamer('x').gte(100)
 		 * // false
 		 */
-			 gte(value: number | string | Expression): Expression
+		gte(value: number | string | Expression): boolean
+		
+		/**
+		 * Expands a function or expression.
+		 * @example
+		 * nerdamer('x*(x+1)').expand();
+		 * // x+x^2
+		 * nerdamer('(x+y)*(x-5)*x').expand();
+		 * // -5*x*y-5*x^2+x^3+x^2*y
+		 */
+		expand(): Expression
 	}
 
 	////////// CALCULUS
