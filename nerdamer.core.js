@@ -12611,8 +12611,3 @@ var nerdamer = (function (imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-
-
-var ans = nerdamer('sqrt(3^x)');
-console.log(ans.toString())
