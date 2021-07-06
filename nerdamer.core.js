@@ -16,7 +16,7 @@ var nerdamer = (function (imports) {
     "use strict";
 
 //version ======================================================================
-    var version = '1.1.11';
+    var version = '1.1.12';
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
@@ -10858,6 +10858,68 @@ var nerdamer = (function (imports) {
                     dx = get(dx.substring(1, dx.length));
                     retval += 'integrate' + inBrackets(f + ',' + dx);
                 }
+                else if(token.value === 'int_') {
+                    var l = parse_next(); // lower
+                    i++; // skip the ^
+                    var u = next().value; // upper
+                    // if it is in brackets
+                    if (u === undefined) {
+                        i--;
+                        var u = parse_next();
+                    }
+                    var f = parse_next(); // function
+                    
+                    // get the variable of integration
+                    var dx = next().value;
+                    // skip the comma
+                    if (dx === ',') {
+                        var dx = next().value;
+                    }
+                    // if 'd', skip
+                    if (dx === 'differentialD') {
+                        // skip the *
+                        i++;
+                        var dx = next().value;
+                    }
+                    if (dx === 'mathrm') {
+                        // skip the mathrm{d}
+                        i++;
+                        var dx = next().value;
+                    }
+                    retval += 'defint' + inBrackets(f + ',' + l + ',' + u + ',' + dx);
+                }
+                else if(token.value && token.value.startsWith('int_')) {
+                    // var l = parse_next(); // lower
+                    var l = token.value.replace('int_', '')
+                    console.log('uppernow')
+                    i++; // skip the ^
+                    var u = next().value; // upper
+                    // if it is in brackets
+                    if (u === undefined) {
+                        i--;
+                        var u = parse_next();
+                    }
+                    var f = parse_next(); // function
+                    
+                    // get the variable of integration
+                    var dx = next().value;
+                    // skip the comma
+                    if (dx === ',') {
+                        var dx = next().value;
+                    }
+                    // if 'd', skip
+                    if (dx === 'differentialD') {
+                        // skip the *
+                        i++;
+                        var dx = next().value;
+                    }
+                    if (dx === 'mathrm') {
+                        // skip the mathrm{d}
+                        i++;
+                        var dx = next().value;
+                    }
+                    retval += 'defint' + inBrackets(f + ',' + l + ',' + u + ',' + dx);
+                }
                 else if(token.value === 'mathrm') {
                     var f = tokens[++i][0].value;
                     retval += f + parse_next();
@@ -12549,8 +12611,3 @@ var nerdamer = (function (imports) {
 if((typeof module) !== 'undefined') {
     module.exports = nerdamer;
 };
-
-
-
-var ans = nerdamer('sqrt(3^x)');
-console.log(ans.toString())
