@@ -605,7 +605,43 @@ if((typeof module) !== 'undefined') {
                 }
 
                 vars = core.Utils.arrayGetVariables(eqns);
+                
+                // If the system only has one variable then we solve for the first one and 
+                // then test the remaining equations with that solution. If any of the remaining
+                // equation fails then the system has no solution
+                if(vars.length === 1) {
+                    var n = 0,
+                        sol, e;
+                    do {
+                        var e = eqns[n].clone();
+                        
+                        if(n > 0) {
+                            e = e.sub(vars[0], sol[0]);
+                        }
 
+                        sol = solve(e, vars[0]);
+                        // Skip the first one
+                        if(n === 0) 
+                            continue;
+                    }
+                    while(++n < eqns.length)
+                        
+                    // Format the output
+                    var solutions;
+                    if(Settings.SOLUTIONS_AS_OBJECT) {
+                        solutions = {};
+                        solutions[vars[0]] = sol;
+                    }
+                    else if(sol.length === 0) {
+                        solutions = sol; // No solutions
+                    }
+                    else {
+                        solutions = [vars[0], sol];
+                    }
+                        
+                    return solutions;
+                }
+                
                 // Deal with redundant equations as expressed in #562
                 // The fix is to remove all but the number of equations equal to the number
                 // of variables. We then solve those and then evaluate the remaining equations
