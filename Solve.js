@@ -748,6 +748,8 @@ if((typeof module) !== 'undefined') {
          */
         quad: function (c, b, a) {
             var discriminant = _.subtract(_.pow(b.clone(), Symbol(2)), _.multiply(_.multiply(a.clone(), c.clone()), Symbol(4)))/*b^2 - 4ac*/;
+            // Fix for #608
+            discriminant = _.expand(discriminant);
             var det = _.pow(discriminant, Symbol(0.5));
             var den = _.parse(_.multiply(new Symbol(2), a.clone()));
             var retval = [
