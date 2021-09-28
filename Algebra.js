@@ -2910,11 +2910,17 @@ if((typeof module) !== 'undefined') {
 
                                 var div = __.div(symbol, d.clone()),
                                         is_factor = div[1].equals(0);
-
+                                
+                                // Break infinite loop for factoring e^t*x-1
+                                if((symbol.equals(div[0]) && div[1].equals(0))) {
+                                    break;
+                                }
+                                
                                 if(div[0].isConstant()) {
                                     factors.add(div[0]);
                                     break;
                                 }
+                                
                             }
                             else
                                 is_factor = false;
