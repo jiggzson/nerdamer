@@ -124,12 +124,19 @@ if((typeof module) !== 'undefined') {
             }
             var a = eqn.LHS;
             var b = eqn.RHS;
+            
             if(a.isConstant(true) && !b.isConstant(true)) {
                 // Swap them to avoid confusing parser and cause an infinite loop
                 [a, b] = [b, a];
             }
             var _t = _.subtract(a, b);
             var retval = expand ? _.expand(_t) : _t;
+            
+            // Quick workaround for issue #636
+            // This basically borrows the removeDenom method from the Equation class. 
+            // TODO: Make this function a stand-alone function
+            retval = new Equation(retval, new Symbol(0)).removeDenom().LHS;
+            
             return retval;
         },
         removeDenom: function () {
@@ -1394,6 +1401,7 @@ if((typeof module) !== 'undefined') {
 
             return symbol;
         };
+
 
         //separate the equation
         var separate = function (eq) {
