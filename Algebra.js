@@ -4178,7 +4178,7 @@ if((typeof module) !== 'undefined') {
                     var symbols = symbol.collectSymbols();
                     //assumption 1.
                     //since it's a composite, it has a length of at least 1
-                    var retval, a, b, d1, d2, n1, n2, x, y, c, den, num;
+                    var retval, a, b, d1, d2, n1, n2, s, x, y, c, den, num;
                     a = symbols.pop(); //grab the first symbol
                     //loop through each term and make denominator common
                     while(symbols.length) {
@@ -4190,11 +4190,11 @@ if((typeof module) !== 'undefined') {
                         c = _.multiply(d1.clone(), d2.clone());
                         x = _.multiply(n1, d2);
                         y = _.multiply(n2, d1);
-                        a = _.divide(_.add(x, y), c);
+                        s = _.add(x, y);
+                        a = _.divide(s, c);
                     }
                     den = _.expand(a.getDenom());
                     num = _.expand(a.getNum());
-
                     //simplify imaginary
                     if(num.isImaginary() && den.isImaginary()) {
                         retval = __.Simplify.complexSimp(num, den);
@@ -4351,7 +4351,6 @@ if((typeof module) !== 'undefined') {
                 symbol = sym_array.pop();
                 //remove gcd from denominator
                 symbol = __.Simplify.fracSimp(symbol);
-
                 //nothing more to do
                 if(symbol.isConstant() || symbol.group === core.groups.S) {
                     sym_array.push(symbol);

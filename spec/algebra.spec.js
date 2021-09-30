@@ -802,6 +802,10 @@ describe('Algebra', function () {
             {
                 given: 'simplify(a/b+b/a)',
                 expected: '(a*b)^(-1)*(a^2+b^2)'
+            },
+            {
+                given: 'simplify(((2*e^t)/(e^t))+(1/(e^t)))',
+                expected: '(1+2*e^t)*e^(-t)'
             }
         ];
 

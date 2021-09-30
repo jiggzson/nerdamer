@@ -4562,7 +4562,7 @@ var nerdamer = (function (imports) {
                 symbol = _.expand(symbol);
 
             //if the symbol already is the denominator... DONE!!!
-            if(symbol.power.lessThan(0)) {
+            if(symbol.power.lessThan(0) || symbol.group === EX && symbol.power.multiplier.lessThan(0)) {
                 var d = _.parse(symbol.multiplier.den);
                 retval = symbol.toUnitMultiplier();
                 retval.power.negate();
@@ -4570,12 +4570,15 @@ var nerdamer = (function (imports) {
             }
             else if(symbol.group === CB) {
                 retval = _.parse(symbol.multiplier.den);
-                for(var x in symbol.symbols)
-                    if(symbol.symbols[x].power < 0)
+                for(var x in symbol.symbols) {
+                    var s = symbol.symbols[x];
+                    if(s.power < 0 || s.group === EX && s.power.multiplier.lessThan(0))
                         retval = _.multiply(retval, symbol.symbols[x].clone().invert());
+                }
             }
-            else
+            else {
                 retval = _.parse(symbol.multiplier.den);
+            }
             return retval;
         },
         getNum: function () {
@@ -4585,7 +4588,7 @@ var nerdamer = (function (imports) {
             if(symbol.group === CB && symbol.power.lessThan(0))
                 symbol = _.expand(symbol);
             //if the symbol already is the denominator... DONE!!!
-            if(symbol.power.greaterThan(0) && symbol.group !== CB) {
+            if(symbol.power.greaterThan(0) && symbol.group !== CB || symbol.group === EX && symbol.power.multiplier.greaterThan(0)) {
                 retval = _.multiply(_.parse(symbol.multiplier.num), symbol.toUnitMultiplier());
             }
             else if(symbol.group === CB) {
@@ -4596,6 +4599,9 @@ var nerdamer = (function (imports) {
                     }
                 });
             }
+//            else if(symbol.group === EX && this.previousGroup === S) {
+//                retval = _.multiply(_.parse(symbol.multiplier.num), symbol.toUnitMultiplier());
+//            }
             else {
                 retval = _.parse(symbol.multiplier.num);
             }
