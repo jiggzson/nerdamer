@@ -12400,9 +12400,9 @@ var nerdamer = (function (imports) {
 
     /**
      * This functions makes internal functions available externally
-     * @param {bool} override Override the functions when calling api if it exists
+     * @param {bool} override Override the functions when calling updateAPI if it exists
      */
-    libExports.api = function (override) {
+    libExports.updateAPI = function (override) {
         //Map internal functions to external ones
         var linker = function (fname) {
             return function () {
@@ -12469,7 +12469,7 @@ var nerdamer = (function (imports) {
         });
     };
 
-    libExports.api();
+    libExports.updateAPI();
 
     return libExports; //Done
 //imports ======================================================================

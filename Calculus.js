@@ -2666,6 +2666,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
     ]);
     //link registered functions externally
-    nerdamer.api();
+    nerdamer.updateAPI();
 
 })();

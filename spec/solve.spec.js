@@ -70,6 +70,7 @@ describe('Solve', function () {
         expect(nerdamer('solve(x^3+8=x^2+6,x)').toString()).toEqual('[-1,1+i,-i+1]');
         expect(nerdamer('solve(x^2=x^-2,x)').toString()).toEqual('[1,-1,i,-i]');
         expect(nerdamer('solve((x+1)(x+1)x=3x,x)').toString()).toEqual('[0,-1+sqrt(3),-1-sqrt(3)]');
+        expect(nerdamer('solve(log(y) = -t, y)').toString() ).toEqual('[e^(-t)]');
 
     });
     it('should solve system of equations correctly', function () {
@@ -80,6 +81,10 @@ describe('Solve', function () {
         expect(nerdamer.solveEquations(['x+y=3', 'y^3-x=7']).toString()).toEqual('x,1,y,2');
         expect(nerdamer.solveEquations(['x^2+y=3', 'x+y+z=6', 'z^2-y=7']).toString()).toEqual('x,1,y,2,z,3');
         expect(nerdamer.solveEquations(['x*y-cos(z)=-3', '3*z^3-y^2+1=12', '3*sin(x)*cos(y)-x^3=-4']).toString()).toEqual('x,1.10523895006979,y,-2.98980336936266,z,1.88015428627437');
+        expect(nerdamer.solveEquations(['x=i','x+y=3']).toString()).toEqual('x,i,y,-i+3');
+        expect(nerdamer.solveEquations(["x/(45909438.9 + 0 + x)=0", "45909438.9+0+x=45909438.9"]).toString()).toEqual('x,0');
+        expect(nerdamer.solveEquations(["a=1"]).toString()).toEqual('a,1');
+        expect(nerdamer.solveEquations(["x=5", "0.6=1-(x/(10+y))"]).toString()).toEqual('x,5,y,2.5');
     });
     /** #55: nerdamer.solveEquation quits working */
     it('should handle text("fractions") without later impact', function () {

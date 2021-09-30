@@ -4555,5 +4555,5 @@ if((typeof module) !== 'undefined') {
             }
         }
     ]);
-    nerdamer.api();
+    nerdamer.updateAPI();
 })();
