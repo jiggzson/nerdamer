@@ -603,219 +603,53 @@ describe('Algebra', function () {
         }
     });
     it('should prime factor correctly', function () {
-        // given
-        var testCases = [
-            {
-                given: 'pfactor(100!)',
-                expected: '(11^9)*(13^7)*(17^5)*(19^5)*(23^4)*(29^3)*(2^97)*(31^3)*(37^2)*(3^48)*(41^2)*(43^2)*(47^2)*(53)*(59)*(5^24)*(61)*(67)*(71)*(73)*(79)*(7^16)*(83)*(89)*(97)'
-            }, 
-            {
-                given: 'pfactor(100)',
-                expected: '(2^2)*(5^2)'
-            }, 
-            {
-                given: 'pfactor(8)',
-                expected: '(2^3)'
-            }, 
-            {
-                given: 'pfactor(999999999999)',
-                expected: '(101)*(11)*(13)*(37)*(3^3)*(7)*(9901)'
-            }, 
-            {
-                given: 'pfactor(1000000005721)',
-                expected: '(1000000005721)'
-            }, 
-            {
-                given: 'pfactor(1000000005721092)',
-                expected: '(131)*(212044106387)*(2^2)*(3^2)'
-            }, 
-            {
-                given: 'pfactor(-10000000114421840327308)',
-                expected: '(-2^2)*(480827)*(7)*(8345706745687)*(89)'
-            }, 
-            {
-                given: 'pfactor(-7877474663)',
-                expected: '(-97)*(180871)*(449)'
-            },
-            {
-                given: 'pfactor(15!+1)',
-                expected: '(46271341)*(479)*(59)'
-            },
-            {
-                given: 'pfactor(15!+11!)',
-                expected: '(11)*(181^2)*(2^8)*(3^4)*(5^2)*(7)'
-            },
-            {
-                given: 'pfactor(product(n!,n,1,10))',
-                expected: '(2^38)*(3^17)*(5^7)*(7^4)'
-            },
-            {
-                given: 'pfactor(4677271)',
-                expected: '(2089)*(2239)'
-            }
-        ];
-
-        for (var i = 0; i < testCases.length; ++i) {
-            // when
-            var result = nerdamer(testCases[i].given);
-
-            // then
-            expect(result.toString()).toEqual(testCases[i].expected);
-        }
+        expect(nerdamer('pfactor(100!)').toString()).toEqual('(11^9)*(13^7)*(17^5)*(19^5)*(23^4)*(29^3)*(2^97)*(31^3)*(37^2)*(3^48)*(41^2)*(43^2)*(47^2)*(53)*(59)*(5^24)*(61)*(67)*(71)*(73)*(79)*(7^16)*(83)*(89)*(97)');
+        expect(nerdamer('pfactor(100)').toString()).toEqual('(2^2)*(5^2)');
+        expect(nerdamer('pfactor(8)').toString()).toEqual('(2^3)');
+        expect(nerdamer('pfactor(999999999999)').toString()).toEqual('(101)*(11)*(13)*(37)*(3^3)*(7)*(9901)');
+        expect(nerdamer('pfactor(1000000005721)').toString()).toEqual('(1000000005721)');
+        expect(nerdamer('pfactor(1000000005721092)').toString()).toEqual('(131)*(212044106387)*(2^2)*(3^2)');
+        expect(nerdamer('pfactor(-10000000114421840327308)').toString()).toEqual('(-2^2)*(480827)*(7)*(8345706745687)*(89)');
+        expect(nerdamer('pfactor(-7877474663)').toString()).toEqual('(-97)*(180871)*(449)');
+        expect(nerdamer('pfactor(15!+1)').toString()).toEqual('(46271341)*(479)*(59)');
+        expect(nerdamer('pfactor(15!+11!)').toString()).toEqual('(11)*(181^2)*(2^8)*(3^4)*(5^2)*(7)');
+        expect(nerdamer('pfactor(product(n!,n,1,10))').toString()).toEqual('(2^38)*(3^17)*(5^7)*(7^4)');
+        expect(nerdamer('pfactor(4677271)').toString()).toEqual('(2089)*(2239)');
     });
     it('should get coeffs', function () {
-        // given
-        var testCases = [
-            {
-                given: 'coeffs(x^2+2*x+1, x)',
-                expected: '[1,2,1]'
-            }, 
-            {
-                given: 'coeffs(a*b*x^2+c*x+d, x)',
-                expected: '[d,c,a*b]'
-            }, 
-            {
-                given: 'coeffs(t*x, x)',
-                expected: '[0,t]'
-            }, 
-            {
-                given: 'coeffs(b*(t*x-5), x)',
-                expected: '[-5*b,b*t]'
-            },
-            {
-                given: 'coeffs(a*x^2+b*x+c+x, x)',
-                expected: '[c,1+b,a]'
-            }
-        ];
-
-        for (var i = 0; i < testCases.length; ++i) {
-            // when
-            var result = nerdamer(testCases[i].given);
-
-            // then
-            expect(result.toString()).toEqual(testCases[i].expected);
-        }
+        expect(nerdamer('coeffs(x^2+2*x+1, x)').toString()).toEqual('[1,2,1]');
+        expect(nerdamer('coeffs(a*b*x^2+c*x+d, x)').toString()).toEqual('[d,c,a*b]');
+        expect(nerdamer('coeffs(t*x, x)').toString()).toEqual('[0,t]');
+        expect(nerdamer('coeffs(b*(t*x-5), x)').toString()).toEqual('[-5*b,b*t]');
+        expect(nerdamer('coeffs(a*x^2+b*x+c+x, x)').toString()).toEqual('[c,1+b,a]');
     });
     it('should get all coeffs', function () {
         expect(nerdamer('coeffs(x+A+1,x)').toString()).toEqual('[1+A,1]');
         expect(nerdamer.coeffs('2x+i*x+5', 'x').toString()).toEqual('[5,2+i]');
     });
     it('should calculate the line function', function () {
-        // given
-        var testCases = [
-            {
-                given: 'line([1,2], [3,4])',
-                expected: '1+x'
-            }, 
-            {
-                given: 'line([a1,b1], [a2,b2], t)',
-                expected: '(-a1+a2)^(-1)*(-b1+b2)*t-(-a1+a2)^(-1)*(-b1+b2)*a1+b1'
-            }, 
-            
-        ];
-
-        for (var i = 0; i < testCases.length; ++i) {
-            // when
-            var result = nerdamer(testCases[i].given);
-
-            // then
-            expect(result.toString()).toEqual(testCases[i].expected);
-        }
+        expect(nerdamer('line([1,2], [3,4])').toString()).toEqual('1+x');
+        expect(nerdamer('line([a1,b1], [a2,b2], t)').toString()).toEqual('(-a1+a2)^(-1)*(-b1+b2)*t-(-a1+a2)^(-1)*(-b1+b2)*a1+b1');
     });
     it('should simplify correctly', function () {
-        // given
-        var testCases = [
-            {
-                given: 'simplify(sin(x)^2+cos(x)^2)',
-                expected: '1'
-            }, 
-            {
-                given: 'simplify(1/2*sin(x^2)^2+cos(x^2)^2)',
-                expected: '(1/4)*(3+cos(2*x^2))'
-            }, 
-            {
-                given: 'simplify(0.75*sin(x^2)^2+cos(x^2)^2)',
-                expected: '(1/8)*(7+cos(2*x^2))'
-            }, 
-            {
-                given: 'simplify(cos(x)^2+sin(x)^2+cos(x)-tan(x)-1+sin(x^2)^2+cos(x^2)^2)',
-                expected: '-tan(x)+1+cos(x)'
-            },
-            {
-                given: 'simplify((x^2+4*x-45)/(x^2+x-30))',
-                expected: '(6+x)^(-1)*(9+x)'
-            },
-            {
-                given: 'simplify(1/(x-1)+1/(1-x))',
-                expected: '0'
-            },
-            {
-                given: 'simplify((x-1)/(1-x))',
-                expected: '-1'
-            },
-            {
-                given: 'simplify((x^2+2*x+1)/(x+1))',
-                expected: '1+x'
-            },
-            {
-                given: 'simplify((- x + x^2 + 1)/(x - x^2 - 1))',
-                expected: '-1'
-            },
-            {
-                given: 'simplify(n!/(n+1)!)',
-                expected: '(1+n)^(-1)'
-            },
-            //imaginary number
-            {
-                given: 'simplify((17/2)*(-10+8*i)^(-1)-5*(-10+8*i)^(-1)*i)',
-                expected: '(-9/82)*i-125/164'
-            },
-            {
-                given: 'simplify((-2*i+7)^(-1)*(3*i+4))',
-                expected: '(29/53)*i+22/53'
-            },
-            {
-                given: 'simplify(((17/2)*(-5*K+32)^(-1)*K^2+(5/2)*K-125*(-5*K+32)^(-1)*K-16+400*(-5*K+32)^(-1))*(-17*(-5*K+32)^(-1)*K+80*(-5*K+32)^(-1))^(-1))',
-                expected: '(-35*K+4*K^2+112)*(-80+17*K)^(-1)'
-            },
-            {
-                given: 'simplify(((a+b)^2)/c)',
-                expected: '(a+b)^2*c^(-1)'
-            },
-            // TODO: Disabling for now since sqrt simplify contains bug
-//            {
-//                given: 'simplify((-1/2)*(1+x^2)^(-1)*sqrt(16+16*x^2))',
-//                expected: '-2*sqrt(1+x^2)^(-1)'
-//            },
-//            {
-//                given: 'simplify((1/2)*sqrt(-4*x^2+16)*x)',
-//                expected: 'sqrt(-x^2+4)*x'
-//            },
-//            {
-//                given: 'simplify((-1/2)*(1+x^2)^(-1)*sqrt(16+16*x^2))',
-//                expected: '-2*sqrt(1+x^2)^(-1)'
-//            },
-            {
-                given: 'simplify(-(-5*x - 9 + 2*y))',
-                expected: '-2*y+5*x+9'
-            },
-            {
-                given: 'simplify(a/b+b/a)',
-                expected: '(a*b)^(-1)*(a^2+b^2)'
-            },
-            {
-                given: 'simplify(((2*e^t)/(e^t))+(1/(e^t)))',
-                expected: '(1+2*e^t)*e^(-t)'
-            }
-        ];
-
-        for (var i = 0; i < testCases.length; ++i) {
-            // when
-            var result = nerdamer(testCases[i].given);
-
-            // then
-            expect(result.toString()).toEqual(testCases[i].expected);
-        }
+        expect(nerdamer('simplify(sin(x)^2+cos(x)^2)').toString()).toEqual('1');
+        expect(nerdamer('simplify(1/2*sin(x^2)^2+cos(x^2)^2)').toString()).toEqual('(1/4)*(3+cos(2*x^2))');
+        expect(nerdamer('simplify(0.75*sin(x^2)^2+cos(x^2)^2)').toString()).toEqual('(1/8)*(7+cos(2*x^2))');
+        expect(nerdamer('simplify(cos(x)^2+sin(x)^2+cos(x)-tan(x)-1+sin(x^2)^2+cos(x^2)^2)').toString()).toEqual('-tan(x)+1+cos(x)');
+        expect(nerdamer('simplify((x^2+4*x-45)/(x^2+x-30))').toString()).toEqual('(6+x)^(-1)*(9+x)');
+        expect(nerdamer('simplify(1/(x-1)+1/(1-x))').toString()).toEqual('0');
+        expect(nerdamer('simplify((x-1)/(1-x))').toString()).toEqual('-1');
+        expect(nerdamer('simplify((x^2+2*x+1)/(x+1))').toString()).toEqual('1+x');
+        expect(nerdamer('simplify((- x + x^2 + 1)/(x - x^2 - 1))').toString()).toEqual('-1');
+        expect(nerdamer('simplify(n!/(n+1)!)').toString()).toEqual('(1+n)^(-1)');
+        expect(nerdamer('simplify((17/2)*(-10+8*i)^(-1)-5*(-10+8*i)^(-1)*i)').toString()).toEqual('(-9/82)*i-125/164');
+        expect(nerdamer('simplify((-2*i+7)^(-1)*(3*i+4))').toString()).toEqual('(29/53)*i+22/53');
+        expect(nerdamer('simplify(((17/2)*(-5*K+32)^(-1)*K^2+(5/2)*K-125*(-5*K+32)^(-1)*K-16+400*(-5*K+32)^(-1))*(-17*(-5*K+32)^(-1)*K+80*(-5*K+32)^(-1))^(-1))').toString()).toEqual('(-35*K+4*K^2+112)*(-80+17*K)^(-1)');
+        expect(nerdamer('simplify(((a+b)^2)/c)').toString()).toEqual('(a+b)^2*c^(-1)');
+        expect(nerdamer('simplify(-(-5*x - 9 + 2*y))').toString()).toEqual('-2*y+5*x+9');
+        expect(nerdamer('simplify(a/b+b/a)').toString()).toEqual('(a*b)^(-1)*(a^2+b^2)');
+        expect(nerdamer('simplify(((2*e^t)/(e^t))+(1/(e^t)))').toString()).toEqual('(1+2*e^t)*e^(-t)');
+        expect(nerdamer('simplify((-3/2)x+(1/3)y+2+z)').toString()).toEqual('(1/6)*(-9*x+12+2*y+6*z)');
     });
     it('should also simplify', function() {
         //expect(nerdamer('6/sqrt(3)')).toEqual();
