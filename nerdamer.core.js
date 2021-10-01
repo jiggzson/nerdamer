@@ -13,7 +13,7 @@
 //var nerdamerBigDecimal = typeof nerdamerBigDecimal !== 'undefined' ? nerdamerBigDecimal : require('big.js');
 
 var nerdamer = (function (imports) {
-    "use strict";
+    "use strict"; 
 
 //version ======================================================================
     var version = '1.1.13';
@@ -92,8 +92,12 @@ var nerdamer = (function (imports) {
         CACHE: {},
         //Print out warnings or not
         SILENCE_WARNINGS: false,
-        //Precision
+        // Precision
         PRECISION: 21,
+        // The Expression defaults to this value for decimal places
+        EXPRESSION_DECP: 19,
+        // The text function defaults to this value for decimal places
+        DEFAULT_DECP: 16,
         //function mappings
         VECTOR: 'vector',
         PARENTHESIS: 'parens',
@@ -2223,7 +2227,7 @@ var nerdamer = (function (imports) {
      * @param {int} useGroup
      * @returns {String}
      */
-    function text(obj, option, useGroup, decp) {
+    function text(obj, option, useGroup, decp) { 
         var asHash = option === 'hash',
                 //whether to wrap numbers in brackets
                 wrapCondition = undefined,
@@ -2231,7 +2235,7 @@ var nerdamer = (function (imports) {
                 asDecimal = opt === 'decimal' || opt === 'decimals';
 
         if(asDecimal && typeof decp === 'undefined')
-            decp = 16;
+            decp = Settings.DEFAULT_DECP;
 
         function toString(obj) {
             switch(option)
@@ -2313,7 +2317,7 @@ var nerdamer = (function (imports) {
                 case 'scientific':
                     wrapCondition = wrapCondition || function (str) {
                         return false;
-                    }
+                    };
                     return new Scientific(obj.valueOf()).toString(Settings.SCIENTIFIC_MAX_DECIMAL_PLACES);
                 default:
                     wrapCondition = wrapCondition || function (str) {
@@ -2577,7 +2581,7 @@ var nerdamer = (function (imports) {
          * @returns {String}
          */
         text: function (opt, n) {
-            n = n || 19;
+            n = n || Settings.EXPRESSION_DECP;
             opt = opt || 'decimals';
             if(this.symbol.text_)
                 return this.symbol.text_(opt);
@@ -3103,13 +3107,14 @@ var nerdamer = (function (imports) {
             var dec = whole.toString() + '.' + narr.join('');
             return sign + dec;
         },
-        toDecimal: function (prec) {
+        toDecimal: function (prec) { 
             prec = prec || Settings.PRECISION;
             if(prec) {
                 return this.decimal(prec);
             }
-            else
+            else {
                 return this.num / this.den;
+            }
         },
         qcompare: function (n) {
             return [this.num.multiply(n.den), n.num.multiply(this.den)];
@@ -3189,7 +3194,8 @@ var nerdamer = (function (imports) {
 //            if(this.num == 24) throw new Error(999)
             if(Settings.USE_BIG)
                 return new bigDec(this.num.toString()).div(new bigDec(this.den.toString()));
-            return this.num / this.den;
+            var retval = this.num / this.den;
+            return retval;
         },
         isNegative: function () {
             return this.toDecimal() < 0;
@@ -7113,12 +7119,15 @@ var nerdamer = (function (imports) {
                     if(e.group === FN) {
                         var fname = e.fname, f;
 
-                        if(fname === SQRT)
+                        if(fname === SQRT) {
                             f = '\\sqrt' + LaTeX.braces(this.toTeX(e.args));
-                        else if(fname === ABS)
+                        }
+                        else if(fname === ABS) {
                             f = LaTeX.brackets(this.toTeX(e.args), 'abs');
-                        else if(fname === PARENTHESIS)
+                        }
+                        else if(fname === PARENTHESIS) {
                             f = LaTeX.brackets(this.toTeX(e.args), 'parens');
+                        }
                         else if(fname === Settings.LOG10) {
                             f = '\\' + Settings.LOG10_LATEX + '\\left( ' + this.toTeX(e.args) + '\\right)';
                         }
@@ -7187,10 +7196,10 @@ var nerdamer = (function (imports) {
                             });
                             f = '\\lim_' + LaTeX.braces(args[1] + '\\to ' + args[2]) + ' ' + LaTeX.braces(args[0]);
                         }
-                        else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL)
+                        else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL) {
                             f = this.toTeX(e.args) + (fname === FACTORIAL ? '!' : '!!');
+                        }
                         else {
-
                             f = LaTeX.latex(e, decimals);
                             //f = '\\mathrm'+LaTeX.braces(fname.replace(/_/g, '\\_')) + LaTeX.brackets(this.toTeX(e.args), 'parens');
                         }
