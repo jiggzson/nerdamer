@@ -2394,6 +2394,7 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             _factor: function (symbol, factors) {
+                var g = symbol.group;
                 //some items cannot be factored any further so return those right away
                 if(symbol.group === FN) {
                     var arg = symbol.args[0];
@@ -2575,11 +2576,20 @@ if((typeof module) !== 'undefined') {
 
                         //last minute clean up
                         symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
-
+                        
+                        var addPower = factors.length === 1;
+                        
                         factors.add(_.pow(symbol, _.parse(p)));
 
                         var retval = factors.toSymbol();
-
+                        
+                        // We may have only factored out the symbol itself so we end up with a factor of one 
+                        // where the power needs to be placed back
+                        // e.g. factor((2*y+p)^2). Here we end up having a factor of 1 remaining and a p of 2.
+                        if(addPower && symbol.equals(1) && retval.isLinear()) {
+                            retval = _.pow(retval, _.parse(p));
+                        }
+                        
                         return retval;
                     }
 

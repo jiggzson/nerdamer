@@ -188,6 +188,7 @@ describe('Algebra', function () {
         expect(nerdamer('factor((-5*K+32)^2)').toString()).toEqual('(-32+5*K)^2');
         expect(nerdamer('factor(100)').toString()).toEqual('2^2*5^2');
         expect(nerdamer('factor(100*x)').toString()).toEqual('100*x');
+        expect(nerdamer('(2*y+p)^2').toString()).toEqual('(2*y+p)^2');
     });
     it('should not have any regression to factor', function() {
         //this test will absolutely break as factor improves enough to factor this expression. For now it just serves as a safeguard
