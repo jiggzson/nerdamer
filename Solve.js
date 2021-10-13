@@ -1607,8 +1607,11 @@ if((typeof module) !== 'undefined') {
                                 var separated = separate(eq);
                                 var lhs = separated[0],
                                         rhs = separated[1];
+                                
                                 if(lhs.group === core.groups.EX) {
-                                    add_to_result(_.parse(core.Utils.format(core.Settings.LOG + '(({0})/({2}))/' + core.Settings.LOG + '({1})', rhs, lhs.value, lhs.multiplier)));
+                                    var log = core.Settings.LOG;
+                                    var expr_str = `${log}((${rhs})/(${lhs.multiplier}))/${log}(${lhs.value})/${lhs.power.multiplier}`;
+                                    add_to_result(_.parse(expr_str));
                                 }
                                 break;
                             case 1:

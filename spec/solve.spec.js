@@ -71,6 +71,7 @@ describe('Solve', function () {
         expect(nerdamer('solve(x^2=x^-2,x)').toString()).toEqual('[1,-1,i,-i]');
         expect(nerdamer('solve((x+1)(x+1)x=3x,x)').toString()).toEqual('[0,-1+sqrt(3),-1-sqrt(3)]');
         expect(nerdamer('solve(log(y) = -t, y)').toString() ).toEqual('[e^(-t)]');
+        expect(nerdamer('solve(y=exp(4x),x)').toString() ).toEqual('[(1/4)*log(y)]');
 
     });
     it('should solve system of equations correctly', function () {
