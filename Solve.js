@@ -140,6 +140,7 @@ if((typeof module) !== 'undefined') {
             a = _.expand(_.multiply(a, den.clone()));
             b = _.expand(_.multiply(b, den));
             //swap the groups
+            // FIXME: CP !== CP
             if(b.group === CP && b.group !== CP) {
                 var t = a;
                 a = b;
@@ -1134,7 +1135,7 @@ if((typeof module) !== 'undefined') {
 
     /*
      * 
-     * @param {String[]|String|Equation} eqns
+     * @param {String[]|String|Equation|core.Vector|Symbol} eqns
      * @param {String} solve_for
      * @param {Array} solutions
      * @param {Number} depth
@@ -1170,7 +1171,7 @@ if((typeof module) !== 'undefined') {
         solve_for = solve_for || 'x'; //assumes x by default
         //If it's an array then solve it as a system of equations
         if(isArray(eqns)) {
-            return __.solveSystem.apply(undefined, arguments);
+            return __.solveSystem.apply(undefined, eqns);
         }
 
         // Parse out functions. Fix for issue #300
@@ -1232,11 +1233,11 @@ if((typeof module) !== 'undefined') {
 
         // Maybe we get lucky. Try the point at the function. If it works we have a point
         // If not it failed
-        if(eqns.group === S && eqns.contains(solve_for)) {
+        if(isSymbol(eqns) && eqns.group === S && eqns.contains(solve_for)) {
             try {
                 var o = {};
                 o[solve_for] = 0;
-                evaluate(fn, o, 'numer');
+                evaluate(fn, o);
                 add_to_result(new Symbol(0));
             }
             catch(e) {

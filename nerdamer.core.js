@@ -1152,7 +1152,7 @@ var nerdamer = (function (imports) {
     /**
      * As the name states. It forces evaluation of the expression
      * @param {Symbol} symbol
-     * @param {Symbol} o
+     * @param {Object} o
      */
     var evaluate = function (symbol, o) {
         return block('PARSE2NUMBER', function () {
@@ -12099,26 +12099,26 @@ var nerdamer = (function (imports) {
 //libExports ===================================================================
     /**
      *
-     * @param {String} expression the expression to be evaluated
+     * @param {String | Expression} expression the expression to be evaluated
      * @param {Object} subs the object containing the variable values
      * @param {Integer} location a specific location in the equation list to
      * insert the evaluated expression
-     * @param {String} option additional options
+     * @param {String | String[]} option additional options
      * @returns {Expression}
      */
     var libExports = function (expression, subs, option, location) {
         // Initiate the numer flag
         var numer = false;
 
-        // Is the user declaring a function?
-        var fndec = /^([a-z_][a-z\d\_]*)\(([a-z_,\s]*)\):=(.+)$/gi.exec(expression);
-        if(fndec)
-            return nerdamer.setFunction(fndec[1], fndec[2].split(','), fndec[3]);
-
         // var variable, fn, args;
         // Convert any expression passed in to a string
         if(expression instanceof Expression)
             expression = expression.toString();
+
+        // Is the user declaring a function?
+        var fndec = /^([a-z_][a-z\d\_]*)\(([a-z_,\s]*)\):=(.+)$/gi.exec(expression);
+        if(fndec)
+            return nerdamer.setFunction(fndec[1], fndec[2].split(','), fndec[3]);
 
         // Convert it to an array for simplicity
         if(!isArray(option)) {
@@ -12133,7 +12133,7 @@ var nerdamer = (function (imports) {
             }
             // Wrap it in a function if requested. This only holds true for
             // functions that take a single argument which is the expression
-            var f = _.functions[option];
+            var f = _.functions[o];
             // If there's a function and it takes a single argument, then wrap
             // the expression in it
             if(f && f[1] === 1) {
