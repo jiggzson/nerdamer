@@ -15,6 +15,9 @@
 var nerdamer = (function (imports) {
     "use strict";
 
+    const Scientific = require('./Core/Scientific');
+    const {nround, isInt} = require('./Core/Utils');
+
 //version ======================================================================
     var version = '1.1.12';
 
@@ -519,13 +522,7 @@ var nerdamer = (function (imports) {
         return Array.isArray(arr);
     };
 
-    /**
-     * Checks to see if a number is an integer
-     * @param {Number} num
-     */
-    var isInt = function (num) {
-        return /^[-+]?\d+e?\+?\d*$/gim.test(num.toString());
-    };
+
 
     /**
      * @param {Number|Symbol} obj
@@ -877,21 +874,7 @@ var nerdamer = (function (imports) {
             };
         return [a, x, ax, b];
     };
-    /**
-     * Rounds a number up to x decimal places
-     * @param {Number} x
-     * @param {Number} s
-     */
-    var nround = function (x, s) {
-        if(isInt(x)) {
-            if(x >= Number.MAX_VALUE)
-                return x.toString();
-            return Number(x);
-        }
 
-        s = typeof s === 'undefined' ? 14 : s;
-        return Math.round(x * Math.pow(10, s)) / Math.pow(10, s);
-    };
 
     /**
      * Is used for u-substitution. Gets a suitable u for substitution. If for
@@ -2792,271 +2775,7 @@ var nerdamer = (function (imports) {
     //Aliases
     Expression.prototype.toTeX = Expression.prototype.latex;
 
-//Scientific ===================================================================
-    function Scientific(num) {
-        if(!(this instanceof Scientific))
-            return new Scientific(num);
 
-        num = String(typeof num === 'undefined' ? 0 : num); //convert to a string
-
-        //remove the sign
-        if(num.startsWith('-')) {
-            this.sign = -1;
-            //remove the sign
-            num = num.substr(1, num.length);
-        }
-        else {
-            this.sign = 1;
-        }
-
-        if(Scientific.isScientific(num)) {
-            this.fromScientific(num);
-        }
-        else {
-            this.convert(num);
-        }
-        return this;
-    }
-
-    Scientific.prototype = {
-        fromScientific: function (num) {
-            var parts = String(num).toLowerCase().split('e');
-            this.coeff = parts[0];
-            this.exponent = parts[1];
-
-            return this;
-        },
-        convert: function (num) {
-            //get wholes and decimals
-            var parts = num.split('.');
-            //make zero go away
-            var w = parts[0] || '';
-            var d = parts[1] || '';
-            //convert zero to blank strings
-            w = Scientific.removeLeadingZeroes(w);
-            d = Scientific.removeTrailingZeroes(d);
-            //find the location of the decimal place which is right after the wholes
-            var dot_location = w.length;
-            //add them together so we can move the dot
-            var n = w + d;
-            //find the next number
-            var zeroes = Scientific.leadingZeroes(n).length;
-            //set the exponent
-            this.exponent = dot_location - (zeroes + 1);
-            //set the coeff but first remove leading zeroes
-            var coeff = Scientific.removeLeadingZeroes(n);
-            this.coeff = coeff.charAt(0) + '.' + (coeff.substr(1, coeff.length) || '0');
-
-            return this;
-        },
-        round: function (num) {
-            var n = this.copy();
-
-            num = Number(num); //cast to number for safety
-            //since we know it guaranteed to be in the format {digit}{optional dot}{optional digits}
-            //we can round based on this
-            if(num === 0)
-                n.coeff = n.coeff.charAt(0);
-            else {
-                //get up to n-1 digits
-                var rounded = this.coeff.substring(0, num + 1);
-                //get the next two
-                var next_two = this.coeff.substring(num + 1, num + 3);
-                //the extra digit
-                var ed = next_two.charAt(0);
-
-                if(next_two.charAt(1) > 4)
-                    ed++;
-
-                n.coeff = rounded + ed;
-            }
-
-            return n;
-        },
-        copy: function () {
-            var n = new Scientific(0);
-            n.coeff = this.coeff;
-            n.exponent = this.exponent;
-            n.sign = this.sign;
-            return n;
-        },
-        toString: function (n) {
-            var coeff = typeof n === 'undefined' ? this.coeff : Scientific.round(this.coeff, n);
-
-            var c;
-            if(this.exponent === 0 && Settings.SCIENTIFIC_IGNORE_INTS) {
-                c = this.coeff;
-            }
-            else {
-                c = coeff + 'e' + this.exponent;
-            }
-            return (this.sign === -1 ? '-' : '') + c;
-        }
-    };
-
-    Scientific.isScientific = function (num) {
-        return /\d+\.?\d*e[\+\-]*\d+/i.test(num);
-    };
-    Scientific.leadingZeroes = function (num) {
-        var match = num.match(/^(0*).*$/);
-        return match ? match[1] : '';
-    };
-    Scientific.removeLeadingZeroes = function (num) {
-        var match = num.match(/^0*(.*)$/);
-        return match ? match[1] : '';
-    };
-
-    Scientific.removeTrailingZeroes = function (num) {
-        var match = num.match(/0*$/);
-        return match ? num.substring(0, num.length - match[0].length) : '';
-    };
-    Scientific.round = function (c, n) {
-        var coeff = nround(c, n);
-        var m = String(coeff).split('.').pop();
-        var d = n - m.length;
-        //if we're asking for more significant figures
-        if(d > 0) {
-            coeff = coeff + (new Array(d + 1).join(0));
-        }
-        return coeff;
-    };
-
-//Scientific ===================================================================
-    /*
-     * Javascript has the toExponential method but this allows you to work with string and therefore any number of digits of your choosing
-     * For example Scientific('464589498449496467924197545625247695464569568959124568489548454');
-     */
-
-    function Scientific(num) {
-        if(!(this instanceof Scientific))
-            return new Scientific(num);
-
-        num = String(typeof num === 'undefined' ? 0 : num); //convert to a string
-
-        //remove the sign
-        if(num.startsWith('-')) {
-            this.sign = -1;
-            //remove the sign
-            num = num.substr(1, num.length);
-        }
-        else {
-            this.sign = 1;
-        }
-
-        if(Scientific.isScientific(num)) {
-            this.fromScientific(num);
-        }
-        else {
-            this.convert(num);
-        }
-        return this;
-    }
-
-    Scientific.prototype = {
-        fromScientific: function (num) {
-            var parts = String(num).toLowerCase().split('e');
-            this.coeff = parts[0];
-            this.exponent = parts[1];
-
-            return this;
-        },
-        convert: function (num) {
-            //get wholes and decimals
-            var parts = num.split('.');
-            //make zero go away
-            var w = parts[0] || '';
-            var d = parts[1] || '';
-            //convert zero to blank strings
-            w = Scientific.removeLeadingZeroes(w);
-            d = Scientific.removeTrailingZeroes(d);
-            //find the location of the decimal place which is right after the wholes
-            var dot_location = w.length;
-            //add them together so we can move the dot
-            var n = w + d;
-            //find the next number
-            var zeroes = Scientific.leadingZeroes(n).length;
-            //set the exponent
-            this.exponent = dot_location - (zeroes + 1);
-            //set the coeff but first remove leading zeroes
-            var coeff = Scientific.removeLeadingZeroes(n);
-            this.coeff = coeff.charAt(0) + '.' + (coeff.substr(1, coeff.length) || '0');
-
-            //the coeff decimal places
-            var dec = this.coeff.split('.')[1] || ''; //if it's undefined or zero it's going to blank
-
-            this.decp = dec === '0' ? 0 : dec.length;
-            //decimals
-            this.dec = d;
-            //wholes
-            this.wholes = w;
-
-            return this;
-        },
-        round: function (num) {
-            var n = this.copy();
-
-            num = Number(num); //cast to number for safety
-            //since we know it guaranteed to be in the format {digit}{optional dot}{optional digits}
-            //we can round based on this
-            if(num === 0)
-                n.coeff = n.coeff.charAt(0);
-            else {
-                //get up to n-1 digits
-                var rounded = this.coeff.substring(0, num + 1);
-                //get the next two
-                var next_two = this.coeff.substring(num + 1, num + 3);
-                //the extra digit
-                var ed = next_two.charAt(0);
-
-                if(next_two.charAt(1) > 4)
-                    ed++;
-
-                n.coeff = rounded + ed;
-            }
-
-            return n;
-        },
-        copy: function () {
-            var n = new Scientific(0);
-            n.coeff = this.coeff;
-            n.exponent = this.exponent;
-            n.sign = this.sign;
-            return n;
-        },
-        toString: function (n) {
-            var retval;
-
-            if(Settings.SCIENTIFIC_IGNORE_ZERO_EXPONENTS && this.exponent === 0 && this.decp < n) {
-                if(this.decp === 0)
-                    retval = this.wholes;
-                else
-                    retval = this.coeff;
-            }
-            else {
-                var coeff = typeof n === 'undefined' ? this.coeff : Scientific.round(this.coeff, Math.min(n, this.decp || 1));
-                retval = this.exponent === 0 ? coeff : coeff + 'e' + this.exponent;
-            }
-
-            return (this.sign === -1 ? '-' : '') + retval;
-        }
-    };
-
-    Scientific.isScientific = function (num) {
-        return /\d+\.?\d*e[\+\-]*\d+/i.test(num);
-    };
-    Scientific.leadingZeroes = function (num) {
-        var match = num.match(/^(0*).*$/);
-        return match ? match[1] : '';
-    };
-    Scientific.removeLeadingZeroes = function (num) {
-        var match = num.match(/^0*(.*)$/);
-        return match ? match[1] : '';
-    };
-
-    Scientific.removeTrailingZeroes = function (num) {
-        var match = num.match(/0*$/);
-        return match ? num.substring(0, num.length - match[0].length) : '';
-    };
 
 
 //Frac =========================================================================
