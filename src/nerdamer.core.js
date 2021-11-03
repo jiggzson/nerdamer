@@ -5,6 +5,10 @@
  * Source : https://github.com/jiggzson/nerdamer
  */
 
+const {Settings} = require("./Settings");
+const {isInt} = require("./Core/Utils");
+const Frac = require("./Core/Frac");
+const Symbol = require("./Core/Symbol");
 var nerdamer = (function (imports) {
     "use strict";
 
@@ -14,7 +18,11 @@ var nerdamer = (function (imports) {
     const bigDec = require('decimal.js');
     const bigInt = imports.bigInt;
     const Symbol = require('./Core/Symbol');
+    const {Groups} = require('./Core/Groups');
     const Frac = require('./Core/Frac');
+    const Slice = require('./Parser/Slice');
+    const Collection = require('./Parser/Collection');
+
 
 //version ======================================================================
     var version = '1.1.12';
@@ -30,8 +38,6 @@ var nerdamer = (function (imports) {
     bigDec.set({
         precision: 250
     });
-
-    var Groups = {};
 
     //container of pregenerated primes
     var PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113
@@ -67,16 +73,16 @@ var nerdamer = (function (imports) {
     //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
     //The groups that help with organizing during parsing. Note that for FN is still a function even
     //when it's raised to a symbol, which typically results in an EX
-    var N = Groups.N = 1, // A number
-        P = Groups.P = 2, // A number with a rational power e.g. 2^(3/5).
-        S = Groups.S = 3, // A single variable e.g. x.
-        EX = Groups.EX = 4, // An exponential
-        FN = Groups.FN = 5, // A function
-        PL = Groups.PL = 6, // A symbol/expression having same name with different powers e.g. 1/x + x^2
-        CB = Groups.CB = 7, // A symbol/expression composed of one or more variables through multiplication e.g. x*y
-        CP = Groups.CP = 8; // A symbol/expression composed of one variable and any other symbol or number x+1 or x+y
+    var N = Groups.N, // A number
+        P = Groups.P, // A number with a rational power e.g. 2^(3/5).
+        S = Groups.S, // A single variable e.g. x.
+        EX = Groups.EX, // An exponential
+        FN = Groups.FN, // A function
+        PL = Groups.PL, // A symbol/expression having same name with different powers e.g. 1/x + x^2
+        CB = Groups.CB, // A symbol/expression composed of one or more variables through multiplication e.g. x*y
+        CP = Groups.CP; // A symbol/expression composed of one variable and any other symbol or number x+1 or x+y
 
-    var CONST_HASH = Settings.CONST_HASH = '#';
+    var CONST_HASH = Settings.CONST_HASH;
 
     var PARENTHESIS = Settings.PARENTHESIS;
 
@@ -4281,39 +4287,14 @@ var nerdamer = (function (imports) {
         var preprocessors = {names: [], actions: []};
 
 //Parser.classes ===============================================================
-        function Slice(upper, lower) {
-            this.start = upper;
-            this.end = lower;
-        }
-        ;
-        Slice.prototype.isConstant = function () {
-            return this.start.isConstant() && this.end.isConstant();
-        };
+
+        // TODO: move
         Slice.prototype.text = function () {
             return text(this.start) + ':' + text(this.end);
         };
 
-        /**
-         * Class used to collect arguments for functions
-         * @returns {Parser.Collection}
-         */
-        function Collection() {
-            this.elements = [];
-        }
-        Collection.prototype.append = function (e) {
-            this.elements.push(e);
-        };
-        Collection.prototype.getItems = function () {
-            return this.elements;
-        };
         Collection.prototype.toString = function () {
             return _.pretty_print(this.elements);
-        };
-        Collection.create = function (e) {
-            var collection = new Collection();
-            if(e)
-                collection.append(e);
-            return collection;
         };
 
         function Token(node, node_type, column) {
