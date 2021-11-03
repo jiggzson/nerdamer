@@ -12,6 +12,8 @@ const nerdamer = require('./nerdamer.core.js');
 require('./Calculus.js');
 require('./Algebra.js');
 const Equation = require('./Solve/Equation');
+const expressionExtend = require('./Solve/Expression.extend');
+const symbolExtend = require('./Solve/Symbol.extend');
 
 (function () {
     //handle imports
@@ -78,20 +80,7 @@ const Equation = require('./Solve/Equation');
     core.Settings.BI_SECTION_EPSILON = 1e-12;
 
 
-    core.Symbol.prototype.hasTrig = function () {
-        return this.containsFunction(['cos', 'sin', 'tan', 'cot', 'csc', 'sec']);
-    };
-
-    core.Symbol.prototype.hasNegativeTerms = function () {
-        if (this.isComposite()) {
-            for (var x in this.symbols) {
-                var sym = this.symbols[x];
-                if (sym.group === PL && sym.hasNegativeTerms() || this.symbols[x].power.lessThan(0))
-                    return true;
-            }
-        }
-        return false;
-    };
+    symbolExtend(core);
 
     //overwrite the equals function
     _.equals = function (a, b) {
@@ -111,58 +100,6 @@ const Equation = require('./Solve/Equation');
             return simplify(symbol);
         };
     })();
-
-    /**
-     * Sets two expressions equal
-     * @param {Symbol} symbol
-     * @returns {Expression}
-     */
-    core.Expression.prototype.equals = function (symbol) {
-        if (symbol instanceof core.Expression)
-            symbol = symbol.symbol; //grab the symbol if it's an expression
-        var eq = new Equation(this.symbol, symbol);
-        return eq;
-    };
-
-    core.Expression.prototype.solveFor = function (x) {
-        var symbol;
-        if (this.symbol instanceof Equation) {
-            //exit right away if we already have the answer
-            //check the LHS
-            if (this.symbol.LHS.isConstant() && this.symbol.RHS.equals(x))
-                return new core.Expression(this.symbol.LHS);
-
-            //check the RHS
-            if (this.symbol.RHS.isConstant() && this.symbol.LHS.equals(x))
-                return new core.Expression(this.symbol.RHS);
-
-            //otherwise just bring it to LHS
-            symbol = this.symbol.toLHS();
-        }
-        else {
-            symbol = this.symbol;
-        }
-
-        return solve(symbol, x).map(function (x) {
-            return new core.Expression(x);
-        });
-    };
-
-    core.Expression.prototype.expand = function () {
-        if (this.symbol instanceof Equation) {
-            var clone = this.symbol.clone();
-            clone.RHS = _.expand(clone.RHS);
-            clone.LHS = _.expand(clone.LHS);
-            return new core.Expression(clone);
-        }
-        return new core.Expression(_.expand(this.symbol));
-    };
-
-    core.Expression.prototype.variables = function () {
-        if (this.symbol instanceof Equation)
-            return core.Utils.arrayUnique(variables(this.symbol.LHS).concat(variables(this.symbol.RHS)));
-        return variables(this.symbol);
-    };
 
 
 
@@ -1591,6 +1528,8 @@ const Equation = require('./Solve/Equation');
 
         return solutions;
     };
+
+    expressionExtend(core, solve, variables);
 
     //Register the functions for external use
     nerdamer.register([
