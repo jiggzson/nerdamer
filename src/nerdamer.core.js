@@ -9,10 +9,12 @@ var nerdamer = (function (imports) {
     "use strict";
 
     const Scientific = require('./Core/Scientific').default;
-    const {nround, isInt, isPrime, isNumber} = require('./Core/Utils');
+    const {nround, isInt, isPrime, isNumber, validateName} = require('./Core/Utils');
     const Settings = require('./Settings').Settings;
     const bigDec = require('decimal.js');
     const bigInt = imports.bigInt;
+    const Symbol = require('./Core/Symbol');
+    const Frac = require('./Core/Frac');
 
 //version ======================================================================
     var version = '1.1.12';
@@ -157,22 +159,7 @@ var nerdamer = (function (imports) {
         }
     };
 
-    /**
-     * Enforces rule: "must start with a letter or underscore and
-     * can have any number of underscores, letters, and numbers thereafter."
-     * @param name The name of the symbol being checked
-     * @param {String} typ - The type of symbols that's being validated
-     * @throws {Exception}  - Throws an exception on fail
-     */
-    var validateName = function (name, typ) {
-        typ = typ || 'variable';
-        if(Settings.ALLOW_CHARS.indexOf(name) !== -1)
-            return;
-        var regex = Settings.VALIDATION_REGEX;
-        if(!(regex.test(name))) {
-            throw new InvalidVariableNameError(name + ' is not a valid ' + typ + ' name');
-        }
-    };
+
 
     /**
      * Convert number from scientific format to decimal format
@@ -1172,8 +1159,6 @@ var nerdamer = (function (imports) {
     var OutOfRangeError = customError('OutOfRangeError');
     // Is thrown if dimensions are incorrect. Mostly for matrices
     var DimensionError = customError('DimensionError');
-    // Is thrown if variable name violates naming rule
-    var InvalidVariableNameError = customError('InvalidVariableNameError');
     // Is thrown if the limits of the library are exceeded for a function
     // This can be that the function become unstable passed a value
     var ValueLimitExceededError = customError('ValueLimitExceededError');
@@ -1197,7 +1182,6 @@ var nerdamer = (function (imports) {
         OperatorError: OperatorError,
         OutOfRangeError: OutOfRangeError,
         DimensionError: DimensionError,
-        InvalidVariableNameError: InvalidVariableNameError,
         ValueLimitExceededError: ValueLimitExceededError,
         NerdamerValueError: NerdamerValueError,
         SolveError: SolveError,
@@ -2691,32 +2675,6 @@ var nerdamer = (function (imports) {
 
 
 //Frac =========================================================================
-    function Frac(n) {
-        if(n instanceof Frac)
-            return n;
-        if(n === undefined)
-            return this;
-        try {
-            if(isInt(n)) {
-                try {
-                    this.num = bigInt(n);
-                    this.den = bigInt(1);
-                }
-                catch(e) {
-                    return Frac.simple(n);
-                }
-            }
-            else {
-                var frac = n instanceof bigDec ? Fraction.quickConversion(n) : Fraction.convert(n);
-                this.num = new bigInt(frac[0]);
-                this.den = new bigInt(frac[1]);
-            }
-        }
-        catch(e) {
-            return Frac.simple(n);
-        }
-
-    }
     //safe to use with negative numbers or other types
     Frac.create = function (n) {
         if(n instanceof Frac)
@@ -2946,47 +2904,6 @@ var nerdamer = (function (imports) {
     };
 
 //Symbol =======================================================================
-    /**
-     * All symbols e.g. x, y, z, etc or functions are wrapped in this class. All symbols have a multiplier and a group.
-     * All symbols except for "numbers (group N)" have a power.
-     * @class Primary data type for the Parser.
-     * @param {String} obj
-     * @returns {Symbol}
-     */
-    function Symbol(obj) {
-        var isInfinity = obj === 'Infinity';
-        // This enables the class to be instantiated without the new operator
-        if(!(this instanceof Symbol)) {
-            return new Symbol(obj);
-        }
-        // Convert big numbers to a string
-        if(obj instanceof bigDec) {
-            obj = obj.toString();
-        }
-        //define numeric symbols
-        if(/^(\-?\+?\d+)\.?\d*e?\-?\+?\d*/i.test(obj) || obj instanceof bigDec) {
-            this.group = N;
-            this.value = CONST_HASH;
-            this.multiplier = new Frac(obj);
-        }
-        //define symbolic symbols
-        else {
-            this.group = S;
-            validateName(obj);
-            this.value = obj;
-            this.multiplier = new Frac(1);
-            this.imaginary = obj === Settings.IMAGINARY;
-            this.isInfinity = isInfinity;
-        }
-
-        //As of 6.0.0 we switched to infinite precision so all objects have a power
-        //Although this is still redundant in constants, it simplifies the logic in
-        //other parts so we'll keep it
-        this.power = new Frac(1);
-
-        // Added to silence the strict warning.
-        return this;
-    }
     /**
      * Returns vanilla imaginary symbol
      * @returns {Symbol}
@@ -9704,142 +9621,6 @@ var nerdamer = (function (imports) {
     }
     ;
 
-    /* "STATIC" */
-    // converts a number to a fraction.
-    var Fraction = {
-        /**
-         * Converts a decimal to a fraction
-         * @param {number} value
-         * @param {object} opts
-         * @returns {Array} - an array containing the denominator and the numerator
-         */
-        convert: function (value, opts) {
-            var frac;
-            if(value === 0) {
-                frac = [0, 1];
-            }
-            else {
-                if(value < 1e-6 || value > 1e20) {
-                    var qc = this.quickConversion(Number(value));
-                    if(qc[1] <= 1e20) {
-                        var abs = Math.abs(value);
-                        var sign = value / abs;
-                        frac = this.fullConversion(abs.toFixed((qc[1] + '').length - 1));
-                        frac[0] = frac[0] * sign;
-                    }
-                    else {
-                        frac = qc;
-                    }
-                }
-                else {
-                    frac = this.fullConversion(value);
-                }
-            }
-            return frac;
-        },
-        /**
-         * If the fraction is too small or too large this gets called instead of fullConversion method
-         * @param {number} dec
-         * @returns {Array} - an array containing the denominator and the numerator
-         */
-        quickConversion: function (value) {
-            var stripSign = function (s) {
-                // Explicitely convert to a string
-                if(typeof s !== 'string') {
-                    s = s.toString();
-                }
-
-                var sign = '';
-
-                // Remove and store the sign
-                var start = s.charAt(0);
-                if(start === '-') {
-                    s = s.substr(1, s.length);
-                    sign = '-';
-                }
-                else if(start === '+') {
-                    // Just remove the plus sign
-                    s = s.substr(1, s.length);
-                }
-
-                return {
-                    sign: sign,
-                    value: s
-                };
-            };
-
-
-            function convert(value) {
-                // Explicitely convert to a decimal
-                if(Scientific.isScientific(value)) {
-                    value = scientificToDecimal(value);
-                }
-
-                // Split the value into the sign and the value
-                var nparts = stripSign(value);
-
-                // Split it at the decimal. We'll refer to it as the coeffient parts
-                var cparts = nparts.value.split('.');
-
-                // Combine the entire number by removing leading zero and adding the decimal part
-                // This would be teh same as moving the decimal point to the end
-                var num;
-                // We're dealing with integers
-                if(cparts.length === 1) {
-                    num = cparts[0];
-                }
-                else {
-                    num = cparts[0] + cparts[1];
-                }
-                var n = cparts[1] ? cparts[1].length : 0;
-                // Generate the padding for the zeros
-                var den = `1${'0'.repeat(n)}`;
-
-                if(num !== '0') {
-                    num = num.replace(/^0+/, '');
-                }
-                return [nparts.sign + num, den];
-            }
-
-            return convert(value);
-        },
-        /**
-         * Returns a good approximation of a fraction. This method gets called by convert
-         * http://mathforum.org/library/drmath/view/61772.html
-         * Decimal To Fraction Conversion - A Simpler Version
-         * Dr Peterson
-         * @param {number} dec
-         * @returns {Array} - an array containing the denominator and the numerator
-         */
-        fullConversion: function (dec) {
-            var done = false;
-            // you can adjust the epsilon to a larger number if you don't need very high precision
-            var n1 = 0, d1 = 1, n2 = 1, d2 = 0, n = 0, q = dec, epsilon = 1e-16;
-            while(!done) {
-                n++;
-                if(n > 10000) {
-                    done = true;
-                }
-                var a = Math.floor(q);
-                var num = n1 + a * n2;
-                var den = d1 + a * d2;
-                var e = (q - a);
-                if(e < epsilon) {
-                    done = true;
-                }
-                q = 1 / e;
-                n1 = n2;
-                d1 = d2;
-                n2 = num;
-                d2 = den;
-                if(Math.abs(num / den - dec) < epsilon || n > 30) {
-                    done = true;
-                }
-            }
-            return [num, den];
-        }
-    };
-    //Depends on Fraction
 
     //The latex generator
     var LaTeX = {
@@ -11714,7 +11495,6 @@ var nerdamer = (function (imports) {
         Matrix: Matrix,
         Parser: Parser,
         Scientific: Scientific,
-        Fraction: Fraction,
         Math2: Math2,
         LaTeX: LaTeX,
         Utils: Utils,

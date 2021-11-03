@@ -59,6 +59,8 @@ export type SettingsType = {
     //True if ints should not be converted to
     SCIENTIFIC_IGNORE_ZERO_EXPONENTS: boolean,
 
+    CONST_HASH: string,
+
 /// SOLVE
 
     // The search radius for the roots
@@ -167,6 +169,8 @@ export let Settings: SettingsType = {
     SCIENTIFIC_MAX_DECIMAL_PLACES: 14,
     //True if ints should not be converted to
     SCIENTIFIC_IGNORE_ZERO_EXPONENTS: true,
+
+    CONST_HASH: '#',
 
 /// SOLVE
 

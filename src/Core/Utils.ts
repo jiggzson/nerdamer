@@ -1,3 +1,5 @@
+import {Settings} from "../Settings";
+
 /**
  * Rounds a number up to x decimal places
  * @param {number} x
@@ -45,3 +47,27 @@ export function isPrime(n: number) {
 export function isNumber(n: string) {
     return /^\d+\.?\d*$/.test(n);
 }
+
+// Is thrown if variable name violates naming rule
+class InvalidVariableNameError extends Error {
+    name = 'InvalidVariableNameError';
+}
+
+/**
+ * Enforces rule: "must start with a letter or underscore and
+ * can have any number of underscores, letters, and numbers thereafter."
+ * @param {string} name The name of the symbol being checked
+ * @param {string} typ - The type of symbols that's being validated
+ * @throws {InvalidVariableNameError}  - Throws an exception on fail
+ */
+export function validateName(name: string, typ: string = 'variable') {
+    if (Settings.ALLOW_CHARS.indexOf(name) !== -1)
+        return;
+
+    const regex = Settings.VALIDATION_REGEX;
+
+    if (!(regex.test(name))) {
+        throw new InvalidVariableNameError(name + ' is not a valid ' + typ + ' name')
+    }
+}
+
