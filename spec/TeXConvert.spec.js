@@ -1,4 +1,4 @@
-var nerdamer = require('../nerdamer.core.js');
+var nerdamer = require('../src/nerdamer.core.js');
 it('Should convert from TeX', function () {
     expect(nerdamer.convertFromLaTeX('x^6 \\cdot cos(\\frac{1}{2})').toString()).toEqual('cos(1/2)*x^6');
     expect(nerdamer.convertFromLaTeX('\\sqrt[3]{1+a}+1').toString()).toEqual('(1+a)^(1/3)+1');

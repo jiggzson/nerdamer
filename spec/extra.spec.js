@@ -2,8 +2,8 @@
 
 'use strict';
 
-var nerdamer = require('../nerdamer.core.js');
-require('../Extra');
+var nerdamer = require('../src/nerdamer.core.js');
+require('../src/Extra');
 
 describe('Extra Calculus', function () {
 

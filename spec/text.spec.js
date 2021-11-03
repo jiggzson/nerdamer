@@ -1,6 +1,6 @@
 'use strict';
 
-var nerdamer = require('../nerdamer.core.js');
+var nerdamer = require('../src/nerdamer.core.js');
 
 describe('The text function', function () {
     // given

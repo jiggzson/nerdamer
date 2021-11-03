@@ -2,7 +2,7 @@
 
 'use strict';
 
-var nerdamer = require('../nerdamer.core.js');
+var nerdamer = require('../src/nerdamer.core.js');
 var round = nerdamer.getCore().Utils.round;
 
 describe('calculus', function () {
