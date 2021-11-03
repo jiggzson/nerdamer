@@ -46,7 +46,7 @@
         "node": ">=0.10.0"
     },
     "scripts": {
-        "test": "jasmine build/spec/**.js",
+        "test": "tsc && jasmine build/spec/**.js",
         "test_js": "jasmine spec/**.js"
     },
     "devDependencies": {

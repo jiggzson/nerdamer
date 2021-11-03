@@ -15,8 +15,9 @@
 var nerdamer = (function (imports) {
     "use strict";
 
-    const Scientific = require('./Core/Scientific');
-    const {nround, isInt} = require('./Core/Utils');
+    const Scientific = require('./Core/Scientific').default;
+    const {nround, isInt, isPrime, isNumber} = require('./Core/Utils');
+    const Settings = require('./Settings').Settings;
 
 //version ======================================================================
     var version = '1.1.12';
@@ -53,73 +54,6 @@ var nerdamer = (function (imports) {
 
 //Settings =====================================================================
     var CUSTOM_OPERATORS = {};
-
-    var Settings = {
-        //Enables/Disables call peekers. False means callPeekers are disabled and true means callPeekers are enabled.
-        callPeekers: false,
-
-        //the max number up to which to cache primes. Making this too high causes performance issues
-        init_primes: 1000,
-
-        exclude: [],
-        //If you don't care about division by zero for example then this can be set to true.
-        //Has some nasty side effects so choose carefully.
-        suppress_errors: false,
-        //the global used to invoke the libary to parse to a number. Normally cos(9) for example returns
-        //cos(9) for convenience but parse to number will always try to return a number if set to true.
-        PARSE2NUMBER: false,
-        //this flag forces the a clone to be returned when add, subtract, etc... is called
-        SAFE: false,
-        //the symbol to use for imaginary symbols
-        IMAGINARY: 'i',
-        //the modules used to link numeric function holders
-        FUNCTION_MODULES: [Math],
-        //Allow certain characters
-        ALLOW_CHARS: ['π'],
-        //Allow nerdamer to convert multi-character variables
-        USE_MULTICHARACTER_VARS: true,
-        //Allow changing of power operator
-        POWER_OPERATOR: '^',
-        //The variable validation regex
-        //VALIDATION_REGEX: /^[a-z_][a-z\d\_]*$/i
-        VALIDATION_REGEX: /^[a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ∞][0-9a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ]*$/i,
-        // The regex used to determine which characters should be included in implied multiplication
-        IMPLIED_MULTIPLICATION_REGEX: /([\+\-\/\*]*[0-9]+)([a-z_αAβBγΓδΔϵEζZηHθΘιIκKλΛμMνNξΞoOπΠρPσΣτTυϒϕΦχXψΨωΩ]+[\+\-\/\*]*)/gi,
-        //Aliases
-        ALIASES: {
-            'π': 'pi',
-            '∞': 'Infinity'
-        },
-        POSITIVE_MULTIPLIERS: false,
-        //Cached items
-        CACHE: {},
-        //Print out warnings or not
-        SILENCE_WARNINGS: false,
-        //Precision
-        PRECISION: 21,
-        //function mappings
-        VECTOR: 'vector',
-        PARENTHESIS: 'parens',
-        SQRT: 'sqrt',
-        ABS: 'abs',
-        FACTORIAL: 'factorial',
-        DOUBLEFACTORIAL: 'dfactorial',
-        //reference pi and e
-        LONG_PI: '3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214' +
-            '808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196',
-        LONG_E: '2.718281828459045235360287471352662497757247093699959574966967627724076630353547594571382178525166427427466' +
-            '39193200305992181741359662904357290033429526059563073813232862794349076323382988075319525101901',
-        PI: Math.PI,
-        E: Math.E,
-        LOG: 'log',
-        LOG10: 'log10',
-        LOG10_LATEX: 'log_{10}',
-        MAX_EXP: 200000,
-        //The number of scientific place to round to
-        SCIENTIFIC_MAX_DECIMAL_PLACES: 14,
-        //True if ints should not be converted to
-        SCIENTIFIC_IGNORE_ZERO_EXPONENTS: true
-    };
 
     (function () {
         Settings.CACHE.roots = {};
@@ -249,7 +183,7 @@ var nerdamer = (function (imports) {
      * Convert number from scientific format to decimal format
      * @param {Number} num
      */
-    var scientificToDecimal = function (num) {
+    const scientificToDecimal = function(num) {
         var nsign = Math.sign(num);
         //remove the sign
         num = Math.abs(num);
@@ -285,18 +219,7 @@ var nerdamer = (function (imports) {
 
         return nsign < 0 ? '-' + num : num;
     };
-    /**
-     * Checks if number is a prime number
-     * @param {Number} n - the number to be checked
-     */
-    var isPrime = function (n) {
-        var q = Math.floor(Math.sqrt(n));
-        for(var i = 2; i <= q; i++) {
-            if(n % i === 0)
-                return false;
-        }
-        return true;
-    };
+
 
     /**
      * Generates an object with known variable value for evaluation
@@ -310,13 +233,7 @@ var nerdamer = (function (imports) {
         return o;
     };
 
-    /**
-     * Checks if n is a number
-     * @param {any} n
-     */
-    var isNumber = function (n) {
-        return /^\d+\.?\d*$/.test(n);
-    };
+
 
     /**
      * Checks to see if an array contains only numeric values
