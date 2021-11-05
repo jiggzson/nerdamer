@@ -20,6 +20,7 @@ const bigDec = require('decimal.js');
 const bigInt = require('./3rdparty/bigInt');
 const Math2 = require('./Core/Math2');
 const {PRIMES, generatePrimes} = require('./Core/Math.consts');
+const {Token} = require('./Parser/Token');
 
 var nerdamer = (function () {
 //version ======================================================================
@@ -27,7 +28,7 @@ var nerdamer = (function () {
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
-
+    Token.parser = _;
     //import bigInt
 
     //var bigDec = imports.bigDec;
@@ -3280,51 +3281,6 @@ var nerdamer = (function () {
         Collection.prototype.toString = function () {
             return _.pretty_print(this.elements);
         };
-
-        class Token {
-            //some constants
-            static OPERATOR = 'OPERATOR';
-            static VARIABLE_OR_LITERAL = 'VARIABLE_OR_LITERAL';
-            static FUNCTION = 'FUNCTION';
-            static UNIT = 'UNIT';
-            static KEYWORD = 'KEYWORD';
-            static MAX_PRECEDENCE = 999;
-
-            is_prefix = false;
-
-            constructor(node, node_type, column) {
-                this.type = node_type;
-                this.value = node;
-                if (column !== undefined)
-                    this.column = column + 1;
-                if (node_type === Token.OPERATOR) {
-                    //copy everything over from the operator
-                    var operator = _.getOperator(node);
-                    for (var x in operator)
-                        this[x] = operator[x];
-
-                }
-                else if (node_type === Token.FUNCTION) {
-                    this.precedence = Token.MAX_PRECEDENCE; //leave enough roon
-                    this.leftAssoc = false;
-                }
-            }
-
-            toString() {
-                if (this.is_prefix) {
-                    return '`' + this.value;
-                }
-                return this.value;
-            }
-        }
-
-        // let Token = TokenProxy
-        // Token.VARIABLE_OR_LITERAL = 'VARIABLE_OR_LITERAL';
-        // Token.FUNCTION = 'FUNCTION';
-        // Token.UNIT = 'UNIT';
-        // Token.KEYWORD = 'KEYWORD';
-        // Token.MAX_PRECEDENCE = 999;
-
 
         //create link to classes
         this.classes = {
