@@ -14,15 +14,17 @@ const Scientific = require('./Core/Scientific').default;
 const {Operators} = require('./Parser/Operators');
 const {createFunctions, findFunction} = require('./Operators/functions');
 const {Groups} = require('./Core/Groups');
-const Slice = require('./Parser/Slice');
-const Collection = require('./Parser/Collection');
+const {Slice} = require('./Parser/Slice');
+const {Collection} = require('./Parser/Collection');
+const {Set} = require('./Parser/Set');
+const {Vector} = require('./Parser/Vector');
 const bigDec = require('decimal.js');
 const bigInt = require('./3rdparty/bigInt');
 const Math2 = require('./Core/Math2');
 const {PRIMES, generatePrimes} = require('./Core/Math.consts');
 const {Token} = require('./Parser/Token');
 const {Tokenizer} = require("./Parser/Tokenizer");
-const {RPN} = require("./Parser/RPN");
+const {RPN, parseRPN} = require("./Parser/RPN");
 
 var nerdamer = (function () {
 //version ======================================================================
@@ -1367,6 +1369,8 @@ var nerdamer = (function () {
             }
         }
     }
+    _._text = text;
+
     /**
      * Calculates prime factors for a number. It first checks if the number
      * is a prime number. If it's not then it will calculate all the primes
@@ -3275,14 +3279,10 @@ var nerdamer = (function () {
 
 //Parser.classes ===============================================================
 
-        // TODO: move
-        Slice.prototype.text = function () {
-            return text(this.start) + ':' + text(this.end);
-        };
+        // Slice & Collection injections
+        Slice.prototype.$text = _._text;
+        Collection.prototype.$pretty_print = _.pretty_print;
 
-        Collection.prototype.toString = function () {
-            return _.pretty_print(this.elements);
-        };
 
         //create link to classes
         this.classes = {
@@ -4435,6 +4435,7 @@ var nerdamer = (function () {
         this.toRPN = (tokens) => {
             return RPN.TokensToRPN(tokens);
         };
+
         /*
          * Parses the tokens
          * @param {Tokens[]} rpn
@@ -4442,198 +4443,20 @@ var nerdamer = (function () {
          * @returns {Symbol}
          */
         this.parseRPN = (rpn, substitutions) => {
-            try {
-                //default substitutions
-                substitutions = substitutions || {};
-                //prepare the substitutions.
-                //we first parse them out as-is
-                for (var x in substitutions)
-                    substitutions[x] = _.parse(substitutions[x], {});
-
-                //Although technically constants,
-                //pi and e are only available when evaluating the expression so add to the subs.
-                //Doing this avoids rounding errors
-                //link e and pi
-                if (Settings.PARSE2NUMBER) {
-                    //use the value provided if the individual for some strange reason prefers this.
-                    //one reason could be to sub e but not pi or vice versa
-                    if (!('e' in substitutions))
-                        substitutions.e = new Symbol(Settings.E);
-                    if ((!('pi' in substitutions)))
-                        substitutions.pi = new Symbol(Settings.PI);
+            let rpnDeps = {
+                parse: _.parse,
+                CONSTANTS: _.CONSTANTS,
+                callfunction: _.callfunction,
+                VARS,
+                callPeekers: this.callPeekers,
+                getAction: (action) => {
+                    return _[action].bind(this)
                 }
-
-                var Q = [];
-                for (var i = 0, l = rpn.length; i < l; i++) {
-                    var e = rpn[i];
-
-                    //Arrays indicate a new scope so parse that out
-                    if (Array.isArray(e)) {
-                        e = this.parseRPN(e, substitutions);
-                    }
-
-                    if (e) {
-                        if (e.type === Token.OPERATOR) {
-                            if (e.is_prefix || e.postfix)
-                                //resolve the operation assocated with the prefix
-                                Q.push(e.operation(Q.pop()));
-                            else {
-                                var b = Q.pop();
-                                var a = Q.pop();
-                                //Throw an error if the RH value is empty. This cannot be a postfix since we already checked
-                                if (typeof a === 'undefined')
-                                    throw new OperatorError(e + ' is not a valid postfix operator at ' + e.column);
-
-                                var is_comma = e.action === 'comma';
-                                //convert Sets to Vectors on all operations at this point. Sets are only recognized functions or individually
-                                if (a instanceof Set && !is_comma)
-                                    a = Vector.fromSet(a);
-
-                                if (b instanceof Set && !is_comma)
-                                    b = Vector.fromSet(b);
-
-                                //call all the pre-operators
-                                this.callPeekers('pre_operator', a, b, e);
-
-                                var ans = _[e.action](a, b);
-
-                                //call all the pre-operators
-                                this.callPeekers('post_operator', ans, a, b, e);
-
-                                Q.push(ans);
-                            }
-                        }
-                        else if (e.type === Token.FUNCTION) {
-                            var args = Q.pop();
-                            var parent = args.parent; //make a note of the parent
-                            if (!(args instanceof Collection))
-                                args = Collection.create(args);
-                            //the return value may be a vector. If it is then we check
-                            //Q to see if there's another vector on the stack. If it is then
-                            //we check if has elements. If it does then we know that we're dealing
-                            //with an "getter" object and return the requested values
-
-                            //call the function. This is the _.callfunction method in nerdamer
-                            //call the function. This is the _.callfunction method in nerdamer
-                            var fn_name = e.value;
-                            var fn_args = args.getItems();
-
-                            //call the pre-function peekers
-                            this.callPeekers('pre_function', fn_name, fn_args);
-
-                            var ret = _.callfunction(fn_name, fn_args);
-
-                            //call the post-function peekers
-                            this.callPeekers('post_function', ret, fn_name, fn_args);
-
-                            var last = Q[Q.length - 1];
-                            var next = rpn[i + 1];
-                            var next_is_comma = next && next.type === Token.OPERATOR && next.value === ',';
-
-                            if (!next_is_comma && ret instanceof Vector && last && last.elements && !(last instanceof Collection)) {
-                                //remove the item from the queue
-                                var item = Q.pop();
-
-                                var getter = ret.elements[0];
-                                //check if it's symbolic. If so put it back and add the item to the stack
-                                if (!getter.isConstant()) {
-                                    item.getter = getter;
-                                    Q.push(item);
-                                    Q.push(ret);
-                                }
-                                else if (getter instanceof Slice) {
-                                    //if it's a Slice return the slice
-                                    Q.push(Vector.fromArray(item.elements.slice(getter.start, getter.end)));
-                                }
-                                else {
-                                    var index = Number(getter);
-                                    var il = item.elements.length;
-                                    //support for negative indices
-                                    if (index < 0)
-                                        index = il + index;
-                                    //it it's still out of bounds
-                                    if (index < 0 || index >= il) //index should no longer be negative since it's been reset above
-                                        //range error
-                                        throw new OutOfRangeError('Index out of range ' + (e.column + 1));
-
-                                    var element = item.elements[index];
-                                    //cyclic but we need to mark this for future reference
-                                    item.getter = index;
-                                    element.parent = item;
-
-                                    Q.push(element);
-                                }
-                            }
-                            else {
-                                //extend the parent reference
-                                if (parent)
-                                    ret.parent = parent;
-                                Q.push(ret);
-                            }
-
-                        }
-                        else {
-                            var subbed;
-                            var v = e.value;
-
-                            if (v in Settings.ALIASES)
-                                e = _.parse(Settings.ALIASES[e]);
-                            //wrap it in a symbol if need be
-                            else if (e.type === Token.VARIABLE_OR_LITERAL)
-                                e = new Symbol(v);
-                            else if (e.type === Token.UNIT) {
-                                e = new Symbol(v);
-                                e.isUnit = true;
-                            }
-
-                            //make substitutions
-                            //Always constants first. This avoids the being overridden
-                            if (v in _.CONSTANTS) {
-                                subbed = e;
-                                e = new Symbol(_.CONSTANTS[v]);
-                            }
-                                //next substitutions. This allows declared variable to be overridden
-                                //check if the values match to avoid erasing the multiplier.
-                            //Example:/e = 3*a. substutiting a for a will wipe out the multiplier.
-                            else if (v in substitutions && v !== substitutions[v].toString()) {
-                                subbed = e;
-                                e = substitutions[v].clone();
-                            }
-                            //next declare variables
-                            else if (v in VARS) {
-                                subbed = e;
-                                e = VARS[v].clone();
-                            }
-                            //make notation of what it was before
-                            if (subbed)
-                                e.subbed = subbed;
-
-                            Q.push(e);
-                        }
-                    }
-                }
-
-                var retval = Q[0];
-
-                if (['undefined', 'string', 'number'].indexOf(typeof retval) !== -1) {
-                    throw new UnexpectedTokenError('Unexpected token!');
-                }
-
-                return retval;
-            }
-            catch(error) {
-                throw error;
-                var rethrowErrors = [OutOfFunctionDomainError];
-                // Rethrow certain errors in the same class to preserve them
-                rethrowErrors.forEach(function (E) {
-                    if (error instanceof E) {
-                        throw new E(error.message + ': ' + e.column);
-                    }
-                });
-
-                throw new ParseError(error.message + ': ' + e.column);
-            }
+            };
+            let rpnParser = new RPN(rpnDeps);
+            return rpnParser.parseRPN(rpn, substitutions);
         };
+
         /**
          * This is the method that triggers the parsing of the string. It generates a parse tree but processes
          * it right away. The operator functions are called when their respective operators are reached. For instance
@@ -7758,8 +7581,6 @@ var nerdamer = (function () {
             return this.symfunction(DOUBLEFACTORIAL, [a]);
         };
     }
-    ;
-
 
     //The latex generator
     var LaTeX = {
@@ -8522,303 +8343,9 @@ var nerdamer = (function () {
         }
     };
 //Vector =======================================================================
-    function Vector(v) {
-        if (isVector(v))
-            this.elements = v.items.slice(0);
-        else if (isArray(v))
-            this.elements = v.slice(0);
-        else
-            this.elements = [].slice.call(arguments);
-    }
-    /*
-     * Generates a pre-filled array
-     * @param {type} n
-     * @param {type} val
-     * @returns {unresolved}
-     */
-    Vector.arrayPrefill = function (n, val) {
-        var a = [];
-        val = val || 0;
-        for (var i = 0; i < n; i++)
-            a[i] = val;
-        return a;
-    };
-    /**
-     * Generate a vector from and array
-     * @param {type} a
-     * @returns {unresolved}
-     */
-    Vector.fromArray = function (a) {
-        var v = new Vector();
-        v.elements = a;
-        return v;
-    };
-
-    /**
-     * Convert a Set to a Vector
-     * @param {Set} set
-     * @returns {Vector}
-     */
-    Vector.fromSet = function (set) {
-        return Vector.fromArray(set.elements);
-    };
-
-    //Ported from Sylvester.js
-    Vector.prototype = {
-        custom: true,
-        // Returns element i of the vector
-        e: function (i) {
-            return (i < 1 || i > this.elements.length) ? null : this.elements[i - 1];
-        },
-
-        set: function (i, val) {
-            if (!isSymbol(val))
-                val = new Symbol(val);
-            this.elements[i] = val;
-        },
-
-        // Returns the number of elements the vector has
-        dimensions: function () {
-            return this.elements.length;
-        },
-
-        // Returns the modulus ('length') of the vector
-        modulus: function () {
-            return block('SAFE', function () {
-                return _.pow((this.dot(this.clone())), new Symbol(0.5));
-            }, undefined, this);
-        },
-
-        // Returns true iff the vector is equal to the argument
-        eql: function (vector) {
-            var n = this.elements.length;
-            var V = vector.elements || vector;
-            if (n !== V.length) {
-                return false;
-            }
-            do {
-                if (Math.abs(_.subtract(this.elements[n - 1], V[n - 1]).valueOf()) > PRECISION) {
-                    return false;
-                }
-            }
-            while(--n);
-            return true;
-        },
-
-        // Returns a clone of the vector
-        clone: function () {
-            var V = new Vector(),
-                l = this.elements.length;
-            for (var i = 0; i < l; i++) {
-                //Rule: all items within the vector must have a clone method.
-                V.elements.push(this.elements[i].clone());
-            }
-            if (this.getter) {
-                V.getter = this.getter.clone();
-            }
-            return V;
-        },
-
-        // Maps the vector to another vector according to the given function
-        map: function (fn) {
-            var elements = [];
-            this.each(function (x, i) {
-                elements.push(fn(x, i));
-            });
-
-            return new Vector(elements);
-        },
-
-        // Calls the iterator for each element of the vector in turn
-        each: function (fn) {
-            var n = this.elements.length, k = n, i;
-            do {
-                i = k - n;
-                fn(this.elements[i], i + 1);
-            }
-            while(--n);
-        },
-
-        // Returns a new vector created by normalizing the receiver
-        toUnitVector: function () {
-            return block('SAFE', function () {
-                var r = this.modulus();
-                if (r.valueOf() === 0) {
-                    return this.clone();
-                }
-                return this.map(function (x) {
-                    return _.divide(x, r);
-                });
-            }, undefined, this);
-        },
-
-        // Returns the angle between the vector and the argument (also a vector)
-        angleFrom: function (vector) {
-            return block('SAFE', function () {
-                var V = vector.elements || vector;
-                var n = this.elements.length;
-                if (n !== V.length) {
-                    return null;
-                }
-                var dot = new Symbol(0), mod1 = new Symbol(0), mod2 = new Symbol(0);
-                // Work things out in parallel to save time
-                this.each(function (x, i) {
-                    dot = _.add(dot, _.multiply(x, V[i - 1]));
-                    mod1 = _.add(mod1, _.multiply(x, x));// will not conflict in safe block
-                    mod2 = _.add(mod2, _.multiply(V[i - 1], V[i - 1]));// will not conflict in safe block
-                });
-                mod1 = _.pow(mod1, new Symbol(0.5));
-                mod2 = _.pow(mod2, new Symbol(0.5));
-                var product = _.multiply(mod1, mod2);
-                if (product.valueOf() === 0) {
-                    return null;
-                }
-                var theta = _.divide(dot, product);
-                var theta_val = theta.valueOf();
-                if (theta_val < -1) {
-                    theta = -1;
-                }
-                if (theta_val > 1) {
-                    theta = 1;
-                }
-                return new Symbol(Math.acos(theta));
-            }, undefined, this);
-        },
-
-        // Returns true iff the vector is parallel to the argument
-        isParallelTo: function (vector) {
-            var angle = this.angleFrom(vector).valueOf();
-            return (angle === null) ? null : (angle <= PRECISION);
-        },
-
-        // Returns true iff the vector is antiparallel to the argument
-        isAntiparallelTo: function (vector) {
-            var angle = this.angleFrom(vector).valueOf();
-            return (angle === null) ? null : (Math.abs(angle - Math.PI) <= PRECISION);
-        },
-
-        // Returns true iff the vector is perpendicular to the argument
-        isPerpendicularTo: function (vector) {
-            var dot = this.dot(vector);
-            return (dot === null) ? null : (Math.abs(dot) <= PRECISION);
-        },
-
-        // Returns the result of adding the argument to the vector
-        add: function (vector) {
-            return block('SAFE', function () {
-                var V = vector.elements || vector;
-                if (this.elements.length !== V.length) {
-                    return null;
-                }
-                return this.map(function (x, i) {
-                    return _.add(x, V[i - 1]);
-                });
-            }, undefined, this);
-        },
-
-        // Returns the result of subtracting the argument from the vector
-        subtract: function (vector) {
-            return block('SAFE', function () {
-                var V = vector.elements || vector;
-                if (this.elements.length !== V.length) {
-                    return null;
-                }
-                return this.map(function (x, i) {
-                    return _.subtract(x, V[i - 1]);
-                });
-            }, undefined, this);
-        },
-
-        // Returns the result of multiplying the elements of the vector by the argument
-        multiply: function (k) {
-            return this.map(function (x) {
-                return x.clone() * k.clone();
-            });
-        },
-
-        x: function (k) {
-            return this.multiply(k);
-        },
-
-        // Returns the scalar product of the vector with the argument
-        // Both vectors must have equal dimensionality
-        dot: function (vector) {
-            return block('SAFE', function () {
-                var V = vector.elements || vector;
-                var product = new Symbol(0), n = this.elements.length;
-                if (n !== V.length) {
-                    return null;
-                }
-                do {
-                    product = _.add(product, _.multiply(this.elements[n - 1], V[n - 1]));
-                }
-                while(--n);
-                return product;
-            }, undefined, this);
-        },
-
-        // Returns the vector product of the vector with the argument
-        // Both vectors must have dimensionality 3
-        cross: function (vector) {
-            var B = vector.elements || vector;
-            if (this.elements.length !== 3 || B.length !== 3) {
-                return null;
-            }
-            var A = this.elements;
-            return block('SAFE', function () {
-                return new Vector([
-                    _.subtract(_.multiply(A[1], B[2]), _.multiply(A[2], B[1])),
-                    _.subtract(_.multiply(A[2], B[0]), _.multiply(A[0], B[2])),
-                    _.subtract(_.multiply(A[0], B[1]), _.multiply(A[1], B[0]))
-                ]);
-            }, undefined, this);
-        },
-
-        // Returns the (absolute) largest element of the vector
-        max: function () {
-            var m = 0, n = this.elements.length, k = n, i;
-            do {
-                i = k - n;
-                if (Math.abs(this.elements[i].valueOf()) > Math.abs(m.valueOf())) {
-                    m = this.elements[i];
-                }
-            }
-            while(--n);
-            return m;
-        },
-        magnitude: function () {
-            var magnitude = new Symbol(0);
-            this.each(function (e) {
-                magnitude = _.add(magnitude, _.pow(e, new Symbol(2)));
-            });
-            return _.sqrt(magnitude);
-        },
-        // Returns the index of the first match found
-        indexOf: function (x) {
-            var index = null, n = this.elements.length, k = n, i;
-            do {
-                i = k - n;
-                if (index === null && this.elements[i].valueOf() === x.valueOf()) {
-                    index = i + 1;
-                }
-            }
-            while(--n);
-            return index;
-        },
-        text: function (x) {
-            return text(this);
-        },
-        toString: function () {
-            return this.text();
-        },
-        latex: function (option) {
-            var tex = [];
-            for (var i = 0; i < this.elements.length; i++) {
-                tex.push(LaTeX.latex.call(LaTeX, this.elements[i], option));
-            }
-            return '[' + tex.join(', ') + ']';
-        }
-    };
+    // Vector injections
+    Vector.prototype.$ = _;
+    Vector.prototype.$block = block;
 
 //Matrix =======================================================================
     function Matrix() {
@@ -9196,113 +8723,6 @@ var nerdamer = (function () {
     };
     // aliases
     Matrix.prototype.each = Matrix.prototype.eachElement;
-
-
-    function Set(set) {
-        this.elements = [];
-        // if the first object isn't an array, convert it to one.
-        if (!isVector(set))
-            set = Vector.fromArray(arguments);
-
-        if (set) {
-            var elements = set.elements;
-            for (var i = 0, l = elements.length; i < l; i++) {
-                this.add(elements[i]);
-            }
-        }
-    }
-
-    Set.fromArray = function (arr) {
-        function F(args) {
-            return Set.apply(this, args);
-        }
-        F.prototype = Set.prototype;
-
-        return new F(arr);
-    };
-
-    Set.prototype = {
-        add: function (x) {
-            if (!this.contains(x))
-                this.elements.push(x.clone());
-        },
-        contains: function (x) {
-            for (var i = 0; i < this.elements.length; i++) {
-                var e = this.elements[i];
-                if (x.equals(e))
-                    return true;
-            }
-            return false;
-        },
-        each: function (f) {
-            var elements = this.elements;
-            var set = new Set();
-            for (var i = 0, l = elements.length; i < l; i++) {
-                var e = elements[i];
-                f.call(this, e, set, i);
-            }
-            return set;
-        },
-        clone: function () {
-            var set = new Set();
-            this.each(function (e) {
-                set.add(e.clone());
-            });
-            return set;
-        },
-        union: function (set) {
-            var _union = this.clone();
-            set.each(function (e) {
-                _union.add(e);
-            });
-
-            return _union;
-        },
-        difference: function (set) {
-            var diff = this.clone();
-            set.each(function (e) {
-                diff.remove(e);
-            });
-            return diff;
-        },
-        remove: function (element) {
-            for (var i = 0, l = this.elements.length; i < l; i++) {
-                var e = this.elements[i];
-                if (e.equals(element)) {
-                    remove(this.elements, i);
-                    return true;
-                }
-            }
-            return false;
-        },
-        intersection: function (set) {
-            var _intersection = new Set();
-            var A = this;
-            set.each(function (e) {
-                if (A.contains(e)) {
-                    _intersection.add(e);
-                }
-                ;
-            });
-
-            return _intersection;
-        },
-        intersects: function (set) {
-            return this.intersection(set).elements.length > 0;
-        },
-        is_subset: function (set) {
-            var elements = set.elements;
-            for (var i = 0, l = elements.length; i < l; i++) {
-                if (!this.contains(elements[i])) {
-                    return false;
-                }
-            }
-            return true;
-        },
-        toString: function () {
-            return '{' + this.elements.join(',') + '}';
-        }
-    };
 
 //build ========================================================================
     var Build = {
