@@ -24,36 +24,40 @@ const Math2 = require('./Core/Math2');
 const {PRIMES, generatePrimes} = require('./Core/Math.consts');
 const {Token} = require('./Parser/Token');
 const {Tokenizer} = require("./Parser/Tokenizer");
-const {RPN, parseRPN} = require("./Parser/RPN");
+const {RPN} = require("./Parser/RPN");
 
-var nerdamer = (function () {
+const exceptions = require('./Core/Errors');
+const {
+    DivisionByZero, ParseError, UndefinedError, OutOfFunctionDomainError,
+    MaximumIterationsReached, NerdamerTypeError, ParityError, OperatorError,
+    OutOfRangeError, DimensionError, ValueLimitExceededError, NerdamerValueError,
+    SolveError, InfiniteLoopError, UnexpectedTokenError, err
+} = exceptions;
+
+const nerdamer = (function () {
 //version ======================================================================
-    var version = '1.1.12';
+    const version = '1.1.12';
 
 //inits ========================================================================
-    var _ = new Parser(); //nerdamer's parser
+    const _ = new Parser(); //nerdamer's parser
     Token.parser = _;
     //import bigInt
-
-    //var bigDec = imports.bigDec;
 
     //set the precision to js precision
     bigDec.set({
         precision: 250
     });
 
-
-
 //Settings =====================================================================
-    var CUSTOM_OPERATORS = {};
+    const CUSTOM_OPERATORS = {};
 
     (function () {
         Settings.CACHE.roots = {};
-        var x = 40,
+        let x = 40,
             y = 40;
-        for (var i = 2; i <= x; i++) {
-            for (var j = 2; j <= y; j++) {
-                var nthpow = bigInt(i).pow(j);
+        for (let i = 2; i <= x; i++) {
+            for (let j = 2; j <= y; j++) {
+                let nthpow = bigInt(i).pow(j);
                 Settings.CACHE.roots[nthpow + '-' + j] = i;
             }
         }
@@ -62,7 +66,7 @@ var nerdamer = (function () {
     //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
     //The groups that help with organizing during parsing. Note that for FN is still a function even
     //when it's raised to a symbol, which typically results in an EX
-    var N = Groups.N, // A number
+    const N = Groups.N, // A number
         P = Groups.P, // A number with a rational power e.g. 2^(3/5).
         S = Groups.S, // A single variable e.g. x.
         EX = Groups.EX, // An exponential
@@ -71,55 +75,32 @@ var nerdamer = (function () {
         CB = Groups.CB, // A symbol/expression composed of one or more variables through multiplication e.g. x*y
         CP = Groups.CP; // A symbol/expression composed of one variable and any other symbol or number x+1 or x+y
 
-    var CONST_HASH = Settings.CONST_HASH;
+    const CONST_HASH = Settings.CONST_HASH;
 
-    var PARENTHESIS = Settings.PARENTHESIS;
+    const PARENTHESIS = Settings.PARENTHESIS;
 
-    var SQRT = Settings.SQRT;
+    const SQRT = Settings.SQRT;
 
-    var ABS = Settings.ABS;
+    const ABS = Settings.ABS;
 
-    var FACTORIAL = Settings.FACTORIAL;
+    const FACTORIAL = Settings.FACTORIAL;
 
-    var DOUBLEFACTORIAL = Settings.DOUBLEFACTORIAL;
+    const DOUBLEFACTORIAL = Settings.DOUBLEFACTORIAL;
 
     //the storage container "memory" for parsed expressions
-    var EXPRESSIONS = [];
+    const EXPRESSIONS = [];
 
     //variables
-    var VARS = {};
+    const VARS = {};
 
     //the container used to store all the reserved functions
-    var RESERVED = [];
+    const RESERVED = [];
 
-    var WARNINGS = [];
+    const WARNINGS = [];
 
-    /**
-     * Use this when errors are suppressible
-     * @param {String} msg
-     * @param {object} ErrorObj
-     */
-    var err = function (msg, ErrorObj) {
-        if (!Settings.suppress_errors) {
-            if (ErrorObj)
-                throw new ErrorObj(msg);
-            else
-                throw new Error(msg);
-        }
-    };
+
 
 //Utils ========================================================================
-    var customError = function (name) {
-        var E = function (message) {
-            this.name = name;
-            this.message = message !== undefined ? message : '';
-            var error = new Error(this.message);
-            error.name = this.name;
-            this.stack = error.stack;
-        }; //create an empty error
-        E.prototype = Object.create(Error.prototype);
-        return E;
-    };
 
     /**
      * Checks to see if value is one of nerdamer's reserved names
@@ -1030,57 +1011,6 @@ var nerdamer = (function () {
 
         // The expanded function is now t
         return t;
-    };
-
-//Exceptions ===================================================================
-    //Is thrown for division by zero
-    var DivisionByZero = customError('DivisionByZero');
-    // Is throw if an error occured during parsing
-    var ParseError = customError('ParseError');
-    // Is thrown if the expression results in undefined
-    var UndefinedError = customError('UndefinedError');
-    // Is throw input is out of the function domain
-    var OutOfFunctionDomainError = customError('OutOfFunctionDomainError');
-    // Is throw if a function exceeds x amount of iterations
-    var MaximumIterationsReached = customError('MaximumIterationsReached');
-    // Is thrown if the parser receives an incorrect type
-    var NerdamerTypeError = customError('NerdamerTypeError');
-    // Is thrown if bracket parity is not correct
-    var ParityError = customError('ParityError');
-    // Is thrown if an unexpectd or incorrect operator is encountered
-    var OperatorError = customError('OperatorError');
-    // Is thrown if an index is out of range.
-    var OutOfRangeError = customError('OutOfRangeError');
-    // Is thrown if dimensions are incorrect. Mostly for matrices
-    var DimensionError = customError('DimensionError');
-    // Is thrown if the limits of the library are exceeded for a function
-    // This can be that the function become unstable passed a value
-    var ValueLimitExceededError = customError('ValueLimitExceededError');
-    // Is throw if the value is an incorrect LH or RH value
-    var NerdamerValueError = customError('NerdamerValueError');
-    // Is thrown if the value is an incorrect LH or RH value
-    var SolveError = customError('SolveError');
-    // Is thrown for an infinite loop
-    var InfiniteLoopError = customError('InfiniteLoopError');
-    // Is thrown if an operator is found when there shouldn't be one
-    var UnexpectedTokenError = customError('UnexpectedTokenError');
-
-    var exceptions = {
-        DivisionByZero: DivisionByZero,
-        ParseError: ParseError,
-        OutOfFunctionDomainError: OutOfFunctionDomainError,
-        UndefinedError: UndefinedError,
-        MaximumIterationsReached: MaximumIterationsReached,
-        NerdamerTypeError: NerdamerTypeError,
-        ParityError: ParityError,
-        OperatorError: OperatorError,
-        OutOfRangeError: OutOfRangeError,
-        DimensionError: DimensionError,
-        ValueLimitExceededError: ValueLimitExceededError,
-        NerdamerValueError: NerdamerValueError,
-        SolveError: SolveError,
-        InfiniteLoopError: InfiniteLoopError,
-        UnexpectedTokenError: UnexpectedTokenError
     };
 
     //link the Math2 object to Settings.FUNCTION_MODULES
@@ -8999,7 +8929,6 @@ var nerdamer = (function () {
         comboSort: comboSort,
         compare: compare,
         convertToVector: convertToVector,
-        customError: customError,
         customType: customType,
         decompose_fn: decompose_fn,
         each: each,
@@ -9250,7 +9179,7 @@ var nerdamer = (function () {
      */
     libExports.clear = function (equation_number, keep_EXPRESSIONS_fixed) {
         if (equation_number === 'all') {
-            EXPRESSIONS = [];
+            EXPRESSIONS.splice(0, EXPRESSIONS.length);
         }
         else if (equation_number === 'last') {
             EXPRESSIONS.pop();
@@ -9392,7 +9321,9 @@ var nerdamer = (function () {
      * @returns {Object} Returns the nerdamer object
      */
     libExports.clearVars = function () {
-        VARS = {};
+        for (let key in VARS) {
+            delete VARS[key];
+        }
         return this;
     };
 
@@ -9488,7 +9419,7 @@ var nerdamer = (function () {
 
     /**
      * This functions makes internal functions available externally
-     * @param {bool} override Override the functions when calling api if it exists
+     * @param {boolean} override Override the functions when calling api if it exists
      */
     libExports.api = function (override) {
         //Map internal functions to external ones
@@ -9567,4 +9498,4 @@ var nerdamer = (function () {
 
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;
-};
+}
