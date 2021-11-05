@@ -1,3 +1,4 @@
+"use strict";
 /*
  * Author : Martin Donk
  * Website : http://www.nerdamer.com
@@ -5,25 +6,19 @@
  * Source : https://github.com/jiggzson/nerdamer
  */
 
-const {Settings} = require("./Settings");
-const {isInt} = require("./Core/Utils");
+const {nround, isInt, isPrime, isNumber, validateName} = require('./Core/Utils');
+const Settings = require('./Settings').Settings;
 const Frac = require("./Core/Frac");
 const Symbol = require("./Core/Symbol");
-var nerdamer = (function (imports) {
-    "use strict";
-
-    const Scientific = require('./Core/Scientific').default;
-    const {nround, isInt, isPrime, isNumber, validateName} = require('./Core/Utils');
-    const Settings = require('./Settings').Settings;
-    const bigDec = require('decimal.js');
-    const bigInt = imports.bigInt;
-    const Symbol = require('./Core/Symbol');
-    const {Groups} = require('./Core/Groups');
-    const Frac = require('./Core/Frac');
-    const Slice = require('./Parser/Slice');
-    const Collection = require('./Parser/Collection');
-
-
+const Scientific = require('./Core/Scientific').default;
+const {Operators} = require('./Parser/Operators');
+const {createFunctions, findFunction} = require('./Operators/functions');
+const {Groups} = require('./Core/Groups');
+const Slice = require('./Parser/Slice');
+const Collection = require('./Parser/Collection');
+const bigDec = require('decimal.js');
+const bigInt = require('./3rdparty/bigInt');
+var nerdamer = (function () {
 //version ======================================================================
     var version = '1.1.12';
 
@@ -4315,7 +4310,7 @@ var nerdamer = (function (imports) {
                     this.column = column + 1;
                 if (node_type === Token.OPERATOR) {
                     //copy everything over from the operator
-                    var operator = operators[node];
+                    var operator = _.getOperator(node);
                     for (var x in operator)
                         this[x] = operator[x];
 
@@ -5192,357 +5187,46 @@ var nerdamer = (function (imports) {
         //list of supported units
         this.units = {};
         //list all the supported operators
-        var operators = {
-            '\\': {
-                precedence: 8,
-                operator: '\\',
-                action: 'slash',
-                prefix: true,
-                postfix: false,
-                leftAssoc: true,
-                operation: function (e) {
-                    return e; //bypass the slash
-                }
-            },
-            '!!': {
-                precedence: 7,
-                operator: '!!',
-                action: 'dfactorial',
-                prefix: false,
-                postfix: true,
-                leftAssoc: true,
-                operation: function (e) {
-                    return _.symfunction(Settings.DOUBLEFACTORIAL, [e]); //wrap it in a factorial function
-                }
-            },
-            '!': {
-                precedence: 7,
-                operator: '!',
-                action: 'factorial',
-                prefix: false,
-                postfix: true,
-                leftAssoc: true,
-                operation: function (e) {
-                    return factorial(e); //wrap it in a factorial function
-                }
-            },
-            '^': {
-                precedence: 6,
-                operator: '^',
-                action: 'pow',
-                prefix: false,
-                postfix: false,
-                leftAssoc: true
-            },
-            '**': {
-                precedence: 6,
-                operator: '**',
-                action: 'pow',
-                prefix: false,
-                postfix: false,
-                leftAssoc: true
-            },
-            '%': {
-                precedence: 4,
-                operator: '%',
-                action: 'percent',
-                prefix: false,
-                postfix: true,
-                leftAssoc: true,
-                overloaded: true,
-                overloadAction: 'mod',
-                overloadLeftAssoc: false,
-                operation: function (x) {
-                    return _.divide(x, new Symbol(100));
-                }
-            },
-            '*': {
-                precedence: 4,
-                operator: '*',
-                action: 'multiply',
-                prefix: false,
-                postfix: false,
-                leftAssoc: false
-            },
-            '/': {
-                precedence: 4,
-                operator: '/',
-                action: 'divide',
-                prefix: false,
-                postfix: false,
-                leftAssoc: false
-            },
-            '+': {
-                precedence: 3,
-                operator: '+',
-                action: 'add',
-                prefix: true,
-                postfix: false,
-                leftAssoc: false,
-                operation: function (x) {
-                    return x;
-                }
-            },
-            'plus': {
-                precedence: 3,
-                operator: 'plus',
-                action: 'add',
-                prefix: true,
-                postfix: false,
-                leftAssoc: false,
-                operation: function (x) {
-                    return x;
-                }
-            },
-            '-': {
-                precedence: 3,
-                operator: '-',
-                action: 'subtract',
-                prefix: true,
-                postfix: false,
-                leftAssoc: false,
-                operation: function (x) {
-                    return x.negate();
-                }
-            },
-            '=': {
-                precedence: 2,
-                operator: '=',
-                action: 'equals',
-                prefix: false,
-                postfix: false,
-                leftAssoc: false
-            },
-            '==': {
-                precedence: 1,
-                operator: '==',
-                action: 'eq',
-                prefix: false,
-                postfix: false,
-                leftAssoc: false
-            },
-            '<': {
-                precedence: 1,
-                operator: '<',
-                action: 'lt',
-                prefix: false,
-                postfix: false,
-                leftAssoc: false
-            },
-            '<=': {
-                precedence: 1,
-                operator: '<=',
-                action: 'lte',
-                prefix: false,
-                postfix: false,
-                leftAssoc: false
-            },
-            '>': {
-                precedence: 1,
-                operator: '>',
-                action: 'gt',
-                prefix: false,
-                postfix: false,
-                leftAssoc: false
-            },
-            '=>': {
-                precedence: 1,
-                operator: '=>',
-                action: 'gte',
-                prefix: false,
-                postfix: false,
-                leftAssoc: false
-            },
-            ',': {
-                precedence: 0,
-                operator: ',',
-                action: 'comma',
-                prefix: false,
-                postfix: false,
-                leftAssoc: false
-            },
-            ':': {
-                precedence: 0,
-                operator: ',',
-                action: 'assign',
-                prefix: false,
-                postfix: false,
-                leftAssoc: false,
-                vectorFn: 'slice'
-            },
-            ':=': {
-                precedence: 0,
-                operator: ',',
-                action: 'function_assign',
-                prefix: false,
-                postfix: false,
-                leftAssoc: true
-            }
-        };
         //brackets
-        var brackets = {
-            '(': {
-                type: 'round',
-                id: 1,
-                is_open: true,
-                is_close: false
-            },
-            ')': {
-                type: 'round',
-                id: 2,
-                is_open: false,
-                is_close: true
-            },
-            '[': {
-                type: 'square',
-                id: 3,
-                is_open: true,
-                is_close: false,
-                maps_to: 'vector'
-            },
-            ']': {
-                type: 'square',
-                id: 4,
-                is_open: false,
-                is_close: true
-            },
-            '{': {
-                type: 'curly',
-                id: 5,
-                is_open: true,
-                is_close: false,
-                maps_to: 'Set'
-            },
-            '}': {
-                type: 'curly',
-                id: 6,
-                is_open: false,
-                is_close: true
-            }
-        };
-        // Supported functions.
-        // Format: function_name: [mapped_function, number_of_parameters]
-        var functions = this.functions = {
-            'cos': [trig.cos, 1],
-            'sin': [trig.sin, 1],
-            'tan': [trig.tan, 1],
-            'sec': [trig.sec, 1],
-            'csc': [trig.csc, 1],
-            'cot': [trig.cot, 1],
-            'acos': [trig.acos, 1],
-            'asin': [trig.asin, 1],
-            'atan': [trig.atan, 1],
-            'arccos': [trig.acos, 1],
-            'arcsin': [trig.asin, 1],
-            'arctan': [trig.atan, 1],
-            'asec': [trig.asec, 1],
-            'acsc': [trig.acsc, 1],
-            'acot': [trig.acot, 1],
-            'atan2': [trig.atan2, 2],
-            'acoth': [trigh.acoth, 1],
-            'asech': [trigh.asech, 1],
-            'acsch': [trigh.acsch, 1],
-            'sinh': [trigh.sinh, 1],
-            'cosh': [trigh.cosh, 1],
-            'tanh': [trigh.tanh, 1],
-            'asinh': [trigh.asinh, 1],
-            'sech': [trigh.sech, 1],
-            'csch': [trigh.csch, 1],
-            'coth': [trigh.coth, 1],
-            'acosh': [trigh.acosh, 1],
-            'atanh': [trigh.atanh, 1],
-            'log10': [, 1],
-            'exp': [exp, 1],
-            'radians': [radians, 1],
-            'degrees': [degrees, 1],
-            'min': [min, -1],
-            'max': [max, -1],
-            'erf': [, 1],
-            'floor': [, 1],
-            'ceil': [, 1],
-            'trunc': [, 1],
-            'Si': [, 1],
-            'step': [, 1],
-            'rect': [, 1],
-            'sinc': [sinc, 1],
-            'tri': [, 1],
-            'sign': [sign, 1],
-            'Ci': [, 1],
-            'Ei': [, 1],
-            'Shi': [, 1],
-            'Chi': [, 1],
-            'Li': [, 1],
-            'fib': [, 1],
-            'fact': [factorial, 1],
-            'factorial': [factorial, 1],
-            'continued_fraction': [continued_fraction, [1, 2]],
-            'dfactorial': [, 1],
-            'gamma_incomplete': [, [1, 2]],
-            'round': [round, [1, 2]],
-            'scientific': [scientific, [1, 2]],
-            'mod': [mod, 2],
-            'pfactor': [pfactor, 1],
-            'vector': [vector, -1],
-            'matrix': [matrix, -1],
-            'Set': [set, -1],
-            'imatrix': [imatrix, -1],
-            'parens': [parens, -1],
-            'sqrt': [sqrt, 1],
-            'cbrt': [cbrt, 1],
-            'nthroot': [nthroot, 2],
-            'log': [log, [1, 2]],
-            'expand': [expandall, 1],
-            'abs': [abs, 1],
-            'invert': [invert, 1],
-            'determinant': [determinant, 1],
-            'size': [size, 1],
-            'transpose': [transpose, 1],
-            'dot': [dot, 2],
-            'cross': [cross, 2],
-            'vecget': [vecget, 2],
-            'vecset': [vecset, 3],
-            'vectrim': [vectrim, [1, 2]],
-            'matget': [matget, 3],
-            'matset': [matset, 4],
-            'matgetrow': [matgetrow, 2],
-            'matsetrow': [matsetrow, 3],
-            'matgetcol': [matgetcol, 2],
-            'matsetcol': [matsetcol, 3],
-            'rationalize': [rationalize, 1],
-            'IF': [IF, 3],
-            'is_in': [is_in, 2],
-            //imaginary support
-            'realpart': [realpart, 1],
-            'imagpart': [imagpart, 1],
-            'conjugate': [conjugate, 1],
-            'arg': [arg, 1],
-            'polarform': [polarform, 1],
-            'rectform': [rectform, 1],
-            'sort': [sort, [1, 2]],
-            'integer_part': [, 1],
-            'union': [union, 2],
-            'contains': [contains, 2],
-            'intersection': [intersection, 2],
-            'difference': [difference, 2],
-            'intersects': [intersects, 2],
-            'is_subset': [is_subset, 2],
-            //system support
-            'print': [print, -1]
-        };
+
+        // let {operators, brackets,
+        //     isOperator, getOperator, getOperators, getBrackets, aliasOperator, setOperator,
+        //     injectOperatorsDeps
+        // } = createOperators(_, factorial);
+
+        let operators = new Operators();
+        operators.injectOperatorsDeps({
+            symfunction: (...args) => this.symfunction(...args),
+            factorial: (...args) => factorial(...args),
+            divide: (...args) => this.divide(...args),
+            registerOperator: (name, operation) => _[name] = operation,
+        });
+
+        // backward compatibility hooks
+        this.isOperator = (...args) => operators.isOperator(...args);
+        this.getOperator = (...args) => operators.getOperator(...args);
+        this.getOperators = (...args) => operators.getOperators(...args);
+        this.getBrackets = (...args) => operators.getBrackets(...args);
+        this.aliasOperator = (...args) => operators.aliasOperator(...args);
+        this.setOperator = (...args) => operators.setOperator(...args);
+
+        let brackets = operators.getBrackets();
+
+        let functions = this.functions = createFunctions({
+            trig, trigh, exp, radians, degrees, print,
+            min, max, sinc, sign, factorial, continued_fraction,
+            round, scientific, mod, pfactor, vector, matrix,
+            imatrix, parens, sqrt, nthroot, set, cbrt, log,
+            expandall, abs, invert, determinant, size, transpose, dot,
+            cross, vecget, vectrim, matget, matset, matgetrow, matsetrow,
+            matgetcol, matsetcol, rationalize, IF, is_in, realpart,
+            imagpart, conjugate, arg, polarform, rectform, sort, union,
+            contains, intersection, difference, intersects, is_subset,
+        });
 
         //error handler
         this.error = err;
-        //this function is used to comb through the function modules and find a function given its name
-        var findFunction = function (fname) {
-            var fmodules = Settings.FUNCTION_MODULES,
-                l = fmodules.length;
-            for (var i = 0; i < l; i++) {
-                var fmodule = fmodules[i];
-                if (fname in fmodule)
-                    return fmodule[fname];
-            }
-            err('The function ' + fname + ' is undefined!');
-        };
+
 
         /**
          * This method gives the ability to override operators with new methods.
@@ -5674,86 +5358,8 @@ var nerdamer = (function (imports) {
 
             return retval;
         };
-        /**
-         * Build a regex based on the operators currently loaded. These operators are to be ignored when
-         * substituting spaces for multiplication
-         */
-        this.operator_filter_regex = (function () {
-            //we only want the operators which are singular since those are the ones
-            //that nerdamer uses anyway
-            var ostr = '^\\' + Object.keys(operators).filter(function (x) {
-                if (x.length === 1)
-                    return x;
-            }).join('\\');
-            //create a regex which captures all spaces between characters except those
-            //have an operator on one end
-            return new RegExp('([' + ostr + '])\\s+([' + ostr + '])');
-        })();
 
-        /**
-         * Replaces nerdamer.setOperator
-         * @param {object} operator
-         * @param {boolean} shift
-         */
-        this.setOperator = function (operator, action, shift) {
-            var name = operator.operator; //take the name to be the symbol
-            operators[name] = operator;
-            if (action)
-                this[operator.action] = action;
-            //make the parser aware of the operator
-            _[name] = operator.operation;
-            //make the action available to the parser if infix
-            if (!operator.action && !(operator.prefix || operator.postif)) {
-                operator.action = name;
-            }
-            //if this operator is exclusive then all successive operators should be shifted
-            if (shift === 'over' || shift === 'under') {
-                var precedence = operator.precedence;
 
-                for (var x in operators) {
-                    var o = operators[x];
-                    var condition = shift === 'over' ? o.precedence >= precedence : o.precedence > precedence;
-                    if (condition)
-                        o.precedence++;
-                }
-                ;
-            }
-        };
-
-        /**
-         * Gets an opererator by its symbol
-         * @param {String} operator
-         * @returns {Object}
-         */
-        this.getOperator = function (operator) {
-            return operators[operator];
-        };
-
-        this.aliasOperator = function (o, n) {
-            var t = {};
-            var operator = operators[o];
-            //copy everything over to the new operator
-            for (var x in operator) {
-                t[x] = operator[x];
-            }
-            //update the symbol
-            t.operator = n;
-
-            this.setOperator(t);
-        };
-
-        /**
-         * Returns the list of operators. Caution! Can break parser!
-         * @returns {object}
-         */
-        this.getOperators = function () {
-            //will replace this with some cloning action in the future
-            return operators;
-        };
-
-        this.getBrackets = function () {
-            return brackets;
-        };
         /*
          * Preforms preprocessing on the string. Useful for making early modification before
          * sending to the parser
@@ -5940,7 +5546,7 @@ var nerdamer = (function (imports) {
                 //to be walking along the string
                 var end = start_at + 1;
                 //just keep moving along
-                while(e.charAt(end++) in operators) {
+                while (operators.isOperator(e.charAt(end++))) {
                 }
                 //remember that we started at one position ahead. The beginning operator is what triggered
                 //this function to be called in the first place. String.CharAt is zero based so we now
@@ -5965,7 +5571,7 @@ var nerdamer = (function (imports) {
                     var o = operator + ch;
                     //since the operator now is undefined then the last operator
                     //was the largest possible combination.
-                    if (!(o in operators)) {
+                    if (!operators.isOperator(o)) {
                         _operators.push(new Token(operator, Token.OPERATOR, start + i));
                         operator = ch;
                     }
@@ -6020,7 +5626,7 @@ var nerdamer = (function (imports) {
             };
             for (; col < L; col++) {
                 var ch = e.charAt(col);
-                if (ch in operators) {
+                if (operators.isOperator(ch)) {
                     add_token(col);
                     //is the last token numeric?
                     var last_token_is_numeric = target[0] && isNumber(target[0]);
@@ -6081,7 +5687,7 @@ var nerdamer = (function (imports) {
                     var nxt = e.charAt(col + 1); //look forward
                     if (has_space) {
 
-                        if (prev in operators) {
+                        if (operators.isOperator(prev)) {
                             target.push(new Token(prev, Token.OPERATOR, col));
                         }
                         else {
@@ -6090,9 +5696,9 @@ var nerdamer = (function (imports) {
                             goUp(); //go up in scope if we're at a space
 
                             //assume multiplication if it's not an operator except for minus
-                            var is_operator = nxt in operators;
+                            var is_operator = operators.isOperator(nxt);
 
-                            if ((is_operator && operators[nxt].value === MINUS) || !is_operator) {
+                            if ((is_operator && operators.getOperator(nxt).value === MINUS) || !is_operator) {
                                 target.push(new Token(MULT, Token.OPERATOR, col));
                             }
                         }
@@ -6109,7 +5715,7 @@ var nerdamer = (function (imports) {
                             add_function(f);
                             addScope();
                         }
-                        else if (f in operators) {
+                        else if (operators.isOperator(f)) {
                             target.push(new Token(f, Token.OPERATOR, col));
                         }
                         else {
@@ -6120,7 +5726,7 @@ var nerdamer = (function (imports) {
                             //If it's a number then add the multiplication operator to the stack but make sure that the next character
                             //is not an operator
 
-                            if (prev !== EMPTY_STRING && nxt !== EMPTY_STRING && !(prev in operators) && !(nxt in operators))
+                            if (prev !== EMPTY_STRING && nxt !== EMPTY_STRING && !operators.isOperator(prev) && !operators.isOperator(nxt))
                                 target.push(new Token(MULT, Token.OPERATOR, col));
                         }
                         //Possible source of bug. Review
@@ -11998,7 +11604,7 @@ var nerdamer = (function (imports) {
     return libExports; //Done
 //imports ======================================================================
 })({
-    bigInt: require('./3rdparty/bigInt')
+
 });
 
 if ((typeof module) !== 'undefined') {

@@ -8,7 +8,7 @@ const Frac = require('./Frac');
  * All symbols e.g. x, y, z, etc or functions are wrapped in this class. All symbols have a multiplier and a group.
  * All symbols except for "numbers (group N)" have a power.
  * @class Primary data type for the Parser.
- * @param {String} obj
+ * @param {String | number} obj
  * @returns {Symbol}
  */
 function Symbol(obj) {
