@@ -4134,11 +4134,6 @@ var nerdamer = (function () {
         //list all the supported operators
         //brackets
 
-        // let {operators, brackets,
-        //     isOperator, getOperator, getOperators, getBrackets, aliasOperator, setOperator,
-        //     injectOperatorsDeps
-        // } = createOperators(_, factorial);
-
         let operators = new Operators();
         operators.injectOperatorsDeps({
             symfunction: (...args) => this.symfunction(...args),
@@ -4374,6 +4369,9 @@ var nerdamer = (function () {
             }
             return e;
         };
+
+        this.prepare_expression = prepare_expression;
+
         //delay setting of constants until Settings is ready
         this.initConstants = function () {
             this.CONSTANTS = {

@@ -1,0 +1,1180 @@
+[{
+ "e": "x^6 \\cdot cos(\\frac{1}{2})",
+ "p2n": false,
+ "result": [
+  {
+   "is_prefix": false,
+   "column": 1,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "x"
+  },
+  {
+   "is_prefix": false,
+   "column": 2,
+   "precedence": 6,
+   "leftAssoc": true,
+   "type": "OPERATOR",
+   "value": "^",
+   "operator": "^",
+   "action": "pow",
+   "prefix": false,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 3,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "6"
+  },
+  {
+   "is_prefix": false,
+   "column": 5,
+   "precedence": 8,
+   "leftAssoc": true,
+   "type": "OPERATOR",
+   "value": "\\",
+   "operator": "\\",
+   "action": "slash",
+   "prefix": true,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 6,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "cdot"
+  },
+  {
+   "is_prefix": false,
+   "column": 10,
+   "precedence": 4,
+   "leftAssoc": false,
+   "type": "OPERATOR",
+   "value": "*",
+   "operator": "*",
+   "action": "multiply",
+   "prefix": false,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 11,
+   "precedence": 999,
+   "leftAssoc": false,
+   "type": "FUNCTION",
+   "value": "cos"
+  },
+  [
+   {
+    "is_prefix": false,
+    "column": 15,
+    "precedence": 8,
+    "leftAssoc": true,
+    "type": "OPERATOR",
+    "value": "\\",
+    "operator": "\\",
+    "action": "slash",
+    "prefix": true,
+    "postfix": false
+   },
+   {
+    "is_prefix": false,
+    "column": 16,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "frac"
+   },
+   [
+    {
+     "is_prefix": false,
+     "column": 21,
+     "precedence": 0,
+     "leftAssoc": false,
+     "type": "VARIABLE_OR_LITERAL",
+     "value": "1"
+    }
+   ],
+   [
+    {
+     "is_prefix": false,
+     "column": 24,
+     "precedence": 0,
+     "leftAssoc": false,
+     "type": "VARIABLE_OR_LITERAL",
+     "value": "2"
+    }
+   ]
+  ]
+ ]
+},
+{
+ "e": "(x^6*cos((1)/(2)))",
+ "p2n": false,
+ "result": [
+  [
+   {
+    "is_prefix": false,
+    "column": 2,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "x"
+   },
+   {
+    "is_prefix": false,
+    "column": 3,
+    "precedence": 6,
+    "leftAssoc": true,
+    "type": "OPERATOR",
+    "value": "^",
+    "operator": "^",
+    "action": "pow",
+    "prefix": false,
+    "postfix": false
+   },
+   {
+    "is_prefix": false,
+    "column": 4,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "6"
+   },
+   {
+    "is_prefix": false,
+    "column": 5,
+    "precedence": 4,
+    "leftAssoc": false,
+    "type": "OPERATOR",
+    "value": "*",
+    "operator": "*",
+    "action": "multiply",
+    "prefix": false,
+    "postfix": false
+   },
+   {
+    "is_prefix": false,
+    "column": 6,
+    "precedence": 999,
+    "leftAssoc": false,
+    "type": "FUNCTION",
+    "value": "cos"
+   },
+   [
+    [
+     {
+      "is_prefix": false,
+      "column": 11,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "VARIABLE_OR_LITERAL",
+      "value": "1"
+     }
+    ],
+    {
+     "is_prefix": false,
+     "column": 13,
+     "precedence": 4,
+     "leftAssoc": false,
+     "type": "OPERATOR",
+     "value": "/",
+     "operator": "/",
+     "action": "divide",
+     "prefix": false,
+     "postfix": false
+    },
+    [
+     {
+      "is_prefix": false,
+      "column": 15,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "VARIABLE_OR_LITERAL",
+      "value": "2"
+     }
+    ]
+   ]
+  ]
+ ]
+},
+{
+ "e": "\\sqrt[3]{1+a}+1",
+ "p2n": false,
+ "result": [
+  {
+   "is_prefix": false,
+   "column": 1,
+   "precedence": 8,
+   "leftAssoc": true,
+   "type": "OPERATOR",
+   "value": "\\",
+   "operator": "\\",
+   "action": "slash",
+   "prefix": true,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 2,
+   "precedence": 999,
+   "leftAssoc": false,
+   "type": "FUNCTION",
+   "value": "sqrt"
+  },
+  [
+   {
+    "is_prefix": false,
+    "column": 7,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "3"
+   }
+  ],
+  [
+   {
+    "is_prefix": false,
+    "column": 10,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "1"
+   },
+   {
+    "is_prefix": false,
+    "column": 11,
+    "precedence": 3,
+    "leftAssoc": false,
+    "type": "OPERATOR",
+    "value": "+",
+    "operator": "+",
+    "action": "add",
+    "prefix": true,
+    "postfix": false
+   },
+   {
+    "is_prefix": false,
+    "column": 12,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "a"
+   }
+  ],
+  {
+   "is_prefix": false,
+   "column": 14,
+   "precedence": 3,
+   "leftAssoc": false,
+   "type": "OPERATOR",
+   "value": "+",
+   "operator": "+",
+   "action": "add",
+   "prefix": true,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 15,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "1"
+  }
+ ]
+},
+{
+ "e": "((1+a)^(1/(3))+1)",
+ "p2n": false,
+ "result": [
+  [
+   [
+    {
+     "is_prefix": false,
+     "column": 3,
+     "precedence": 0,
+     "leftAssoc": false,
+     "type": "VARIABLE_OR_LITERAL",
+     "value": "1"
+    },
+    {
+     "is_prefix": false,
+     "column": 4,
+     "precedence": 3,
+     "leftAssoc": false,
+     "type": "OPERATOR",
+     "value": "+",
+     "operator": "+",
+     "action": "add",
+     "prefix": true,
+     "postfix": false
+    },
+    {
+     "is_prefix": false,
+     "column": 5,
+     "precedence": 0,
+     "leftAssoc": false,
+     "type": "VARIABLE_OR_LITERAL",
+     "value": "a"
+    }
+   ],
+   {
+    "is_prefix": false,
+    "column": 7,
+    "precedence": 6,
+    "leftAssoc": true,
+    "type": "OPERATOR",
+    "value": "^",
+    "operator": "^",
+    "action": "pow",
+    "prefix": false,
+    "postfix": false
+   },
+   [
+    {
+     "is_prefix": false,
+     "column": 9,
+     "precedence": 0,
+     "leftAssoc": false,
+     "type": "VARIABLE_OR_LITERAL",
+     "value": "1"
+    },
+    {
+     "is_prefix": false,
+     "column": 10,
+     "precedence": 4,
+     "leftAssoc": false,
+     "type": "OPERATOR",
+     "value": "/",
+     "operator": "/",
+     "action": "divide",
+     "prefix": false,
+     "postfix": false
+    },
+    [
+     {
+      "is_prefix": false,
+      "column": 12,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "VARIABLE_OR_LITERAL",
+      "value": "3"
+     }
+    ]
+   ],
+   {
+    "is_prefix": false,
+    "column": 15,
+    "precedence": 3,
+    "leftAssoc": false,
+    "type": "OPERATOR",
+    "value": "+",
+    "operator": "+",
+    "action": "add",
+    "prefix": true,
+    "postfix": false
+   },
+   {
+    "is_prefix": false,
+    "column": 16,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "1"
+   }
+  ]
+ ]
+},
+{
+ "e": "\\begin{matrix} \\begin{matrix}1 & 2 \\\\ 7 & 8\\end{matrix} & 2+9 \\\\ 7 & 8\\end{matrix}",
+ "p2n": false,
+ "result": [
+  {
+   "is_prefix": false,
+   "column": 1,
+   "precedence": 8,
+   "leftAssoc": true,
+   "type": "OPERATOR",
+   "value": "\\",
+   "operator": "\\",
+   "action": "slash",
+   "prefix": true,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 2,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "begin"
+  },
+  [
+   {
+    "is_prefix": false,
+    "column": 8,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "matrix"
+   }
+  ],
+  {
+   "is_prefix": false,
+   "column": 16,
+   "precedence": 8,
+   "leftAssoc": true,
+   "type": "OPERATOR",
+   "value": "\\",
+   "operator": "\\",
+   "action": "slash",
+   "prefix": true,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 17,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "begin"
+  },
+  [
+   {
+    "is_prefix": false,
+    "column": 23,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "matrix"
+   }
+  ],
+  {
+   "is_prefix": false,
+   "column": 30,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "1"
+  },
+  {
+   "is_prefix": false,
+   "column": 31,
+   "precedence": 4,
+   "leftAssoc": false,
+   "type": "OPERATOR",
+   "value": "*",
+   "operator": "*",
+   "action": "multiply",
+   "prefix": false,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 32,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "&"
+  },
+  {
+   "is_prefix": false,
+   "column": 33,
+   "precedence": 4,
+   "leftAssoc": false,
+   "type": "OPERATOR",
+   "value": "*",
+   "operator": "*",
+   "action": "multiply",
+   "prefix": false,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 34,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "2"
+  },
+  {
+   "is_prefix": false,
+   "column": 36,
+   "precedence": 8,
+   "leftAssoc": true,
+   "type": "OPERATOR",
+   "value": "\\",
+   "operator": "\\",
+   "action": "slash",
+   "prefix": true,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 37,
+   "precedence": 8,
+   "leftAssoc": true,
+   "type": "OPERATOR",
+   "value": "\\",
+   "operator": "\\",
+   "action": "slash",
+   "prefix": true,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 39,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "7"
+  },
+  {
+   "is_prefix": false,
+   "column": 40,
+   "precedence": 4,
+   "leftAssoc": false,
+   "type": "OPERATOR",
+   "value": "*",
+   "operator": "*",
+   "action": "multiply",
+   "prefix": false,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 41,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "&"
+  },
+  {
+   "is_prefix": false,
+   "column": 42,
+   "precedence": 4,
+   "leftAssoc": false,
+   "type": "OPERATOR",
+   "value": "*",
+   "operator": "*",
+   "action": "multiply",
+   "prefix": false,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 43,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "8"
+  },
+  {
+   "is_prefix": false,
+   "column": 44,
+   "precedence": 8,
+   "leftAssoc": true,
+   "type": "OPERATOR",
+   "value": "\\",
+   "operator": "\\",
+   "action": "slash",
+   "prefix": true,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 45,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "end"
+  },
+  [
+   {
+    "is_prefix": false,
+    "column": 49,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "matrix"
+   }
+  ],
+  {
+   "is_prefix": false,
+   "column": 57,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "&"
+  },
+  {
+   "is_prefix": false,
+   "column": 58,
+   "precedence": 4,
+   "leftAssoc": false,
+   "type": "OPERATOR",
+   "value": "*",
+   "operator": "*",
+   "action": "multiply",
+   "prefix": false,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 59,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "2"
+  },
+  {
+   "is_prefix": false,
+   "column": 60,
+   "precedence": 3,
+   "leftAssoc": false,
+   "type": "OPERATOR",
+   "value": "+",
+   "operator": "+",
+   "action": "add",
+   "prefix": true,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 61,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "9"
+  },
+  {
+   "is_prefix": false,
+   "column": 63,
+   "precedence": 8,
+   "leftAssoc": true,
+   "type": "OPERATOR",
+   "value": "\\",
+   "operator": "\\",
+   "action": "slash",
+   "prefix": true,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 64,
+   "precedence": 8,
+   "leftAssoc": true,
+   "type": "OPERATOR",
+   "value": "\\",
+   "operator": "\\",
+   "action": "slash",
+   "prefix": true,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 66,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "7"
+  },
+  {
+   "is_prefix": false,
+   "column": 67,
+   "precedence": 4,
+   "leftAssoc": false,
+   "type": "OPERATOR",
+   "value": "*",
+   "operator": "*",
+   "action": "multiply",
+   "prefix": false,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 68,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "&"
+  },
+  {
+   "is_prefix": false,
+   "column": 69,
+   "precedence": 4,
+   "leftAssoc": false,
+   "type": "OPERATOR",
+   "value": "*",
+   "operator": "*",
+   "action": "multiply",
+   "prefix": false,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 70,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "8"
+  },
+  {
+   "is_prefix": false,
+   "column": 71,
+   "precedence": 8,
+   "leftAssoc": true,
+   "type": "OPERATOR",
+   "value": "\\",
+   "operator": "\\",
+   "action": "slash",
+   "prefix": true,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 72,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "end"
+  },
+  [
+   {
+    "is_prefix": false,
+    "column": 76,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "matrix"
+   }
+  ]
+ ]
+},
+{
+ "e": "(matrix([matrix([1,2],[7,8]),2+9],[7,8]))",
+ "p2n": false,
+ "result": [
+  [
+   {
+    "is_prefix": false,
+    "column": 2,
+    "precedence": 999,
+    "leftAssoc": false,
+    "type": "FUNCTION",
+    "value": "matrix"
+   },
+   [
+    [
+     {
+      "is_prefix": false,
+      "column": 10,
+      "precedence": 999,
+      "leftAssoc": false,
+      "type": "FUNCTION",
+      "value": "matrix"
+     },
+     [
+      [
+       {
+        "is_prefix": false,
+        "column": 18,
+        "precedence": 0,
+        "leftAssoc": false,
+        "type": "VARIABLE_OR_LITERAL",
+        "value": "1"
+       },
+       {
+        "is_prefix": false,
+        "column": 19,
+        "precedence": 0,
+        "leftAssoc": false,
+        "type": "OPERATOR",
+        "value": ",",
+        "operator": ",",
+        "action": "comma",
+        "prefix": false,
+        "postfix": false
+       },
+       {
+        "is_prefix": false,
+        "column": 20,
+        "precedence": 0,
+        "leftAssoc": false,
+        "type": "VARIABLE_OR_LITERAL",
+        "value": "2"
+       }
+      ],
+      {
+       "is_prefix": false,
+       "column": 22,
+       "precedence": 0,
+       "leftAssoc": false,
+       "type": "OPERATOR",
+       "value": ",",
+       "operator": ",",
+       "action": "comma",
+       "prefix": false,
+       "postfix": false
+      },
+      [
+       {
+        "is_prefix": false,
+        "column": 24,
+        "precedence": 0,
+        "leftAssoc": false,
+        "type": "VARIABLE_OR_LITERAL",
+        "value": "7"
+       },
+       {
+        "is_prefix": false,
+        "column": 25,
+        "precedence": 0,
+        "leftAssoc": false,
+        "type": "OPERATOR",
+        "value": ",",
+        "operator": ",",
+        "action": "comma",
+        "prefix": false,
+        "postfix": false
+       },
+       {
+        "is_prefix": false,
+        "column": 26,
+        "precedence": 0,
+        "leftAssoc": false,
+        "type": "VARIABLE_OR_LITERAL",
+        "value": "8"
+       }
+      ]
+     ],
+     {
+      "is_prefix": false,
+      "column": 29,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "OPERATOR",
+      "value": ",",
+      "operator": ",",
+      "action": "comma",
+      "prefix": false,
+      "postfix": false
+     },
+     {
+      "is_prefix": false,
+      "column": 30,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "VARIABLE_OR_LITERAL",
+      "value": "2"
+     },
+     {
+      "is_prefix": false,
+      "column": 31,
+      "precedence": 3,
+      "leftAssoc": false,
+      "type": "OPERATOR",
+      "value": "+",
+      "operator": "+",
+      "action": "add",
+      "prefix": true,
+      "postfix": false
+     },
+     {
+      "is_prefix": false,
+      "column": 32,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "VARIABLE_OR_LITERAL",
+      "value": "9"
+     }
+    ],
+    {
+     "is_prefix": false,
+     "column": 34,
+     "precedence": 0,
+     "leftAssoc": false,
+     "type": "OPERATOR",
+     "value": ",",
+     "operator": ",",
+     "action": "comma",
+     "prefix": false,
+     "postfix": false
+    },
+    [
+     {
+      "is_prefix": false,
+      "column": 36,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "VARIABLE_OR_LITERAL",
+      "value": "7"
+     },
+     {
+      "is_prefix": false,
+      "column": 37,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "OPERATOR",
+      "value": ",",
+      "operator": ",",
+      "action": "comma",
+      "prefix": false,
+      "postfix": false
+     },
+     {
+      "is_prefix": false,
+      "column": 38,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "VARIABLE_OR_LITERAL",
+      "value": "8"
+     }
+    ]
+   ]
+  ]
+ ]
+},
+{
+ "e": "\\int_{0}^{\\pi}(\\sin(y)),y",
+ "p2n": false,
+ "result": [
+  {
+   "is_prefix": false,
+   "column": 1,
+   "precedence": 8,
+   "leftAssoc": true,
+   "type": "OPERATOR",
+   "value": "\\",
+   "operator": "\\",
+   "action": "slash",
+   "prefix": true,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 2,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "int_"
+  },
+  [
+   {
+    "is_prefix": false,
+    "column": 7,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "0"
+   }
+  ],
+  {
+   "is_prefix": false,
+   "column": 9,
+   "precedence": 6,
+   "leftAssoc": true,
+   "type": "OPERATOR",
+   "value": "^",
+   "operator": "^",
+   "action": "pow",
+   "prefix": false,
+   "postfix": false
+  },
+  [
+   {
+    "is_prefix": false,
+    "column": 11,
+    "precedence": 8,
+    "leftAssoc": true,
+    "type": "OPERATOR",
+    "value": "\\",
+    "operator": "\\",
+    "action": "slash",
+    "prefix": true,
+    "postfix": false
+   },
+   {
+    "is_prefix": false,
+    "column": 12,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "pi"
+   }
+  ],
+  [
+   {
+    "is_prefix": false,
+    "column": 16,
+    "precedence": 8,
+    "leftAssoc": true,
+    "type": "OPERATOR",
+    "value": "\\",
+    "operator": "\\",
+    "action": "slash",
+    "prefix": true,
+    "postfix": false
+   },
+   {
+    "is_prefix": false,
+    "column": 17,
+    "precedence": 999,
+    "leftAssoc": false,
+    "type": "FUNCTION",
+    "value": "sin"
+   },
+   [
+    {
+     "is_prefix": false,
+     "column": 21,
+     "precedence": 0,
+     "leftAssoc": false,
+     "type": "VARIABLE_OR_LITERAL",
+     "value": "y"
+    }
+   ]
+  ],
+  {
+   "is_prefix": false,
+   "column": 24,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "OPERATOR",
+   "value": ",",
+   "operator": ",",
+   "action": "comma",
+   "prefix": false,
+   "postfix": false
+  },
+  {
+   "is_prefix": false,
+   "column": 25,
+   "precedence": 0,
+   "leftAssoc": false,
+   "type": "VARIABLE_OR_LITERAL",
+   "value": "y"
+  }
+ ]
+},
+{
+ "e": "(defint*((sin(y)),(0),(pi),y))",
+ "p2n": false,
+ "result": [
+  [
+   {
+    "is_prefix": false,
+    "column": 2,
+    "precedence": 0,
+    "leftAssoc": false,
+    "type": "VARIABLE_OR_LITERAL",
+    "value": "defint"
+   },
+   {
+    "is_prefix": false,
+    "column": 8,
+    "precedence": 4,
+    "leftAssoc": false,
+    "type": "OPERATOR",
+    "value": "*",
+    "operator": "*",
+    "action": "multiply",
+    "prefix": false,
+    "postfix": false
+   },
+   [
+    [
+     {
+      "is_prefix": false,
+      "column": 11,
+      "precedence": 999,
+      "leftAssoc": false,
+      "type": "FUNCTION",
+      "value": "sin"
+     },
+     [
+      {
+       "is_prefix": false,
+       "column": 15,
+       "precedence": 0,
+       "leftAssoc": false,
+       "type": "VARIABLE_OR_LITERAL",
+       "value": "y"
+      }
+     ]
+    ],
+    {
+     "is_prefix": false,
+     "column": 18,
+     "precedence": 0,
+     "leftAssoc": false,
+     "type": "OPERATOR",
+     "value": ",",
+     "operator": ",",
+     "action": "comma",
+     "prefix": false,
+     "postfix": false
+    },
+    [
+     {
+      "is_prefix": false,
+      "column": 20,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "VARIABLE_OR_LITERAL",
+      "value": "0"
+     }
+    ],
+    {
+     "is_prefix": false,
+     "column": 22,
+     "precedence": 0,
+     "leftAssoc": false,
+     "type": "OPERATOR",
+     "value": ",",
+     "operator": ",",
+     "action": "comma",
+     "prefix": false,
+     "postfix": false
+    },
+    [
+     {
+      "is_prefix": false,
+      "column": 24,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "VARIABLE_OR_LITERAL",
+      "value": "pi"
+     }
+    ],
+    {
+     "is_prefix": false,
+     "column": 27,
+     "precedence": 0,
+     "leftAssoc": false,
+     "type": "OPERATOR",
+     "value": ",",
+     "operator": ",",
+     "action": "comma",
+     "prefix": false,
+     "postfix": false
+    },
+    {
+     "is_prefix": false,
+     "column": 28,
+     "precedence": 0,
+     "leftAssoc": false,
+     "type": "VARIABLE_OR_LITERAL",
+     "value": "y"
+    }
+   ]
+  ]
+ ]
+}]

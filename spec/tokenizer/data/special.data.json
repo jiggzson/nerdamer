@@ -1,0 +1,120 @@
+[
+{
+  "e": "x+1°+π+x",
+  "p2n": false,
+  "result": [
+    {
+      "is_prefix": false,
+      "column": 1,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "VARIABLE_OR_LITERAL",
+      "value": "x"
+    },
+    {
+      "is_prefix": false,
+      "column": 2,
+      "precedence": 3,
+      "leftAssoc": false,
+      "type": "OPERATOR",
+      "value": "+",
+      "operator": "+",
+      "action": "add",
+      "prefix": true,
+      "postfix": false
+    },
+    {
+      "is_prefix": false,
+      "column": 3,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "VARIABLE_OR_LITERAL",
+      "value": "1"
+    },
+    {
+      "is_prefix": false,
+      "column": 4,
+      "precedence": 4,
+      "leftAssoc": false,
+      "type": "OPERATOR",
+      "value": "°",
+      "operator": "°",
+      "postfix": true
+    },
+    {
+      "is_prefix": false,
+      "column": 5,
+      "precedence": 3,
+      "leftAssoc": false,
+      "type": "OPERATOR",
+      "value": "+",
+      "operator": "+",
+      "action": "add",
+      "prefix": true,
+      "postfix": false
+    },
+    {
+      "is_prefix": false,
+      "column": 6,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "VARIABLE_OR_LITERAL",
+      "value": "π"
+    },
+    {
+      "is_prefix": false,
+      "column": 7,
+      "precedence": 3,
+      "leftAssoc": false,
+      "type": "OPERATOR",
+      "value": "+",
+      "operator": "+",
+      "action": "add",
+      "prefix": true,
+      "postfix": false
+    },
+    {
+      "is_prefix": false,
+      "column": 8,
+      "precedence": 0,
+      "leftAssoc": false,
+      "type": "VARIABLE_OR_LITERAL",
+      "value": "x"
+    }
+  ]
+},
+  {
+    "e": "a(b(x))",
+    "p2n": false,
+    "result": [
+      {
+        "is_prefix": false,
+        "column": 1,
+        "precedence": 999,
+        "leftAssoc": false,
+        "type": "FUNCTION",
+        "value": "a"
+      },
+      [
+        {
+          "is_prefix": false,
+          "column": 3,
+          "precedence": 999,
+          "leftAssoc": false,
+          "type": "FUNCTION",
+          "value": "b"
+        },
+        [
+          {
+            "is_prefix": false,
+            "column": 5,
+            "precedence": 0,
+            "leftAssoc": false,
+            "type": "VARIABLE_OR_LITERAL",
+            "value": "x"
+          }
+        ]
+      ]
+    ]
+  }
+]
