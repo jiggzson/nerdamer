@@ -542,8 +542,8 @@ const Settings = require('./Settings').Settings;
          * @returns {Symbol}
          */
         quad: function (c, b, a) {
-            let discriminant = _.subtract(_.pow(b.clone(), Symbol(2)), _.multiply(_.multiply(a.clone(), c.clone()), Symbol(4)))/*b^2 - 4ac*/;
-            let det = _.pow(discriminant, Symbol(0.5));
+            let discriminant = _.subtract(_.pow(b.clone(),new Symbol(2)), _.multiply(_.multiply(a.clone(), c.clone()),new Symbol(4)))/*b^2 - 4ac*/;
+            let det = _.pow(discriminant,new Symbol(0.5));
             let den = _.parse(_.multiply(new Symbol(2), a.clone()));
             let retval = [
                 _.parse(format('(-({0})+({1}))/({2})', b, det, den)),

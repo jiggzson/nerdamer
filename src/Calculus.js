@@ -483,7 +483,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                     symbol.multiplier = symbol.multiplier.multiply(symbol.power);
                     symbol.power = symbol.power.subtract(new Frac(1));
                     if(symbol.power.equals(0)) {
-                        symbol = Symbol(symbol.multiplier);
+                        symbol = new Symbol(symbol.multiplier);
                     }
                 }
 
@@ -494,7 +494,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                 var g = symbol.group, a, b, cp;
 
                 if(g === N || g === S && symbol.value !== d || g === P) {
-                    symbol = Symbol(0);
+                    symbol = new Symbol(0);
                 }
                 else if(g === S) {
                     symbol = polydiff(symbol);
@@ -563,7 +563,7 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                         case 'parens':
                             //see product rule: f'.g goes to zero since f' will return zero. This way we only get back
                             //1*g'
-                            symbol = Symbol(1);
+                            symbol = new Symbol(1);
                             break;
                         case 'cosh':
                             //cosh -> -sinh
@@ -2586,13 +2586,13 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         Fresnel: {
             S: function (x) {
                 if(x.isConstant(true)) {
-                    return __.defint(_.parse('sin(pi*x^2/2)'), Symbol(0), x, 'x');
+                    return __.defint(_.parse('sin(pi*x^2/2)'), new Symbol(0), x, 'x');
                 }
                 return _.symfunction('S', arguments);
             },
             C: function (x) {
                 if(x.isConstant(true)) {
-                    return __.defint(_.parse('cos(pi*x^2/2)'), Symbol(0), x, 'x');
+                    return __.defint(_.parse('cos(pi*x^2/2)'), new Symbol(0), x, 'x');
                 }
                 return _.symfunction('C', arguments);
             }

@@ -2379,13 +2379,13 @@ if((typeof module) !== 'undefined') {
                                 // Apply difference of cubes rule
                                 factors.add(_.parse(format('(({0})-({1}))', x, y)));
                                 factors.add(_.parse(format('(({0})^2+({0})*({1})+({1})^2)', x, y)));
-                                symbol = Symbol(1);
+                                symbol = new Symbol(1);
                             }
                             else if(sign_a === 1 && sign_b === 1) {
                                 // Apply sum of cubes rule
                                 factors.add(_.parse(format('(({0})+({1}))', x, y)));
                                 factors.add(_.parse(format('(({0})^2-({0})*({1})+({1})^2)', x, y)));
-                                symbol = Symbol(1);
+                                symbol = new Symbol(1);
                             }
                         }
                     }

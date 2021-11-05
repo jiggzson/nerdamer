@@ -127,3 +127,29 @@ export function warn(msg: string) {
 export function even(num: number) {
     return num % 2 === 0;
 }
+
+/**
+ * @param {String} str
+ * @returns {String} - returns a formatted string surrounded by brackets
+ */
+export function inBrackets(str: string) {
+    return '(' + str + ')';
+}
+
+/**
+ * Removes an item from either an array or an object. If the object is an array, the index must be
+ * specified after the array. If it's an object then the key must be specified
+ * @param {Object|Array} obj
+ * @param {Integer} indexOrKey
+ */
+export function remove(obj: any, indexOrKey: number | string): any {
+    let result;
+    if (Array.isArray(obj) && typeof indexOrKey === 'number') {
+        result = obj.splice(indexOrKey, 1)[0];
+    }
+    else {
+        result = obj[indexOrKey];
+        delete obj[indexOrKey];
+    }
+    return result;
+}
