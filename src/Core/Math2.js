@@ -3,10 +3,10 @@
 //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the
 //functions within are pretty self-explanatory.
 //NOTE: DO NOT USE INLINE COMMENTS WITH THE MATH2 OBJECT! THIS BREAK DURING COMPILATION OF BUILDFUNCTION.
-const Frac = require("./Frac");
+const {Frac} = require("./Frac");
 const bigInt = require("../3rdparty/bigInt");
 const {isInt, nround, arrayUnique, arrayMin, warn, even} = require("./Utils");
-const Symbol = require("./Symbol");
+const {Symbol} = require("./Symbol");
 const {PRIMES, generatePrimes, BIGLOG_CACHE} = require('./Math.consts');
 const {Groups} = require("./Groups");
 
@@ -946,4 +946,4 @@ Math.trunc = Math.trunc || function (x) {
     return Math.ceil(x);
 };
 
-module.exports = Math2;
+module.exports = {Math2};

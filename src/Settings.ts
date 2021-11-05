@@ -103,6 +103,7 @@ export type SettingsType = {
     BI_SECTION_EPSILON: number,
 
     SHOW_WARNINGS: boolean,
+    USE_BIG: boolean,
 };
 
 // noinspection NonAsciiCharacters
@@ -215,5 +216,6 @@ export let Settings: SettingsType = {
     // The tolerance for the bisection method
     BI_SECTION_EPSILON: 1e-12,
 
-    SHOW_WARNINGS: false
+    SHOW_WARNINGS: false,
+    USE_BIG: false
 };

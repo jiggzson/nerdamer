@@ -1,4 +1,4 @@
-const Symbol = require('../Core/Symbol');
+const {Symbol} = require('../Core/Symbol');
 
 export class Vector {
     elements;

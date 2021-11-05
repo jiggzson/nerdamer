@@ -1,5 +1,6 @@
 import {Settings} from '../Settings';
-import Symbol from '../Core/Symbol';
+// @ts-ignore
+import {Symbol} from '../Core/Symbol';
 
 type OperationFunction = (...args: any) => any;
 

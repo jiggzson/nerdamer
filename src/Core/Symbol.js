@@ -2,7 +2,7 @@ const bigDec = require("decimal.js");
 const {Settings} = require("../Settings");
 const {validateName} = require('./Utils');
 const {Groups} = require("./Groups");
-const Frac = require('./Frac');
+const {Frac} = require('./Frac');
 
 /**
  * All symbols e.g. x, y, z, etc or functions are wrapped in this class. All symbols have a multiplier and a group.
@@ -46,4 +46,4 @@ function Symbol(obj) {
     return this;
 }
 
-module.exports = Symbol;
+module.exports = { Symbol };

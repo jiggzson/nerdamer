@@ -8,8 +8,8 @@
 
 const {nround, isInt, isPrime, isNumber, validateName, arrayUnique, arrayMin, arrayMax, warn, even} = require('./Core/Utils');
 const Settings = require('./Settings').Settings;
-const Frac = require("./Core/Frac");
-const Symbol = require("./Core/Symbol");
+const {Symbol} = require("./Core/Symbol");
+const {Frac} = require("./Core/Frac");
 const Scientific = require('./Core/Scientific').default;
 const {Operators} = require('./Parser/Operators');
 const {createFunctions, findFunction} = require('./Operators/functions');
@@ -20,7 +20,7 @@ const {Set} = require('./Parser/Set');
 const {Vector} = require('./Parser/Vector');
 const bigDec = require('decimal.js');
 const bigInt = require('./3rdparty/bigInt');
-const Math2 = require('./Core/Math2');
+const {Math2} = require('./Core/Math2');
 const {PRIMES, generatePrimes} = require('./Core/Math.consts');
 const {Token} = require('./Parser/Token');
 const {Tokenizer} = require("./Parser/Tokenizer");
@@ -98,7 +98,7 @@ const nerdamer = (function () {
 
     const WARNINGS = [];
 
-
+    Frac.$Math2 = Math2;
 
 //Utils ========================================================================
 
@@ -1602,233 +1602,6 @@ const nerdamer = (function () {
 
 
 //Frac =========================================================================
-    //safe to use with negative numbers or other types
-    Frac.create = function (n) {
-        if (n instanceof Frac)
-            return n;
-        n = n.toString();
-        var is_neg = n.charAt(0) === '-'; //check if it's negative
-        if (is_neg)
-            n = n.substr(1, n.length - 1); //remove the sign
-        var frac = new Frac(n);
-        //put the sign back
-        if (is_neg)
-            frac.negate();
-        return frac;
-    };
-    Frac.isFrac = function (o) {
-        return (o instanceof Frac);
-    };
-    Frac.quick = function (n, d) {
-        var frac = new Frac();
-        frac.num = new bigInt(n);
-        frac.den = new bigInt(d);
-        return frac;
-    };
-    Frac.simple = function (n) {
-        var nstr = String(Math2.scientificToDecimal(n)),
-            m_dc = nstr.split('.'),
-            num = m_dc.join(''),
-            den = 1,
-            l = (m_dc[1] || '').length;
-        for (var i = 0; i < l; i++)
-            den += '0';
-        var frac = Frac.quick(num, den);
-        return frac.simplify();
-    };
-    Frac.prototype = {
-        multiply: function (m) {
-            if (this.isOne()) {
-                return m.clone();
-            }
-            if (m.isOne()) {
-                return this.clone();
-            }
-
-            var c = this.clone();
-            c.num = c.num.multiply(m.num);
-            c.den = c.den.multiply(m.den);
-
-            return c.simplify();
-        },
-        divide: function (m) {
-            if (m.equals(0))
-                throw new DivisionByZero('Division by zero not allowed!');
-            return this.clone().multiply(m.clone().invert()).simplify();
-        },
-        subtract: function (m) {
-            return this.clone().add(m.clone().neg());
-        },
-        neg: function () {
-            this.num = this.num.multiply(-1);
-            return this;
-        },
-        add: function (m) {
-            var n1 = this.den, n2 = m.den, c = this.clone();
-            var a = c.num, b = m.num;
-            if (n1.equals(n2)) {
-                c.num = a.add(b);
-            }
-            else {
-                c.num = a.multiply(n2).add(b.multiply(n1));
-                c.den = n1.multiply(n2);
-            }
-
-            return c.simplify();
-        },
-        mod: function (m) {
-            var a = this.clone(),
-                b = m.clone();
-            //make their denominators even and return the mod of their numerators
-            a.num = a.num.multiply(b.den);
-            a.den = a.den.multiply(b.den);
-            b.num = b.num.multiply(this.den);
-            b.den = b.den.multiply(this.den);
-            a.num = a.num.mod(b.num);
-            return a.simplify();
-        },
-        simplify: function () {
-            var gcd = bigInt.gcd(this.num, this.den);
-
-            this.num = this.num.divide(gcd);
-            this.den = this.den.divide(gcd);
-            return this;
-        },
-        clone: function () {
-            var m = new Frac();
-            m.num = new bigInt(this.num);
-            m.den = new bigInt(this.den);
-            return m;
-        },
-        decimal: function (prec) {
-            var sign = this.num.isNegative() ? '-' : '';
-            if (this.num.equals(this.den)) {
-                return '1';
-            }
-            //go plus one for rounding
-            prec = prec || Settings.PRECISION;
-            prec++;
-            var narr = [],
-                n = this.num.abs(),
-                d = this.den;
-            for (var i = 0; i < prec; i++) {
-                var w = n.divide(d), //divide out whole
-                    r = n.subtract(w.multiply(d)); //get remainder
-
-                narr.push(w);
-                if (r.equals(0))
-                    break;
-                n = r.times(10); //shift one dec place
-            }
-            var whole = narr.shift();
-            if (narr.length === 0) {
-                return sign + whole.toString();
-            }
-
-            if (i === prec) {
-                var lt = [];
-                //get the last two so we can round it
-                for (var i = 0; i < 2; i++)
-                    lt.unshift(narr.pop());
-                //put the last digit back by rounding the last two
-                narr.push(Math.round(lt.join('.')));
-            }
-
-            var dec = whole.toString() + '.' + narr.join('');
-            return sign + dec;
-        },
-        toDecimal: function (prec) {
-            prec = prec || Settings.PRECISION;
-            if (prec) {
-                return this.decimal(prec);
-            }
-            else
-                return this.num / this.den;
-        },
-        qcompare: function (n) {
-            return [this.num.multiply(n.den), n.num.multiply(this.den)];
-        },
-        equals: function (n) {
-            if (!isNaN(n))
-                n = new Frac(n);
-            var q = this.qcompare(n);
-
-            return q[0].equals(q[1]);
-        },
-        absEquals: function (n) {
-            if (!isNaN(n))
-                n = new Frac(n);
-            var q = this.qcompare(n);
-
-            return q[0].abs().equals(q[1]);
-        },
-        //lazy check to be fixed. Sufficient for now but will cause future problems
-        greaterThan: function (n) {
-            if (!isNaN(n))
-                n = new Frac(n);
-            var q = this.qcompare(n);
-
-            return q[0].gt(q[1]);
-        },
-        gte: function (n) {
-            return this.greaterThan(n) || this.equals(n);
-        },
-        lte: function (n) {
-            return this.lessThan(n) || this.equals(n);
-        },
-        lessThan: function (n) {
-            if (!isNaN(n))
-                n = new Frac(n);
-            var q = this.qcompare(n);
-
-            return q[0].lt(q[1]);
-        },
-        isInteger: function () {
-            return this.den.equals(1);
-        },
-        negate: function () {
-            this.num = this.num.multiply(-1);
-            return this;
-        },
-        invert: function () {
-            var t = this.den;
-            //why invert 0/1? It'll become 1/0 and that's a lie.
-            if (!this.num.equals(0)) {
-                var isnegative = this.num.isNegative();
-                this.den = this.num.abs();
-                this.num = t;
-                if (isnegative)
-                    this.num = this.num.multiply(-1);
-            }
-
-            return this;
-        },
-        isOne: function () {
-            return this.num.equals(1) && this.den.equals(1);
-        },
-        sign: function () {
-            return this.num.isNegative() ? -1 : 1;
-        },
-        abs: function () {
-            this.num = this.num.abs();
-            return this;
-        },
-        gcd: function (f) {
-            return Frac.quick(bigInt.gcd(f.num, this.num), bigInt.lcm(f.den, this.den));
-        },
-        toString: function () {
-            return !this.den.equals(1) ? this.num.toString() + '/' + this.den.toString() : this.num.toString();
-        },
-        valueOf: function () {
-//            if (this.num == 24) throw new Error(999)
-            if (Settings.USE_BIG)
-                return new bigDec(this.num.toString()).div(new bigDec(this.den.toString()));
-            return this.num / this.den;
-        },
-        isNegative: function () {
-            return this.toDecimal() < 0;
-        }
-    };
 
 //Symbol =======================================================================
     /**

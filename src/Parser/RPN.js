@@ -1,6 +1,6 @@
 const {Token} = require('./Token');
 const {Settings} = require('../Settings');
-const Symbol = require('../Core/Symbol');
+const {Symbol} = require('../Core/Symbol');
 const {Collection} = require('./Collection');
 const {Slice} = require('./Slice');
 const {Vector} = require('./Vector');

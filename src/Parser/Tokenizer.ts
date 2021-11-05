@@ -1,6 +1,6 @@
 import {Token} from './Token';
 import {isNumber} from '../Core/Utils';
-import Math2 from '../Core/Math2';
+import {Math2} from '../Core/Math2';
 import {Settings} from '../Settings';
 import {Bracket, Brackets, Operators} from './Operators';
 
