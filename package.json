@@ -47,7 +47,7 @@
     },
     "scripts": {
         "test": "tsc && jasmine build/spec/*.spec.js",
-        "test_new": "tsc && jasmine build/spec/**/*.spec.js"
+        "test_tokenize": "tsc && jasmine build/spec/tokenizer/tokenize.spec.js"
     },
     "devDependencies": {
         "gulp": "^4.0.2",

@@ -21,6 +21,7 @@ const bigInt = require('./3rdparty/bigInt');
 const Math2 = require('./Core/Math2');
 const {PRIMES, generatePrimes} = require('./Core/Math.consts');
 const {Token} = require('./Parser/Token');
+const {Tokenizer} = require("./Parser/Tokenizer");
 
 var nerdamer = (function () {
 //version ======================================================================
@@ -4146,6 +4147,7 @@ var nerdamer = (function () {
         this.isOperator = (...args) => operators.isOperator(...args);
         this.getOperator = (...args) => operators.getOperator(...args);
         this.getOperators = (...args) => operators.getOperators(...args);
+        this.getOperatorsClass = () => operators;
         this.getBrackets = (...args) => operators.getBrackets(...args);
         this.aliasOperator = (...args) => operators.aliasOperator(...args);
         this.setOperator = (...args) => operators.setOperator(...args);
@@ -4163,6 +4165,8 @@ var nerdamer = (function () {
             imagpart, conjugate, arg, polarform, rectform, sort, union,
             contains, intersection, difference, intersects, is_subset,
         });
+
+        this.getFunctions = () => (functions);
 
         //error handler
         this.error = err;
@@ -4415,289 +4419,12 @@ var nerdamer = (function () {
          * Tokenizes the string
          * @param {String} e
          * @returns {Token[]}
+         * @deprecated
          */
         this.tokenize = function (e) {
-            //cast to String
-            e = String(e);
-            //remove multiple white spaces and spaces at beginning and end of string
-            e = e.trim().replace(/\s+/g, ' ');
-            //remove spaces before and after brackets
-            for (var x in brackets) {
-                var regex = new RegExp(brackets[x].is_close ? '\\s+\\' + x : '\\' + x + '\\s+', 'g');
-                e = e.replace(regex, x);
-            }
-
-            var col = 0; //the column position
-            var L = e.length; //expression length
-            var lpos = 0; //marks beginning of next token
-            var tokens = []; //the tokens container
-            var scopes = [tokens]; //initiate with the tokens as the highest scope
-            var target = scopes[0]; //the target to which the tokens are added. This can swing up or down
-            var depth = 0;
-            var open_brackets = [];
-            var has_space = false; //marks if an open space character was found
-            var SPACE = ' ';
-            var EMPTY_STRING = '';
-            var COMMA = ',';
-            var MINUS = '-';
-            var MULT = '*';
-            //Possible source of bug. Review
-            /*
-             //gets the next space
-             var next_space = function(from) {
-             for (var i=from; i<L; i++) {
-             if (e.charAt(i) === ' ')
-             return i;
-             }
-
-             return L; //assume the end of the string instead
-             };
-             */
-            /**
-             * Adds a scope to tokens
-             * @param {String} scope_type
-             * @param {int} column
-             * @returns {undefined}
-             */
-            var addScope = function (scope_type, column) {
-                var new_scope = []; //create a new scope
-                if (scope_type !== undefined) {
-                    new_scope.type = scope_type;
-                }
-                new_scope.column = column; //mark the column of the scope
-                scopes.push(new_scope); //add it to the list of scopes
-                target.push(new_scope); //add it to the tokens list since now it's a scope
-                target = new_scope; //point to it
-                depth++; //go down one in scope
-            };
-            /**
-             * Goes up in scope by one
-             * @returns {undefined}
-             */
-            var goUp = function () {
-                scopes.pop(); //remove the scope from the scopes stack
-                target = scopes[--depth]; //point the above scope
-            };
-            /**
-             * Extracts all the operators from the expression string starting at postion start_at
-             * @param {int} start_at
-             * @returns {String}
-             */
-            var get_operator_str = function (start_at) {
-                start_at = start_at !== undefined ? start_at : col;
-                //mark the end of the operator as the start since we're just going
-                //to be walking along the string
-                var end = start_at + 1;
-                //just keep moving along
-                while (operators.isOperator(e.charAt(end++))) {
-                }
-                //remember that we started at one position ahead. The beginning operator is what triggered
-                //this function to be called in the first place. String.CharAt is zero based so we now
-                //have to correct two places. The initial increment + the extra++ at the end of end during
-                //the last iteration.
-                return e.substring(start_at, end - 1);
-            };
-            /**
-             * Breaks operator up in to several different operators as defined in operators
-             * @param {String} operator_str
-             * @returns {String[]}
-             */
-            var chunkify = function (operator_str) {
-                var start = col - operator_str.length; //start of operator
-                var _operators = [];
-                var operator = operator_str.charAt(0);
-                //grab the largest possible chunks but start at 2 since we already know
-                //that the first character is an operator
-
-                for (var i = 1, L = operator_str.length; i < L; i++) {
-                    var ch = operator_str.charAt(i);
-                    var o = operator + ch;
-                    //since the operator now is undefined then the last operator
-                    //was the largest possible combination.
-                    if (!operators.isOperator(o)) {
-                        _operators.push(new Token(operator, Token.OPERATOR, start + i));
-                        operator = ch;
-                    }
-                    else
-                        operator = o;//now the operator is the larger chunk
-                }
-                //add the last operator
-                _operators.push(new Token(operator, Token.OPERATOR, start + i));
-                return _operators;
-            };
-
-            /**
-             * Is used to add a token to the tokens array. Makes sure that no empty token is added
-             * @param {int} at
-             * @param {String} token
-             * @returns {undefined}
-             */
-            var add_token = function (at, token) {
-                //grab the token if we're not supplied one
-                if (token === undefined)
-                    token = e.substring(lpos, at);
-                //only add it if it's not an empty string
-                if (token in _.units)
-                    target.push(new Token(token, Token.UNIT, lpos));
-                else if (token !== '')
-                    target.push(new Token(token, Token.VARIABLE_OR_LITERAL, lpos));
-            };
-            /**
-             * Adds a function to the output
-             * @param {String} f
-             * @returns {undefined}
-             */
-            var add_function = function (f) {
-                target.push(new Token(f, Token.FUNCTION, lpos));
-            };
-            /**
-             * Tokens are found between operators so this marks the location of where the last token was found
-             * @param {int} position
-             * @returns {undefined}
-             */
-            var set_last_position = function (position) {
-                lpos = position + 1;
-            };
-            /**
-             * When a operator is found and added, especially a combo operator, then the column location
-             * has to be adjusted to the end of the operator
-             * @returns {undefined}
-             */
-            var adjust_column_position = function () {
-                lpos = lpos + operator_str.length - 2;
-                col = lpos - 1;
-            };
-            for (; col < L; col++) {
-                var ch = e.charAt(col);
-                if (operators.isOperator(ch)) {
-                    add_token(col);
-                    //is the last token numeric?
-                    var last_token_is_numeric = target[0] && isNumber(target[0]);
-                    //is this character multiplication?
-                    var is_multiplication = last_token_is_numeric && ch === MULT;
-                    //if we're in a new scope then go up by one but if the space
-                    //is right befor an operator then it makes no sense to go up in scope
-                    //consider sin -x. The last position = current position at the minus sign
-                    //this means that we're going for sin(x) -x which is wrong
-                    //Ignore comma since comma is still part of the existing scope.
-                    if (has_space && lpos < col && !(ch === COMMA || is_multiplication)) {
-                        has_space = false;
-                        goUp();
-                    }
-                    //mark the last position that a
-                    set_last_position(col + 1);
-                    var operator_str = get_operator_str(col);
-
-                    adjust_column_position();
-                    target.push.apply(target, chunkify(operator_str));
-                }
-                else if (ch in brackets) {
-                    var bracket = brackets[ch];
-
-                    if (bracket.is_open) {
-                        //mark the bracket
-                        open_brackets.push([bracket, lpos]);
-                        var f = e.substring(lpos, col);
-                        if (f in functions) {
-                            add_function(f);
-                        }
-                        else if (f !== '') {
-                            //assume multiplication
-                            //TODO: Add the multiplication to stack
-                            target.push(new Token(f, Token.VARIABLE_OR_LITERAL, lpos));
-                        }
-                        //go down one in scope
-                        addScope(bracket.maps_to, col);
-                    }
-                    else if (bracket.is_close) {
-                        //get the matching bracket
-                        var pair = open_brackets.pop();
-                        //throw errors accordingly
-                        //missing open bracket
-                        if (!pair)
-                            throw new ParityError('Missing open bracket for bracket at: ' + (col + 1));
-                        //incorrect pair
-                        else if (pair[0].id !== bracket.id - 1)
-                            throw new ParityError('Parity error');
-
-                        add_token(col);
-                        goUp();
-                    }
-                    set_last_position(col);
-                }
-                else if (ch === SPACE) {
-                    var prev = e.substring(lpos, col); //look back
-                    var nxt = e.charAt(col + 1); //look forward
-                    if (has_space) {
-
-                        if (operators.isOperator(prev)) {
-                            target.push(new Token(prev, Token.OPERATOR, col));
-                        }
-                        else {
-                            add_token(undefined, prev);
-                            //we're at the closing space
-                            goUp(); //go up in scope if we're at a space
-
-                            //assume multiplication if it's not an operator except for minus
-                            var is_operator = operators.isOperator(nxt);
-
-                            if ((is_operator && operators.getOperator(nxt).value === MINUS) || !is_operator) {
-                                target.push(new Token(MULT, Token.OPERATOR, col));
-                            }
-                        }
-                        has_space = false; //remove the space
-                    }
-                    else {
-                        //we're at the closing space
-                        //check if it's a function
-                        var f = e.substring(lpos, col);
-
-                        if (f in functions) {
-                            //there's no need to go up in scope if the next character is an operator
-                            has_space = true; //mark that a space was found
-                            add_function(f);
-                            addScope();
-                        }
-                        else if (operators.isOperator(f)) {
-                            target.push(new Token(f, Token.OPERATOR, col));
-                        }
-                        else {
-                            add_token(undefined, f);
-                            //peek ahead to the next character
-                            var nxt = e.charAt(col + 1);
-
-                            //If it's a number then add the multiplication operator to the stack but make sure that the next character
-                            //is not an operator
-
-                            if (prev !== EMPTY_STRING && nxt !== EMPTY_STRING && !operators.isOperator(prev) && !operators.isOperator(nxt))
-                                target.push(new Token(MULT, Token.OPERATOR, col));
-                        }
-                        //Possible source of bug. Review
-                        /*
-                         //space can mean multiplication so add the symbol if the is encountered
-                         if (/\d+|\d+\.?\d*e[\+\-]*\d+/i.test(f)) {
-                         var next = e.charAt(col+1);
-                         var next_is_operator = next in operators;
-                         var ns = next_space(col+1);
-                         var next_word = e.substring(col+1, ns);
-                         //the next can either be a prefix operator or no operator
-                         if ((next_is_operator && operators[next].prefix) || !(next_is_operator || next_word in operators))
-                         target.push(new Token('*', Token.OPERATOR, col));
-                         }
-                         */
-                    }
-                    set_last_position(col); //mark this location
-                }
-            }
-            //check that all brackets were closed
-            if (open_brackets.length) {
-                var b = open_brackets.pop();
-                throw new ParityError('Missing closed bracket for bracket at ' + (b[1] + 1));
-            }
-            //add the last token
-            add_token(col);
-
-            return tokens;
+            let deps = {preprocessors, functions, brackets, operators, units: _.units};
+            let tokenizer = new Tokenizer(deps);
+            return tokenizer.tokenize(e, false);
         };
         /*
          * Puts token array in Reverse Polish Notation
@@ -5134,12 +4861,14 @@ var nerdamer = (function () {
 
             return Q[0];
         };
-        this.parse = (e, substitutions) => {
-            e = prepare_expression(e);
-            substitutions = substitutions || {};
-            //three passes but easier to debug
-            var tokens = this.tokenize(e);
-            var rpn = this.toRPN(tokens);
+
+        let deps = {preprocessors, functions, brackets, operators, units: _.units};
+        let tokenizer = new Tokenizer(deps);
+
+        this.parse = (e, substitutions = {}) => {
+            let tokens = tokenizer.tokenize(e, true);
+
+            let rpn = this.toRPN(tokens);
             return this.parseRPN(rpn, substitutions);
         };
         /**

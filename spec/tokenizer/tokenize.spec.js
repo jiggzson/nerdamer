@@ -1,8 +1,12 @@
 'use strict';
 const fs = require("fs");
-const _ = require('lodash');
+const lodash = require('lodash');
 
-const runFor = function (data, includes, noPrepare = false, prerun = null) {
+const {Tokenizer} = require("../../src/Parser/Tokenizer");
+const assert = require('assert');
+
+
+const runFor = function (data, includes, noPrepare = false, prerun = null, refactored = false) {
     const nerdamer = require('../../src/nerdamer.core.js');
     for (let inc of includes) {
         require('../../src/' + inc);
@@ -21,13 +25,19 @@ const runFor = function (data, includes, noPrepare = false, prerun = null) {
         let expression = t.e;
         let expectedTree = t.result;
 
-        // Settings.PARSE2NUMBER = t.p2n;
+        let preprocessors = {names: [], actions: []};
+        let functions = core.PARSER.getFunctions();
+        let brackets = core.PARSER.getBrackets();
+        let operators = core.PARSER.getOperatorsClass();
+        let units = {};
 
-        expression = noPrepare ? expression : parser.prepare_expression(expression);
-        let tokens = parser.tokenize(expression);
+        let deps = {preprocessors, functions, brackets, operators, units};
+
+        let tokenizer = new Tokenizer(deps);
+
+        let tokens = tokenizer.tokenize(expression, !noPrepare);
         let tokenTree = JSON.parse(JSON.stringify(tokens));
-        let res = _.isEqual(expectedTree, tokenTree);
-
+        let res = lodash.isEqual(expectedTree, tokenTree);
 
         if (!res) {
             console.error(`Test ${data}(${includes.join(',')}) failed for ${t.e}`);
@@ -36,12 +46,39 @@ const runFor = function (data, includes, noPrepare = false, prerun = null) {
         }
 
         expect(res).toBeTruthy()
+
+        if (!res) {
+            break;
+        }
     }
 }
 
-describe('tokenize', function () {
-    it('correct for core cases', function () {
-        runFor('core', []);
+xdescribe('test expression', () => {
+    it('test expression', () => {
+        const nerdamer = require('../../src/nerdamer.core.js');
+        let core = nerdamer.getCore();
+
+
+        let expression = ' j + z + (max(j * 0.280587, z * 0.280587, 176))';
+
+        let preprocessors = {names: [], actions: []};
+        let functions = core.PARSER.getFunctions();
+        let brackets = core.PARSER.getBrackets();
+        let operators = core.PARSER.getOperatorsClass();
+        let units = {};
+
+        let deps = {preprocessors, functions, brackets, operators, units};
+
+        let tokenizer = new Tokenizer(deps);
+        tokenizer.tokenize(expression);
+
+        assert('failure');
+    })
+});
+
+describe('tokenize core', function () {
+    it('correct', function () {
+        runFor('core', [], false, false, true);
     });
 
     it('correct for special cases', function () {
@@ -66,37 +103,58 @@ describe('tokenize', function () {
         });
 
     });
+});
 
-
-    it('correct for latex cases', function () {
+describe('tokenize latex', function () {
+    it('correct', function () {
         runFor('latex', [], true);
     });
+});
 
-    it('correct for basic_parser cases', function () {
+describe('tokenize basic_parser', function () {
+    it('correct', function () {
         runFor('basic_parser', []);
     });
 
-    it('correct for texconvert cases', function () {
+});
+
+describe('tokenize texconvert', function () {
+    it('correct', function () {
         runFor('texconvert', []);
     });
 
-    it('correct for text cases', function () {
+});
+
+describe('tokenize text', function () {
+    it('correct', function () {
         runFor('text', []);
     });
 
-    it('correct for algebra cases', function () {
+});
+
+describe('tokenize algebra', function () {
+    it('correct', function () {
         runFor('algebra', ['Algebra']);
     });
 
-    it('correct for calculus cases', function () {
+});
+
+describe('tokenize calculus', function () {
+    it('correct', function () {
         runFor('calculus', ['Calculus']);
     });
 
-    it('correct for extra cases', function () {
+});
+
+describe('tokenize extra', function () {
+    it('correct', function () {
         runFor('extra', ['Extra']);
     });
 
-    it('correct for solve cases', function () {
+});
+
+describe('tokenize solve', function () {
+    it('correct', function () {
         runFor('solve', ['Solve']);
     });
 });

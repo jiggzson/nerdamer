@@ -23,7 +23,18 @@ export type OperatorDescriptor = {
     overloadAction?: string;
     overloadLeftAssoc?: boolean;
     vectorFn?: string;
+    value?: any;
 }
+
+export type Bracket = {
+    type: string;
+    id: number;
+    is_open: boolean;
+    is_close: boolean;
+    maps_to?: string;
+}
+
+export type Brackets = Record<string, Bracket>;
 
 export class Operators {
     private deps!: OperatorsDependencies;
@@ -224,7 +235,7 @@ export class Operators {
         this.deps = depsFunction;
     }
 
-    brackets = {
+    brackets: Brackets = {
         '(': {
             type: 'round',
             id: 1,
