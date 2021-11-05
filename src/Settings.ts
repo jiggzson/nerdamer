@@ -101,6 +101,8 @@ export type SettingsType = {
     MAX_BISECTION_ITER: number,
     // The tolerance for the bisection method
     BI_SECTION_EPSILON: number,
+
+    SHOW_WARNINGS: boolean,
 };
 
 // noinspection NonAsciiCharacters
@@ -212,4 +214,6 @@ export let Settings: SettingsType = {
     MAX_BISECTION_ITER: 2000,
     // The tolerance for the bisection method
     BI_SECTION_EPSILON: 1e-12,
+
+    SHOW_WARNINGS: false
 };

@@ -71,3 +71,59 @@ export function validateName(name: string, typ: string = 'variable') {
     }
 }
 
+/**
+ * Strips duplicates out of an array
+ * @param {Array} arr
+ */
+export function arrayUnique(arr: any[]) {
+    const l = arr.length, a = [];
+
+    for (let i = 0; i < l; i++) {
+        let item = arr[i];
+        if (a.indexOf(item) === -1) {
+            a.push(item);
+        }
+    }
+
+    return a;
+}
+
+/**
+ * Returns the minimum number in an array
+ * @param {Array} arr
+ * @returns {Number}
+ */
+export function arrayMax(arr: any[]) {
+    return Math.max.apply(undefined, arr);
+}
+
+/**
+ * Returns the maximum number in an array
+ * @param {Array} arr
+ * @returns {Number}
+ */
+export function arrayMin(arr: any[]) {
+    return Math.min.apply(undefined, arr);
+}
+
+/**
+ * Used to pass warnings or low severity errors about the library
+ * @param msg
+ */
+export const WARNINGS: string[] = [];
+export function warn(msg: string) {
+    WARNINGS.push(msg);
+    if (Settings.SHOW_WARNINGS && console && console.warn) {
+        console.warn(msg);
+    }
+}
+
+
+/**
+ * Checks to see if a number is an even number
+ * @param {Number} num
+ * @returns {boolean}
+ */
+export function even(num: number) {
+    return num % 2 === 0;
+}
