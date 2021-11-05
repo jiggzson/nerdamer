@@ -173,6 +173,7 @@ class InnerTokenizer {
      * @returns {undefined}
      */
     addScope(scope_type?: string, column?: number) {
+        // TODO: need to refactor this mix of array and object
         let new_scope: any = []; //create a new scope
         if (scope_type !== undefined) {
             new_scope.type = scope_type;
