@@ -1,6 +1,6 @@
 const {Symbol, isSymbol} = require('../Core/Symbol');
 const {Vector, isVector} = require('./Vector');
-const {inBrackets} = require('../Core/Utils');
+const {inBrackets, format} = require('../Core/Utils');
 const {err} = require('../Core/Errors');
 
 class Matrix {
@@ -387,7 +387,7 @@ class Matrix {
 
     latex(option) {
         var cols = this.cols(), elements = this.elements;
-        return this.$format('\\begin{vmatrix}{0}\\end{vmatrix}', function () {
+        return format('\\begin{vmatrix}{0}\\end{vmatrix}', function () {
             var tex = [];
             for (var row in elements) {
                 var row_tex = [];

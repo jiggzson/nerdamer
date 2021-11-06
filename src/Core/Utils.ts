@@ -153,3 +153,15 @@ export function remove(obj: any, indexOrKey: number | string): any {
     }
     return result;
 }
+
+/**
+ * A helper function to replace multiple occurences in a string. Takes multiple arguments
+ * @example format('{0} nice, {0} sweet', 'something')
+ * //returns 'something nice, something sweet'
+ */
+export function format(str: string, ...args: any) {
+    return str.replace(/{(\d+)}/g, function (match, index) {
+        const arg = args[index];
+        return typeof arg === 'function' ? arg() : arg;
+    });
+}

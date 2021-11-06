@@ -7,7 +7,7 @@
  */
 
 const {nround, isInt, isPrime, isNumber, validateName, arrayUnique,
-    arrayMin, arrayMax, warn, even, inBrackets, remove} = require('./Core/Utils');
+    arrayMin, arrayMax, warn, even, inBrackets, remove, format} = require('./Core/Utils');
 const Settings = require('./Settings').Settings;
 const {Symbol, isSymbol, isNumericSymbol, isVariableSymbol, isFraction, isNegative} = require("./Core/Symbol");
 const {Frac} = require("./Core/Frac");
@@ -32,6 +32,7 @@ const {Build} = require("./Parser/Build");
 const {LaTeX} = require('./LaTeX/LaTeX');
 
 const exceptions = require('./Core/Errors');
+const {Complex} = require('./Core/Complex');
 const {
     DivisionByZero, ParseError, UndefinedError, OutOfFunctionDomainError,
     MaximumIterationsReached, NerdamerTypeError, ParityError, OperatorError,
@@ -329,23 +330,6 @@ const nerdamer = (function () {
      */
     var sameSign = function (a, b) {
         return (a < 0) === (b < 0);
-    };
-
-    /**
-     * A helper function to replace multiple occurences in a string. Takes multiple arguments
-     * @example format('{0} nice, {0} sweet', 'something')
-     * //returns 'something nice, something sweet'
-     */
-    const format = function () {
-        const args = [].slice.call(arguments);
-        const str = args.shift();
-
-        const new_str = str.replace(/{(\d+)}/g, function (match, index) {
-            const arg = args[index];
-            return typeof arg === 'function' ? arg() : arg;
-        });
-
-        return new_str;
     };
 
     /**
@@ -1295,234 +1279,12 @@ const nerdamer = (function () {
         };
 //Parser.modules ===============================================================
         //object for functions which handle complex number
-        var complex = {
-            prec: undefined,
-            cos: function (r, i) {
-                var re, im;
-                re = _.parse(Math.cos(r) * Math.cosh(i));
-                im = _.parse(Math.sin(r) * Math.sinh(i));
-                return _.subtract(re, _.multiply(im, Symbol.imaginary()));
-            },
-            sin: function (r, i) {
-                var re, im;
-                re = _.parse(Math.sin(r) * Math.cosh(i));
-                im = _.parse(Math.cos(r) * Math.sinh(i));
-                return _.subtract(re, _.multiply(im, Symbol.imaginary()));
-            },
-            tan: function (r, i) {
-                var re, im;
-                re = _.parse(Math.sin(2 * r) / (Math.cos(2 * r) + Math.cosh(2 * i)));
-                im = _.parse(Math.sinh(2 * i) / (Math.cos(2 * r) + Math.cosh(2 * i)));
-                return _.add(re, _.multiply(im, Symbol.imaginary()));
-            },
-            sec: function (r, i) {
-                var t = this.removeDen(this.cos(r, i));
-                return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
-            },
-            csc: function (r, i) {
-                var t = this.removeDen(this.sin(r, i));
-                return _.add(t[0], _.multiply(t[1], Symbol.imaginary()));
-            },
-            cot: function (r, i) {
-                var t = this.removeDen(this.tan(r, i));
-                return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
-            },
-            acos: function (r, i) {
-                var symbol, sq, a, b, c, squared;
-                symbol = this.fromArray([r, i]);
-                squared = _.pow(symbol.clone(), new Symbol(2));
-                sq = _.expand(squared); //z*z
-                a = _.multiply(sqrt(_.subtract(new Symbol(1), sq)), Symbol.imaginary());
-                b = _.expand(_.add(symbol.clone(), a));
-                c = log(b);
-                return _.expand(_.multiply(Symbol.imaginary().negate(), c));
-            },
-            asin: function (r, i) {
-                return _.subtract(_.parse('pi/2'), this.acos(r, i));
-            },
-            atan: function (r, i) {
-                // Handle i and -i
-                if (r.equals(0) && (i.equals(1) || i.equals(-1))) {
-                    // Just copy Wolfram Alpha for now. The parenthesis
-                    return _.parse(`${Symbol.infinity()}*${Settings.IMAGINARY}*${i}`);
-                }
-                var a, b, c, symbol;
-                symbol = complex.fromArray([r, i]);
-                a = _.expand(_.multiply(Symbol.imaginary(), symbol.clone()));
-                b = log(_.expand(_.subtract(new Symbol(1), a.clone())));
-                c = log(_.expand(_.add(new Symbol(1), a.clone())));
-                return _.expand(_.multiply(_.divide(Symbol.imaginary(), new Symbol(2)), _.subtract(b, c)));
-            },
-            asec: function (r, i) {
-                var d = this.removeDen([r, i]);
-                d[1].negate();
-                return this.acos.apply(this, d);
-            },
-            acsc: function (r, i) {
-                var d = this.removeDen([r, i]);
-                d[1].negate();
-                return this.asin.apply(this, d);
-            },
-            acot: function (r, i) {
-                var d = this.removeDen([r, i]);
-                d[1].negate();
-                return this.atan.apply(this, d);
-            },
-            //Hyperbolic trig
-            cosh: function (r, i) {
-                var re, im;
-                re = _.parse(Math.cosh(r) * Math.cos(i));
-                im = _.parse(Math.sinh(r) * Math.sin(i));
-                return _.add(re, _.multiply(im, Symbol.imaginary()));
-            },
-            sinh: function (r, i) {
-                var re, im;
-                re = _.parse(Math.sinh(r) * Math.cos(i));
-                im = _.parse(Math.cosh(r) * Math.sin(i));
-                return _.add(re, _.multiply(im, Symbol.imaginary()));
-            },
-            tanh: function (r, i) {
-                var re, im;
-                re = _.parse(Math.sinh(2 * r) / (Math.cos(2 * i) + Math.cosh(2 * r)));
-                im = _.parse(Math.sin(2 * i) / (Math.cos(2 * i) + Math.cosh(2 * r)));
-                return _.subtract(re, _.multiply(im, Symbol.imaginary()));
-            },
-            sech: function (r, i) {
-                var t = this.removeDen(this.cosh(r, i));
-                return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
-            },
-            csch: function (r, i) {
-                var t = this.removeDen(this.sinh(r, i));
-                return _.subtract(t[0], _.multiply(t[1], Symbol.imaginary()));
-            },
-            coth: function (r, i) {
-                var t = this.removeDen(this.tanh(r, i));
-                return _.add(t[0], _.multiply(t[1], Symbol.imaginary()));
-            },
-            acosh: function (r, i) {
-                var a, b, z;
-                z = this.fromArray([r, i]);
-                a = sqrt(_.add(z.clone(), new Symbol(1)));
-                b = sqrt(_.subtract(z.clone(), new Symbol(1)));
-                return _.expand(log(_.add(z, _.expand(_.multiply(a, b)))));
-            },
-            asinh: function (r, i) {
-                var a, z;
-                z = this.fromArray([r, i]);
-                a = sqrt(_.add(new Symbol(1), _.expand(_.pow(z.clone(), new Symbol(2)))));
-                return _.expand(log(_.add(z, a)));
-            },
-            atanh: function (r, i) {
-                var a, b, z;
-                z = this.fromArray([r, i]);
-                a = log(_.add(z.clone(), new Symbol(1)));
-                b = log(_.subtract(new Symbol(1), z));
-                return _.expand(_.divide(_.subtract(a, b), new Symbol(2)));
-            },
-            asech: function (r, i) {
-                var t = this.removeDen([r, i]);
-                t[1].negate();
-                return this.acosh.apply(this, t);
-            },
-            acsch: function (r, i) {
-                var t = this.removeDen([r, i]);
-                t[1].negate();
-                return this.asinh.apply(this, t);
-            },
-            acoth: function (r, i) {
-                var t = this.removeDen([r, i]);
-                t[1].negate();
-                return this.atanh.apply(this, t);
-            },
-            sqrt: function (symbol) {
-                var re, im, h, a, d;
-                re = symbol.realpart();
-                im = symbol.imagpart();
-                h = Symbol.hyp(re, im);
-                a = _.add(re.clone(), h);
-                d = sqrt(_.multiply(new Symbol(2), a.clone()));
-                return _.add(_.divide(a.clone(), d.clone()), _.multiply(_.divide(im, d), Symbol.imaginary()));
-            },
-            log: function (r, i) {
-                var re, im, phi;
-                re = log(Symbol.hyp(r, i));
-                phi = Settings.USE_BIG ? Symbol(bigDec.atan2(i.multiplier.toDecimal(), r.multiplier.toDecimal())) : Math.atan2(i, r);
-                im = _.parse(phi);
-                return _.add(re, _.multiply(Symbol.imaginary(), im));
-            },
-            erf(symbol, n) {
-                //Do nothing for now. Revisit this in the future.
-                return _.symfunction('erf', [symbol]);
+        let complex = Complex;
+        Complex.$ = _;
+        Complex.$log = log;
+        Complex.$sqrt = sqrt;
+        Complex.$block = block;
 
-                n = n || 30;
-
-                var f = function (R, I) {
-                    return block('PARSE2NUMBER', function () {
-                        var retval = new Symbol(0);
-                        for (var i = 0; i < n; i++) {
-                            var a, b;
-                            a = _.parse(bigDec.exp(bigDec(i).toPower(2).neg().dividedBy(bigDec(n).pow(2).plus(bigDec(R).toPower(2).times(4)))));
-                            b = _.parse(format('2*({1})-e^(-(2*{0}*{1}*{2}))*(2*{1}*cosh({2}*{3})-{0}*{3}*sinh({3}*{2}))', Settings.IMAGINARY, R, I, i));
-                            retval = _.add(retval, _.multiply(a, b));
-                        }
-                        return _.multiply(retval, new Symbol(2));
-                    }, true);
-                };
-                var re, im, a, b, c, k;
-                re = symbol.realpart();
-                im = symbol.imagpart();
-
-                k = _.parse(format('(e^(-{0}^2))/pi', re));
-                a = _.parse(format('(1-e^(-(2*{0}*{1}*{2})))/(2*{1})', Settings.IMAGINARY, re, im));
-                b = f(re.toString(), im.toString());
-
-                return _.add(_.parse(Math2.erf(re.toString())), _.multiply(k, _.add(a, b)));
-            },
-            removeDen: function (symbol) {
-                var den, r, i, re, im;
-                if (isArray(symbol)) {
-                    r = symbol[0];
-                    i = symbol[1];
-                }
-                else {
-                    r = symbol.realpart();
-                    i = symbol.imagpart();
-                }
-
-                den = Math.pow(r, 2) + Math.pow(i, 2);
-                re = _.parse(r / den);
-                im = _.parse(i / den);
-                return [re, im];
-            },
-            fromArray: function (arr) {
-                return _.add(arr[0], _.multiply(Symbol.imaginary(), arr[1]));
-            },
-            evaluate: function (symbol, f) {
-                var re, im, sign;
-
-                sign = symbol.power.sign();
-                //remove it from under the denominator
-                symbol.power = symbol.power.abs();
-                //expand
-                if (symbol.power.greaterThan(1))
-                    symbol = _.expand(symbol);
-                //remove the denominator
-                if (sign < 0) {
-                    var d = this.removeDen(symbol);
-                    re = d[0];
-                    im = d[1];
-                }
-                else {
-                    re = symbol.realpart();
-                    im = symbol.imagpart();
-                }
-
-                if (re.isConstant('all') && im.isConstant('all'))
-                    return this[f].call(this, re, im);
-
-                return _.symfunction(f, [symbol]);
-            }
-        };
         //object for functions which handle trig
         var trig = this.trig = {
             //container for trigonometric function
@@ -5601,7 +5363,6 @@ const nerdamer = (function () {
     Matrix.prototype.$ = _;
     Matrix.prototype.$LaTeX = LaTeX;
     Matrix.prototype.$block = block;
-    Matrix.prototype.$format = format;
 
     Expression.prototype.$LaTeX = LaTeX;
     Expression.prototype.$block = block;
