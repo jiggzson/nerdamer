@@ -5,7 +5,9 @@ import {Build} from './Build';
 import {text} from '../Core/Text';
 import {LaTeX} from '../LaTeX/LaTeX';
 import {block} from '../Core/Utils';
-import {subtract} from '../Core/SymbolOperators/SymbolOperators';
+import {subtract} from '../Core/functions';
+import {parse, evaluate} from '../Core/parse';
+import {expand} from '../Core/functions/math/expand';
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -17,7 +19,10 @@ import {subtract} from '../Core/SymbolOperators/SymbolOperators';
  */
 
 export class Expression {
+    /** @deprecated */
     static $EXPRESSIONS;
+    /** @deprecated */
+    $variables;
     symbol;
 
     constructor(symbol) {
@@ -103,7 +108,7 @@ export class Expression {
         let subs = arguments[idx] || {};
 
         return new Expression(block('PARSE2NUMBER', function () {
-            return this.$parse(expression, subs);
+            return parse(expression, subs);
         }, true, this));
     }
 
@@ -137,7 +142,7 @@ export class Expression {
      * @returns {boolean}
      */
     isImaginary() {
-        return this.$evaluate(this.$.parse(this.symbol)).isImaginary();
+        return evaluate(parse(this.symbol)).isImaginary();
     }
 
     /**
@@ -179,7 +184,7 @@ export class Expression {
 
     //performs a substitution
     sub(symbol, for_symbol) {
-        return new Expression(this.symbol.sub(this.$parse(symbol), this.$parse(for_symbol)));
+        return new Expression(this.symbol.sub(parse(symbol), parse(for_symbol)));
     }
 
     operation(otype, symbol) {
@@ -187,7 +192,7 @@ export class Expression {
             symbol = symbol.symbol;
         }
         else if (!isSymbol(symbol)) {
-            symbol = this.$parse(symbol);
+            symbol = parse(symbol);
         }
 
         return new Expression(this.$getAction(otype)(this.symbol.clone(), symbol.clone()));
@@ -214,7 +219,7 @@ export class Expression {
     }
 
     expand() {
-        return new Expression(this.$expand(this.symbol));
+        return new Expression(expand(this.symbol));
     }
 
     each(callback, i) {
@@ -230,7 +235,7 @@ export class Expression {
 
     eq(value) {
         if (!isSymbol(value))
-            value = this.$parse(value);
+            value = parse(value);
         try {
             let d = subtract(this.symbol.clone(), value);
             return d.equals(0);
@@ -242,9 +247,9 @@ export class Expression {
 
     lt(value) {
         if (!isSymbol(value))
-            value = this.$parse(value);
+            value = parse(value);
         try {
-            let d = this.$evaluate(subtract(this.symbol.clone(), value));
+            let d = evaluate(subtract(this.symbol.clone(), value));
             return d.lessThan(0);
         }
         catch(e) {
@@ -254,9 +259,9 @@ export class Expression {
 
     gt(value) {
         if (!isSymbol(value))
-            value = this.$parse(value);
+            value = parse(value);
         try {
-            let d = this.$evaluate(subtract(this.symbol.clone(), value));
+            let d = evaluate(subtract(this.symbol.clone(), value));
             return d.greaterThan(0);
         }
         catch(e) {

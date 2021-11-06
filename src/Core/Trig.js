@@ -7,6 +7,9 @@ import {Math2} from './Math2';
 import {Complex} from './Complex';
 import {OutOfFunctionDomainError, UndefinedError} from './Errors';
 import {getQuadrant} from './Frac';
+import {parse, evaluate} from './parse';
+import {add, multiply} from './functions';
+import {expand} from './functions/math/expand';
 
 export const Trig = {
     //container for trigonometric function
@@ -47,15 +50,15 @@ export const Trig = {
                 if (d === 2)
                     retval = new Symbol(0);
                 else if (d === 3) {
-                    retval = Trig.$.parse('1/2');
+                    retval = parse('1/2');
                     c = true;
                 }
                 else if (d === 4) {
-                    retval = Trig.$.parse('1/sqrt(2)');
+                    retval = parse('1/sqrt(2)');
                     c = true;
                 }
                 else if (d === 6) {
-                    retval = Trig.$.parse('sqrt(3)/2');
+                    retval = parse('sqrt(3)/2');
                     c = true;
                 }
                 else
@@ -111,24 +114,24 @@ export const Trig = {
                     c = true;
                 }
                 else if (d == 3) {
-                    retval = Trig.$.parse('sqrt(3)/2');
+                    retval = parse('sqrt(3)/2');
                     c = true
                 }
                 else if (d == 4) {
-                    retval = Trig.$.parse('1/sqrt(2)');
+                    retval = parse('1/sqrt(2)');
                     c = true;
                 }
                 else if (d == 6) {
-                    retval = Trig.$.parse('1/2');
+                    retval = parse('1/2');
                     c = true;
                 }
                 else
-                    retval = Trig.$.multiply(new Symbol(sign), symfunction('sin', [symbol]));
+                    retval = multiply(new Symbol(sign), symfunction('sin', [symbol]));
             }
         }
 
         if (!retval)
-            retval = Trig.$.multiply(new Symbol(sign), symfunction('sin', [symbol]));
+            retval = multiply(new Symbol(sign), symfunction('sin', [symbol]));
 
         if (c && (q === 3 || q === 4))
             retval.negate();
@@ -167,7 +170,7 @@ export const Trig = {
                 if (d == 2)
                     throw new UndefinedError('tan is undefined for ' + symbol.toString());
                 else if (d == 3) {
-                    retval = Trig.$.parse('sqrt(3)');
+                    retval = parse('sqrt(3)');
                     c = true;
                 }
                 else if (d == 4) {
@@ -175,7 +178,7 @@ export const Trig = {
                     c = true;
                 }
                 else if (d == 6) {
-                    retval = Trig.$.parse('1/sqrt(3)');
+                    retval = parse('1/sqrt(3)');
                     c = true;
                 }
                 else
@@ -202,7 +205,7 @@ export const Trig = {
             }
             if (symbol.isImaginary())
                 return Complex.evaluate(symbol, 'sec');
-            return Trig.$.parse(format('1/cos({0})', symbol));
+            return parse(format('1/cos({0})', symbol));
         }
 
         var retval,
@@ -225,11 +228,11 @@ export const Trig = {
                     c = true;
                 }
                 else if (d == 4) {
-                    retval = Trig.$.parse('sqrt(2)');
+                    retval = parse('sqrt(2)');
                     c = true;
                 }
                 else if (d == 6) {
-                    retval = Trig.$.parse('2/sqrt(3)');
+                    retval = parse('2/sqrt(3)');
                     c = true;
                 }
                 else
@@ -256,7 +259,7 @@ export const Trig = {
             }
             if (symbol.isImaginary())
                 return Complex.evaluate(symbol, 'csc');
-            return Trig.$.parse(format('1/sin({0})', symbol));
+            return parse(format('1/sin({0})', symbol));
         }
 
         var retval,
@@ -279,11 +282,11 @@ export const Trig = {
                     c = true;
                 }
                 else if (d == 3) {
-                    retval = Trig.$.parse('2/sqrt(3)');
+                    retval = parse('2/sqrt(3)');
                     c = true
                 }
                 else if (d == 4) {
-                    retval = Trig.$.parse('sqrt(2)');
+                    retval = parse('sqrt(2)');
                     c = true;
                 }
                 else if (d == 6) {
@@ -291,12 +294,12 @@ export const Trig = {
                     c = true;
                 }
                 else
-                    retval = Trig.$.multiply(new Symbol(sign), symfunction('csc', [symbol]));
+                    retval = multiply(new Symbol(sign), symfunction('csc', [symbol]));
             }
         }
 
         if (!retval)
-            retval = Trig.$.multiply(new Symbol(sign), symfunction('csc', [symbol]));
+            retval = multiply(new Symbol(sign), symfunction('csc', [symbol]));
 
         if (c && (q === 3 || q === 4))
             retval.negate();
@@ -317,7 +320,7 @@ export const Trig = {
             }
             if (symbol.isImaginary())
                 return Complex.evaluate(symbol, 'cot');
-            return Trig.$.parse(format('1/tan({0})', symbol));
+            return parse(format('1/tan({0})', symbol));
         }
         var retval,
             c = false,
@@ -336,7 +339,7 @@ export const Trig = {
                 if (d == 2)
                     retval = new Symbol(0);
                 else if (d == 3) {
-                    retval = Trig.$.parse('1/sqrt(3)');
+                    retval = parse('1/sqrt(3)');
                     c = true;
                 }
                 else if (d == 4) {
@@ -344,7 +347,7 @@ export const Trig = {
                     c = true;
                 }
                 else if (d == 6) {
-                    retval = Trig.$.parse('sqrt(3)');
+                    retval = parse('sqrt(3)');
                     c = true;
                 }
                 else
@@ -366,7 +369,7 @@ export const Trig = {
                 // Handle values in the complex domain
                 if (symbol.gt(1) || symbol.lt(-1)) {
                     var x = symbol.toString();
-                    return Trig.$expand(Trig.$evaluate(`pi/2-asin(${x})`));
+                    return expand(evaluate(`pi/2-asin(${x})`));
                 }
                 // Handle big numbers
                 if (Settings.USE_BIG) {
@@ -387,7 +390,7 @@ export const Trig = {
                 if (symbol.gt(1) || symbol.lt(-1)) {
                     var i = Settings.IMAGINARY;
                     var x = symbol.multiplier.toDecimal();
-                    return Trig.$expand(Trig.$evaluate(`${i}*log(sqrt(1-${x}^2)-${i}*${x})`));
+                    return expand(evaluate(`${i}*log(sqrt(1-${x}^2)-${i}*${x})`));
                 }
                 // Handle big numbers
                 if (Settings.USE_BIG) {
@@ -419,7 +422,7 @@ export const Trig = {
             return symfunction('atan', arguments);
         }
         else if (symbol.equals(-1))
-            retval = Trig.$.parse('-pi/4');
+            retval = parse('-pi/4');
         else
             retval = symfunction('atan', arguments);
         return retval;
@@ -452,7 +455,7 @@ export const Trig = {
     acot: function (symbol) {
         if (Settings.PARSE2NUMBER) {
             if (symbol.isConstant()) {
-                return new Trig.$.add(Trig.$.parse('pi/2'), Trig.atan(symbol).negate());
+                return new add(parse('pi/2'), Trig.atan(symbol).negate());
             }
 
             if (symbol.isImaginary())

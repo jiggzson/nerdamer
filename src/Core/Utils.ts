@@ -1,4 +1,5 @@
 import {Settings, SettingsType} from "../Settings";
+import {Groups} from './Groups';
 
 /**
  * Rounds a number up to x decimal places
@@ -242,7 +243,7 @@ export function allNumeric(arr: any[]) {
  * @param {boolean} opt - The value of the setting in the block
  * @param {String} obj - The obj of interest. Usually a Symbol but could be any object
  */
-export function block<T>(settingsName: keyof SettingsType, f: () => T, opt: any, obj: object): T {
+export function block<T>(settingsName: keyof SettingsType, f: () => T, opt: any, obj?: object): T {
     let current_setting = Settings[settingsName];
     (Settings[settingsName] as any) = opt === undefined ? true : !!opt;
     let retval = f.call(obj);
@@ -267,4 +268,36 @@ export function pretty_print(o: any): string {
         return '(' + s + ')';
     }
     return o.toString();
+}
+
+/**
+ * Checks to see if all arguments are numbers
+ * @param {object} args
+ */
+export function allNumbers(args: any[]) {
+    for (let i = 0; i < args.length; i++) {
+        if (args[i].group !== Groups.N) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*
+ * Checks if all arguments aren't just all number but if they
+ * are constants as well e.g. pi, e.
+ * @param {object} args
+ */
+export function allConstants(args: any) {
+    for (let i = 0; i < args.length; i++) {
+        if (args[i].isPi() || args[i].isE()) {
+            continue;
+        }
+
+        if (!args[i].isConstant(true)) {
+            return false;
+        }
+    }
+    return true;
 }

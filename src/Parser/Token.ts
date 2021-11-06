@@ -15,6 +15,7 @@ export class Token {
     leftAssoc = false;
     postfix = false;
 
+    /** @deprecated */
     static parser: any;
 
     constructor(node: string, node_type: string, column: number) {

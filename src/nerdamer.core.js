@@ -7,21 +7,26 @@
  */
 
 import {
+    abs, add, divide, factorial, log, multiply,
+    pow, rationalize, sqrt, subtract, mod, round,
+    parens, cbrt, nthroot, realpart, imagpart, conjugate, arg,
+} from './Core/functions';
+import {
+    allNumbers,
     allNumeric, allSame, arrayMax, arrayMin, arrayUnique, block,
     even, evenFraction, firstObject, format, inBrackets, isInt,
     isPrime, nround, remove, validateName, warn
 } from './Core/Utils';
 import {Settings} from './Settings';
-import {isFraction, isNegative, isNumericSymbol, isSymbol, isVariableSymbol, Symbol, symfunction} from './Core/Symbol';
+import {isFraction, isNegative, isNumericSymbol, isSymbol, isVariableSymbol, Symbol, symfunction, decompose_fn} from './Core/Symbol';
 import {Frac} from './Core/Frac';
 import Scientific from './Core/Scientific';
-import {Operators} from './Parser/Operators';
+import {OperatorDictionary} from './Parser/OperatorDictionary';
 import {createFunctions, findFunction} from './Operators/functions';
 import {Groups} from './Core/Groups';
 import {Slice} from './Parser/Slice';
 import {isMatrix, Matrix} from './Parser/Matrix';
 import {Collection} from './Parser/Collection';
-import {isSet, Set} from './Parser/Set';
 import {isVector, Vector} from './Parser/Vector';
 import bigDec from 'decimal.js';
 import bigInt from './3rdparty/bigInt';
@@ -34,18 +39,15 @@ import {RPN} from './Parser/RPN';
 import {Build} from './Parser/Build';
 import {LaTeX} from './LaTeX/LaTeX';
 import * as exceptions from './Core/Errors';
-import {Complex} from './Core/Complex';
 import {Trig} from './Core/Trig';
 import {TrigHyperbolic} from './Core/Trig.hyperbolic';
-import {
-    abs, add, divide, factorial, log, multiply, pfactor,
-    pow, rationalize, sqrt, subtract, SymbolOperatorsDeps
-} from './Core/SymbolOperators/SymbolOperators';
 
+
+import {ParseDeps, evaluate} from './Core/parse';
+import {expand} from './Core/functions/math/expand';
 import {text, TextDependencies} from './Core/Text';
-const {
-    UndefinedError, NerdamerTypeError, DimensionError, NerdamerValueError, err
-} = exceptions;
+import {FactorialDeps} from './Core/functions/math/factorial';
+const {NerdamerTypeError, NerdamerValueError, err} = exceptions;
 
 
 
@@ -53,25 +55,11 @@ const nerdamer = (function () {
 //version ======================================================================
     const version = '1.1.12';
 
-    /**
-     * As the name states. It forces evaluation of the expression
-     * @param {Symbol} symbol
-     * @param {Symbol} o
-     */
-    var evaluate = function (symbol, o= undefined) {
-        return block('PARSE2NUMBER', function () {
-            return _.parse(symbol, o);
-        }, true);
-    };
-    Symbol.$evaluate = evaluate;
-
-
 //inits ========================================================================
     const _ = new Parser(); //nerdamer's parser
     Token.parser = _;
-    //import bigInt
 
-    //set the precision to js precision
+    //set bigInt the precision to js precision
     bigDec.set({
         precision: 250
     });
@@ -125,10 +113,6 @@ const nerdamer = (function () {
 
     const WARNINGS = [];
 
-    Frac.$Math2 = Math2;
-    Symbol.$Math2 = Math2;
-    Symbol.$parser = _;
-    Symbol.$LaTeX = LaTeX;
 
 //Utils ========================================================================
 
@@ -536,36 +520,6 @@ const nerdamer = (function () {
 
         return [na, nb];
     };
-    /**
-     * TODO: Pick a more descriptive name and better description
-     * Breaks a function down into it's parts wrt to a variable, mainly coefficients
-     * Example a*x^2+b wrt x
-     * @param {Symbol} fn
-     * @param {String} wrt
-     * @param {boolean} as_obj
-     */
-    var decompose_fn = function (fn, wrt, as_obj) {
-        wrt = String(wrt); //convert to string
-        var ax, a, x, b;
-        if (fn.group === CP) {
-            var t = _.expand(fn.clone()).stripVar(wrt);
-            ax = _.subtract(fn.clone(), t.clone());
-            b = t;
-        }
-        else
-            ax = fn.clone();
-        a = ax.stripVar(wrt);
-        x = _.divide(ax.clone(), a.clone());
-        b = b || new Symbol(0);
-        if (as_obj)
-            return {
-                a: a,
-                x: x,
-                ax: ax,
-                b: b
-            };
-        return [a, x, ax, b];
-    };
 
 
     /**
@@ -646,43 +600,7 @@ const nerdamer = (function () {
         return vars;
     };
 
-    /**
-     * Removes duplicates from an array. Returns a new array
-     * @param {Array} arr
-     * @param {Function} condition
-     */
-    var removeDuplicates = function (arr, condition) {
-        var conditionType = typeof condition;
 
-        if (conditionType !== 'function' || conditionType === 'undefined') {
-            condition = function (a, b) {
-                return a === b;
-            };
-        }
-
-        var seen = [];
-
-        while(arr.length) {
-            var a = arr[0];
-            //only one element left so we're done
-            if (arr.length === 1) {
-                seen.push(a);
-                break;
-            }
-            var temp = [];
-            seen.push(a); //we already scanned these
-            for (var i = 1; i < arr.length; i++) {
-                var b = arr[i];
-                //if the number is outside the specified tolerance
-                if (!condition(a, b))
-                    temp.push(b);
-            }
-            //start over with the remainder
-            arr = temp;
-        }
-
-        return seen;
-    };
 
     /**
      * Reserves the names in an object so they cannot be used as function names
@@ -783,71 +701,8 @@ const nerdamer = (function () {
         return x;
     };
 
-    /**
-     * Checks to see if all arguments are numbers
-     * @param {object} args
-     */
-    var allNumbers = function (args) {
-        for (var i = 0; i < args.length; i++)
-            if (args[i].group !== N)
-                return false;
-        return true;
-    };
-    /*
-     * Checks if all arguments aren't just all number but if they
-     * are constants as well e.g. pi, e.
-     * @param {object} args
-     */
-    var allConstants = function (args) {
-        for (var i = 0; i < args.length; i++) {
-            if (args[i].isPi() || args[i].isE())
-                continue;
-            if (!args[i].isConstant(true))
-                return false;
-        }
-        return true;
-    };
 
-    /**
-     * Used to multiply two expression in expanded form
-     * @param {Symbol} a
-     * @param {Symbol} b
-     */
-    var mix = function (a, b, opt) {
-        // Flip them if b is a CP or PL and a is not
-        if (b.isComposite() && !a.isComposite() || b.isLinear() && !a.isLinear()) {
-            [a, b] = [b, a];
-        }
-        // A temporary variable to hold the expanded terms
-        var t = new Symbol(0);
-        if (a.isLinear()) {
-            a.each(function (x) {
-                // If b is not a PL or a CP then simply multiply it
-                if (!b.isComposite()) {
-                    var term = _.multiply(_.parse(x), _.parse(b));
-                    t = _.add(t, _.expand(term, opt));
-                }
-                // Otherwise multiply out each term.
-                else if (b.isLinear()) {
-                    b.each(function (y) {
-                        var term = _.multiply(_.parse(x), _.parse(y));
-                        var expanded = _.expand(_.parse(term), opt);
-                        t = _.add(t, expanded);
-                    }, true);
-                }
-                else {
-                    t = _.add(t, _.multiply(x, _.parse(b)));
-                }
-            }, true);
-        }
-        else {
-            // Just multiply them together
-            t = _.multiply(a, b);
-        }
 
-        // The expanded function is now t
-        return t;
-    };
 
     //link the Math2 object to Settings.FUNCTION_MODULES
     Settings.FUNCTION_MODULES.push(Math2);
@@ -859,8 +714,6 @@ const nerdamer = (function () {
 
 
 //Expression ===================================================================
-    Expression.prototype.$ = _;
-    Expression.prototype.$evaluate = evaluate;
     Expression.prototype.$getAction = a => {
         return _[a];
     }
@@ -888,16 +741,8 @@ const nerdamer = (function () {
             Token: Token
         };
 //Parser.modules ===============================================================
-        //object for functions which handle complex number
-        Complex.$ = _;
 
-        Trig.$ = _;
-        Trig.$expand = expand;
-        Trig.$evaluate = evaluate;
         let trig = this.trig = Trig;
-
-        TrigHyperbolic.$ = _;
-        TrigHyperbolic.$evaluate = evaluate;
         let trigh = TrigHyperbolic;
 
         //list of supported units
@@ -905,7 +750,7 @@ const nerdamer = (function () {
         //list all the supported operators
         //brackets
 
-        let operators = new Operators();
+        let operators = new OperatorDictionary();
         operators.injectOperatorsDeps({
             registerOperator: (name, operation) => _[name] = operation,
         });
@@ -921,18 +766,7 @@ const nerdamer = (function () {
 
         let brackets = operators.getBrackets();
 
-        let functions = this.functions = createFunctions({
-            trig, trigh, exp, radians, degrees, print,
-            min, max, sinc, sign, factorial, continued_fraction,
-            round, scientific, mod, pfactor, vector, matrix,
-            imatrix, parens, sqrt, nthroot, set, cbrt, log,
-            expandall, abs, invert, determinant, size, transpose, dot,
-            cross, vecget, vecset, vectrim, matget, matset, matgetrow, matsetrow,
-            matgetcol, matsetcol, rationalize, IF, is_in, realpart,
-            imagpart, conjugate, arg, polarform, rectform, sort, union,
-            contains, intersection, difference, intersects, is_subset,
-        });
-
+        let functions = this.functions = createFunctions();
         this.getFunctions = () => (functions);
 
         //error handler
@@ -1110,6 +944,10 @@ const nerdamer = (function () {
             let rpn = this.toRPN(tokens);
             return this.parseRPN(rpn, substitutions);
         };
+        ParseDeps.parse = this.parse;
+        ParseDeps.evaluate = evaluate;
+
+
         /**
          * TODO: Switch to Parser.tokenize for this method
          * Reads a string into an array of Symbols and operators
@@ -1388,140 +1226,6 @@ const nerdamer = (function () {
         };
 
 //Parser.functions ==============================================================
-        /* Although parens is not a "real" function it is important in some cases when the
-         * symbol must carry parenthesis. Once set you don't have to worry about it anymore
-         * as the parser will get rid of it at the first opportunity
-         */
-        function parens(symbol) {
-            if (Settings.PARSE2NUMBER) {
-                return symbol;
-            }
-            return symfunction('parens', [symbol]);
-        }
-
-        /**
-         * Returns the continued fraction of a number
-         * @param {Symbol} symbol
-         * @param {Symbol} n
-         * @returns {Symbol}
-         */
-        function continued_fraction(symbol, n) {
-            var _symbol = evaluate(symbol);
-            if (_symbol.isConstant()) {
-                var cf = Math2.continuedFraction(_symbol, n);
-                //convert the fractions array to a new Vector
-                var fractions = Vector.fromArray(cf.fractions.map(function (x) {
-                    return new Symbol(x);
-                }));
-                return Vector.fromArray([new Symbol(cf.sign), new Symbol(cf.whole), fractions]);
-            }
-            return _.symfunction('continued_fraction', arguments);
-        }
-
-        /**
-         * The mod function
-         * @param {Symbol} symbol1
-         * @param {Symbol} symbol2
-         * @returns {Symbol}
-         */
-        function mod(symbol1, symbol2) {
-            if (symbol1.isConstant() && symbol2.isConstant()) {
-                var retval = new Symbol(1);
-                retval.multiplier = retval.multiplier.multiply(symbol1.multiplier.mod(symbol2.multiplier));
-                return retval;
-            }
-            //try to see if division has remainder of zero
-            var r = _.divide(symbol1.clone(), symbol2.clone());
-            if (isInt(r))
-                return new Symbol(0);
-            return _.symfunction('mod', [symbol1, symbol2]);
-        }
-        /**
-         * A branghing function
-         * @param {Boolean} condition
-         * @param {Symbol} a
-         * @param {Symbol} b
-         * @returns {Symbol}
-         */
-        function IF (condition, a, b) {
-            if (typeof condition !== 'boolean')
-                if (isNumericSymbol(condition))
-                    condition = !!Number(condition);
-            if (condition)
-                return a;
-            return b;
-        }
-        /**
-         *
-         * @param {Matrix|Vector|Set|Collection} obj
-         * @param {Symbol} item
-         * @returns {Boolean}
-         */
-        function is_in(obj, item) {
-            if (isMatrix(obj)) {
-                for (var i = 0, l = obj.rows(); i < l; i++) {
-                    for (var j = 0, l2 = obj.cols(); j < l2; j++) {
-                        var element = obj.elements[i][j];
-                        if (element.equals(item))
-                            return new Symbol(1);
-                    }
-                }
-            }
-            else if (obj.elements) {
-                for (var i = 0, l = obj.elements.length; i < l; i++) {
-                    if (obj.elements[i].equals(item))
-                        return new Symbol(1);
-                }
-            }
-
-            return new Symbol(0);
-        }
-
-        /**
-         * A symbolic extension for sinc
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        function sinc(symbol) {
-            if (Settings.PARSE2NUMBER) {
-                if (symbol.isConstant()) {
-                    return new Symbol(Math2.sinc(symbol));
-                }
-                return _.parse(format('sin({0})/({0})', symbol));
-            }
-            return _.symfunction('sinc', [symbol]);
-        }
-
-        /**
-         * A symbolic extension for exp. This will auto-convert all instances of exp(x) to e^x.
-         * Thanks @ Happypig375
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        function exp(symbol) {
-            if (symbol.fname === Settings.LOG && symbol.isLinear()) {
-                return _.pow(symbol.args[0], Symbol.create(symbol.multiplier));
-            }
-            return _.parse(format('e^({0})', symbol));
-        }
-
-        /**
-         * Converts value degrees to radians
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        function radians(symbol) {
-            return _.parse(format('({0})*pi/180', symbol));
-        }
-
-        /**
-         * Converts value from radians to degrees
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        function degrees(symbol) {
-            return _.parse(format('({0})*180/pi', symbol));
-        }
 
         function nroots(symbol) {
             var a, b;
@@ -1570,328 +1274,33 @@ const nerdamer = (function () {
         }
 
 
-        /**
-         * The cube root function
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        function cbrt(symbol) {
-            if (!symbol.isConstant(true)) {
-                var retval;
-
-                var n = symbol.power / 3;
-                //take the cube root of the multplier
-                var m = _.pow(_.parse(symbol.multiplier), new Symbol(1 / 3));
-                //strip the multiplier
-                var sym = symbol.toUnitMultiplier();
-
-                //simplify the power
-                if (isInt(n)) {
-                    retval = _.pow(sym.toLinear(), _.parse(n));
-                }
-                else {
-                    if (sym.group === CB) {
-                        retval = new Symbol(1);
-                        sym.each(function (x) {
-                            retval = _.multiply(retval, cbrt(x));
-                        });
-                    }
-                    else {
-                        retval = _.symfunction('cbrt', [sym]);
-                    }
-                }
-
-                return _.multiply(m, retval);
-            }
-            return nthroot(symbol, new Symbol(3));
-        }
-
-        function scientific(symbol, sigfigs) {
-            //Just set the flag and keep it moving. Symbol.toString will deal with how to
-            //display this
-            symbol.scientific = sigfigs || 10;
-            return symbol;
-        }
-
-        /**
-         *
-         * @param {Symbol} num - the number being raised
-         * @param {Symbol} p - the exponent
-         * @param {type} prec - the precision wanted
-         * @param {bool} asbig - true if a bigDecimal is wanted
-         * @returns {Symbol}
-         */
-        function nthroot(num, p, prec, asbig) {
-            //clone p and convert to a number if possible
-            p = evaluate(_.parse(p));
-
-            //cannot calculate if p = 0. nthroot(0, 0) => 0^(1/0) => undefined
-            if (p.equals(0)) {
-                throw new UndefinedError('Unable to calculate nthroots of zero');
-            }
-
-            //Stop computation if it negative and even since we have an imaginary result
-            if (num < 0 && even(p))
-                throw new Error('Cannot calculate nthroot of negative number for even powers');
-
-            //return non numeric values unevaluated
-            if (!num.isConstant(true)) {
-                return _.symfunction('nthroot', arguments);
-            }
-
-            //evaluate numeric values
-            if (num.group !== N) {
-                num = evaluate(num);
-            }
-
-            //default is to return a big value
-            if (typeof asbig === 'undefined')
-                asbig = true;
-
-            prec = prec || 25;
-
-            var sign = num.sign();
-            var ans;
-
-            if (sign < 0) {
-                num = abs(num); //remove the sign
-            }
-
-            if (isInt(num) && p.isConstant()) {
-
-                if (num < 18446744073709551616) {
-                    //2^64
-                    ans = Frac.create(Math.pow(num, 1 / p));
-                }
-                else {
-                    ans = Math2.nthroot(num, p);
-                }
-
-                var retval;
-                if (asbig) {
-                    // FIXME: unused retval
-                    retval = new Symbol(ans);
-                }
-                retval = new Symbol(ans.toDecimal(prec));
-
-                return _.multiply(new Symbol(sign), retval);
-            }
-        }
 
 
 
-        /**
-         * Get's the real part of a complex number. Return number if real
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        function realpart(symbol) {
-            return symbol.realpart();
-        }
-
-        /**
-         * Get's the imaginary part of a complex number
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        function imagpart(symbol) {
-            return symbol.imagpart();
-        }
-
-        /**
-         * Computes the conjugate of a complex number
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        function conjugate(symbol) {
-            var re = symbol.realpart();
-            var im = symbol.imagpart();
-            return _.add(re, _.multiply(im.negate(), Symbol.imaginary()));
-        }
-
-        /**
-         * Returns the arugment of a complex number
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        function arg(symbol) {
-            var re = symbol.realpart();
-            var im = symbol.imagpart();
-            if (re.isConstant() && im.isConstant()) {
-                if (im.equals(0) && re.equals(-1)) {
-                    return _.parse('pi');
-                }
-                else if (im.equals(1) && re.equals(0)) {
-                    return _.parse('pi/2');
-                }
-                else if (im.equals(1) && re.equals(1)) {
-                    return _.parse('pi/4');
-                }
-                return new Symbol(Math.atan2(im, re));
-            }
-            return _.symfunction('atan2', [im, re]);
-        }
-
-        /**
-         * Returns the polarform of a complex number
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        function polarform(symbol) {
-            var p, r, e, theta;
-            p = Symbol.toPolarFormArray(symbol);
-            theta = p[1];
-            r = p[0];
-            e = _.parse(format('e^({0}*({1}))', Settings.IMAGINARY, theta));
-            return _.multiply(r, e);
-        }
-
-        /**
-         * Returns the rectangular form of a complex number. Does not work for symbolic coefficients
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        function rectform(symbol) {
-            //TODO: e^((i*pi)/4)
-            var original = symbol.clone();
-            try {
-                var f, p, q, s, h, d, n;
-                f = decompose_fn(symbol, 'e', true);
-                p = _.divide(f.x.power, Symbol.imaginary());
-                q = evaluate(trig.tan(p));
-                s = _.pow(f.a, new Symbol(2));
-                d = q.getDenom(true);
-                n = q.getNum();
-                h = Symbol.hyp(n, d);
-                //check
-                if (h.equals(f.a)) {
-                    return _.add(d, _.multiply(Symbol.imaginary(), n));
-                }
-                else {
-                    return original;
-                }
-            }
-            catch(e) {
-                return original;
-            }
-        }
-
-        function symMinMax(f, args) {
-            args.map(function (x) {
-                x.numVal = evaluate(x).multiplier;
-            });
-            var l, a, b;
-            while(true) {
-                l = args.length;
-                if (l < 2)
-                    return args[0];
-                a = args.pop();
-                b = args[l - 2];
-                if (f === 'min' ? a.numVal < b.numVal : a.numVal > b.numVal) {
-                    args.pop();
-                    args.push(a);
-                }
-            }
-        }
-
-        /**
-         * Returns maximum of a set of numbers
-         * @returns {Symbol}
-         */
-        function max() {
-            var args = [].slice.call(arguments);
-            if (allSame(args))
-                return args[0];
-            if (allNumbers(args))
-                return new Symbol(Math.max.apply(null, args));
-            if (Settings.SYMBOLIC_MIN_MAX && allConstants(args))
-                return symMinMax('max', args);
-            return _.symfunction('max', args);
-        }
-
-        /**
-         * Returns minimum of a set of numbers
-         * @returns {Symbol}
-         */
-        function min() {
-            var args = [].slice.call(arguments);
-            if (allSame(args))
-                return args[0];
-            if (allNumbers(args))
-                return new Symbol(Math.min.apply(null, args));
-            if (Settings.SYMBOLIC_MIN_MAX && allConstants(args))
-                return symMinMax('min', args);
-            return _.symfunction('min', args);
-        }
-
-        /**
-         * Returns the sign of a number
-         * @param {Symbol} x
-         * @returns {Symbol}
-         */
-        function sign(x) {
-            if (x.isConstant(true))
-                return new Symbol(Math.sign(evaluate(x)));
-            return _.symfunction('sign', arguments);
-        }
-
-        function sort(symbol, opt) {
-            opt = opt ? opt.toString() : 'asc';
-            var getval = function (e) {
-                if (e.group === N)
-                    return e.multiplier;
-                if (e.group === FN) {
-                    if (e.fname === '')
-                        return getval(e.args[0]);
-                    return e.fname;
-                }
-                if (e.group === S)
-                    return e.power;
-
-                return e.value;
-            };
-            var symbols = isVector(symbol) ? symbol.elements : symbol.collectSymbols();
-            return new Vector(symbols.sort(function (a, b) {
-                var aval = getval(a),
-                    bval = getval(b);
-                if (opt === 'desc')
-                    return bval - aval;
-                return aval - bval;
-            }));
-        }
 
 
-        /**
-         * Round a number up to s decimal places
-         * @param {Number} x
-         * @param {int} s - the number of decimal places
-         * @returns {undefined}
-         */
-        function round(x, s) {
-            var sIsConstant = s && s.isConstant() || typeof s === 'undefined';
-            if (x.isConstant() && sIsConstant) {
-                var v, e, exp, retval;
-                v = x;
-                //round the coefficient of then number but not the actual decimal value
-                //we know this because a negative number was passed
-                if (s && s.lessThan(0)) {
-                    s = abs(s);
-                    //convert the number to exponential form
-                    e = Number(x).toExponential().toString().split('e');
-                    //point v to the coefficient of then number
-                    v = e[0];
-                    //set the expontent
-                    exp = e[1];
-                }
-                //round the number to the requested precision
-                retval = new Symbol(nround(v, Number(s || 0)));
-                //if there's a exponent then put it back
-                return _.multiply(retval, _.pow(new Symbol(10), new Symbol(exp || 0)))
-            }
 
 
-            return _.symfunction('round', arguments);
-        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1984,367 +1393,7 @@ const nerdamer = (function () {
             return retval;
         }
 
-        /**
-         * A wrapper for the expand function
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        function expandall(symbol, opt) {
-            opt = opt || {
-                expand_denominator: true,
-                expand_functions: true
-            };
-            return expand(symbol, opt);
-        }
-        /**
-         * Expands a symbol
-         * @param symbol
-         */
-        // Old expand
-        function expand(symbol, opt) {
-            if (Array.isArray(symbol)) {
-                return symbol.map(function (x) {
-                    return expand(x, opt);
-                });
-            }
-            opt = opt || {};
-            //deal with parenthesis
-            if (symbol.group === FN && symbol.fname === '') {
-                var f = expand(symbol.args[0], opt);
-                var x = expand(_.pow(f, _.parse(symbol.power)), opt);
-                return _.multiply(_.parse(symbol.multiplier), x).distributeMultiplier();
-            }
-            // We can expand these groups so no need to waste time. Just return and be done.
-            if ([N, P, S].indexOf(symbol.group) !== -1) {
-                return symbol; //nothing to do
-            }
 
-            var original = symbol.clone();
-
-            // Set up a try-catch block. If anything goes wrong then we simply return the original symbol
-            try {
-                // Store the power and multiplier
-                var m = symbol.multiplier.toString();
-                var p = Number(symbol.power);
-                var retval = symbol;
-
-                // Handle (a+b)^2 | (x+x^2)^2
-                if (symbol.isComposite() && isInt(symbol.power) && symbol.power > 0) {
-                    var n = p - 1;
-                    // Strip the expression of it's multiplier and power. We'll call it f. The power will be p and the multiplier m.
-                    var f = new Symbol(0);
-
-                    symbol.each(function (x) {
-                        f = _.add(f, expand(_.parse(x), opt));
-                    });
-
-                    var expanded = _.parse(f);
-
-                    for (var i = 0; i < n; i++) {
-                        expanded = mix(expanded, f, opt);
-                    }
-
-                    retval = _.multiply(_.parse(m), expanded).distributeMultiplier();
-                }
-                else if (symbol.group === FN && opt.expand_functions === true) {
-                    var args = [];
-                    // Expand function the arguments
-                    symbol.args.forEach(function (x) {
-                        args.push(expand(x, opt));
-                    });
-                    // Put back the power and multiplier
-                    retval = _.pow(_.symfunction(symbol.fname, args), _.parse(symbol.power));
-                    retval = _.multiply(retval, _.parse(symbol.multiplier));
-                }
-                else if (symbol.isComposite() && isInt(symbol.power) && symbol.power < 0 && opt.expand_denominator === true) {
-                    // Invert it. Expand it and then re-invert it.
-                    symbol = symbol.invert();
-                    retval = expand(symbol, opt);
-                    retval.invert();
-                }
-                else if (symbol.group === CB) {
-                    var rank = function (s) {
-                        switch(s.group) {
-                            case CP:
-                                return 0;
-                            case PL:
-                                return 1;
-                            case CB:
-                                return 2;
-                            case FN:
-                                return 3;
-                            default:
-                                return 4;
-                        }
-                    };
-                    // Consider (a+b)(c+d). The result will be (a*c+a*d)+(b*c+b*d).
-                    // We start by moving collecting the symbols. We want others>FN>CB>PL>CP
-                    var symbols = symbol.collectSymbols().sort(function (a, b) {
-                        return rank(b) - rank(a);
-                    })
-                        // Distribute the power to each symbol and expand
-                        .map(function (s) {
-                            var x = _.pow(s, _.parse(p));
-                            var e = expand(x, opt);
-                            return e;
-                        });
-
-                    var f = symbols.pop();
-
-                    // If the first symbols isn't a composite then we're done
-                    if (f.isComposite() && f.isLinear()) {
-                        symbols.forEach(function (s) {
-                            f = mix(f, s, opt);
-                        });
-
-                        // If f is of group PL or CP then we can expand some more
-                        if (f.isComposite()) {
-                            if (f.power > 1) {
-                                f = expand(_.pow(f, _.parse(f.power)), opt);
-                            }
-                            // Put back the multiplier
-                            retval = _.multiply(_.parse(m), f).distributeMultiplier();
-                            ;
-                        }
-                        else {
-                            // Everything is expanded at this point so if it's still a CB
-                            // then just return the symbol
-                            retval = f;
-                        }
-                    }
-                    else {
-                        // Just multiply back in the expanded form of each
-                        retval = f;
-                        symbols.forEach(function (s) {
-                            retval = _.multiply(retval, s);
-                        });
-                        // Put back the multiplier
-                        retval = _.multiply(retval, _.parse(m)).distributeMultiplier();
-                    }
-
-                    // TODO: This exists solely as a quick fix for sqrt(11)*sqrt(33) not simplifying.
-                    if (retval.group === CB) {
-                        retval = _.parse(retval);
-                    }
-                }
-                else {
-                    // Otherwise just return the expression
-                    retval = symbol;
-                }
-                // Final cleanup and return
-                return retval;
-            }
-            catch(e) {
-                return original;
-            }
-
-            return original;
-        }
-
-        /**
-         * Returns an identity matrix of nxn
-         * @param {Number} n
-         * @returns {Matrix}
-         */
-        function imatrix(n) {
-            return Matrix.identity(n);
-        }
-
-        /**
-         * Retrieves and item from a vector
-         * @param {Vector} vector
-         * @param {Number} index
-         * @returns {Vector|Symbol}
-         */
-        function vecget(vector, index) {
-            if (index.isConstant() && isInt(index))
-                return vector.elements[index];
-            return _.symfunction('vecget', arguments);
-        }
-
-        /**
-         * Removes duplicates from a vector
-         * @param {Vector} vector
-         * @param {Number} tolerance
-         * @returns {Vector}
-         */
-        function vectrim(vector, tolerance) {
-            tolerance = typeof tolerance === 'undefined' ? 1e-14 : tolerance;
-
-            vector = vector.clone();
-
-            tolerance = Number(tolerance);
-            //place algebraic solutions first
-            vector.elements.sort(function (a, b) {
-                return b.group - a.group;
-            });
-            //depending on the start point we may have duplicates so we need to clean those up a bit.
-            //start by creating an object with the solution and the numeric value. This way we don't destroy algebraic values
-            vector.elements = removeDuplicates(vector.elements, function (a, b) {
-                var diff = Number(_.subtract(evaluate(a), evaluate(b)).abs());
-                return diff <= tolerance;
-            });
-
-            return vector;
-        }
-
-        /**
-         * Set a value for a vector at a given index
-         * @param {Vector} vector
-         * @param {Number} index
-         * @param {Symbol} value
-         * @returns {Vector}
-         */
-        function vecset(vector, index, value) {
-            if (!index.isConstant)
-                return _.symfunction('vecset', arguments);
-            vector.elements[index] = value;
-            return vector;
-        }
-
-        function matget(matrix, i, j) {
-            if (i.isConstant() && j.isConstant())
-                return matrix.elements[i][j];
-            return _.symfunction('matget', arguments);
-        }
-
-        function matgetrow(matrix, i) {
-            if (i.isConstant())
-                return new Matrix(matrix.elements[i]);
-            return _.symfunction('matgetrow', arguments);
-        }
-
-        function matsetrow(matrix, i, x) {
-            //handle symbolics
-            if (!i.isConstant())
-                return _.symfunction('matsetrow', arguments);
-            if (matrix.elements[i].length !== x.elements.length)
-                throw new DimensionError('Matrix row must match row dimensions!');
-            var M = matrix.clone();
-            M.elements[i] = x.clone().elements;
-            return M;
-        }
-
-        function matgetcol(matrix, col_index) {
-            //handle symbolics
-            if (!col_index.isConstant())
-                return _.symfunction('matgetcol', arguments);
-            col_index = Number(col_index);
-            var M = Matrix.fromArray([]);
-            matrix.each(function (x, i, j) {
-                if (j === col_index) {
-                    M.elements.push([x.clone()]);
-                }
-            });
-            return M;
-        }
-
-        function matsetcol(matrix, j, col) {
-            //handle symbolics
-            if (!j.isConstant())
-                return _.symfunction('matsetcol', arguments);
-            j = Number(j);
-            if (matrix.rows() !== col.elements.length)
-                throw new DimensionError('Matrix columns must match number of columns!');
-            col.each(function (x, i) {
-                matrix.set(i - 1, j, x.elements[0].clone());
-            });
-            return matrix;
-        }
-
-
-        function matset(matrix, i, j, value) {
-            matrix.elements[i][j] = value;
-            return matrix;
-        }
-
-        //the constructor for vectors
-        function vector() {
-            return new Vector([].slice.call(arguments));
-        }
-
-        //the constructor for matrices
-        function matrix() {
-            return Matrix.fromArray(arguments);
-        }
-
-        //the constructor for sets
-        function set() {
-            return Set.fromArray(arguments);
-        }
-
-        function determinant(symbol) {
-            if (isMatrix(symbol)) {
-                return symbol.determinant();
-            }
-            return symbol;
-        }
-
-        function size(symbol) {
-            var retval;
-            if (isMatrix(symbol))
-                retval = [new Symbol(symbol.cols()), new Symbol(symbol.rows())];
-            else if (isVector(symbol) || isSet(symbol))
-                retval = new Symbol(symbol.elements.length);
-            else
-                err('size expects a matrix or a vector');
-            return retval;
-        }
-
-        function dot(vec1, vec2) {
-            if (isVector(vec1) && isVector(vec2))
-                return vec1.dot(vec2);
-            err('function dot expects 2 vectors');
-        }
-
-        function cross(vec1, vec2) {
-            if (isVector(vec1) && isVector(vec2))
-                return vec1.cross(vec2);
-            err('function cross expects 2 vectors');
-        }
-
-        function transpose(mat) {
-            if (isMatrix(mat))
-                return mat.transpose();
-            err('function transpose expects a matrix');
-        }
-
-        function invert(mat) {
-            if (isMatrix(mat))
-                return mat.invert();
-            err('invert expects a matrix');
-        }
-
-        //basic set functions
-        function union(set1, set2) {
-            return set1.union(set2);
-        }
-
-        function intersection(set1, set2) {
-            return set1.intersection(set2);
-        }
-
-        function contains(set1, e) {
-            return set1.contains(e);
-        }
-
-        function difference(set1, set2) {
-            return set1.difference(set2);
-        }
-
-        function intersects(set1, set2) {
-            return new Symbol(Number(set1.intersects(set2)));
-        }
-
-        function is_subset(set1, set2) {
-            return new Symbol(Number(set1.is_subset(set2)));
-        }
-
-        function print() {
-            arguments2Array(arguments).map(function (x) {
-                console.log(x.toString());
-            });
-        }
 
         //Link the functions to the parse so they're available outside of the library.
         //This is strictly for convenience and may be deprecated.
@@ -2426,11 +1475,7 @@ const nerdamer = (function () {
         };
 
 
-        SymbolOperatorsDeps.parse = this.parse;
-        SymbolOperatorsDeps.expand = expand;
-        SymbolOperatorsDeps.Trig = Trig;
-        SymbolOperatorsDeps.bigConvert = bigConvert;
-        SymbolOperatorsDeps.evaluate = evaluate;
+        FactorialDeps.bigConvert = bigConvert;
 
         this.sqrt = sqrt;
         this.multiply = multiply;
@@ -2441,6 +1486,7 @@ const nerdamer = (function () {
         this.log = log;
         this.abs = abs;
         this.factorial = factorial;
+        this.expand = expand;
 
 
         // Gets called when the parser finds the , operator.
@@ -2530,23 +1576,10 @@ const nerdamer = (function () {
         };
     }
 
-    //The latex generator
-    LaTeX.$ = _;
+    // inject back dependencies
     LaTeX.$Parser = Parser;
-
-    Symbol.$LaTeX = LaTeX;
-    Symbol.$text = text;
     Symbol.$variables = variables;
-
-    Expression.prototype.$LaTeX = LaTeX;
-    Expression.prototype.$parse = _.parse;
     Expression.prototype.$variables = variables;
-    Expression.prototype.$expand = _.expand;
-
-
-//build ========================================================================
-    Build.$ = _;
-    Build.$block = block;
     Build.$variables = variables;
 
 
@@ -2634,7 +1667,7 @@ const nerdamer = (function () {
 
     //This contains all the parts of nerdamer and enables nerdamer's internal functions
     //to be used.
-    var C = {
+    const Core = {
         groups: Groups,
         Symbol: Symbol,
         Expression: Expression,
@@ -2810,10 +1843,10 @@ const nerdamer = (function () {
 
     /**
      *
-     * @returns {C} Exports the nerdamer core functions and objects
+     * @returns {Core} Exports the nerdamer core functions and objects
      */
     libExports.getCore = function () {
-        return C;
+        return Core;
     };
 
     libExports.getExpression = libExports.getEquation = Expression.getExpression;

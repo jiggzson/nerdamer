@@ -1,6 +1,6 @@
 import {block} from '../Core/Utils';
 import {isSymbol, Symbol} from '../Core/Symbol';
-import {add, divide, multiply, pow, sqrt, subtract} from '../Core/SymbolOperators/SymbolOperators';
+import {add, divide, multiply, pow, sqrt, subtract} from '../Core/functions';
 import {Settings} from '../Settings';
 import {LaTeX} from '../LaTeX/LaTeX';
 import {text} from '../Core/Text';

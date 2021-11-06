@@ -2,7 +2,7 @@ import {isSymbol, Symbol} from '../Core/Symbol';
 import {isVector, Vector} from './Vector';
 import {block, format, inBrackets} from '../Core/Utils';
 import {err} from '../Core/Errors';
-import {add, divide, multiply, subtract} from '../Core/SymbolOperators/SymbolOperators';
+import {add, divide, multiply, subtract} from '../Core/functions';
 import {LaTeX} from '../LaTeX/LaTeX';
 
 export class Matrix {

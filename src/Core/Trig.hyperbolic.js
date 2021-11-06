@@ -3,7 +3,8 @@ import {Settings} from '../Settings';
 import {Symbol, symfunction} from './Symbol';
 import {format} from './Utils';
 import {Complex} from './Complex';
-import {add, divide, log, pow, sqrt, subtract} from './SymbolOperators/SymbolOperators';
+import {add, divide, log, pow, sqrt, subtract} from './functions';
+import {parse, evaluate} from './parse';
 
 export const TrigHyperbolic = {
     //container for hyperbolic trig function
@@ -52,7 +53,7 @@ export const TrigHyperbolic = {
             if (symbol.isImaginary()) {
                 return Complex.evaluate(symbol, 'sech');
             }
-            return TrigHyperbolic.$.parse(format('1/cosh({0})', symbol));
+            return parse(format('1/cosh({0})', symbol));
         }
 
         return retval = symfunction('sech', arguments);
@@ -65,7 +66,7 @@ export const TrigHyperbolic = {
             if (symbol.isImaginary()) {
                 return Complex.evaluate(symbol, 'csch');
             }
-            return TrigHyperbolic.$.parse(format('1/sinh({0})', symbol));
+            return parse(format('1/sinh({0})', symbol));
         }
 
         return retval = symfunction('csch', arguments);
@@ -78,7 +79,7 @@ export const TrigHyperbolic = {
             if (symbol.isImaginary()) {
                 return Complex.evaluate(symbol, 'coth');
             }
-            return TrigHyperbolic.$.parse(format('1/tanh({0})', symbol));
+            return parse(format('1/tanh({0})', symbol));
         }
 
         return retval = symfunction('coth', arguments);
@@ -88,7 +89,7 @@ export const TrigHyperbolic = {
         if (Settings.PARSE2NUMBER && symbol.isImaginary())
             retval = Complex.evaluate(symbol, 'acosh');
         else if (Settings.PARSE2NUMBER)
-            retval = TrigHyperbolic.$evaluate(TrigHyperbolic.$.parse(format(Settings.LOG + '(({0})+sqrt(({0})^2-1))', symbol.toString())));
+            retval = evaluate(parse(format(Settings.LOG + '(({0})+sqrt(({0})^2-1))', symbol.toString())));
         else
             retval = symfunction('acosh', arguments);
         return retval;
@@ -98,7 +99,7 @@ export const TrigHyperbolic = {
         if (Settings.PARSE2NUMBER && symbol.isImaginary())
             retval = Complex.evaluate(symbol, 'asinh');
         else if (Settings.PARSE2NUMBER)
-            retval = TrigHyperbolic.$evaluate(TrigHyperbolic.$.parse(format(Settings.LOG + '(({0})+sqrt(({0})^2+1))', symbol.toString())));
+            retval = evaluate(parse(format(Settings.LOG + '(({0})+sqrt(({0})^2+1))', symbol.toString())));
         else
             retval = symfunction('asinh', arguments);
         return retval;
@@ -108,7 +109,7 @@ export const TrigHyperbolic = {
         if (Settings.PARSE2NUMBER && symbol.isImaginary())
             retval = Complex.evaluate(symbol, 'atanh');
         else if (Settings.PARSE2NUMBER) {
-            retval = TrigHyperbolic.$evaluate(TrigHyperbolic.$.parse(format('(1/2)*' + Settings.LOG + '((1+({0}))/(1-({0})))', symbol.toString())));
+            retval = evaluate(parse(format('(1/2)*' + Settings.LOG + '((1+({0}))/(1-({0})))', symbol.toString())));
         }
         else
             retval = symfunction('atanh', arguments);
@@ -119,7 +120,7 @@ export const TrigHyperbolic = {
         if (Settings.PARSE2NUMBER && symbol.isImaginary())
             retval = Complex.evaluate(symbol, 'asech');
         else if (Settings.PARSE2NUMBER)
-            retval = TrigHyperbolic.$evaluate(log(add(symbol.clone().invert(), sqrt(subtract(pow(symbol, new Symbol(-2)), new Symbol(1))))));
+            retval = evaluate(log(add(symbol.clone().invert(), sqrt(subtract(pow(symbol, new Symbol(-2)), new Symbol(1))))));
         else
             retval = symfunction('asech', arguments);
         return retval;
@@ -129,7 +130,7 @@ export const TrigHyperbolic = {
         if (Settings.PARSE2NUMBER && symbol.isImaginary())
             retval = Complex.evaluate(symbol, 'acsch');
         else if (Settings.PARSE2NUMBER)
-            retval = TrigHyperbolic.$evaluate(TrigHyperbolic.$.parse(format(Settings.LOG + '((1+sqrt(1+({0})^2))/({0}))', symbol.toString())));
+            retval = evaluate(parse(format(Settings.LOG + '((1+sqrt(1+({0})^2))/({0}))', symbol.toString())));
         else
             retval = symfunction('acsch', arguments);
         return retval;
@@ -142,7 +143,7 @@ export const TrigHyperbolic = {
             if (symbol.equals(1))
                 retval = Symbol.infinity();
             else
-                retval = TrigHyperbolic.$evaluate(
+                retval = evaluate(
                     divide(
                         log(divide(add(symbol.clone(), new Symbol(1)), subtract(symbol.clone(), new Symbol(1)))),
                         new Symbol(2)));

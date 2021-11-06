@@ -1,7 +1,7 @@
 import {Settings} from '../Settings';
 // @ts-ignore
 import {Symbol, symfunction} from '../Core/Symbol';
-import {divide, factorial} from '../Core/SymbolOperators/SymbolOperators';
+import {divide, factorial} from '../Core/functions';
 
 type OperationFunction = (...args: any) => any;
 
@@ -35,7 +35,7 @@ export type Bracket = {
 
 export type Brackets = Record<string, Bracket>;
 
-export class Operators {
+export class OperatorDictionary {
     private deps!: OperatorsDependencies;
     private operators: Record<string, OperatorDescriptor> = {};
 

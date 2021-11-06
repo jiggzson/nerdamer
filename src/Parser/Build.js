@@ -1,8 +1,9 @@
 import {Math2} from '../Core/Math2';
 import {Frac} from '../Core/Frac';
-import {even, inBrackets, isInt, nround} from '../Core/Utils';
+import {block, even, inBrackets, isInt, nround} from '../Core/Utils';
 import {Symbol} from '../Core/Symbol';
 import {Groups} from '../Core/Groups';
+import {parse} from '../Core/parse';
 
 export const Build = {
     dependencies: {
@@ -103,8 +104,8 @@ export const Build = {
         return dependencies;
     },
     build: function (symbol, arg_array) {
-        symbol = Build.$block('PARSE2NUMBER', function () {
-            return Build.$.parse(symbol);
+        symbol = block('PARSE2NUMBER', function () {
+            return parse(symbol);
         }, true);
         var args = Build.$variables(symbol);
         var supplements = [];
@@ -198,7 +199,7 @@ export const Build = {
             }
 
             if (symbol.group !== Groups.N && !symbol.power.equals(1)) {
-                var pow = ftext(Build.$.parse(symbol.power));
+                var pow = ftext(parse(symbol.power));
                 xports.push(pow[1]);
                 value = 'Math.pow' + inBrackets(value + ',' + pow[0]);
             }

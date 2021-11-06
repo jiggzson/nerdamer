@@ -6,8 +6,11 @@ import {Groups} from '../Core/Groups';
 import {isSet} from '../Parser/Set';
 import {isVector} from '../Parser/Vector';
 import {Collection} from '../Parser/Collection';
+import {parse} from '../Core/parse';
 
 export class LaTeX {
+    /** @deprecated */
+    static $Parser;
     static space = '~';
     static dot = ' \\cdot ';
 
@@ -70,7 +73,7 @@ export class LaTeX {
                 var sym = symbol[i];
                 //This way I can generate LaTeX on an array of strings.
                 if (!isSymbol(sym))
-                    sym = LaTeX.$.parse(sym);
+                    sym = parse(sym);
                 LaTeXArray.push(this.latex(sym, option));
             }
             return this.brackets(LaTeXArray.join(', '), 'square');

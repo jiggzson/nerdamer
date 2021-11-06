@@ -2,7 +2,7 @@ import {Token} from './Token';
 import {isNumber} from '../Core/Utils';
 import {Math2} from '../Core/Math2';
 import {Settings} from '../Settings';
-import {Bracket, Brackets, Operators} from './Operators';
+import {Bracket, Brackets, OperatorDictionary} from './OperatorDictionary';
 import {Node} from './Node';
 
 class ParityError extends Error {
@@ -17,7 +17,7 @@ type TokenizerDependencies = {
     preprocessors: Preprocessors;
     functions: Functions;
     brackets: Brackets;
-    operators: Operators;
+    operators: OperatorDictionary;
     units: Record<string, never>;
 }
 
@@ -27,7 +27,7 @@ export class Tokenizer {
     private readonly preprocessors: Preprocessors;
     private readonly functions: Functions;
     private readonly brackets: Brackets;
-    private readonly operators: Operators;
+    private readonly operators: OperatorDictionary;
     private readonly units: Record<string, never>;
 
     constructor(deps: TokenizerDependencies) {
@@ -188,7 +188,7 @@ class InnerTokenizer {
     private readonly preprocessors: Preprocessors;
     private readonly functions: Functions;
     private readonly brackets: Brackets;
-    private readonly operators: Operators;
+    private readonly operators: OperatorDictionary;
     private readonly units: Record<string, never>;
 
     private expression: string;
