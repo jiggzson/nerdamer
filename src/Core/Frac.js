@@ -428,4 +428,26 @@ var Fraction = {
 //Depends on Fraction
 
 
-module.exports = {Frac};
+/**
+ * Gets the quadrant of the trig function
+ * @param {Frac} m
+ * @returns {Int}
+ */
+function getQuadrant(m) {
+    var v = m % 2, quadrant;
+
+    if (v < 0)
+        v = 2 + v; //put it in terms of pi
+
+    if (v >= 0 && v <= 0.5)
+        quadrant = 1;
+    else if (v > 0.5 && v <= 1)
+        quadrant = 2;
+    else if (v > 1 && v <= 1.5)
+        quadrant = 3;
+    else
+        quadrant = 4;
+    return quadrant;
+}
+
+module.exports = {Frac, getQuadrant};

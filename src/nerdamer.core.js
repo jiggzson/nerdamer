@@ -10,7 +10,7 @@ const {nround, isInt, isPrime, isNumber, validateName, arrayUnique,
     arrayMin, arrayMax, warn, even, inBrackets, remove, format} = require('./Core/Utils');
 const Settings = require('./Settings').Settings;
 const {Symbol, isSymbol, isNumericSymbol, isVariableSymbol, isFraction, isNegative} = require("./Core/Symbol");
-const {Frac} = require("./Core/Frac");
+const {Frac, getQuadrant} = require("./Core/Frac");
 const Scientific = require('./Core/Scientific').default;
 const {Operators} = require('./Parser/Operators');
 const {createFunctions, findFunction} = require('./Operators/functions');
@@ -33,6 +33,7 @@ const {LaTeX} = require('./LaTeX/LaTeX');
 
 const exceptions = require('./Core/Errors');
 const {Complex} = require('./Core/Complex');
+const {Trig} = require('./Core/Trig');
 const {
     DivisionByZero, ParseError, UndefinedError, OutOfFunctionDomainError,
     MaximumIterationsReached, NerdamerTypeError, ParityError, OperatorError,
@@ -43,6 +44,38 @@ const {
 const nerdamer = (function () {
 //version ======================================================================
     const version = '1.1.12';
+
+
+    /**
+     * Creates a temporary block in which one of the global settings is temporarily modified while
+     * the function is called. For instance if you want to parse directly to a number rather than have a symbolic
+     * answer for a period you would set PARSE2NUMBER to true in the block.
+     * @example block('PARSE2NUMBER', function(){//symbol being parsed to number}, true);
+     * @param {String} setting - The setting being accessed
+     * @param {Function} f
+     * @param {boolean} opt - The value of the setting in the block
+     * @param {String} obj - The obj of interest. Usually a Symbol but could be any object
+     */
+    var block = function (setting, f, opt, obj) {
+        var current_setting = Settings[setting];
+        Settings[setting] = opt === undefined ? true : !!opt;
+        var retval = f.call(obj);
+        Settings[setting] = current_setting;
+        return retval;
+    };
+    
+    /**
+     * As the name states. It forces evaluation of the expression
+     * @param {Symbol} symbol
+     * @param {Symbol} o
+     */
+    var evaluate = function (symbol, o= undefined) {
+        return block('PARSE2NUMBER', function () {
+            return _.parse(symbol, o);
+        }, true);
+    };
+    Symbol.$evaluate = evaluate;
+
 
 //inits ========================================================================
     const _ = new Parser(); //nerdamer's parser
@@ -740,23 +773,7 @@ const nerdamer = (function () {
 
 
 
-    /**
-     * Creates a temporary block in which one of the global settings is temporarily modified while
-     * the function is called. For instance if you want to parse directly to a number rather than have a symbolic
-     * answer for a period you would set PARSE2NUMBER to true in the block.
-     * @example block('PARSE2NUMBER', function(){//symbol being parsed to number}, true);
-     * @param {String} setting - The setting being accessed
-     * @param {Function} f
-     * @param {boolean} opt - The value of the setting in the block
-     * @param {String} obj - The obj of interest. Usually a Symbol but could be any object
-     */
-    var block = function (setting, f, opt, obj) {
-        var current_setting = Settings[setting];
-        Settings[setting] = opt === undefined ? true : !!opt;
-        var retval = f.call(obj);
-        Settings[setting] = current_setting;
-        return retval;
-    };
+
 
     /**
      * provide a mechanism for accessing functions directly. Not yet complete!!!
@@ -815,17 +832,7 @@ const nerdamer = (function () {
         return coeffs;
     };
 
-    /**
-     * As the name states. It forces evaluation of the expression
-     * @param {Symbol} symbol
-     * @param {Symbol} o
-     */
-    var evaluate = function (symbol, o= undefined) {
-        return block('PARSE2NUMBER', function () {
-            return _.parse(symbol, o);
-        }, true);
-    };
-    Symbol.$evaluate = evaluate;
+
 
     /**
      * Converts an array to a vector. Consider moving this to Vector.fromArray
@@ -1279,475 +1286,18 @@ const nerdamer = (function () {
         };
 //Parser.modules ===============================================================
         //object for functions which handle complex number
-        let complex = Complex;
         Complex.$ = _;
         Complex.$log = log;
         Complex.$sqrt = sqrt;
         Complex.$block = block;
+        let complex = Complex;
 
-        //object for functions which handle trig
-        var trig = this.trig = {
-            //container for trigonometric function
-            cos: function (symbol) {
-                if (symbol.equals('pi') && symbol.multiplier.den.equals(2))
-                    return new Symbol(0);
+        Trig.$ = _;
+        Trig.$expand = expand;
+        Trig.$evaluate = evaluate;
+        let trig = this.trig = Trig;
 
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.equals(new Symbol(Settings.PI / 2)))
-                        return new Symbol(0);
-                    if (symbol.isConstant()) {
-                        if (Settings.USE_BIG) {
-                            return new Symbol(bigDec.cos(symbol.multiplier.toDecimal()));
-                        }
 
-                        return new Symbol(Math.cos(symbol.valueOf()));
-                    }
-                    if (symbol.isImaginary()) {
-                        return complex.evaluate(symbol, 'cos');
-                    }
-                }
-                if (symbol.equals(0))
-                    return new Symbol(1);
-
-                var retval,
-                    c = false,
-                    q = getQuadrant(symbol.multiplier.toDecimal()),
-                    m = symbol.multiplier.abs();
-                symbol.multiplier = m;
-
-                if (symbol.isPi() && symbol.isLinear()) {
-                    //return for 1 or -1 for multiples of pi
-                    if (isInt(m)) {
-                        retval = new Symbol(even(m) ? 1 : -1);
-                    }
-                    else {
-                        var n = Number(m.num), d = Number(m.den);
-                        if (d === 2)
-                            retval = new Symbol(0);
-                        else if (d === 3) {
-                            retval = _.parse('1/2');
-                            c = true;
-                        }
-                        else if (d === 4) {
-                            retval = _.parse('1/sqrt(2)');
-                            c = true;
-                        }
-                        else if (d === 6) {
-                            retval = _.parse('sqrt(3)/2');
-                            c = true;
-                        }
-                        else
-                            retval = _.symfunction('cos', [symbol]);
-                    }
-                }
-
-                if (c && (q === 2 || q === 3))
-                    retval.negate();
-
-                if (!retval)
-                    retval = _.symfunction('cos', [symbol]);
-
-                return retval;
-            },
-            sin: function (symbol) {
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant()) {
-                        if (symbol % Math.PI === 0) {
-                            return new Symbol(0);
-                        }
-
-                        if (Settings.USE_BIG) {
-                            return new Symbol(bigDec.sin(symbol.multiplier.toDecimal()));
-                        }
-
-                        return new Symbol(Math.sin(symbol.valueOf()));
-                    }
-                    if (symbol.isImaginary())
-                        return complex.evaluate(symbol, 'sin');
-                }
-
-                if (symbol.equals(0))
-                    return new Symbol(0);
-
-                var retval,
-                    c = false,
-                    q = getQuadrant(symbol.multiplier.toDecimal()),
-                    sign = symbol.multiplier.sign(),
-                    m = symbol.multiplier.abs();
-                symbol.multiplier = m;
-                if (symbol.equals('pi'))
-                    retval = new Symbol(0);
-                else if (symbol.isPi() && symbol.isLinear()) {
-                    //return for 0 for multiples of pi
-                    if (isInt(m)) {
-                        retval = new Symbol(0);
-                    }
-                    else {
-                        var n = m.num, d = m.den;
-                        if (d == 2) {
-                            retval = new Symbol(1);
-                            c = true;
-                        }
-                        else if (d == 3) {
-                            retval = _.parse('sqrt(3)/2');
-                            c = true
-                        }
-                        else if (d == 4) {
-                            retval = _.parse('1/sqrt(2)');
-                            c = true;
-                        }
-                        else if (d == 6) {
-                            retval = _.parse('1/2');
-                            c = true;
-                        }
-                        else
-                            retval = _.multiply(new Symbol(sign), _.symfunction('sin', [symbol]));
-                    }
-                }
-
-                if (!retval)
-                    retval = _.multiply(new Symbol(sign), _.symfunction('sin', [symbol]));
-
-                if (c && (q === 3 || q === 4))
-                    retval.negate();
-
-                return retval;
-            },
-            tan: function (symbol) {
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol % Math.PI === 0 && symbol.isLinear()) {
-                        return new Symbol(0);
-                    }
-                    if (symbol.isConstant()) {
-                        if (Settings.USE_BIG) {
-                            return new Symbol(bigDec.tan(symbol.multiplier.toDecimal()));
-                        }
-
-                        return new Symbol(Math.tan(symbol.valueOf()));
-                    }
-                    if (symbol.isImaginary())
-                        return complex.evaluate(symbol, 'tan');
-                }
-                var retval,
-                    c = false,
-                    q = getQuadrant(symbol.multiplier.toDecimal()),
-                    m = symbol.multiplier;
-
-                symbol.multiplier = m;
-
-                if (symbol.isPi() && symbol.isLinear()) {
-                    //return 0 for all multiples of pi
-                    if (isInt(m)) {
-                        retval = new Symbol(0);
-                    }
-                    else {
-                        var n = m.num, d = m.den;
-                        if (d == 2)
-                            throw new UndefinedError('tan is undefined for ' + symbol.toString());
-                        else if (d == 3) {
-                            retval = _.parse('sqrt(3)');
-                            c = true;
-                        }
-                        else if (d == 4) {
-                            retval = new Symbol(1);
-                            c = true;
-                        }
-                        else if (d == 6) {
-                            retval = _.parse('1/sqrt(3)');
-                            c = true;
-                        }
-                        else
-                            retval = _.symfunction('tan', [symbol]);
-                    }
-                }
-
-                if (!retval)
-                    retval = _.symfunction('tan', [symbol]);
-
-                if (c && (q === 2 || q === 4))
-                    retval.negate();
-
-                return retval;
-            },
-            sec: function (symbol) {
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant()) {
-                        if (Settings.USE_BIG) {
-                            return new Symbol(new bigDec(1).dividedBy(bigDec.cos(symbol.multiplier.toDecimal())));
-                        }
-
-                        return new Symbol(Math2.sec(symbol.valueOf()));
-                    }
-                    if (symbol.isImaginary())
-                        return complex.evaluate(symbol, 'sec');
-                    return _.parse(format('1/cos({0})', symbol));
-                }
-
-                var retval,
-                    c = false,
-                    q = getQuadrant(symbol.multiplier.toDecimal()),
-                    m = symbol.multiplier.abs();
-                symbol.multiplier = m;
-
-                if (symbol.isPi() && symbol.isLinear()) {
-                    //return for 1 or -1 for multiples of pi
-                    if (isInt(m)) {
-                        retval = new Symbol(even(m) ? 1 : -1);
-                    }
-                    else {
-                        var n = m.num, d = m.den;
-                        if (d == 2)
-                            throw new UndefinedError('sec is undefined for ' + symbol.toString());
-                        else if (d == 3) {
-                            retval = new Symbol(2);
-                            c = true;
-                        }
-                        else if (d == 4) {
-                            retval = _.parse('sqrt(2)');
-                            c = true;
-                        }
-                        else if (d == 6) {
-                            retval = _.parse('2/sqrt(3)');
-                            c = true;
-                        }
-                        else
-                            retval = _.symfunction('sec', [symbol]);
-                    }
-                }
-
-                if (c && (q === 2 || q === 3))
-                    retval.negate();
-
-                if (!retval)
-                    retval = _.symfunction('sec', [symbol]);
-
-                return retval;
-            },
-            csc: function (symbol) {
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant()) {
-                        if (Settings.USE_BIG) {
-                            return new Symbol(new bigDec(1).dividedBy(bigDec.sin(symbol.multiplier.toDecimal())));
-                        }
-
-                        return new Symbol(Math2.csc(symbol.valueOf()));
-                    }
-                    if (symbol.isImaginary())
-                        return complex.evaluate(symbol, 'csc');
-                    return _.parse(format('1/sin({0})', symbol));
-                }
-
-                var retval,
-                    c = false,
-                    q = getQuadrant(symbol.multiplier.toDecimal()),
-                    sign = symbol.multiplier.sign(),
-                    m = symbol.multiplier.abs();
-
-                symbol.multiplier = m;
-
-                if (symbol.isPi() && symbol.isLinear()) {
-                    //return for 0 for multiples of pi
-                    if (isInt(m)) {
-                        throw new UndefinedError('csc is undefined for ' + symbol.toString());
-                    }
-                    else {
-                        var n = m.num, d = m.den;
-                        if (d == 2) {
-                            retval = new Symbol(1);
-                            c = true;
-                        }
-                        else if (d == 3) {
-                            retval = _.parse('2/sqrt(3)');
-                            c = true
-                        }
-                        else if (d == 4) {
-                            retval = _.parse('sqrt(2)');
-                            c = true;
-                        }
-                        else if (d == 6) {
-                            retval = new Symbol(2);
-                            c = true;
-                        }
-                        else
-                            retval = _.multiply(new Symbol(sign), _.symfunction('csc', [symbol]));
-                    }
-                }
-
-                if (!retval)
-                    retval = _.multiply(new Symbol(sign), _.symfunction('csc', [symbol]));
-
-                if (c && (q === 3 || q === 4))
-                    retval.negate();
-
-                return retval;
-            },
-            cot: function (symbol) {
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol % (Math.PI/2) === 0) {
-                        return new Symbol(0);
-                    }
-                    if (symbol.isConstant()) {
-                        if (Settings.USE_BIG) {
-                            return new Symbol(new bigDec(1).dividedBy(bigDec.tan(symbol.multiplier.toDecimal())));
-                        }
-
-                        return new Symbol(Math2.cot(symbol.valueOf()));
-                    }
-                    if (symbol.isImaginary())
-                        return complex.evaluate(symbol, 'cot');
-                    return _.parse(format('1/tan({0})', symbol));
-                }
-                var retval,
-                    c = false,
-                    q = getQuadrant(symbol.multiplier.toDecimal()),
-                    m = symbol.multiplier;
-
-                symbol.multiplier = m;
-
-                if (symbol.isPi() && symbol.isLinear()) {
-                    //return 0 for all multiples of pi
-                    if (isInt(m)) {
-                        throw new UndefinedError('cot is undefined for ' + symbol.toString());
-                    }
-                    else {
-                        var n = m.num, d = m.den;
-                        if (d == 2)
-                            retval = new Symbol(0);
-                        else if (d == 3) {
-                            retval = _.parse('1/sqrt(3)');
-                            c = true;
-                        }
-                        else if (d == 4) {
-                            retval = new Symbol(1);
-                            c = true;
-                        }
-                        else if (d == 6) {
-                            retval = _.parse('sqrt(3)');
-                            c = true;
-                        }
-                        else
-                            retval = _.symfunction('cot', [symbol]);
-                    }
-                }
-
-                if (!retval)
-                    retval = _.symfunction('cot', [symbol]);
-
-                if (c && (q === 2 || q === 4))
-                    retval.negate();
-
-                return retval;
-            },
-            acos: function (symbol) {
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant()) {
-                        // Handle values in the complex domain
-                        if (symbol.gt(1) || symbol.lt(-1)) {
-                            var x = symbol.toString();
-                            return expand(evaluate(`pi/2-asin(${x})`));
-                        }
-                        // Handle big numbers
-                        if (Settings.USE_BIG) {
-                            return new Symbol(bigDec.acos(symbol.multiplier.toDecimal()));
-                        }
-
-                        return new Symbol(Math.acos(symbol.valueOf()));
-                    }
-                    if (symbol.isImaginary())
-                        return complex.evaluate(symbol, 'acos');
-                }
-                return _.symfunction('acos', arguments);
-            },
-            asin: function (symbol) {
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant()) {
-                        // Handle values in the complex domain
-                        if (symbol.gt(1) || symbol.lt(-1)) {
-                            var i = Settings.IMAGINARY;
-                            var x = symbol.multiplier.toDecimal();
-                            return expand(evaluate(`${i}*log(sqrt(1-${x}^2)-${i}*${x})`));
-                        }
-                        // Handle big numbers
-                        if (Settings.USE_BIG) {
-                            return new Symbol(bigDec.asin(symbol.multiplier.toDecimal()));
-                        }
-
-                        return new Symbol(Math.asin(symbol.valueOf()));
-                    }
-                    if (symbol.isImaginary())
-                        return complex.evaluate(symbol, 'asin');
-                }
-                return _.symfunction('asin', arguments);
-            },
-            atan: function (symbol) {
-                var retval;
-                if (symbol.equals(0))
-                    retval = new Symbol(0);
-                else if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant()) {
-                        // Handle big numbers
-                        if (Settings.USE_BIG) {
-                            return new Symbol(bigDec.atan(symbol.multiplier.toDecimal()));
-                        }
-
-                        return new Symbol(Math.atan(symbol.valueOf()));
-                    }
-                    if (symbol.isImaginary())
-                        return complex.evaluate(symbol, 'atan');
-                    return _.symfunction('atan', arguments);
-                }
-                else if (symbol.equals(-1))
-                    retval = _.parse('-pi/4');
-                else
-                    retval = _.symfunction('atan', arguments);
-                return retval;
-            },
-            asec: function (symbol) {
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.equals(0)) {
-                        throw new OutOfFunctionDomainError('Input is out of the domain of sec!');
-                    }
-                    if (symbol.isConstant()) {
-                        return trig.acos(symbol.invert());
-                    }
-                    if (symbol.isImaginary()) {
-                        return complex.evaluate(symbol, 'asec');
-                    }
-                }
-                return _.symfunction('asec', arguments);
-            },
-            acsc: function (symbol) {
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant()) {
-                        return trig.asin(symbol.invert());
-                    }
-
-                    if (symbol.isImaginary())
-                        return complex.evaluate(symbol, 'acsc');
-                }
-                return _.symfunction('acsc', arguments);
-            },
-            acot: function (symbol) {
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant()) {
-                        return new _.add(_.parse('pi/2'), trig.atan(symbol).negate());
-                    }
-
-                    if (symbol.isImaginary())
-                        return complex.evaluate(symbol, 'acot');
-                }
-                return _.symfunction('acot', arguments);
-            },
-            atan2: function (a, b) {
-                if (a.equals(0) && b.equals(0))
-                    throw new UndefinedError('atan2 is undefined for 0, 0');
-
-                if (Settings.PARSE2NUMBER && a.isConstant() && b.isConstant()) {
-                    return new Symbol(Math.atan2(a, b));
-                }
-                return _.symfunction('atan2', arguments);
-            }
-        };
         //object for functions which handle hyperbolic trig
         var trigh = this.trigh = {
             //container for hyperbolic trig function
@@ -3538,27 +3088,7 @@ const nerdamer = (function () {
             return _.symfunction('round', arguments);
         }
 
-        /**
-         * Gets the quadrant of the trig function
-         * @param {Frac} m
-         * @returns {Int}
-         */
-        function getQuadrant(m) {
-            var v = m % 2, quadrant;
 
-            if (v < 0)
-                v = 2 + v; //put it in terms of pi
-
-            if (v >= 0 && v <= 0.5)
-                quadrant = 1;
-            else if (v > 0.5 && v <= 1)
-                quadrant = 2;
-            else if (v > 1 && v <= 1.5)
-                quadrant = 3;
-            else
-                quadrant = 4;
-            return quadrant;
-        }
 
         /*
          * Serves as a bridge between numbers and bigNumbers
