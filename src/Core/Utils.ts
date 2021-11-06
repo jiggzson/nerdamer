@@ -1,4 +1,4 @@
-import {Settings} from "../Settings";
+import {Settings, SettingsType} from "../Settings";
 
 /**
  * Rounds a number up to x decimal places
@@ -191,4 +191,80 @@ export function firstObject(obj: any, key: boolean = false, both: boolean = fals
     }
 
     return null;
+}
+
+/**
+ * Checks to see if a fraction is divisible by 2
+ * @param {number} num
+ * @returns {boolean}
+ */
+export function evenFraction(num: number) {
+    return 1 / (num % 1) % 2 === 0;
+}
+
+
+/**
+ * Checks to see that all symbols in array are the same
+ * @param {Symbol[]} arr
+ * @returns {boolean}
+ */
+export function allSame(arr: any[]) {
+    let last = arr[0];
+    for (let i = 1, l = arr.length; i < l; i++) {
+        if (!arr[i].equals(last)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Checks to see if an array contains only numeric values
+ * @param {Array} arr
+ */
+export function allNumeric(arr: any[]) {
+    for (let i = 0; i < arr.length; i++) {
+        if (!isNumber(arr[i])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Creates a temporary block in which one of the global settings is temporarily modified while
+ * the function is called. For instance if you want to parse directly to a number rather than have a symbolic
+ * answer for a period you would set PARSE2NUMBER to true in the block.
+ * @example block('PARSE2NUMBER', function(){//symbol being parsed to number}, true);
+ * @param settingsName
+ * @param {Function} f
+ * @param {boolean} opt - The value of the setting in the block
+ * @param {String} obj - The obj of interest. Usually a Symbol but could be any object
+ */
+export function block<T>(settingsName: keyof SettingsType, f: () => T, opt: any, obj: object): T {
+    let current_setting = Settings[settingsName];
+    (Settings[settingsName] as any) = opt === undefined ? true : !!opt;
+    let retval = f.call(obj);
+    (Settings[settingsName] as any) = current_setting;
+    return retval;
+}
+
+
+/*
+ * Debugging method used to better visualize vector and arrays
+ * @param {object} o
+ * @returns {String}
+ */
+export function pretty_print(o: any): string {
+    if (Array.isArray(o)) {
+        let s = o.map(x => pretty_print(x)).join(', ');
+
+        if ((o as any).type === 'vector') {
+            return 'vector<' + s + '>';
+        }
+
+        return '(' + s + ')';
+    }
+    return o.toString();
 }

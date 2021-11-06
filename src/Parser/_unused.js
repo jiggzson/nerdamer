@@ -24,3 +24,15 @@ function erf(symbol) {
     }
     return _.symfunction('erf', arguments);
 }
+
+/**
+ * This method gives the ability to override operators with new methods.
+ * @param {String} which
+ * @param {Function} with_what
+ */
+this.override = function (which, with_what) {
+    if (!bin[which])
+        bin[which] = [];
+    bin[which].push(this[which]);
+    this[which] = with_what;
+};

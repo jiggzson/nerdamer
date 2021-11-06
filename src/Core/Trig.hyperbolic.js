@@ -3,6 +3,7 @@ const {Settings} = require('../Settings');
 const {Symbol, symfunction} = require('./Symbol');
 const {format} = require('./Utils');
 const {Complex} = require('./Complex');
+const {log, add, sqrt, subtract, divide, pow} = require('./SymbolOperators/SymbolOperators');
 
 const TrigHyperbolic = {
     //container for hyperbolic trig function
@@ -118,7 +119,7 @@ const TrigHyperbolic = {
         if (Settings.PARSE2NUMBER && symbol.isImaginary())
             retval = Complex.evaluate(symbol, 'asech');
         else if (Settings.PARSE2NUMBER)
-            retval = TrigHyperbolic.$evaluate(TrigHyperbolic.$log(TrigHyperbolic.$.add(symbol.clone().invert(), TrigHyperbolic.$sqrt(TrigHyperbolic.$.subtract(TrigHyperbolic.$.pow(symbol, new Symbol(-2)), new Symbol(1))))));
+            retval = TrigHyperbolic.$evaluate(log(add(symbol.clone().invert(), sqrt(subtract(pow(symbol, new Symbol(-2)), new Symbol(1))))));
         else
             retval = symfunction('asech', arguments);
         return retval;
@@ -142,8 +143,8 @@ const TrigHyperbolic = {
                 retval = Symbol.infinity();
             else
                 retval = TrigHyperbolic.$evaluate(
-                    TrigHyperbolic.$.divide(
-                        TrigHyperbolic.$log(TrigHyperbolic.$.divide(TrigHyperbolic.$.add(symbol.clone(), new Symbol(1)), TrigHyperbolic.$.subtract(symbol.clone(), new Symbol(1)))),
+                    divide(
+                        log(divide(add(symbol.clone(), new Symbol(1)), subtract(symbol.clone(), new Symbol(1)))),
                         new Symbol(2)));
         }
         else

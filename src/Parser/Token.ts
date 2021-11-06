@@ -13,6 +13,7 @@ export class Token {
     column: number = 0
     precedence: number = 0;
     leftAssoc = false;
+    postfix = false;
 
     static parser: any;
 

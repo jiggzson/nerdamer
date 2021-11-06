@@ -1,6 +1,6 @@
 const {Symbol, isSymbol} = require('../Core/Symbol');
 const {Vector, isVector} = require('./Vector');
-const {inBrackets, format} = require('../Core/Utils');
+const {inBrackets, format, block} = require('../Core/Utils');
 const {err} = require('../Core/Errors');
 
 class Matrix {
@@ -161,7 +161,7 @@ class Matrix {
     invert() {
         if (!this.isSquare())
             err('Matrix is not square!');
-        return this.$block('SAFE', function () {
+        return block('SAFE', function () {
             var ni = this.elements.length, ki = ni, i, j;
             var imatrix = Matrix.identity(ni);
             var M = this.augment(imatrix).toRightTriangular();
@@ -208,7 +208,7 @@ class Matrix {
 
     // ported from Sylvester.js
     toRightTriangular() {
-        return this.$block('SAFE', function () {
+        return block('SAFE', function () {
             var M = this.clone(), els, fel, nel,
                 n = this.elements.length, k = n, i, np, kp = this.elements[0].length, p;
             do {
@@ -286,7 +286,7 @@ class Matrix {
     }
 
     multiply(matrix) {
-        return this.$block('SAFE', function () {
+        return block('SAFE', function () {
             var M = matrix.elements || matrix;
             if (!this.canMultiplyFromLeft(M)) {
                 if (this.sameSize(matrix)) {

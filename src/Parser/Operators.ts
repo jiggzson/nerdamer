@@ -1,12 +1,11 @@
 import {Settings} from '../Settings';
 // @ts-ignore
 import {Symbol, symfunction} from '../Core/Symbol';
+import {divide, factorial} from '../Core/SymbolOperators/SymbolOperators';
 
 type OperationFunction = (...args: any) => any;
 
 type OperatorsDependencies = {
-    factorial: (symbol: Symbol) => Symbol;
-    divide: (a: Symbol, b: Symbol) => Symbol;
     registerOperator: (name: string, operation?: OperationFunction) => void;
 }
 
@@ -72,7 +71,7 @@ export class Operators {
                 postfix: true,
                 leftAssoc: true,
                 operation: (e: any) => {
-                    return this.deps.factorial(e); //wrap it in a factorial function
+                    return factorial(e); //wrap it in a factorial function
                 }
             },
             '^': {
@@ -102,7 +101,7 @@ export class Operators {
                 overloadAction: 'mod',
                 overloadLeftAssoc: false,
                 operation: (x: any) => {
-                    return this.deps.divide(x, new Symbol(100));
+                    return divide(x, new Symbol(100));
                 }
             },
             '*': {

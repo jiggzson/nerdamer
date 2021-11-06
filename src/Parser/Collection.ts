@@ -2,10 +2,10 @@
  * Class used to collect arguments for functions
  * @returns {Parser.Collection}
  */
+import {pretty_print} from '../Core/Utils';
+
 export class Collection {
     elements: any[];
-    /// injected dependency
-    $pretty_print!: (array: any) => string;
 
     constructor() {
         this.elements = [];
@@ -28,6 +28,6 @@ export class Collection {
     }
 
     toString() {
-        return this.$pretty_print(this.elements);
+        return pretty_print(this.elements);
     }
 }

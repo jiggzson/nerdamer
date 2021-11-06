@@ -3,6 +3,7 @@ import {isNumber} from '../Core/Utils';
 import {Math2} from '../Core/Math2';
 import {Settings} from '../Settings';
 import {Bracket, Brackets, Operators} from './Operators';
+import {Node} from './Node';
 
 class ParityError extends Error {
     name = 'ParityError';
@@ -124,6 +125,61 @@ export class Tokenizer {
         }
 
         return e;
+    }
+
+
+    tree(tokens: Token[]) {
+        let Q = [];
+        for (let i = 0; i < tokens.length; i++) {
+            let e: any = tokens[i];
+            //Arrays indicate a new scope so parse that out
+            if (Array.isArray(e)) {
+                e = this.tree(e);
+                //if it's a comma then it's just arguments
+                Q.push(e);
+                continue;
+            }
+
+            if (e.type === Token.OPERATOR) {
+                if (e.is_prefix || e.postfix) {
+                    //prefixes go to the left, postfix to the right
+                    let location = e.is_prefix ? 'left' : 'right';
+                    let last = Q.pop();
+                    e = new Node(e);
+                    e[location] = last;
+                    Q.push(e);
+                }
+                else {
+                    e = new Node(e);
+                    e.right = Q.pop();
+                    e.left = Q.pop();
+                    Q.push(e);
+                }
+            }
+            else if (e.type === Token.FUNCTION) {
+                e = new Node(e);
+                let args = Q.pop();
+                e.right = args;
+                if (e.value === 'object') {
+                    //check if Q has a value
+                    let last = Q[Q.length - 1];
+                    if (last) {
+                        while(last.right) {
+                            last = last.right;
+                        }
+                        last.right = e;
+                        continue;
+                    }
+                }
+
+                Q.push(e);
+            }
+            else {
+                Q.push(new Node(e));
+            }
+        }
+
+        return Q[0];
     }
 }
 

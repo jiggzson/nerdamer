@@ -1,3 +1,5 @@
+import {block} from '../Core/Utils';
+
 const {Symbol} = require('../Core/Symbol');
 
 export class Vector {
@@ -66,7 +68,7 @@ export class Vector {
 
     // Returns the modulus ('length') of the vector
     modulus() {
-        return this.$block('SAFE', function () {
+        return block('SAFE', function () {
             return this.$.pow((this.dot(this.clone())), new Symbol(0.5));
         }, undefined, this);
     }
@@ -123,7 +125,7 @@ export class Vector {
 
     // Returns a new vector created by normalizing the receiver
     toUnitVector() {
-        return this.$block('SAFE', function () {
+        return block('SAFE', function () {
             var r = this.modulus();
             if (r.valueOf() === 0) {
                 return this.clone();
@@ -136,7 +138,7 @@ export class Vector {
 
     // Returns the angle between the vector and the argument (also a vector)
     angleFrom(vector) {
-        return this.$block('SAFE', function () {
+        return block('SAFE', function () {
             var V = vector.elements || vector;
             var n = this.elements.length;
             if (n !== V.length) {
@@ -187,7 +189,7 @@ export class Vector {
 
     // Returns the result of adding the argument to the vector
     add(vector) {
-        return this.$block('SAFE', function () {
+        return block('SAFE', function () {
             var V = vector.elements || vector;
             if (this.elements.length !== V.length) {
                 return null;
@@ -200,7 +202,7 @@ export class Vector {
 
     // Returns the result of subtracting the argument from the vector
     subtract(vector) {
-        return this.$block('SAFE', function () {
+        return block('SAFE', function () {
             var V = vector.elements || vector;
             if (this.elements.length !== V.length) {
                 return null;
@@ -225,7 +227,7 @@ export class Vector {
     // Returns the scalar product of the vector with the argument
     // Both vectors must have equal dimensionality
     dot(vector) {
-        return this.$block('SAFE', function () {
+        return block('SAFE', function () {
             var V = vector.elements || vector;
             var product = new Symbol(0), n = this.elements.length;
             if (n !== V.length) {
@@ -247,7 +249,7 @@ export class Vector {
             return null;
         }
         var A = this.elements;
-        return this.$block('SAFE', function () {
+        return block('SAFE', function () {
             return new Vector([
                 this.$.subtract(this.$.multiply(A[1], B[2]), this.$.multiply(A[2], B[1])),
                 this.$.subtract(this.$.multiply(A[2], B[0]), this.$.multiply(A[0], B[2])),

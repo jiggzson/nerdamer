@@ -7,7 +7,8 @@
  */
 
 const {nround, isInt, isPrime, isNumber, validateName, arrayUnique,
-    arrayMin, arrayMax, warn, even, inBrackets, remove, format, firstObject
+    arrayMin, arrayMax, warn, even, inBrackets, remove, format, firstObject,
+    evenFraction, allSame, allNumeric, block, pretty_print
 } = require('./Core/Utils');
 const Settings = require('./Settings').Settings;
 const {Symbol, isSymbol, isNumericSymbol, isVariableSymbol, isFraction, isNegative, symfunction} = require("./Core/Symbol");
@@ -24,7 +25,7 @@ const {Vector, isVector} = require('./Parser/Vector');
 const bigDec = require('decimal.js');
 const bigInt = require('./3rdparty/bigInt');
 const {Math2} = require('./Core/Math2');
-const {PRIMES, generatePrimes} = require('./Core/Math.consts');
+const {generatePrimes} = require('./Core/Math.consts');
 const {Token} = require('./Parser/Token');
 const {Tokenizer} = require("./Parser/Tokenizer");
 const {Expression, isExpression} = require("./Parser/Expression");
@@ -38,34 +39,16 @@ const {Complex} = require('./Core/Complex');
 const {Trig} = require('./Core/Trig');
 const {TrigHyperbolic} = require('./Core/Trig.hyperbolic');
 const {
-    DivisionByZero, UndefinedError, NerdamerTypeError, DimensionError, NerdamerValueError, err
+    UndefinedError, NerdamerTypeError, DimensionError, NerdamerValueError, err
 } = exceptions;
 
-const {sqrt, multiply, SymbolOperatorsDeps} = require('./Core/SymbolOperators/SymbolOperators');
+const {sqrt, multiply, divide, subtract, add, pow, log,
+    pfactor, rationalize, abs, factorial, SymbolOperatorsDeps} = require('./Core/SymbolOperators/SymbolOperators');
 const {text, TextDependencies} = require('./Core/Text');
 
 const nerdamer = (function () {
 //version ======================================================================
     const version = '1.1.12';
-
-
-    /**
-     * Creates a temporary block in which one of the global settings is temporarily modified while
-     * the function is called. For instance if you want to parse directly to a number rather than have a symbolic
-     * answer for a period you would set PARSE2NUMBER to true in the block.
-     * @example block('PARSE2NUMBER', function(){//symbol being parsed to number}, true);
-     * @param {String} setting - The setting being accessed
-     * @param {Function} f
-     * @param {boolean} opt - The value of the setting in the block
-     * @param {String} obj - The obj of interest. Usually a Symbol but could be any object
-     */
-    var block = function (setting, f, opt, obj) {
-        var current_setting = Settings[setting];
-        Settings[setting] = opt === undefined ? true : !!opt;
-        var retval = f.call(obj);
-        Settings[setting] = current_setting;
-        return retval;
-    };
 
     /**
      * As the name states. It forces evaluation of the expression
@@ -154,18 +137,6 @@ const nerdamer = (function () {
         return RESERVED.indexOf(value) !== -1;
     };
 
-    /**
-     * Checks to see that all symbols in array are the same
-     * @param {Symbol[]} arr
-     * @returns {boolean}
-     */
-    var allSame = function (arr) {
-        var last = arr[0];
-        for (var i = 1, l = arr.length; i < l; i++)
-            if (!arr[i].equals(last))
-                return false;
-        return true;
-    };
 
     /**
      * Generates an object with known variable value for evaluation
@@ -178,20 +149,6 @@ const nerdamer = (function () {
         o[variable] = value;
         return o;
     };
-
-
-
-    /**
-     * Checks to see if an array contains only numeric values
-     * @param {Array} arr
-     */
-    var allNumeric = function (arr) {
-        for (var i = 0; i < arr.length; i++)
-            if (!isNumber(arr[i]))
-                return false;
-        return true;
-    };
-
 
     /**
      * This method traverses the symbol structure and grabs all the variables in a symbol. The variable
@@ -665,14 +622,6 @@ const nerdamer = (function () {
     };
 
 
-    /**
-     * Checks to see if a fraction is divisible by 2
-     * @param {Number} num
-     * @returns {boolean}
-     */
-    var evenFraction = function (num) {
-        return 1 / (num % 1) % 2 === 0;
-    };
 
 
 
@@ -904,53 +853,7 @@ const nerdamer = (function () {
     TextDependencies.CUSTOM_OPERATORS = CUSTOM_OPERATORS;
     _._text = text;
 
-    /**
-     * Calculates prime factors for a number. It first checks if the number
-     * is a prime number. If it's not then it will calculate all the primes
-     * for that number.
-     * @param {int} num
-     * @returns {Array}
-     */
 
-    function primeFactors(num) {
-        if (isPrime(num)) {
-            return [num];
-        }
-
-        var l = num, i = 1, factors = [],
-            epsilon = 2.2204460492503130808472633361816E-16;
-        while(i < l) {
-            var quotient = num / i;
-            var whole = Math.floor(quotient);
-            var remainder = quotient - whole;
-
-            if (remainder <= epsilon && i > 1) {
-                // If the prime wasn't found but calculated then save it and
-                // add it as a factor.
-                if (isPrime(i)) {
-                    if (PRIMES.indexOf(i) === -1) {
-                        PRIMES.push(i);
-                    }
-                    factors.push(i);
-                }
-
-                // Check if the remainder is a prime
-                if (isPrime(whole)) {
-                    factors.push(whole);
-                    break;
-                }
-
-                l = whole;
-            }
-            i++;
-        }
-
-        return factors.sort(function (a, b) {
-            return a - b;
-        });
-    }
-
-    primeFactors(314146179365)
 //Expression ===================================================================
     Expression.prototype.$ = _;
     Expression.prototype.$evaluate = evaluate;
@@ -971,10 +874,6 @@ const nerdamer = (function () {
 
 //Parser.classes ===============================================================
 
-        // Slice & Collection injections
-        Collection.prototype.$pretty_print = _.pretty_print;
-
-
         //create link to classes
         this.classes = {
             Collection: Collection,
@@ -984,10 +883,6 @@ const nerdamer = (function () {
 //Parser.modules ===============================================================
         //object for functions which handle complex number
         Complex.$ = _;
-        Complex.$log = log;
-        Complex.$sqrt = sqrt;
-        Complex.$block = block;
-        let complex = Complex;
 
         Trig.$ = _;
         Trig.$expand = expand;
@@ -996,9 +891,7 @@ const nerdamer = (function () {
 
         TrigHyperbolic.$ = _;
         TrigHyperbolic.$evaluate = evaluate;
-        TrigHyperbolic.$log = log;
-        TrigHyperbolic.$sqrt = sqrt;
-        let trigh = this.trigh = TrigHyperbolic;
+        let trigh = TrigHyperbolic;
 
         //list of supported units
         this.units = {};
@@ -1007,9 +900,6 @@ const nerdamer = (function () {
 
         let operators = new Operators();
         operators.injectOperatorsDeps({
-            symfunction: (...args) => this.symfunction(...args),
-            factorial: (...args) => factorial(...args),
-            divide: (...args) => this.divide(...args),
             registerOperator: (name, operation) => _[name] = operation,
         });
 
@@ -1040,20 +930,6 @@ const nerdamer = (function () {
 
         //error handler
         this.error = err;
-
-
-        /**
-         * This method gives the ability to override operators with new methods.
-         * @param {String} which
-         * @param {Function} with_what
-         */
-        this.override = function (which, with_what) {
-            if (!bin[which])
-                bin[which] = [];
-            bin[which].push(this[which]);
-            this[which] = with_what;
-        };
-
 
 
         /**
@@ -1155,20 +1031,7 @@ const nerdamer = (function () {
                 PI: new Symbol(Settings.PI)
             };
         };
-        /*
-         * Debugging method used to better visualize vector and arrays
-         * @param {object} o
-         * @returns {String}
-         */
-        this.pretty_print = function (o) {
-            if (Array.isArray(o)) {
-                var s = o.map(x => _.pretty_print(x)).join(', ');
-                if (o.type === 'vector')
-                    return 'vector<' + s + '>';
-                return '(' + s + ')';
-            }
-            return o.toString();
-        };
+
         this.peekers = {
             pre_operator: [],
             post_operator: [],
@@ -1228,61 +1091,11 @@ const nerdamer = (function () {
             return rpnParser.parseRPN(rpn, substitutions);
         };
 
-        this.tree = function (tokens) {
-            var Q = [];
-            for (var i = 0; i < tokens.length; i++) {
-                var e = tokens[i];
-                //Arrays indicate a new scope so parse that out
-                if (Array.isArray(e)) {
-                    e = this.tree(e);
-                    //if it's a comma then it's just arguments
-                    Q.push(e);
-                    continue;
-                }
-                if (e.type === Token.OPERATOR) {
-                    if (e.is_prefix || e.postfix) {
-                        //prefixes go to the left, postfix to the right
-                        var location = e.is_prefix ? 'left' : 'right';
-                        var last = Q.pop();
-                        e = new Node(e);
-                        e[location] = last;
-                        Q.push(e);
-                    }
-                    else {
-                        e = new Node(e);
-                        e.right = Q.pop();
-                        e.left = Q.pop();
-                        Q.push(e);
-                    }
-                }
-                else if (e.type === Token.FUNCTION) {
-                    e = new Node(e);
-                    var args = Q.pop();
-                    e.right = args;
-                    if (e.value === 'object') {
-                        //check if Q has a value
-                        var last = Q[Q.length - 1];
-                        if (last) {
-                            while(last.right) {
-                                last = last.right;
-                            }
-                            last.right = e;
-                            continue;
-                        }
-                    }
-
-                    Q.push(e);
-                }
-                else {
-                    Q.push(new Node(e));
-                }
-            }
-
-            return Q[0];
-        };
 
         let deps = {preprocessors, functions, brackets, operators, units: _.units};
         let tokenizer = new Tokenizer(deps);
+
+        this.tree = tokenizer.tree;
 
         this.parse = (e, substitutions = {}) => {
             let tokens = tokenizer.tokenize(e, true);
@@ -1576,103 +1389,9 @@ const nerdamer = (function () {
             if (Settings.PARSE2NUMBER) {
                 return symbol;
             }
-            return _.symfunction('parens', [symbol]);
+            return symfunction('parens', [symbol]);
         }
 
-        function abs(symbol) {
-
-            //|-∞| = ∞
-            if (symbol.isInfinity) {
-                return Symbol.infinity();
-            }
-            if (symbol.multiplier.lessThan(0))
-                symbol.multiplier.negate();
-
-            if (symbol.isImaginary()) {
-                var re = symbol.realpart();
-                var im = symbol.imagpart();
-                if (re.isConstant() && im.isConstant())
-                    return sqrt(_.add(_.pow(re, new Symbol(2)), _.pow(im, new Symbol(2))));
-            }
-            else if (isNumericSymbol(symbol) || even(symbol.power)) {
-                return symbol;
-            }
-
-            if (symbol.isComposite()) {
-                var ms = [];
-                symbol.each(function (x) {
-                    ms.push(x.multiplier);
-                });
-                var gcd = Math2.QGCD.apply(null, ms);
-                if (gcd.lessThan(0)) {
-                    symbol.multiplier = symbol.multiplier.multiply(new Frac(-1));
-                    symbol.distributeMultiplier();
-                }
-            }
-
-            //convert |n*x| to n*|x|
-            var m = _.parse(symbol.multiplier);
-            symbol.toUnitMultiplier();
-
-            return _.multiply(m, _.symfunction(ABS, [symbol]));
-        }
-        /**
-         * The factorial function
-         * @param {Symbol} symbol
-         * @return {Symbol}
-         */
-        function factorial(symbol) {
-            var retval;
-            if (isVector(symbol)) {
-                var V = new Vector();
-                symbol.each(function (x, i) {
-                    //i start at one.
-                    V.set(i - 1, factorial(x));
-                });
-                return V;
-            }
-            if (isMatrix(symbol)) {
-                var M = new Matrix();
-                symbol.each(function (x, i, j) {
-                    //i start at one.
-                    M.set(i, j, factorial(x));
-                });
-                return M;
-            }
-            if (Settings.PARSE2NUMBER && symbol.isConstant()) {
-                if (isInt(symbol)) {
-                    retval = Math2.bigfactorial(symbol);
-                }
-                else {
-                    retval = Math2.gamma(symbol.multiplier.add(new Frac(1)).toDecimal());
-                }
-
-                retval = bigConvert(retval);
-                return retval;
-            }
-            else if (symbol.isConstant()) {
-                var den = symbol.getDenom();
-                if (den.equals(2)) {
-                    var num = symbol.getNum();
-                    var a, b, c, n;
-
-                    if (!symbol.multiplier.isNegative()) {
-                        n = _.add(num, new Symbol(1)).multiplier.divide(new Frac(2));
-                        a = Math2.bigfactorial(new Frac(2).multiply(n));
-                        b = _.pow(new Symbol(4), new Symbol(n)).multiplier.multiply(Math2.bigfactorial(n));
-                    }
-                    else {
-                        n = _.subtract(num.negate(), new Symbol(1)).multiplier.divide(new Frac(2));
-                        a = _.pow(new Symbol(-4), new Symbol(n)).multiplier.multiply(Math2.bigfactorial(n));
-                        b = Math2.bigfactorial(new Frac(2).multiply(n));
-                    }
-                    c = a.divide(b);
-                    return _.multiply(_.parse('sqrt(pi)'), new Symbol(c));
-                }
-            }
-            return _.symfunction(FACTORIAL, [symbol]);
-        }
-        ;
         /**
          * Returns the continued fraction of a number
          * @param {Symbol} symbol
@@ -1843,31 +1562,6 @@ const nerdamer = (function () {
             return Vector.fromArray(_roots);
         }
 
-        /**
-         * Rationalizes a symbol
-         * @param {Symbol} symbol
-         * @returns {Symbol}
-         */
-        function rationalize(symbol) {
-            if (symbol.isComposite()) {
-                var retval = new Symbol(0);
-                var num, den, retnum, retden, a, b, n, d;
-                symbol.each(function (x) {
-                    num = x.getNum();
-                    den = x.getDenom();
-                    retnum = retval.getNum();
-                    retden = retval.getDenom();
-                    a = _.multiply(den, retnum);
-                    b = _.multiply(num, retden);
-                    n = _.expand(_.add(a, b));
-                    d = _.multiply(retden, den);
-                    retval = _.divide(n, d);
-                }, true);
-
-                return retval;
-            }
-            return symbol;
-        }
 
         /**
          * The cube root function
@@ -1977,37 +1671,7 @@ const nerdamer = (function () {
             }
         }
 
-        function pfactor(symbol) {
-            //Fix issue #458 | nerdamer("sqrt(1-(3.3333333550520926e-7)^2)").evaluate().text()
-            //More Big Number issues >:(
-            if (symbol.greaterThan(9.999999999998891e+41) || symbol.equals(-1))
-                return symbol;
-            //Fix issue #298
-            if (symbol.equals(Math.PI))
-                return new Symbol(Math.PI);
-            //evaluate the symbol to merge constants
-            symbol = evaluate(symbol.clone());
 
-            if (symbol.isConstant()) {
-                var retval = new Symbol(1);
-                var m = symbol.toString();
-                if (isInt(m)) {
-                    var factors = Math2.ifactor(m);
-                    for (var factor in factors) {
-                        var p = factors[factor];
-                        retval = _.multiply(retval, _.symfunction('parens', [new Symbol(factor).setPower(new Frac(p))]));
-                    }
-                }
-                else {
-                    var n = pfactor(new Symbol(symbol.multiplier.num));
-                    var d = pfactor(new Symbol(symbol.multiplier.den));
-                    retval = _.multiply(_.symfunction('parens', [n]), _.symfunction('parens', [d]).invert());
-                }
-            }
-            else
-                retval = _.symfunction('pfactor', arguments);
-            return retval;
-        }
 
         /**
          * Get's the real part of a complex number. Return number if real
@@ -2189,100 +1853,6 @@ const nerdamer = (function () {
             }));
         }
 
-        /**
-         * The log function
-         * @param {Symbol} symbol
-         * @param {Symbol} base
-         * @returns {Symbol}
-         */
-        function log(symbol, base) {
-
-            if (symbol.equals(1)) {
-                return new Symbol(0);
-            }
-
-            var retval;
-
-            if (symbol.fname === SQRT && symbol.multiplier.equals(1)) {
-                retval = _.divide(log(symbol.args[0]), new Symbol(2));
-
-                if (symbol.power.sign() < 0) {
-                    retval.negate();
-                }
-
-                // Exit early
-                return retval;
-            }
-
-            //log(0) is undefined so complain
-            if (symbol.equals(0)) {
-                throw new UndefinedError(Settings.LOG + '(0) is undefined!');
-            }
-
-            //deal with imaginary values
-            if (symbol.isImaginary()) {
-                return complex.evaluate(symbol, Settings.LOG);
-            }
-
-            if (symbol.isConstant() && typeof base !== 'undefined' && base.isConstant()) {
-                var log_sym = Math.log(symbol);
-                var log_base = Math.log(base);
-                retval = new Symbol(log_sym / log_base);
-            }
-            else if (symbol.group === EX && symbol.power.multiplier.lessThan(0) || symbol.power.toString() === '-1') {
-                symbol.power.negate();
-                //move the negative outside but keep the positive inside :)
-                retval = log(symbol).negate();
-            }
-            else if (symbol.value === 'e' && symbol.multiplier.equals(1)) {
-                var p = symbol.power;
-                retval = isSymbol(p) ? p : new Symbol(p);
-            }
-            else if (symbol.group === FN && symbol.fname === 'exp') {
-                var s = symbol.args[0];
-                if (symbol.multiplier.equals(1))
-                    retval = _.multiply(s, new Symbol(symbol.power));
-                else
-                    retval = _.symfunction(Settings.LOG, [symbol]);
-            }
-            else if (Settings.PARSE2NUMBER && isNumericSymbol(symbol)) {
-                // Parse for safety.
-                symbol = _.parse(symbol);
-
-                var img_part;
-                if (symbol.multiplier.lessThan(0)) {
-                    symbol.negate();
-                    img_part = _.multiply(new Symbol(Math.PI), new Symbol('i'));
-                }
-
-                retval = new Symbol(Math.log(symbol.multiplier.toDecimal()));
-
-                if (img_part) {
-                    retval = _.add(retval, img_part);
-                }
-
-            }
-            else {
-                var s;
-                if (!symbol.power.equals(1) && !symbol.contains('e')) {
-                    s = symbol.group === EX ? symbol.power : new Symbol(symbol.power);
-                    symbol.toLinear();
-                }
-                //log(a,a) = 1 since the base is allowed to be changed.
-                //This was pointed out by Happypig375 in issue #280
-                if (arguments.length > 1 && allSame(arguments)) {
-                    retval = new Symbol(1);
-                }
-                else {
-                    retval = _.symfunction(Settings.LOG, arguments);
-                }
-
-                if (s)
-                    retval = _.multiply(s, retval);
-            }
-
-            return retval;
-        }
 
         /**
          * Round a number up to s decimal places
@@ -2769,50 +2339,6 @@ const nerdamer = (function () {
             });
         }
 
-        function testSQRT(symbol) {
-            //wrap the symbol in sqrt. This eliminates one more check down the line.
-            if (!isSymbol(symbol.power) && symbol.power.absEquals(0.5)) {
-                var sign = symbol.power.sign();
-                //don't devide the power directly. Notice the use of toString. This makes it possible
-                //to use a bigNumber library in the future
-                var retval = sqrt(symbol.group === P ? new Symbol(symbol.value) : symbol.toLinear());
-                //place back the sign of the power
-                if (sign < 0)
-                    retval.invert();
-                return retval;
-            }
-            return symbol;
-        }
-
-        //try to reduce a symbol by pulling its power
-        function testPow(symbol) {
-            if (symbol.group === P) {
-                var v = symbol.value;
-
-                var fct = primeFactors(v)[0];
-
-                //safety
-                if (!fct) {
-                    warn('Unable to compute prime factors. This should not happen. Please review and report.');
-                    return symbol;
-                }
-
-                var n = new Frac(Math.log(v) / Math.log(fct)),
-                    p = n.multiply(symbol.power);
-
-                //we don't want a more complex number than before
-                if (p.den > symbol.power.den)
-                    return symbol;
-
-                if (isInt(p))
-                    symbol = new Symbol(Math.pow(fct, p));
-                else
-                    symbol = new Symbol(fct).setPower(p);
-            }
-
-            return symbol;
-        }
-
         //Link the functions to the parse so they're available outside of the library.
         //This is strictly for convenience and may be deprecated.
         this.expand = expand;
@@ -2891,780 +2417,23 @@ const nerdamer = (function () {
 
             return _.parse(this.body, subs);
         };
-        /**
-         * Adds two symbols
-         * @param {Symbol} a
-         * @param {Symbol} b
-         * @returns {Symbol}
-         */
-        this.add = function (a, b) {
-            var aIsSymbol = isSymbol(a),
-                bIsSymbol = isSymbol(b);
-            //we're dealing with two symbols
-            if (aIsSymbol && bIsSymbol) {
-                //forward the adding of symbols with units to the Unit module
-                if (a.unit || b.unit) {
-                    return _.Unit.add(a, b);
-                }
-                //handle Infinity
-                //https://www.encyclopediaofmath.org/index.php/Infinity
-                if (a.isInfinity || b.isInfinity) {
-                    var aneg = a.multiplier.lessThan(0),
-                        bneg = b.multiplier.lessThan(0);
 
-                    if (a.isInfinity && b.isInfinity && aneg !== bneg) {
-                        throw new UndefinedError('(' + a + ')+(' + b + ') is not defined!');
-                    }
-
-                    var inf = Symbol.infinity();
-                    if (bneg)
-                        inf.negate();
-                    return inf;
-                }
-
-                if (a.isComposite() && a.isLinear() && b.isComposite() && b.isLinear()) {
-                    a.distributeMultiplier();
-                    b.distributeMultiplier();
-                    // Fix for issue #606
-                    if (b.length > a.length && a.group === b.group) {
-                        [a, b] = [b, a];
-                    }
-                }
-
-                //no need to waste time on zeroes
-                if (a.multiplier.equals(0))
-                    return b;
-                if (b.multiplier.equals(0))
-                    return a;
-
-                if (a.isConstant() && b.isConstant() && Settings.PARSE2NUMBER) {
-                    var result = new Symbol(a.multiplier.add(b.multiplier).toDecimal(Settings.PRECISION));
-                    return result;
-                }
-
-                var g1 = a.group,
-                    g2 = b.group,
-                    ap = a.power.toString(),
-                    bp = b.power.toString();
-
-                //always keep the greater group on the left.
-                if (g1 < g2 || (g1 === g2 && ap > bp && bp > 0)) {
-                    return this.add(b, a);
-                }
-
-                /*note to self: Please don't forget about this dilemma ever again. In this model PL and CB goes crazy
-                 * because it doesn't know which one to prioritize. */
-                //correction to PL dilemma
-                if (g1 === CB && g2 === PL && a.value === b.value) {
-                    //swap
-                    var t = a;
-                    a = b;
-                    b = t;
-                    g1 = a.group;
-                    g2 = b.group;
-                    ap = a.power.toString();
-                    bp = b.power.toString();
-                }
-
-                var powEQ = ap === bp,
-                    v1 = a.value,
-                    v2 = b.value,
-                    aIsComposite = a.isComposite(),
-                    bIsComposite = b.isComposite(),
-                    h1, h2, result;
-
-                if (aIsComposite)
-                    h1 = text(a, 'hash');
-                if (bIsComposite)
-                    h2 = text(b, 'hash');
-
-                if (g1 === CP && g2 === CP && b.isLinear() && !a.isLinear() && h1 !== h2) {
-                    return this.add(b, a);
-                }
-
-                //PL & PL should compare hashes and not values e.g. compare x+x^2 with x+x^3 and not x with x
-                if (g1 === PL && g2 === PL) {
-                    v1 = h1;
-                    v2 = h2;
-                }
-
-                var PN = g1 === P && g2 === N,
-                    PNEQ = a.value === b.multiplier.toString(),
-                    valEQ = (v1 === v2 || h1 === h2 && h1 !== undefined || (PN && PNEQ));
-
-                //equal values, equal powers
-                if (valEQ && powEQ && g1 === g2) {
-                    //make sure to convert N to something P can work with
-                    if (PN)
-                        b = b.convert(P);//CL
-
-                    //handle PL
-                    if (g1 === PL && (g2 === S || g2 === P)) {
-                        a.distributeMultiplier();
-                        result = a.attach(b);
-                    }
-                    else {
-                        result = a;//CL
-                        if (a.multiplier.isOne() && b.multiplier.isOne() && g1 === CP && a.isLinear() && b.isLinear()) {
-                            for (var s in b.symbols) {
-                                var x = b.symbols[s];
-                                result.attach(x);
-                            }
-                        }
-                        else
-                            result.multiplier = result.multiplier.add(b.multiplier);
-                    }
-                }
-                //equal values uneven powers
-                else if (valEQ && g1 !== PL) {
-                    //break the tie for e.g. (x+1)+((x+1)^2+(x+1)^3)
-                    if (g1 === CP && g2 === PL) {
-                        b.insert(a, 'add');
-                        result = b;
-                    }
-                    else {
-                        result = Symbol.shell(PL).attach([a, b]);
-                        //update the hash
-                        result.value = g1 === PL ? h1 : v1;
-                    }
-                }
-                else if (aIsComposite && a.isLinear()) {
-                    var canIterate = g1 === g2,
-                        bothPL = g1 === PL && g2 === PL;
-
-                    //we can only iterate group PL if they values match
-                    if (bothPL)
-                        canIterate = a.value === b.value;
-                    //distribute the multiplier over the entire symbol
-                    a.distributeMultiplier();
-
-                    if (b.isComposite() && b.isLinear() && canIterate) {
-                        b.distributeMultiplier();
-                        //CL
-                        for (var s in b.symbols) {
-                            var x = b.symbols[s];
-                            a.attach(x);
-                        }
-                        result = a;
-                    }
-                    //handle cases like 2*(x+x^2)^2+2*(x+x^2)^3+4*(x+x^2)^2
-                    else if (bothPL && a.value !== h2 || g1 === PL && !valEQ) {
-                        result = Symbol.shell(CP).attach([a, b]);
-                        result.updateHash();
-
-                    }
-                    else {
-                        result = a.attach(b);
-                    }
-                }
-                else {
-                    if (g1 === FN && a.fname === SQRT && g2 !== EX && b.power.equals(0.5)) {
-                        var m = b.multiplier.clone();
-                        b = sqrt(b.toUnitMultiplier().toLinear());
-                        b.multiplier = m;
-                    }
-                    //fix for issue #3 and #159
-                    if (a.length === 2 && b.length === 2 && even(a.power) && even(b.power)) {
-                        result = _.add(expand(a), expand(b));
-                    }
-                    else {
-                        result = Symbol.shell(CP).attach([a, b]);
-                        result.updateHash();
-                    }
-                }
-
-                if (result.multiplier.equals(0))
-                    result = new Symbol(0);
-
-                //make sure to remove unnecessary wraps
-                if (result.length === 1) {
-                    var m = result.multiplier;
-                    result = firstObject(result.symbols);
-                    result.multiplier = result.multiplier.multiply(m);
-                }
-
-                return result;
-            }
-            else {
-                //keep symbols to the right
-                if (bIsSymbol && !aIsSymbol) {
-                    var t = a;
-                    a = b;
-                    b = t; //swap
-                    t = bIsSymbol;
-                    bIsSymbol = aIsSymbol;
-                    aIsSymbol = t;
-                }
-
-                var bIsMatrix = isMatrix(b);
-
-                if (aIsSymbol && bIsMatrix) {
-                    var M = new Matrix();
-                    b.eachElement(function (e, i, j) {
-                        M.set(i, j, _.add(a.clone(), e));
-                    });
-
-                    b = M
-                }
-                else {
-                    if (isMatrix(a) && bIsMatrix) {
-                        b = a.add(b);
-                    }
-                    else if (aIsSymbol && isVector(b)) {
-                        b.each(function (x, i) {
-                            i--;
-                            b.elements[i] = _.add(a.clone(), b.elements[i]);
-                        });
-                    }
-                    else {
-                        if (isVector(a) && isVector(b)) {
-                            b.each(function (x, i) {
-                                i--;
-                                b.elements[i] = _.add(a.elements[i], b.elements[i]);
-                            });
-                        }
-                        else if (isVector(a) && isMatrix(b)) {
-                            //try to convert a to a matrix
-                            return _.add(b, a);
-                        }
-                        else if (isMatrix(a) && isVector(b)) {
-                            if (b.elements.length === a.rows()) {
-                                var M = new Matrix(), l = a.cols();
-                                b.each(function (e, i) {
-                                    var row = [];
-                                    for (var j = 0; j < l; j++) {
-                                        row.push(_.add(a.elements[i - 1][j].clone(), e.clone()));
-                                    }
-                                    M.elements.push(row);
-                                });
-                                return M;
-                            }
-                            else
-                                err('Dimensions must match!');
-                        }
-                    }
-                }
-                return b;
-            }
-
-        };
-        /**
-         * Gets called when the parser finds the - operator. Not the prefix operator. See this.add
-         * @param {Symbol} a
-         * @param {Symbol} b
-         * @returns {Symbol}
-         */
-        this.subtract = function (a, b) {
-            var aIsSymbol = isSymbol(a),
-                bIsSymbol = isSymbol(b);
-
-            if (aIsSymbol && bIsSymbol) {
-                if (a.unit || b.unit) {
-                    return _.Unit.subtract(a, b);
-                }
-                return this.add(a, b.negate());
-            }
-            else {
-                if (bIsSymbol && isVector(a)) {
-                    b = a.map(function (x) {
-                        return _.subtract(x, b.clone());
-                    });
-                }
-                else if (aIsSymbol && isVector(b)) {
-                    b = b.map(function (x) {
-                        return _.subtract(a.clone(), x);
-                    });
-                }
-                else if (isVector(a) && isVector(b)) {
-                    if (a.dimensions() === b.dimensions())
-                        b = a.subtract(b);
-                    else
-                        _.error('Unable to subtract vectors. Dimensions do not match.');
-                }
-                else if (isMatrix(a) && isVector(b)) {
-                    if (b.elements.length === a.rows()) {
-                        var M = new Matrix(), l = a.cols();
-                        b.each(function (e, i) {
-                            var row = [];
-                            for (var j = 0; j < l; j++) {
-                                row.push(_.subtract(a.elements[i - 1][j].clone(), e.clone()));
-                            }
-                            M.elements.push(row);
-                        });
-                        return M;
-                    }
-                    else
-                        err('Dimensions must match!');
-                }
-                else if (isVector(a) && isMatrix(b)) {
-                    var M = b.clone().negate();
-                    return _.add(M, a);
-                }
-                else if (isMatrix(a) && isMatrix(b)) {
-                    b = a.subtract(b);
-                }
-                else if (isMatrix(a) && bIsSymbol) {
-                    var M = new Matrix();
-                    a.each(function (x, i, j) {
-                        M.set(i, j, _.subtract(x, b.clone()));
-                    });
-                    b = M;
-                }
-                else if (aIsSymbol && isMatrix(b)) {
-                    var M = new Matrix();
-                    b.each(function (x, i, j) {
-                        M.set(i, j, _.subtract(a.clone(), x));
-                    });
-                    b = M;
-                }
-                return b;
-            }
-        };
-
-        /**
-         * Gets called when the parser finds the / operator. See this.add
-         * @param {Symbol} a
-         * @param {Symbol} b
-         * @returns {Symbol}
-         */
-        this.divide = function (a, b) {
-            var aIsSymbol = isSymbol(a),
-                bIsSymbol = isSymbol(b);
-
-            if (aIsSymbol && bIsSymbol) {
-                //forward to Unit division
-                if (a.unit || b.unit) {
-                    return _.Unit.divide(a, b);
-                }
-                var result;
-                if (b.equals(0))
-                    throw new DivisionByZero('Division by zero not allowed!');
-
-                if (a.isConstant() && b.isConstant()) {
-                    result = a.clone();
-                    result.multiplier = result.multiplier.divide(b.multiplier);
-                }
-                else {
-                    b.invert();
-                    result = _.multiply(a, b);
-                }
-                return result;
-            }
-            else {
-                //******* Vectors & Matrices *********//
-                var isVectorA = isVector(a), isVectorB = isVector(b);
-                if (aIsSymbol && isVectorB) {
-                    b = b.map(function (x) {
-                        return _.divide(a.clone(), x);
-                    });
-                }
-                else if (isVectorA && bIsSymbol) {
-                    b = a.map(function (x) {
-                        return _.divide(x, b.clone());
-                    });
-                }
-                else if (isVectorA && isVectorB) {
-                    if (a.dimensions() === b.dimensions()) {
-                        b = b.map(function (x, i) {
-                            return _.divide(a.elements[--i], x);
-                        });
-                    }
-                    else
-                        _.error('Cannot divide vectors. Dimensions do not match!');
-                }
-                else {
-                    var isMatrixA = isMatrix(a), isMatrixB = isMatrix(b);
-                    if (isMatrixA && bIsSymbol) {
-                        var M = new Matrix();
-                        a.eachElement(function (x, i, j) {
-                            M.set(i, j, _.divide(x, b.clone()));
-                        });
-                        b = M;
-                    }
-                    else if (aIsSymbol && isMatrixB) {
-                        var M = new Matrix();
-                        b.eachElement(function (x, i, j) {
-                            M.set(i, j, _.divide(a.clone(), x));
-                        });
-                        b = M;
-                    }
-                    else if (isMatrixA && isMatrixB) {
-                        var M = new Matrix();
-                        if (a.rows() === b.rows() && a.cols() === b.cols()) {
-                            a.eachElement(function (x, i, j) {
-                                M.set(i, j, _.divide(x, b.elements[i][j]));
-                            });
-                            b = M;
-                        }
-                        else {
-                            _.error('Dimensions do not match!');
-                        }
-                    }
-                    else if (isMatrixA && isVectorB) {
-                        if (a.cols() === b.dimensions()) {
-                            var M = new Matrix();
-                            a.eachElement(function (x, i, j) {
-                                M.set(i, j, _.divide(x, b.elements[i].clone()));
-                            });
-                            b = M;
-                        }
-                        else {
-                            _.error('Unable to divide matrix by vector.');
-                        }
-                    }
-                }
-                return b;
-            }
-        };
-        /**
-         * Gets called when the parser finds the ^ operator. See this.add
-         * @param {Symbol} a
-         * @param {Symbol} b
-         * @returns {Symbol}
-         */
-        this.pow = function (a, b) {
-            var aIsSymbol = isSymbol(a),
-                bIsSymbol = isSymbol(b);
-            if (aIsSymbol && bIsSymbol) {
-                //it has units then it's the Unit module's problem
-                if (a.unit || b.unit) {
-                    return _.Unit.pow(a, b);
-                }
-
-                // Handle abs
-                if (a.group === FN && a.fname === ABS && even(b)) {
-                    var m = a.multiplier.clone();
-                    var raised = _.pow(a.args[0], b);
-                    raised.multiplier = m;
-                    return raised;
-                }
-
-                // Handle infinity
-                if (a.isInfinity || b.isInfinity) {
-                    if (a.isInfinity && b.isInfinity)
-                        throw new UndefinedError('(' + a + ')^(' + b + ') is undefined!');
-
-                    if (a.isConstant() && b.isInfinity) {
-                        if (a.equals(0)) {
-                            if (b.lessThan(0))
-                                throw new UndefinedError('0^Infinity is undefined!');
-                            return new Symbol(0);
-                        }
-                        if (a.equals(1))
-                            throw new UndefinedError('1^' + b.toString() + ' is undefined!');
-                        //a^-oo
-                        if (b.lessThan(0))
-                            return new Symbol(0);
-                        //a^oo
-                        if (!a.lessThan(0))
-                            return Symbol.infinity();
-                    }
-
-                    if (a.isInfinity && b.isConstant()) {
-                        if (b.equals(0))
-                            throw new UndefinedError(a + '^0 is undefined!');
-                        if (b.lessThan(0))
-                            return new Symbol(0);
-                        return _.multiply(Symbol.infinity(), _.pow(new Symbol(a.sign()), b.clone()));
-                    }
-                }
-
-                var aIsZero = a.equals(0);
-                var bIsZero = b.equals(0);
-                if (aIsZero && bIsZero)
-                    throw new UndefinedError('0^0 is undefined!');
-
-                // Return 0 right away if possible
-                if (aIsZero && b.isConstant() && b.multiplier.greaterThan(0))
-                    return new Symbol(0);
-
-                if (bIsZero)
-                    return new Symbol(1);
-
-                var bIsConstant = b.isConstant(),
-                    aIsConstant = a.isConstant(),
-                    bIsInt = b.isInteger(),
-                    m = a.multiplier,
-                    result = a.clone();
-
-                // 0^0, 1/0, etc. Complain.
-                if (aIsConstant && bIsConstant && a.equals(0) && b.lessThan(0))
-                    throw new UndefinedError('Division by zero is not allowed!');
-
-                // Compute imaginary numbers right away
-                if (Settings.PARSE2NUMBER && aIsConstant && bIsConstant && a.sign() < 0 && evenFraction(b)) {
-                    var k, re, im;
-                    k = Math.PI * b;
-                    re = new Symbol(Math.cos(k));
-                    im = _.multiply(Symbol.imaginary(), new Symbol(Math.sin(k)));
-                    return _.add(re, im);
-                }
-
-                // Imaginary number under negative nthroot or to the n
-                if (Settings.PARSE2NUMBER && a.isImaginary() && bIsConstant && isInt(b) && !b.lessThan(0)) {
-                    var re, im, r, theta, nre, nim, phi;
-                    re = a.realpart();
-                    im = a.imagpart();
-                    if (re.isConstant('all') && im.isConstant('all')) {
-                        phi = Settings.USE_BIG ? Symbol(bigDec.atan2(i.multiplier.toDecimal(), r.multiplier.toDecimal()).times(b.toString())) : Math.atan2(im, re) * b;
-                        theta = new Symbol(phi);
-                        r = _.pow(Symbol.hyp(re, im), b);
-                        nre = _.multiply(r.clone(), _.trig.cos(theta.clone()));
-                        nim = _.multiply(r, _.trig.sin(theta));
-                        return _.add(nre, _.multiply(Symbol.imaginary(), nim));
-                    }
-                }
-
-                // Take care of the symbolic part
-                result.toUnitMultiplier();
-                //simpifly sqrt
-                if (result.group === FN && result.fname === SQRT && !bIsConstant) {
-                    var s = result.args[0];
-                    s.multiplyPower(new Symbol(0.5));
-                    s.multiplier.multiply(result.multiplier);
-                    s.multiplyPower(b);
-                    result = s;
-                }
-                else {
-                    var sign = m.sign();
-                    //handle cases such as (-a^3)^(1/4)
-                    if (evenFraction(b) && sign < 0) {
-                        // Swaperoo
-                        // First put the sign back on the symbol
-                        result.negate();
-                        // Wrap it in brackets
-                        result = _.symfunction(PARENTHESIS, [result]);
-                        // Move the sign back the exterior and let nerdamer handle the rest
-                        result.negate();
-                    }
-
-                    result.multiplyPower(b);
-                }
-
-                if (aIsConstant && bIsConstant && Settings.PARSE2NUMBER) {
-                    var c;
-                    //remove the sign
-                    if (sign < 0) {
-                        a.negate();
-                        if (b.multiplier.den.equals(2))
-                            //we know that the numerator has to be odd and therefore it's i
-                            c = new Symbol(Settings.IMAGINARY);
-                        else if (isInt(b.multiplier)) {
-                            if (even(b.multiplier))
-                                c = new Symbol(1);
-                            else
-                                c = new Symbol(-1);
-                        }
-                        else if (!even(b.multiplier.den)) {
-                            c = new Symbol(Math.pow(sign, b.multiplier.num));
-                        }
-                        else {
-                            c = _.pow(_.symfunction(PARENTHESIS, [new Symbol(sign)]), b.clone());
-                        }
-                    }
-
-                    result = new Symbol(Math.pow(a.multiplier.toDecimal(), b.multiplier.toDecimal()));
-
-                    //result = new Symbol(Math2.bigpow(a.multiplier, b.multiplier));
-                    //put the back sign
-                    if (c)
-                        result = _.multiply(result, c);
-                }
-                else if (bIsInt && !m.equals(1)) {
-                    var abs_b = b.abs();
-                    // Provide fall back to JS until big number implementation is improved
-                    if (abs_b.gt(Settings.MAX_EXP)) {
-                        if (b.sign() < 0)
-                            return new Symbol(0);
-                        return Symbol.infinity();
-                    }
-                    else {
-                        var p = b.multiplier.toDecimal();
-                        var sgn = Math.sign(p);
-                        p = Math.abs(p);
-                        var multiplier = new Frac(1);
-                        multiplier.num = m.num.pow(p);
-                        multiplier.den = m.den.pow(p);
-                        if (sgn < 0)
-                            multiplier.invert();
-                        //multiplying is justified since after mulltiplyPower if it was of group P it will now be of group N
-                        result.multiplier = result.multiplier.multiply(multiplier);
-                    }
-                }
-                else {
-                    var sign = a.sign();
-                    if (b.isConstant() && a.isConstant() && !b.multiplier.den.equals(1) && sign < 0) {
-                        //we know the sign is negative so if the denominator for b == 2 then it's i
-                        if (b.multiplier.den.equals(2)) {
-                            var i = new Symbol(Settings.IMAGINARY);
-                            a.negate();//remove the sign
-                            //if the power is negative then i is negative
-                            if (b.lessThan(0)) {
-                                i.negate();
-                                b.negate();//remove the sign from the power
-                            }
-                            //pull the power normally and put back the imaginary
-                            result = _.multiply(_.pow(a, b), i);
-                        }
-                        else {
-                            var aa = a.clone();
-                            aa.multiplier.negate();
-                            result = _.pow(_.symfunction(PARENTHESIS, [new Symbol(sign)]), b.clone());
-                            var _a = _.pow(new Symbol(aa.multiplier.num), b.clone());
-                            var _b = _.pow(new Symbol(aa.multiplier.den), b.clone());
-                            var r = _.divide(_a, _b);
-                            result = _.multiply(result, r);
-                        }
-                    }
-                    else if (Settings.PARSE2NUMBER && b.isImaginary()) {
-                        //4^(i + 2) = e^(- (2 - 4 i) π n + (2 + i) log(4))
-
-                        var re = b.realpart();
-                        var im = b.imagpart();
-                        /*
-                         if (b.group === CP && false) {
-                         var ex = _.pow(a.clone(), re);
-                         var xi = _.multiply(_.multiply(ex.clone(), trig.sin(im.clone())), Symbol.imaginary());
-                         var xa = _.multiply(trig.cos(im), ex);
-                         result = _.add(xi, xa);
-                         }
-                         else {
-                         */
-                        var aa = a.clone().toLinear();
-                        var a1 = _.pow(aa.clone(), re);
-                        var log_a = log(aa.clone());
-                        var b1 = trig.cos(_.multiply(im.clone(), log_a));
-                        var c1 = _.multiply(trig.sin(_.multiply(im, log(aa))), Symbol.imaginary());
-                        result = _.multiply(a1, _.add(b1, c1));
-                        result = _.expand(_.parse(result));
-                        /*
-                         }
-                         */
-                    }
-                    else {
-                        //b is a symbol
-                        var neg_num = a.group === N && sign < 0,
-                            num = testSQRT(new Symbol(neg_num ? m.num : Math.abs(m.num)).setPower(b.clone())),
-                            den = testSQRT(new Symbol(m.den).setPower(b.clone()).invert());
-
-                        //eliminate imaginary if possible
-                        if (a.imaginary) {
-                            if (bIsInt) {
-                                var s, p, n;
-                                s = Math.sign(b);
-                                p = abs(b);
-                                n = p % 4;
-                                result = new Symbol(even(n) ? -1 : Settings.IMAGINARY);
-                                if (n === 0 || s < 0 && (n === 1) || s > 0 && (n === 3)) {
-                                    result.negate();
-                                }
-                            }
-                            else {
-                                //assume i = sqrt(-1) -> (-1)^(1/2)
-                                var nr = b.multiplier.multiply(Frac.quick(1, 2)),
-                                    //the denominator denotes the power so raise to it. It will turn positive it round
-                                    tn = Math.pow(-1, nr.num);
-                                result = even(nr.den) ? new Symbol(-1).setPower(nr, true) : new Symbol(tn);
-                            }
-                        }
-                        //ensure that the sign is carried by the symbol and not the multiplier
-                        //this enables us to check down the line if the multiplier can indeed be transferred
-                        if (sign < 0 && !neg_num)
-                            result.negate();
-
-                        //retain the absolute value
-                        if (bIsConstant && a.group !== EX) {
-                            var evenr = even(b.multiplier.den),
-                                evenp = even(a.power),
-                                n = result.power.toDecimal(),
-                                evennp = even(n);
-                            if (evenr && evenp && !evennp) {
-                                if (n === 1)
-                                    result = _.symfunction(ABS, [result]);
-                                else if (!isInt(n)) {
-                                    var p = result.power;
-                                    result = _.symfunction(ABS, [result.toLinear()]).setPower(p);
-                                }
-                                else {
-                                    result = _.multiply(_.symfunction(ABS, [result.clone().toLinear()]),
-                                        result.clone().setPower(new Frac(n - 1)));
-                                }
-                                //quick workaround. Revisit
-                                if (Settings.POSITIVE_MULTIPLIERS && result.fname === ABS)
-                                    result = result.args[0];
-                            }
-                        }
-                        //multiply out sqrt
-                        if (b.equals(2) && result.group === CB) {
-                            var _result = new Symbol(1);
-                            result.each(function (sym) {
-                                _result = _.multiply(_result, _.pow(sym, b));
-                            });
-                            result = _result;
-                        }
-                    }
-                }
-
-                result = testSQRT(result);
-
-                // Don't multiply until we've tested the remaining symbol
-                if (num && den) {
-                    result = _.multiply(result, testPow(_.multiply(num, den)));
-                }
-
-                // Reduce square root
-                if (result.fname === SQRT) {
-                    var isEX = result.group === EX;
-                    var t = isEX ? result.power.multiplier.toString() : result.power.toString();
-                    if (even(t)) {
-                        var pt = isEX ? _.divide(result.power, new Symbol(2)) : new Symbol(result.power.divide(new Frac(2))),
-                            m = result.multiplier;
-                        result = _.pow(result.args[0], pt);
-                        result.multiplier = result.multiplier.multiply(m);
-                    }
-                }
-                // Detect Euler's identity
-                else if (!Settings.IGNORE_E && result.isE() && result.group === EX && result.power.contains('pi')
-                    && result.power.contains(Settings.IMAGINARY) && b.group === CB) {
-                    var theta = b.stripVar(Settings.IMAGINARY);
-                    result = _.add(trig.cos(theta), _.multiply(Symbol.imaginary(), trig.sin(theta)));
-                }
-
-                return result;
-            }
-            else {
-                if (isVector(a) && bIsSymbol) {
-                    a = a.map(function (x) {
-                        return _.pow(x, b.clone());
-                    });
-                }
-                else if (isMatrix(a) && bIsSymbol) {
-                    var M = new Matrix();
-                    a.eachElement(function (x, i, j) {
-                        M.set(i, j, _.pow(x, b.clone()));
-                    });
-                    a = M;
-                }
-                else if (aIsSymbol && isMatrix(b)) {
-                    var M = new Matrix();
-                    b.eachElement(function (x, i, j) {
-                        M.set(i, j, _.pow(a.clone(), x));
-                    });
-                    a = M;
-                }
-                return a;
-            }
-        };
 
         SymbolOperatorsDeps.parse = this.parse;
-        SymbolOperatorsDeps.divide = this.divide;
-        SymbolOperatorsDeps.pow = this.pow;
-        SymbolOperatorsDeps.pfactor = pfactor;
-        SymbolOperatorsDeps.subtract = this.subtract;
-        SymbolOperatorsDeps.add = this.add;
+        SymbolOperatorsDeps.expand = expand;
+        SymbolOperatorsDeps.Trig = Trig;
+        SymbolOperatorsDeps.bigConvert = bigConvert;
+        SymbolOperatorsDeps.evaluate = evaluate;
 
         this.sqrt = sqrt;
         this.multiply = multiply;
+        this.divide = divide;
+        this.subtract = subtract;
+        this.add = add;
+        this.pow = pow;
+        this.log = log;
+        this.abs = abs;
+        this.factorial = factorial;
 
 
         // Gets called when the parser finds the , operator.
@@ -3765,12 +2534,10 @@ const nerdamer = (function () {
     // Vector injections
     Vector.prototype.$ = _;
     Vector.prototype.$text = text;
-    Vector.prototype.$block = block;
 
 //Matrix =======================================================================
     Matrix.prototype.$ = _;
     Matrix.prototype.$LaTeX = LaTeX;
-    Matrix.prototype.$block = block;
 
     Expression.prototype.$LaTeX = LaTeX;
     Expression.prototype.$block = block;
