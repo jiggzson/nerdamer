@@ -1,8 +1,8 @@
-const {isSymbol, isNumericSymbol, isFraction} = require('../Core/Symbol');
-const {Settings} = require('../Settings');
-const {isVector} = require('./Vector');
-const {Build} = require('./Build');
-const {text} = require('../Core/Text');
+import {isFraction, isNumericSymbol, isSymbol} from '../Core/Symbol';
+import {Settings} from '../Settings';
+import {isVector} from './Vector';
+import {Build} from './Build';
+import {text} from '../Core/Text';
 
 /**
  * This is what nerdamer returns. It's sort of a wrapper around the symbol class and
@@ -12,7 +12,7 @@ const {text} = require('../Core/Text');
  * @returns {Expression} wraps around the Symbol class
  */
 
-class Expression {
+export class Expression {
     symbol;
 
     constructor(symbol) {
@@ -292,9 +292,8 @@ class Expression {
  * Checks to see if the object provided is an Expression
  * @param {Object} obj
  */
-var isExpression = function (obj) {
+export function isExpression(obj) {
     return (obj instanceof Expression);
-};
-
+}
 
 module.exports = { Expression, isExpression };

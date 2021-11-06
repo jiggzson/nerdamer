@@ -1,9 +1,9 @@
-const {Symbol, isSymbol} = require('../Core/Symbol');
-const {Vector, isVector} = require('./Vector');
-const {inBrackets, format, block} = require('../Core/Utils');
-const {err} = require('../Core/Errors');
+import {isSymbol, Symbol} from '../Core/Symbol';
+import {isVector, Vector} from './Vector';
+import {block, format, inBrackets} from '../Core/Utils';
+import {err} from '../Core/Errors';
 
-class Matrix {
+export class Matrix {
     custom = true
 
     constructor(...m) {
@@ -410,8 +410,6 @@ class Matrix {
  * Checks to see if the object provided is a Matrix
  * @param {Object} obj
  */
-var isMatrix = function (obj) {
+export function isMatrix(obj) {
     return (obj instanceof Matrix);
-};
-
-module.exports = { Matrix, isMatrix };
+}

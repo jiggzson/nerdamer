@@ -1,10 +1,10 @@
-const {Math2} = require('../Core/Math2');
-const {Frac} = require('../Core/Frac');
-const {isInt, nround, even, inBrackets} = require('../Core/Utils');
-const {Symbol} = require('../Core/Symbol');
-const {Groups} = require('../Core/Groups');
+import {Math2} from '../Core/Math2';
+import {Frac} from '../Core/Frac';
+import {even, inBrackets, isInt, nround} from '../Core/Utils';
+import {Symbol} from '../Core/Symbol';
+import {Groups} from '../Core/Groups';
 
-var Build = {
+export const Build = {
     dependencies: {
         _rename: {
             'Math2.factorial': 'factorial'
@@ -237,5 +237,3 @@ var Build = {
         return f;
     }
 };
-
-module.exports = { Build };
