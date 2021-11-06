@@ -1,6 +1,10 @@
 import {block} from '../Core/Utils';
-import {Symbol} from '../Core/Symbol';
+import {isSymbol, Symbol} from '../Core/Symbol';
+import {add, divide, multiply, pow, sqrt, subtract} from '../Core/SymbolOperators/SymbolOperators';
+import {Settings} from '../Settings';
+import {LaTeX} from '../LaTeX/LaTeX';
 
+// noinspection JSUnusedGlobalSymbols
 export class Vector {
     elements;
     custom = true;
@@ -67,20 +71,20 @@ export class Vector {
 
     // Returns the modulus ('length') of the vector
     modulus() {
-        return block('SAFE', function () {
-            return this.$.pow((this.dot(this.clone())), new Symbol(0.5));
+        return block('SAFE', () => {
+            return pow((this.dot(this.clone())), new Symbol(0.5));
         }, undefined, this);
     }
 
     // Returns true iff the vector is equal to the argument
     eql(vector) {
-        var n = this.elements.length;
-        var V = vector.elements || vector;
+        let n = this.elements.length;
+        let V = vector.elements || vector;
         if (n !== V.length) {
             return false;
         }
         do {
-            if (Math.abs(this.$.subtract(this.elements[n - 1], V[n - 1]).valueOf()) > PRECISION) {
+            if (Math.abs(subtract(this.elements[n - 1], V[n - 1]).valueOf()) > Settings.PRECISION) {
                 return false;
             }
         }
@@ -90,9 +94,9 @@ export class Vector {
 
     // Returns a clone of the vector
     clone() {
-        var V = new Vector(),
+        let V = new Vector(),
             l = this.elements.length;
-        for (var i = 0; i < l; i++) {
+        for (let i = 0; i < l; i++) {
             //Rule: all items within the vector must have a clone method.
             V.elements.push(this.elements[i].clone());
         }
@@ -104,7 +108,7 @@ export class Vector {
 
     // Maps the vector to another vector according to the given function
     map(fn) {
-        var elements = [];
+        let elements = [];
         this.each(function (x, i) {
             elements.push(fn(x, i));
         });
@@ -114,7 +118,7 @@ export class Vector {
 
     // Calls the iterator for each element of the vector in turn
     each(fn) {
-        var n = this.elements.length, k = n, i;
+        let n = this.elements.length, k = n, i;
         do {
             i = k - n;
             fn(this.elements[i], i + 1);
@@ -124,40 +128,40 @@ export class Vector {
 
     // Returns a new vector created by normalizing the receiver
     toUnitVector() {
-        return block('SAFE', function () {
-            var r = this.modulus();
+        return block('SAFE', () => {
+            let r = this.modulus();
             if (r.valueOf() === 0) {
                 return this.clone();
             }
             return this.map((x) => {
-                return this.$.divide(x, r);
+                return divide(x, r);
             });
         }, undefined, this);
     }
 
     // Returns the angle between the vector and the argument (also a vector)
     angleFrom(vector) {
-        return block('SAFE', function () {
-            var V = vector.elements || vector;
-            var n = this.elements.length;
+        return block('SAFE', () => {
+            let V = vector.elements || vector;
+            let n = this.elements.length;
             if (n !== V.length) {
                 return null;
             }
-            var dot = new Symbol(0), mod1 = new Symbol(0), mod2 = new Symbol(0);
+            let dot = new Symbol(0), mod1 = new Symbol(0), mod2 = new Symbol(0);
             // Work things out in parallel to save time
             this.each((x, i) => {
-                dot = this.$.add(dot, this.$.multiply(x, V[i - 1]));
-                mod1 = this.$.add(mod1, this.$.multiply(x, x));// will not conflict in safe block
-                mod2 = this.$.add(mod2, this.$.multiply(V[i - 1], V[i - 1]));// will not conflict in safe block
+                dot = add(dot, multiply(x, V[i - 1]));
+                mod1 = add(mod1, multiply(x, x));// will not conflict in safe block
+                mod2 = add(mod2, multiply(V[i - 1], V[i - 1]));// will not conflict in safe block
             });
-            mod1 = this.$.pow(mod1, new Symbol(0.5));
-            mod2 = this.$.pow(mod2, new Symbol(0.5));
-            var product = this.$.multiply(mod1, mod2);
+            mod1 = pow(mod1, new Symbol(0.5));
+            mod2 = pow(mod2, new Symbol(0.5));
+            let product = multiply(mod1, mod2);
             if (product.valueOf() === 0) {
                 return null;
             }
-            var theta = this.$.divide(dot, product);
-            var theta_val = theta.valueOf();
+            let theta = divide(dot, product);
+            let theta_val = theta.valueOf();
             if (theta_val < -1) {
                 theta = -1;
             }
@@ -170,44 +174,44 @@ export class Vector {
 
     // Returns true iff the vector is parallel to the argument
     isParallelTo(vector) {
-        var angle = this.angleFrom(vector).valueOf();
-        return (angle === null) ? null : (angle <= PRECISION);
+        let angle = this.angleFrom(vector).valueOf();
+        return (angle === null) ? null : (angle <= Settings.PRECISION);
     }
 
     // Returns true iff the vector is antiparallel to the argument
     isAntiparallelTo(vector) {
-        var angle = this.angleFrom(vector).valueOf();
-        return (angle === null) ? null : (Math.abs(angle - Math.PI) <= PRECISION);
+        let angle = this.angleFrom(vector).valueOf();
+        return (angle === null) ? null : (Math.abs(angle - Math.PI) <= Settings.PRECISION);
     }
 
     // Returns true iff the vector is perpendicular to the argument
     isPerpendicularTo(vector) {
-        var dot = this.dot(vector);
-        return (dot === null) ? null : (Math.abs(dot) <= PRECISION);
+        let dot = this.dot(vector);
+        return (dot === null) ? null : (Math.abs(dot) <= Settings.PRECISION);
     }
 
     // Returns the result of adding the argument to the vector
     add(vector) {
-        return block('SAFE', function () {
-            var V = vector.elements || vector;
+        return block('SAFE', () => {
+            let V = vector.elements || vector;
             if (this.elements.length !== V.length) {
                 return null;
             }
             return this.map((x, i) => {
-                return this.$.add(x, V[i - 1]);
+                return add(x, V[i - 1]);
             });
         }, undefined, this);
     }
 
     // Returns the result of subtracting the argument from the vector
     subtract(vector) {
-        return block('SAFE', function () {
-            var V = vector.elements || vector;
+        return block('SAFE', () => {
+            let V = vector.elements || vector;
             if (this.elements.length !== V.length) {
                 return null;
             }
             return this.map((x, i) => {
-                return this.$.subtract(x, V[i - 1]);
+                return subtract(x, V[i - 1]);
             });
         }, undefined, this);
     }
@@ -226,14 +230,14 @@ export class Vector {
     // Returns the scalar product of the vector with the argument
     // Both vectors must have equal dimensionality
     dot(vector) {
-        return block('SAFE', function () {
-            var V = vector.elements || vector;
-            var product = new Symbol(0), n = this.elements.length;
+        return block('SAFE', () => {
+            let V = vector.elements || vector;
+            let product = new Symbol(0), n = this.elements.length;
             if (n !== V.length) {
                 return null;
             }
             do {
-                product = this.$.add(product, this.$.multiply(this.elements[n - 1], V[n - 1]));
+                product = add(product, multiply(this.elements[n - 1], V[n - 1]));
             }
             while(--n);
             return product;
@@ -243,23 +247,23 @@ export class Vector {
     // Returns the vector product of the vector with the argument
     // Both vectors must have dimensionality 3
     cross(vector) {
-        var B = vector.elements || vector;
+        let B = vector.elements || vector;
         if (this.elements.length !== 3 || B.length !== 3) {
             return null;
         }
-        var A = this.elements;
+        let A = this.elements;
         return block('SAFE', function () {
             return new Vector([
-                this.$.subtract(this.$.multiply(A[1], B[2]), this.$.multiply(A[2], B[1])),
-                this.$.subtract(this.$.multiply(A[2], B[0]), this.$.multiply(A[0], B[2])),
-                this.$.subtract(this.$.multiply(A[0], B[1]), this.$.multiply(A[1], B[0]))
+                subtract(multiply(A[1], B[2]), multiply(A[2], B[1])),
+                subtract(multiply(A[2], B[0]), multiply(A[0], B[2])),
+                subtract(multiply(A[0], B[1]), multiply(A[1], B[0]))
             ]);
         }, undefined, this);
     }
 
     // Returns the (absolute) largest element of the vector
     max() {
-        var m = 0, n = this.elements.length, k = n, i;
+        let m = 0, n = this.elements.length, k = n, i;
         do {
             i = k - n;
             if (Math.abs(this.elements[i].valueOf()) > Math.abs(m.valueOf())) {
@@ -270,15 +274,15 @@ export class Vector {
         return m;
     }
     magnitude() {
-        var magnitude = new Symbol(0);
+        let magnitude = new Symbol(0);
         this.each(function (e) {
-            magnitude = this.$.add(magnitude, this.$.pow(e, new Symbol(2)));
+            magnitude = add(magnitude, pow(e, new Symbol(2)));
         });
-        return this.$.sqrt(magnitude);
+        return sqrt(magnitude);
     }
     // Returns the index of the first match found
     indexOf(x) {
-        var index = null, n = this.elements.length, k = n, i;
+        let index = null, n = this.elements.length, k = n, i;
         do {
             i = k - n;
             if (index === null && this.elements[i].valueOf() === x.valueOf()) {
@@ -288,15 +292,15 @@ export class Vector {
         while(--n);
         return index;
     }
-    text(x) {
+    text() {
         return this.$text(this);
     }
     toString() {
         return this.text();
     }
     latex(option) {
-        var tex = [];
-        for (var i = 0; i < this.elements.length; i++) {
+        let tex = [];
+        for (let i = 0; i < this.elements.length; i++) {
             tex.push(LaTeX.latex.call(LaTeX, this.elements[i], option));
         }
         return '[' + tex.join(', ') + ']';
