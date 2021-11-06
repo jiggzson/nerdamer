@@ -6,9 +6,9 @@
 
 import {Frac} from './Frac';
 import bigInt from '../3rdparty/bigInt';
-import {arrayMin, arrayUnique, even, isInt, nround, warn} from './Utils';
+import {arrayMin, arrayUnique, even, generatePrimes, isInt, nround, warn} from './Utils';
 import {Symbol} from './Symbol';
-import {PRIMES, generatePrimes, BIGLOG_CACHE} from './Math.consts';
+import {PRIMES, BIGLOG_CACHE} from './Math.consts';
 import {Groups} from './Groups';
 
 

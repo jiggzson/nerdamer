@@ -1,7 +1,5 @@
-import {isSymbol, Symbol} from '../Symbol';
-import {isVector} from '../../Parser/Vector';
-import {isMatrix} from '../../Parser/Matrix';
-// import {AddSymbols} from './add/AddSymbols';
+import {Symbol} from '../Symbol';
+import {isSymbol, isMatrix, isVector} from '../Utils';
 
 export type OperandType = {
     operand: any;

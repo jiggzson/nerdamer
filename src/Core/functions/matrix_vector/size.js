@@ -1,6 +1,5 @@
-import {isMatrix} from '../../../Parser/Matrix';
+import {isMatrix, isVector} from '../../Utils';
 import {Symbol} from '../../Symbol';
-import {isVector} from '../../../Parser/Vector';
 import {isSet} from '../../../Parser/Set';
 import {err} from '../../Errors';
 

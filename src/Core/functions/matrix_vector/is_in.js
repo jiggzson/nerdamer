@@ -1,4 +1,4 @@
-import {isMatrix} from '../../../Parser/Matrix';
+import {isMatrix} from '../../Utils';
 import {Symbol} from '../../Symbol';
 
 /**

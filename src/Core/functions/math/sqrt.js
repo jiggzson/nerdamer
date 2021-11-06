@@ -1,4 +1,4 @@
-import {isSymbol, Symbol, symfunction} from '../../Symbol';
+import {Symbol, symfunction} from '../../Symbol';
 import {parse} from '../../parse';
 import {Groups} from '../../Groups';
 import {Settings} from '../../../Settings';
@@ -6,7 +6,7 @@ import bigDec from 'decimal.js';
 import {Complex} from '../../Complex';
 import {multiply} from '../operations/multiply';
 import {Frac} from '../../Frac';
-import {even, isInt} from '../../Utils';
+import {even, isInt, isSymbol} from '../../Utils';
 import {Math2} from '../../Math2';
 import {pfactor} from './pfactor';
 import {pow} from '../operations/pow';

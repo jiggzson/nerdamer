@@ -1,10 +1,8 @@
-import {isFraction, isNumericSymbol, isSymbol} from '../Core/Symbol';
 import {Settings} from '../Settings';
-import {isVector} from './Vector';
 import {Build} from './Build';
 import {text} from '../Core/Text';
 import {LaTeX} from '../LaTeX/LaTeX';
-import {block} from '../Core/Utils';
+import {block, isFraction, isNumericSymbol, isSymbol, isVector} from '../Core/Utils';
 import {subtract} from '../Core/functions';
 import {parse, evaluate} from '../Core/parse';
 import {expand} from '../Core/functions/math/expand';
@@ -298,10 +296,3 @@ export class Expression {
     }
 }
 
-/**
- * Checks to see if the object provided is an Expression
- * @param {Object} obj
- */
-export function isExpression(obj) {
-    return (obj instanceof Expression);
-}

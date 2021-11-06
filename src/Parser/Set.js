@@ -1,4 +1,6 @@
-import {isVector, Vector} from './Vector';
+import {Vector} from './Vector';
+import {isVector} from '../Core/Utils';
+
 
 export class Set {
     elements;

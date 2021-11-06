@@ -1,4 +1,4 @@
-import {isMatrix} from '../../../../Parser/Matrix';
+import {isMatrix} from '../../../Utils';
 import {err} from '../../../Errors';
 
 export function transpose(mat) {

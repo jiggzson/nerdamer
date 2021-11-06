@@ -1,4 +1,4 @@
-import {isNumericSymbol, isSymbol, Symbol, symfunction} from '../../Symbol';
+import {Symbol, symfunction} from '../../Symbol';
 import {Settings} from '../../../Settings';
 import {UndefinedError} from '../../Errors';
 import {Complex} from '../../Complex';
@@ -6,6 +6,7 @@ import {Groups} from '../../Groups';
 import {parse} from '../../parse';
 import {add} from '../operations/add';
 import {divide, multiply} from '../index';
+import {isSymbol, isNumericSymbol} from '../../Utils';
 
 /**
  * The log function

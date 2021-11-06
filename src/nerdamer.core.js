@@ -12,40 +12,90 @@ import {
     parens, cbrt, nthroot, realpart, imagpart, conjugate, arg,
 } from './Core/functions';
 import {
+    allSame,
+    allNumeric,
     allNumbers,
-    allNumeric, allSame, arrayMax, arrayMin, arrayUnique, block,
-    even, evenFraction, firstObject, format, inBrackets, isInt,
-    isPrime, nround, remove, validateName, warn
+    arguments2Array,
+    arrayAddSlices,
+    arrayClone,
+    arrayMax,
+    arrayMin,
+    arrayEqual,
+    arrayUnique,
+    arraySum,
+
+    block,
+    build,
+
+    comboSort,
+    compare,
+    convertToVector,
+    customType,
+    decompose_fn,
+    each,
+    evaluate,
+    even,
+    evenFraction,
+    fillHoles,
+    firstObject,
+    format,
+    generatePrimes,
+    getCoeffs,
+
+
+    inBrackets,
+    isArray,
+    isExpression,
+    isFraction,
+    isInt,
+    isMatrix,
+    isNegative,
+    isNumericSymbol,
+    isPrime,
+    isSymbol,
+    isVariableSymbol,
+    isVector,
+    knownVariable,
+    nroots,
+    remove,
+    range,
+    nround,
+    sameSign,
+    scientificToDecimal,
+    stringReplace,
+    text,
+    validateName,
+    warn,
 } from './Core/Utils';
+
+
 import {Settings} from './Settings';
-import {isFraction, isNegative, isNumericSymbol, isSymbol, isVariableSymbol, Symbol, symfunction, decompose_fn} from './Core/Symbol';
+import {Symbol, symfunction} from './Core/Symbol';
 import {Frac} from './Core/Frac';
 import Scientific from './Core/Scientific';
 import {OperatorDictionary} from './Parser/OperatorDictionary';
 import {createFunctions, findFunction} from './Operators/functions';
 import {Groups} from './Core/Groups';
 import {Slice} from './Parser/Slice';
-import {isMatrix, Matrix} from './Parser/Matrix';
+import {Matrix} from './Parser/Matrix';
 import {Collection} from './Parser/Collection';
-import {isVector, Vector} from './Parser/Vector';
+import {Vector} from './Parser/Vector';
 import bigDec from 'decimal.js';
 import bigInt from './3rdparty/bigInt';
 import {Math2} from './Core/Math2';
-import {generatePrimes} from './Core/Math.consts';
 import {Token} from './Parser/Token';
 import {Tokenizer} from './Parser/Tokenizer';
-import {Expression, isExpression} from './Parser/Expression';
+import {Expression} from './Parser/Expression';
 import {RPN} from './Parser/RPN';
 import {Build} from './Parser/Build';
 import {LaTeX} from './LaTeX/LaTeX';
 import * as exceptions from './Core/Errors';
 import {Trig} from './Core/Trig';
-import {TrigHyperbolic} from './Core/Trig.hyperbolic';
 
 
-import {ParseDeps, evaluate} from './Core/parse';
+import {ParseDeps} from './Core/parse';
 import {expand} from './Core/functions/math/expand';
-import {text, TextDependencies} from './Core/Text';
+import {TextDependencies} from './Core/Text';
 import {FactorialDeps} from './Core/functions/math/factorial';
 const {NerdamerTypeError, NerdamerValueError, err} = exceptions;
 
@@ -57,7 +107,6 @@ const nerdamer = (function () {
 
 //inits ========================================================================
     const _ = new Parser(); //nerdamer's parser
-    Token.parser = _;
 
     //set bigInt the precision to js precision
     bigDec.set({
@@ -121,22 +170,12 @@ const nerdamer = (function () {
      * @param {String} value
      * @return boolean
      */
-    var isReserved = function (value) {
+    let isReserved = function (value) {
         return RESERVED.indexOf(value) !== -1;
     };
 
 
-    /**
-     * Generates an object with known variable value for evaluation
-     * @param {String} variable
-     * @param {any} value Any stringifyable object
-     * @returns {Object}
-     */
-    var knownVariable = function (variable, value) {
-        var o = {};
-        o[variable] = value;
-        return o;
-    };
+
 
     /**
      * This method traverses the symbol structure and grabs all the variables in a symbol. The variable
@@ -147,7 +186,7 @@ const nerdamer = (function () {
      * automatically. In the future this will be a Collector object.
      * @returns {String[]} - An array containing variable names
      */
-    var variables = function (obj, poly = false, vars = undefined) {
+    let variables = function (obj, poly = false, vars = undefined) {
         vars = vars || {
             c: [],
             add: function (value) {
@@ -157,13 +196,13 @@ const nerdamer = (function () {
         };
 
         if (isSymbol(obj)) {
-            var group = obj.group,
+            let group = obj.group,
                 prevgroup = obj.previousGroup;
             if (group === EX)
                 variables(obj.power, poly, vars);
 
             if (group === CP || group === CB || prevgroup === CP || prevgroup === CB) {
-                for (var x in obj.symbols) {
+                for (let x in obj.symbols) {
                     variables(obj.symbols[x], poly, vars);
                 }
             }
@@ -181,30 +220,13 @@ const nerdamer = (function () {
                 variables(obj.power, poly, vars);
             }
             else if (group === FN && !poly) {
-                for (var i = 0; i < obj.args.length; i++) {
+                for (let i = 0; i < obj.args.length; i++) {
                     variables(obj.args[i], poly, vars);
                 }
             }
         }
 
         return vars.c.sort();
-    };
-
-    /**
-     * Returns the sum of an array
-     * @param {Array} arr
-     * @param {boolean} toNumber
-     * @returns {Symbol}
-     */
-    var arraySum = function (arr, toNumber) {
-        var sum = new Symbol(0);
-        for (var i = 0; i < arr.length; i++) {
-            var x = arr[i];
-            // Convert to symbol if not
-            sum = _.add(sum, !isSymbol(x) ? _.parse(x) : x);
-        }
-
-        return toNumber ? Number(sum) : sum;
     };
 
     /**
@@ -216,10 +238,10 @@ const nerdamer = (function () {
      * @returns {undefined}
      * @throws {Error} for expontentials
      */
-    var separate = function (symbol, o) {
+    let separate = function (symbol, o) {
         symbol = _.expand(symbol);
         o = o || {};
-        var insert = function (key, sym) {
+        let insert = function (key, sym) {
             if (!o[key])
                 o[key] = new Symbol(0);
             o[key] = _.add(o[key], sym.clone());
@@ -245,34 +267,14 @@ const nerdamer = (function () {
         return o;
     };
 
-    /**
-     * Fills holes in an array with zero symbol or generates one with n zeroes
-     * @param {Array} arr
-     * @param {Number} n
-     */
-    var fillHoles = function (arr, n) {
-        n = n || arr.length;
-        for (var i = 0; i < n; i++) {
-            var sym = arr[i];
-            if (!sym)
-                arr[i] = new Symbol(0);
-        }
-        return arr;
-    };
 
-    /**
-     * Checks to see if the object provided is an Array
-     * @param {Object} arr
-     */
-    var isArray = function (arr) {
-        return Array.isArray(arr);
-    };
+
 
     /**
      * Safely stringify object
      * @param o
      */
-    var stringify = function (o) {
+    let stringify = function (o) {
         if (!o)
             return o;
         return String(o);
@@ -280,77 +282,21 @@ const nerdamer = (function () {
 
 
 
-    /**
-     * A helper function to replace parts of string
-     * @param {String} str - The original string
-     * @param {Integer} from - The starting index
-     * @param {Integer} to - The ending index
-     * @param {String} with_str - The replacement string
-     * @returns {String} - A formatted string
-     */
-    var stringReplace = function (str, from, to, with_str) {
-        return str.substr(0, from) + with_str + str.substr(to, str.length);
-    };
 
-    /**
-     * the Parser uses this to check if it's allowed to convert the obj to type Symbol
-     * @param {Object} obj
-     * @returns {boolean}
-     */
-    var customType = function (obj) {
-        return obj !== undefined && obj.custom;
-    };
 
-    /**
-     * Checks to see if numbers are both negative or are both positive
-     * @param {Number} a
-     * @param {Number} b
-     * @returns {boolean}
-     */
-    var sameSign = function (a, b) {
-        return (a < 0) === (b < 0);
-    };
 
-    /**
-     * Generates an array with values within a range. Multiplies by a step if provided
-     * @param {Number} start
-     * @param {Number} end
-     * @param {Number} step
-     */
-    var range = function (start, end, step) {
-        var arr = [];
-        step = step || 1;
-        for (var i = start; i <= end; i++)
-            arr.push(i * step);
-        return arr;
-    };
+
+
+
 
     /**
      * Returns an array of all the keys in an array
      * @param {Object} obj
      * @returns {Array}
      */
-    var keys = Object.keys;
+    let keys = Object.keys;
 
 
-    /**
-     * Substitutes out variables for two symbols, parses them to a number and them compares them numerically
-     * @param {Symbol} sym1
-     * @param {Symbol} sym2
-     * @param {String[]} vars - an optional array of variables to use
-     * @returns {boolean}
-     */
-    var compare = function (sym1, sym2, vars) {
-        var n = 5; //a random number between 1 and 5 is good enough
-        var scope = {}; // scope object with random numbers generated using vars
-        var comparison;
-        for (var i = 0; i < vars.length; i++)
-            scope[vars[i]] = new Symbol(Math.floor(Math.random() * n) + 1);
-        block('PARSE2NUMBER', function () {
-            comparison = _.parse(sym1, scope).equals(_.parse(sym2, scope));
-        });
-        return comparison;
-    };
 
     /**
      * Is used to set a user defined function using the function assign operator
@@ -359,7 +305,7 @@ const nerdamer = (function () {
      * @param {String} body
      * @returns {Boolean}
      */
-    var setFunction = function (name, params_array, body) {
+    let setFunction = function (name, params_array, body) {
         validateName(name);
         if (!isReserved(name)) {
             params_array = params_array || variables(_.parse(body));
@@ -376,152 +322,6 @@ const nerdamer = (function () {
         return null;
     };
 
-
-
-    /**
-     * Checks to see if two arrays are equal
-     * @param {Array} arr1
-     * @param {Array} arr2
-     */
-    var arrayEqual = function (arr1, arr2) {
-        arr1.sort();
-        arr2.sort();
-
-        // The must be of the same length
-        if (arr1.length === arr2.length) {
-            for (var i = 0; i < arr1.length; i++) {
-                // If any two items don't match we're done
-                if (arr1[i] !== arr2[i]) {
-                    return false;
-                }
-            }
-            // Otherwise they're equal
-            return true;
-        }
-
-        return false;
-    };
-
-    /**
-     * Clones array with clonable items
-     * @param {Array} arr
-     * @returns {Array}
-     */
-    var arrayClone = function (arr) {
-        var new_array = [], l = arr.length;
-        for (var i = 0; i < l; i++)
-            new_array[i] = arr[i].clone();
-        return new_array;
-    };
-
-    /**
-     * Fills numbers between array values
-     * @param {number[]} arr
-     * @param {Integer} slices
-     */
-    var arrayAddSlices = function (arr, slices) {
-        slices = slices || 20;
-        var retval = [];
-        var c, delta, e;
-        retval.push(arr[0]); //push the beginning
-        for (var i = 0; i < arr.length - 1; i++) {
-            c = arr[i];
-            delta = arr[i + 1] - c; //get the difference
-            e = delta / slices; //chop it up in the desired number of slices
-            for (var j = 0; j < slices; j++) {
-                c += e; //add the mesh to the last slice
-                retval.push(c);
-            }
-        }
-
-        return retval;
-    };
-
-    /**
-     * Gets nth roots of a number
-     * @param {Symbol} symbol
-     * @returns {Vector}
-     */
-    var nroots = function (symbol) {
-        var a, b;
-
-        if (symbol.group === FN && symbol.fname === '') {
-            a = Symbol.unwrapPARENS(_.parse(symbol).toLinear());
-            b = _.parse(symbol.power);
-        }
-        else if (symbol.group === P) {
-            a = _.parse(symbol.value);
-            b = _.parse(symbol.power);
-        }
-
-        if (a && b && (a.group === N) && b.group === N && a.multiplier.isNegative()) {
-            let _roots = [];
-
-            var parts = Symbol.toPolarFormArray(evaluate(symbol));
-            var r = parts[0];
-
-            //var r = _.parse(a).abs().toString();
-
-            //https://en.wikipedia.org/wiki/De_Moivre%27s_formula
-            var x = _.arg(a);
-            var n = b.multiplier.den.toString();
-            var p = b.multiplier.num.toString();
-
-            var formula = '(({0})^({1})*(cos({3})+({2})*sin({3})))^({4})';
-
-            for (var i = 0; i < n; i++) {
-                var t = evaluate(_.parse(format("(({0})+2*pi*({1}))/({2})", x, i, n))).multiplier.toDecimal();
-                _roots.push(evaluate(_.parse(format(formula, r, n, Settings.IMAGINARY, t, p))));
-            }
-            return Vector.fromArray(_roots);
-        }
-        else if (symbol.isConstant(true, true)) {
-            var sign = symbol.sign();
-            var x = evaluate(symbol.abs());
-            var root = _.sqrt(x);
-
-            var _roots = [root.clone(), root.negate()];
-
-            if (sign < 0)
-                _roots = _roots.map(function (x) {
-                    return _.multiply(x, Symbol.imaginary());
-                });
-
-        }
-        else {
-            _roots = [_.parse(symbol)];
-        }
-
-        return Vector.fromArray(_roots);
-    };
-
-    /**
-     * Sorts and array given 2 parameters
-     * @param {String} a
-     * @param {String} b
-     */
-    var comboSort = function (a, b) {
-        var l = a.length,
-            combined = []; //the linker
-        for (var i = 0; i < a.length; i++) {
-            combined.push([a[i], b[i]]); //create the map
-        }
-
-        combined.sort(function (x, y) {
-            return x[0] - y[0];
-        });
-
-        var na = [], nb = [];
-
-        for (i = 0; i < l; i++) {
-            na.push(combined[i][0]);
-            nb.push(combined[i][1]);
-        }
-
-        return [na, nb];
-    };
-
-
     /**
      * Is used for u-substitution. Gets a suitable u for substitution. If for
      * instance a is used in the symbol then it keeps going down the line until
@@ -531,9 +331,9 @@ const nerdamer = (function () {
      * beore the user gets to interact with the object again.
      * @param {Symbol} symbol
      */
-    var getU = function (symbol) {
+    let getU = function (symbol) {
         //start with u
-        var u = 'u', //start with u
+        let u = 'u', //start with u
             v = u, //init with u
             c = 0, //postfix number
             vars = variables(symbol);
@@ -542,7 +342,7 @@ const nerdamer = (function () {
             v = u + c++;
         //get an empty slot. It seems easier to just push but the
         //problem is that we may have some which are created by clearU
-        for (var i = 0, l = RESERVED.length; i <= l; i++)
+        for (let i = 0, l = RESERVED.length; i <= l; i++)
             //reserved cannot equals false or 0 so we can safely check for a falsy type
             if (!RESERVED[i]) {
                 RESERVED[i] = v; //reserve the variable
@@ -555,43 +355,21 @@ const nerdamer = (function () {
      * Clears the u variable so it's no longer reserved
      * @param {String} u
      */
-    var clearU = function (u) {
-        var indx = RESERVED.indexOf(u);
+    let clearU = function (u) {
+        let indx = RESERVED.indexOf(u);
         if (indx !== -1)
             RESERVED[indx] = undefined;
     };
 
     /**
-     * Loops through each item in object and calls function with item as param
-     * @param {Object|Array} obj
-     * @param {Function} fn
-     */
-    var each = function (obj, fn) {
-        if (isArray(obj)) {
-            var l = obj.length;
-            for (var i = 0; i < l; i++)
-                fn.call(obj, i);
-        }
-        else {
-            for (var x in obj)
-                if (obj.hasOwnProperty(x))
-                    fn.call(obj, x);
-        }
-    };
-
-
-
-
-
-    /**
      * Gets all the variables in an array of Symbols
      * @param {Symbol[]} arr
      */
-    var arrayGetVariables = function (arr) {
-        var vars = variables(arr[0], null, null, true);
+    let arrayGetVariables = function (arr) {
+        let vars = variables(arr[0], null, null, true);
 
         //get all variables
-        for (var i = 1, l = arr.length; i < l; i++)
+        for (let i = 1, l = arr.length; i < l; i++)
             vars = vars.concat(variables(arr[i]));
         //remove duplicates
         vars = arrayUnique(vars).sort();
@@ -600,14 +378,12 @@ const nerdamer = (function () {
         return vars;
     };
 
-
-
     /**
      * Reserves the names in an object so they cannot be used as function names
      * @param {Object} obj
      */
-    var reserveNames = function (obj) {
-        var add = function (item) {
+    let reserveNames = function (obj) {
+        let add = function (item) {
             if (RESERVED.indexOf(item) === -1)
                 RESERVED.push(item);
         };
@@ -621,10 +397,6 @@ const nerdamer = (function () {
         }
     };
 
-
-
-
-
     /**
      * provide a mechanism for accessing functions directly. Not yet complete!!!
      * Some functions will return undefined. This can maybe just remove the
@@ -632,107 +404,29 @@ const nerdamer = (function () {
      * housed in the global function object. Returns ALL parser available
      * functions. Parser.functions may not contain all functions
      */
-    var importFunctions = function () {
-        var o = {};
-        for (var x in _.functions)
+    let importFunctions = function () {
+        let o = {};
+        for (let x in _.functions)
             o[x] = _.functions[x][0];
         return o;
     };
-
-    /**
-     * Converts function arguments to an array. Now used by gcd and lcm in Algebra.js :)
-     * @param {Array|object} obj
-     */
-    var arguments2Array = function (obj) {
-        return [].slice.call(obj);
-    };
-
-    /**
-     * Returns the coefficients of a symbol given a variable. Given ax^2+b^x+c, it divides
-     * each nth term by x^n.
-     * @param {Symbol} symbol
-     * @param {Symbol} wrt
-     */
-    var getCoeffs = function (symbol, wrt, info) {
-        var coeffs = [];
-        //we loop through the symbols and stick them in their respective
-        //containers e.g. y*x^2 goes to index 2
-        symbol.each(function (term) {
-            if (term.contains(wrt)) {
-                //we want only the coefficient which in this case will be everything but the variable
-                //e.g. a*b*x -> a*b if the variable to solve for is x
-                var coeff = term.stripVar(wrt),
-                    x = _.divide(term.clone(), coeff.clone()),
-                    p = x.power.toDecimal();
-            }
-            else {
-                coeff = term;
-                p = 0;
-            }
-            var e = coeffs[p];
-            //if it exists just add it to it
-            coeffs[p] = e ? _.add(e, coeff) : coeff;
-
-        }, true);
-
-        for (var i = 0; i < coeffs.length; i++)
-            if (!coeffs[i])
-                coeffs[i] = new Symbol(0);
-        //fill the holes
-        return coeffs;
-    };
-
-
-
-    /**
-     * Converts an array to a vector. Consider moving this to Vector.fromArray
-     * @param {String[]|String|Symbol|Number|Number[]} x
-     */
-    var convertToVector = function (x) {
-        if (isArray(x)) {
-            var vector = new Vector([]);
-            for (var i = 0; i < x.length; i++)
-                vector.elements.push(convertToVector(x[i]));
-            return vector;
-        }
-        //Ensure that a nerdamer ready object is returned
-        if (!isSymbol(x))
-            return _.parse(x);
-        return x;
-    };
-
-
-
 
     //link the Math2 object to Settings.FUNCTION_MODULES
     Settings.FUNCTION_MODULES.push(Math2);
     reserveNames(Math2); //reserve the names in Math2
 
-//Global functions =============================================================
     TextDependencies.CUSTOM_OPERATORS = CUSTOM_OPERATORS;
-    _._text = text;
-
 
 //Expression ===================================================================
     Expression.prototype.$getAction = a => {
         return _[a];
     }
 
-
-
-//Frac =========================================================================
-
-//Symbol =======================================================================
-
-//Parser =======================================================================
     //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
     function Parser() {
         //Point to the local parser instead of the global one
-        var _ = this;
-        var bin = {};
-        var preprocessors = {names: [], actions: []};
-
-//Parser.classes ===============================================================
+        let _ = this;
+        let preprocessors = {names: [], actions: []};
 
         //create link to classes
         this.classes = {
@@ -740,10 +434,7 @@ const nerdamer = (function () {
             Slice: Slice,
             Token: Token
         };
-//Parser.modules ===============================================================
-
-        let trig = this.trig = Trig;
-        let trigh = TrigHyperbolic;
+        this.trig = Trig;
 
         //list of supported units
         this.units = {};
@@ -772,7 +463,6 @@ const nerdamer = (function () {
         //error handler
         this.error = err;
 
-
         /**
          * This method is supposed to behave similarly to the override method but it does not override
          * the existing function rather it only extends it
@@ -781,10 +471,10 @@ const nerdamer = (function () {
          * @param {boolean} force_call
          */
         this.extend = function (what, with_what, force_call) {
-            var _ = this,
+            let _ = this,
                 extended = this[what];
             if (typeof extended === 'function' && typeof with_what === 'function') {
-                var f = this[what];
+                let f = this[what];
                 this[what] = function (a, b) {
                     if (isSymbol(a) && isSymbol(b) && !force_call)
                         return f.call(_, a, b);
@@ -806,12 +496,12 @@ const nerdamer = (function () {
          * @returns {Symbol}
          */
         this.callfunction = function (fn_name, args, allowed_args) {
-            var fn_settings = functions[fn_name];
+            let fn_settings = functions[fn_name];
 
             if (!fn_settings)
                 err('Nerdamer currently does not support the function ' + fn_name);
 
-            var num_allowed_args = fn_settings[1] || allowed_args, //get the number of allowed arguments
+            let num_allowed_args = fn_settings[1] || allowed_args, //get the number of allowed arguments
                 fn = fn_settings[0], //get the mapped function
                 retval;
             //We want to be able to call apply on the arguments or create a symfunction. Both require
@@ -820,12 +510,12 @@ const nerdamer = (function () {
                 args = args !== undefined ? [args] : [];
 
             if (num_allowed_args !== -1) {
-                var is_array = isArray(num_allowed_args),
+                let is_array = isArray(num_allowed_args),
                     min_args = is_array ? num_allowed_args[0] : num_allowed_args,
                     max_args = is_array ? num_allowed_args[1] : num_allowed_args,
                     num_args = args.length;
 
-                var error_msg = fn_name + ' requires a {0} of {1} arguments. {2} provided!';
+                let error_msg = fn_name + ' requires a {0} of {1} arguments. {2} provided!';
 
                 if (num_args < min_args)
                     err(format(error_msg, 'minimum', min_args, num_args));
@@ -842,7 +532,7 @@ const nerdamer = (function () {
              *     they are expecting a symbolic output.
              */
             //check if arguments are all numers
-            var numericArgs = allNumbers(args);
+            let numericArgs = allNumbers(args);
             //Big number support. Check if Big number is requested and the arguments are all numeric and, not imaginary
 //            if (Settings.USE_BIG && numericArgs) {
 //                retval = Big[fn_name].apply(undefined, args);
@@ -882,15 +572,16 @@ const nerdamer = (function () {
 
         this.callPeekers = function (name) {
             if (Settings.callPeekers) {
-                var peekers = this.peekers[name];
+                let peekers = this.peekers[name];
                 //remove the first items and stringify
-                var args = arguments2Array(arguments).slice(1).map(stringify);
+                let args = arguments2Array(arguments).slice(1).map(stringify);
                 //call each one of the peekers
-                for (var i = 0; i < peekers.length; i++) {
+                for (let i = 0; i < peekers.length; i++) {
                     peekers[i].apply(null, args);
                 }
             }
         };
+
         /*
          * Tokenizes the string
          * @param {String} e
@@ -902,6 +593,7 @@ const nerdamer = (function () {
             let tokenizer = new Tokenizer(deps);
             return tokenizer.tokenize(e, false);
         };
+
         /*
          * Puts token array in Reverse Polish Notation
          * @param {Token[]} tokens
@@ -919,7 +611,6 @@ const nerdamer = (function () {
          */
         this.parseRPN = (rpn, substitutions) => {
             let rpnDeps = {
-                parse: _.parse,
                 CONSTANTS: _.CONSTANTS,
                 callfunction: _.callfunction,
                 VARS,
@@ -955,11 +646,11 @@ const nerdamer = (function () {
          * @returns {Array}
          */
         this.toObject = function (expression_string) {
-            var objectify = function (tokens) {
-                var output = [];
-                for (var i = 0, l = tokens.length; i < l; i++) {
-                    var token = tokens[i];
-                    var v = token.value;
+            let objectify = function (tokens) {
+                let output = [];
+                for (let i = 0, l = tokens.length; i < l; i++) {
+                    let token = tokens[i];
+                    let v = token.value;
                     if (token.type === Token.VARIABLE_OR_LITERAL) {
                         output.push(new Symbol(v));
                     }
@@ -967,7 +658,7 @@ const nerdamer = (function () {
                         //jump ahead since the next object are the arguments
                         i++;
                         //create a symbolic function and stick it on output
-                        var f = _.symfunction(v, objectify(tokens[i]));
+                        let f = _.symfunction(v, objectify(tokens[i]));
                         f.isConversion = true;
                         output.push(f);
                     }
@@ -985,9 +676,9 @@ const nerdamer = (function () {
         };
 
         // A helper method for toTeX
-        var chunkAtCommas = function (arr) {
-            var j, k = 0, chunks = [[]];
-            for (var j = 0, l = arr.length; j < l; j++) {
+        let chunkAtCommas = function (arr) {
+            let chunks = [[]];
+            for (let j = 0, k = 0, l = arr.length; j < l; j++) {
                 if (arr[j] === ',') {
                     k++;
                     chunks[k] = [];
@@ -1000,7 +691,7 @@ const nerdamer = (function () {
         };
 
         // Helper method for toTeX
-        var rem_brackets = function (str) {
+        let rem_brackets = function (str) {
             return str.replace(/^\\left\((.+)\\right\)$/g, function (str, a) {
                 if (a)
                     return a;
@@ -1008,16 +699,16 @@ const nerdamer = (function () {
             });
         };
 
-        var remove_redundant_powers = function (arr) {
+        let remove_redundant_powers = function (arr) {
             // The filtered array
-            var narr = [];
+            let narr = [];
 
             while(arr.length) {
                 // Remove the element from the front
-                var e = arr.shift();
-                var next = arr[0];
-                var next_is_array = isArray(next);
-                var next_is_minus = next === '-';
+                let e = arr.shift();
+                let next = arr[0];
+                let next_is_array = isArray(next);
+                let next_is_minus = next === '-';
 
                 // Remove redundant plusses
                 if (e === '^') {
@@ -1038,10 +729,10 @@ const nerdamer = (function () {
                 if (e === '^' && (next_is_array && next[0] === '-' || next_is_minus)) {
                     // If so:
                     // - Remove it from the new array, place a one and a division sign in that array and put it back
-                    var last = narr.pop();
+                    let last = narr.pop();
                     // Check if it's something multiplied by
-                    var before = narr[narr.length - 1];
-                    var before_last = '1';
+                    let before = narr[narr.length - 1];
+                    let before_last = '1';
 
                     if (before === '*') {
                         narr.pop();
@@ -1084,9 +775,9 @@ const nerdamer = (function () {
         this.toTeX = function (expression_or_obj, opt) {
             opt = opt || {};
             // Add decimal option as per issue #579. Consider passing an object to Latex.latex as option instead of string
-            var decimals = opt.decimals === true ? 'decimals' : undefined;
+            let decimals = opt.decimals === true ? 'decimals' : undefined;
 
-            var obj = typeof expression_or_obj === 'string' ? this.toObject(expression_or_obj) : expression_or_obj,
+            let obj = typeof expression_or_obj === 'string' ? this.toObject(expression_or_obj) : expression_or_obj,
                 TeX = [],
                 cdot = typeof opt.cdot === 'undefined' ? '\\cdot' : opt.cdot; //set omit cdot to true by default
 
@@ -1094,9 +785,9 @@ const nerdamer = (function () {
             obj = remove_redundant_powers(obj);
 
             if (isArray(obj)) {
-                var nobj = [], a, b;
+                let nobj = [], a, b;
                 //first handle ^
-                for (var i = 0; i < obj.length; i++) {
+                for (let i = 0; i < obj.length; i++) {
                     a = obj[i];
 
                     if (obj[i + 1] === '^') {
@@ -1111,8 +802,8 @@ const nerdamer = (function () {
                 obj = nobj;
             }
 
-            for (var i = 0, l = obj.length; i < l; i++) {
-                var e = obj[i];
+            for (let i = 0, l = obj.length; i < l; i++) {
+                let e = obj[i];
 
                 // Convert * to cdot
                 if (e === '*') {
@@ -1121,7 +812,7 @@ const nerdamer = (function () {
 
                 if (isSymbol(e)) {
                     if (e.group === FN) {
-                        var fname = e.fname, f;
+                        let fname = e.fname, f;
 
                         if (fname === SQRT)
                             f = '\\sqrt' + LaTeX.braces(this.toTeX(e.args));
@@ -1134,14 +825,14 @@ const nerdamer = (function () {
                         }
                         else if (fname === 'integrate') {
                             /* Retrive [Expression, x] */
-                            var chunks = chunkAtCommas(e.args);
+                            let chunks = chunkAtCommas(e.args);
                             /* Build TeX */
-                            var expr = LaTeX.braces(this.toTeX(chunks[0])),
+                            let expr = LaTeX.braces(this.toTeX(chunks[0])),
                                 dx = this.toTeX(chunks[1]);
                             f = '\\int ' + expr + '\\, d' + dx;
                         }
                         else if (fname === 'defint') {
-                            var chunks = chunkAtCommas(e.args),
+                            let chunks = chunkAtCommas(e.args),
                                 expr = LaTeX.braces(this.toTeX(chunks[0])),
                                 dx = this.toTeX(chunks[3]),
                                 lb = this.toTeX(chunks[1]),
@@ -1150,12 +841,12 @@ const nerdamer = (function () {
 
                         }
                         else if (fname === 'diff') {
-                            var chunks = chunkAtCommas(e.args);
-                            var dx = '', expr = LaTeX.braces(this.toTeX(chunks[0]));
+                            let chunks = chunkAtCommas(e.args);
+                            let dx = '', expr = LaTeX.braces(this.toTeX(chunks[0]));
                             /* Handle cases: one argument provided, we need to guess the variable, and assume n = 1 */
                             if (chunks.length === 1) {
-                                var vars = [];
-                                for (j = 0; j < chunks[0].length; j++) {
+                                let vars = [];
+                                for (let j = 0; j < chunks[0].length; j++) {
                                     if (chunks[0][j].group === 3) {
                                         vars.push(chunks[0][j].value);
                                     }
@@ -1177,7 +868,7 @@ const nerdamer = (function () {
                         }
                         else if (fname === 'sum' || fname === 'product') {
                             // Split e.args into 4 parts based on locations of , symbols.
-                            var argSplit = [[], [], [], []], j = 0, i;
+                            let argSplit = [[], [], [], []], j = 0, i;
                             for (i = 0; i < e.args.length; i++) {
                                 if (e.args[i] === ',') {
                                     j++;
@@ -1190,7 +881,7 @@ const nerdamer = (function () {
                             f += '^' + LaTeX.braces(this.toTeX(argSplit[3])) + LaTeX.braces(this.toTeX(argSplit[0]));
                         }
                         else if (fname === 'limit') {
-                            var args = chunkAtCommas(e.args).map(function (x) {
+                            let args = chunkAtCommas(e.args).map(function (x) {
                                 if (Array.isArray(x))
                                     return _.toTeX(x.join(''));
                                 return _.toTeX(String(x));
@@ -1226,84 +917,6 @@ const nerdamer = (function () {
         };
 
 //Parser.functions ==============================================================
-
-        function nroots(symbol) {
-            var a, b;
-            if (symbol.group === FN && symbol.fname === '') {
-                a = Symbol.unwrapPARENS(_.parse(symbol).toLinear());
-                b = _.parse(symbol.power);
-            }
-            else if (symbol.group === P) {
-                a = _.parse(symbol.value);
-                b = _.parse(symbol.power);
-            }
-
-            if (a && b && a.group === N && b.group === N) {
-                var _roots = [];
-                var parts = Symbol.toPolarFormArray(symbol);
-                var r = _.parse(a).abs().toString();
-                //https://en.wikipedia.org/wiki/De_Moivre%27s_formula
-                var x = arg(a).toString();
-                var n = b.multiplier.den.toString();
-                var p = b.multiplier.num.toString();
-
-                var formula = "(({0})^({1})*(cos({3})+({2})*sin({3})))^({4})";
-                for (var i = 0; i < n; i++) {
-                    var t = evaluate(_.parse(format("(({0})+2*pi*({1}))/({2})", x, i, n))).multiplier.toDecimal();
-                    _roots.push(evaluate(_.parse(format(formula, r, n, Settings.IMAGINARY, t, p))));
-                }
-                return Vector.fromArray(_roots);
-            }
-            else if (symbol.isConstant(true)) {
-                var sign = symbol.sign();
-                var x = evaluate(symbol.abs());
-                var root = _.sqrt(x);
-
-                var _roots = [root.clone(), root.negate()];
-
-                if (sign < 0)
-                    _roots = _roots.map(function (x) {
-                        return _.multiply(x, Symbol.imaginary());
-                    });
-            }
-            else {
-                _roots = [_.parse(symbol)];
-            }
-
-            return Vector.fromArray(_roots);
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         /*
          * Serves as a bridge between numbers and bigNumbers
          * @param {Frac|Number} n
@@ -1311,8 +924,8 @@ const nerdamer = (function () {
          */
         function bigConvert(n) {
             if (!isFinite(n)) {
-                var sign = Math.sign(n);
-                var r = new Symbol(String(Math.abs(n)));
+                let sign = Math.sign(n);
+                let r = new Symbol(String(Math.abs(n)));
                 r.multiplier = r.multiplier.multiply(new Frac(sign));
                 return r;
             }
@@ -1327,20 +940,19 @@ const nerdamer = (function () {
                 }
             }
 
-            var symbol = new Symbol(0);
+            let symbol = new Symbol(0);
             symbol.multiplier = n;
             return symbol;
         }
-        ;
 
         function clean(symbol) {
             // handle functions with numeric values
             // handle denominator within denominator
             // handle trig simplifications
-            var g = symbol.group, retval;
+            let g = symbol.group, retval;
             //Now let's get to work
             if (g === CP) {
-                var num = symbol.getNum(),
+                let num = symbol.getNum(),
                     den = symbol.getDenom() || new Symbol(1),
                     p = Number(symbol.power),
                     factor = new Symbol(1);
@@ -1354,14 +966,14 @@ const nerdamer = (function () {
                         }
                     });
 
-                    var new_den = new Symbol(0);
+                    let new_den = new Symbol(0);
                     //now divide out the factor and add to new den
                     den.each(function (x) {
                         new_den = _.add(_.divide(x, factor.clone()), new_den);
                     });
 
                     factor.invert(); //invert so it can be added to the top
-                    var new_num;
+                    let new_num;
                     if (num.isComposite()) {
                         new_num = new Symbol(0);
                         num.each(function (x) {
@@ -1393,8 +1005,6 @@ const nerdamer = (function () {
             return retval;
         }
 
-
-
         //Link the functions to the parse so they're available outside of the library.
         //This is strictly for convenience and may be deprecated.
         this.expand = expand;
@@ -1418,8 +1028,8 @@ const nerdamer = (function () {
 
 //Parser.methods ===============================================================
         this.addPreprocessor = function (name, action, order, shift_cells) {
-            var names = preprocessors.names;
-            var actions = preprocessors.actions;
+            let names = preprocessors.names;
+            let actions = preprocessors.actions;
             if ((typeof action !== 'function')) //the person probably forgot to specify a name
                 throw new PreprocessorError('Incorrect parameters. Function expected!');
             if (!order) {
@@ -1439,9 +1049,9 @@ const nerdamer = (function () {
         };
 
         this.getPreprocessors = function () {
-            var preprocessors = {};
-            for (var i = 0, l = preprocessors.names.length; i < l; i++) {
-                var name = preprocessors.names[i];
+            let preprocessors = {};
+            for (let i = 0, l = preprocessors.names.length; i < l; i++) {
+                let name = preprocessors.names[i];
                 preprocessors[name] = {
                     order: i,
                     action: preprocessors.actions[i]
@@ -1451,7 +1061,7 @@ const nerdamer = (function () {
         };
 
         this.removePreprocessor = function (name, shift_cells) {
-            var i = preprocessors.names.indexOf(name);
+            let i = preprocessors.names.indexOf(name);
             if (shift_cells) {
                 remove(preprocessors.names, i);
                 remove(preprocessors.actions, i);
@@ -1464,10 +1074,10 @@ const nerdamer = (function () {
 
         //The loader for functions which are not part of Math2
         this.mapped_function = function () {
-            var subs = {},
+            let subs = {},
                 params = this.params;
 
-            for (var i = 0; i < params.length; i++) {
+            for (let i = 0; i < params.length; i++) {
                 subs[params[i]] = String(arguments[i]);
             }
 
@@ -1527,7 +1137,7 @@ const nerdamer = (function () {
             }
             if (a.parent) {
                 // It's referring to the parent instead. The current item can be discarded
-                var e = a.parent;
+                let e = a.parent;
                 e.elements[e.getter] = b;
                 delete e.getter;
                 return e;
@@ -1539,11 +1149,11 @@ const nerdamer = (function () {
             return b;
         };
         this.function_assign = function (a, b) {
-            var f = a.elements.pop();
+            let f = a.elements.pop();
             return setFunction(f, a.elements, b);
         };
         // Function to quickly convert bools to Symbols
-        var bool2Symbol = function (x) {
+        let bool2Symbol = function (x) {
             return new Symbol(x === true ? 1 : 0);
         };
         //check for equality
@@ -1604,7 +1214,7 @@ const nerdamer = (function () {
     /* END FINALIZE */
 
 //Core =========================================================================
-    var Utils = {
+    let Utils = {
         allSame: allSame,
         allNumeric: allNumeric,
         arguments2Array: arguments2Array,
@@ -1614,11 +1224,11 @@ const nerdamer = (function () {
         arrayMin: arrayMin,
         arrayEqual: arrayEqual,
         arrayUnique: arrayUnique,
-        arrayGetVariables: arrayGetVariables,
+        arrayGetVariables: arrayGetVariables, // inject!
         arraySum: arraySum,
         block: block,
-        build: Build.build,
-        clearU: clearU,
+        build: build,
+        clearU: clearU, // inject!
         comboSort: comboSort,
         compare: compare,
         convertToVector: convertToVector,
@@ -1633,8 +1243,8 @@ const nerdamer = (function () {
         format: format,
         generatePrimes: generatePrimes,
         getCoeffs: getCoeffs,
-        getU: getU,
-        importFunctions: importFunctions,
+        getU: getU, // inject!
+        importFunctions: importFunctions, // inject!
         inBrackets: inBrackets,
         isArray: isArray,
         isExpression: isExpression,
@@ -1648,7 +1258,7 @@ const nerdamer = (function () {
         isSymbol: isSymbol,
         isVariableSymbol: isVariableSymbol,
         isVector: isVector,
-        keys: keys,
+        keys: Object.keys, // inject
         knownVariable: knownVariable,
         nroots: nroots,
         remove: remove,
@@ -1656,8 +1266,8 @@ const nerdamer = (function () {
         range: range,
         round: nround,
         sameSign: sameSign,
-        scientificToDecimal: Math2.scientificToDecimal,
-        separate: separate,
+        scientificToDecimal: scientificToDecimal,
+        separate: separate, // inject
         stringReplace: stringReplace,
         text: text,
         validateName: validateName,
@@ -1698,16 +1308,16 @@ const nerdamer = (function () {
      * @param {String} option additional options
      * @returns {Expression}
      */
-    var libExports = function (expression, subs, option, location) {
+    let libExports = function (expression, subs, option, location) {
         // Initiate the numer flag
-        var numer = false;
+        let numer = false;
 
         // Is the user declaring a function?
-        var fndec = /^([a-z_][a-z\d\_]*)\(([a-z_,\s]*)\):=(.+)$/gi.exec(expression);
+        let fndec = /^([a-z_][a-z\d_]*)\(([a-z_,\s]*)\):=(.+)$/gi.exec(expression);
         if (fndec)
             return nerdamer.setFunction(fndec[1], fndec[2].split(','), fndec[3]);
 
-        // var variable, fn, args;
+        // let variable, fn, args;
         // Convert any expression passed in to a string
         if (expression instanceof Expression)
             expression = expression.toString();
@@ -1725,7 +1335,7 @@ const nerdamer = (function () {
             }
             // Wrap it in a function if requested. This only holds true for
             // functions that take a single argument which is the expression
-            var f = _.functions[option];
+            let f = _.functions[option];
             // If there's a function and it takes a single argument, then wrap
             // the expression in it
             if (f && f[1] === 1) {
@@ -1733,7 +1343,7 @@ const nerdamer = (function () {
             }
         });
 
-        var e = block('PARSE2NUMBER', function () {
+        let e = block('PARSE2NUMBER', function () {
             return _.parse(expression, subs);
         }, numer || Settings.PARSE2NUMBER);
 
@@ -1771,7 +1381,7 @@ const nerdamer = (function () {
      * @returns {String}
      */
     libExports.convertFromLaTeX = function (e) {
-        var txt = LaTeX.parse(_.tokenize(e));
+        let txt = LaTeX.parse(_.tokenize(e));
         return new Expression(_.parse(txt));
     };
 
@@ -1881,7 +1491,7 @@ const nerdamer = (function () {
             EXPRESSIONS.shift();
         }
         else {
-            var index = !equation_number ? EXPRESSIONS.length : equation_number - 1;
+            let index = !equation_number ? EXPRESSIONS.length : equation_number - 1;
             keep_EXPRESSIONS_fixed === true ? EXPRESSIONS[index] = undefined : remove(EXPRESSIONS, index);
         }
         return this;
@@ -1903,9 +1513,9 @@ const nerdamer = (function () {
      * @returns {Array}
      */
     libExports.expressions = function (asObject, asLaTeX, option) {
-        var result = asObject ? {} : [];
-        for (var i = 0; i < EXPRESSIONS.length; i++) {
-            var eq = asLaTeX ? LaTeX.latex(EXPRESSIONS[i], option) : text(EXPRESSIONS[i], option);
+        let result = asObject ? {} : [];
+        for (let i = 0; i < EXPRESSIONS.length; i++) {
+            let eq = asLaTeX ? LaTeX.latex(EXPRESSIONS[i], option) : text(EXPRESSIONS[i], option);
             asObject ? result[i + 1] = eq : result.push(eq);
         }
         return result;
@@ -1913,10 +1523,10 @@ const nerdamer = (function () {
 
     //the method for registering modules
     libExports.register = function (obj) {
-        var core = this.getCore();
+        let core = this.getCore();
 
         if (isArray(obj)) {
-            for (var i = 0; i < obj.length; i++) {
+            for (let i = 0; i < obj.length; i++) {
                 if (obj)
                     this.register(obj[i]);
             }
@@ -1924,18 +1534,18 @@ const nerdamer = (function () {
         else if (obj && Settings.exclude.indexOf(obj.name) === -1) {
             //make sure all the dependencies are available
             if (obj.dependencies) {
-                for (var i = 0; i < obj.dependencies.length; i++)
+                for (let i = 0; i < obj.dependencies.length; i++)
                     if (!core[obj.dependencies[i]])
                         throw new Error(format('{0} requires {1} to be loaded!', obj.name, obj.dependencies[i]));
             }
             //if no parent object is provided then the function does not have an address and cannot be called directly
-            var parent_obj = obj.parent,
+            let parent_obj = obj.parent,
                 fn = obj.build.call(core); //call constructor to get function
             if (parent_obj) {
                 if (!core[parent_obj])
                     core[obj.parent] = {};
 
-                var ref_obj = parent_obj === 'nerdamer' ? this : core[parent_obj];
+                let ref_obj = parent_obj === 'nerdamer' ? this : core[parent_obj];
                 //attach the function to the core
                 ref_obj[obj.name] = fn;
             }
@@ -2037,11 +1647,11 @@ const nerdamer = (function () {
      */
     libExports.getVars = function (output, option) {
         output = output || 'text';
-        var variables = {};
+        let variables = {};
         if (output === 'object')
             variables = VARS;
         else {
-            for (var v in VARS) {
+            for (let v in VARS) {
                 if (output === 'latex') {
                     variables[v] = VARS[v].latex(option);
                 }
@@ -2062,11 +1672,11 @@ const nerdamer = (function () {
         //current options:
         //PARSE2NUMBER, suppress_errors
         if (typeof setting === 'object')
-            for (var x in setting) {
+            for (let x in setting) {
                 libExports.set(x, setting[x]);
             }
 
-        var disallowed = ['SAFE'];
+        let disallowed = ['SAFE'];
         if (disallowed.indexOf(setting) !== -1)
             err('Cannot modify setting: ' + setting);
 
@@ -2116,10 +1726,10 @@ const nerdamer = (function () {
      */
     libExports.api = function (override) {
         //Map internal functions to external ones
-        var linker = function (fname) {
+        let linker = function (fname) {
             return function () {
-                var args = [].slice.call(arguments);
-                for (var i = 0; i < args.length; i++)
+                let args = [].slice.call(arguments);
+                for (let i = 0; i < args.length; i++)
                     args[i] = _.parse(args[i]);
                 return new Expression(block('PARSE2NUMBER', function () {
                     return _.callfunction(fname, args);
@@ -2127,14 +1737,14 @@ const nerdamer = (function () {
             };
         };
         //perform the mapping
-        for (var x in _.functions)
+        for (let x in _.functions)
             if (!(x in libExports) || override)
                 libExports[x] = linker(x);
     };
 
     libExports.replaceFunction = function (name, fn, num_args) {
-        var existing = _.functions[name];
-        var new_num_args = typeof num_args === 'undefined' ? existing[1] : num_args;
+        let existing = _.functions[name];
+        let new_num_args = typeof num_args === 'undefined' ? existing[1] : num_args;
         _.functions[name] = [fn.call(undefined, existing[0], C), new_num_args];
     };
 
@@ -2155,7 +1765,7 @@ const nerdamer = (function () {
     };
 
     libExports.htmlTree = function (expression, indent) {
-        var tree = this.tree(expression);
+        let tree = this.tree(expression);
 
         return '<div class="tree">\n' +
             '    <ul>\n' +
@@ -2185,9 +1795,7 @@ const nerdamer = (function () {
 
     return libExports; //Done
 //imports ======================================================================
-})({
-
-});
+})();
 
 if ((typeof module) !== 'undefined') {
     module.exports = nerdamer;

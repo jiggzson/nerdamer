@@ -1,10 +1,7 @@
-import {isNegative, isSymbol} from '../Core/Symbol';
-import {isMatrix} from '../Parser/Matrix';
 import {Settings} from '../Settings';
-import {inBrackets} from '../Core/Utils';
+import {isSymbol, inBrackets, isMatrix, isNegative, isVector} from '../Core/Utils';
 import {Groups} from '../Core/Groups';
 import {isSet} from '../Parser/Set';
-import {isVector} from '../Parser/Vector';
 import {Collection} from '../Parser/Collection';
 import {parse} from '../Core/parse';
 

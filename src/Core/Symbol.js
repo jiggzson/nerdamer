@@ -1,6 +1,6 @@
 import bigDec from 'decimal.js';
 import {Settings} from '../Settings';
-import {arrayMin, inBrackets, isInt, nround, remove, validateName} from './Utils';
+import {isSymbol, arrayMin, inBrackets, isInt, nround, remove, validateName} from './Utils';
 import {Groups} from './Groups';
 import {Frac} from './Frac';
 import bigInt from '../3rdparty/bigInt';
@@ -12,6 +12,7 @@ import {parse, evaluate} from './parse';
 import {add, divide, multiply, pow, sqrt, subtract} from './functions';
 import {expand} from './functions/math/expand';
 import {Trig} from './Trig';
+import {isNumericSymbol} from './Utils-js';
 
 
 // noinspection JSUnusedGlobalSymbols
@@ -1499,52 +1500,16 @@ export class Symbol {
     }
 }
 
-/**
- * Checks to see if the object provided is a Symbol
- * @param {Object} obj
- */
-export function isSymbol(obj) {
-    return (obj instanceof Symbol);
-}
-
-/**
- * Checks to see if a symbol is in group N
- * @param {Symbol} symbol
- */
-export function isNumericSymbol(symbol) {
-    return symbol.group === Groups.N || symbol.group === Groups.P;
-}
-
-/**
- * Checks to see if a symbol is a variable with no multiplier nor power
- * @param {Symbol} symbol
- */
-export function isVariableSymbol(symbol) {
-    return symbol.group === Groups.S && symbol.multiplier.equals(1) && symbol.power.equals(1);
-}
 
 
-/**
- * Checks to see if a number or Symbol is a fraction
- * @param {Number|Symbol} num
- * @returns {boolean}
- */
-export function isFraction(num) {
-    if (isSymbol(num))
-        return isFraction(num.multiplier.toDecimal());
-    return (num % 1 !== 0);
-}
 
-/**
- * @param {Number|Symbol} obj
- * @returns {boolean}
- */
-export function isNegative(obj) {
-    if (isSymbol(obj)) {
-        obj = obj.multiplier;
-    }
-    return obj.lessThan(0);
-}
+
+
+
+
+
+
+
 
 /**
  * Generates library's representation of a function. It's a fancy way of saying a symbol with
@@ -1565,35 +1530,4 @@ export function symfunction(fn_name, params) {
     f.fname = fn_name === Settings.PARENTHESIS ? '' : fn_name;
     f.updateHash();
     return f;
-}
-
-/**
- * TODO: Pick a more descriptive name and better description
- * Breaks a function down into it's parts wrt to a variable, mainly coefficients
- * Example a*x^2+b wrt x
- * @param {Symbol} fn
- * @param {String} wrt
- * @param {boolean} as_obj
- */
-export function decompose_fn(fn, wrt, as_obj) {
-    wrt = String(wrt); //convert to string
-    var ax, a, x, b;
-    if (fn.group === Groups.CP) {
-        var t = expand(fn.clone()).stripVar(wrt);
-        ax = subtract(fn.clone(), t.clone());
-        b = t;
-    }
-    else
-        ax = fn.clone();
-    a = ax.stripVar(wrt);
-    x = divide(ax.clone(), a.clone());
-    b = b || new Symbol(0);
-    if (as_obj)
-        return {
-            a: a,
-            x: x,
-            ax: ax,
-            b: b
-        };
-    return [a, x, ax, b];
 }

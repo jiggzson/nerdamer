@@ -1,6 +1,6 @@
-import {isNumericSymbol, Symbol, symfunction} from '../../Symbol';
+import {Symbol, symfunction} from '../../Symbol';
 import {add} from '../operations/add';
-import {even} from '../../Utils';
+import {even, isNumericSymbol} from '../../Utils';
 import {Math2} from '../../Math2';
 import {Frac} from '../../Frac';
 import {parse} from '../../parse';

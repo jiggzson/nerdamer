@@ -1,4 +1,4 @@
-import {isMatrix} from '../../../../Parser/Matrix';
+import {isMatrix} from '../../../Utils';
 
 export function determinant(symbol) {
     if (isMatrix(symbol)) {

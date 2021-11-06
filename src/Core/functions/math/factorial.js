@@ -1,7 +1,7 @@
-import {isVector, Vector} from '../../../Parser/Vector';
-import {isMatrix, Matrix} from '../../../Parser/Matrix';
+import {Vector} from '../../../Parser/Vector';
+import {Matrix} from '../../../Parser/Matrix';
 import {Settings} from '../../../Settings';
-import {isInt} from '../../Utils';
+import {isInt, isMatrix, isVector} from '../../Utils';
 import {Math2} from '../../Math2';
 import {Frac} from '../../Frac';
 import {add} from '../operations/add';

@@ -1,4 +1,4 @@
-export class Token {
+export class Token  {
     //some constants
     static OPERATOR = 'OPERATOR';
     static VARIABLE_OR_LITERAL = 'VARIABLE_OR_LITERAL';
@@ -14,23 +14,22 @@ export class Token {
     precedence: number = 0;
     leftAssoc = false;
     postfix = false;
+    action: string = '';
+    operator: string = '';
+    prefix: boolean = false;
 
-    /** @deprecated */
-    static parser: any;
-
-    constructor(node: string, node_type: string, column: number) {
+    constructor(node: string, node_type: string, column: number, operator?: any) {
         this.type = node_type;
         this.value = node;
         if (column !== undefined) {
             this.column = column + 1;
         }
 
-        if (node_type === Token.OPERATOR) {
+        if (node_type === Token.OPERATOR && operator) {
             //copy everything over from the operator
-            var operator = Token.parser.getOperator(node);
-            for (var x in operator)
+            for (let x in operator) {
                 (this as any)[x] = operator[x];
-
+            }
         }
         else if (node_type === Token.FUNCTION) {
             this.precedence = Token.MAX_PRECEDENCE; //leave enough roon
@@ -44,5 +43,4 @@ export class Token {
         }
         return this.value;
     }
-
 }

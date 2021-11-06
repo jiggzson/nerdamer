@@ -9,7 +9,7 @@ import {parse} from '../../parse';
  * @param symbol
  */
 // Old expand
-export function expand(symbol, opt) {
+export function expand(symbol, opt = undefined) {
     if (Array.isArray(symbol)) {
         return symbol.map(function (x) {
             return expand(x, opt);

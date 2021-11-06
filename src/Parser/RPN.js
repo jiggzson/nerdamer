@@ -6,6 +6,7 @@ import {Slice} from './Slice';
 import {Vector} from './Vector';
 import {Set} from './Set';
 import {OperatorError, OutOfRangeError, UnexpectedTokenError} from '../Core/Errors';
+import {parse} from '../Core/parse';
 
 export class RPN {
     deps;
@@ -177,7 +178,7 @@ export class RPN {
         substitutions = substitutions || {};
         //we first parse them out as-is
         for (let x in substitutions)
-            substitutions[x] = deps.parse(substitutions[x], {});
+            substitutions[x] = parse(substitutions[x], {});
 
         //Although technically constants,
         //pi and e are only available when evaluating the expression so add to the subs.
@@ -308,7 +309,7 @@ export class RPN {
                     let v = e.value;
 
                     if (v in Settings.ALIASES)
-                        e = deps.parse(Settings.ALIASES[e]);
+                        e = parse(Settings.ALIASES[e]);
                     //wrap it in a symbol if need be
                     else if (e.type === Token.VARIABLE_OR_LITERAL)
                         e = new Symbol(v);

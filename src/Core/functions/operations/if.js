@@ -1,4 +1,4 @@
-import {isNumericSymbol} from '../../Symbol';
+import {isNumericSymbol} from '../../Utils';
 
 /**
  * A branghing function

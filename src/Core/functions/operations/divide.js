@@ -1,8 +1,8 @@
-import {Symbol, isSymbol} from '../../Symbol';
+import {Symbol} from '../../Symbol';
 import {DivisionByZero, err} from '../../Errors';
-import {isVector} from '../../../Parser/Vector';
-import {isMatrix, Matrix} from '../../../Parser/Matrix';
+import {Matrix} from '../../../Parser/Matrix';
 import {multiply} from '../index';
+import {isMatrix, isSymbol, isVector} from '../../Utils';
 
 /**
  * Gets called when the parser finds the / operator. See this.add

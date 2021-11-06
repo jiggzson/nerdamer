@@ -1,9 +1,7 @@
 import bigInt from '../3rdparty/bigInt';
 import Scientific from './Scientific';
 import {Settings} from '../Settings';
-import {isSymbol} from './Symbol';
-import {inBrackets, nround} from './Utils';
-import {isVector} from '../Parser/Vector';
+import {isSymbol, inBrackets, nround, isVector} from './Utils';
 import {Groups} from './Groups';
 
 

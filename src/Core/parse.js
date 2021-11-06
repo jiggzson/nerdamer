@@ -13,6 +13,7 @@ export function parse(e, substitutions = {}) {
  * As the name states. It forces evaluation of the expression
  * @param {Symbol} symbol
  * @param {Symbol} o
+ * @deprecated use Utils.evaluate instead
  */
 export function evaluate(symbol, o = undefined) {
     return block('PARSE2NUMBER', function () {

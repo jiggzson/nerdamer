@@ -61,6 +61,10 @@ export class InfiniteLoopError extends Error {
 export class UnexpectedTokenError extends Error {
   name = 'UnexpectedTokenError';
 }
+// Is thrown if variable name violates naming rule
+export class InvalidVariableNameError extends Error {
+  name = 'InvalidVariableNameError';
+}
 
 
 /**

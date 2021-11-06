@@ -1,5 +1,5 @@
 import {Token} from './Token';
-import {isNumber} from '../Core/Utils';
+import {isNumber, scientificToDecimal} from '../Core/Utils';
 import {Math2} from '../Core/Math2';
 import {Settings} from '../Settings';
 import {Bracket, Brackets, OperatorDictionary} from './OperatorDictionary';
@@ -297,14 +297,14 @@ class InnerTokenizer {
             //since the operator now is undefined then the last operator
             //was the largest possible combination.
             if (!this.operators.isOperator(o)) {
-                _operators.push(new Token(operator, Token.OPERATOR, index));
+                _operators.push(new Token(operator, Token.OPERATOR, index, this.operators.getOperator(operator)));
                 operator = ch;
             }
             else
                 operator = o;//now the operator is the larger chunk
         }
         //add the last operator
-        _operators.push(new Token(operator, Token.OPERATOR, index));
+        _operators.push(new Token(operator, Token.OPERATOR, index, this.operators.getOperator(operator)));
         return _operators;
     }
 
@@ -453,7 +453,7 @@ class InnerTokenizer {
                 if (has_space) {
 
                     if (this.operators.isOperator(prev)) {
-                        this.target.push(new Token(prev, Token.OPERATOR, this.col));
+                        this.target.push(new Token(prev, Token.OPERATOR, this.col, this.operators.getOperator(prev)));
                     }
                     else {
                         this.add_token(undefined, prev);
@@ -464,7 +464,7 @@ class InnerTokenizer {
                         let is_operator = this.operators.isOperator(nxt);
 
                         if ((is_operator && this.operators.getOperator(nxt).value === MINUS) || !is_operator) {
-                            this.target.push(new Token(MULT, Token.OPERATOR, this.col));
+                            this.target.push(new Token(MULT, Token.OPERATOR, this.col, this.operators.getOperator(MULT)));
                         }
                     }
                     has_space = false; //remove the space
@@ -481,7 +481,7 @@ class InnerTokenizer {
                         this.addScope();
                     }
                     else if (this.operators.isOperator(f)) {
-                        this.target.push(new Token(f, Token.OPERATOR, this.col));
+                        this.target.push(new Token(f, Token.OPERATOR, this.col, this.operators.getOperator(f)));
                     }
                     else {
                         this.add_token(undefined, f);
@@ -492,7 +492,7 @@ class InnerTokenizer {
                         //is not an operator
 
                         if (prev !== EMPTY_STRING && nxt !== EMPTY_STRING && !this.operators.isOperator(prev) && !this.operators.isOperator(nxt))
-                            this.target.push(new Token(MULT, Token.OPERATOR, this.col));
+                            this.target.push(new Token(MULT, Token.OPERATOR, this.col, this.operators.getOperator(MULT)));
                     }
                     //Possible source of bug. Review
                     /*

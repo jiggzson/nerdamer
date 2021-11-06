@@ -1,4 +1,5 @@
-import {isVector, Vector} from '../../../../Parser/Vector';
+import {Vector} from '../../../../Parser/Vector';
+import {isVector} from '../../../Utils';
 
 export function sort(symbol, opt) {
     opt = opt ? opt.toString() : 'asc';

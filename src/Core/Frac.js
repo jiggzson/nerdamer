@@ -1,10 +1,9 @@
-import {isInt} from './Utils';
+import {isInt, scientificToDecimal} from './Utils';
 import bigDec from 'decimal.js';
 import bigInt from '../3rdparty/bigInt';
 import Scientific from './Scientific';
 import {DivisionByZero} from './Errors';
 import {Settings} from '../Settings';
-import {Math2} from './Math2';
 
 export class Frac {
     constructor(n) {
@@ -60,7 +59,7 @@ export class Frac {
     }
 
     static simple(n) {
-        var nstr = String(Math2.scientificToDecimal(n)),
+        var nstr = String(scientificToDecimal(n)),
             m_dc = nstr.split('.'),
             num = m_dc.join(''),
             den = 1,
@@ -359,7 +358,7 @@ var Fraction = {
         function convert(value) {
             // Explicitely convert to a decimal
             if (Scientific.isScientific(value)) {
-                value = Math2.scientificToDecimal(value);
+                value = scientificToDecimal(value);
             }
 
             // Split the value into the sign and the value

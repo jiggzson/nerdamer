@@ -1,7 +1,8 @@
-import {decompose_fn, Symbol} from '../../Symbol';
+import {Symbol} from '../../Symbol';
 import {evaluate} from '../../parse';
 import {add, divide, multiply, pow, subtract} from '../index';
 import {Trig} from '../../Trig';
+import {decompose_fn} from '../../Utils';
 
 /**
  * Returns the rectangular form of a complex number. Does not work for symbolic coefficients

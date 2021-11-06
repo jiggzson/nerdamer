@@ -1,9 +1,10 @@
-import {block} from '../Core/Utils';
-import {isSymbol, Symbol} from '../Core/Symbol';
+import {isSymbol, block, isVector} from '../Core/Utils';
+import {Symbol} from '../Core/Symbol';
 import {add, divide, multiply, pow, sqrt, subtract} from '../Core/functions';
 import {Settings} from '../Settings';
 import {LaTeX} from '../LaTeX/LaTeX';
 import {text} from '../Core/Text';
+
 
 // noinspection JSUnusedGlobalSymbols
 export class Vector {
@@ -313,11 +314,3 @@ export class Vector {
     }
 }
 
-/**
- *
- * Checks to see if the object provided is a Vector
- * @param {Object} obj
- */
-export function isVector(obj) {
-    return (obj instanceof Vector);
-}

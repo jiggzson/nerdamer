@@ -1,11 +1,10 @@
-import {isSymbol, Symbol} from '../../Symbol';
+import {Symbol} from '../../Symbol';
 import {err, UndefinedError} from '../../Errors';
 import {Settings} from '../../../Settings';
 import {Groups} from '../../Groups';
 import {text} from '../../Text';
-import {even, firstObject} from '../../Utils';
-import {isMatrix, Matrix} from '../../../Parser/Matrix';
-import {isVector} from '../../../Parser/Vector';
+import {even, firstObject, isMatrix, isSymbol, isVector} from '../../Utils';
+import {Matrix} from '../../../Parser/Matrix';
 import {sqrt} from '../index';
 import {expand} from '../math/expand';
 

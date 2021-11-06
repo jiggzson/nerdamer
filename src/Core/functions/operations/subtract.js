@@ -1,8 +1,7 @@
-import {isSymbol} from '../../Symbol';
 import {add} from './add';
-import {isVector} from '../../../Parser/Vector';
 import {err} from '../../Errors';
-import {isMatrix, Matrix} from '../../../Parser/Matrix';
+import {Matrix} from '../../../Parser/Matrix';
+import {isMatrix, isSymbol, isVector} from '../../Utils';
 
 /**
  * Gets called when the parser finds the - operator. Not the prefix operator. See this.add

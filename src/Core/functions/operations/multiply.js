@@ -1,4 +1,4 @@
-import {isSymbol, Symbol, symfunction} from '../../Symbol';
+import {Symbol, symfunction} from '../../Symbol';
 import {Collection} from '../../../Parser/Collection';
 import {err, UndefinedError} from '../../Errors';
 import {Settings} from '../../../Settings';
@@ -7,13 +7,12 @@ import {Groups} from '../../Groups';
 import {parse} from '../../parse';
 import {Frac} from '../../Frac';
 import {divide} from './divide';
-import {even, firstObject, isInt} from '../../Utils';
+import {even, firstObject, isInt, isMatrix, isSymbol, isVector} from '../../Utils';
 import {subtract} from './subtract';
 import {add} from './add';
 import {pow} from './pow';
 import {text} from '../../Text';
-import {isMatrix, Matrix} from '../../../Parser/Matrix';
-import {isVector} from '../../../Parser/Vector';
+import {Matrix} from '../../../Parser/Matrix';
 import {sqrt} from '../index';
 
 /**
