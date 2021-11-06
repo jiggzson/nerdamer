@@ -3,6 +3,7 @@ import {isSymbol, Symbol} from '../Core/Symbol';
 import {add, divide, multiply, pow, sqrt, subtract} from '../Core/SymbolOperators/SymbolOperators';
 import {Settings} from '../Settings';
 import {LaTeX} from '../LaTeX/LaTeX';
+import {text} from '../Core/Text';
 
 // noinspection JSUnusedGlobalSymbols
 export class Vector {
@@ -88,7 +89,7 @@ export class Vector {
                 return false;
             }
         }
-        while(--n);
+        while (--n);
         return true;
     }
 
@@ -123,7 +124,7 @@ export class Vector {
             i = k - n;
             fn(this.elements[i], i + 1);
         }
-        while(--n);
+        while (--n);
     }
 
     // Returns a new vector created by normalizing the receiver
@@ -239,7 +240,7 @@ export class Vector {
             do {
                 product = add(product, multiply(this.elements[n - 1], V[n - 1]));
             }
-            while(--n);
+            while (--n);
             return product;
         }, undefined, this);
     }
@@ -270,9 +271,10 @@ export class Vector {
                 m = this.elements[i];
             }
         }
-        while(--n);
+        while (--n);
         return m;
     }
+
     magnitude() {
         let magnitude = new Symbol(0);
         this.each(function (e) {
@@ -280,6 +282,7 @@ export class Vector {
         });
         return sqrt(magnitude);
     }
+
     // Returns the index of the first match found
     indexOf(x) {
         let index = null, n = this.elements.length, k = n, i;
@@ -289,15 +292,18 @@ export class Vector {
                 index = i + 1;
             }
         }
-        while(--n);
+        while (--n);
         return index;
     }
+
     text() {
-        return this.$text(this);
+        return text(this);
     }
+
     toString() {
         return this.text();
     }
+
     latex(option) {
         let tex = [];
         for (let i = 0; i < this.elements.length; i++) {

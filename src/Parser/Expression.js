@@ -3,7 +3,11 @@ import {Settings} from '../Settings';
 import {isVector} from './Vector';
 import {Build} from './Build';
 import {text} from '../Core/Text';
+import {LaTeX} from '../LaTeX/LaTeX';
+import {block} from '../Core/Utils';
+import {subtract} from '../Core/SymbolOperators/SymbolOperators';
 
+// noinspection JSUnusedGlobalSymbols
 /**
  * This is what nerdamer returns. It's sort of a wrapper around the symbol class and
  * provides the user with some useful functions. If you want to provide the user with extra
@@ -13,6 +17,7 @@ import {text} from '../Core/Text';
  */
 
 export class Expression {
+    static $EXPRESSIONS;
     symbol;
 
     constructor(symbol) {
@@ -22,18 +27,20 @@ export class Expression {
 
     /**
      * Returns stored expression at index. For first index use 1 not 0.
-     * @param {bool} asType
-     * @param {Integer} expression_number
+     * @param {number | string} expression_number
+     * @param {boolean} asType
      */
-    static getExpression(expression_number, asType) {
+    static getExpression(expression_number, asType = false) {
         if (expression_number === 'last' || !expression_number)
-            expression_number = EXPRESSIONS.length;
+            expression_number = Expression.$EXPRESSIONS.length;
+
         if (expression_number === 'first')
             expression_number = 1;
-        var index = expression_number - 1,
-            expression = EXPRESSIONS[index],
-            retval = expression ? new Expression(expression) : expression;
-        return retval;
+
+        let index = expression_number - 1,
+            expression = Expression.$EXPRESSIONS[index];
+
+        return expression ? new Expression(expression) : expression;
     }
 
     /**
@@ -42,7 +49,7 @@ export class Expression {
      * @param {Number} n The number of significant figures
      * @returns {String}
      */
-    text(opt, n) {
+    text(opt = 'decimals', n = 0) {
         n = n || 19;
         opt = opt || 'decimals';
         if (this.symbol.text_)
@@ -59,7 +66,7 @@ export class Expression {
     latex(option) {
         if (this.symbol.latex)
             return this.symbol.latex(option);
-        return this.$LaTeX.latex(this.symbol, option);
+        return LaTeX.latex(this.symbol, option);
     }
 
     valueOf() {
@@ -79,7 +86,7 @@ export class Expression {
             return this;
         }
 
-        var first_arg = arguments[0], expression, idx = 1;
+        let first_arg = arguments[0], expression, idx = 1;
 
         //Enable getting of expressions using the % so for example %1 should get the first expression
         if (typeof first_arg === 'string') {
@@ -93,13 +100,11 @@ export class Expression {
             idx--;
         }
 
-        var subs = arguments[idx] || {};
+        let subs = arguments[idx] || {};
 
-        var retval = new Expression(this.$block('PARSE2NUMBER', function () {
-            return this.$.parse(expression, subs);
+        return new Expression(block('PARSE2NUMBER', function () {
+            return this.$parse(expression, subs);
         }, true, this));
-
-        return retval;
     }
 
     /**
@@ -143,7 +148,6 @@ export class Expression {
         return this.$variables(this.symbol);
     }
 
-
     toString() {
         try {
             if (Array.isArray(this.symbol))
@@ -158,7 +162,7 @@ export class Expression {
     //forces the symbol to be returned as a decimal
     toDecimal(prec) {
         Settings.precision = prec;
-        var dec = text(this.symbol, 'decimals');
+        let dec = text(this.symbol, 'decimals');
         Settings.precision = undefined;
         return dec;
     }
@@ -175,15 +179,18 @@ export class Expression {
 
     //performs a substitution
     sub(symbol, for_symbol) {
-        return new Expression(this.symbol.sub(this.$.parse(symbol), this.$.parse(for_symbol)));
+        return new Expression(this.symbol.sub(this.$parse(symbol), this.$parse(for_symbol)));
     }
 
     operation(otype, symbol) {
-        if (isExpression(symbol))
+        if (isExpression(symbol)) {
             symbol = symbol.symbol;
-        else if (!isSymbol(symbol))
-            symbol = this.$.parse(symbol);
-        return new Expression(_[otype](this.symbol.clone(), symbol.clone()));
+        }
+        else if (!isSymbol(symbol)) {
+            symbol = this.$parse(symbol);
+        }
+
+        return new Expression(this.$getAction(otype)(this.symbol.clone(), symbol.clone()));
     }
 
     add(symbol) {
@@ -207,14 +214,14 @@ export class Expression {
     }
 
     expand() {
-        return new Expression(this.$.expand(this.symbol));
+        return new Expression(this.$expand(this.symbol));
     }
 
     each(callback, i) {
         if (this.symbol.each)
             this.symbol.each(callback, i);
         else if (Array.isArray(this.symbol)) {
-            for (var i = 0; i < this.symbol.length; i++)
+            for (let i = 0; i < this.symbol.length; i++)
                 callback.call(this.symbol, this.symbol[i], i);
         }
         else
@@ -223,35 +230,33 @@ export class Expression {
 
     eq(value) {
         if (!isSymbol(value))
-            value = this.$.parse(value);
+            value = this.$parse(value);
         try {
-            var d = this.$.subtract(this.symbol.clone(), value);
+            let d = subtract(this.symbol.clone(), value);
             return d.equals(0);
         }
         catch(e) {
             return false;
         }
-        ;
     }
 
     lt(value) {
         if (!isSymbol(value))
-            value = this.$.parse(value);
+            value = this.$parse(value);
         try {
-            var d = this.$evaluate(this.$.subtract(this.symbol.clone(), value));
+            let d = this.$evaluate(subtract(this.symbol.clone(), value));
             return d.lessThan(0);
         }
         catch(e) {
             return false;
         }
-        ;
     }
 
     gt(value) {
         if (!isSymbol(value))
-            value = this.$.parse(value);
+            value = this.$parse(value);
         try {
-            var d = this.$evaluate(this.$.subtract(this.symbol.clone(), value));
+            let d = this.$evaluate(subtract(this.symbol.clone(), value));
             return d.greaterThan(0);
         }
         catch(e) {
@@ -295,5 +300,3 @@ export class Expression {
 export function isExpression(obj) {
     return (obj instanceof Expression);
 }
-
-module.exports = { Expression, isExpression };

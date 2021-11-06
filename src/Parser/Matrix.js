@@ -2,6 +2,8 @@ import {isSymbol, Symbol} from '../Core/Symbol';
 import {isVector, Vector} from './Vector';
 import {block, format, inBrackets} from '../Core/Utils';
 import {err} from '../Core/Errors';
+import {add, divide, multiply, subtract} from '../Core/SymbolOperators/SymbolOperators';
+import {LaTeX} from '../LaTeX/LaTeX';
 
 export class Matrix {
     custom = true
@@ -119,7 +121,7 @@ export class Matrix {
         var det = M.elements[0][0], n = M.elements.length - 1, k = n, i;
         do {
             i = k - n + 1;
-            det = this.$.multiply(det, M.elements[i][i]);
+            det = multiply(det, M.elements[i][i]);
         }
         while(--n);
         return det;
@@ -178,7 +180,7 @@ export class Matrix {
                 divisor = M.elements[i][i];
                 do {
                     p = kp - np;
-                    new_element = this.$.divide(M.elements[i][p], divisor.clone());
+                    new_element = divide(M.elements[i][p], divisor.clone());
                     els.push(new_element);
                     // Shuffle of the current row of the right hand side into the results
                     // array as it will not be modified by later runs through this loop
@@ -195,7 +197,7 @@ export class Matrix {
                     np = kp;
                     do {
                         p = kp - np;
-                        els.push(this.$.subtract(M.elements[j][p].clone(), this.$.multiply(M.elements[i][p].clone(), M.elements[j][i].clone())));
+                        els.push(subtract(M.elements[j][p].clone(), multiply(M.elements[i][p].clone(), M.elements[j][i].clone())));
                     }
                     while(--np);
                     M.elements[j] = els;
@@ -222,7 +224,7 @@ export class Matrix {
                             np = kp;
                             do {
                                 p = kp - np;
-                                els.push(this.$.add(M.elements[i][p].clone(), M.elements[j][p].clone()));
+                                els.push(add(M.elements[i][p].clone(), M.elements[j][p].clone()));
                             }
                             while(--np);
                             M.elements[i] = els;
@@ -233,7 +235,7 @@ export class Matrix {
                 var fel = M.elements[i][i];
                 if (fel.valueOf() !== 0) {
                     for (j = i + 1; j < k; j++) {
-                        var multiplier = this.$.divide(M.elements[j][i].clone(), M.elements[i][i].clone());
+                        var multiplier = divide(M.elements[j][i].clone(), M.elements[i][i].clone());
                         els = [];
                         np = kp;
                         do {
@@ -243,7 +245,7 @@ export class Matrix {
                             // zero, since that's the point of this routine and it avoids having
                             // to loop over and correct rounding errors later
                             els.push(p <= i ? new Symbol(0) :
-                                this.$.subtract(M.elements[j][p].clone(), this.$.multiply(M.elements[i][p].clone(), multiplier.clone())));
+                                subtract(M.elements[j][p].clone(), multiply(M.elements[i][p].clone(), multiplier.clone())));
                         }
                         while(--np);
                         M.elements[j] = els;
@@ -293,7 +295,7 @@ export class Matrix {
                     var MM = new Matrix();
                     var rows = this.rows();
                     for (var i = 0; i < rows; i++) {
-                        var e = this.$.multiply(new Vector(this.elements[i]), new Vector(matrix.elements[i]));
+                        var e = multiply(new Vector(this.elements[i]), new Vector(matrix.elements[i]));
                         MM.elements[i] = e.elements;
                     }
                     return MM;
@@ -312,7 +314,7 @@ export class Matrix {
                     nc = cols;
                     do {
                         c = cols - nc;
-                        sum = this.$.add(sum, this.$.multiply(this.elements[i][c], M[c][j]));
+                        sum = add(sum, multiply(this.elements[i][c], M[c][j]));
                     }
                     while(--nc);
                     elements[i][j] = sum;
@@ -328,7 +330,7 @@ export class Matrix {
         var M = new Matrix();
         if (this.sameSize(matrix)) {
             this.eachElement(function (e, i, j) {
-                var result = this.$.add(e.clone(), matrix.elements[i][j].clone());
+                var result = add(e.clone(), matrix.elements[i][j].clone());
                 if (callback) {
                     result = callback.call(M, result, e, matrix.elements[i][j]);
                 }
@@ -342,7 +344,7 @@ export class Matrix {
         var M = new Matrix();
         if (this.sameSize(matrix)) {
             this.eachElement(function (e, i, j) {
-                var result = this.$.subtract(e.clone(), matrix.elements[i][j].clone());
+                var result = subtract(e.clone(), matrix.elements[i][j].clone());
                 if (callback) {
                     result = callback.call(M, result, e, matrix.elements[i][j]);
                 }
@@ -392,7 +394,7 @@ export class Matrix {
             for (var row in elements) {
                 var row_tex = [];
                 for (var i = 0; i < cols; i++) {
-                    row_tex.push(this.$LaTeX.latex.call(this.$LaTeX, elements[row][i], option));
+                    row_tex.push(LaTeX.latex.call(this.$LaTeX, elements[row][i], option));
                 }
                 tex.push(row_tex.join(' & '));
             }

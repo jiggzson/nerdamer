@@ -314,10 +314,10 @@ export class Symbol {
      * rather a custom grouping method, this has to be
      * reinserted in order to make use of most algorithms. This function
      * checks if the symbol meets the criteria of a polynomial.
-     * @param {bool} multivariate
+     * @param {boolean} multivariate
      * @returns {boolean}
      */
-    isPoly(multivariate) {
+    isPoly(multivariate = false) {
         var g = this.group,
             p = this.power;
         //the power must be a integer so fail if it's not

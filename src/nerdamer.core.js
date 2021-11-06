@@ -115,6 +115,7 @@ const nerdamer = (function () {
 
     //the storage container "memory" for parsed expressions
     const EXPRESSIONS = [];
+    Expression.$EXPRESSIONS = EXPRESSIONS;
 
     //variables
     const VARS = {};
@@ -162,7 +163,7 @@ const nerdamer = (function () {
      * automatically. In the future this will be a Collector object.
      * @returns {String[]} - An array containing variable names
      */
-    var variables = function (obj, poly, vars) {
+    var variables = function (obj, poly = false, vars = undefined) {
         vars = vars || {
             c: [],
             add: function (value) {
@@ -860,6 +861,9 @@ const nerdamer = (function () {
 //Expression ===================================================================
     Expression.prototype.$ = _;
     Expression.prototype.$evaluate = evaluate;
+    Expression.prototype.$getAction = a => {
+        return _[a];
+    }
 
 
 
@@ -2533,18 +2537,11 @@ const nerdamer = (function () {
     Symbol.$LaTeX = LaTeX;
     Symbol.$text = text;
     Symbol.$variables = variables;
-//Vector =======================================================================
-    // Vector injections
-    Vector.prototype.$ = _;
-    Vector.prototype.$text = text;
-
-//Matrix =======================================================================
-    Matrix.prototype.$ = _;
-    Matrix.prototype.$LaTeX = LaTeX;
 
     Expression.prototype.$LaTeX = LaTeX;
-    Expression.prototype.$block = block;
+    Expression.prototype.$parse = _.parse;
     Expression.prototype.$variables = variables;
+    Expression.prototype.$expand = _.expand;
 
 
 //build ========================================================================
