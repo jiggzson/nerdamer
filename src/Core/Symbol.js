@@ -5,8 +5,12 @@ import {Groups} from './Groups';
 import {Frac} from './Frac';
 import bigInt from '../3rdparty/bigInt';
 import {err, NerdamerTypeError} from './Errors';
+import {Math2} from './Math2';
+import {text} from './Text';
+import {LaTeX} from '../LaTeX/LaTeX';
 
 
+// noinspection JSUnusedGlobalSymbols
 /**
  * All symbols e.g. x, y, z, etc or functions are wrapped in this class. All symbols have a multiplier and a group.
  * All symbols except for "numbers (group Groups.N)" have a power.
@@ -17,19 +21,21 @@ import {err, NerdamerTypeError} from './Errors';
 export class Symbol {
     // injected dependencies
     static $parser
+    static $evaluate;
+    static $variables;
 
     constructor(obj) {
         let isInfinity = obj === 'Infinity';
         // This enables the class to be instantiated without the new operator
-        if(!(this instanceof Symbol)) {
+        if (!(this instanceof Symbol)) {
             return new Symbol(obj);
         }
         // Convert big numbers to a string
-        if(obj instanceof bigDec) {
+        if (obj instanceof bigDec) {
             obj = obj.toString();
         }
         //define numeric symbols
-        if(/^(-?\+?\d+)\.?\d*e?-?\+?\d*/i.test(obj) || obj instanceof bigDec) {
+        if (/^(-?\+?\d+)\.?\d*e?-?\+?\d*/i.test(obj) || obj instanceof bigDec) {
             this.group = Groups.N;
             this.value = Settings.CONST_HASH;
             this.multiplier = new Frac(obj);
@@ -57,8 +63,8 @@ export class Symbol {
      * Returns vanilla imaginary symbol
      * @returns {Symbol}
      */
-    static imaginary () {
-        var s = new Symbol(Settings.IMAGINARY);
+    static imaginary() {
+        let s = new Symbol(Settings.IMAGINARY);
         s.imaginary = true;
         return s;
     }
@@ -68,15 +74,15 @@ export class Symbol {
      * @param {int} negative -1 to return negative infinity
      * @returns {Symbol}
      */
-    static infinity (negative) {
-        var v = new Symbol('Infinity');
+    static infinity(negative) {
+        let v = new Symbol('Infinity');
         if (negative === -1)
             v.negate();
         return v;
     }
 
-    static shell (group, value) {
-        var symbol = new Symbol(value);
+    static shell(group, value) {
+        let symbol = new Symbol(value);
         symbol.group = group;
         symbol.symbols = {};
         symbol.length = 0;
@@ -84,10 +90,10 @@ export class Symbol {
     }
 
     //sqrt(x) -> x^(1/2)
-    static unwrapSQRT (symbol, all) {
-        var p = symbol.power;
+    static unwrapSQRT(symbol, all) {
+        let p = symbol.power;
         if (symbol.fname === Settings.SQRT && (symbol.isLinear() || all)) {
-            var t = symbol.args[0].clone();
+            let t = symbol.args[0].clone();
             t.power = t.power.multiply(new Frac(1 / 2));
             t.multiplier = t.multiplier.multiply(symbol.multiplier);
             symbol = t;
@@ -98,7 +104,7 @@ export class Symbol {
         return symbol;
     }
 
-    static hyp (a, b) {
+    static hyp(a, b) {
         a = a || new Symbol(0);
         b = b || new Symbol(0);
         return Symbol.$parser.sqrt(Symbol.$parser.add(Symbol.$parser.pow(a.clone(), new Symbol(2)), Symbol.$parser.pow(b.clone(), new Symbol(2))));
@@ -106,7 +112,7 @@ export class Symbol {
 
     //converts to polar form array
     static toPolarFormArray(symbol) {
-        var re, im, r, theta;
+        let re, im, r, theta;
         re = symbol.realpart();
         im = symbol.imagpart();
         r = Symbol.hyp(re, im);
@@ -117,7 +123,7 @@ export class Symbol {
     //removes parentheses
     static unwrapPARENS(symbol) {
         if (symbol.fname === '') {
-            var r = symbol.args[0];
+            let r = symbol.args[0];
             r.power = r.power.multiply(symbol.power);
             r.multiplier = r.multiplier.multiply(symbol.multiplier);
             if (symbol.fname === '')
@@ -140,11 +146,11 @@ export class Symbol {
      */
     getNth(n) {
         // First calculate the root
-        var root = Symbol.$evaluate(Symbol.$parser.pow(Symbol.$parser.parse(this.multiplier), Symbol.$parser.parse(n).invert()));
+        let root = Symbol.$evaluate(Symbol.$parser.pow(Symbol.$parser.parse(this.multiplier), Symbol.$parser.parse(n).invert()));
         // Round of any errors
-        var rounded = Symbol.$parser.parse(nround(root));
+        let rounded = Symbol.$parser.parse(nround(root));
         // Reverse the root
-        var e = Symbol.$evaluate(Symbol.$parser.pow(rounded, Symbol.$parser.parse(n)));
+        let e = Symbol.$evaluate(Symbol.$parser.pow(rounded, Symbol.$parser.parse(n)));
         // If the rounded root equals the original number then we're good
         if (e.equals(Symbol.$parser.parse(this.multiplier))) {
             return rounded;
@@ -160,9 +166,9 @@ export class Symbol {
     isToNth(n) {
         // Start by check in the multiplier for squareness
         // First get the root but round it because currently we still depend
-        var root = this.getNth(n);
-        var nthMultiplier = isInt(root);
-        var nthPower;
+        let root = this.getNth(n);
+        let nthMultiplier = isInt(root);
+        let nthPower;
 
         if (this.group === Groups.CB) {
             // Start by assuming that all will be square.
@@ -170,7 +176,7 @@ export class Symbol {
             // All it takes is for one of the symbols to not have an even power
             // e.g. x^n1*y^n2 requires that both n1 and n2 are even
             this.each(function (x) {
-                var isNth = x.isToNth(n);
+                let isNth = x.isToNth(n);
 
                 if (!isNth) {
                     nthPower = false;
@@ -215,29 +221,28 @@ export class Symbol {
      */
     powSimp() {
         if (this.group === Groups.CB) {
-            var powers = [],
-                sign = this.multiplier.sign();
+            let powers = [];
             this.each(function (x) {
-                var p = x.power;
+                let p = x.power;
                 //why waste time if I can't do anything anyway
                 if (isSymbol(p) || p.equals(1))
                     return this.clone();
                 powers.push(p);
             });
-            var min = new Frac(arrayMin(powers));
+            let min = new Frac(arrayMin(powers));
 
             //handle the coefficient
             //handle the multiplier
-            var sign = this.multiplier.sign(),
-                m = this.multiplier.clone().abs(),
-                mfactors = Symbol.$Math2.ifactor(m);
+            let sign = this.multiplier.sign();
+            let m = this.multiplier.clone().abs(),
+                mfactors = Math2.ifactor(m);
             //if we have a multiplier of 6750 and a min of 2 then the factors are 5^3*5^3*2
             //we can then reduce it to 2*3*5*(15)^2
-            var out_ = new Frac(1);
-            var in_ = new Frac(1);
+            let out_ = new Frac(1);
+            let in_ = new Frac(1);
 
-            for (var x in mfactors) {
-                var n = new Frac(mfactors[x]);
+            for (let x in mfactors) {
+                let n = new Frac(mfactors[x]);
                 if (!n.lessThan(min)) {
                     n = n.divide(min).subtract(new Frac(1));
                     in_ = in_.multiply(new Frac(x)); //move the factor inside the bracket
@@ -245,14 +250,14 @@ export class Symbol {
 
                 out_ = out_.multiply(Symbol.$parser.parse(inBrackets(x) + '^' + inBrackets(n)).multiplier);
             }
-            var t = new Symbol(in_);
+            let t = new Symbol(in_);
             this.each(function (x) {
                 x = x.clone();
                 x.power = x.power.divide(min);
                 t = Symbol.$parser.multiply(t, x);
             });
 
-            var xt = symfunction(Settings.PARENTHESIS, [t]);
+            let xt = symfunction(Settings.PARENTHESIS, [t]);
             xt.power = min;
             xt.multiplier = sign < 0 ? out_.negate() : out_;
 
@@ -274,7 +279,7 @@ export class Symbol {
     }
 
     abs() {
-        var e = this.clone();
+        let e = this.clone();
         e.multiplier.abs();
         return e;
     }
@@ -318,7 +323,7 @@ export class Symbol {
      * @returns {boolean}
      */
     isPoly(multivariate = false) {
-        var g = this.group,
+        let g = this.group,
             p = this.power;
         //the power must be a integer so fail if it's not
         if (!isInt(p) || p < 0)
@@ -326,15 +331,15 @@ export class Symbol {
         //constants and first orders
         if (g === Groups.N || g === Groups.S || this.isConstant(true))
             return true;
-        var vars = Symbol.$variables(this);
+        let vars = Symbol.$variables(this);
         if (g === Groups.CB && vars.length === 1) {
             //the variable is assumed the only one that was found
-            var v = vars[0];
+            let v = vars[0];
             //if no variable then guess what!?!? We're done!!! We have a polynomial.
             if (!v)
                 return true;
-            for (var x in this.symbols) {
-                var sym = this.symbols[x];
+            for (let x in this.symbols) {
+                let sym = this.symbols[x];
                 //sqrt(x)
                 if (sym.group === Groups.FN && !sym.args[0].isConstant())
                     return false;
@@ -350,7 +355,7 @@ export class Symbol {
             if (!multivariate && vars.length > 1)
                 return false;
             //loop though the symbols and check if they qualify
-            for (var x in this.symbols) {
+            for (let x in this.symbols) {
                 //we've already the symbols if we're not checking for multivariates at this point
                 //so we check the sub-symbols
                 if (!this.symbols[x].isPoly(multivariate))
@@ -369,7 +374,7 @@ export class Symbol {
 
     //removes the requested variable from the symbol and returns the remainder
     stripVar(x, exclude_x) {
-        var retval;
+        let retval;
         if ((this.group === Groups.PL || this.group === Groups.S) && this.value === x)
             retval = new Symbol(exclude_x ? 0 : this.multiplier);
         else if (this.group === Groups.CB && this.isLinear()) {
@@ -387,7 +392,7 @@ export class Symbol {
             retval = new Symbol(0);
             this.each(function (s) {
                 if (!s.contains(x)) {
-                    var t = s.clone();
+                    let t = s.clone();
                     t.multiplier = t.multiplier.multiply(this.multiplier);
                     retval = Symbol.$parser.add(retval, t);
                 }
@@ -419,19 +424,19 @@ export class Symbol {
         arr = arr || {
             arr: [],
             add: function (x, idx) {
-                var e = this.arr[idx];
+                let e = this.arr[idx];
                 this.arr[idx] = e ? Symbol.$parser.add(e, x) : x;
             }
         };
-        var g = this.group;
+        let g = this.group;
 
         if (g === Groups.S && this.contains(v)) {
             arr.add(new Symbol(this.multiplier), this.power);
         }
         else if (g === Groups.CB) {
-            var a = this.stripVar(v),
+            let a = this.stripVar(v),
                 x = Symbol.$parser.divide(this.clone(), a.clone());
-            var p = x.isConstant() ? 0 : x.power;
+            let p = x.isConstant() ? 0 : x.power;
             arr.add(a, p);
         }
         else if (g === Groups.PL && this.value === v) {
@@ -454,7 +459,7 @@ export class Symbol {
         }
         //fill the holes
         arr = arr.arr; //keep only the array since we don't need the object anymore
-        for (var i = 0; i < arr.length; i++)
+        for (let i = 0; i < arr.length; i++)
             if (!arr[i])
                 arr[i] = new Symbol(0);
         return arr;
@@ -462,11 +467,11 @@ export class Symbol {
 
     //checks to see if a symbol contans a function
     hasFunc(v) {
-        var fn_group = this.group === Groups.FN || this.group === Groups.EX;
+        let fn_group = this.group === Groups.FN || this.group === Groups.EX;
         if (fn_group && !v || fn_group && this.contains(v))
             return true;
         if (this.symbols) {
-            for (var x in this.symbols) {
+            for (let x in this.symbols) {
                 if (this.symbols[x].hasFunc(v))
                     return true;
             }
@@ -479,7 +484,7 @@ export class Symbol {
         b = !isSymbol(b) ? Symbol.$parser.parse(b) : b.clone();
         if (a.group === Groups.N || a.group === Groups.P)
             err('Cannot substitute a number. Must be a variable');
-        var same_pow = false,
+        let same_pow = false,
             a_is_unit_multiplier = a.multiplier.equals(1),
             m = this.multiplier.clone(),
             retval;
@@ -507,18 +512,18 @@ export class Symbol {
         else if (this.group === Groups.CB || this.previousGroup === Groups.CB) {
             retval = new Symbol(1);
             this.each(function (x) {
-                var subbed = Symbol.$parser.parse(x.sub(a, b)); //parse it again for safety
+                let subbed = Symbol.$parser.parse(x.sub(a, b)); //parse it again for safety
                 retval = Symbol.$parser.multiply(retval, subbed);
 
             });
         }
         else if (this.isComposite()) {
-            var symbol = this.clone();
+            let symbol = this.clone();
 
             if (a.isComposite() && symbol.isComposite() && symbol.isLinear() && a.isLinear()) {
-                var find = function (stack, needle) {
-                    for (var x in stack.symbols) {
-                        var sym = stack.symbols[x];
+                let find = function (stack, needle) {
+                    for (let x in stack.symbols) {
+                        let sym = stack.symbols[x];
                         //if the symbol equals the needle or it's within the sub-symbols we're done
                         if (sym.isComposite() && find(sym, needle) || sym.equals(needle))
                             return true;
@@ -526,7 +531,7 @@ export class Symbol {
                     return false;
                 };
                 //go fish
-                for (var x in a.symbols) {
+                for (let x in a.symbols) {
                     if (!find(symbol, a.symbols[x]))
                         return symbol.clone();
                 }
@@ -544,9 +549,9 @@ export class Symbol {
             retval = Symbol.$parser.parse(this.value).sub(a, b);
         }
         else if (this.group === Groups.FN) {
-            var nargs = [];
-            for (var i = 0; i < this.args.length; i++) {
-                var arg = this.args[i];
+            let nargs = [];
+            for (let i = 0; i < this.args.length; i++) {
+                let arg = this.args[i];
                 if (!isSymbol(arg))
                     arg = Symbol.$parser.parse(arg);
                 nargs.push(arg.sub(a, b));
@@ -557,7 +562,7 @@ export class Symbol {
         if (retval) {
             if (!same_pow) {
                 //substitute the power
-                var p = this.group === Groups.EX ? this.power.sub(a, b) : Symbol.$parser.parse(this.power);
+                let p = this.group === Groups.EX ? this.power.sub(a, b) : Symbol.$parser.parse(this.power);
                 //now raise the symbol to that power
                 retval = Symbol.$parser.pow(retval, p);
             }
@@ -576,7 +581,7 @@ export class Symbol {
         if (this.group === Groups.S)
             return true;
         if (this.group === Groups.CB) {
-            for (var x in this.symbols)
+            for (let x in this.symbols)
                 if (this.symbols[x].group !== Groups.S)
                     return false;
         }
@@ -603,14 +608,14 @@ export class Symbol {
 
     isConstant(check_all, check_symbols) {
         if (check_symbols && this.group === Groups.CB) {
-            for (var x in this.symbols) {
+            for (let x in this.symbols) {
                 if (this.symbols[x].isConstant(true))
                     return true;
             }
         }
 
         if (check_all === 'functions' && this.isComposite()) {
-            var isConstant = true;
+            let isConstant = true;
 
             this.each(function (x) {
                 if (!x.isConstant(check_all, check_symbols)) {
@@ -626,7 +631,7 @@ export class Symbol {
         }
 
         if (check_all && this.group === Groups.FN) {
-            for (var i = 0; i < this.args.length; i++) {
+            for (let i = 0; i < this.args.length; i++) {
                 if (!this.args[i].isConstant(check_all))
                     return false;
             }
@@ -646,7 +651,7 @@ export class Symbol {
         if (this.imaginary)
             return true;
         else if (this.symbols) {
-            for (var x in this.symbols)
+            for (let x in this.symbols)
                 if (this.symbols[x].isImaginary())
                     return true;
         }
@@ -664,7 +669,7 @@ export class Symbol {
         else if (this.imaginary)
             return new Symbol(0);
         else if (this.isComposite()) {
-            var retval = new Symbol(0);
+            let retval = new Symbol(0);
             this.each(function (x) {
                 retval = Symbol.$parser.add(retval, x.realpart());
             });
@@ -683,7 +688,7 @@ export class Symbol {
         if (this.group === Groups.S && this.isImaginary())
             return new Symbol(this.multiplier);
         if (this.isComposite()) {
-            var retval = new Symbol(0);
+            let retval = new Symbol(0);
             this.each(function (x) {
                 retval = Symbol.$parser.add(retval, x.imagpart());
             });
@@ -710,7 +715,7 @@ export class Symbol {
             }
 
             if (this.isComposite() && this.power.equals(1)) {
-                for (var x in this.symbols) {
+                for (let x in this.symbols) {
                     if (!this.symbols[x].isLinear(wrt))
                         return false;
                 }
@@ -736,7 +741,7 @@ export class Symbol {
         if (this.group === Groups.FN && names.indexOf(this.fname) !== -1)
             return true;
         if (this.symbols) {
-            for (var x in this.symbols) {
+            for (let x in this.symbols) {
                 if (this.symbols[x].containsFunction(names))
                     return true;
             }
@@ -749,10 +754,10 @@ export class Symbol {
         if (this.group === Groups.N && this.multiplier.equals(1))
             return this;
 
-        var p1 = this.power;
+        let p1 = this.power;
 
         if (this.group !== Groups.EX && p2.group === Groups.N) {
-            var p = p2.multiplier;
+            let p = p2.multiplier;
             if (this.group === Groups.N && !p.isInteger()) {
                 this.convert(Groups.P);
             }
@@ -767,7 +772,7 @@ export class Symbol {
             }
         }
         else {
-            if (this.group !== Groups.EX)  {
+            if (this.group !== Groups.EX) {
                 p1 = new Symbol(p1);
                 this.convert(Groups.EX);
             }
@@ -785,7 +790,7 @@ export class Symbol {
         if (this.group === Groups.EX && !isSymbol(p)) {
             this.group = this.previousGroup;
             delete this.previousGroup;
-            if (this.group === Groups.N)  {
+            if (this.group === Groups.N) {
                 this.multiplier = new Frac(this.value);
                 this.value = Settings.CONST_HASH;
             }
@@ -793,9 +798,9 @@ export class Symbol {
                 this.power = p;
         }
         else {
-            var isSymbolic = false;
+            let isSymbolic = false;
             if (isSymbol(p)) {
-                if (p.group === Groups.N)  {
+                if (p.group === Groups.N) {
                     //p should be the multiplier instead
                     p = p.multiplier;
 
@@ -804,7 +809,7 @@ export class Symbol {
                     isSymbolic = true;
                 }
             }
-            var group = isSymbolic ? Groups.EX : Groups.P;
+            let group = isSymbolic ? Groups.EX : Groups.P;
             this.power = p;
             if (this.group === Groups.N && group)
                 this.convert(group, retainSign);
@@ -830,15 +835,15 @@ export class Symbol {
      * @param {Symbol | undefined} c
      * @returns {Symbol}
      */
-    clone(c= undefined) {
-        var clone = c || new Symbol(0),
+    clone(c = undefined) {
+        let clone = c || new Symbol(0),
             //list of properties excluding power as this may be a symbol and would also need to be a clone.
             properties = [
                 'value', 'group', 'length', 'previousGroup', 'imaginary', 'fname', 'args', 'isInfinity', 'scientific'],
             l = properties.length, i;
         if (this.symbols) {
             clone.symbols = {};
-            for (var x in this.symbols) {
+            for (let x in this.symbols) {
                 clone.symbols[x] = this.symbols[x].clone();
             }
         }
@@ -866,7 +871,7 @@ export class Symbol {
      * @param {Boolean} keepSign Keep the multiplier as negative if the multiplier is negative and keepSign is true
      * @returns {Symbol}
      */
-    toUnitMultiplier(keepSign) {
+    toUnitMultiplier(keepSign = false) {
         this.multiplier.num = new bigInt(this.multiplier.num.isNegative() && keepSign ? -1 : 1);
         this.multiplier.den = new bigInt(1);
         return this;
@@ -889,16 +894,17 @@ export class Symbol {
      * Iterates over all the sub-symbols. If no sub-symbols exist then it's called on itself
      * @param {Function} fn
      * @@param {Boolean} deep If true it will itterate over the sub-symbols their symbols as well
+     * @param deep
      */
     each(fn, deep) {
         if (!this.symbols) {
             fn.call(this, this, this.value);
         }
         else {
-            for (var x in this.symbols) {
-                var sym = this.symbols[x];
+            for (let x in this.symbols) {
+                let sym = this.symbols[x];
                 if (sym.group === Groups.PL && deep) {
-                    for (var y in sym.symbols) {
+                    for (let y in sym.symbols) {
                         fn.call(x, sym.symbols[y], y);
                     }
                 }
@@ -924,7 +930,7 @@ export class Symbol {
             return 0;
         }
         else {
-            return Symbol.$text(this, 'decimals');
+            return text(this, 'decimals');
         }
     }
 
@@ -932,7 +938,7 @@ export class Symbol {
      * Checks to see if a symbols has a particular variable within it.
      * Pass in true as second argument to include the power of exponentials
      * which aren't check by default.
-     * @example var s = _.parse('x+y+z'); s.contains('y');
+     * @example let s = _.parse('x+y+z'); s.contains('y');
      * //returns true
      * @param {any} variable
      * @param {boolean} all
@@ -941,23 +947,23 @@ export class Symbol {
     contains(variable, all) {
         //contains expects a string
         variable = String(variable);
-        var g = this.group;
+        let g = this.group;
         if (this.value === variable)
             return true;
         if (this.symbols) {
-            for (var x in this.symbols) {
+            for (let x in this.symbols) {
                 if (this.symbols[x].contains(variable, all))
                     return true;
             }
         }
         if (g === Groups.FN || this.previousGroup === Groups.FN) {
-            for (var i = 0; i < this.args.length; i++) {
+            for (let i = 0; i < this.args.length; i++) {
                 if (this.args[i].contains(variable, all))
                     return true;
             }
         }
 
-        if (g === Groups.EX)  {
+        if (g === Groups.EX) {
             //exit only if it does
             if (all && this.power.contains(variable, all)) {
                 return true;
@@ -1016,11 +1022,11 @@ export class Symbol {
      * @param {boolean} all
      * @returns {Symbol}
      */
-    distributeMultiplier(all) {
-        var is_one = all ? this.power.absEquals(1) : this.power.equals(1);
+    distributeMultiplier(all = false) {
+        let is_one = all ? this.power.absEquals(1) : this.power.equals(1);
         if (this.symbols && is_one && this.group !== Groups.CB && !this.multiplier.equals(1)) {
-            for (var x in this.symbols) {
-                var s = this.symbols[x];
+            for (let x in this.symbols) {
+                let s = this.symbols[x];
                 s.multiplier = s.multiplier.multiply(this.multiplier);
                 s.distributeMultiplier();
             }
@@ -1037,10 +1043,10 @@ export class Symbol {
      */
     distributeExponent() {
         if (!this.power.equals(1)) {
-            var p = this.power;
-            for (var x in this.symbols) {
-                var s = this.symbols[x];
-                if (s.group === Groups.EX)  {
+            let p = this.power;
+            for (let x in this.symbols) {
+                let s = this.symbols[x];
+                if (s.group === Groups.EX) {
                     s.power = Symbol.$parser.multiply(s.power, new Symbol(p));
                 }
                 else {
@@ -1060,10 +1066,10 @@ export class Symbol {
      * @param {number} group
      * @param {string} imaginary
      */
-    convert(group, imaginary) {
+    convert(group, imaginary = undefined) {
         if (group > Groups.FN) {
             //make a clone of this symbol;
-            var cp = this.clone();
+            let cp = this.clone();
 
             //attach a symbols object and upgrade the group
             this.symbols = {};
@@ -1098,29 +1104,29 @@ export class Symbol {
             //of sub-symbols we have to impliment our own.
             this.length = 1;
         }
-        else if (group === Groups.EX)  {
+        else if (group === Groups.EX) {
             //1^x is just one so check and make sure
             if (!(this.group === Groups.N && this.multiplier.equals(1))) {
                 if (this.group !== Groups.EX)
                     this.previousGroup = this.group;
-                if (this.group === Groups.N)  {
+                if (this.group === Groups.N) {
                     this.value = this.multiplier.num.toString();
                     this.toUnitMultiplier();
                 }
                 //update the hash to reflect the accurate hash
                 else
-                    this.value = Symbol.$text(this, 'hash');
+                    this.value = text(this, 'hash');
 
                 this.group = Groups.EX;
             }
         }
-        else if (group === Groups.N)  {
-            var m = this.multiplier.toDecimal();
+        else if (group === Groups.N) {
+            let m = this.multiplier.toDecimal();
             if (this.symbols)
                 this.symbols = undefined;
             new Symbol(this.group === Groups.P ? m * Math.pow(this.value, this.power) : m).clone(this);
         }
-        else if (group === Groups.P && this.group === Groups.N)  {
+        else if (group === Groups.P && this.group === Groups.N) {
             this.value = imaginary ? this.multiplier.num.toString() : Math.abs(this.multiplier.num.toString());
             this.toUnitMultiplier(!imaginary);
             this.group = Groups.P;
@@ -1148,12 +1154,12 @@ export class Symbol {
         if (!isSymbol(symbol))
             err('Object ' + symbol + ' is not of type Symbol!');
         if (this.symbols) {
-            var group = this.group;
+            let group = this.group;
             if (group > Groups.FN) {
-                var key = symbol.keyForGroup(group);
-                var existing = key in this.symbols ? this.symbols[key] : false; //check if there's already a symbol there
+                let key = symbol.keyForGroup(group);
+                let existing = key in this.symbols ? this.symbols[key] : false; //check if there's already a symbol there
                 if (action === 'add') {
-                    var hash = key;
+                    let hash = key;
                     if (existing) {
                         //add them together using the parser
                         this.symbols[hash] = Symbol.$parser.add(existing, symbol);
@@ -1180,7 +1186,7 @@ export class Symbol {
                     }
 
                     //transfer the multiplier to the upper symbol but only if the symbol numeric
-                    if (symbol.group !== Groups.EX)  {
+                    if (symbol.group !== Groups.EX) {
                         this.multiplier = this.multiplier.multiply(symbol.multiplier);
                         symbol.toUnitMultiplier();
                     }
@@ -1228,7 +1234,7 @@ export class Symbol {
     //the insert method for addition
     attach(symbol) {
         if (Array.isArray(symbol)) {
-            for (var i = 0; i < symbol.length; i++)
+            for (let i = 0; i < symbol.length; i++)
                 this.insert(symbol[i], 'add');
             return this;
         }
@@ -1238,7 +1244,7 @@ export class Symbol {
     //the insert method for multiplication
     combine(symbol) {
         if (Array.isArray(symbol)) {
-            for (var i = 0; i < symbol.length; i++)
+            for (let i = 0; i < symbol.length; i++)
                 this.insert(symbol[i], 'multiply');
             return this;
         }
@@ -1255,16 +1261,16 @@ export class Symbol {
             return;
 
         if (this.group === Groups.FN) {
-            var contents = '',
+            let contents = '',
                 args = this.args,
                 is_parens = this.fname === Settings.PARENTHESIS;
-            for (var i = 0; i < args.length; i++)
-                contents += (i === 0 ? '' : ',') + Symbol.$text(args[i]);
-            var fn_name = is_parens ? '' : this.fname;
+            for (let i = 0; i < args.length; i++)
+                contents += (i === 0 ? '' : ',') + text(args[i]);
+            let fn_name = is_parens ? '' : this.fname;
             this.value = fn_name + (is_parens ? contents : inBrackets(contents));
         }
         else if (!(this.group === Groups.S || this.group === Groups.PL)) {
-            this.value = Symbol.$text(this, 'hash');
+            this.value = text(this, 'hash');
         }
     }
 
@@ -1275,10 +1281,10 @@ export class Symbol {
      * @param {int} group
      */
     keyForGroup(group) {
-        var g = this.group;
-        var key;
+        let g = this.group;
+        let key;
 
-        if (g === Groups.N)  {
+        if (g === Groups.N) {
             key = this.value;
         }
         else if (g === Groups.S || g === Groups.P) {
@@ -1291,18 +1297,18 @@ export class Symbol {
             if (group === Groups.PL)
                 key = this.power.toDecimal();
             else
-                key = Symbol.$text(this, 'hash');
+                key = text(this, 'hash');
         }
         else if (g === Groups.PL) {
             //if the order is reversed then we'll assume multiplication
             //TODO: possible future dilemma
             if (group === Groups.CB)
-                key = Symbol.$text(this, 'hash');
+                key = text(this, 'hash');
             else if (group === Groups.CP) {
                 if (this.power.equals(1))
                     key = this.value;
                 else
-                    key = inBrackets(Symbol.$text(this, 'hash')) + Settings.POWER_OPERATOR + this.power.toDecimal();
+                    key = inBrackets(text(this, 'hash')) + Settings.POWER_OPERATOR + this.power.toDecimal();
             }
             else if (group === Groups.PL)
                 key = this.power.toString();
@@ -1312,7 +1318,7 @@ export class Symbol {
         }
         else if (g === Groups.CP) {
             if (group === Groups.CP) {
-                key = Symbol.$text(this, 'hash');
+                key = text(this, 'hash');
             }
             if (group === Groups.PL)
                 key = this.power.toDecimal();
@@ -1323,13 +1329,13 @@ export class Symbol {
             if (group === Groups.PL)
                 key = this.power.toDecimal();
             else
-                key = Symbol.$text(this, 'hash');
+                key = text(this, 'hash');
         }
-        else if (g === Groups.EX)  {
+        else if (g === Groups.EX) {
             if (group === Groups.PL)
-                key = Symbol.$text(this.power);
+                key = text(this.power);
             else
-                key = Symbol.$text(this, 'hash');
+                key = text(this, 'hash');
         }
 
         return key;
@@ -1345,15 +1351,16 @@ export class Symbol {
      * @param {Object} opt
      * @param {Function} sort_fn
      * @@param {Boolean} expand_symbol
+     * @param expand_symbol
      * @returns {Array}
      */
-    collectSymbols(fn, opt, sort_fn, expand_symbol) {
-        var collected = [];
+    collectSymbols(fn, opt, sort_fn = undefined, expand_symbol = false) {
+        let collected = [];
         if (!this.symbols)
             collected.push(this);
         else {
-            for (var x in this.symbols) {
-                var symbol = this.symbols[x];
+            for (let x in this.symbols) {
+                let symbol = this.symbols[x];
                 if (expand_symbol && (symbol.group === Groups.PL || symbol.group === Groups.CP)) {
                     collected = collected.concat(symbol.collectSymbols());
                 }
@@ -1373,7 +1380,7 @@ export class Symbol {
      * @returns {String}
      */
     latex(option) {
-        return Symbol.$LaTeX.latex(this, option);
+        return LaTeX.latex(this, option);
     }
 
     /**
@@ -1381,8 +1388,8 @@ export class Symbol {
      * @param {String} option
      * @returns {String}
      */
-    text(option) {
-        return Symbol.$text(this, option);
+    text(option = undefined) {
+        return text(this, option);
     }
 
     /**
@@ -1390,7 +1397,7 @@ export class Symbol {
      * @@param {bool} abs Compares the absolute value
      */
     isOne(abs) {
-        var f = abs ? 'absEquals' : 'equals';
+        let f = abs ? 'absEquals' : 'equals';
         if (this.group === Groups.N)
             return this.multiplier[f](1);
         else
@@ -1398,13 +1405,13 @@ export class Symbol {
     }
 
     isComposite() {
-        var g = this.group,
+        let g = this.group,
             pg = this.previousGroup;
         return g === Groups.CP || g === Groups.PL || pg === Groups.PL || pg === Groups.CP;
     }
 
     isCombination() {
-        var g = this.group,
+        let g = this.group,
             pg = this.previousGroup;
         return g === Groups.CB || pg === Groups.CB;
     }
@@ -1433,7 +1440,7 @@ export class Symbol {
      * denominator and has to be found by looking at the actual symbols themselves.
      */
     getDenom() {
-        var retval, symbol;
+        let retval, symbol;
         symbol = this.clone();
         //e.g. 1/(x*(x+1))
         if (this.group === Groups.CB && this.power.lessThan(0))
@@ -1441,14 +1448,14 @@ export class Symbol {
 
         //if the symbol already is the denominator... DONE!!!
         if (symbol.power.lessThan(0)) {
-            var d = Symbol.$parser.parse(symbol.multiplier.den);
+            let d = Symbol.$parser.parse(symbol.multiplier.den);
             retval = symbol.toUnitMultiplier();
             retval.power.negate();
             retval = Symbol.$parser.multiply(d, retval); //put back the coeff
         }
         else if (symbol.group === Groups.CB) {
             retval = Symbol.$parser.parse(symbol.multiplier.den);
-            for (var x in symbol.symbols)
+            for (let x in symbol.symbols)
                 if (symbol.symbols[x].power < 0)
                     retval = Symbol.$parser.multiply(retval, symbol.symbols[x].clone().invert());
         }
@@ -1458,7 +1465,7 @@ export class Symbol {
     }
 
     getNum() {
-        var retval, symbol;
+        let retval, symbol;
         symbol = this.clone();
         //e.g. 1/(x*(x+1))
         if (symbol.group === Groups.CB && symbol.power.lessThan(0))
@@ -1520,7 +1527,7 @@ export function isFraction(num) {
     if (isSymbol(num))
         return isFraction(num.multiplier.toDecimal());
     return (num % 1 !== 0);
-};
+}
 
 /**
  * @param {Number|Symbol} obj
@@ -1531,7 +1538,7 @@ export function isNegative(obj) {
         obj = obj.multiplier;
     }
     return obj.lessThan(0);
-};
+}
 
 /**
  * Generates library's representation of a function. It's a fancy way of saying a symbol with
@@ -1543,7 +1550,7 @@ export function isNegative(obj) {
  */
 export function symfunction(fn_name, params) {
     //call the proper function and return the result;
-    var f = new Symbol(fn_name);
+    let f = new Symbol(fn_name);
     f.group = Groups.FN;
     if (typeof params === 'object') {
         params = [].slice.call(params);//ensure an array
