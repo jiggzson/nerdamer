@@ -1,6 +1,5 @@
 import {block} from '../Core/Utils';
-
-const {Symbol} = require('../Core/Symbol');
+import {Symbol} from '../Core/Symbol';
 
 export class Vector {
     elements;

@@ -1,12 +1,13 @@
-const bigInt = require('../3rdparty/bigInt');
-const {default: Scientific} = require('./Scientific');
-const {Settings} = require('../Settings');
-const {isSymbol} = require('./Symbol');
-const {inBrackets, nround} = require('./Utils');
-const {isVector} = require('../Parser/Vector');
-const {Groups} = require('./Groups');
+import bigInt from '../3rdparty/bigInt';
+import Scientific from './Scientific';
+import {Settings} from '../Settings';
+import {isSymbol} from './Symbol';
+import {inBrackets, nround} from './Utils';
+import {isVector} from '../Parser/Vector';
+import {Groups} from './Groups';
 
-const TextDependencies = {
+
+export const TextDependencies = {
     CUSTOM_OPERATORS: null
 };
 const deps = TextDependencies;
@@ -21,7 +22,7 @@ const deps = TextDependencies;
  * @param {int | undefined} decp
  * @returns {String}
  */
-function text(obj, option= undefined, useGroup= undefined, decp= undefined) {
+export function text(obj, option= undefined, useGroup= undefined, decp= undefined) {
     var asHash = option === 'hash',
         //whether to wrap numbers in brackets
         wrapCondition = undefined,
@@ -293,5 +294,3 @@ function text(obj, option= undefined, useGroup= undefined, decp= undefined) {
         }
     }
 }
-
-module.exports = { text, TextDependencies };

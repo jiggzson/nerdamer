@@ -1,14 +1,14 @@
 //object for functions which handle trig
-const {Symbol, symfunction} = require('./Symbol');
-const {Settings} = require('../Settings');
-const bigDec = require('decimal.js');
-const {isInt, even, format} = require('./Utils');
-const {Math2} = require('./Math2');
-const {Complex} = require('./Complex');
-const {UndefinedError, OutOfFunctionDomainError} = require('./Errors');
-const {getQuadrant} = require('./Frac');
+import {Symbol, symfunction} from './Symbol';
+import {Settings} from '../Settings';
+import bigDec from 'decimal.js';
+import {even, format, isInt} from './Utils';
+import {Math2} from './Math2';
+import {Complex} from './Complex';
+import {OutOfFunctionDomainError, UndefinedError} from './Errors';
+import {getQuadrant} from './Frac';
 
-const Trig = {
+export const Trig = {
     //container for trigonometric function
     cos: function (symbol) {
         if (symbol.equals('pi') && symbol.multiplier.den.equals(2))
@@ -470,5 +470,3 @@ const Trig = {
         return symfunction('atan2', arguments);
     }
 };
-
-module.exports = { Trig };

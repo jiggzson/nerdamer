@@ -227,12 +227,15 @@ export const Build = {
 
         // make all the substitutions;
         for (var x in dependencies[0]) {
+            f_array[1] = f_array[1].replace('exports.', '');
+            dependencies[1] = dependencies[1].replace('exports.', '');
+
             var alias = dependencies[0][x];
             f_array[1] = f_array[1].replace(x, alias);
             dependencies[1] = dependencies[1].replace(x, alias);
         }
 
-        var f = new Function(args, (dependencies[1] || '') + f_array[1] + ' return ' + f_array[0] + ';');
+        var f = new Function(args,  (dependencies[1] || '') + f_array[1] + ' return ' + f_array[0] + ';');
 
         return f;
     }

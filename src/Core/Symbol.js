@@ -1,12 +1,11 @@
-const bigDec = require("decimal.js");
-const {Settings} = require("../Settings");
-const {validateName} = require('./Utils');
-const {Groups} = require("./Groups");
-const {Frac} = require('./Frac');
+import bigDec from 'decimal.js';
+import {Settings} from '../Settings';
+import {arrayMin, inBrackets, isInt, nround, remove, validateName} from './Utils';
+import {Groups} from './Groups';
+import {Frac} from './Frac';
+import bigInt from '../3rdparty/bigInt';
+import {err, NerdamerTypeError} from './Errors';
 
-const {nround, isInt, arrayMin, inBrackets, remove} = require('./Utils');
-const bigInt = require('../3rdparty/bigInt');
-const {NerdamerTypeError, err} = require('./Errors');
 
 /**
  * All symbols e.g. x, y, z, etc or functions are wrapped in this class. All symbols have a multiplier and a group.
@@ -15,7 +14,7 @@ const {NerdamerTypeError, err} = require('./Errors');
  * @param {String | number} obj
  * @returns {Symbol}
  */
-class Symbol {
+export class Symbol {
     // injected dependencies
     static $parser
 
@@ -1491,25 +1490,25 @@ class Symbol {
  * Checks to see if the object provided is a Symbol
  * @param {Object} obj
  */
-var isSymbol = function (obj) {
+export function isSymbol(obj) {
     return (obj instanceof Symbol);
-};
+}
 
 /**
  * Checks to see if a symbol is in group N
  * @param {Symbol} symbol
  */
-var isNumericSymbol = function (symbol) {
+export function isNumericSymbol(symbol) {
     return symbol.group === Groups.N || symbol.group === Groups.P;
-};
+}
 
 /**
  * Checks to see if a symbol is a variable with no multiplier nor power
  * @param {Symbol} symbol
  */
-var isVariableSymbol = function (symbol) {
+export function isVariableSymbol(symbol) {
     return symbol.group === Groups.S && symbol.multiplier.equals(1) && symbol.power.equals(1);
-};
+}
 
 
 /**
@@ -1517,7 +1516,7 @@ var isVariableSymbol = function (symbol) {
  * @param {Number|Symbol} num
  * @returns {boolean}
  */
-var isFraction = function (num) {
+export function isFraction(num) {
     if (isSymbol(num))
         return isFraction(num.multiplier.toDecimal());
     return (num % 1 !== 0);
@@ -1527,7 +1526,7 @@ var isFraction = function (num) {
  * @param {Number|Symbol} obj
  * @returns {boolean}
  */
-var isNegative = function (obj) {
+export function isNegative(obj) {
     if (isSymbol(obj)) {
         obj = obj.multiplier;
     }
@@ -1554,5 +1553,3 @@ export function symfunction(fn_name, params) {
     f.updateHash();
     return f;
 }
-
-module.exports = { Symbol, isVariableSymbol, isNumericSymbol, isSymbol, isFraction, isNegative, symfunction };

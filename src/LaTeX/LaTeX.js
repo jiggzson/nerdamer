@@ -1,13 +1,13 @@
-const {isSymbol, isNegative} = require('../Core/Symbol');
-const {isMatrix} = require('../Parser/Matrix');
-const {Settings} = require('../Settings');
-const {inBrackets} = require('../Core/Utils');
-const {Groups} = require('../Core/Groups');
-const {isSet} = require('../Parser/Set');
-const {isVector} = require('../Parser/Vector');
-const {Collection} = require('../Parser/Collection');
+import {isNegative, isSymbol} from '../Core/Symbol';
+import {isMatrix} from '../Parser/Matrix';
+import {Settings} from '../Settings';
+import {inBrackets} from '../Core/Utils';
+import {Groups} from '../Core/Groups';
+import {isSet} from '../Parser/Set';
+import {isVector} from '../Parser/Vector';
+import {Collection} from '../Parser/Collection';
 
-class LaTeX {
+export class LaTeX {
     static space = '~';
     static dot = ' \\cdot ';
 
@@ -787,7 +787,3 @@ class LaTeX {
         return inBrackets(retval);
     }
 }
-
-module.exports = {
-    LaTeX
-};

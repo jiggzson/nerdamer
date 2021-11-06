@@ -62,6 +62,7 @@ export class UnexpectedTokenError extends Error {
   name = 'UnexpectedTokenError';
 }
 
+
 /**
  * Use this when errors are suppressible
  * @param {String} message

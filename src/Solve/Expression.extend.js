@@ -1,4 +1,4 @@
-const Equation = require("./Equation");
+import Equation from './Equation';
 
 module.exports = function(core, solve, variables) {
     const _ = core.PARSER;

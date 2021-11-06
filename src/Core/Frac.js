@@ -1,11 +1,11 @@
-const {isInt} = require("./Utils");
-const bigDec = require("decimal.js");
-const bigInt = require('../3rdparty/bigInt');
-const {default: Scientific} = require("./Scientific");
-const {Settings} = require('../Settings');
-const {DivisionByZero} = require('./Errors');
+import {isInt} from './Utils';
+import bigDec from 'decimal.js';
+import bigInt from '../3rdparty/bigInt';
+import Scientific from './Scientific';
+import {DivisionByZero} from './Errors';
+import {Settings} from '../Settings';
 
-class Frac {
+export class Frac {
     constructor(n) {
         if (n instanceof Frac)
             return n;
@@ -433,7 +433,7 @@ var Fraction = {
  * @param {Frac} m
  * @returns {Int}
  */
-function getQuadrant(m) {
+export function getQuadrant(m) {
     var v = m % 2, quadrant;
 
     if (v < 0)
@@ -449,5 +449,3 @@ function getQuadrant(m) {
         quadrant = 4;
     return quadrant;
 }
-
-module.exports = {Frac, getQuadrant};

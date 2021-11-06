@@ -3,15 +3,17 @@
 //I really don't like touching objects which aren't mine hence the reason for Math2. The names of the
 //functions within are pretty self-explanatory.
 //NOTE: DO NOT USE INLINE COMMENTS WITH THE MATH2 OBJECT! THIS BREAK DURING COMPILATION OF BUILDFUNCTION.
-const {Frac} = require("./Frac");
-const bigInt = require("../3rdparty/bigInt");
-const {isInt, nround, arrayUnique, arrayMin, warn, even} = require("./Utils");
-const {Symbol} = require("./Symbol");
-const {PRIMES, generatePrimes, BIGLOG_CACHE} = require('./Math.consts');
-const {Groups} = require("./Groups");
+
+import {Frac} from './Frac';
+import bigInt from '../3rdparty/bigInt';
+import {arrayMin, arrayUnique, even, isInt, nround, warn} from './Utils';
+import {Symbol} from './Symbol';
+import {PRIMES, generatePrimes, BIGLOG_CACHE} from './Math.consts';
+import {Groups} from './Groups';
+
 
 // noinspection JSUnusedGlobalSymbols
-var Math2 = {
+export var Math2 = {
     csc: function (x) {
         return 1 / Math.sin(x);
     },
@@ -945,5 +947,3 @@ Math.trunc = Math.trunc || function (x) {
     }
     return Math.ceil(x);
 };
-
-module.exports = {Math2};

@@ -1,32 +1,13 @@
-const {Token} = require('./Token');
-const {Settings} = require('../Settings');
-const {Symbol} = require('../Core/Symbol');
-const {Collection} = require('./Collection');
-const {Slice} = require('./Slice');
-const {Vector} = require('./Vector');
-const {Set} = require('./Set');
+import {Token} from './Token';
+import {Settings} from '../Settings';
+import {Symbol} from '../Core/Symbol';
+import {Collection} from './Collection';
+import {Slice} from './Slice';
+import {Vector} from './Vector';
+import {Set} from './Set';
+import {OperatorError, OutOfRangeError, UnexpectedTokenError} from '../Core/Errors';
 
-class OperatorError extends Error {
-    name = 'OperatorError';
-}
-
-class UnexpectedTokenError extends Error {
-    name = 'UnexpectedTokenError';
-}
-
-// class ParseError extends Error {
-//     name = 'ParseError';
-// }
-
-class OutOfRangeError extends Error {
-    name = 'OutOfRangeError';
-}
-
-// class OutOfFunctionDomainError extends Error {
-//     name = 'OutOfFunctionDomainError';
-// }
-
-class RPN {
+export class RPN {
     deps;
 
     constructor(deps) {
@@ -385,10 +366,3 @@ class RPN {
         // }
     }
 }
-
-
-
-
-module.exports = {
-    RPN
-};

@@ -1,4 +1,4 @@
-const {isVector, Vector} = require('./Vector');
+import {isVector, Vector} from './Vector';
 
 export class Set {
     elements;

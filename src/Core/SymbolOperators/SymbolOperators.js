@@ -1,6 +1,6 @@
 import {Settings} from '../../Settings';
 import {Groups} from '../Groups';
-import {isSymbol, symfunction} from '../Symbol';
+import {isSymbol, Symbol, symfunction} from '../Symbol';
 import bigDec from 'decimal.js';
 import {Frac} from '../Frac';
 import {even, evenFraction, firstObject, isInt} from '../Utils';
@@ -15,7 +15,7 @@ import {isPrime, warn} from '../Utils';
 import {PRIMES} from '../Math.consts';
 import {isNumericSymbol} from '../Symbol';
 import {Vector} from '../../Parser/Vector';
-const {Symbol} = require('../Symbol');
+
 
 export const SymbolOperatorsDeps = {
     parse: null,

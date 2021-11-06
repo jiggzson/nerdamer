@@ -1,6 +1,6 @@
-const {Settings} = require("../Settings");
+import {Settings} from '../Settings';
 
-function createFunctions(deps) {
+export function createFunctions(deps) {
     let {
         trig, trigh, exp, radians, degrees, print,
         min, max, sinc, sign, factorial, continued_fraction,
@@ -123,7 +123,7 @@ function createFunctions(deps) {
 }
 
 //this function is used to comb through the function modules and find a function given its name
-function findFunction(fname) {
+export function findFunction(fname) {
     var fmodules = Settings.FUNCTION_MODULES,
         l = fmodules.length;
     for (var i = 0; i < l; i++) {
@@ -133,8 +133,3 @@ function findFunction(fname) {
     }
     err('The function ' + fname + ' is undefined!');
 }
-
-module.exports = {
-    createFunctions: createFunctions,
-    findFunction: findFunction
-};

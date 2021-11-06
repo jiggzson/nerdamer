@@ -7,33 +7,36 @@
  * stack.
  * @param {String} token
  */
+import {Token} from './Token';
 
 export class Node {
-    type;
-    value;
-    left;
-    right;
+    type: string;
+    value: string;
+    left?: Node;
+    right?: Node;
 
-    constructor(token) {
+    constructor(token: Token | Node) {
         this.type = token.type;
         this.value = token.value;
+
         //the incoming token may already be a Node type
-        this.left = token.left;
-        this.right = token.right;
+        if (token instanceof Node) {
+            this.left = token.left;
+            this.right = token.right;
+        }
     }
 
     toString() {
-        let left = this.left ? this.left.toString() + '---' : '';
-        let right = this.right ? '---' + this.right.toString() : '';
+        let left: string = this.left ? this.left.toString() + '---' : '';
+        let right: string = this.right ? '---' + this.right.toString() : '';
         return left + '(' + this.value + ')' + right;
     }
 
-    toHTML(depth, indent) {
-        depth = depth || 0;
-        indent = typeof indent === 'undefined' ? 4 : indent;
-        let tab = function (n) {
+    toHTML(depth: number = 0, indent: number = 4) {
+        let tab = function(n: number) {
             return ' '.repeat(indent * n);
-        };
+        }
+
         let html = '';
         let left = this.left ? tab(depth + 1) + '<li>\n' + this.left.toHTML(depth + 2, indent) + tab(depth + 1) + '</li> \n' : '';
         let right = this.right ? tab(depth + 1) + '<li>\n' + this.right.toHTML(depth + 2, indent) + tab(depth + 1) + '</li>\n' : '';

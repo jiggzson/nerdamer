@@ -1,11 +1,11 @@
 //object for functions which handle hyperbolic trig
-const {Settings} = require('../Settings');
-const {Symbol, symfunction} = require('./Symbol');
-const {format} = require('./Utils');
-const {Complex} = require('./Complex');
-const {log, add, sqrt, subtract, divide, pow} = require('./SymbolOperators/SymbolOperators');
+import {Settings} from '../Settings';
+import {Symbol, symfunction} from './Symbol';
+import {format} from './Utils';
+import {Complex} from './Complex';
+import {add, divide, log, pow, sqrt, subtract} from './SymbolOperators/SymbolOperators';
 
-const TrigHyperbolic = {
+export const TrigHyperbolic = {
     //container for hyperbolic trig function
     cosh: function (symbol) {
         var retval;
@@ -151,8 +151,4 @@ const TrigHyperbolic = {
             retval = symfunction('acoth', arguments);
         return retval;
     }
-};
-
-module.exports = {
-    TrigHyperbolic
 };

@@ -6,45 +6,48 @@
  * Source : https://github.com/jiggzson/nerdamer
  */
 
-const {nround, isInt, isPrime, isNumber, validateName, arrayUnique,
-    arrayMin, arrayMax, warn, even, inBrackets, remove, format, firstObject,
-    evenFraction, allSame, allNumeric, block, pretty_print
-} = require('./Core/Utils');
-const Settings = require('./Settings').Settings;
-const {Symbol, isSymbol, isNumericSymbol, isVariableSymbol, isFraction, isNegative, symfunction} = require("./Core/Symbol");
-const {Frac} = require("./Core/Frac");
-const Scientific = require('./Core/Scientific').default;
-const {Operators} = require('./Parser/Operators');
-const {createFunctions, findFunction} = require('./Operators/functions');
-const {Groups} = require('./Core/Groups');
-const {Slice} = require('./Parser/Slice');
-const {Matrix, isMatrix} = require('./Parser/Matrix');
-const {Collection} = require('./Parser/Collection');
-const {Set, isSet} = require('./Parser/Set');
-const {Vector, isVector} = require('./Parser/Vector');
-const bigDec = require('decimal.js');
-const bigInt = require('./3rdparty/bigInt');
-const {Math2} = require('./Core/Math2');
-const {generatePrimes} = require('./Core/Math.consts');
-const {Token} = require('./Parser/Token');
-const {Tokenizer} = require("./Parser/Tokenizer");
-const {Expression, isExpression} = require("./Parser/Expression");
-const {RPN} = require("./Parser/RPN");
-const {Build} = require("./Parser/Build");
-const {Node} = require("./Parser/Node");
-const {LaTeX} = require('./LaTeX/LaTeX');
+import {
+    allNumeric, allSame, arrayMax, arrayMin, arrayUnique, block,
+    even, evenFraction, firstObject, format, inBrackets, isInt,
+    isPrime, nround, remove, validateName, warn
+} from './Core/Utils';
+import {Settings} from './Settings';
+import {isFraction, isNegative, isNumericSymbol, isSymbol, isVariableSymbol, Symbol, symfunction} from './Core/Symbol';
+import {Frac} from './Core/Frac';
+import Scientific from './Core/Scientific';
+import {Operators} from './Parser/Operators';
+import {createFunctions, findFunction} from './Operators/functions';
+import {Groups} from './Core/Groups';
+import {Slice} from './Parser/Slice';
+import {isMatrix, Matrix} from './Parser/Matrix';
+import {Collection} from './Parser/Collection';
+import {isSet, Set} from './Parser/Set';
+import {isVector, Vector} from './Parser/Vector';
+import bigDec from 'decimal.js';
+import bigInt from './3rdparty/bigInt';
+import {Math2} from './Core/Math2';
+import {generatePrimes} from './Core/Math.consts';
+import {Token} from './Parser/Token';
+import {Tokenizer} from './Parser/Tokenizer';
+import {Expression, isExpression} from './Parser/Expression';
+import {RPN} from './Parser/RPN';
+import {Build} from './Parser/Build';
+import {LaTeX} from './LaTeX/LaTeX';
+import * as exceptions from './Core/Errors';
+import {Complex} from './Core/Complex';
+import {Trig} from './Core/Trig';
+import {TrigHyperbolic} from './Core/Trig.hyperbolic';
+import {
+    abs, add, divide, factorial, log, multiply, pfactor,
+    pow, rationalize, sqrt, subtract, SymbolOperatorsDeps
+} from './Core/SymbolOperators/SymbolOperators';
 
-const exceptions = require('./Core/Errors');
-const {Complex} = require('./Core/Complex');
-const {Trig} = require('./Core/Trig');
-const {TrigHyperbolic} = require('./Core/Trig.hyperbolic');
+import {text, TextDependencies} from './Core/Text';
 const {
     UndefinedError, NerdamerTypeError, DimensionError, NerdamerValueError, err
 } = exceptions;
 
-const {sqrt, multiply, divide, subtract, add, pow, log,
-    pfactor, rationalize, abs, factorial, SymbolOperatorsDeps} = require('./Core/SymbolOperators/SymbolOperators');
-const {text, TextDependencies} = require('./Core/Text');
+
 
 const nerdamer = (function () {
 //version ======================================================================
