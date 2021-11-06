@@ -1512,4 +1512,15 @@ var isVariableSymbol = function (symbol) {
 };
 
 
-module.exports = { Symbol, isVariableSymbol, isNumericSymbol, isSymbol };
+/**
+ * Checks to see if a number or Symbol is a fraction
+ * @param {Number|Symbol} num
+ * @returns {boolean}
+ */
+var isFraction = function (num) {
+    if (isSymbol(num))
+        return isFraction(num.multiplier.toDecimal());
+    return (num % 1 !== 0);
+};
+
+module.exports = { Symbol, isVariableSymbol, isNumericSymbol, isSymbol, isFraction };
