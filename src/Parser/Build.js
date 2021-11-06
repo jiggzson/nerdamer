@@ -107,7 +107,7 @@ export const Build = {
         symbol = block('PARSE2NUMBER', function () {
             return parse(symbol);
         }, true);
-        var args = Build.$variables(symbol);
+        var args = symbol.variables();
         var supplements = [];
         var dependencies = [];
         var ftext = function (symbol, xports) {

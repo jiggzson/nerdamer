@@ -1,6 +1,6 @@
 import bigDec from 'decimal.js';
 import {Settings} from '../Settings';
-import {isSymbol, arrayMin, inBrackets, isInt, nround, remove, validateName} from './Utils';
+import {isSymbol, arrayMin, inBrackets, isInt, nround, remove, validateName, firstObject} from './Utils';
 import {Groups} from './Groups';
 import {Frac} from './Frac';
 import bigInt from '../3rdparty/bigInt';
@@ -26,10 +26,6 @@ import {isNumericSymbol} from './Utils-js';
  * @returns {Symbol}
  */
 export class Symbol {
-    // injected dependencies
-    /** @deprecated */
-    static $variables;
-
     unit;
     group;
     power;
@@ -338,7 +334,7 @@ export class Symbol {
         //constants and first orders
         if (g === Groups.N || g === Groups.S || this.isConstant(true))
             return true;
-        let vars = Symbol.$variables(this);
+        let vars = this.variables();
         if (g === Groups.CB && vars.length === 1) {
             //the variable is assumed the only one that was found
             let v = vars[0];
@@ -1498,18 +1494,62 @@ export class Symbol {
     toString() {
         return this.text();
     }
+
+    /**
+     * This method traverses the symbol structure and grabs all the variables in a symbol. The variable
+     * names are then returned in alphabetical order.
+     * @param {Symbol} obj
+     * @param {Boolean} poly
+     * @param {Object} vars - An object containing the variables. Do not pass this in as it generated
+     * automatically. In the future this will be a Collector object.
+     * @returns {String[]} - An array containing variable names
+     */
+    variables(poly = false, vars = undefined) {
+        vars = vars || {
+            c: [],
+            add: function (value) {
+                if (this.c.indexOf(value) === -1 && isNaN(value))
+                    this.c.push(value);
+            }
+        };
+
+        let group = this.group;
+        let prevgroup = this.previousGroup;
+
+        if (group === Groups.EX) {
+            if (isSymbol(this.power)) this.power.variables(poly, vars);
+        }
+
+        if (group === Groups.CP || group === Groups.CB || prevgroup === Groups.CP || prevgroup === Groups.CB) {
+            for (let x in this.symbols) {
+                if (isSymbol(this.symbols[x])) this.symbols[x].variables(poly, vars);
+            }
+        }
+        else if (group === Groups.S || prevgroup === Groups.S) {
+            //very crude needs fixing. TODO
+            if (!(this.value === 'e' || this.value === 'pi' || this.value === Settings.IMAGINARY)) {
+                vars.add(this.value);
+            }
+        }
+        else if (group === Groups.PL || prevgroup === Groups.PL) {
+            let fo = firstObject(this.symbols);
+            if (isSymbol(fo)) fo.variables(poly, vars);
+        }
+        else if (group === Groups.EX) {
+            if (!isNaN(this.value)) {
+                vars.add(this.value);
+            }
+            if (isSymbol(this.power)) this.power.variables(poly, vars);
+        }
+        else if (group === Groups.FN && !poly) {
+            for (let i = 0; i < this.args.length; i++) {
+                if (isSymbol(this.args[i])) this.args[i].variables(poly, vars);
+            }
+        }
+
+        return vars.c.sort();
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * Generates library's representation of a function. It's a fancy way of saying a symbol with

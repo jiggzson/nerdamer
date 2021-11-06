@@ -4,7 +4,7 @@ import {Symbol} from './Symbol';
 import {Build} from '../Parser/Build';
 import {parse} from './parse';
 import {Vector} from '../Parser/Vector';
-import {decompose_fn, getCoeffs, isFraction, isNegative, isNumericSymbol, nroots, scientificToDecimal} from './Utils-js';
+import {decompose_fn, getCoeffs, isFraction, isNegative, isNumericSymbol, nroots, scientificToDecimal, separate} from './Utils-js';
 import {arraySum} from './Utils.Symbol';
 import {PRIMES} from './Math.consts';
 import {Matrix} from '../Parser/Matrix';
@@ -13,7 +13,7 @@ import {InvalidVariableNameError} from './Errors';
 import {text as Text} from './Text';
 
 
-export { decompose_fn, arraySum, getCoeffs, isFraction, isNegative, isNumericSymbol, nroots, scientificToDecimal };
+export { decompose_fn, arraySum, getCoeffs, isFraction, isNegative, isNumericSymbol, nroots, scientificToDecimal, separate };
 
 /**
  * Checks to see that all symbols in array are the same
@@ -89,6 +89,27 @@ export function arrayClone<T extends { clone: () => T }>(arr: T[]) {
     }
 
     return new_array;
+}
+
+/**
+ * Gets all the variables in an array of Symbols
+ * @param {Symbol[]} arr
+ */
+export function arrayGetVariables(arr: Symbol[]) {
+    let vars: string[] = [];
+    for (let i = 0; i < arr.length; i++) {
+        if (!isSymbol(arr[i])) {
+            continue;
+        }
+
+        vars = vars.concat(arr[i].variables());
+    }
+
+    //remove duplicates
+    vars = arrayUnique(vars).sort();
+
+    //done
+    return vars;
 }
 
 /**
@@ -650,4 +671,25 @@ export function text(obj: any, option?: any, useGroup?: boolean, decp?: any) {
     return Text(obj, option, useGroup, decp);
 }
 
+/**
+ * Returns an array of all the keys in an array
+ * @param {Object} obj
+ * @returns {Array}
+ */
 export const keys = Object.keys;
+
+/**
+ * This method traverses the symbol structure and grabs all the variables in a symbol. The variable
+ * names are then returned in alphabetical order.
+ * @param {Symbol} obj
+ * @param {Boolean} poly
+ * @param {Object} vars - An object containing the variables. Do not pass this in as it generated
+ * automatically. In the future this will be a Collector object.
+ * @returns {String[]} - An array containing variable names
+ */
+export function variables(obj: Symbol, poly = false, vars?: { c: string[] }) {
+    if (!isSymbol(obj)) {
+        return vars ? vars.c.sort() : [];
+    }
+    return obj.variables(poly, vars);
+}

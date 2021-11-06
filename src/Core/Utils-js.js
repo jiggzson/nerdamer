@@ -2,7 +2,7 @@ import {Groups} from './Groups';
 import {expand} from './functions/math/expand';
 import {add, arg, divide, multiply, sqrt, subtract} from './functions';
 import {Symbol} from './Symbol';
-import {evaluate, format, isSymbol} from './Utils';
+import {arrayUnique, evaluate, format, isSymbol} from './Utils';
 import {Settings} from '../Settings';
 import {Vector} from '../Parser/Vector';
 import {parse} from './parse';
@@ -175,3 +175,42 @@ export function scientificToDecimal(value) {
 }
 
 
+/**
+ * Separates out the variables into terms of variabls.
+ * e.g. x+y+x*y+sqrt(2)+pi returns
+ * {x: x, y: y, x y: x*y, constants: sqrt(2)+pi
+ * @param {type} symbol
+ * @param {type} o
+ * @returns {undefined}
+ * @throws {Error} for expontentials
+ */
+export function separate(symbol, o) {
+    symbol = expand(symbol);
+    o = o || {};
+
+    let insert = function (key, sym) {
+        if (!o[key])
+            o[key] = new Symbol(0);
+        o[key] = add(o[key], sym.clone());
+    };
+
+    symbol.each(function (x) {
+        if (x.isConstant('all')) {
+            insert('constants', x);
+        }
+        else if (x.group === Groups.S) {
+            insert(x.value, x);
+        }
+        else if (x.group === Groups.FN && (x.fname === Settings.ABS || x.fname === '')) {
+            separate(x.args[0]);
+        }
+        else if (x.group === Groups.EX || x.group === Groups.FN) {
+            throw new Error('Unable to separate. Term cannot be a function!');
+        }
+        else {
+            insert(isSymbol(x) ? x.variables().join(' ') : '', x);
+        }
+    });
+
+    return o;
+}

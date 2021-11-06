@@ -2,7 +2,6 @@ import {block} from './Utils';
 
 export const ParseDeps = {
     parse: null,
-    evaluate: null
 };
 
 export function parse(e, substitutions = {}) {

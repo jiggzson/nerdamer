@@ -18,6 +18,7 @@ import {
     arguments2Array,
     arrayAddSlices,
     arrayClone,
+    arrayGetVariables,
     arrayMax,
     arrayMin,
     arrayEqual,
@@ -61,10 +62,12 @@ import {
     range,
     nround,
     sameSign,
+    separate,
     scientificToDecimal,
     stringReplace,
     text,
     validateName,
+    variables,
     warn,
 } from './Core/Utils';
 
@@ -97,6 +100,7 @@ import {ParseDeps} from './Core/parse';
 import {expand} from './Core/functions/math/expand';
 import {TextDependencies} from './Core/Text';
 import {FactorialDeps} from './Core/functions/math/factorial';
+import {ReservedDictionary} from './Parser/ReservedDictionary';
 const {NerdamerTypeError, NerdamerValueError, err} = exceptions;
 
 
@@ -141,160 +145,28 @@ const nerdamer = (function () {
         CP = Groups.CP; // A symbol/expression composed of one variable and any other symbol or number x+1 or x+y
 
     const PARENTHESIS = Settings.PARENTHESIS;
-
     const SQRT = Settings.SQRT;
-
     const ABS = Settings.ABS;
-
     const FACTORIAL = Settings.FACTORIAL;
-
     const DOUBLEFACTORIAL = Settings.DOUBLEFACTORIAL;
-
     //the storage container "memory" for parsed expressions
     const EXPRESSIONS = [];
     Expression.$EXPRESSIONS = EXPRESSIONS;
 
     //variables
     const VARS = {};
-
     //the container used to store all the reserved functions
-    const RESERVED = [];
-
     const WARNINGS = [];
 
 
 //Utils ========================================================================
 
-    /**
-     * Checks to see if value is one of nerdamer's reserved names
-     * @param {String} value
-     * @return boolean
-     */
-    let isReserved = function (value) {
-        return RESERVED.indexOf(value) !== -1;
-    };
+    const reservedDictionary = new ReservedDictionary();
 
-
-
-
-    /**
-     * This method traverses the symbol structure and grabs all the variables in a symbol. The variable
-     * names are then returned in alphabetical order.
-     * @param {Symbol} obj
-     * @param {Boolean} poly
-     * @param {Object} vars - An object containing the variables. Do not pass this in as it generated
-     * automatically. In the future this will be a Collector object.
-     * @returns {String[]} - An array containing variable names
-     */
-    let variables = function (obj, poly = false, vars = undefined) {
-        vars = vars || {
-            c: [],
-            add: function (value) {
-                if (this.c.indexOf(value) === -1 && isNaN(value))
-                    this.c.push(value);
-            }
-        };
-
-        if (isSymbol(obj)) {
-            let group = obj.group,
-                prevgroup = obj.previousGroup;
-            if (group === EX)
-                variables(obj.power, poly, vars);
-
-            if (group === CP || group === CB || prevgroup === CP || prevgroup === CB) {
-                for (let x in obj.symbols) {
-                    variables(obj.symbols[x], poly, vars);
-                }
-            }
-            else if (group === S || prevgroup === S) {
-                //very crude needs fixing. TODO
-                if (!(obj.value === 'e' || obj.value === 'pi' || obj.value === Settings.IMAGINARY))
-                    vars.add(obj.value);
-            }
-            else if (group === PL || prevgroup === PL) {
-                variables(firstObject(obj.symbols), poly, vars);
-            }
-            else if (group === EX) {
-                if (!isNaN(obj.value))
-                    vars.add(obj.value);
-                variables(obj.power, poly, vars);
-            }
-            else if (group === FN && !poly) {
-                for (let i = 0; i < obj.args.length; i++) {
-                    variables(obj.args[i], poly, vars);
-                }
-            }
-        }
-
-        return vars.c.sort();
-    };
-
-    /**
-     * Separates out the variables into terms of variabls.
-     * e.g. x+y+x*y+sqrt(2)+pi returns
-     * {x: x, y: y, x y: x*y, constants: sqrt(2)+pi
-     * @param {type} symbol
-     * @param {type} o
-     * @returns {undefined}
-     * @throws {Error} for expontentials
-     */
-    let separate = function (symbol, o) {
-        symbol = _.expand(symbol);
-        o = o || {};
-        let insert = function (key, sym) {
-            if (!o[key])
-                o[key] = new Symbol(0);
-            o[key] = _.add(o[key], sym.clone());
-        };
-        symbol.each(function (x) {
-            if (x.isConstant('all')) {
-                insert('constants', x);
-            }
-            else if (x.group === S) {
-                insert(x.value, x);
-            }
-            else if (x.group === FN && (x.fname === ABS || x.fname === '')) {
-                separate(x.args[0]);
-            }
-            else if (x.group === EX || x.group === FN) {
-                throw new Error('Unable to separate. Term cannot be a function!');
-            }
-            else {
-                insert(variables(x).join(' '), x);
-            }
-        });
-
-        return o;
-    };
-
-
-
-
-    /**
-     * Safely stringify object
-     * @param o
-     */
-    let stringify = function (o) {
-        if (!o)
-            return o;
-        return String(o);
-    };
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Returns an array of all the keys in an array
-     * @param {Object} obj
-     * @returns {Array}
-     */
-    let keys = Object.keys;
+    const getU = symbol => reservedDictionary.getU(symbol);
+    const clearU = u => reservedDictionary.clearU(u);
+    const isReserved = value => reservedDictionary.isReserved(value);
+    const reserveNames = obj => reservedDictionary.reserveNames(obj);
 
 
 
@@ -307,8 +179,8 @@ const nerdamer = (function () {
      */
     let setFunction = function (name, params_array, body) {
         validateName(name);
-        if (!isReserved(name)) {
-            params_array = params_array || variables(_.parse(body));
+        if (!reservedDictionary.isReserved(name)) {
+            params_array = params_array || _.parse(body).variables();
             // The function gets set to PARSER.mapped function which is just
             // a generic function call.
             _.functions[name] = [_.mapped_function, params_array.length, {
@@ -322,80 +194,9 @@ const nerdamer = (function () {
         return null;
     };
 
-    /**
-     * Is used for u-substitution. Gets a suitable u for substitution. If for
-     * instance a is used in the symbol then it keeps going down the line until
-     * one is found that's not in use. If all letters are taken then it
-     * starts appending numbers.
-     * IMPORTANT! It assumes that the substitution will be undone
-     * beore the user gets to interact with the object again.
-     * @param {Symbol} symbol
-     */
-    let getU = function (symbol) {
-        //start with u
-        let u = 'u', //start with u
-            v = u, //init with u
-            c = 0, //postfix number
-            vars = variables(symbol);
-        //make sure this variable isn't reserved and isn't in the variable list
-        while(!(RESERVED.indexOf(v) === - 1 && vars.indexOf(v) === - 1))
-            v = u + c++;
-        //get an empty slot. It seems easier to just push but the
-        //problem is that we may have some which are created by clearU
-        for (let i = 0, l = RESERVED.length; i <= l; i++)
-            //reserved cannot equals false or 0 so we can safely check for a falsy type
-            if (!RESERVED[i]) {
-                RESERVED[i] = v; //reserve the variable
-                break;
-            }
-        return v;
-    };
 
-    /**
-     * Clears the u variable so it's no longer reserved
-     * @param {String} u
-     */
-    let clearU = function (u) {
-        let indx = RESERVED.indexOf(u);
-        if (indx !== -1)
-            RESERVED[indx] = undefined;
-    };
 
-    /**
-     * Gets all the variables in an array of Symbols
-     * @param {Symbol[]} arr
-     */
-    let arrayGetVariables = function (arr) {
-        let vars = variables(arr[0], null, null, true);
 
-        //get all variables
-        for (let i = 1, l = arr.length; i < l; i++)
-            vars = vars.concat(variables(arr[i]));
-        //remove duplicates
-        vars = arrayUnique(vars).sort();
-
-        //done
-        return vars;
-    };
-
-    /**
-     * Reserves the names in an object so they cannot be used as function names
-     * @param {Object} obj
-     */
-    let reserveNames = function (obj) {
-        let add = function (item) {
-            if (RESERVED.indexOf(item) === -1)
-                RESERVED.push(item);
-        };
-
-        if (typeof obj === 'string')
-            add(obj);
-        else {
-            each(obj, function (x) {
-                add(x);
-            });
-        }
-    };
 
     /**
      * provide a mechanism for accessing functions directly. Not yet complete!!!
@@ -574,7 +375,7 @@ const nerdamer = (function () {
             if (Settings.callPeekers) {
                 let peekers = this.peekers[name];
                 //remove the first items and stringify
-                let args = arguments2Array(arguments).slice(1).map(stringify);
+                let args = arguments2Array(arguments).slice(1).map(o => o ? String(o) : o);
                 //call each one of the peekers
                 for (let i = 0; i < peekers.length; i++) {
                     peekers[i].apply(null, args);
@@ -636,7 +437,6 @@ const nerdamer = (function () {
             return this.parseRPN(rpn, substitutions);
         };
         ParseDeps.parse = this.parse;
-        ParseDeps.evaluate = evaluate;
 
 
         /**
@@ -1188,9 +988,6 @@ const nerdamer = (function () {
 
     // inject back dependencies
     LaTeX.$Parser = Parser;
-    Symbol.$variables = variables;
-    Expression.prototype.$variables = variables;
-    Build.$variables = variables;
 
 
 //finalize =====================================================================
@@ -1224,7 +1021,7 @@ const nerdamer = (function () {
         arrayMin: arrayMin,
         arrayEqual: arrayEqual,
         arrayUnique: arrayUnique,
-        arrayGetVariables: arrayGetVariables, // inject!
+        arrayGetVariables: arrayGetVariables,
         arraySum: arraySum,
         block: block,
         build: build,
@@ -1467,10 +1264,11 @@ const nerdamer = (function () {
      * @returns {String|Array}
      */
     libExports.reserved = function (asArray) {
+        let reserved = reservedDictionary.getReserved();
         if (asArray) {
-            return RESERVED;
+            return reserved;
         }
-        return RESERVED.join(', ');
+        return reserved.join(', ');
     };
 
     /**
@@ -1568,7 +1366,7 @@ const nerdamer = (function () {
     libExports.validVarName = function (varname) {
         try {
             validateName(varname);
-            return RESERVED.indexOf(varname) === -1;
+            return !reservedDictionary.isReserved(varname);
         }
         catch(e) {
             return false;
@@ -1580,7 +1378,7 @@ const nerdamer = (function () {
      * @returns {Array} Array of functions currently supported by nerdamer
      */
     libExports.supported = function () {
-        return keys(_.functions);
+        return Object.keys(_.functions);
     };
 
     /**

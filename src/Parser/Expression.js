@@ -19,8 +19,6 @@ import {expand} from '../Core/functions/math/expand';
 export class Expression {
     /** @deprecated */
     static $EXPRESSIONS;
-    /** @deprecated */
-    $variables;
     symbol;
 
     constructor(symbol) {
@@ -148,7 +146,10 @@ export class Expression {
      * @returns {Array}
      */
     variables() {
-        return this.$variables(this.symbol);
+        if (!isSymbol(this.symbol)) {
+            return [];
+        }
+        return this.symbol.variables();
     }
 
     toString() {
