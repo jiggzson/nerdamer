@@ -1523,4 +1523,15 @@ var isFraction = function (num) {
     return (num % 1 !== 0);
 };
 
-module.exports = { Symbol, isVariableSymbol, isNumericSymbol, isSymbol, isFraction };
+/**
+ * @param {Number|Symbol} obj
+ * @returns {boolean}
+ */
+var isNegative = function (obj) {
+    if (isSymbol(obj)) {
+        obj = obj.multiplier;
+    }
+    return obj.lessThan(0);
+};
+
+module.exports = { Symbol, isVariableSymbol, isNumericSymbol, isSymbol, isFraction, isNegative };

@@ -117,3 +117,7 @@ export class Set {
         return '{' + this.elements.join(',') + '}';
     }
 }
+
+export function isSet(obj) {
+    return (obj instanceof Set);
+}
