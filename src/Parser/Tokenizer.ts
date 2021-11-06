@@ -38,6 +38,11 @@ export class Tokenizer {
         this.units = deps.units;
     }
 
+    /*
+     * Tokenizes the string
+     * @param {String} e
+     * @returns {Token[]}
+     */
     tokenize(e: string, shouldPrepare = false) {
         if (shouldPrepare) {
             e = this.prepareExpression(e);
@@ -296,11 +301,11 @@ class InnerTokenizer {
         this.col = this.lpos - 1;
     }
 
-    /*
-         * Tokenizes the string
-         * @param {String} e
-         * @returns {Token[]}
-         */
+    /**
+     * Tokenizes the string
+     * @param {String} e
+     * @returns {Token[]}
+     */
     tokenize() {
         let e = this.expression;
 

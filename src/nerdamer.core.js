@@ -34,6 +34,7 @@ const {LaTeX} = require('./LaTeX/LaTeX');
 const exceptions = require('./Core/Errors');
 const {Complex} = require('./Core/Complex');
 const {Trig} = require('./Core/Trig');
+const {TrigHyperbolic} = require('./Core/Trig.hyperbolic');
 const {
     DivisionByZero, ParseError, UndefinedError, OutOfFunctionDomainError,
     MaximumIterationsReached, NerdamerTypeError, ParityError, OperatorError,
@@ -63,7 +64,7 @@ const nerdamer = (function () {
         Settings[setting] = current_setting;
         return retval;
     };
-    
+
     /**
      * As the name states. It forces evaluation of the expression
      * @param {Symbol} symbol
@@ -1297,155 +1298,12 @@ const nerdamer = (function () {
         Trig.$evaluate = evaluate;
         let trig = this.trig = Trig;
 
+        TrigHyperbolic.$ = _;
+        TrigHyperbolic.$evaluate = evaluate;
+        TrigHyperbolic.$log = log;
+        TrigHyperbolic.$sqrt = sqrt;
+        let trigh = this.trigh = TrigHyperbolic;
 
-        //object for functions which handle hyperbolic trig
-        var trigh = this.trigh = {
-            //container for hyperbolic trig function
-            cosh: function (symbol) {
-                var retval;
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
-                        return new Symbol(Math.cosh(symbol.valueOf()));
-                    if (symbol.isImaginary()) {
-                        return complex.evaluate(symbol, 'cosh');
-                    }
-                }
-
-                return retval = _.symfunction('cosh', arguments);
-            },
-            sinh: function (symbol) {
-                var retval;
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
-                        return new Symbol(Math.sinh(symbol.valueOf()));
-                    if (symbol.isImaginary()) {
-                        return complex.evaluate(symbol, 'sinh');
-                    }
-                }
-
-                return retval = _.symfunction('sinh', arguments);
-            },
-            tanh: function (symbol) {
-                var retval;
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
-                        return new Symbol(Math.tanh(symbol.valueOf()));
-                    if (symbol.isImaginary()) {
-                        return complex.evaluate(symbol, 'tanh');
-                    }
-                }
-
-                return retval = _.symfunction('tanh', arguments);
-            },
-            sech: function (symbol) {
-                var retval;
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant()) {
-                        return new Symbol(Math.sech(symbol.valueOf()));
-                    }
-                    if (symbol.isImaginary()) {
-                        return complex.evaluate(symbol, 'sech');
-                    }
-                    return _.parse(format('1/cosh({0})', symbol));
-                }
-
-                return retval = _.symfunction('sech', arguments);
-            },
-            csch: function (symbol) {
-                var retval;
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
-                        return new Symbol(Math.csch(symbol.valueOf()));
-                    if (symbol.isImaginary()) {
-                        return complex.evaluate(symbol, 'csch');
-                    }
-                    return _.parse(format('1/sinh({0})', symbol));
-                }
-
-                return retval = _.symfunction('csch', arguments);
-            },
-            coth: function (symbol) {
-                var retval;
-                if (Settings.PARSE2NUMBER) {
-                    if (symbol.isConstant())
-                        return new Symbol(Math.coth(symbol.valueOf()));
-                    if (symbol.isImaginary()) {
-                        return complex.evaluate(symbol, 'coth');
-                    }
-                    return _.parse(format('1/tanh({0})', symbol));
-                }
-
-                return retval = _.symfunction('coth', arguments);
-            },
-            acosh: function (symbol) {
-                var retval;
-                if (Settings.PARSE2NUMBER && symbol.isImaginary())
-                    retval = complex.evaluate(symbol, 'acosh');
-                else if (Settings.PARSE2NUMBER)
-                    retval = evaluate(_.parse(format(Settings.LOG + '(({0})+sqrt(({0})^2-1))', symbol.toString())));
-                else
-                    retval = _.symfunction('acosh', arguments);
-                return retval;
-            },
-            asinh: function (symbol) {
-                var retval;
-                if (Settings.PARSE2NUMBER && symbol.isImaginary())
-                    retval = complex.evaluate(symbol, 'asinh');
-                else if (Settings.PARSE2NUMBER)
-                    retval = evaluate(_.parse(format(Settings.LOG + '(({0})+sqrt(({0})^2+1))', symbol.toString())));
-                else
-                    retval = _.symfunction('asinh', arguments);
-                return retval;
-            },
-            atanh: function (symbol) {
-                var retval;
-                if (Settings.PARSE2NUMBER && symbol.isImaginary())
-                    retval = complex.evaluate(symbol, 'atanh');
-                else if (Settings.PARSE2NUMBER) {
-                    retval = evaluate(_.parse(format('(1/2)*' + Settings.LOG + '((1+({0}))/(1-({0})))', symbol.toString())));
-                }
-                else
-                    retval = _.symfunction('atanh', arguments);
-                return retval;
-            },
-            asech: function (symbol) {
-                var retval;
-                if (Settings.PARSE2NUMBER && symbol.isImaginary())
-                    retval = complex.evaluate(symbol, 'asech');
-                else if (Settings.PARSE2NUMBER)
-                    retval = evaluate(log(_.add(symbol.clone().invert(), sqrt(_.subtract(_.pow(symbol, new Symbol(-2)), new Symbol(1))))));
-                else
-                    retval = _.symfunction('asech', arguments);
-                return retval;
-            },
-            acsch: function (symbol) {
-                var retval;
-                if (Settings.PARSE2NUMBER && symbol.isImaginary())
-                    retval = complex.evaluate(symbol, 'acsch');
-                else if (Settings.PARSE2NUMBER)
-                    retval = evaluate(_.parse(format(Settings.LOG + '((1+sqrt(1+({0})^2))/({0}))', symbol.toString())));
-                else
-                    retval = _.symfunction('acsch', arguments);
-                return retval;
-            },
-            acoth: function (symbol) {
-                var retval;
-                if (Settings.PARSE2NUMBER && symbol.isImaginary())
-                    retval = complex.evaluate(symbol, 'acoth');
-                else if (Settings.PARSE2NUMBER) {
-                    if (symbol.equals(1))
-                        retval = Symbol.infinity();
-                    else
-                        retval = evaluate(
-                            _.divide(
-                                log(_.divide(_.add(symbol.clone(), new Symbol(1)), _.subtract(symbol.clone(), new Symbol(1)))),
-                                new Symbol(2)));
-                }
-                else
-                    retval = _.symfunction('acoth', arguments);
-                return retval;
-            }
-        };
         //list of supported units
         this.units = {};
         //list all the supported operators
@@ -1618,79 +1476,6 @@ const nerdamer = (function () {
 
             return retval;
         };
-
-
-        /*
-         * Preforms preprocessing on the string. Useful for making early modification before
-         * sending to the parser
-         * @param {String} e
-         */
-        var prepare_expression = function (e) {
-            /*
-             * Since variables cannot start with a number, the assumption is made that when this occurs the
-             * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for
-             * a side-by-side close and open parenthesis
-             */
-            e = String(e);
-            //apply preprocessors
-            for (var i = 0; i < preprocessors.actions.length; i++)
-                e = preprocessors.actions[i].call(this, e);
-
-            //e = e.split(' ').join('');//strip empty spaces
-            //replace multiple spaces with one space
-            e = e.replace(/\s+/g, ' ');
-
-            //only even bother to check if the string contains e. This regex is painfully slow and might need a better solution. e.g. hangs on (0.06/3650))^(365)
-            if (/e/gi.test(e)) {
-                e = e.replace(/\-*\d+\.*\d*e\+?\-?\d+/gi, function (x) {
-                    return Math2.scientificToDecimal(x);
-                });
-            }
-            //replace scientific numbers
-
-            //allow omission of multiplication after coefficients
-            e = e.replace(Settings.IMPLIED_MULTIPLICATION_REGEX, function () {
-                var str = arguments[4],
-                    group1 = arguments[1],
-                    group2 = arguments[2],
-                    start = arguments[3],
-                    first = str.charAt(start),
-                    before = '',
-                    d = '*';
-                if (!first.match(/[\+\-\/\*]/))
-                    before = str.charAt(start - 1);
-                if (before.match(/[a-z]/i))
-                    d = '';
-                return group1 + d + group2;
-            })
-                .replace(/([a-z0-9_]+)/gi, function (match, a) {
-                    if (Settings.USE_MULTICHARACTER_VARS === false && !(a in functions)) {
-                        if (!isNaN(a))
-                            return a;
-                        return a.split('').join('*');
-                    }
-                    return a;
-                })
-                //allow omission of multiplication sign between brackets
-                .replace(/\)\(/g, ')*(') || '0';
-            //replace x(x+a) with x*(x+a)
-            while(true) {
-                var e_org = e; //store the original
-                e = e.replace(/([a-z0-9_]+)(\()|(\))([a-z0-9]+)/gi, function (match, a, b, c, d) {
-                    var g1 = a || c,
-                        g2 = b || d;
-                    if (g1 in functions) //create a passthrough for functions
-                        return g1 + g2;
-                    return g1 + '*' + g2;
-                });
-                //if the original equals the replace we're done
-                if (e_org === e)
-                    break;
-            }
-            return e;
-        };
-
-        this.prepare_expression = prepare_expression;
 
         //delay setting of constants until Settings is ready
         this.initConstants = function () {
