@@ -104,6 +104,9 @@ export type SettingsType = {
 
     SHOW_WARNINGS: boolean,
     USE_BIG: boolean,
+    E_TO_EXP: boolean,
+    SYMBOLIC_MIN_MAX: boolean,
+    IGNORE_E: boolean,
 };
 
 // noinspection NonAsciiCharacters
@@ -217,5 +220,8 @@ export let Settings: SettingsType = {
     BI_SECTION_EPSILON: 1e-12,
 
     SHOW_WARNINGS: false,
-    USE_BIG: false
+    USE_BIG: false,
+    E_TO_EXP: false,
+    SYMBOLIC_MIN_MAX: false,
+    IGNORE_E: false
 };

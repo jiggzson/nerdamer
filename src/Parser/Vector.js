@@ -288,7 +288,7 @@ export class Vector {
         return index;
     }
     text(x) {
-        return this.$._text(this);
+        return this.$text(this);
     }
     toString() {
         return this.text();

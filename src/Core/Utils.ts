@@ -165,3 +165,30 @@ export function format(str: string, ...args: any) {
         return typeof arg === 'function' ? arg() : arg;
     });
 }
+
+/**
+ * Returns the first encountered item in an object. Items do not have a fixed order in objects
+ * so only use if you need any first random or if there's only one item in the object
+ * @param {object} obj
+ * @param {boolean} key Return this key as first object
+ * @param {boolean} both
+ * @returns {*}
+ */
+export function firstObject(obj: any, key: boolean = false, both: boolean = false) {
+    for (let x in obj) {
+        if (key) {
+            return x;
+        }
+
+        if (both) {
+            return {
+                key: x,
+                obj: obj[x]
+            };
+        }
+
+        return obj[x];
+    }
+
+    return null;
+}

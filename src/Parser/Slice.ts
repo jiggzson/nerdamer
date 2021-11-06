@@ -1,10 +1,11 @@
+import {text} from '../Core/Text';
+
 interface Constant {
     isConstant: () => boolean;
 }
 
 export class Slice {
     /// injected dependency
-    private $text!: (array: any) => string;
 
     start: Constant;
     end: Constant;
@@ -19,6 +20,6 @@ export class Slice {
     }
 
     text() {
-        return this.$text(this.start) + ':' + this.$text(this.end);
+        return text(this.start) + ':' + text(this.end);
     }
 }

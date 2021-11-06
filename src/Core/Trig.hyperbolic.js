@@ -1,6 +1,6 @@
 //object for functions which handle hyperbolic trig
 const {Settings} = require('../Settings');
-const {Symbol} = require('./Symbol');
+const {Symbol, symfunction} = require('./Symbol');
 const {format} = require('./Utils');
 const {Complex} = require('./Complex');
 
@@ -16,7 +16,7 @@ const TrigHyperbolic = {
             }
         }
 
-        return retval = TrigHyperbolic.$.symfunction('cosh', arguments);
+        return symfunction('cosh', arguments);
     },
     sinh: function (symbol) {
         var retval;
@@ -28,7 +28,7 @@ const TrigHyperbolic = {
             }
         }
 
-        return retval = TrigHyperbolic.$.symfunction('sinh', arguments);
+        return retval = symfunction('sinh', arguments);
     },
     tanh: function (symbol) {
         var retval;
@@ -40,7 +40,7 @@ const TrigHyperbolic = {
             }
         }
 
-        return retval = TrigHyperbolic.$.symfunction('tanh', arguments);
+        return retval = symfunction('tanh', arguments);
     },
     sech: function (symbol) {
         var retval;
@@ -54,7 +54,7 @@ const TrigHyperbolic = {
             return TrigHyperbolic.$.parse(format('1/cosh({0})', symbol));
         }
 
-        return retval = TrigHyperbolic.$.symfunction('sech', arguments);
+        return retval = symfunction('sech', arguments);
     },
     csch: function (symbol) {
         var retval;
@@ -67,7 +67,7 @@ const TrigHyperbolic = {
             return TrigHyperbolic.$.parse(format('1/sinh({0})', symbol));
         }
 
-        return retval = TrigHyperbolic.$.symfunction('csch', arguments);
+        return retval = symfunction('csch', arguments);
     },
     coth: function (symbol) {
         var retval;
@@ -80,7 +80,7 @@ const TrigHyperbolic = {
             return TrigHyperbolic.$.parse(format('1/tanh({0})', symbol));
         }
 
-        return retval = TrigHyperbolic.$.symfunction('coth', arguments);
+        return retval = symfunction('coth', arguments);
     },
     acosh: function (symbol) {
         var retval;
@@ -89,7 +89,7 @@ const TrigHyperbolic = {
         else if (Settings.PARSE2NUMBER)
             retval = TrigHyperbolic.$evaluate(TrigHyperbolic.$.parse(format(Settings.LOG + '(({0})+sqrt(({0})^2-1))', symbol.toString())));
         else
-            retval = TrigHyperbolic.$.symfunction('acosh', arguments);
+            retval = symfunction('acosh', arguments);
         return retval;
     },
     asinh: function (symbol) {
@@ -99,7 +99,7 @@ const TrigHyperbolic = {
         else if (Settings.PARSE2NUMBER)
             retval = TrigHyperbolic.$evaluate(TrigHyperbolic.$.parse(format(Settings.LOG + '(({0})+sqrt(({0})^2+1))', symbol.toString())));
         else
-            retval = TrigHyperbolic.$.symfunction('asinh', arguments);
+            retval = symfunction('asinh', arguments);
         return retval;
     },
     atanh: function (symbol) {
@@ -110,7 +110,7 @@ const TrigHyperbolic = {
             retval = TrigHyperbolic.$evaluate(TrigHyperbolic.$.parse(format('(1/2)*' + Settings.LOG + '((1+({0}))/(1-({0})))', symbol.toString())));
         }
         else
-            retval = TrigHyperbolic.$.symfunction('atanh', arguments);
+            retval = symfunction('atanh', arguments);
         return retval;
     },
     asech: function (symbol) {
@@ -120,7 +120,7 @@ const TrigHyperbolic = {
         else if (Settings.PARSE2NUMBER)
             retval = TrigHyperbolic.$evaluate(TrigHyperbolic.$log(TrigHyperbolic.$.add(symbol.clone().invert(), TrigHyperbolic.$sqrt(TrigHyperbolic.$.subtract(TrigHyperbolic.$.pow(symbol, new Symbol(-2)), new Symbol(1))))));
         else
-            retval = TrigHyperbolic.$.symfunction('asech', arguments);
+            retval = symfunction('asech', arguments);
         return retval;
     },
     acsch: function (symbol) {
@@ -130,7 +130,7 @@ const TrigHyperbolic = {
         else if (Settings.PARSE2NUMBER)
             retval = TrigHyperbolic.$evaluate(TrigHyperbolic.$.parse(format(Settings.LOG + '((1+sqrt(1+({0})^2))/({0}))', symbol.toString())));
         else
-            retval = TrigHyperbolic.$.symfunction('acsch', arguments);
+            retval = symfunction('acsch', arguments);
         return retval;
     },
     acoth: function (symbol) {
@@ -147,7 +147,7 @@ const TrigHyperbolic = {
                         new Symbol(2)));
         }
         else
-            retval = TrigHyperbolic.$.symfunction('acoth', arguments);
+            retval = symfunction('acoth', arguments);
         return retval;
     }
 };

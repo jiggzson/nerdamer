@@ -1,10 +1,11 @@
-const {Symbol} = require('./Symbol');
-const {Settings} = require('../Settings');
-const bigDec = require('decimal.js');
-const {Math2} = require('./Math2');
-const {format} = require('./Utils');
+import {Symbol, symfunction} from './Symbol';
+import {Settings} from '../Settings';
+import bigDec from 'decimal.js';
+import {Math2} from './Math2';
+import {format} from './Utils';
 
-const Complex = {
+
+export const Complex = {
     prec: undefined,
     cos: function (r, i) {
         var re, im;
@@ -161,7 +162,7 @@ const Complex = {
     },
     erf(symbol, n) {
         //Do nothing for now. Revisit this in the future.
-        return Complex.$.symfunction('erf', [symbol]);
+        return symfunction('erf', [symbol]);
 
         n = n || 30;
 
@@ -229,8 +230,7 @@ const Complex = {
         if (re.isConstant('all') && im.isConstant('all'))
             return this[f].call(this, re, im);
 
-        return Complex.$.symfunction(f, [symbol]);
+        return symfunction(f, [symbol]);
     }
 };
 
-module.exports = { Complex };

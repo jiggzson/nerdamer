@@ -1,5 +1,5 @@
 //object for functions which handle trig
-const {Symbol} = require('./Symbol');
+const {Symbol, symfunction} = require('./Symbol');
 const {Settings} = require('../Settings');
 const bigDec = require('decimal.js');
 const {isInt, even, format} = require('./Utils');
@@ -59,7 +59,7 @@ const Trig = {
                     c = true;
                 }
                 else
-                    retval = Trig.$.symfunction('cos', [symbol]);
+                    retval = symfunction('cos', [symbol]);
             }
         }
 
@@ -67,7 +67,7 @@ const Trig = {
             retval.negate();
 
         if (!retval)
-            retval = Trig.$.symfunction('cos', [symbol]);
+            retval = symfunction('cos', [symbol]);
 
         return retval;
     },
@@ -123,12 +123,12 @@ const Trig = {
                     c = true;
                 }
                 else
-                    retval = Trig.$.multiply(new Symbol(sign), Trig.$.symfunction('sin', [symbol]));
+                    retval = Trig.$.multiply(new Symbol(sign), symfunction('sin', [symbol]));
             }
         }
 
         if (!retval)
-            retval = Trig.$.multiply(new Symbol(sign), Trig.$.symfunction('sin', [symbol]));
+            retval = Trig.$.multiply(new Symbol(sign), symfunction('sin', [symbol]));
 
         if (c && (q === 3 || q === 4))
             retval.negate();
@@ -179,12 +179,12 @@ const Trig = {
                     c = true;
                 }
                 else
-                    retval = Trig.$.symfunction('tan', [symbol]);
+                    retval = symfunction('tan', [symbol]);
             }
         }
 
         if (!retval)
-            retval = Trig.$.symfunction('tan', [symbol]);
+            retval = symfunction('tan', [symbol]);
 
         if (c && (q === 2 || q === 4))
             retval.negate();
@@ -233,7 +233,7 @@ const Trig = {
                     c = true;
                 }
                 else
-                    retval = Trig.$.symfunction('sec', [symbol]);
+                    retval = symfunction('sec', [symbol]);
             }
         }
 
@@ -241,7 +241,7 @@ const Trig = {
             retval.negate();
 
         if (!retval)
-            retval = Trig.$.symfunction('sec', [symbol]);
+            retval = symfunction('sec', [symbol]);
 
         return retval;
     },
@@ -291,12 +291,12 @@ const Trig = {
                     c = true;
                 }
                 else
-                    retval = Trig.$.multiply(new Symbol(sign), Trig.$.symfunction('csc', [symbol]));
+                    retval = Trig.$.multiply(new Symbol(sign), symfunction('csc', [symbol]));
             }
         }
 
         if (!retval)
-            retval = Trig.$.multiply(new Symbol(sign), Trig.$.symfunction('csc', [symbol]));
+            retval = Trig.$.multiply(new Symbol(sign), symfunction('csc', [symbol]));
 
         if (c && (q === 3 || q === 4))
             retval.negate();
@@ -348,12 +348,12 @@ const Trig = {
                     c = true;
                 }
                 else
-                    retval = Trig.$.symfunction('cot', [symbol]);
+                    retval = symfunction('cot', [symbol]);
             }
         }
 
         if (!retval)
-            retval = Trig.$.symfunction('cot', [symbol]);
+            retval = symfunction('cot', [symbol]);
 
         if (c && (q === 2 || q === 4))
             retval.negate();
@@ -378,7 +378,7 @@ const Trig = {
             if (symbol.isImaginary())
                 return Complex.evaluate(symbol, 'acos');
         }
-        return Trig.$.symfunction('acos', arguments);
+        return symfunction('acos', arguments);
     },
     asin: function (symbol) {
         if (Settings.PARSE2NUMBER) {
@@ -399,7 +399,7 @@ const Trig = {
             if (symbol.isImaginary())
                 return Complex.evaluate(symbol, 'asin');
         }
-        return Trig.$.symfunction('asin', arguments);
+        return symfunction('asin', arguments);
     },
     atan: function (symbol) {
         var retval;
@@ -416,12 +416,12 @@ const Trig = {
             }
             if (symbol.isImaginary())
                 return Complex.evaluate(symbol, 'atan');
-            return Trig.$.symfunction('atan', arguments);
+            return symfunction('atan', arguments);
         }
         else if (symbol.equals(-1))
             retval = Trig.$.parse('-pi/4');
         else
-            retval = Trig.$.symfunction('atan', arguments);
+            retval = symfunction('atan', arguments);
         return retval;
     },
     asec: function (symbol) {
@@ -436,7 +436,7 @@ const Trig = {
                 return Complex.evaluate(symbol, 'asec');
             }
         }
-        return Trig.$.symfunction('asec', arguments);
+        return symfunction('asec', arguments);
     },
     acsc: function (symbol) {
         if (Settings.PARSE2NUMBER) {
@@ -447,7 +447,7 @@ const Trig = {
             if (symbol.isImaginary())
                 return Complex.evaluate(symbol, 'acsc');
         }
-        return Trig.$.symfunction('acsc', arguments);
+        return symfunction('acsc', arguments);
     },
     acot: function (symbol) {
         if (Settings.PARSE2NUMBER) {
@@ -458,7 +458,7 @@ const Trig = {
             if (symbol.isImaginary())
                 return Complex.evaluate(symbol, 'acot');
         }
-        return Trig.$.symfunction('acot', arguments);
+        return symfunction('acot', arguments);
     },
     atan2: function (a, b) {
         if (a.equals(0) && b.equals(0))
@@ -467,7 +467,7 @@ const Trig = {
         if (Settings.PARSE2NUMBER && a.isConstant() && b.isConstant()) {
             return new Symbol(Math.atan2(a, b));
         }
-        return Trig.$.symfunction('atan2', arguments);
+        return symfunction('atan2', arguments);
     }
 };
 

@@ -253,7 +253,7 @@ class Symbol {
                 t = Symbol.$parser.multiply(t, x);
             });
 
-            var xt = Symbol.$parser.symfunction(Settings.PARENTHESIS, [t]);
+            var xt = symfunction(Settings.PARENTHESIS, [t]);
             xt.power = min;
             xt.multiplier = sign < 0 ? out_.negate() : out_;
 
@@ -552,7 +552,7 @@ class Symbol {
                     arg = Symbol.$parser.parse(arg);
                 nargs.push(arg.sub(a, b));
             }
-            retval = Symbol.$parser.symfunction(this.fname, nargs);
+            retval = symfunction(this.fname, nargs);
         }
         //if we did manage a substitution
         if (retval) {
@@ -1534,4 +1534,25 @@ var isNegative = function (obj) {
     return obj.lessThan(0);
 };
 
-module.exports = { Symbol, isVariableSymbol, isNumericSymbol, isSymbol, isFraction, isNegative };
+/**
+ * Generates library's representation of a function. It's a fancy way of saying a symbol with
+ * a few extras. The most important thing is that that it gives a fname and
+ * an args property to the symbols in addition to changing its group to FN
+ * @param {String} fn_name
+ * @param {Array} params
+ * @returns {Symbol}
+ */
+export function symfunction(fn_name, params) {
+    //call the proper function and return the result;
+    var f = new Symbol(fn_name);
+    f.group = Groups.FN;
+    if (typeof params === 'object') {
+        params = [].slice.call(params);//ensure an array
+    }
+    f.args = params;
+    f.fname = fn_name === Settings.PARENTHESIS ? '' : fn_name;
+    f.updateHash();
+    return f;
+}
+
+module.exports = { Symbol, isVariableSymbol, isNumericSymbol, isSymbol, isFraction, isNegative, symfunction };

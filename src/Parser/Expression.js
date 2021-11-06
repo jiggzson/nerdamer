@@ -2,6 +2,7 @@ const {isSymbol, isNumericSymbol, isFraction} = require('../Core/Symbol');
 const {Settings} = require('../Settings');
 const {isVector} = require('./Vector');
 const {Build} = require('./Build');
+const {text} = require('../Core/Text');
 
 /**
  * This is what nerdamer returns. It's sort of a wrapper around the symbol class and
@@ -47,7 +48,7 @@ class Expression {
         if (this.symbol.text_)
             return this.symbol.text_(opt);
 
-        return this.$text(this.symbol, opt, undefined, n);
+        return text(this.symbol, opt, undefined, n);
     }
 
     /**
@@ -157,7 +158,7 @@ class Expression {
     //forces the symbol to be returned as a decimal
     toDecimal(prec) {
         Settings.precision = prec;
-        var dec = this.$text(this.symbol, 'decimals');
+        var dec = text(this.symbol, 'decimals');
         Settings.precision = undefined;
         return dec;
     }

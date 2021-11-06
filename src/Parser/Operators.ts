@@ -1,11 +1,10 @@
 import {Settings} from '../Settings';
 // @ts-ignore
-import {Symbol} from '../Core/Symbol';
+import {Symbol, symfunction} from '../Core/Symbol';
 
 type OperationFunction = (...args: any) => any;
 
 type OperatorsDependencies = {
-    symfunction: (fn_name: string, params: any) => Symbol;
     factorial: (symbol: Symbol) => Symbol;
     divide: (a: Symbol, b: Symbol) => Symbol;
     registerOperator: (name: string, operation?: OperationFunction) => void;
@@ -62,7 +61,7 @@ export class Operators {
                 postfix: true,
                 leftAssoc: true,
                 operation: (e: any) => {
-                    return this.deps.symfunction(Settings.DOUBLEFACTORIAL, [e]); //wrap it in a factorial function
+                    return symfunction(Settings.DOUBLEFACTORIAL, [e]); //wrap it in a factorial function
                 }
             },
             '!': {
