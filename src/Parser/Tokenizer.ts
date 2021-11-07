@@ -1,42 +1,34 @@
 import {Token} from './Token';
-import {isNumber, scientificToDecimal} from '../Core/Utils';
+import {isNumber, remove} from '../Core/Utils';
 import {Math2} from '../Core/Math2';
 import {Settings} from '../Settings';
 import {Bracket, Brackets, OperatorDictionary} from './OperatorDictionary';
 import {Node} from './Node';
+import {FunctionProvider} from '../Operators/functions';
+import {PreprocessorError} from '../Core/Errors';
 
 class ParityError extends Error {
     name = 'ParityError';
 }
 
 type PreprocessorAction = (expression: string) => string;
-type Preprocessors = { names: never[], actions: PreprocessorAction[] };
-type Functions = Record<string, [Function, number | number[]]>;
-
-type TokenizerDependencies = {
-    preprocessors: Preprocessors;
-    functions: Functions;
-    brackets: Brackets;
-    operators: OperatorDictionary;
-    units: Record<string, never>;
-}
+type Preprocessors = { names: (string|undefined)[], actions: (PreprocessorAction|undefined)[] };
 
 export class Tokenizer {
     // dependencies
-    private readonly deps: TokenizerDependencies;
-    private readonly preprocessors: Preprocessors;
-    private readonly functions: Functions;
+    // private readonly deps: TokenizerDependencies;
+    private readonly functions: FunctionProvider;
     private readonly brackets: Brackets;
     private readonly operators: OperatorDictionary;
-    private readonly units: Record<string, never>;
+    private readonly units: Record<string, any>;
 
-    constructor(deps: TokenizerDependencies) {
-        this.deps = deps;
-        this.preprocessors = deps.preprocessors;
-        this.functions = deps.functions
-        this.brackets = deps.brackets;
-        this.operators = deps.operators;
-        this.units = deps.units;
+    private preprocessors: Preprocessors = { names: [], actions: [] };
+
+    constructor(functionsProvider: FunctionProvider, operators: OperatorDictionary, units: Record<string, any>) {
+        this.functions = functionsProvider
+        this.brackets = operators.getBrackets();
+        this.operators = operators;
+        this.units = units;
     }
 
     /*
@@ -49,9 +41,57 @@ export class Tokenizer {
             e = this.prepareExpression(e);
         }
 
-        let t = new InnerTokenizer(this.deps, e);
+        let t = new InnerTokenizer(this.functions, this.brackets, this.operators, this.units, e);
         return t.tokenize();
     }
+
+    addPreprocessor(name: string, action: string, order: number, shift_cells: boolean) {
+        let names = this.preprocessors.names || [];
+        let actions = this.preprocessors.actions || [];
+        if ((typeof action !== 'function')) //the person probably forgot to specify a name
+            throw new PreprocessorError('Incorrect parameters. Function expected!');
+        if (!order) {
+            names.push(name);
+            actions.push(action);
+        }
+        else {
+            if (shift_cells) {
+                names.splice(order, 0, name);
+                actions.splice(order, 0, action);
+            }
+            else {
+                names[order] = name;
+                actions[order] = action;
+            }
+        }
+    }
+
+    getPreprocessors() {
+        let preprocessors: Record<string, any> = {};
+        if (this.preprocessors.names?.length )
+
+        for (let i = 0, l = this.preprocessors.names.length; i < l; i++) {
+            let name = this.preprocessors.names[i] || '';
+            preprocessors[name] = {
+                order: i,
+                action: this.preprocessors.actions[i]
+            };
+        }
+
+        return preprocessors;
+    }
+
+    removePreprocessor(name: string, shift_cells: boolean) {
+        let i = this.preprocessors.names.indexOf(name);
+        if (shift_cells) {
+            remove(this.preprocessors.names, i);
+            remove(this.preprocessors.actions, i);
+        }
+        else {
+            this.preprocessors.names[i] = undefined;
+            this.preprocessors.actions[i] = undefined;
+        }
+    };
 
     /*
      * Preforms preprocessing on the string. Useful for making early modification before
@@ -67,7 +107,7 @@ export class Tokenizer {
         e = String(e);
         //apply preprocessors
         for (let i = 0; i < this.preprocessors.actions.length; i++)
-            e = this.preprocessors.actions[i].call(this, e);
+            e = this.preprocessors.actions[i]?.call(this, e) || e;
 
         //e = e.split(' ').join('');//strip empty spaces
         //replace multiple spaces with one space
@@ -95,7 +135,7 @@ export class Tokenizer {
         })
 
         e = e.replace(/([a-z0-9_]+)/gi, (match, a) => {
-            if (!Settings.USE_MULTICHARACTER_VARS && !(a in this.functions)) {
+            if (!Settings.USE_MULTICHARACTER_VARS && !this.functions.getFunctionDescriptor(a)) {
                 if (!isNaN(a))
                     return a;
                 return a.split('').join('*');
@@ -114,7 +154,7 @@ export class Tokenizer {
                 let g1 = a || c,
                     g2 = b || d;
 
-                if (g1 in this.functions) //create a passthroughs for functions
+                if (this.functions.getFunctionDescriptor(g1)) //create a passthroughs for functions
                     return g1 + g2;
                 return g1 + '*' + g2;
             });
@@ -185,11 +225,10 @@ export class Tokenizer {
 
 class InnerTokenizer {
     // dependencies
-    private readonly preprocessors: Preprocessors;
-    private readonly functions: Functions;
+    private readonly functions: FunctionProvider;
     private readonly brackets: Brackets;
     private readonly operators: OperatorDictionary;
-    private readonly units: Record<string, never>;
+    private readonly units: Record<string, any>;
 
     private expression: string;
 
@@ -200,13 +239,12 @@ class InnerTokenizer {
     private col: number;
     private readonly tokens: any[];
 
-    constructor(deps: TokenizerDependencies, expression: string) {
+    constructor(functions: FunctionProvider, brackets: Brackets, operators: OperatorDictionary, units: Record<string, any>, expression: string) {
         this.expression = expression;
-        this.preprocessors = deps.preprocessors;
-        this.functions = deps.functions
-        this.brackets = deps.brackets;
-        this.operators = deps.operators;
-        this.units = deps.units;
+        this.functions = functions
+        this.brackets = brackets;
+        this.operators = operators;
+        this.units = units;
 
         this.tokens = []; //the tokens container
         this.col = 0; //the column position
@@ -420,7 +458,7 @@ class InnerTokenizer {
                     //mark the bracket
                     open_brackets.push([bracket, this.lpos]);
                     let f = e.substring(this.lpos, this.col);
-                    if (f in this.functions) {
+                    if (this.functions.getFunctionDescriptor(f)) {
                         this.add_function(f);
                     }
                     else if (f !== '') {
@@ -474,7 +512,7 @@ class InnerTokenizer {
                     //check if it's a function
                     let f = e.substring(this.lpos, this.col);
 
-                    if (f in this.functions) {
+                    if (this.functions.getFunctionDescriptor(f)) {
                         //there's no need to go up in scope if the next character is an operator
                         has_space = true; //mark that a space was found
                         this.add_function(f);

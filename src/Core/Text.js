@@ -4,12 +4,6 @@ import {Settings} from '../Settings';
 import {isSymbol, inBrackets, nround, isVector} from './Utils';
 import {Groups} from './Groups';
 
-
-export const TextDependencies = {
-    CUSTOM_OPERATORS: null
-};
-const deps = TextDependencies;
-
 /**
  * This method will return a hash or a text representation of a Symbol, Matrix, or Vector.
  * If all else fails it *assumes* the object has a toString method and will call that.
@@ -212,8 +206,14 @@ export function text(obj, option= undefined, useGroup= undefined, decp= undefine
                 return text(symbol, opt);
             }).join(','));
         }
+
+
+        /*
+
+        FIXME: Currently there is no way to set CUSTOM_OPERATORS outside of core, is this code still needed?
+
         //TODO: Needs to be more efficient. Maybe.
-        if (group === Groups.FN && obj.fname in deps.CUSTOM_OPERATORS) {
+        if (group === Groups.FN && obj.fname in CUSTOM_OPERATORS) {
             var a = text(obj.args[0]);
             var b = text(obj.args[1]);
             if (obj.args[0].isComposite()) //preserve the brackets
@@ -222,6 +222,8 @@ export function text(obj, option= undefined, useGroup= undefined, decp= undefine
                 b = inBrackets(b);
             value = a + deps.CUSTOM_OPERATORS[obj.fname] + b;
         }
+         */
+
         //wrap the power since / is less than ^
         //TODO: introduce method call isSimple
         if (power && group !== Groups.EX && wrapCondition(power)) {

@@ -66,6 +66,10 @@ export class InvalidVariableNameError extends Error {
   name = 'InvalidVariableNameError';
 }
 
+export class PreprocessorError extends Error {
+  name = 'PreprocessorError';
+}
+
 
 /**
  * Use this when errors are suppressible

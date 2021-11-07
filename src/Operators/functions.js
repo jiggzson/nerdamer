@@ -11,7 +11,7 @@ import {
 } from '../Core/functions';
 import {expandall} from '../Core/functions/math/expand';
 
-export class FunctionDictionary {
+export class FunctionProvider {
     functions = {
         'cos': [Trig.cos, 1],
         'sin': [Trig.sin, 1],
@@ -120,17 +120,40 @@ export class FunctionDictionary {
         'print': [print, -1]
     }
 
-    getFunction(fname) {
-        let fmodules = Settings.FUNCTION_MODULES;
-        const l = fmodules.length;
+    getFunctionDescriptor(name) {
+        return this.functions[name];
+    }
+
+    /**
+     * Searches for function in FUNCTION_MODULES by name, throws error was not found
+     * @param name
+     * @return {(...args: any) => any}
+     * @throws
+     */
+    findFunction(name) {
+        let modules = Settings.FUNCTION_MODULES;
+        const l = modules.length;
 
         for (let i = 0; i < l; i++) {
-            let fmodule = fmodules[i];
-            if (fname in fmodule) {
-                return fmodule[fname];
+            let module = modules[i];
+            if (name in module) {
+                return module[name];
             }
         }
-        err('The function ' + fname + ' is undefined!');
+
+        err(`The function ${name} is undefined!`);
+    }
+
+    getFunctionDescriptors() {
+        return this.functions;
+    }
+
+    setFunctionDescriptor(name, descriptor) {
+        this.functions[name] = descriptor;
+    }
+
+    removeFunctionDescriptor(name) {
+        delete this.functions[name];
     }
 }
 

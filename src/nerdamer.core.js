@@ -77,7 +77,7 @@ import {Symbol, symfunction} from './Core/Symbol';
 import {Frac} from './Core/Frac';
 import Scientific from './Core/Scientific';
 import {OperatorDictionary} from './Parser/OperatorDictionary';
-import {createFunctions, findFunction} from './Operators/functions';
+import {FunctionProvider} from './Operators/functions';
 import {Groups} from './Core/Groups';
 import {Slice} from './Parser/Slice';
 import {Matrix} from './Parser/Matrix';
@@ -90,7 +90,6 @@ import {Token} from './Parser/Token';
 import {Tokenizer} from './Parser/Tokenizer';
 import {Expression} from './Parser/Expression';
 import {RPN} from './Parser/RPN';
-import {Build} from './Parser/Build';
 import {LaTeX} from './LaTeX/LaTeX';
 import * as exceptions from './Core/Errors';
 import {Trig} from './Core/Trig';
@@ -98,49 +97,85 @@ import {Trig} from './Core/Trig';
 
 import {ParseDeps} from './Core/parse';
 import {expand} from './Core/functions/math/expand';
-import {TextDependencies} from './Core/Text';
 import {FactorialDeps} from './Core/functions/math/factorial';
 import {ReservedDictionary} from './Parser/ReservedDictionary';
 const {NerdamerTypeError, NerdamerValueError, err} = exceptions;
 
 
+//version ======================================================================
+const version = '1.1.12';
+// set bigInt the precision to js precision
+bigDec.set({
+    precision: 250
+});
+
 
 const nerdamer = (function () {
-//version ======================================================================
-    const version = '1.1.12';
-
 //inits ========================================================================
-    const _ = new Parser(); //nerdamer's parser
+    const reservedDictionary = new ReservedDictionary();
+    const functionProvider = new FunctionProvider();
+    const operators = new OperatorDictionary();
+    const units = {};
+    const tokenizer = new Tokenizer(functionProvider, operators, units);
 
-    //set bigInt the precision to js precision
-    bigDec.set({
-        precision: 250
-    });
+    // functions for export
+    const getU = symbol => reservedDictionary.getU(symbol);
+    const clearU = u => reservedDictionary.clearU(u);
+    const isReserved = value => reservedDictionary.isReserved(value);
+    const reserveNames = obj => reservedDictionary.reserveNames(obj);
+
+    const getOperator = (...args) => operators.getOperator(...args);
+    const aliasOperator = (...args) => operators.aliasOperator(...args);
+    const setOperator = (...args) => operators.setOperator(...args);
+
+    let setFunction = function (name, params_array, body) {
+        validateName(name);
+        if (!reservedDictionary.isReserved(name)) {
+            params_array = params_array || _.parse(body).variables();
+            // The function gets set to PARSER.mapped function which is just
+            // a generic function call.
+
+            functionProvider.setFunctionDescriptor(
+                name,
+                [_.mapped_function, params_array.length, {
+                    name: name,
+                    params: params_array,
+                    body: body
+                }]
+            );
+            return body;
+        }
+        return null;
+    };
+    /**
+     * provide a mechanism for accessing functions directly. Not yet complete!!!
+     * Some functions will return undefined. This can maybe just remove the
+     * function object at some point when all functions are eventually
+     * housed in the global function object. Returns ALL parser available
+     * functions. Parser.functions may not contain all functions
+     */
+    let importFunctions = function () {
+        let o = {};
+        let functions = functionProvider.getFunctionDescriptors();
+        for (let x in functions) {
+            o[x] = functions[x][0];
+        }
+        return o;
+    };
+
+
+    // nerdamer's parser
+    const _ = new Parser();
+
 
 //Settings =====================================================================
-    const CUSTOM_OPERATORS = {};
-
-    (function () {
-        Settings.CACHE.roots = {};
-        let x = 40,
-            y = 40;
-        for (let i = 2; i <= x; i++) {
-            for (let j = 2; j <= y; j++) {
-                let nthpow = bigInt(i).pow(j);
-                Settings.CACHE.roots[nthpow + '-' + j] = i;
-            }
-        }
-    })();
 
     //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
     //The groups that help with organizing during parsing. Note that for FN is still a function even
     //when it's raised to a symbol, which typically results in an EX
-    const N = Groups.N, // A number
-        P = Groups.P, // A number with a rational power e.g. 2^(3/5).
+    const
         S = Groups.S, // A single variable e.g. x.
-        EX = Groups.EX, // An exponential
         FN = Groups.FN, // A function
-        PL = Groups.PL, // A symbol/expression having same name with different powers e.g. 1/x + x^2
         CB = Groups.CB, // A symbol/expression composed of one or more variables through multiplication e.g. x*y
         CP = Groups.CP; // A symbol/expression composed of one variable and any other symbol or number x+1 or x+y
 
@@ -161,62 +196,17 @@ const nerdamer = (function () {
 
 //Utils ========================================================================
 
-    const reservedDictionary = new ReservedDictionary();
-
-    const getU = symbol => reservedDictionary.getU(symbol);
-    const clearU = u => reservedDictionary.clearU(u);
-    const isReserved = value => reservedDictionary.isReserved(value);
-    const reserveNames = obj => reservedDictionary.reserveNames(obj);
-
-
-
-    /**
-     * Is used to set a user defined function using the function assign operator
-     * @param {String} name
-     * @param {String[]} params_array
-     * @param {String} body
-     * @returns {Boolean}
-     */
-    let setFunction = function (name, params_array, body) {
-        validateName(name);
-        if (!reservedDictionary.isReserved(name)) {
-            params_array = params_array || _.parse(body).variables();
-            // The function gets set to PARSER.mapped function which is just
-            // a generic function call.
-            _.functions[name] = [_.mapped_function, params_array.length, {
-                name: name,
-                params: params_array,
-                body: body
-            }];
-
-            return body;
-        }
-        return null;
-    };
 
 
 
 
 
-    /**
-     * provide a mechanism for accessing functions directly. Not yet complete!!!
-     * Some functions will return undefined. This can maybe just remove the
-     * function object at some point when all functions are eventually
-     * housed in the global function object. Returns ALL parser available
-     * functions. Parser.functions may not contain all functions
-     */
-    let importFunctions = function () {
-        let o = {};
-        for (let x in _.functions)
-            o[x] = _.functions[x][0];
-        return o;
-    };
+
+
 
     //link the Math2 object to Settings.FUNCTION_MODULES
     Settings.FUNCTION_MODULES.push(Math2);
     reserveNames(Math2); //reserve the names in Math2
-
-    TextDependencies.CUSTOM_OPERATORS = CUSTOM_OPERATORS;
 
 //Expression ===================================================================
     Expression.prototype.$getAction = a => {
@@ -227,7 +217,7 @@ const nerdamer = (function () {
     function Parser() {
         //Point to the local parser instead of the global one
         let _ = this;
-        let preprocessors = {names: [], actions: []};
+
 
         //create link to classes
         this.classes = {
@@ -238,28 +228,22 @@ const nerdamer = (function () {
         this.trig = Trig;
 
         //list of supported units
-        this.units = {};
-        //list all the supported operators
-        //brackets
+        this.units = units;
 
-        let operators = new OperatorDictionary();
         operators.injectOperatorsDeps({
             registerOperator: (name, operation) => _[name] = operation,
         });
 
         // backward compatibility hooks
         this.isOperator = (...args) => operators.isOperator(...args);
-        this.getOperator = (...args) => operators.getOperator(...args);
-        this.getOperators = (...args) => operators.getOperators(...args);
+        // this.getOperators = (...args) => operators.getOperators(...args);
         this.getOperatorsClass = () => operators;
         this.getBrackets = (...args) => operators.getBrackets(...args);
-        this.aliasOperator = (...args) => operators.aliasOperator(...args);
-        this.setOperator = (...args) => operators.setOperator(...args);
 
-        let brackets = operators.getBrackets();
 
-        let functions = this.functions = createFunctions();
-        this.getFunctions = () => (functions);
+
+        this.functions = functionProvider.getFunctionDescriptors();
+        this.getFunctions = () => functionProvider.getFunctionDescriptors;
 
         //error handler
         this.error = err;
@@ -296,8 +280,8 @@ const nerdamer = (function () {
          * @param {int} allowed_args
          * @returns {Symbol}
          */
-        this.callfunction = function (fn_name, args, allowed_args) {
-            let fn_settings = functions[fn_name];
+        this.callfunction = function (fn_name, args, allowed_args= undefined) {
+            let fn_settings = functionProvider.getFunctionDescriptor(fn_name);
 
             if (!fn_settings)
                 err('Nerdamer currently does not support the function ' + fn_name);
@@ -341,7 +325,7 @@ const nerdamer = (function () {
 //            else {
             if (!fn) {
                 //Remember assumption 1. No function defined so it MUST be numeric in nature
-                fn = findFunction(fn_name);
+                fn = functionProvider.findFunction(fn_name);
                 if (Settings.PARSE2NUMBER && numericArgs)
                     retval = bigConvert(fn.apply(fn, args));
                 else
@@ -390,8 +374,7 @@ const nerdamer = (function () {
          * @deprecated
          */
         this.tokenize = function (e) {
-            let deps = {preprocessors, functions, brackets, operators, units: _.units};
-            let tokenizer = new Tokenizer(deps);
+            // let deps = {preprocessors, functionsDirectory: functionProvider, brackets, operators, units: _.units};
             return tokenizer.tokenize(e, false);
         };
 
@@ -425,8 +408,8 @@ const nerdamer = (function () {
         };
 
 
-        let deps = {preprocessors, functions, brackets, operators, units: _.units};
-        let tokenizer = new Tokenizer(deps);
+        // let deps = {preprocessors, functionsDirectory: functionProvider, brackets, operators, units: _.units};
+        // let tokenizer = new Tokenizer(deps);
 
         this.tree = tokenizer.tree;
 
@@ -827,50 +810,11 @@ const nerdamer = (function () {
         };
 
 //Parser.methods ===============================================================
-        this.addPreprocessor = function (name, action, order, shift_cells) {
-            let names = preprocessors.names;
-            let actions = preprocessors.actions;
-            if ((typeof action !== 'function')) //the person probably forgot to specify a name
-                throw new PreprocessorError('Incorrect parameters. Function expected!');
-            if (!order) {
-                names.push(name);
-                actions.push(action);
-            }
-            else {
-                if (shift_cells) {
-                    names.splice(order, 0, name);
-                    actions.splice(order, 0, action);
-                }
-                else {
-                    names[order] = name;
-                    actions[order] = action;
-                }
-            }
-        };
 
-        this.getPreprocessors = function () {
-            let preprocessors = {};
-            for (let i = 0, l = preprocessors.names.length; i < l; i++) {
-                let name = preprocessors.names[i];
-                preprocessors[name] = {
-                    order: i,
-                    action: preprocessors.actions[i]
-                };
-            }
-            return preprocessors;
-        };
 
-        this.removePreprocessor = function (name, shift_cells) {
-            let i = preprocessors.names.indexOf(name);
-            if (shift_cells) {
-                remove(preprocessors.names, i);
-                remove(preprocessors.actions, i);
-            }
-            else {
-                preprocessors.names[i] = undefined;
-                preprocessors.actions[i] = undefined;
-            }
-        };
+
+
+
 
         //The loader for functions which are not part of Math2
         this.mapped_function = function () {
@@ -994,7 +938,7 @@ const nerdamer = (function () {
     /* FINALIZE */
     (function () {
         reserveNames(_.CONSTANTS);
-        reserveNames(_.functions);
+        reserveNames(functionProvider.getFunctionDescriptors());
         _.initConstants();
         //bug fix for error but needs to be revisited
         if (!_.error)
@@ -1002,8 +946,8 @@ const nerdamer = (function () {
 
         //Store the log and log10 functions
         Settings.LOG_FNS = {
-            log: _.functions['log'],
-            log10: _.functions['log10']
+            log: functionProvider.getFunctionDescriptor('log'),
+            log10: functionProvider.getFunctionDescriptor('log10')
         };
 
     })();
@@ -1132,7 +1076,7 @@ const nerdamer = (function () {
             }
             // Wrap it in a function if requested. This only holds true for
             // functions that take a single argument which is the expression
-            let f = _.functions[option];
+            let f = functionProvider.getFunctionDescriptor(option);
             // If there's a function and it takes a single argument, then wrap
             // the expression in it
             if (f && f[1] === 1) {
@@ -1347,8 +1291,10 @@ const nerdamer = (function () {
                 //attach the function to the core
                 ref_obj[obj.name] = fn;
             }
-            if (obj.visible)
-                _.functions[obj.name] = [fn, obj.numargs]; //make the function available
+
+            if (obj.visible) {
+                functionProvider.setFunctionDescriptor(obj.name, [fn, obj.numargs]); //make the function available
+            }
 
         }
     };
@@ -1378,7 +1324,7 @@ const nerdamer = (function () {
      * @returns {Array} Array of functions currently supported by nerdamer
      */
     libExports.supported = function () {
-        return Object.keys(_.functions);
+        return Object.keys(functionProvider.getFunctionDescriptors());
     };
 
     /**
@@ -1493,20 +1439,22 @@ const nerdamer = (function () {
             //set log10 as log
             Settings.LOG10 = 'log';
             //point the functions in the right direction
-            _.functions['log'] = Settings.LOG_FNS.log10; //log is now log10
-            //the log10 function must be explicitly set
-            _.functions['log'][0] = function (x) {
+
+            const logFunc = x => {
                 if (x.isConstant())
                     return new Symbol(Math.log10(x));
                 return _.symfunction(Settings.LOG10, [x]);
             };
-            _.functions['LN'] = Settings.LOG_FNS.log; //LN is now log
+
+            functionProvider.setFunctionDescriptor('log', [logFunc, [1, 2]])
+            functionProvider.setFunctionDescriptor('LN', Settings.LOG_FNS.log);
 
             //remove log10
-            delete _.functions['log10'];
+            functionProvider.removeFunctionDescriptor('log10');
         }
-        else
+        else {
             Settings[setting] = value;
+        }
     };
 
     /**
@@ -1524,38 +1472,35 @@ const nerdamer = (function () {
      */
     libExports.api = function (override) {
         //Map internal functions to external ones
-        let linker = function (fname) {
-            return function () {
-                let args = [].slice.call(arguments);
-                for (let i = 0; i < args.length; i++)
+        let linker = fname => {
+            return (...args) => {
+                for (let i = 0; i < args.length; i++) {
                     args[i] = _.parse(args[i]);
-                return new Expression(block('PARSE2NUMBER', function () {
+                }
+
+                return new Expression(block('PARSE2NUMBER', () => {
                     return _.callfunction(fname, args);
                 }));
             };
         };
-        //perform the mapping
-        for (let x in _.functions)
-            if (!(x in libExports) || override)
-                libExports[x] = linker(x);
     };
 
     libExports.replaceFunction = function (name, fn, num_args) {
-        let existing = _.functions[name];
+        let existing = functionProvider.getFunctionDescriptor(name);
         let new_num_args = typeof num_args === 'undefined' ? existing[1] : num_args;
-        _.functions[name] = [fn.call(undefined, existing[0], C), new_num_args];
+        functionProvider.setFunctionDescriptor(name, [fn.call(undefined, existing[0], C), new_num_args]);
     };
 
     libExports.setOperator = function (operator, shift) {
-        _.setOperator(operator, shift);
+        setOperator(operator, shift);
     };
 
     libExports.getOperator = function (operator) {
-        return _.getOperator(operator);
+        return getOperator(operator);
     };
 
     libExports.aliasOperator = function (operator, withOperator) {
-        _.aliasOperator(operator, withOperator);
+        return aliasOperator(operator, withOperator);
     };
 
     libExports.tree = function (expression) {
@@ -1591,7 +1536,29 @@ const nerdamer = (function () {
 
     libExports.api();
 
-    return libExports; //Done
+
+    let proxy = new Proxy(libExports, {
+        get: (target, name) => {
+            // console.log('Requested prop:', name);
+            if (target[name]) return target[name];
+
+            if (functionProvider.getFunctionDescriptor(name)) {
+                return (...args) => {
+                    for (let i = 0; i < args.length; i++) {
+                        args[i] = _.parse(args[i]);
+                    }
+
+                    return new Expression(block('PARSE2NUMBER', () => {
+                        return _.callfunction(name, args);
+                    }));
+                }
+            }
+
+            // throw new Error('Requested non-existent property: ' + name);
+        }
+    });
+
+    return proxy; //Done
 //imports ======================================================================
 })();
 
