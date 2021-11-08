@@ -6,7 +6,7 @@
     "description": "javascript light-weight symbolic math expression evaluator",
     "name": "nerdamer",
     "license": "MIT",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "homepage": "http://nerdamer.com/",
     "directory": {
         "lib": "./"
@@ -50,6 +50,9 @@
         "test_tokenizer": "tsc && jasmine build/spec/tokenizer/tokenize.spec.js",
         "build": "webpack --config-name core && webpack --config-name all"
     },
+    "files": [
+        "src"
+    ],
     "devDependencies": {
         "gulp": "^4.0.2",
         "gulp-cli": "^2.3.0",
