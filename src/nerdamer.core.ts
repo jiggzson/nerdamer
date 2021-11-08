@@ -9,7 +9,7 @@
 
 import {Expression} from './Parser/Expression';
 import {Settings, SettingsType} from './Settings';
-import {OperatorDescriptor} from './Parser/OperatorDictionary';
+import {OperatorDescriptor} from './Providers/OperatorDictionary';
 import {Core} from './Core/Core';
 import bigDec from 'decimal.js';
 import * as Utils from './Core/Utils';

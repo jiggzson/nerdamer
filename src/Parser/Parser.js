@@ -1,15 +1,15 @@
 import {Collection} from './Collection';
 import {Slice} from './Slice';
 import {Token} from './Token';
-import {Trig} from '../Core/Trig';
-import {TrigHyperbolic} from '../Core/Trig.hyperbolic';
-import {bigConvert, Symbol, symfunction} from '../Core/Symbol';
+import {Trig} from '../Functions/Trig';
+import {TrigHyperbolic} from '../Functions/Trig.hyperbolic';
+import {bigConvert, Symbol, symfunction} from '../Types/Symbol';
 import {Settings} from '../Settings';
 import {RPN} from './RPN';
 import {allNumbers, block, format, isArray, isSymbol, validateName} from '../Core/Utils';
-import {Groups} from '../Core/Groups';
+import {Groups} from '../Types/Groups';
 import {LaTeX} from '../LaTeX/LaTeX';
-import {Vector} from './Vector';
+import {Vector} from '../Types/Vector';
 import {err, NerdamerValueError} from '../Core/Errors';
 import {
     abs,
@@ -24,9 +24,10 @@ import {
     nthroot, pow,
     rationalize, realpart,
     round, sqrt, subtract
-} from '../Core/functions';
-import {expand} from '../Core/functions/math/expand';
-import {OperatorDescriptor} from './OperatorDictionary';
+} from '../Functions/Core';
+import {expand} from '../Functions/Core/math/expand';
+import {OperatorDescriptor} from '../Providers/OperatorDictionary';
+import {ParseDeps} from './Parser';
 
 //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
 export class Parser {
@@ -50,6 +51,7 @@ export class Parser {
     functionProvider;
     /** @property {VariableDictionary} variables */
     variables;
+    bin = {};
 
     constructor(tokenizer, operators, functionProvider, variables, peekers, units) {
         this.tokenizer = tokenizer;
@@ -146,7 +148,30 @@ export class Parser {
                 }
             });
         }
-    };
+    }
+
+    /**
+     * This method gives the ability to override operators with new methods.
+     * @param {String} which
+     * @param {Function} with_what
+     */
+    override(which, with_what) {
+        if (!this.bin[which]) {
+            this.bin[which] = [];
+        }
+        this.bin[which].push(this[which]);
+        this[which] = with_what;
+    }
+
+    /**
+     * Restores a previously overridden operator
+     * @param {String} what
+     */
+    restore(what) {
+        if (this[what]) {
+            this[what] = this.bin[what].pop();
+        }
+    }
 
     clean(symbol) {
         // handle functions with numeric values
@@ -593,6 +618,10 @@ export class Parser {
         return this.functionProvider.getFunctionDescriptors()
     }
 
+    getFunctionProvider() {
+        return this.functionProvider
+    }
+
 
     // Gets called when the parser finds the , operator.
     // Commas return a Collector object which is roughly an array
@@ -806,4 +835,37 @@ export class Parser {
         return null;
     };
 
+}
+
+// type ParseDepsType = {
+//     parser: Parser | null;
+// }
+/**
+ *
+ * @type {{parser: Parser}}
+ */
+export const ParseDeps = {
+    parser: null
+};
+
+/**
+ *
+ * @param {string | Symbol} e
+ * @param {object} substitutions
+ * @return {*}
+ */
+export function parse(e, substitutions = {}) {
+    return ParseDeps.parser.parse(e, substitutions);
+}
+
+/**
+ * As the name states. It forces evaluation of the expression
+ * @param {string} expression
+ * @param {Symbol} o
+ * @deprecated use Utils.evaluate instead
+ */
+export function evaluate(expression, o = undefined) {
+    return block('PARSE2NUMBER', function () {
+        return parse(expression, o);
+    }, true);
 }

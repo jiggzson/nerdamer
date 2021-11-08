@@ -25,15 +25,10 @@ const runFor = function (data, includes, noPrepare = false, prerun = null, refac
         let expression = t.e;
         let expectedTree = t.result;
 
-        let preprocessors = {names: [], actions: []};
-        let functions = core.PARSER.getFunctions();
-        let brackets = core.PARSER.getBrackets();
+        let functions = core.PARSER.getFunctionProvider();
         let operators = core.PARSER.getOperatorsClass();
-        let units = {};
 
-        let deps = {preprocessors, functions, brackets, operators, units};
-
-        let tokenizer = new Tokenizer(deps);
+        let tokenizer = new Tokenizer(functions, operators, {});
 
         let tokens = tokenizer.tokenize(expression, !noPrepare);
         let tokenTree = JSON.parse(JSON.stringify(tokens));

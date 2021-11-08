@@ -13,10 +13,11 @@ export class Token  {
     column: number = 0
     precedence: number = 0;
     leftAssoc = false;
-    postfix = false;
-    action: string = '';
-    operator: string = '';
-    prefix: boolean = false;
+    postfix?: boolean;
+    action?: string;
+    operator?: string;
+    prefix?: boolean;
+
 
     constructor(node: string, node_type: string, column: number, operator?: any) {
         this.type = node_type;

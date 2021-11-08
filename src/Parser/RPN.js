@@ -1,13 +1,13 @@
 import {Token} from './Token';
 import {Settings} from '../Settings';
-import {Symbol} from '../Core/Symbol';
+import {Symbol} from '../Types/Symbol';
 import {Collection} from './Collection';
 import {Slice} from './Slice';
-import {Vector} from './Vector';
-import {Set} from './Set';
+import {Vector} from '../Types/Vector';
+import {Set} from '../Types/Set';
 import {OperatorError, OutOfRangeError, UnexpectedTokenError} from '../Core/Errors';
-import {parse} from '../Core/parse';
 import {arguments2Array} from '../Core/Utils';
+import {parse} from './Parser';
 
 export class RPN {
     deps;

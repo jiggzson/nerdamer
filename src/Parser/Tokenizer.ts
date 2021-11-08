@@ -1,10 +1,10 @@
 import {Token} from './Token';
 import {isNumber, remove} from '../Core/Utils';
-import {Math2} from '../Core/Math2';
+import {Math2} from '../Functions/Math2';
 import {Settings} from '../Settings';
-import {Bracket, Brackets, OperatorDictionary} from './OperatorDictionary';
+import {Bracket, Brackets, OperatorDictionary} from '../Providers/OperatorDictionary';
 import {Node} from './Node';
-import {FunctionProvider} from '../Operators/functions';
+import {FunctionProvider} from '../Providers/FunctionProvider';
 import {PreprocessorError} from '../Core/Errors';
 
 class ParityError extends Error {

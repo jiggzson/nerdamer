@@ -3,9 +3,9 @@ import {Build} from './Build';
 import {text} from '../Core/Text';
 import {LaTeX} from '../LaTeX/LaTeX';
 import {block, isFraction, isNumericSymbol, isSymbol, isVector} from '../Core/Utils';
-import {subtract} from '../Core/functions';
-import {parse, evaluate, ParseDeps} from '../Core/parse';
-import {expand} from '../Core/functions/math/expand';
+import {subtract} from '../Functions/Core';
+import {expand} from '../Functions/Core/math/expand';
+import {evaluate, parse, ParseDeps} from './Parser';
 
 /**
  * This is what nerdamer returns. It's sort of a wrapper around the symbol class and

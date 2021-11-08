@@ -1,12 +1,12 @@
-import {Groups} from './Groups';
-import {expand} from './functions/math/expand';
-import {add, arg, divide, multiply, sqrt, subtract} from './functions';
-import {Symbol} from './Symbol';
+import {Groups} from '../Types/Groups';
+import {expand} from '../Functions/Core/math/expand';
+import {add, arg, divide, multiply, sqrt, subtract} from '../Functions/Core';
+import {Symbol} from '../Types/Symbol';
 import {arrayUnique, evaluate, format, isSymbol} from './Utils';
 import {Settings} from '../Settings';
-import {Vector} from '../Parser/Vector';
-import {parse} from './parse';
-import {Math2} from './Math2';
+import {Vector} from '../Types/Vector';
+import {Math2} from '../Functions/Math2';
+import {parse} from '../Parser/Parser';
 
 /**
  * TODO: Pick a more descriptive name and better description

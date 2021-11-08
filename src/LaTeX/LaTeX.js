@@ -1,10 +1,9 @@
 import {Settings} from '../Settings';
 import {isSymbol, inBrackets, isMatrix, isNegative, isVector} from '../Core/Utils';
-import {Groups} from '../Core/Groups';
-import {isSet} from '../Parser/Set';
+import {Groups} from '../Types/Groups';
+import {isSet} from '../Types/Set';
 import {Collection} from '../Parser/Collection';
-import {parse} from '../Core/parse';
-import {Parser} from '../Parser/Parser';
+import {parse, Parser} from '../Parser/Parser';
 
 export class LaTeX {
     /** @deprecated */

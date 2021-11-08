@@ -1,9 +1,9 @@
-import {Math2} from '../Core/Math2';
-import {Frac} from '../Core/Frac';
+import {Math2} from '../Functions/Math2';
+import {Frac} from '../Types/Frac';
 import {block, even, inBrackets, isInt, nround} from '../Core/Utils';
-import {Symbol} from '../Core/Symbol';
-import {Groups} from '../Core/Groups';
-import {parse} from '../Core/parse';
+import {Symbol} from '../Types/Symbol';
+import {Groups} from '../Types/Groups';
+import {parse} from './Parser';
 
 export const Build = {
     dependencies: {

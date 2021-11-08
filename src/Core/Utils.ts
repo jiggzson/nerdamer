@@ -1,16 +1,16 @@
 import {Settings, SettingsType} from "../Settings";
-import {Groups} from './Groups';
-import {Symbol} from './Symbol';
+import {Groups} from '../Types/Groups';
+import {Symbol} from '../Types/Symbol';
 import {Build} from '../Parser/Build';
-import {parse} from './parse';
-import {Vector} from '../Parser/Vector';
+import {Vector} from '../Types/Vector';
 import {decompose_fn, getCoeffs, isFraction, isNegative, isNumericSymbol, nroots, scientificToDecimal, separate} from './Utils-js';
 import {arraySum} from './Utils.Symbol';
-import {PRIMES} from './Math.consts';
-import {Matrix} from '../Parser/Matrix';
+import {PRIMES} from '../Functions/Math.consts';
+import {Matrix} from '../Types/Matrix';
 import {Expression} from '../Parser/Expression';
 import {InvalidVariableNameError} from './Errors';
 import {text as Text} from './Text';
+import {parse} from '../Parser/Parser';
 
 
 export { decompose_fn, arraySum, getCoeffs, isFraction, isNegative, isNumericSymbol, nroots, scientificToDecimal, separate };

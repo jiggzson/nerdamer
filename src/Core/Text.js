@@ -1,8 +1,8 @@
 import bigInt from '../3rdparty/bigInt';
-import Scientific from './Scientific';
+import Scientific from '../Types/Scientific';
 import {Settings} from '../Settings';
 import {isSymbol, inBrackets, nround, isVector} from './Utils';
-import {Groups} from './Groups';
+import {Groups} from '../Types/Groups';
 
 /**
  * This method will return a hash or a text representation of a Symbol, Matrix, or Vector.

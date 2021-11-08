@@ -1,7 +1,7 @@
-import {Symbol} from './Symbol';
-import {add, divide} from './functions';
-import {parse} from './parse';
+import {Symbol} from '../Types/Symbol';
+import {add, divide} from '../Functions/Core';
 import {isSymbol} from './Utils';
+import {parse} from '../Parser/Parser';
 
 /**
  * Returns the sum of an array
