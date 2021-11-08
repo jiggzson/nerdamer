@@ -408,7 +408,7 @@ function testPow(symbol) {
  * @returns {Array}
  */
 
-function primeFactors(num) {
+export function primeFactors(num) {
     if (isPrime(num)) {
         return [num];
     }
@@ -446,4 +446,3 @@ function primeFactors(num) {
     });
 }
 
-primeFactors(314146179365);
