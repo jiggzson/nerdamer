@@ -34,6 +34,8 @@ let operators = defaultCore.operators;
 
 type NerdamerBaseType = typeof nerdamer;
 
+type CoreFunction = (expression: string | Expression, subs?: Record<string, any>, options?: string | string[], location?: number) => Expression;
+
 /**
  *
  * @param {string|Expression} expression   The expression being parsed.
@@ -42,9 +44,9 @@ type NerdamerBaseType = typeof nerdamer;
  *                                  or expanding the expression. Use "numer" to when wanting the expression to be
  *                                  evaluated. Use "expand" when wanting the expression to be expanded.
  * @param {number} location     The index of where the expression should be stored.
- * @returns {Expression}
+ * @returns {Expression & Spread<[Math]>}
  */
-function nerdamer(expression: string | Expression, subs?: Record<string, any>, options?: string | string[], location?: number) {
+function nerdamer(expression: string | Expression, subs?: Record<string, any>, options?: string | string[], location?: number): Expression & Spread<[Math]> {
     // Initiate the numer flag
     let numer = false;
 
@@ -57,7 +59,7 @@ function nerdamer(expression: string | Expression, subs?: Record<string, any>, o
     // Is the user declaring a function?
     let fndec = /^([a-z_][a-z\d_]*)\(([a-z_,\s]*)\):=(.+)$/gi.exec(expression);
     if (fndec) {
-        return nerdamer.setFunction(fndec[1], fndec[2].split(','), fndec[3]);
+        return nerdamer.setFunction(fndec[1], fndec[2].split(','), fndec[3]) as any as Expression & Spread<[Math]>;
     }
 
 
@@ -97,7 +99,7 @@ function nerdamer(expression: string | Expression, subs?: Record<string, any>, o
         EXPRESSIONS.push(e);
     }
 
-    return new Expression(e);
+    return new Expression(e) as Expression & Spread<[Math]>;
 }
 
 
@@ -596,7 +598,9 @@ namespace nerdamer {
     export function api(override: boolean = false) { }
 }
 
-const proxy: Required<NerdamerBaseType> = new Proxy(nerdamer, {
+//Required<NerdamerBaseType> | CoreFunction
+
+const proxy: typeof nerdamer & Spread<[Math]> = new Proxy(nerdamer, {
     get: (target: NerdamerBaseType, name: keyof NerdamerBaseType) => {
         if (name in target) {
             return target[name];
@@ -616,6 +620,6 @@ const proxy: Required<NerdamerBaseType> = new Proxy(nerdamer, {
 
         throw new Error('Requested non-existent property: ' + String(name));
     }
-});
+}) as typeof nerdamer & Spread<[Math]>;
 
 export = proxy;

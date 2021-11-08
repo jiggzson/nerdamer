@@ -6,12 +6,12 @@
     "description": "javascript light-weight symbolic math expression evaluator",
     "name": "nerdamer",
     "license": "MIT",
-    "version": "1.2.1",
+    "version": "1.2.1.1",
     "homepage": "http://nerdamer.com/",
     "directory": {
         "lib": "./"
     },
-    "main": "src/nerdamer.core.ts",
+    "main": "src/index.ts",
     "typings": "index.d.ts",
     "keywords": [
         "math",
@@ -51,6 +51,7 @@
         "build": "webpack --config-name core && webpack --config-name all"
     },
     "files": [
+        "nerdamer.core.js",
         "src"
     ],
     "devDependencies": {
