@@ -73,7 +73,7 @@ import {
 
 
 import {Settings} from './Settings';
-import {Symbol, symfunction} from './Core/Symbol';
+import {bigConvert, Symbol, symfunction} from './Core/Symbol';
 import {Frac} from './Core/Frac';
 import Scientific from './Core/Scientific';
 import {OperatorDictionary} from './Parser/OperatorDictionary';
@@ -97,8 +97,9 @@ import {Trig} from './Core/Trig';
 
 import {ParseDeps} from './Core/parse';
 import {expand} from './Core/functions/math/expand';
-import {FactorialDeps} from './Core/functions/math/factorial';
 import {ReservedDictionary} from './Parser/ReservedDictionary';
+import {TrigHyperbolic} from './Core/Trig.hyperbolic';
+import {VariableDictionary} from './Parser/VariableDictionary';
 const {NerdamerTypeError, NerdamerValueError, err} = exceptions;
 
 
@@ -115,6 +116,7 @@ const nerdamer = (function () {
     const reservedDictionary = new ReservedDictionary();
     const functionProvider = new FunctionProvider();
     const operators = new OperatorDictionary();
+    const variableDictionary = new VariableDictionary();
     const units = {};
     const tokenizer = new Tokenizer(functionProvider, operators, units);
 
@@ -131,13 +133,25 @@ const nerdamer = (function () {
     let setFunction = function (name, params_array, body) {
         validateName(name);
         if (!reservedDictionary.isReserved(name)) {
-            params_array = params_array || _.parse(body).variables();
+            params_array = params_array || parser.parse(body).variables();
             // The function gets set to PARSER.mapped function which is just
             // a generic function call.
 
+            //The loader for functions which are not part of Math2
+            const mapped_function = function () {
+                let subs = {},
+                    params = this.params;
+
+                for (let i = 0; i < params.length; i++) {
+                    subs[params[i]] = String(arguments[i]);
+                }
+
+                return parser.parse(this.body, subs);
+            }
+
             functionProvider.setFunctionDescriptor(
                 name,
-                [_.mapped_function, params_array.length, {
+                [mapped_function, params_array.length, {
                     name: name,
                     params: params_array,
                     body: body
@@ -163,90 +177,96 @@ const nerdamer = (function () {
         return o;
     };
 
-
-    // nerdamer's parser
-    const _ = new Parser();
-
-
-//Settings =====================================================================
-
-    //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
-    //The groups that help with organizing during parsing. Note that for FN is still a function even
-    //when it's raised to a symbol, which typically results in an EX
-    const
-        S = Groups.S, // A single variable e.g. x.
-        FN = Groups.FN, // A function
-        CB = Groups.CB, // A symbol/expression composed of one or more variables through multiplication e.g. x*y
-        CP = Groups.CP; // A symbol/expression composed of one variable and any other symbol or number x+1 or x+y
-
-    const PARENTHESIS = Settings.PARENTHESIS;
-    const SQRT = Settings.SQRT;
-    const ABS = Settings.ABS;
-    const FACTORIAL = Settings.FACTORIAL;
-    const DOUBLEFACTORIAL = Settings.DOUBLEFACTORIAL;
-    //the storage container "memory" for parsed expressions
-    const EXPRESSIONS = [];
-    Expression.$EXPRESSIONS = EXPRESSIONS;
-
-    //variables
-    const VARS = {};
-    //the container used to store all the reserved functions
-    const WARNINGS = [];
-
-
-//Utils ========================================================================
-
-
-
-
-
-
-
-
-
-    //link the Math2 object to Settings.FUNCTION_MODULES
-    Settings.FUNCTION_MODULES.push(Math2);
-    reserveNames(Math2); //reserve the names in Math2
-
-//Expression ===================================================================
-    Expression.prototype.$getAction = a => {
-        return _[a];
-    }
+    const peekers = {
+        pre_operator: [],
+        post_operator: [],
+        pre_function: [],
+        post_function: []
+    };
 
     //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
-    function Parser() {
-        //Point to the local parser instead of the global one
-        let _ = this;
-
-
-        //create link to classes
-        this.classes = {
-            Collection: Collection,
-            Slice: Slice,
-            Token: Token
+    class Parser {
+        // exports for back compatibility
+        classes = {
+            Collection,
+            Slice,
+            Token
         };
-        this.trig = Trig;
+        trig = Trig;
+        trigh = TrigHyperbolic;
+        units = units;
+        error = err;
+        symfunction = symfunction;
 
-        //list of supported units
-        this.units = units;
+        // dependencies
+        /** @property {Tokenizer} tokenizer */
+        tokenizer
+        /** @property {OperatorDictionary} operators */
+        operators;
+        /** @property {FunctionProvider} functionProvider */
+        functionProvider;
+        /** @property {VariableDictionary} variables */
+        variables;
 
-        operators.injectOperatorsDeps({
-            registerOperator: (name, operation) => _[name] = operation,
-        });
+        constructor(tokenizer, operators, functionProvider, variables) {
+            this.tokenizer = tokenizer;
+            this.operators = operators;
+            this.functionProvider = functionProvider;
+            this.variables = variables;
 
-        // backward compatibility hooks
-        this.isOperator = (...args) => operators.isOperator(...args);
-        // this.getOperators = (...args) => operators.getOperators(...args);
-        this.getOperatorsClass = () => operators;
-        this.getBrackets = (...args) => operators.getBrackets(...args);
+            operators.injectOperatorsDeps({
+                registerOperator: (name, operation) => this[name] = operation,
+            });
+        }
+
+        //delay setting of constants until Settings is ready
+        initConstants() {
+            this.variables.setConstant('E', new Symbol(Settings.E));
+            this.variables.setConstant('PI', new Symbol(Settings.PI));
+        }
+
+        parse(e, substitutions = {}) {
+            let tokens = tokenizer.tokenize(e, true);
+
+            let rpn = this.toRPN(tokens);
+            return this.parseRPN(rpn, substitutions);
+        }
 
 
+        /**
+         * Tokenizes the string
+         * @param {String} e
+         * @returns {Token[]}
+         */
+        tokenize(e) {
+            return this.tokenizer.tokenize(e, false);
+        }
 
-        this.functions = functionProvider.getFunctionDescriptors();
-        this.getFunctions = () => functionProvider.getFunctionDescriptors;
+        /**
+         * Puts token array in Reverse Polish Notation
+         * @param {Token[]} tokens
+         * @returns {Token[]}
+         */
+        toRPN(tokens) {
+            return RPN.TokensToRPN(tokens);
+        }
 
-        //error handler
-        this.error = err;
+        /**
+         * Parses the tokens
+         * @param {Tokens[]} rpn
+         * @param {object} substitutions
+         * @returns {Symbol}
+         */
+        parseRPN(rpn, substitutions) {
+            let rpnDeps = {
+                callfunction: this.callfunction,
+                getAction: (action) => {
+                    return this[action].bind(this)
+                }
+            };
+            let rpnParser = new RPN(rpnDeps, this.variables, peekers);
+            return rpnParser.parseRPN(rpn, substitutions);
+        }
 
         /**
          * This method is supposed to behave similarly to the override method but it does not override
@@ -255,21 +275,81 @@ const nerdamer = (function () {
          * @param {Function} with_what
          * @param {boolean} force_call
          */
-        this.extend = function (what, with_what, force_call) {
-            let _ = this,
-                extended = this[what];
+        extend(what, with_what, force_call) {
+            let extended = this[what];
             if (typeof extended === 'function' && typeof with_what === 'function') {
                 let f = this[what];
-                this[what] = function (a, b) {
-                    if (isSymbol(a) && isSymbol(b) && !force_call)
-                        return f.call(_, a, b);
-                    else
-                        return with_what.call(_, a, b, f);
+                this[what] = (a, b) => {
+                    if (isSymbol(a) && isSymbol(b) && !force_call) {
+                        return f.call(this, a, b);
+                    }
+                    else {
+                        return with_what.call(this, a, b, f);
+                    }
                 };
             }
         };
 
-        this.symfunction = symfunction;
+        clean(symbol) {
+            // handle functions with numeric values
+            // handle denominator within denominator
+            // handle trig simplifications
+            let g = symbol.group, retval;
+            //Now let's get to work
+            if (g === Groups.CP) {
+                let num = symbol.getNum(),
+                    den = symbol.getDenom() || new Symbol(1),
+                    p = Number(symbol.power),
+                    factor = new Symbol(1);
+                if (Math.abs(p) === 1) {
+                    den.each(x => {
+                        if (x.group === Groups.CB) {
+                            factor = multiply(factor, this.clean(x.getDenom()));
+                        }
+                        else if (x.power.lessThan(0)) {
+                            factor = multiply(factor, this.clean(x.clone().toUnitMultiplier()));
+                        }
+                    });
+
+                    let new_den = new Symbol(0);
+                    //now divide out the factor and add to new den
+                    den.each(function (x) {
+                        new_den = add(divide(x, factor.clone()), new_den);
+                    });
+
+                    factor.invert(); //invert so it can be added to the top
+                    let new_num;
+                    if (num.isComposite()) {
+                        new_num = new Symbol(0);
+                        num.each(x => {
+                            new_num = add(multiply(this.clean(x), factor.clone()), new_num);
+                        });
+                    }
+                    else
+                        new_num = multiply(factor, num);
+
+                    retval = divide(new_num, new_den);
+                }
+            }
+            else if (g === Groups.CB) {
+                retval = new Symbol(1);
+                symbol.each(x => {
+                    retval = multiply(retval, this.clean(x));
+                });
+            }
+            else if (g === Groups.FN) {
+                if (symbol.args.length === 1 && symbol.args[0].isConstant())
+                    retval = block('PARSE2NUMBER', () => {
+                        return this.parse(symbol);
+                    }, true);
+            }
+
+            if (!retval)
+                retval = symbol;
+
+            return retval;
+        }
+
 
         /**
          * An internal function call for the Parser. This will either trigger a real
@@ -280,7 +360,7 @@ const nerdamer = (function () {
          * @param {int} allowed_args
          * @returns {Symbol}
          */
-        this.callfunction = function (fn_name, args, allowed_args= undefined) {
+        callfunction(fn_name, args, allowed_args = undefined) {
             let fn_settings = functionProvider.getFunctionDescriptor(fn_name);
 
             if (!fn_settings)
@@ -319,107 +399,32 @@ const nerdamer = (function () {
             //check if arguments are all numers
             let numericArgs = allNumbers(args);
             //Big number support. Check if Big number is requested and the arguments are all numeric and, not imaginary
-//            if (Settings.USE_BIG && numericArgs) {
-//                retval = Big[fn_name].apply(undefined, args);
-//            }
-//            else {
+            //            if (Settings.USE_BIG && numericArgs) {
+            //                retval = Big[fn_name].apply(undefined, args);
+            //            }
+            //            else {
             if (!fn) {
                 //Remember assumption 1. No function defined so it MUST be numeric in nature
                 fn = functionProvider.findFunction(fn_name);
                 if (Settings.PARSE2NUMBER && numericArgs)
                     retval = bigConvert(fn.apply(fn, args));
                 else
-                    retval = _.symfunction(fn_name, args);
+                    retval = symfunction(fn_name, args);
             }
             else {
                 //Remember assumption 2. The function is defined so it MUST handle all aspects including numeric values
                 retval = fn.apply(fn_settings[2], args);
             }
-//            }
+            //            }
 
             return retval;
         };
 
-        //delay setting of constants until Settings is ready
-        this.initConstants = function () {
-            this.CONSTANTS = {
-                E: new Symbol(Settings.E),
-                PI: new Symbol(Settings.PI)
-            };
-        };
+        //TODO: Utilize the function below instead of the linked function
+        getFunction(name) {
+            return this.functionProvider.getFunctionDescriptors(name)[0];
+        }
 
-        this.peekers = {
-            pre_operator: [],
-            post_operator: [],
-            pre_function: [],
-            post_function: []
-        };
-
-        this.callPeekers = function (name) {
-            if (Settings.callPeekers) {
-                let peekers = this.peekers[name];
-                //remove the first items and stringify
-                let args = arguments2Array(arguments).slice(1).map(o => o ? String(o) : o);
-                //call each one of the peekers
-                for (let i = 0; i < peekers.length; i++) {
-                    peekers[i].apply(null, args);
-                }
-            }
-        };
-
-        /*
-         * Tokenizes the string
-         * @param {String} e
-         * @returns {Token[]}
-         * @deprecated
-         */
-        this.tokenize = function (e) {
-            // let deps = {preprocessors, functionsDirectory: functionProvider, brackets, operators, units: _.units};
-            return tokenizer.tokenize(e, false);
-        };
-
-        /*
-         * Puts token array in Reverse Polish Notation
-         * @param {Token[]} tokens
-         * @returns {Token[]}
-         */
-        this.toRPN = (tokens) => {
-            return RPN.TokensToRPN(tokens);
-        };
-
-        /*
-         * Parses the tokens
-         * @param {Tokens[]} rpn
-         * @param {object} substitutions
-         * @returns {Symbol}
-         */
-        this.parseRPN = (rpn, substitutions) => {
-            let rpnDeps = {
-                CONSTANTS: _.CONSTANTS,
-                callfunction: _.callfunction,
-                VARS,
-                callPeekers: this.callPeekers,
-                getAction: (action) => {
-                    return _[action].bind(this)
-                }
-            };
-            let rpnParser = new RPN(rpnDeps);
-            return rpnParser.parseRPN(rpn, substitutions);
-        };
-
-
-        // let deps = {preprocessors, functionsDirectory: functionProvider, brackets, operators, units: _.units};
-        // let tokenizer = new Tokenizer(deps);
-
-        this.tree = tokenizer.tree;
-
-        this.parse = (e, substitutions = {}) => {
-            let tokens = tokenizer.tokenize(e, true);
-
-            let rpn = this.toRPN(tokens);
-            return this.parseRPN(rpn, substitutions);
-        };
-        ParseDeps.parse = this.parse;
 
 
         /**
@@ -428,8 +433,8 @@ const nerdamer = (function () {
          * @param {String} expression_string
          * @returns {Array}
          */
-        this.toObject = function (expression_string) {
-            let objectify = function (tokens) {
+        toObject(expression_string) {
+            let objectify = (tokens) => {
                 let output = [];
                 for (let i = 0, l = tokens.length; i < l; i++) {
                     let token = tokens[i];
@@ -441,7 +446,7 @@ const nerdamer = (function () {
                         //jump ahead since the next object are the arguments
                         i++;
                         //create a symbolic function and stick it on output
-                        let f = _.symfunction(v, objectify(tokens[i]));
+                        let f = symfunction(v, objectify(tokens[i]));
                         f.isConversion = true;
                         output.push(f);
                     }
@@ -455,38 +460,16 @@ const nerdamer = (function () {
 
                 return output;
             };
-            return objectify(_.tokenize(expression_string));
-        };
 
-        // A helper method for toTeX
-        let chunkAtCommas = function (arr) {
-            let chunks = [[]];
-            for (let j = 0, k = 0, l = arr.length; j < l; j++) {
-                if (arr[j] === ',') {
-                    k++;
-                    chunks[k] = [];
-                }
-                else {
-                    chunks[k].push(arr[j]);
-                }
-            }
-            return chunks;
-        };
+            return objectify(this.tokenize(expression_string));
+        }
 
-        // Helper method for toTeX
-        let rem_brackets = function (str) {
-            return str.replace(/^\\left\((.+)\\right\)$/g, function (str, a) {
-                if (a)
-                    return a;
-                return str;
-            });
-        };
-
-        let remove_redundant_powers = function (arr) {
+        // private
+        remove_redundant_powers = function (arr) {
             // The filtered array
             let narr = [];
 
-            while(arr.length) {
+            while (arr.length) {
                 // Remove the element from the front
                 let e = arr.shift();
                 let next = arr[0];
@@ -548,14 +531,45 @@ const nerdamer = (function () {
             }
 
             return narr;
-        };
-        /*
+        }
+
+
+        // A helper method for toTeX
+        // private
+        chunkAtCommas(arr) {
+            let chunks = [[]];
+            for (let j = 0, k = 0, l = arr.length; j < l; j++) {
+                if (arr[j] === ',') {
+                    k++;
+                    chunks[k] = [];
+                }
+                else {
+                    chunks[k].push(arr[j]);
+                }
+            }
+            return chunks;
+        }
+
+
+        // Helper method for toTeX
+        // private
+        rem_brackets(str) {
+            return str.replace(/^\\left\((.+)\\right\)$/g, function (str, a) {
+                if (a) {
+                    return a;
+                }
+                return str;
+            })
+        }
+
+
+        /**
          * Convert expression or object to LaTeX
          * @param {String} expression_or_obj
          * @param {object} opt
          * @returns {String}
          */
-        this.toTeX = function (expression_or_obj, opt) {
+        toTeX(expression_or_obj, opt) {
             opt = opt || {};
             // Add decimal option as per issue #579. Consider passing an object to Latex.latex as option instead of string
             let decimals = opt.decimals === true ? 'decimals' : undefined;
@@ -565,7 +579,7 @@ const nerdamer = (function () {
                 cdot = typeof opt.cdot === 'undefined' ? '\\cdot' : opt.cdot; //set omit cdot to true by default
 
             // Remove negative powers as per issue #570
-            obj = remove_redundant_powers(obj);
+            obj = this.remove_redundant_powers(obj);
 
             if (isArray(obj)) {
                 let nobj = [], a, b;
@@ -608,14 +622,14 @@ const nerdamer = (function () {
                         }
                         else if (fname === 'integrate') {
                             /* Retrive [Expression, x] */
-                            let chunks = chunkAtCommas(e.args);
+                            let chunks = this.chunkAtCommas(e.args);
                             /* Build TeX */
                             let expr = LaTeX.braces(this.toTeX(chunks[0])),
                                 dx = this.toTeX(chunks[1]);
                             f = '\\int ' + expr + '\\, d' + dx;
                         }
                         else if (fname === 'defint') {
-                            let chunks = chunkAtCommas(e.args),
+                            let chunks = this.chunkAtCommas(e.args),
                                 expr = LaTeX.braces(this.toTeX(chunks[0])),
                                 dx = this.toTeX(chunks[3]),
                                 lb = this.toTeX(chunks[1]),
@@ -624,7 +638,7 @@ const nerdamer = (function () {
 
                         }
                         else if (fname === 'diff') {
-                            let chunks = chunkAtCommas(e.args);
+                            let chunks = this.chunkAtCommas(e.args);
                             let dx = '', expr = LaTeX.braces(this.toTeX(chunks[0]));
                             /* Handle cases: one argument provided, we need to guess the variable, and assume n = 1 */
                             if (chunks.length === 1) {
@@ -664,10 +678,10 @@ const nerdamer = (function () {
                             f += '^' + LaTeX.braces(this.toTeX(argSplit[3])) + LaTeX.braces(this.toTeX(argSplit[0]));
                         }
                         else if (fname === 'limit') {
-                            let args = chunkAtCommas(e.args).map(function (x) {
+                            let args = this.chunkAtCommas(e.args).map(x => {
                                 if (Array.isArray(x))
-                                    return _.toTeX(x.join(''));
-                                return _.toTeX(String(x));
+                                    return this.toTeX(x.join(''));
+                                return this.toTeX(String(x));
                             });
                             f = '\\lim_' + LaTeX.braces(args[1] + '\\to ' + args[2]) + ' ' + LaTeX.braces(args[0]);
                         }
@@ -690,7 +704,7 @@ const nerdamer = (function () {
                 }
                 else {
                     if (e === '/')
-                        TeX.push(LaTeX.frac(rem_brackets(TeX.pop()), rem_brackets(this.toTeX([obj[++i]]))));
+                        TeX.push(LaTeX.frac(this.rem_brackets(TeX.pop()), this.rem_brackets(this.toTeX([obj[++i]]))));
                     else
                         TeX.push(e);
                 }
@@ -699,183 +713,61 @@ const nerdamer = (function () {
             return TeX.join(' ');
         };
 
-//Parser.functions ==============================================================
-        /*
-         * Serves as a bridge between numbers and bigNumbers
-         * @param {Frac|Number} n
-         * @returns {Symbol}
-         */
-        function bigConvert(n) {
-            if (!isFinite(n)) {
-                let sign = Math.sign(n);
-                let r = new Symbol(String(Math.abs(n)));
-                r.multiplier = r.multiplier.multiply(new Frac(sign));
-                return r;
-            }
-            if (isSymbol(n))
-                return n;
-            if (typeof n === 'number') {
-                try {
-                    n = Frac.simple(n);
-                }
-                catch(e) {
-                    n = new Frac(n);
-                }
-            }
 
-            let symbol = new Symbol(0);
-            symbol.multiplier = n;
-            return symbol;
+        isOperator(name) {
+            return this.operators.isOperator()
         }
 
-        function clean(symbol) {
-            // handle functions with numeric values
-            // handle denominator within denominator
-            // handle trig simplifications
-            let g = symbol.group, retval;
-            //Now let's get to work
-            if (g === CP) {
-                let num = symbol.getNum(),
-                    den = symbol.getDenom() || new Symbol(1),
-                    p = Number(symbol.power),
-                    factor = new Symbol(1);
-                if (Math.abs(p) === 1) {
-                    den.each(function (x) {
-                        if (x.group === CB) {
-                            factor = _.multiply(factor, clean(x.getDenom()));
-                        }
-                        else if (x.power.lessThan(0)) {
-                            factor = _.multiply(factor, clean(x.clone().toUnitMultiplier()));
-                        }
-                    });
-
-                    let new_den = new Symbol(0);
-                    //now divide out the factor and add to new den
-                    den.each(function (x) {
-                        new_den = _.add(_.divide(x, factor.clone()), new_den);
-                    });
-
-                    factor.invert(); //invert so it can be added to the top
-                    let new_num;
-                    if (num.isComposite()) {
-                        new_num = new Symbol(0);
-                        num.each(function (x) {
-                            new_num = _.add(_.multiply(clean(x), factor.clone()), new_num);
-                        });
-                    }
-                    else
-                        new_num = _.multiply(factor, num);
-
-                    retval = _.divide(new_num, new_den);
-                }
-            }
-            else if (g === CB) {
-                retval = new Symbol(1);
-                symbol.each(function (x) {
-                    retval = _.multiply(retval, _.clean(x));
-                });
-            }
-            else if (g === FN) {
-                if (symbol.args.length === 1 && symbol.args[0].isConstant())
-                    retval = block('PARSE2NUMBER', function () {
-                        return _.parse(symbol);
-                    }, true);
-            }
-
-            if (!retval)
-                retval = symbol;
-
-            return retval;
+        getOperatorsClass() {
+            return this.operators;
         }
 
-        //Link the functions to the parse so they're available outside of the library.
-        //This is strictly for convenience and may be deprecated.
-        this.expand = expand;
-        this.round = round;
-        this.clean = clean;
-        this.cbrt = cbrt;
-        this.abs = abs;
-        this.log = log;
-        this.rationalize = rationalize;
-        this.nthroot = nthroot;
-        this.arg = arg;
-        this.conjugate = conjugate;
-        this.imagpart = imagpart;
-        this.realpart = realpart;
+        getBrackets() {
+            return this.operators.getBrackets();
+        }
 
-        //TODO:
-        //Utilize the function below instead of the linked function
-        this.getFunction = function (name) {
-            return functions[name][0];
-        };
-
-//Parser.methods ===============================================================
-
-
-
-
-
-
-        //The loader for functions which are not part of Math2
-        this.mapped_function = function () {
-            let subs = {},
-                params = this.params;
-
-            for (let i = 0; i < params.length; i++) {
-                subs[params[i]] = String(arguments[i]);
-            }
-
-            return _.parse(this.body, subs);
-        };
-
-
-        FactorialDeps.bigConvert = bigConvert;
-
-        this.sqrt = sqrt;
-        this.multiply = multiply;
-        this.divide = divide;
-        this.subtract = subtract;
-        this.add = add;
-        this.pow = pow;
-        this.log = log;
-        this.abs = abs;
-        this.factorial = factorial;
-        this.expand = expand;
+        get functions() {
+            return this.getFunctions();
+        }
+        getFunctions() {
+            return this.functionProvider.getFunctionDescriptors()
+        }
 
 
         // Gets called when the parser finds the , operator.
         // Commas return a Collector object which is roughly an array
-        this.comma = function (a, b) {
+        comma(a, b) {
             if (!(a instanceof Collection))
                 a = Collection.create(a);
             a.append(b);
             return a;
-        };
-        // Link to modulus
-        this.mod = function (a, b) {
-            return mod(a, b);
-        };
+        }
+
         // Used to slice elements from arrays
-        this.slice = function (a, b) {
+        slice(a, b) {
             return new Slice(a, b);
-        };
+        }
+
         // The equality setter
-        this.equals = function (a, b) {
+        equals(a, b) {
             // Equality can only be set for group S so complain it's not
-            if (a.group !== S && !a.isLinear())
+            if (a.group !== S && !a.isLinear()) {
                 err('Cannot set equality for ' + a.toString());
-            VARS[a.value] = b.clone();
+            }
+            this.variables.setVar(a.value, b.clone());
             return b;
-        };
+        }
+
         // Percent
-        this.percent = function (a) {
-            return _.divide(a, new Symbol(100));
-        };
+        percent(a) {
+            return divide(a, new Symbol(100));
+        }
+
         // Set variable
-        this.assign = function (a, b) {
+        assign(a, b) {
             if (a instanceof Collection && b instanceof Collection) {
-                a.elements.map(function (x, i) {
-                    return _.assign(x, b.elements[i]);
+                a.elements.map((x, i) => {
+                    return this.assign(x, b.elements[i]);
                 });
                 return Vector.fromArray(b.elements);
             }
@@ -887,48 +779,183 @@ const nerdamer = (function () {
                 return e;
             }
 
-            if (a.group !== S)
+            if (a.group !== Groups.S) {
                 throw new NerdamerValueError('Cannot complete operation. Incorrect LH value for ' + a);
-            VARS[a.value] = b;
+            }
+
+            this.variables.setVar(a.value, b);
             return b;
-        };
-        this.function_assign = function (a, b) {
+        }
+
+        function_assign(a, b) {
             let f = a.elements.pop();
             return setFunction(f, a.elements, b);
-        };
+        }
+
         // Function to quickly convert bools to Symbols
-        let bool2Symbol = function (x) {
+        bool2Symbol(x) {
             return new Symbol(x === true ? 1 : 0);
-        };
+        }
+
         //check for equality
-        this.eq = function (a, b) {
-            return bool2Symbol(a.equals(b));
-        };
+        eq(a, b) {
+            return this.bool2Symbol(a.equals(b));
+        }
+
         //checks for greater than
-        this.gt = function (a, b) {
-            return bool2Symbol(a.gt(b));
-        };
+        gt(a, b) {
+            return this.bool2Symbol(a.gt(b));
+        }
+
         //checks for greater than equal
-        this.gte = function (a, b) {
-            return bool2Symbol(a.gte(b));
-        };
+        gte(a, b) {
+            return this.bool2Symbol(a.gte(b));
+        }
+
         //checks for less than
-        this.lt = function (a, b) {
-            return bool2Symbol(a.lt(b));
-        };
+        lt(a, b) {
+            return this.bool2Symbol(a.lt(b));
+        }
+
         //checks for less than equal
-        this.lte = function (a, b) {
-            return bool2Symbol(a.lte(b));
-        };
+        lte(a, b) {
+            return this.bool2Symbol(a.lte(b));
+        }
+
         // wraps the factorial
-        this.factorial = function (a) {
-            return this.symfunction(FACTORIAL, [a]);
-        };
+        factorial(a) {
+            return symfunction(FACTORIAL, [a]);
+        }
+
         // wraps the double factorial
-        this.dfactorial = function (a) {
-            return this.symfunction(DOUBLEFACTORIAL, [a]);
-        };
+        dfactorial(a) {
+            return symfunction(DOUBLEFACTORIAL, [a]);
+        }
+
+
+        //Link the functions to the parse so they're available outside of the library.
+        //This is strictly for convenience and may be deprecated.
+        expand(symbol, opt = undefined) {
+            return expand(symbol, opt);
+        }
+
+        round(x, s) {
+            return round(x, s);
+        }
+
+        cbrt(symbol) {
+            return cbrt(symbol);
+        }
+
+        abs(symbol) {
+            return abs(symbol);
+        }
+
+        log(symbol, base) {
+            return log(symbol, base);
+        }
+
+        rationalize(symbol) {
+            return rationalize(symbol);
+        }
+
+        nthroot(num, p, prec, asbig) {
+            return nthroot(num, p, prec, asbig);
+        }
+
+        arg(symbol) {
+            return arg(symbol);
+        }
+
+        conjugate(symbol) {
+            return conjugate(symbol);
+        }
+
+        imagpart(symbol) {
+            return imagpart(symbol);
+        }
+
+        realpart(symbol) {
+            return realpart(symbol);
+        }
+
+        sqrt(symbol) {
+            return sqrt(symbol);
+        }
+
+        multiply(a, b) {
+            return multiply(a, b);
+        }
+
+        divide(a, b) {
+            return divide(a, b);
+        }
+
+        subtract(a, b) {
+            return subtract(a, b);
+        }
+
+        add(a, b) {
+            return add(a, b);
+        }
+
+        pow(a, b) {
+            return pow(a, b);
+        }
+
+        mod(symbol1, symbol2) {
+            return mod(symbol1, symbol2);
+        }
+
+        tree(expression) {
+            let tokens = this.tokenize(expression)
+            tokens = this.toRPN(tokens)
+
+            return this.tokenizer.tree(tokens);
+        }
     }
+
+
+
+//Settings =====================================================================
+
+    //Add the groups. These have been reorganized as of v0.5.1 to make CP the highest group
+    //The groups that help with organizing during parsing. Note that for FN is still a function even
+    //when it's raised to a symbol, which typically results in an EX
+    const
+        S = Groups.S, // A single variable e.g. x.
+        FN = Groups.FN; // A function
+
+    const PARENTHESIS = Settings.PARENTHESIS;
+    const SQRT = Settings.SQRT;
+    const ABS = Settings.ABS;
+    const FACTORIAL = Settings.FACTORIAL;
+    const DOUBLEFACTORIAL = Settings.DOUBLEFACTORIAL;
+    //the storage container "memory" for parsed expressions
+    const EXPRESSIONS = [];
+    Expression.$EXPRESSIONS = EXPRESSIONS;
+
+    //the container used to store all the reserved functions
+    const WARNINGS = [];
+
+
+//Utils ========================================================================
+
+
+    // nerdamer's parser
+    const parser = new Parser(tokenizer, operators, functionProvider, variableDictionary);
+    ParseDeps.parser = parser;
+
+
+    //link the Math2 object to Settings.FUNCTION_MODULES
+    Settings.FUNCTION_MODULES.push(Math2);
+    reserveNames(Math2); //reserve the names in Math2
+
+//Expression ===================================================================
+    Expression.prototype.$getAction = a => {
+        return parser[a];
+    }
+
 
     // inject back dependencies
     LaTeX.$Parser = Parser;
@@ -937,12 +964,12 @@ const nerdamer = (function () {
 //finalize =====================================================================
     /* FINALIZE */
     (function () {
-        reserveNames(_.CONSTANTS);
+        reserveNames(variableDictionary.getAllConstants());
         reserveNames(functionProvider.getFunctionDescriptors());
-        _.initConstants();
+        parser.initConstants();
         //bug fix for error but needs to be revisited
-        if (!_.error)
-            _.error = err;
+        if (!parser.error)
+            parser.error = err;
 
         //Store the log and log10 functions
         Settings.LOG_FNS = {
@@ -1030,7 +1057,7 @@ const nerdamer = (function () {
         Math2: Math2,
         LaTeX: LaTeX,
         Utils: Utils,
-        PARSER: _,
+        PARSER: parser,
         PARENTHESIS: PARENTHESIS,
         Settings: Settings,
         err: err,
@@ -1085,7 +1112,7 @@ const nerdamer = (function () {
         });
 
         let e = block('PARSE2NUMBER', function () {
-            return _.parse(expression, subs);
+            return parser.parse(expression, subs);
         }, numer || Settings.PARSE2NUMBER);
 
         if (location) {
@@ -1103,7 +1130,8 @@ const nerdamer = (function () {
      * @returns {Token[]}
      */
     libExports.rpn = function (expression) {
-        return _.tokenize(_.toRPN(expression));
+        // FIXME: tokenize(toRPN) ?
+        return parser.tokenize(parser.toRPN(expression));
     };
 
     /**
@@ -1113,7 +1141,7 @@ const nerdamer = (function () {
      * @returns {String}
      */
     libExports.convertToLaTeX = function (e, opt) {
-        return _.toTeX(e, opt);
+        return parser.toTeX(e, opt);
     };
 
     /**
@@ -1122,8 +1150,8 @@ const nerdamer = (function () {
      * @returns {String}
      */
     libExports.convertFromLaTeX = function (e) {
-        let txt = LaTeX.parse(_.tokenize(e));
-        return new Expression(_.parse(txt));
+        let txt = LaTeX.parse(parser.tokenize(e));
+        return new Expression(parser.parse(txt));
     };
 
     /**
@@ -1162,12 +1190,13 @@ const nerdamer = (function () {
         if (!isReserved(constant)) {
             //fix for issue #127
             if (value === 'delete' || value === '') {
-                delete _.CONSTANTS[constant];
+                variableDictionary.deleteConstant(constant);
             }
             else {
-                if (isNaN(value))
+                if (isNaN(value)) {
                     throw new NerdamerTypeError('Constant must be a number!');
-                _.CONSTANTS[constant] = value;
+                }
+                variableDictionary.setConstant(constant, value);
             }
         }
         return this;
@@ -1179,7 +1208,7 @@ const nerdamer = (function () {
      * @returns {String}
      */
     libExports.getConstant = function (constant) {
-        return String(_.constant[constant]);
+        return String(variableDictionary.getConstant(constant));
     };
 
     /**
@@ -1345,32 +1374,33 @@ const nerdamer = (function () {
     libExports.setVar = function (v, val) {
         validateName(v);
         //check if it's not already a constant
-        if (v in _.CONSTANTS)
+        if (variableDictionary.isConstant(v)) {
             err('Cannot set value for constant ' + v);
-        if (val === 'delete' || val === '')
-            delete VARS[v];
+        }
+        if (val === 'delete' || val === '') {
+            variableDictionary.deleteVar(v);
+        }
         else {
-            VARS[v] = isSymbol(val) ? val : _.parse(val);
+            let value = isSymbol(val) ? val : parser.parse(val);
+            variableDictionary.setVar(v, value);
         }
         return this;
     };
 
     /**
      * Returns the value of a set variable
-     * @param {type} v
-     * @returns {varies}
+     * @param {string} v
+     * @returns {any}
      */
     libExports.getVar = function (v) {
-        return VARS[v];
+        return variableDictionary.getVar(v);
     };
     /**
      * Clear the variables from the VARS object
      * @returns {Object} Returns the nerdamer object
      */
     libExports.clearVars = function () {
-        for (let key in VARS) {
-            delete VARS[key];
-        }
+        variableDictionary.clearAllVars();
         return this;
     };
 
@@ -1391,20 +1421,15 @@ const nerdamer = (function () {
      */
     libExports.getVars = function (output, option) {
         output = output || 'text';
-        let variables = {};
-        if (output === 'object')
-            variables = VARS;
-        else {
-            for (let v in VARS) {
-                if (output === 'latex') {
-                    variables[v] = VARS[v].latex(option);
-                }
-                else if (output === 'text') {
-                    variables[v] = VARS[v].text(option);
-                }
-            }
+        let variables = variableDictionary.getAllVars();
+
+        switch (output) {
+            case 'object': return variables;
+            case 'latex': return variables.map(v => v.latex(option));
+            case 'text': return variables.map(v => v.text(option));
         }
-        return variables;
+
+        return {};
     };
 
     /**
@@ -1443,7 +1468,7 @@ const nerdamer = (function () {
             const logFunc = x => {
                 if (x.isConstant())
                     return new Symbol(Math.log10(x));
-                return _.symfunction(Settings.LOG10, [x]);
+                return symfunction(Settings.LOG10, [x]);
             };
 
             functionProvider.setFunctionDescriptor('log', [logFunc, [1, 2]])
@@ -1475,11 +1500,11 @@ const nerdamer = (function () {
         let linker = fname => {
             return (...args) => {
                 for (let i = 0; i < args.length; i++) {
-                    args[i] = _.parse(args[i]);
+                    args[i] = parser.parse(args[i]);
                 }
 
                 return new Expression(block('PARSE2NUMBER', () => {
-                    return _.callfunction(fname, args);
+                    return parser.callfunction(fname, args);
                 }));
             };
         };
@@ -1504,7 +1529,7 @@ const nerdamer = (function () {
     };
 
     libExports.tree = function (expression) {
-        return _.tree(_.toRPN(_.tokenize(expression)));
+        return parser.tree(expression);
     };
 
     libExports.htmlTree = function (expression, indent) {
@@ -1520,17 +1545,18 @@ const nerdamer = (function () {
     };
 
     libExports.addPeeker = function (name, f) {
-        if (_.peekers[name])
-            _.peekers[name].push(f);
+        if (peekers[name]) {
+            peekers[name].push(f);
+        }
     };
 
     libExports.removePeeker = function (name, f) {
-        remove(_.peekers[name], f);
+        remove(peekers[name], f);
     };
 
     libExports.parse = function (e) {
         return String(e).split(';').map(function (x) {
-            return _.parse(x);
+            return parser.parse(x);
         });
     };
 
@@ -1545,11 +1571,11 @@ const nerdamer = (function () {
             if (functionProvider.getFunctionDescriptor(name)) {
                 return (...args) => {
                     for (let i = 0; i < args.length; i++) {
-                        args[i] = _.parse(args[i]);
+                        args[i] = parser.parse(args[i]);
                     }
 
                     return new Expression(block('PARSE2NUMBER', () => {
-                        return _.callfunction(name, args);
+                        return parser.callfunction(name, args);
                     }));
                 }
             }

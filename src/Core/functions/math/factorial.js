@@ -5,13 +5,9 @@ import {isInt, isMatrix, isVector} from '../../Utils';
 import {Math2} from '../../Math2';
 import {Frac} from '../../Frac';
 import {add} from '../operations/add';
-import {Symbol, symfunction} from '../../Symbol';
+import {bigConvert, Symbol, symfunction} from '../../Symbol';
 import {parse} from '../../parse';
 import {multiply, pow, subtract} from '../index';
-
-export const FactorialDeps = {
-    bigConvert: null
-};
 
 /**
  * The factorial function
@@ -44,7 +40,7 @@ export function factorial(symbol) {
             retval = Math2.gamma(symbol.multiplier.add(new Frac(1)).toDecimal());
         }
 
-        retval = FactorialDeps.bigConvert(retval);
+        retval = bigConvert(retval);
         return retval;
     }
     else if (symbol.isConstant()) {

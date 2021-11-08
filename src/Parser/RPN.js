@@ -7,12 +7,17 @@ import {Vector} from './Vector';
 import {Set} from './Set';
 import {OperatorError, OutOfRangeError, UnexpectedTokenError} from '../Core/Errors';
 import {parse} from '../Core/parse';
+import {arguments2Array} from '../Core/Utils';
 
 export class RPN {
     deps;
+    variables;
+    peekers;
 
-    constructor(deps) {
+    constructor(deps, variables, peekers) {
         this.deps = deps;
+        this.peekers = peekers;
+        this.variables = variables;
     }
 
     /**
@@ -171,7 +176,6 @@ export class RPN {
  */
     parseRPN(rpn, substitutions = {}) {
         let deps = this.deps;
-        let VARS = deps.VARS;
 
         // try {
         //prepare the substitutions.
@@ -224,13 +228,13 @@ export class RPN {
                             b = Vector.fromSet(b);
 
                         //call all the pre-operators
-                        deps.callPeekers('pre_operator', a, b, e);
+                        this.callPeekers('pre_operator', a, b, e);
 
                         let action = deps.getAction(e.action);
                         let ans = action(a, b);
 
                         //call all the pre-operators
-                        deps.callPeekers('post_operator', ans, a, b, e);
+                        this.callPeekers('post_operator', ans, a, b, e);
 
                         Q.push(ans);
                     }
@@ -251,12 +255,12 @@ export class RPN {
                     let fn_args = args.getItems();
 
                     //call the pre-function peekers
-                    deps.callPeekers('pre_function', fn_name, fn_args);
+                    this.callPeekers('pre_function', fn_name, fn_args);
 
                     let ret = deps.callfunction(fn_name, fn_args);
 
                     //call the post-function peekers
-                    deps.callPeekers('post_function', ret, fn_name, fn_args);
+                    this.callPeekers('post_function', ret, fn_name, fn_args);
 
                     let last = Q[Q.length - 1];
                     let next = rpn[i + 1];
@@ -320,9 +324,9 @@ export class RPN {
 
                     //make substitutions
                     //Always constants first. This avoids the being overridden
-                    if (v in deps.CONSTANTS) {
+                    if (this.variables.isConstant(v)) {
                         subbed = e;
-                        e = new Symbol(deps.CONSTANTS[v]);
+                        e = new Symbol(this.variables.getConstant(v));
                     }
                         //next substitutions. This allows declared variable to be overridden
                         //check if the values match to avoid erasing the multiplier.
@@ -332,9 +336,9 @@ export class RPN {
                         e = substitutions[v].clone();
                     }
                     //next declare variables
-                    else if (v in VARS) {
+                    else if (this.variables.isVar(v)) {
                         subbed = e;
-                        e = VARS[v].clone();
+                        e = this.variables.getVar(v).clone();
                     }
                     //make notation of what it was before
                     if (subbed)
@@ -366,4 +370,17 @@ export class RPN {
         //     // throw new ParseError(error.message + ': ' + e.column);
         // }
     }
+
+
+    callPeekers(name) {
+        if (Settings.callPeekers) {
+            let peekers = this.peekers[name];
+            //remove the first items and stringify
+            let args = arguments2Array(arguments).slice(1).map(o => o ? String(o) : o);
+            //call each one of the peekers
+            for (let i = 0; i < peekers.length; i++) {
+                peekers[i].apply(null, args);
+            }
+        }
+    };
 }

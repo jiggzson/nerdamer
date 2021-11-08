@@ -1,11 +1,11 @@
 import {block} from './Utils';
 
 export const ParseDeps = {
-    parse: null,
+    parser: null,
 };
 
 export function parse(e, substitutions = {}) {
-    return ParseDeps.parse(e, substitutions);
+    return ParseDeps.parser.parse(e, substitutions);
 }
 
 /**

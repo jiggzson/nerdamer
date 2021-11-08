@@ -1571,3 +1571,31 @@ export function symfunction(fn_name, params) {
     f.updateHash();
     return f;
 }
+
+
+/**
+ * Serves as a bridge between numbers and bigNumbers
+ * @param {Frac|Number} n
+ * @returns {Symbol}
+ */
+export function bigConvert(n) {
+    if (!isFinite(n)) {
+        let sign = Math.sign(n);
+        let r = new Symbol(String(Math.abs(n)));
+        r.multiplier = r.multiplier.multiply(new Frac(sign));
+        return r;
+    }
+    if (isSymbol(n))
+        return n;
+    if (typeof n === 'number') {
+        try {
+            n = Frac.simple(n);
+        } catch (e) {
+            n = new Frac(n);
+        }
+    }
+
+    let symbol = new Symbol(0);
+    symbol.multiplier = n;
+    return symbol;
+}
