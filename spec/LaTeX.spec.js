@@ -2,7 +2,7 @@
 
 'use strict';
 
-var nerdamer = require('../src/nerdamer.core.js');
+var nerdamer = require('../src/nerdamer.core');
 
 describe('TeX features', function () {
     it('should render TeX output correctly', function () {

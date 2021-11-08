@@ -23,7 +23,7 @@ const config = {
 module.exports = [
     {
         name: 'core',
-        entry: path.resolve(__dirname, 'src/nerdamer.core.ts'),
+        entry: path.resolve(__dirname, 'src/nerdamer.core.js'),
         output: {
             filename: 'nerdamer.core.js',
             path: __dirname,

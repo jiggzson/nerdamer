@@ -5,5 +5,4 @@
 /node_modules/
 /package-lock.json
 /.vscode
-/build/
-/dist/
+/dist

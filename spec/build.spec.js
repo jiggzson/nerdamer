@@ -2,7 +2,7 @@
 
 'use strict';
 
-var nerdamer = require('../src/nerdamer.core.js');
+var nerdamer = require('../src/nerdamer.core');
 
 describe('build', function () {
 

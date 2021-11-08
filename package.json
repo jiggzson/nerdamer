@@ -4,15 +4,12 @@
         "email": "martin.r.donk@gmail.com"
     },
     "description": "javascript light-weight symbolic math expression evaluator",
-    "name": "nerdamer",
+    "name": "nerdamer-ts",
     "license": "MIT",
-    "version": "1.2.1.1",
+    "version": "1.2.0",
     "homepage": "http://nerdamer.com/",
-    "directory": {
-        "lib": "./"
-    },
-    "main": "src/index.ts",
-    "typings": "index.d.ts",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "keywords": [
         "math",
         "matrix",
@@ -46,13 +43,13 @@
         "node": ">=0.10.0"
     },
     "scripts": {
-        "test": "tsc && jasmine build/spec/*.spec.js",
-        "test_tokenizer": "tsc && jasmine build/spec/tokenizer/tokenize.spec.js",
-        "build": "webpack --config-name core && webpack --config-name all"
+        "test": "jasmine-ts spec/*.spec.js",
+        "test_tokenizer": "jasmine-ts spec/tokenizer/tokenize.spec.js",
+        "pack": "webpack --config-name core && webpack --config-name all",
+        "build": "tsc"
     },
     "files": [
-        "nerdamer.core.js",
-        "src"
+        "dist"
     ],
     "devDependencies": {
         "gulp": "^4.0.2",
@@ -61,15 +58,15 @@
         "gulp-typescript": "^6.0.0-alpha.1",
         "gulp-uglify": "^3.0.2",
         "gulp-watch": "^5.0.1",
-        "jasmine": "^2.99.0",
-        "webpack-merge": "^5.8.0",
         "lodash": "^4.17.21",
         "ts-loader": "^9.2.6",
         "typescript": "^4.4.4",
-        "webpack-cli": "^4.9.1"
+        "webpack-cli": "^4.9.1",
+        "webpack-merge": "^5.8.0"
     },
     "dependencies": {
         "big-integer": "1.6.40",
-        "decimal.js": "^10.3.1"
+        "decimal.js": "^10.3.1",
+        "jasmine-ts": "^0.4.0"
     }
 }

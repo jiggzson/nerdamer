@@ -1,6 +1,6 @@
 /* global expect */
 
-var nerdamer = require('../../src/nerdamer.core.js');
+var nerdamer = require('../../src/nerdamer.core');
 
 //fix for rounding errors in some functions
 var toFixed = function(x, n) {
