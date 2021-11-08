@@ -9,7 +9,7 @@
 /* global module */
 
 if((typeof module) !== 'undefined') {
-    var nerdamer = require('./nerdamer.core.js');
+    var nerdamer = require('./nerdamer.core');
     require('./Calculus');
     require('./Algebra');
 }

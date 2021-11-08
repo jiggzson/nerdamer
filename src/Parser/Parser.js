@@ -23,11 +23,9 @@ import {
     multiply,
     nthroot, pow,
     rationalize, realpart,
-    round, sqrt, subtract
+    round, sqrt, subtract, expand
 } from '../Functions/Core';
-import {expand} from '../Functions/Core/math/expand';
-import {OperatorDescriptor} from '../Providers/OperatorDictionary';
-import {ParseDeps} from './Parser';
+
 
 //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
 export class Parser {

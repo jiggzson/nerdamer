@@ -9,8 +9,8 @@
 /* global module, Function */
 
 if((typeof module) !== 'undefined') {
-    var nerdamer = require('./nerdamer.core.js');
-    require('./Calculus.js');
+    var nerdamer = require('./nerdamer.core');
+    require('./Calculus');
 }
 
 (function () {

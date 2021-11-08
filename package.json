@@ -47,21 +47,25 @@
     },
     "scripts": {
         "test": "tsc && jasmine build/spec/*.spec.js",
-        "test_all": "tsc && jasmine build/spec/{**/,}*.spec.js",
-        "test_tokenizer": "tsc && jasmine build/spec/tokenizer/tokenize.spec.js"
+        "test_tokenizer": "tsc && jasmine build/spec/tokenizer/tokenize.spec.js",
+        "build": "webpack --config-name core && webpack --config-name all"
     },
     "devDependencies": {
         "gulp": "^4.0.2",
         "gulp-cli": "^2.3.0",
         "gulp-concat": "^2.6.1",
+        "gulp-typescript": "^6.0.0-alpha.1",
         "gulp-uglify": "^3.0.2",
         "gulp-watch": "^5.0.1",
-        "jasmine": "^2.99.0"
+        "jasmine": "^2.99.0",
+        "webpack-merge": "^5.8.0",
+        "lodash": "^4.17.21",
+        "ts-loader": "^9.2.6",
+        "typescript": "^4.4.4",
+        "webpack-cli": "^4.9.1"
     },
     "dependencies": {
         "big-integer": "1.6.40",
-        "decimal.js": "^10.3.1",
-        "lodash": "^4.17.21",
-        "typescript": "^4.4.4"
+        "decimal.js": "^10.3.1"
     }
 }

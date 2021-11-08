@@ -8,8 +8,8 @@
  */
 
 if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
-    var nerdamer = require('./nerdamer.core.js');
-    require('./Algebra.js');
+    var nerdamer = require('./nerdamer.core');
+    require('./Algebra');
 }
 
 (function () {
