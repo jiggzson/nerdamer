@@ -515,11 +515,6 @@ export function validateName(name: string, typ: string = 'variable') {
     }
 }
 
-
-
-
-
-
 /**
  * Used to pass warnings or low severity errors about the library
  * @param msg
@@ -531,11 +526,6 @@ export function warn(msg: string) {
         console.warn(msg);
     }
 }
-
-
-
-
-
 
 /**
  * Removes an item from either an array or an object. If the object is an array, the index must be

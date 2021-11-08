@@ -26,6 +26,7 @@ import {
     round, sqrt, subtract
 } from '../Core/functions';
 import {expand} from '../Core/functions/math/expand';
+import {OperatorDescriptor} from './OperatorDictionary';
 
 //Uses modified Shunting-yard algorithm. http://en.wikipedia.org/wiki/Shunting-yard_algorithm
 export class Parser {
@@ -50,18 +51,30 @@ export class Parser {
     /** @property {VariableDictionary} variables */
     variables;
 
-    constructor(tokenizer, operators, functionProvider, variables, reservedDictionary, peekers, units) {
+    constructor(tokenizer, operators, functionProvider, variables, peekers, units) {
         this.tokenizer = tokenizer;
         this.operators = operators;
         this.functionProvider = functionProvider;
         this.variables = variables;
-        this.reservedDictionary = reservedDictionary;
         this.peekers = peekers;
         this.units = units;
 
         operators.injectOperatorsDeps({
-            registerOperator: (name, operation) => this[name] = operation,
+            registerOperator: (name, operation) => this.setAction(name, operation)
         });
+    }
+
+    getAction(name) {
+        // return this.actions[name];
+        return this[name];
+    }
+    setAction(name, func) {
+        // this.actions[name] = func;
+        this[name] = func;
+    }
+
+    setOperator(operator, action = undefined, shift = undefined) {
+        this.operators.setOperator(operator, action, shift)
     }
 
     //delay setting of constants until Settings is ready
@@ -106,7 +119,7 @@ export class Parser {
         let rpnDeps = {
             callfunction: (...args) => this.callfunction(...args),
             getAction: (action) => {
-                return this[action].bind(this)
+                return this.getAction(action).bind(this)
             }
         };
         let rpnParser = new RPN(rpnDeps, this.variables, this.peekers);
@@ -121,17 +134,17 @@ export class Parser {
      * @param {boolean} force_call
      */
     extend(what, with_what, force_call) {
-        let extended = this[what];
+        let extended = this.getAction(what);
         if (typeof extended === 'function' && typeof with_what === 'function') {
-            let f = this[what];
-            this[what] = (a, b) => {
+            let f = extended;
+            this.setAction(what, (a, b) => {
                 if (isSymbol(a) && isSymbol(b) && !force_call) {
                     return f.call(this, a, b);
                 }
                 else {
                     return with_what.call(this, a, b, f);
                 }
-            };
+            });
         }
     };
 
@@ -763,7 +776,7 @@ export class Parser {
 
     setFunction(name, params_array, body) {
         validateName(name);
-        if (!this.reservedDictionary.isReserved(name)) {
+        if (!this.variables.isReserved(name)) {
             params_array = params_array || this.parse(body).variables();
             // The function gets set to PARSER.mapped function which is just
             // a generic function call.

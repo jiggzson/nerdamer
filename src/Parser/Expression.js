@@ -4,7 +4,7 @@ import {text} from '../Core/Text';
 import {LaTeX} from '../LaTeX/LaTeX';
 import {block, isFraction, isNumericSymbol, isSymbol, isVector} from '../Core/Utils';
 import {subtract} from '../Core/functions';
-import {parse, evaluate} from '../Core/parse';
+import {parse, evaluate, ParseDeps} from '../Core/parse';
 import {expand} from '../Core/functions/math/expand';
 
 // noinspection JSUnusedGlobalSymbols
@@ -194,7 +194,7 @@ export class Expression {
             symbol = parse(symbol);
         }
 
-        return new Expression(this.$getAction(otype)(this.symbol.clone(), symbol.clone()));
+        return new Expression(ParseDeps.parser.getAction(otype)(this.symbol.clone(), symbol.clone()));
     }
 
     add(symbol) {

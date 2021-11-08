@@ -4,10 +4,10 @@ import {Groups} from '../Core/Groups';
 import {isSet} from '../Parser/Set';
 import {Collection} from '../Parser/Collection';
 import {parse} from '../Core/parse';
+import {Parser} from '../Parser/Parser';
 
 export class LaTeX {
     /** @deprecated */
-    static $Parser;
     static space = '~';
     static dot = ' \\cdot ';
 
@@ -22,7 +22,7 @@ export class LaTeX {
     static createParser() {
         // create a parser and strip it from everything except the items that you need
         var keep = ['classes', 'setOperator', 'getOperators', 'getBrackets', 'tokenize', 'toRPN', 'tree', 'units'];
-        var parser = new LaTeX.$Parser();
+        var parser = new Parser();
         for (var x in parser) {
             if (keep.indexOf(x) === -1)
                 delete parser[x];

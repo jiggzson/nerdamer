@@ -6,92 +6,16 @@
  * Source : https://github.com/jiggzson/nerdamer
  */
 
-import {
-    allSame,
-    allNumeric,
-    allNumbers,
-    arguments2Array,
-    arrayAddSlices,
-    arrayClone,
-    arrayGetVariables,
-    arrayMax,
-    arrayMin,
-    arrayEqual,
-    arrayUnique,
-    arraySum,
-
-    block,
-    build,
-
-    comboSort,
-    compare,
-    convertToVector,
-    customType,
-    decompose_fn,
-    each,
-    evaluate,
-    even,
-    evenFraction,
-    fillHoles,
-    firstObject,
-    format,
-    generatePrimes,
-    getCoeffs,
-
-
-    inBrackets,
-    isArray,
-    isExpression,
-    isFraction,
-    isInt,
-    isMatrix,
-    isNegative,
-    isNumericSymbol,
-    isPrime,
-    isSymbol,
-    isVariableSymbol,
-    isVector,
-    knownVariable,
-    nroots,
-    remove,
-    range,
-    nround,
-    sameSign,
-    separate,
-    scientificToDecimal,
-    stringReplace,
-    text,
-    validateName,
-    variables,
-    warn,
-} from './Core/Utils';
-
-
+import * as Utils from './Core/Utils';
 import {Settings} from './Settings';
 import {Symbol, symfunction} from './Core/Symbol';
-import {Frac} from './Core/Frac';
-import Scientific from './Core/Scientific';
-import {OperatorDictionary} from './Parser/OperatorDictionary';
-import {FunctionProvider} from './Operators/functions';
-import {Groups} from './Core/Groups';
-import {Matrix} from './Parser/Matrix';
-import {Vector} from './Parser/Vector';
 import bigDec from 'decimal.js';
-import bigInt from './3rdparty/bigInt';
-import {Math2} from './Core/Math2';
 import {Token} from './Parser/Token';
-import {Tokenizer} from './Parser/Tokenizer';
 import {Expression} from './Parser/Expression';
 import {LaTeX} from './LaTeX/LaTeX';
 import * as exceptions from './Core/Errors';
-
-
-import {ParseDeps} from './Core/parse';
-import {ReservedDictionary} from './Parser/ReservedDictionary';
-import {VariableDictionary} from './Parser/VariableDictionary';
-import {Parser} from './Parser/Parser';
-import {primeFactors} from './Core/functions/operations/pow';
-const {NerdamerTypeError, NerdamerValueError, err} = exceptions;
+import {Core} from './Core/Core';
+const {NerdamerTypeError, err} = exceptions;
 
 
 //version ======================================================================
@@ -103,184 +27,15 @@ bigDec.set({
 
 
 const nerdamer = (function () {
-//inits ========================================================================
-    const reservedDictionary = new ReservedDictionary();
-    const functionProvider = new FunctionProvider();
-    const operators = new OperatorDictionary();
-    const variableDictionary = new VariableDictionary();
-    const units = {};
-    const tokenizer = new Tokenizer(functionProvider, operators, units);
+    const core = new Core();
 
-    // functions for export
-    const getU = symbol => reservedDictionary.getU(symbol);
-    const clearU = u => reservedDictionary.clearU(u);
-    const isReserved = value => reservedDictionary.isReserved(value);
-    const reserveNames = obj => reservedDictionary.reserveNames(obj);
+    const parser = core.PARSER;
+    const functionProvider = core.functionProvider;
+    const variableDictionary = core.variableDictionary;
+    const EXPRESSIONS = core.EXPRESSIONS;
+    const peekers = core.peekers;
+    const operators = core.operators;
 
-    const getOperator = (...args) => operators.getOperator(...args);
-    const aliasOperator = (...args) => operators.aliasOperator(...args);
-    const setOperator = (...args) => operators.setOperator(...args);
-
-    /**
-     * provide a mechanism for accessing functions directly. Not yet complete!!!
-     * Some functions will return undefined. This can maybe just remove the
-     * function object at some point when all functions are eventually
-     * housed in the global function object. Returns ALL parser available
-     * functions. Parser.functions may not contain all functions
-     */
-    let importFunctions = function () {
-        let o = {};
-        let functions = functionProvider.getFunctionDescriptors();
-        for (let x in functions) {
-            o[x] = functions[x][0];
-        }
-        return o;
-    };
-
-    const peekers = {
-        pre_operator: [],
-        post_operator: [],
-        pre_function: [],
-        post_function: []
-    };
-
-
-//Settings =====================================================================
-
-    const PARENTHESIS = Settings.PARENTHESIS;
-    const EXPRESSIONS = [];
-    Expression.$EXPRESSIONS = EXPRESSIONS;
-
-    //the container used to store all the reserved functions
-    const WARNINGS = [];
-
-
-//Utils ========================================================================
-    primeFactors(314146179365);
-
-    // nerdamer's parser
-    const parser = new Parser(tokenizer, operators, functionProvider, variableDictionary, reservedDictionary, peekers, units);
-    ParseDeps.parser = parser;
-
-
-    //link the Math2 object to Settings.FUNCTION_MODULES
-    Settings.FUNCTION_MODULES.push(Math2);
-    reserveNames(Math2); //reserve the names in Math2
-
-//Expression ===================================================================
-    Expression.prototype.$getAction = a => {
-        return parser[a];
-    }
-
-
-    // inject back dependencies
-    LaTeX.$Parser = Parser;
-
-
-//finalize =====================================================================
-    /* FINALIZE */
-    (function () {
-        reserveNames(variableDictionary.getAllConstants());
-        reserveNames(functionProvider.getFunctionDescriptors());
-        parser.initConstants();
-        //bug fix for error but needs to be revisited
-        if (!parser.error)
-            parser.error = err;
-
-        //Store the log and log10 functions
-        Settings.LOG_FNS = {
-            log: functionProvider.getFunctionDescriptor('log'),
-            log10: functionProvider.getFunctionDescriptor('log10')
-        };
-
-    })();
-
-    /* END FINALIZE */
-
-//Core =========================================================================
-    let Utils = {
-        allSame: allSame,
-        allNumeric: allNumeric,
-        arguments2Array: arguments2Array,
-        arrayAddSlices: arrayAddSlices,
-        arrayClone: arrayClone,
-        arrayMax: arrayMax,
-        arrayMin: arrayMin,
-        arrayEqual: arrayEqual,
-        arrayUnique: arrayUnique,
-        arrayGetVariables: arrayGetVariables,
-        arraySum: arraySum,
-        block: block,
-        build: build,
-        clearU: clearU, // inject!
-        comboSort: comboSort,
-        compare: compare,
-        convertToVector: convertToVector,
-        customType: customType,
-        decompose_fn: decompose_fn,
-        each: each,
-        evaluate: evaluate,
-        even: even,
-        evenFraction: evenFraction,
-        fillHoles: fillHoles,
-        firstObject: firstObject,
-        format: format,
-        generatePrimes: generatePrimes,
-        getCoeffs: getCoeffs,
-        getU: getU, // inject!
-        importFunctions: importFunctions, // inject!
-        inBrackets: inBrackets,
-        isArray: isArray,
-        isExpression: isExpression,
-        isFraction: isFraction,
-        isInt: isInt,
-        isMatrix: isMatrix,
-        isNegative: isNegative,
-        isNumericSymbol: isNumericSymbol,
-        isPrime: isPrime,
-        isReserved: isReserved,
-        isSymbol: isSymbol,
-        isVariableSymbol: isVariableSymbol,
-        isVector: isVector,
-        keys: Object.keys, // inject
-        knownVariable: knownVariable,
-        nroots: nroots,
-        remove: remove,
-        reserveNames: reserveNames,
-        range: range,
-        round: nround,
-        sameSign: sameSign,
-        scientificToDecimal: scientificToDecimal,
-        separate: separate, // inject
-        stringReplace: stringReplace,
-        text: text,
-        validateName: validateName,
-        variables: variables,
-        warn: warn
-    };
-
-    //This contains all the parts of nerdamer and enables nerdamer's internal functions
-    //to be used.
-    const Core = {
-        groups: Groups,
-        Symbol: Symbol,
-        Expression: Expression,
-        Frac: Frac,
-        Vector: Vector,
-        Matrix: Matrix,
-        Parser: Parser,
-        Scientific: Scientific,
-        Math2: Math2,
-        LaTeX: LaTeX,
-        Utils: Utils,
-        PARSER: parser,
-        PARENTHESIS: PARENTHESIS,
-        Settings: Settings,
-        err: err,
-        bigInt: bigInt,
-        bigDec: bigDec,
-        exceptions: exceptions
-    };
 
 //libExports ===================================================================
     /**
@@ -289,7 +44,7 @@ const nerdamer = (function () {
      * @param {Object} subs the object containing the variable values
      * @param {Integer} location a specific location in the equation list to
      * insert the evaluated expression
-     * @param {String} option additional options
+     * @param {string|string[]} option additional options
      * @returns {Expression}
      */
     let libExports = function (expression, subs, option, location) {
@@ -307,7 +62,7 @@ const nerdamer = (function () {
             expression = expression.toString();
 
         // Convert it to an array for simplicity
-        if (!isArray(option)) {
+        if (!Utils.isArray(option)) {
             option = typeof option === 'undefined' ? [] : [option];
         }
 
@@ -327,7 +82,7 @@ const nerdamer = (function () {
             }
         });
 
-        let e = block('PARSE2NUMBER', function () {
+        let e = Utils.block('PARSE2NUMBER', function () {
             return parser.parse(expression, subs);
         }, numer || Settings.PARSE2NUMBER);
 
@@ -378,7 +133,7 @@ const nerdamer = (function () {
     libExports.version = function (add_on) {
         if (add_on) {
             try {
-                return C[add_on].version;
+                return core[add_on].version;
             }
             catch(e) {
                 return "No module named " + add_on + " found!";
@@ -392,7 +147,7 @@ const nerdamer = (function () {
      * @returns {String[]}
      */
     libExports.getWarnings = function () {
-        return WARNINGS;
+        return Utils.WARNINGS;
     };
 
     /**
@@ -402,8 +157,8 @@ const nerdamer = (function () {
      * @returns {Object} Returns the nerdamer object
      */
     libExports.setConstant = function (constant, value) {
-        validateName(constant);
-        if (!isReserved(constant)) {
+        Utils.validateName(constant);
+        if (!variableDictionary.isReserved(constant)) {
             //fix for issue #127
             if (value === 'delete' || value === '') {
                 variableDictionary.deleteConstant(constant);
@@ -444,7 +199,7 @@ const nerdamer = (function () {
      * @returns {Core} Exports the nerdamer core functions and objects
      */
     libExports.getCore = function () {
-        return Core;
+        return core;
     };
 
     libExports.getExpression = libExports.getEquation = Expression.getExpression;
@@ -455,7 +210,7 @@ const nerdamer = (function () {
      * @returns {String|Array}
      */
     libExports.reserved = function (asArray) {
-        let reserved = reservedDictionary.getReserved();
+        let reserved = variableDictionary.getReserved();
         if (asArray) {
             return reserved;
         }
@@ -481,7 +236,7 @@ const nerdamer = (function () {
         }
         else {
             let index = !equation_number ? EXPRESSIONS.length : equation_number - 1;
-            keep_EXPRESSIONS_fixed === true ? EXPRESSIONS[index] = undefined : remove(EXPRESSIONS, index);
+            keep_EXPRESSIONS_fixed === true ? EXPRESSIONS[index] = undefined : Utils.remove(EXPRESSIONS, index);
         }
         return this;
     };
@@ -504,7 +259,7 @@ const nerdamer = (function () {
     libExports.expressions = function (asObject, asLaTeX, option) {
         let result = asObject ? {} : [];
         for (let i = 0; i < EXPRESSIONS.length; i++) {
-            let eq = asLaTeX ? LaTeX.latex(EXPRESSIONS[i], option) : text(EXPRESSIONS[i], option);
+            let eq = asLaTeX ? LaTeX.latex(EXPRESSIONS[i], option) : Utils.text(EXPRESSIONS[i], option);
             asObject ? result[i + 1] = eq : result.push(eq);
         }
         return result;
@@ -514,7 +269,7 @@ const nerdamer = (function () {
     libExports.register = function (obj) {
         let core = this.getCore();
 
-        if (isArray(obj)) {
+        if (Utils.isArray(obj)) {
             for (let i = 0; i < obj.length; i++) {
                 if (obj)
                     this.register(obj[i]);
@@ -525,7 +280,7 @@ const nerdamer = (function () {
             if (obj.dependencies) {
                 for (let i = 0; i < obj.dependencies.length; i++)
                     if (!core[obj.dependencies[i]])
-                        throw new Error(format('{0} requires {1} to be loaded!', obj.name, obj.dependencies[i]));
+                        throw new Error(Utils.format('{0} requires {1} to be loaded!', obj.name, obj.dependencies[i]));
             }
             //if no parent object is provided then the function does not have an address and cannot be called directly
             let parent_obj = obj.parent,
@@ -550,7 +305,9 @@ const nerdamer = (function () {
      * @param {String} name variable name
      * @returns {boolean} validates if the profided string is a valid variable name
      */
-    libExports.validateName = validateName;
+    libExports.validateName = function(name, type = 'variable') {
+        return Utils.validateName();
+    }
 
     /**
      * @param {String} varname variable name
@@ -558,8 +315,8 @@ const nerdamer = (function () {
      */
     libExports.validVarName = function (varname) {
         try {
-            validateName(varname);
-            return !reservedDictionary.isReserved(varname);
+            Utils.validateName(varname);
+            return !variableDictionary.isReserved(varname);
         }
         catch(e) {
             return false;
@@ -590,7 +347,7 @@ const nerdamer = (function () {
      * @returns {Object} Returns the nerdamer object
      */
     libExports.setVar = function (v, val) {
-        validateName(v);
+        Utils.validateName(v);
         //check if it's not already a constant
         if (variableDictionary.isConstant(v)) {
             err('Cannot set value for constant ' + v);
@@ -599,7 +356,7 @@ const nerdamer = (function () {
             variableDictionary.deleteVar(v);
         }
         else {
-            let value = isSymbol(val) ? val : parser.parse(val);
+            let value = Utils.isSymbol(val) ? val : parser.parse(val);
             variableDictionary.setVar(v, value);
         }
         return this;
@@ -710,40 +467,30 @@ const nerdamer = (function () {
     };
 
     /**
+     * DEPRECATED! Added functions available immediately.
+     *
      * This functions makes internal functions available externally
      * @param {boolean} override Override the functions when calling api if it exists
+     * @deprecated
      */
-    libExports.api = function (override) {
-        //Map internal functions to external ones
-        let linker = fname => {
-            return (...args) => {
-                for (let i = 0; i < args.length; i++) {
-                    args[i] = parser.parse(args[i]);
-                }
-
-                return new Expression(block('PARSE2NUMBER', () => {
-                    return parser.callfunction(fname, args);
-                }));
-            };
-        };
-    };
+    libExports.api = () => {};
 
     libExports.replaceFunction = function (name, fn, num_args) {
         let existing = functionProvider.getFunctionDescriptor(name);
         let new_num_args = typeof num_args === 'undefined' ? existing[1] : num_args;
-        functionProvider.setFunctionDescriptor(name, [fn.call(undefined, existing[0], C), new_num_args]);
+        functionProvider.setFunctionDescriptor(name, [fn.call(undefined, existing[0], core), new_num_args]);
     };
 
     libExports.setOperator = function (operator, shift) {
-        setOperator(operator, shift);
+        return operators.setOperator(operator, shift);
     };
 
     libExports.getOperator = function (operator) {
-        return getOperator(operator);
+        return operators.getOperator(operator)
     };
 
     libExports.aliasOperator = function (operator, withOperator) {
-        return aliasOperator(operator, withOperator);
+        return operators.aliasOperator(operator, withOperator);
     };
 
     libExports.tree = function (expression) {
@@ -769,7 +516,7 @@ const nerdamer = (function () {
     };
 
     libExports.removePeeker = function (name, f) {
-        remove(peekers[name], f);
+        Utils.remove(peekers[name], f);
     };
 
     libExports.parse = function (e) {
@@ -792,7 +539,7 @@ const nerdamer = (function () {
                         args[i] = parser.parse(args[i]);
                     }
 
-                    return new Expression(block('PARSE2NUMBER', () => {
+                    return new Expression(Utils.block('PARSE2NUMBER', () => {
                         return parser.callfunction(name, args);
                     }));
                 }

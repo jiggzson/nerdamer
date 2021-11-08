@@ -3,9 +3,7 @@
 import {Expression} from './Parser/Expression';
 import {SettingsType} from './Settings';
 import {OperatorDescriptor} from './Parser/OperatorDictionary';
-import {core, Core} from './Core/Core';
-
-let defaultCore = new Core();
+import {Core} from './Core/Core';
 
 /**
  *
@@ -18,9 +16,12 @@ let defaultCore = new Core();
  * @returns {Expression}
  */
 function nerdamer(expression: string, subs: Record<string, any>, option: string | string[], location: number) {
-    core.with(defaultCore, () => {
 
-    });
+    // let defaultCore = new Core();
+    //
+    // core.with(defaultCore, () => {
+    //
+    // });
 }
 
 namespace nerdamer {
@@ -330,12 +331,13 @@ namespace nerdamer {
     }
 
     /**
+     * DEPRECATED! Added functions available immediately.
+     *
      * This functions makes internal functions available externally
      * @param {boolean} override Override the functions when calling api if it exists
+     * @deprecated
      */
-    export function api(override: boolean = false) {
-
-    }
+    export function api(override: boolean = false) { }
 }
 
 export = nerdamer;

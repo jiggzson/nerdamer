@@ -155,4 +155,21 @@ export class FunctionProvider {
     removeFunctionDescriptor(name) {
         delete this.functions[name];
     }
+
+    /**
+     * provide a mechanism for accessing functions directly. Not yet complete!!!
+     * Some functions will return undefined. This can maybe just remove the
+     * function object at some point when all functions are eventually
+     * housed in the global function object. Returns ALL parser available
+     * functions. Parser.functions may not contain all functions
+     * @return {Record<string, (...args: any[]) => any>}
+     */
+    importFunctions() {
+        let o = {};
+        let functions = this.functions;
+        for (let x in functions) {
+            o[x] = functions[x][0];
+        }
+        return o;
+    }
 }

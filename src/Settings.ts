@@ -17,7 +17,7 @@ export type SettingsType = {
     //the symbol to use for imaginary symbols
     IMAGINARY: string,
     //the modules used to link numeric function holders
-    FUNCTION_MODULES: [Math],
+    FUNCTION_MODULES: object[],
     //Allow certain characters
     ALLOW_CHARS: string[],
     //Allow nerdamer to convert multi-character variables
@@ -53,6 +53,10 @@ export type SettingsType = {
     LOG: string,
     LOG10: string,
     LOG10_LATEX: string,
+    LOG_FNS: {
+        'log': any,
+        'log10': any
+    },
     MAX_EXP: number,
     //The number of scientific place to round to
     SCIENTIFIC_MAX_DECIMAL_PLACES: number,
@@ -170,6 +174,9 @@ export let Settings: SettingsType = {
     LOG: 'log',
     LOG10: 'log10',
     LOG10_LATEX: 'log_{10}',
+
+    LOG_FNS: { log: null, log10: null },
+
     MAX_EXP: 200000,
     //The number of scientific place to round to
     SCIENTIFIC_MAX_DECIMAL_PLACES: 14,
