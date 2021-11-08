@@ -11,7 +11,7 @@
     "directory": {
         "lib": "./"
     },
-    "main": "nerdamer.core.js",
+    "main": "src/nerdamer.core.ts",
     "typings": "index.d.ts",
     "keywords": [
         "math",
