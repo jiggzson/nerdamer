@@ -425,9 +425,9 @@ export class Parser {
 
     /**
      * Convert expression or object to LaTeX
-     * @param {String} expression_or_obj
-     * @param {object} opt
-     * @returns {String}
+     * @param {string} expression_or_obj
+     * @param {ConvertToLaTeXOptions} opt
+     * @returns {string}
      */
     toTeX(expression_or_obj, opt) {
         opt = opt || {};

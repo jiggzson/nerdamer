@@ -181,9 +181,9 @@ export function arrayUnique(arr: any[]) {
  * @param settingsName
  * @param {Function} f
  * @param {boolean} opt - The value of the setting in the block
- * @param {String} obj - The obj of interest. Usually a Symbol but could be any object
+ * @param {string} obj - The obj of interest. Usually a Symbol but could be any object
  */
-export function block<T>(settingsName: keyof SettingsType, f: () => T, opt: any, obj?: object): T {
+export function block<T>(settingsName: keyof SettingsType, f: () => T, opt?: any, obj?: object): T {
     let current_setting = Settings[settingsName];
     (Settings[settingsName] as any) = opt === undefined ? true : !!opt;
     let retVal = f.call(obj);

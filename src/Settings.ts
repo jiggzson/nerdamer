@@ -5,7 +5,7 @@ export type SettingsType = {
     //the max number up to which to cache primes. Making this too high causes performance issues
     init_primes: number,
 
-    exclude: [],
+    exclude: string[],
     //If you don't care about division by zero for example then this can be set to true.
     //Has some nasty side effects so choose carefully.
     suppress_errors: boolean,

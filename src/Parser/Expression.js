@@ -7,13 +7,11 @@ import {subtract} from '../Core/functions';
 import {parse, evaluate, ParseDeps} from '../Core/parse';
 import {expand} from '../Core/functions/math/expand';
 
-// noinspection JSUnusedGlobalSymbols
 /**
  * This is what nerdamer returns. It's sort of a wrapper around the symbol class and
  * provides the user with some useful functions. If you want to provide the user with extra
  * library functions then add them to this class's prototype.
  * @param {Symbol} symbol
- * @returns {Expression} wraps around the Symbol class
  */
 
 export class Expression {
@@ -152,6 +150,10 @@ export class Expression {
         return this.symbol.variables();
     }
 
+    /**
+     *
+     * @return {string}
+     */
     toString() {
         try {
             if (Array.isArray(this.symbol))
