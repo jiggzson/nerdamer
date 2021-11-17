@@ -2394,6 +2394,7 @@ if((typeof module) !== 'undefined') {
                 return symbol;
             },
             _factor: function (symbol, factors) {
+                var g = symbol.group;
                 //some items cannot be factored any further so return those right away
                 if(symbol.group === FN) {
                     var arg = symbol.args[0];
@@ -2575,11 +2576,20 @@ if((typeof module) !== 'undefined') {
 
                         //last minute clean up
                         symbol = _.parse(symbol, core.Utils.getFunctionsSubs(map));
-
+                        
+                        var addPower = factors.length === 1;
+                        
                         factors.add(_.pow(symbol, _.parse(p)));
 
                         var retval = factors.toSymbol();
-
+                        
+                        // We may have only factored out the symbol itself so we end up with a factor of one 
+                        // where the power needs to be placed back
+                        // e.g. factor((2*y+p)^2). Here we end up having a factor of 1 remaining and a p of 2.
+                        if(addPower && symbol.equals(1) && retval.isLinear()) {
+                            retval = _.pow(retval, _.parse(p));
+                        }
+                        
                         return retval;
                     }
 
@@ -2910,11 +2920,17 @@ if((typeof module) !== 'undefined') {
 
                                 var div = __.div(symbol, d.clone()),
                                         is_factor = div[1].equals(0);
-
+                                
+                                // Break infinite loop for factoring e^t*x-1
+                                if((symbol.equals(div[0]) && div[1].equals(0))) {
+                                    break;
+                                }
+                                
                                 if(div[0].isConstant()) {
                                     factors.add(div[0]);
                                     break;
                                 }
+                                
                             }
                             else
                                 is_factor = false;
@@ -4172,7 +4188,7 @@ if((typeof module) !== 'undefined') {
                     var symbols = symbol.collectSymbols();
                     //assumption 1.
                     //since it's a composite, it has a length of at least 1
-                    var retval, a, b, d1, d2, n1, n2, x, y, c, den, num;
+                    var retval, a, b, d1, d2, n1, n2, s, x, y, c, den, num;
                     a = symbols.pop(); //grab the first symbol
                     //loop through each term and make denominator common
                     while(symbols.length) {
@@ -4184,11 +4200,11 @@ if((typeof module) !== 'undefined') {
                         c = _.multiply(d1.clone(), d2.clone());
                         x = _.multiply(n1, d2);
                         y = _.multiply(n2, d1);
-                        a = _.divide(_.add(x, y), c);
+                        s = _.add(x, y);
+                        a = _.divide(s, c);
                     }
                     den = _.expand(a.getDenom());
                     num = _.expand(a.getNum());
-
                     //simplify imaginary
                     if(num.isImaginary() && den.isImaginary()) {
                         retval = __.Simplify.complexSimp(num, den);
@@ -4345,7 +4361,6 @@ if((typeof module) !== 'undefined') {
                 symbol = sym_array.pop();
                 //remove gcd from denominator
                 symbol = __.Simplify.fracSimp(symbol);
-
                 //nothing more to do
                 if(symbol.isConstant() || symbol.group === core.groups.S) {
                     sym_array.push(symbol);
@@ -4549,5 +4564,5 @@ if((typeof module) !== 'undefined') {
             }
         }
     ]);
-    nerdamer.api();
+    nerdamer.updateAPI();
 })();

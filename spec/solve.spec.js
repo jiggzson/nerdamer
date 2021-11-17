@@ -31,7 +31,7 @@ describe('Solve', function () {
         expect(nerdamer('solve(1/x=a,x)').toString()).toEqual('[a^(-1)]');
         expect(nerdamer('solve(sqrt(x^2-1),x)').toString()).toEqual('[1,-1]');
         expect(nerdamer('solve(m*x^9+n,x)').toString()).toEqual('[2*m^(-1/9)*n^(1/9),2*e^((2/9)*i*pi)*m^(-1/9)*n^(1/9),2*e^((4/9)*i*pi)*m^(-1/9)*n^(1/9),2*e^((2/3)*i*pi)*m^(-1/9)*n^(1/9),2*e^((8/9)*i*pi)*m^(-1/9)*n^(1/9),2*e^((10/9)*i*pi)*m^(-1/9)*n^(1/9),2*e^((4/3)*i*pi)*m^(-1/9)*n^(1/9),2*e^((14/9)*i*pi)*m^(-1/9)*n^(1/9),2*e^((16/9)*i*pi)*m^(-1/9)*n^(1/9)]');
-        expect(nerdamer('solve(sqrt(97)x^2-sqrt(13)x+sqrt(14)x+sqrt(43)x^2+sqrt(3)*sqrt(101)=0,x)').toString()).toEqual('[(-1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(14)+(1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt((-sqrt(13)+sqrt(14))^2-4*(sqrt(43)+sqrt(97))*sqrt(101)*sqrt(3))+(1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(13),(-1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt((-sqrt(13)+sqrt(14))^2-4*(sqrt(43)+sqrt(97))*sqrt(101)*sqrt(3))+(-1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(14)+(1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(13)]');
+        expect(nerdamer('solve(sqrt(97)x^2-sqrt(13)x+sqrt(14)x+sqrt(43)x^2+sqrt(3)*sqrt(101)=0,x)').toString()).toEqual('[(-1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(14)+(1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(-2*sqrt(13)*sqrt(14)-4*sqrt(101)*sqrt(3)*sqrt(43)-4*sqrt(101)*sqrt(3)*sqrt(97)+27)+(1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(13),(-1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(-2*sqrt(13)*sqrt(14)-4*sqrt(101)*sqrt(3)*sqrt(43)-4*sqrt(101)*sqrt(3)*sqrt(97)+27)+(-1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(14)+(1/2)*(sqrt(43)+sqrt(97))^(-1)*sqrt(13)]');
         expect(nerdamer('solve(a*y^2*x^3-1, x)').toString()).toEqual('[((-1/2)*abs(a^(-1)*y^(-2))+(1/2)*a^(-1)*y^(-2))^(1/3)+((1/2)*a^(-1)*y^(-2)+(1/2)*abs(a^(-1)*y^(-2)))^(1/3),(((-1/2)*abs(a^(-1)*y^(-2))+(1/2)*a^(-1)*y^(-2))^(1/3)+((1/2)*a^(-1)*y^(-2)+(1/2)*abs(a^(-1)*y^(-2)))^(1/3))*((1/2)*i*sqrt(3)+1/2),(((-1/2)*abs(a^(-1)*y^(-2))+(1/2)*a^(-1)*y^(-2))^(1/3)+((1/2)*a^(-1)*y^(-2)+(1/2)*abs(a^(-1)*y^(-2)))^(1/3))*((1/2)*i*sqrt(3)+1/2)^2]');
         expect(nerdamer('solve((1/2)*sqrt(-4*x+4*y)-2+y, y)').toString()).toEqual('[(-1/2)*(-5+sqrt(-4*x+9)),(-1/2)*(-5-sqrt(-4*x+9))]');
         expect(nerdamer('solve(log(a*x-c)-b=21, x)').toString()).toEqual('[-(-c-e^(21+b))*a^(-1)]');
@@ -70,6 +70,8 @@ describe('Solve', function () {
         expect(nerdamer('solve(x^3+8=x^2+6,x)').toString()).toEqual('[-1,1+i,-i+1]');
         expect(nerdamer('solve(x^2=x^-2,x)').toString()).toEqual('[1,-1,i,-i]');
         expect(nerdamer('solve((x+1)(x+1)x=3x,x)').toString()).toEqual('[0,-1+sqrt(3),-1-sqrt(3)]');
+        expect(nerdamer('solve(log(y) = -t, y)').toString() ).toEqual('[e^(-t)]');
+        expect(nerdamer('solve(y=exp(4x),x)').toString() ).toEqual('[(1/4)*log(y)]');
 
     });
     it('should solve system of equations correctly', function () {
@@ -80,6 +82,10 @@ describe('Solve', function () {
         expect(nerdamer.solveEquations(['x+y=3', 'y^3-x=7']).toString()).toEqual('x,1,y,2');
         expect(nerdamer.solveEquations(['x^2+y=3', 'x+y+z=6', 'z^2-y=7']).toString()).toEqual('x,1,y,2,z,3');
         expect(nerdamer.solveEquations(['x*y-cos(z)=-3', '3*z^3-y^2+1=12', '3*sin(x)*cos(y)-x^3=-4']).toString()).toEqual('x,1.10523895006979,y,-2.98980336936266,z,1.88015428627437');
+        expect(nerdamer.solveEquations(['x=i','x+y=3']).toString()).toEqual('x,i,y,-i+3');
+        expect(nerdamer.solveEquations(["x/(45909438.9 + 0 + x)=0", "45909438.9+0+x=45909438.9"]).toString()).toEqual('x,0');
+        expect(nerdamer.solveEquations(["a=1"]).toString()).toEqual('a,1');
+        expect(nerdamer.solveEquations(["x=5", "0.6=1-(x/(10+y))"]).toString()).toEqual('x,5,y,2.5');
     });
     /** #55: nerdamer.solveEquation quits working */
     it('should handle text("fractions") without later impact', function () {

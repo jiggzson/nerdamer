@@ -13,10 +13,10 @@
 //var nerdamerBigDecimal = typeof nerdamerBigDecimal !== 'undefined' ? nerdamerBigDecimal : require('big.js');
 
 var nerdamer = (function (imports) {
-    "use strict";
+    "use strict"; 
 
 //version ======================================================================
-    var version = '1.1.12';
+    var version = '1.1.13';
 
 //inits ========================================================================
     var _ = new Parser(); //nerdamer's parser
@@ -92,8 +92,12 @@ var nerdamer = (function (imports) {
         CACHE: {},
         //Print out warnings or not
         SILENCE_WARNINGS: false,
-        //Precision
+        // Precision
         PRECISION: 21,
+        // The Expression defaults to this value for decimal places
+        EXPRESSION_DECP: 19,
+        // The text function defaults to this value for decimal places
+        DEFAULT_DECP: 16,
         //function mappings
         VECTOR: 'vector',
         PARENTHESIS: 'parens',
@@ -2223,7 +2227,7 @@ var nerdamer = (function (imports) {
      * @param {int} useGroup
      * @returns {String}
      */
-    function text(obj, option, useGroup, decp) {
+    function text(obj, option, useGroup, decp) { 
         var asHash = option === 'hash',
                 //whether to wrap numbers in brackets
                 wrapCondition = undefined,
@@ -2231,7 +2235,7 @@ var nerdamer = (function (imports) {
                 asDecimal = opt === 'decimal' || opt === 'decimals';
 
         if(asDecimal && typeof decp === 'undefined')
-            decp = 16;
+            decp = Settings.DEFAULT_DECP;
 
         function toString(obj) {
             switch(option)
@@ -2313,7 +2317,7 @@ var nerdamer = (function (imports) {
                 case 'scientific':
                     wrapCondition = wrapCondition || function (str) {
                         return false;
-                    }
+                    };
                     return new Scientific(obj.valueOf()).toString(Settings.SCIENTIFIC_MAX_DECIMAL_PLACES);
                 default:
                     wrapCondition = wrapCondition || function (str) {
@@ -2577,7 +2581,7 @@ var nerdamer = (function (imports) {
          * @returns {String}
          */
         text: function (opt, n) {
-            n = n || 19;
+            n = n || Settings.EXPRESSION_DECP;
             opt = opt || 'decimals';
             if(this.symbol.text_)
                 return this.symbol.text_(opt);
@@ -2792,135 +2796,7 @@ var nerdamer = (function (imports) {
     //Aliases
     Expression.prototype.toTeX = Expression.prototype.latex;
 
-//Scientific ===================================================================
-    function Scientific(num) {
-        if(!(this instanceof Scientific))
-            return new Scientific(num);
-
-        num = String(typeof num === 'undefined' ? 0 : num); //convert to a string
-
-        //remove the sign
-        if(num.startsWith('-')) {
-            this.sign = -1;
-            //remove the sign
-            num = num.substr(1, num.length);
-        }
-        else {
-            this.sign = 1;
-        }
-
-        if(Scientific.isScientific(num)) {
-            this.fromScientific(num);
-        }
-        else {
-            this.convert(num);
-        }
-        return this;
-    }
-
-    Scientific.prototype = {
-        fromScientific: function (num) {
-            var parts = String(num).toLowerCase().split('e');
-            this.coeff = parts[0];
-            this.exponent = parts[1];
-
-            return this;
-        },
-        convert: function (num) {
-            //get wholes and decimals
-            var parts = num.split('.');
-            //make zero go away
-            var w = parts[0] || '';
-            var d = parts[1] || '';
-            //convert zero to blank strings
-            w = Scientific.removeLeadingZeroes(w);
-            d = Scientific.removeTrailingZeroes(d);
-            //find the location of the decimal place which is right after the wholes
-            var dot_location = w.length;
-            //add them together so we can move the dot
-            var n = w + d;
-            //find the next number
-            var zeroes = Scientific.leadingZeroes(n).length;
-            //set the exponent
-            this.exponent = dot_location - (zeroes + 1);
-            //set the coeff but first remove leading zeroes
-            var coeff = Scientific.removeLeadingZeroes(n);
-            this.coeff = coeff.charAt(0) + '.' + (coeff.substr(1, coeff.length) || '0');
-
-            return this;
-        },
-        round: function (num) {
-            var n = this.copy();
-
-            num = Number(num); //cast to number for safety
-            //since we know it guaranteed to be in the format {digit}{optional dot}{optional digits}
-            //we can round based on this
-            if(num === 0)
-                n.coeff = n.coeff.charAt(0);
-            else {
-                //get up to n-1 digits
-                var rounded = this.coeff.substring(0, num + 1);
-                //get the next two
-                var next_two = this.coeff.substring(num + 1, num + 3);
-                //the extra digit
-                var ed = next_two.charAt(0);
-
-                if(next_two.charAt(1) > 4)
-                    ed++;
-
-                n.coeff = rounded + ed;
-            }
-
-            return n;
-        },
-        copy: function () {
-            var n = new Scientific(0);
-            n.coeff = this.coeff;
-            n.exponent = this.exponent;
-            n.sign = this.sign;
-            return n;
-        },
-        toString: function (n) {
-            var coeff = typeof n === 'undefined' ? this.coeff : Scientific.round(this.coeff, n);
-
-            var c;
-            if(this.exponent === 0 && Settings.SCIENTIFIC_IGNORE_INTS) {
-                c = this.coeff;
-            }
-            else {
-                c = coeff + 'e' + this.exponent;
-            }
-            return (this.sign === -1 ? '-' : '') + c;
-        }
-    };
-
-    Scientific.isScientific = function (num) {
-        return /\d+\.?\d*e[\+\-]*\d+/i.test(num);
-    };
-    Scientific.leadingZeroes = function (num) {
-        var match = num.match(/^(0*).*$/);
-        return match ? match[1] : '';
-    };
-    Scientific.removeLeadingZeroes = function (num) {
-        var match = num.match(/^0*(.*)$/);
-        return match ? match[1] : '';
-    };
-
-    Scientific.removeTrailingZeroes = function (num) {
-        var match = num.match(/0*$/);
-        return match ? num.substring(0, num.length - match[0].length) : '';
-    };
-    Scientific.round = function (c, n) {
-        var coeff = nround(c, n);
-        var m = String(coeff).split('.').pop();
-        var d = n - m.length;
-        //if we're asking for more significant figures
-        if(d > 0) {
-            coeff = coeff + (new Array(d + 1).join(0));
-        }
-        return coeff;
-    };
-
+    
 //Scientific ===================================================================
     /*
      * Javascript has the toExponential method but this allows you to work with string and therefore any number of digits of your choosing
@@ -3058,6 +2934,16 @@ var nerdamer = (function (imports) {
         return match ? num.substring(0, num.length - match[0].length) : '';
     };
 
+    Scientific.round = function (c, n) {
+        var coeff = nround(c, n);
+        var m = String(coeff).split('.').pop();
+        var d = n - m.length;
+        //if we're asking for more significant figures
+        if(d > 0) {
+            coeff = coeff + (new Array(d + 1).join(0));
+        }
+        return coeff;
+    };
 
 //Frac =========================================================================
     function Frac(n) {
@@ -3221,13 +3107,14 @@ var nerdamer = (function (imports) {
             var dec = whole.toString() + '.' + narr.join('');
             return sign + dec;
         },
-        toDecimal: function (prec) {
+        toDecimal: function (prec) { 
             prec = prec || Settings.PRECISION;
             if(prec) {
                 return this.decimal(prec);
             }
-            else
+            else {
                 return this.num / this.den;
+            }
         },
         qcompare: function (n) {
             return [this.num.multiply(n.den), n.num.multiply(this.den)];
@@ -3307,7 +3194,8 @@ var nerdamer = (function (imports) {
 //            if(this.num == 24) throw new Error(999)
             if(Settings.USE_BIG)
                 return new bigDec(this.num.toString()).div(new bigDec(this.den.toString()));
-            return this.num / this.den;
+            var retval = this.num / this.den;
+            return retval;
         },
         isNegative: function () {
             return this.toDecimal() < 0;
@@ -4680,7 +4568,7 @@ var nerdamer = (function (imports) {
                 symbol = _.expand(symbol);
 
             //if the symbol already is the denominator... DONE!!!
-            if(symbol.power.lessThan(0)) {
+            if(symbol.power.lessThan(0) || symbol.group === EX && symbol.power.multiplier.lessThan(0)) {
                 var d = _.parse(symbol.multiplier.den);
                 retval = symbol.toUnitMultiplier();
                 retval.power.negate();
@@ -4688,12 +4576,15 @@ var nerdamer = (function (imports) {
             }
             else if(symbol.group === CB) {
                 retval = _.parse(symbol.multiplier.den);
-                for(var x in symbol.symbols)
-                    if(symbol.symbols[x].power < 0)
+                for(var x in symbol.symbols) {
+                    var s = symbol.symbols[x];
+                    if(s.power < 0 || s.group === EX && s.power.multiplier.lessThan(0))
                         retval = _.multiply(retval, symbol.symbols[x].clone().invert());
+                }
             }
-            else
+            else {
                 retval = _.parse(symbol.multiplier.den);
+            }
             return retval;
         },
         getNum: function () {
@@ -4703,7 +4594,7 @@ var nerdamer = (function (imports) {
             if(symbol.group === CB && symbol.power.lessThan(0))
                 symbol = _.expand(symbol);
             //if the symbol already is the denominator... DONE!!!
-            if(symbol.power.greaterThan(0) && symbol.group !== CB) {
+            if(symbol.power.greaterThan(0) && symbol.group !== CB || symbol.group === EX && symbol.power.multiplier.greaterThan(0)) {
                 retval = _.multiply(_.parse(symbol.multiplier.num), symbol.toUnitMultiplier());
             }
             else if(symbol.group === CB) {
@@ -4714,6 +4605,9 @@ var nerdamer = (function (imports) {
                     }
                 });
             }
+//            else if(symbol.group === EX && this.previousGroup === S) {
+//                retval = _.multiply(_.parse(symbol.multiplier.num), symbol.toUnitMultiplier());
+//            }
             else {
                 retval = _.parse(symbol.multiplier.num);
             }
@@ -7225,12 +7119,15 @@ var nerdamer = (function (imports) {
                     if(e.group === FN) {
                         var fname = e.fname, f;
 
-                        if(fname === SQRT)
+                        if(fname === SQRT) {
                             f = '\\sqrt' + LaTeX.braces(this.toTeX(e.args));
-                        else if(fname === ABS)
+                        }
+                        else if(fname === ABS) {
                             f = LaTeX.brackets(this.toTeX(e.args), 'abs');
-                        else if(fname === PARENTHESIS)
+                        }
+                        else if(fname === PARENTHESIS) {
                             f = LaTeX.brackets(this.toTeX(e.args), 'parens');
+                        }
                         else if(fname === Settings.LOG10) {
                             f = '\\' + Settings.LOG10_LATEX + '\\left( ' + this.toTeX(e.args) + '\\right)';
                         }
@@ -7299,10 +7196,10 @@ var nerdamer = (function (imports) {
                             });
                             f = '\\lim_' + LaTeX.braces(args[1] + '\\to ' + args[2]) + ' ' + LaTeX.braces(args[0]);
                         }
-                        else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL)
+                        else if(fname === FACTORIAL || fname === DOUBLEFACTORIAL) {
                             f = this.toTeX(e.args) + (fname === FACTORIAL ? '!' : '!!');
+                        }
                         else {
-
                             f = LaTeX.latex(e, decimals);
                             //f = '\\mathrm'+LaTeX.braces(fname.replace(/_/g, '\\_')) + LaTeX.brackets(this.toTeX(e.args), 'parens');
                         }
@@ -12518,9 +12415,9 @@ var nerdamer = (function (imports) {
 
     /**
      * This functions makes internal functions available externally
-     * @param {bool} override Override the functions when calling api if it exists
+     * @param {bool} override Override the functions when calling updateAPI if it exists
      */
-    libExports.api = function (override) {
+    libExports.updateAPI = function (override) {
         //Map internal functions to external ones
         var linker = function (fname) {
             return function () {
@@ -12587,7 +12484,7 @@ var nerdamer = (function (imports) {
         });
     };
 
-    libExports.api();
+    libExports.updateAPI();
 
     return libExports; //Done
 //imports ======================================================================

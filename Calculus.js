@@ -1223,6 +1223,10 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
                                     __.integration.stop();
                                 }
                             }
+                            else if(p === 1/2 && x.power.equals(2) && a.greaterThan(0)) {
+                                // TODO: Revisit
+                                __.integration.stop();
+                            }
                             else {
                                 if(x.isLinear() && x.group !== PL)
                                     retval = _.divide(__.integration.poly_integrate(symbol), a);
@@ -2666,6 +2670,6 @@ if((typeof module) !== 'undefined' && typeof nerdamer === 'undefined') {
         }
     ]);
     //link registered functions externally
-    nerdamer.api();
+    nerdamer.updateAPI();
 
 })();

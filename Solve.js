@@ -97,7 +97,7 @@ if((typeof module) !== 'undefined') {
      * This is an equation that has a left hand side and a right hand side
      */
     function Equation(lhs, rhs) {
-        if(rhs.isConstant() && lhs.isConstant() && !lhs.equals(rhs) || lhs.equals(core.Settings.IMAGINARY) || rhs.equals(core.Settings.IMAGINARY))
+        if(rhs.isConstant() && lhs.isConstant() && !lhs.equals(rhs) || lhs.equals(core.Settings.IMAGINARY) && rhs.isConstant(true) || rhs.equals(core.Settings.IMAGINARY) && lhs.isConstant(true))
             throw new core.exceptions.NerdamerValueError(lhs.toString() + ' does not equal ' + rhs.toString());
         this.LHS = lhs; //left hand side
         this.RHS = rhs; //right and side
@@ -124,12 +124,19 @@ if((typeof module) !== 'undefined') {
             }
             var a = eqn.LHS;
             var b = eqn.RHS;
+            
             if(a.isConstant(true) && !b.isConstant(true)) {
                 // Swap them to avoid confusing parser and cause an infinite loop
                 [a, b] = [b, a];
             }
             var _t = _.subtract(a, b);
             var retval = expand ? _.expand(_t) : _t;
+            
+            // Quick workaround for issue #636
+            // This basically borrows the removeDenom method from the Equation class. 
+            // TODO: Make this function a stand-alone function
+            retval = new Equation(retval, new Symbol(0)).removeDenom().LHS;
+            
             return retval;
         },
         removeDenom: function () {
@@ -605,7 +612,43 @@ if((typeof module) !== 'undefined') {
                 }
 
                 vars = core.Utils.arrayGetVariables(eqns);
+                
+                // If the system only has one variable then we solve for the first one and 
+                // then test the remaining equations with that solution. If any of the remaining
+                // equation fails then the system has no solution
+                if(vars.length === 1) {
+                    var n = 0,
+                        sol, e;
+                    do {
+                        var e = eqns[n].clone();
+                        
+                        if(n > 0) {
+                            e = e.sub(vars[0], sol[0]);
+                        }
 
+                        sol = solve(e, vars[0]);
+                        // Skip the first one
+                        if(n === 0) 
+                            continue;
+                    }
+                    while(++n < eqns.length)
+                        
+                    // Format the output
+                    var solutions;
+                    if(Settings.SOLUTIONS_AS_OBJECT) {
+                        solutions = {};
+                        solutions[vars[0]] = sol;
+                    }
+                    else if(sol.length === 0) {
+                        solutions = sol; // No solutions
+                    }
+                    else {
+                        solutions = [vars[0], sol];
+                    }
+                        
+                    return solutions;
+                }
+                
                 // Deal with redundant equations as expressed in #562
                 // The fix is to remove all but the number of equations equal to the number
                 // of variables. We then solve those and then evaluate the remaining equations
@@ -748,6 +791,8 @@ if((typeof module) !== 'undefined') {
          */
         quad: function (c, b, a) {
             var discriminant = _.subtract(_.pow(b.clone(), Symbol(2)), _.multiply(_.multiply(a.clone(), c.clone()), Symbol(4)))/*b^2 - 4ac*/;
+            // Fix for #608
+            discriminant = _.expand(discriminant);
             var det = _.pow(discriminant, Symbol(0.5));
             var den = _.parse(_.multiply(new Symbol(2), a.clone()));
             var retval = [
@@ -1357,6 +1402,7 @@ if((typeof module) !== 'undefined') {
             return symbol;
         };
 
+
         //separate the equation
         var separate = function (eq) {
             var lhs = new Symbol(0),
@@ -1561,8 +1607,11 @@ if((typeof module) !== 'undefined') {
                                 var separated = separate(eq);
                                 var lhs = separated[0],
                                         rhs = separated[1];
+                                
                                 if(lhs.group === core.groups.EX) {
-                                    add_to_result(_.parse(core.Utils.format(core.Settings.LOG + '(({0})/({2}))/' + core.Settings.LOG + '({1})', rhs, lhs.value, lhs.multiplier)));
+                                    var log = core.Settings.LOG;
+                                    var expr_str = `${log}((${rhs})/(${lhs.multiplier}))/${log}(${lhs.value})/${lhs.power.multiplier}`;
+                                    add_to_result(_.parse(expr_str));
                                 }
                                 break;
                             case 1:
@@ -1730,5 +1779,5 @@ if((typeof module) !== 'undefined') {
             }
         }
     ]);
-    nerdamer.api();
+    nerdamer.updateAPI();
 })();

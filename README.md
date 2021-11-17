@@ -20,6 +20,25 @@ Load the library in your html page
 <script src="Solve.js"></script>
 <script src="Extra.js"></script>
 ```
+Or import everything
+```html
+<script src="all.min.js"></script>  <!-- assuming you've saved the file in the root -->
+```
+If you're using node.js install it using `npm i nerdamer` and then
+
+```javascript
+// const cannot be used since nerdamer gets modified when other modules are loaded  
+var nerdamer = require('nerdamer'); 
+// Load additional modules. These are not required.  
+require('nerdamer/Algebra'); 
+require('nerdamer/Calculus'); 
+require('nerdamer/Solve'); 
+require('nerdamer/Extra');
+```
+Or do a single import to import everything
+```javascript
+const nerdamer = require("nerdamer/all.min")
+```
 
 Some functions have dependencies from other add-ons. 
 
@@ -29,7 +48,7 @@ For full documentation go to http://nerdamer.com/documentation
 
 All operations are done using the 'nerdamer' object. 
 
-To add an expression just add it to the nerdamer object which will return a expression object.
+To add an expression just add it to the nerdamer object which will return a `Expression` object.
 
 ```javascript             
 var e = nerdamer('x^2+2*(cos(x)+x*x)');
@@ -38,6 +57,16 @@ console.log(e.text());
 //result: 
 //2*cos(x)+3*x^2
 ```            
+It is also possible to use `nerdamer` functions directly within the need for string manipulation of the input. The input will be parsed and the output will of type `Expression`. For example:
+```javascript
+var ans = nerdamer.expand('(x-1)^5');
+console.log(ans.text());
+// -1-10*x^2-5*x^4+10*x^3+5*x+x^5
+
+var sol = nerdamer.solve('x^2-4', 'x');
+console.log(sol.text())
+// [2,-2]
+```
 
 You can also pass in an object with known values as the second parameter.
 
