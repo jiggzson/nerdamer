@@ -2,10 +2,10 @@ const fs = require('fs');
 const fdocs = require('./function_docs');
 
 
-const template_file = './templates/page.html';
-const parameter_file = './templates/parameters.html';
-const example_file = './templates/example.html';
-const target_dir = '../functions/';
+const template_file = `${__dirname}/templates/page.html`;
+const parameter_file = `${__dirname}/templates/parameters.html`;
+const example_file = `${__dirname}/templates/example.html`;
+const target_dir = `${__dirname}/../functions/`;
 
 let data_template = fs.readFileSync(template_file).toString();
 let parameter_template = fs.readFileSync(parameter_file).toString(); 

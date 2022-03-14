@@ -631,7 +631,11 @@ FUNCTIONS = {
             "nerdamer.set('SOLUTIONS_AS_OBJECT', true);",
             "sol = nerdamer.solveEquations(['2*x-y=8', '10*x+7*y-z=53', '4*z+y=6']);",
             'console.log(sol)',
-            "//nerdamer also has some ability to solve some nonlinear equations",
+            "nerdamer.set('SOLUTIONS_AS_OBJECT', true)",
+            "// Linear solutions can be solved symbolically. Just pass in the variables to solve for",
+            "var solutions = nerdamer.solveEquations(['2*x-b*y=1', 'x+y=4'], ['x', 'y']);",
+            "console.log(JSON.stringify(solutions, null, 4))",
+            "// nerdamer also has some ability to solve some nonlinear equations",
             "nerdamer.set('SOLUTIONS_AS_OBJECT', false);",
             "sol = nerdamer('solveEquations([2*x^2*z-y=-59, 0.5*y^3-z=65.5, x^2+y^3-5*z^2=89])');",
             "console.log(sol.toString());"
