@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+title: "Nerdamer"
+message: "If you use this software, please cite it as below.""
+version: 1.1.3
+date-released: 2021-11-01
+url: "https://nerdamer.com"
+license: "MIT License"
+authors:
+  - family-names: Donk
+    given-names: Martin
