@@ -898,7 +898,7 @@ FUNCTIONS = {
     Expression__lt: {
         type: 'Expression',
         usage: 'nerdamer(x).lt(y)',
-        full_name: 'less than or equals',
+        full_name: 'less than',
         description: 'Checks if one expression is less than other.',
         parameters: {
             x: {
