@@ -2,7 +2,7 @@ export as namespace nerdamer
 export = nerdamer
 declare function nerdamer(
 	expression: nerdamer.ExpressionParam,
-	subs?: { [name: string]: string },
+	subs?: { [name: string]: nerdamer.ExpressionParam },
 	option?: keyof nerdamer.Options | (keyof nerdamer.Options)[],
 	location?: nerdamer.int): nerdamer.Expression
 declare namespace nerdamer {
