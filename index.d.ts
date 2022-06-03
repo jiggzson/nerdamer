@@ -206,8 +206,12 @@ return _.multiply(sum, product)
 		 * x.toString() // == sin(14)
 		 * // force function calls with evaluate:
 		 * x.evaluate().toString() // == 127690464/128901187
+		 * @param args An object with key-value pairs to be substituted into the expression.
+		 * @example
+		 * let y = nerdamer('P*V=n*R*T').evaluate({ P: 1, V: 2, n: 3, R: 9.8 });
+		 * y.toString(); // == '2=(147/5)*T'
 		 */
-		evaluate(): Expression
+		evaluate(x: {}): Expression
 
 		/**
 		 * Substitutes a given value for another given value
