@@ -6111,7 +6111,7 @@ var nerdamer = (function (imports) {
          * sending to the parser
          * @param {String} e
          */
-        var prepare_expression = function (e) {
+        this.prepareExpression = function (e) {
             /*
              * Since variables cannot start with a number, the assumption is made that when this occurs the
              * user intents for this to be a coefficient. The multiplication symbol in then added. The same goes for
@@ -6937,7 +6937,7 @@ var nerdamer = (function (imports) {
             return Q[0];
         };
         this.parse = function (e, substitutions) {
-            e = prepare_expression(e);
+            e = this.prepareExpression(e);
             substitutions = substitutions || {};
             //three passes but easier to debug
             var tokens = this.tokenize(e);
