@@ -5,6 +5,11 @@ Nerdamer
 
 As of version 0.5.0, the library is split into the core and optional add-ons which can be loaded after the core has been loaded.
 
+## UPDATE
+Nerdamer is currently being ported to TypeScript. This will have substantial breaking changes. A full list of changes will be published with the official release. You can track the TypeScript port [here](https://github.com/jiggzson/nerdamer/tree/2.0)
+
+---
+
 Note: The Together-science project decided to pick up the banner where Nerdamer left off. See [Nerdamer-Prime](https://github.com/together-science/nerdamer-prime).
 
 Getting started with Nerdamer
