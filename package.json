@@ -1,59 +1,87 @@
 {
-    "author": {
-        "name": "Martin Donk",
-        "email": "martin.r.donk@gmail.com"
-    },
-    "description": "javascript light-weight symbolic math expression evaluator",
-    "name": "nerdamer",
-    "license": "MIT",
-    "version": "1.1.13",
-    "homepage": "http://nerdamer.com/",
-    "directory": {
-        "lib": "./"
-    },
-    "main": "nerdamer.core.js",
-    "typings": "index.d.ts",
-    "keywords": [
-        "math",
-        "matrix",
-        "complex",
-        "number",
-        "parser",
-        "expression",
-        "functions",
-        "numeric",
-        "equation solver",
-        "linear algebra",
-        "vectors",
-        "symbolic",
-        "integration",
-        "differentiation",
-        "derivative",
-        "algebra",
-        "calculus",
-        "mathematics",
-        "constants",
-        "symbolic math"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/jiggzson/nerdamer.git"
-    },
-    "bugs": {
-        "url": "https://github.com/jiggzson/nerdamer/issues"
-    },
-    "engines": {
-        "node": ">=0.10.0"
-    },
-    "scripts": {
-        "test": "jasmine"
-    },
-    "devDependencies": {
-        "gulp": "^4.0.2",
-        "gulp-cli": "^2.3.0",
-        "gulp-concat": "^2.6.1",
-        "gulp-uglify": "^3.0.2",
-        "gulp-watch": "^5.0.1",
-        "jasmine": "^2.99.0"
-    }
+  "devDependencies": {
+    "@eslint/js": "^9.8.0",
+    "@types/eslint__js": "^8.42.3",
+    "@webpack-cli/generators": "^3.0.7",
+    "css-loader": "^7.1.2",
+    "decimal.js": "^10.4.3",
+    "eslint": "^9.8.0",
+    "html-webpack-plugin": "^5.6.3",
+    "jasmine": "^5.1.0",
+    "mini-css-extract-plugin": "^2.9.2",
+    "nodemon": "^3.1.4",
+    "prettier": "^3.5.3",
+    "sass": "^1.86.0",
+    "sass-loader": "^16.0.5",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.2",
+    "ts-node": "^10.9.2",
+    "typedoc": "^0.28.1",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.0.0",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.2.0",
+    "workbox-webpack-plugin": "^7.3.0"
+  },
+  "name": "nerdamer",
+  "version": "2.0.0",
+  "description": "A CAS for JavaScript/TypeScript",
+  "directory": {
+    "lib": "./src"
+  },
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon ./src/dev.ts",
+    "lint": "eslint ./src/**/*.ts",
+    "test": "jasmine",
+    "build": "webpack --mode=production --node-env=production",
+    "build:dev": "webpack --mode=development",
+    "build:prod": "webpack --mode=production --node-env=production",
+    "watch": "webpack --watch",
+    "serve": "webpack serve"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jiggzson/nerdamer.git"
+  },
+  "typings": "index.d.ts",
+  "keywords": [
+    "math",
+    "matrix",
+    "complex",
+    "number",
+    "parser",
+    "expression",
+    "functions",
+    "numeric",
+    "equation solver",
+    "linear algebra",
+    "vectors",
+    "symbolic",
+    "integration",
+    "differentiation",
+    "derivative",
+    "algebra",
+    "calculus",
+    "mathematics",
+    "constants",
+    "symbolic math"
+  ],
+  "author": "Martin Donk",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/jiggzson/nerdamer/issues"
+  },
+  "homepage": "http://nerdamer.com",
+  "dependencies": {
+    "js-big-decimal": "^2.0.7",
+    "nerdamer": "^1.1.13",
+    "npm": "^11.2.0",
+    "sylvester": "^0.0.21",
+    "terser-webpack-plugin": "^5.3.14"
+  },
+  "browser": {
+    "[module-name]": false
+  }
 }
