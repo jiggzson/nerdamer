@@ -1,15 +1,14 @@
-import { Expression } from "../parser/operations";
-import { Matrix } from "./Matrix";
+import { Expression } from '../expression/Expression';
 
+import { Matrix } from './Matrix';
 
 export function imatrix(x: Expression) {
-    let retval;
-    if (!x.isInteger()) {
-        retval = Expression.toFunction('imatrix', [x])
-    }
-    else {
-        retval = Matrix.identity(Number(x))
-    }
+	let retval;
+	if (!x.isInteger()) {
+		retval = Expression.toFunction('imatrix', [x]);
+	} else {
+		retval = Matrix.identity(Number(x));
+	}
 
-    return retval;
+	return retval;
 }

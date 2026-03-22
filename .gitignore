@@ -3,3 +3,5 @@
 .idea/
 .venv
 /dist/*
+/docs/*
+test-results.json

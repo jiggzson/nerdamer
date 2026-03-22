@@ -1,69 +1,137 @@
-import { Expression } from "./Expression";
-import { __, NaNError } from "../../errors";
+import { message, NaNError } from '../../errors';
+import { Polynomial } from '../polynomial/Polynomial';
+import { Vector } from '../vector/Vector';
 
+import { Expression } from './Expression';
+import { zero } from './shortcuts';
 
 export class CoeffObject {
-    coeffs: { [key: string]: Expression } = {};
-    variables: string[];
+	coeffs: { [key: string]: Expression } = {};
+	variables: string[];
 
-    constructor(variables: string[]) {
-        this.variables = variables;
-    }
+	constructor(variables: string[]) {
+		this.variables = variables;
+	}
 
-    add(key: string, value: Expression) {
-        const e = this.coeffs[key];
-        this.coeffs[key] = e ? e.plus(value) : value;
-    }
+	add(key: string, value: Expression) {
+		const e = this.coeffs[key];
+		this.coeffs[key] = e ? e.plus(value) : value;
+	}
 
-    max() {
-        const powers = Object.keys(this.coeffs).map((x) => { return Number(x) });
-        return Math.max(...powers);
-    }
+	/**
+	 * Loops over each coefficient in the object
+	 *
+	 * @param callback
+	 */
+	each(fn: (e: Expression, p: string) => void) {
+		for (const x in this.coeffs) {
+			fn(this.coeffs[x], x);
+		}
 
-    /**
-     * Loops over each coefficient in the object
-     * 
-     * @param callback 
-     */
-    each(callback: (e: Expression, p: string) => void) {
-        for (const x in this.coeffs) {
-            callback(this.coeffs[x], x);
-        }
-    }
+		return this;
+	}
 
-    toArray(): Expression[];
-    toArray(asNumber: false): Expression[];
-    toArray(asNumber: true): number[];
-    toArray(asNumber: boolean = false) {
-        const max = this.max();
-        const coeffs: (Expression | number)[] = [];
+	/**
+	 * Gets the coefficient of a particular power
+	 * @param p
+	 * @returns
+	 */
+	getPower(p: string | number) {
+		return this.coeffs[p];
+	}
 
-        if (isNaN(max)) {
-            throw new NaNError(__('cannotCreateArrayFromNaN'));
-        }
+	/**
+	 * Checks if the coeff object has a coefficient for a particular power
+	 * @param p
+	 * @returns
+	 */
+	hasPower(p: string | number) {
+		return p in this.coeffs;
+	}
+	max() {
+		const powers = Object.keys(this.coeffs).map(x => {
+			return Number(x);
+		});
+		return Math.max(...powers);
+	}
+	text(formatted: boolean = false) {
+		const n = formatted ? '\n' : '';
+		const t = formatted ? '    ' : '';
+		const values: string[] = [];
+		const d = `, ` + n;
+		for (const x in this.coeffs) {
+			values.push(`${t}${x}: ${this.coeffs[x]}`);
+		}
 
-        for (let i = 0; i <= max; i++) {
-            let coeff = this.coeffs[i];
-            // Fill voids with zero
-            if (!coeff) {
-                coeff = Expression.Number('0');
-            }
+		return `{ ${n}${values.join(d)} ${n}}`;
+	}
+	toArray(): Expression[];
+	toArray(asNumber: false): Expression[];
+	toArray(asNumber: true): number[];
+	toArray(asNumber: boolean = false) {
+		const max = this.max();
+		const coeffs: (Expression | number)[] = [];
 
-            coeffs[i] = asNumber ? Number(coeff) : coeff;
-        }
+		if (isNaN(max)) {
+			throw new NaNError(message('cannotCreateArrayFromNaN'));
+		}
 
-        return coeffs;
-    }
+		for (let i = 0; i <= max; i++) {
+			let coeff = this.coeffs[i];
+			// Fill voids with zero
+			if (!coeff) {
+				coeff = zero();
+			}
 
-    text(formatted: boolean = false) {
-        const n = formatted ? '\n' : '';
-        const t = formatted ? '    ' : '';
-        const values: string[] = [];
-        const d = `, ` + n;
-        for (const x in this.coeffs) {
-            values.push(`${t}${x}: ${this.coeffs[x]}`);
-        }
+			coeffs[i] = asNumber ? Number(coeff) : coeff;
+		}
 
-        return `{ ${n}${values.join(d)} ${n}}`;
-    }
+		return coeffs;
+	}
+
+	/**
+	 * Returns a polynomial from the coefficient object.
+	 *
+	 * @returns
+	 */
+	toExpression() {
+		return Expression.create(this.toParsableString());
+	}
+
+	/**
+	 * Rebuilds the polynomial from the coefficients.
+	 */
+	toParsableString() {
+		const polyArr: string[] = [];
+		const vars = this.variables.join('*');
+
+		for (const x in this.coeffs) {
+			polyArr.push(`${this.coeffs[x]}*${vars}^${x}`);
+		}
+
+		return polyArr.join('+');
+	}
+
+	/**
+	 * Returns a polynomial from a coefficient object.
+	 *
+	 * @throws {PolynomialError} Will throw if the coeffients provided are not a valid polynomial
+	 * @returns
+	 */
+	toPolynomial() {
+		return new Polynomial(this.toParsableString(), this.variables);
+	}
+
+	toString() {
+		return this.text();
+	}
+
+	/**
+	 * Returns the coefficients as a vector.
+	 *
+	 * @returns
+	 */
+	toVector() {
+		return new Vector(this.toArray());
+	}
 }

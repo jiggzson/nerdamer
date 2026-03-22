@@ -1,10 +1,10 @@
-import { ParserSupportedType } from "../types";
+import type { ParserInputType } from '../types';
 
 /**
  * The comma is essentially a prefix operator that just returns the object.
- * 
- * @param a 
+ *
+ * @param a
  */
-export function comma(a: ParserSupportedType, b: ParserSupportedType) {
-    return [a, b];
+export function comma(a: ParserInputType, b: ParserInputType) {
+	return [a, b];
 }

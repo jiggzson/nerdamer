@@ -1,0 +1,141 @@
+{
+	"workbench.colorTheme": "Default Dark Modern",
+	"security.workspace.trust.untrustedFiles": "open",
+	"[python]": {
+		"editor.formatOnType": true
+	},
+	"files.exclude": {
+		"**/.git": true,
+		"**/.DS_Store": true,
+		"**/node_modules": true,
+		"**/dist": true
+	},
+	"search.exclude": {
+		"**/node_modules": true,
+		"**/dist": true
+	},
+	"workbench.colorCustomizations": {
+		"editorUnicodeHighlight.border": "#0000", // set to transparent
+		"minimap.unicodeHighlight": "#0000",
+		"editorOverviewRuler.unicodeForeground": "#0000"
+	},
+	"cSpell.userWords": [
+		"algebrite",
+		"nerdamer",
+		"ACOT",
+		"Ahhh",
+		"coeff",
+		"cosr",
+		"decp",
+		"Fxshfr",
+		"imagpart",
+		"numer",
+		"polarform",
+		"prec",
+		"realpart",
+		"retval",
+		"sinr",
+		"tseslint",
+		"zeroi",
+		"zerok",
+		"zeror"
+	],
+	"[typescript, javascript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"workbench.iconTheme": "vscode-icons",
+	"vsicons.dontShowNewVersionMessage": true,
+	"todo-tree.general.tags": [
+		"BUG",
+		"HACK",
+		"FIXME",
+		"TODO",
+		"XXX",
+		"[ ]",
+		"[x]",
+		"IMPROVE",
+		"FLAG"
+	],
+	"todo-tree.highlights.customHighlight": {
+		"FLAG": {
+			"foreground": "white",
+			"background": "red",
+			"iconColour": "yellow",
+			"gutterIcon": true
+		}
+	},
+	"cSpell.words": [
+		"Aberth",
+		"accm",
+		"acoth",
+		"acsc",
+		"acsch",
+		"arccos",
+		"arccosecant",
+		"arccotangent",
+		"arcsecant",
+		"arcsin",
+		"arctan",
+		"asec",
+		"asech",
+		"binom",
+		"byvar",
+		"Coeffs",
+		"cyclotomic",
+		"defint",
+		"dfact",
+		"dfactorial",
+		"erfc",
+		"grevlex",
+		"grlex",
+		"Gröbner",
+		"Groebner",
+		"icont",
+		"ilaplace",
+		"imatrix",
+		"infty",
+		"L'Hôpital",
+		"lcoeff",
+		"liate",
+		"mathrm",
+		"MGCD",
+		"modinv",
+		"monic",
+		"multideg",
+		"multidegree",
+		"MVGCD",
+		"nround",
+		"nthroot",
+		"omnikron",
+		"operatorname",
+		"partfrac",
+		"pfactors",
+		"polyarray",
+		"polyfactors",
+		"polynomialize",
+		"Raphson",
+		"rectform",
+		"relstp",
+		"revlex",
+		"sinc",
+		"Spouge",
+		"sptext",
+		"tdeg",
+		"Traub",
+		"UVGCD",
+		"valuesset",
+		"xdescribe",
+		"XRPN",
+		"zippel"
+	],
+	"favorites.resources": [
+		{
+			"filePath": "node_modules\\nerdamer",
+			"group": "Default"
+		}
+	],
+	"js/ts.preferences.autoImportSpecifierExcludeRegexes": ["^node:", "^node:crypto$", "^crypto$"],
+	"editor.snippetSuggestions": "none",
+	"debug.console.wordWrap": true,
+	"js/ts.preferences.autoImportFileExcludePatterns": ["**/typedoc-entry.ts"]
+}

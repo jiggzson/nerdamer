@@ -1,0 +1,21 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"noEmit": false,
+		"declaration": true,
+		"declarationMap": false,
+		"sourceMap": false,
+		"outDir": "output",
+		"rootDir": "src",
+		"types": ["node"]
+	},
+	"include": ["src/**/*.ts"],
+	"exclude": [
+		"node_modules",
+		"src/spec/**/*",
+		"spec/**/*",
+		"src/dev.ts",
+		"src/assets/**/*",
+		"src/typedoc-entry.ts"
+	]
+}

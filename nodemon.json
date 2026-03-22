@@ -1,5 +1,5 @@
 {
-    "execMap": {
-        "ts": "ts-node"
-    }
+	"execMap": {
+		"ts": "ts-node"
+	}
 }
