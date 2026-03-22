@@ -62,3 +62,5 @@ Version 2 introduces breaking changes.
 This is partly due to the TypeScript rewrite itself, and partly due to deeper internal refactoring. In some areas the new behavior is intentionally different from earlier releases.
 
 As with any substantial port or redesign, there are still rough edges to work out and some older functionality may need to be restored or adjusted. Even so, the new version is already more consistent internally and provides a stronger foundation for future work.
+
+See the [docs](https://github.com/jiggzson/nerdamer/tree/2.0/docs) for the API as it currently stands.
