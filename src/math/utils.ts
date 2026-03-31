@@ -1,7 +1,12 @@
+import { Collection } from '../core/classes/collection/Collection';
+import { Dictionary } from '../core/classes/dictionary/Dictionary';
 import { Expression } from '../core/classes/expression/Expression';
 import { one, zero } from '../core/classes/expression/shortcuts';
 
 import type { ParserInputType } from '../core/classes/parser/types';
+import { ValuesSet } from '../core/classes/valuesSet/ValuesSet';
+import { Vector } from '../core/classes/vector/Vector';
+import { SolutionSet } from '../solve/classes/SolutionSet';
 
 /**
  * Contains useful functions which are not likely to be exported to the user through `build`
@@ -179,4 +184,21 @@ export function indexOf(arr: ParserInputType[], e: ParserInputType) {
 	}
 
 	return -1;
+}
+
+/**
+ * Returns the number of elements in a Vector, SolutionSet, ValuesSet
+ * @param x
+ * @returns
+ */
+export function count(x: ParserInputType) {
+	if (
+		Vector.isVector(x) ||
+		SolutionSet.isSolutionSet(x) ||
+		ValuesSet.isValuesSet(x) ||
+		Dictionary.isDictionary(x)
+	) {
+		return Expression.create(x.count());
+	}
+	return Expression.toFunction('count', [x.text()]);
 }

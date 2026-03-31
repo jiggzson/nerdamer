@@ -28,7 +28,7 @@ export function build(x: ExpressionInputType, argsArray?: string[]): (...args: n
 	 * The body for the most part is just a expression. The function definitions get loaded
 	 * from the numeric functions object.
 	 */
-	const body = `${x};`
+	const body = `${x.text({ wrapPow: true })};`
 		//The caret symbol gets replaced because it has an entirely different meaning to JavaScript
 		.replace(/\^/g, '**');
 	/**

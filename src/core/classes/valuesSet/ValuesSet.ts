@@ -13,7 +13,7 @@ export class ValuesSet extends MathematicalAggregate<ValuesSet> {
 	dataType = SET;
 	public elements: ParserInputType[];
 
-	isCollectionOfValues: boolean = true;
+	isEnumerable: boolean = true;
 	isFunctionReturn = false;
 	precision?: number | undefined;
 

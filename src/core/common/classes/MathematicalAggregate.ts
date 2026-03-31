@@ -61,8 +61,6 @@ export abstract class MathematicalAggregate<
 		return [this.elements.length];
 	}
 
-	// ─── Element access ────────────────────────────────────────────
-
 	/**
 	 * Iterate/mutate elements in-place.
 	 */
@@ -88,7 +86,7 @@ export abstract class MathematicalAggregate<
 		return true;
 	}
 
-	// ─── Element-wise comparisons ──────────────────────────────────
+	//  Element-wise comparisons
 
 	gt(other: ParserInputType): boolean {
 		if (!this.dimensionsMatch(other)) {

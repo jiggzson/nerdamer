@@ -12,7 +12,7 @@ import type { ParserInputType, StructuredEntityType } from '../types';
 export class IndexedReference {
 	private _resolved: ParserInputType | null = null;
 	dataType = 'INDEXED_REF';
-	isCollectionOfValues = false;
+	isEnumerable = false;
 
 	constructor(
 		public target: ParserInputType,

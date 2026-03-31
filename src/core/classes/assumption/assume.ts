@@ -68,13 +68,10 @@ function setAssumption(symbol: string, assumption: Assumption): Assumption {
 /**
  * Register assumptions which can later be used by comparison operations.
  *
- * @example
- * ```ts
- * assume('x>=0');
- * Expression.create('x').gt(0); // true
- * assume('x<9');
- * assume('x', new Assumption(0, 9, true, false));
- * ```
+ * Supported forms:
+ *   assume('x>=0')
+ *   assume('x<9')
+ *   assume('x', new Assumption(0, 9, true, false))
  */
 export function assume(expr: string): Assumption;
 export function assume(symbol: string, exprOrAssumption: string | Assumption): Assumption;

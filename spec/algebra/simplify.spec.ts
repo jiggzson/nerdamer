@@ -144,6 +144,38 @@ describe('Simplify', () => {
 	});
 });
 
+describe('simplifyArguments in products', () => {
+	it('should simplify function arguments inside products', () => {
+		expect(simplify('x*cos(x^2+2*x+1)^2').text()).toEqual('x*cos((1+x)^2)^2');
+		expect(simplify('a*sin(x^2-1)').text()).toEqual('a*sin((-1+x)*(1+x))');
+		expect(simplify('3*x*log(x^2+2*x+1)').text()).toEqual('6*x*log(1+x)');
+	});
+
+	it('should simplify function arguments inside sums', () => {
+		expect(simplify('cos(x^2+2*x+1)+sin(x^2+2*x+1)').text()).toEqual(
+			'cos((1+x)^2)+sin((1+x)^2)'
+		);
+	});
+
+	it('should simplify nested function arguments', () => {
+		expect(simplify('x*cos(sin(x^2+2*x+1))').text()).toEqual('x*cos(sin((1+x)^2))');
+	});
+});
+
+describe('cancelNestedFactors', () => {
+	it('should simplify bare factorial ratios', () => {
+		expect(simplify('n!/(n+1)!').text()).toEqual('(1+n)^-1');
+	});
+
+	it('should simplify factorial ratios with extra factors', () => {
+		expect(simplify('x*n!/((n+1)!*a)').text()).toEqual('x*(a*(1+n))^-1');
+	});
+
+	it('should simplify factorial ratios with larger gaps', () => {
+		expect(simplify('(n+3)!/n!').text()).toEqual('(2+n)*(1+n)*(3+n)');
+	});
+});
+
 /* Pending
 (1/2)*log(x)+(-1/2)*log(2+3*x) -> (1/2)*log(x*((2+3*x)^-1))
 log(x)-log(1+x) ->log(x*((1+x)^-1))

@@ -2,6 +2,8 @@ import { Expression } from '../../classes/expression/Expression';
 import { zero } from '../../classes/expression/shortcuts';
 import { FACTORIAL, WRAP } from '../../classes/parser/constants';
 
+import type { Rational } from '../../classes/rational/Rational';
+
 export function powerExpandToArray(variables: string[], power: number) {
 	/**
 	 * The row will take on the form of [a_power, b_power, ..., coeff]. The polynomial gets
@@ -349,7 +351,7 @@ function factorialExpand(x: Expression) {
  *
  * @param x
  */
-export function expand(x: Expression) {
+export function expand(x: Expression): Expression {
 	let retval;
 
 	x = unwrap(x);
@@ -394,7 +396,7 @@ export function expand(x: Expression) {
 				const pow = expand(retval.getPower());
 				const expression = expand(retval.getBase());
 				const t = expression.pow(pow);
-				t.multiplier = t.getMultiplier().times(retval.getMultiplier());
+				t.multiplier = t.getMultiplier().times(retval.getMultiplier() as Rational);
 				retval = t;
 			}
 		}

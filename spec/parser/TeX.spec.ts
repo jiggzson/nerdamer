@@ -29,7 +29,7 @@ describe('General TeX', () => {
 			'\\frac{\\left(x+1\\right)^{\\frac{1}{4}}}{x+2}'
 		);
 		expect(_('(3/5)(x+1)^(1/4)/(x+2)', options)).toEqual(
-			'\\frac{3 \\cdot \\left(x+1\\right)^{\\frac{1}{4}}}{5 \\cdot x+2}'
+			'\\frac{3 \\cdot \\left(x+1\\right)^{\\frac{1}{4}}}{5 \\cdot \\left(x+2\\right)}'
 		);
 		expect(_('(4/5)^(x+1)^x')).toEqual('\\left(\\frac{4}{5}\\right)^{\\left(x+1\\right)^{x}}');
 		expect(_('(((4+a)^(x+1)^x)/(x+1))^a/(x-1)')).toEqual(
@@ -93,5 +93,96 @@ describe('Matrix TeX', () => {
 		expect(_(M, { matrixStyle: 'v' })).toEqual(
 			'\\begin{vmatrix} 1 & 2 \\\\ 3 & 4 \\end{vmatrix}'
 		);
+	});
+});
+
+describe('Fraction bracket stripping', () => {
+	it('should strip superfluous brackets in simple fractions', () => {
+		expect(_('(x+1)/(x+2)')).toEqual('\\frac{x+1}{x+2}');
+	});
+
+	it('should strip superfluous brackets in denominator of unit fractions', () => {
+		expect(_('1/((s-1)^2+1)')).toEqual('\\frac{1}{\\left(s-1\\right)^{2}+1}');
+	});
+
+	it('should preserve brackets when multiplier is present in denominator', () => {
+		expect(_('(3/5)(x+1)^(1/4)/(x+2)', { convertRoots: false })).toEqual(
+			'\\frac{3 \\cdot \\left(x+1\\right)^{\\frac{1}{4}}}{5 \\cdot \\left(x+2\\right)}'
+		);
+	});
+
+	it('should preserve inner brackets that have exponents', () => {
+		expect(_('(x+1)^(1/4)/(x+2)', { convertRoots: false })).toEqual(
+			'\\frac{\\left(x+1\\right)^{\\frac{1}{4}}}{x+2}'
+		);
+	});
+});
+
+describe('Product bracketing', () => {
+	it('should bracket sum factors in a product in TeX mode', () => {
+		const result = _('(1+x)*(1-x)');
+		expect(result).toContain('\\left(');
+		expect(result).toContain('\\right)');
+	});
+
+	it('should bracket sum factors in a product in text mode', () => {
+		const result = __('(1+x)*(1-x)');
+		expect(result).toContain('(');
+		expect(result).toContain(')');
+	});
+});
+
+describe('Multiplication symbol uniformity', () => {
+	it('should use \\cdot between multiplier and value in TeX mode', () => {
+		expect(_('2*a/b')).toEqual('\\frac{2 \\cdot a}{b}');
+	});
+
+	it('should use \\cdot in denominator between multiplier and bracketed value', () => {
+		expect(_('(3/5)(x+1)^(1/4)/(x+2)', { convertRoots: false })).toContain(
+			'5 \\cdot \\left(x+2\\right)'
+		);
+	});
+});
+
+describe('Plain numbers', () => {
+	it('should convert plain numbers to string', () => {
+		expect(TeXConverter.convert(42)).toEqual('42');
+		expect(TeXConverter.convert(3.14)).toEqual('3.14');
+		expect(TeXConverter.convert(0)).toEqual('0');
+		expect(textConverter.convert(7)).toEqual('7');
+	});
+});
+
+describe('ValuesSet TeX', () => {
+	it('should convert a ValuesSet to TeX', () => {
+		const result = _('[1, 2, 3]');
+		expect(result).toBeDefined();
+	});
+});
+
+describe('Dictionary TeX', () => {
+	it('should use \\mapsto in TeX mode', () => {
+		const result = _('{x => 1, y => 2}');
+		expect(result).toContain('\\mapsto');
+		expect(result).toContain('\\left\\{');
+		expect(result).toContain('\\right\\}');
+	});
+
+	it('should use => in text mode', () => {
+		const result = __('{x => 1, y => 2}');
+		expect(result).toContain('=>');
+	});
+});
+
+describe('Vector separator', () => {
+	it('should use comma separator for standalone vectors in TeX mode', () => {
+		const result = _('[x+1, x+2]');
+		expect(result).not.toContain(' & ');
+	});
+
+	it('should use & separator inside matrix', () => {
+		const M = new Matrix([1, 2], [3, 4]);
+		const result = _(M);
+		expect(result).toContain(' & ');
 	});
 });

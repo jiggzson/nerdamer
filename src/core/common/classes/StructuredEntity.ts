@@ -3,18 +3,18 @@ import type { SupportedInputType } from '../../classes/parser/types';
 import type { Scope } from './Scope';
 
 type SetOfValuesLike = {
-	isCollectionOfValues: boolean;
+	isEnumerable: boolean;
 	dataType: string;
 	elements: ParserInputType[] | ParserInputType[][];
 };
 
-function isCollectionOfValuesLike(x: unknown): x is SetOfValuesLike {
+function isEnumerableLike(x: unknown): x is SetOfValuesLike {
 	if (typeof x !== 'object' || x === null) {
 		return false;
 	}
 	const r = x as Record<string, unknown>;
 	return (
-		r['isCollectionOfValues'] === true &&
+		r['isEnumerable'] === true &&
 		typeof r['dataType'] === 'string' &&
 		Array.isArray(r['elements'])
 	);
@@ -84,11 +84,11 @@ function applyBinaryOp(
 export abstract class StructuredEntity<T extends StructuredEntity<T>> {
 	abstract dataType: string;
 	abstract elements: ParserInputType[] | ParserInputType[][] | Scope;
-	abstract isCollectionOfValues: boolean;
+	abstract isEnumerable: boolean;
 	abstract precision?: number;
 
 	private binaryOp(op: 'plus' | 'minus' | 'times' | 'div' | 'pow', x: SupportedInputType): T {
-		const rhsAgg = isCollectionOfValuesLike(x) && x.dataType === this.dataType ? x : undefined;
+		const rhsAgg = isEnumerableLike(x) && x.dataType === this.dataType ? x : undefined;
 		return this.copy().each((e: ParserInputType, i?: string | number, j?: string | number) => {
 			const rhs: SupportedInputType = rhsAgg ? (getAggregateElement(rhsAgg, i, j) ?? x) : x;
 			return applyBinaryOp(op, e, rhs);
@@ -145,7 +145,7 @@ export abstract class StructuredEntity<T extends StructuredEntity<T>> {
 	abstract copy(): T;
 	abstract dimensions(): number[];
 	dimensionsMatch(x: ParserInputType): boolean {
-		if (!isCollectionOfValuesLike(x) || this.dataType !== x.dataType) {
+		if (!isEnumerableLike(x) || this.dataType !== x.dataType) {
 			return false;
 		}
 		return x.elements.length === this.elements.length;

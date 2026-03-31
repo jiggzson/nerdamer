@@ -748,3 +748,71 @@ describe('product substitution (f·f′ pattern)', () => {
 		});
 	});
 });
+
+// ================================================================
+// Weierstrass substitution (tangent half-angle)
+//
+// For rational functions of sin(x) and cos(x), the substitution
+// t = tan(x/2) reduces the integrand to a rational function of t.
+// ================================================================
+describe('Weierstrass substitution (rational-in-trig)', () => {
+	describe('basic reciprocal trig expressions', () => {
+		it('integrates 1/(1+cos(x))', () => {
+			// = 1/(2cos²(x/2)) → tan(x/2)
+			const result = integrate('(1+cos(x))^(-1)', 'x');
+			expect(result.isFunction('integrate')).toBe(false);
+		});
+
+		it('integrates 1/(1-cos(x))', () => {
+			// = 1/(2sin²(x/2)) → -cot(x/2)
+			const result = integrate('(1-cos(x))^(-1)', 'x');
+			expect(result.isFunction('integrate')).toBe(false);
+		});
+
+		it('integrates 1/(1+sin(x))', () => {
+			const result = integrate('(1+sin(x))^(-1)', 'x');
+			expect(result.isFunction('integrate')).toBe(false);
+		});
+
+		it('integrates 1/(1-sin(x))', () => {
+			const result = integrate('(1-sin(x))^(-1)', 'x');
+			expect(result.isFunction('integrate')).toBe(false);
+		});
+	});
+
+	describe('general rational-in-trig', () => {
+		it('integrates 1/(2+cos(x))', () => {
+			// Denominator is a+b*cos(x) with a≠b → atan result
+			const result = integrate('(2+cos(x))^(-1)', 'x');
+			expect(result.isFunction('integrate')).toBe(false);
+		});
+
+		it('integrates 1/(sin(x)+cos(x))', () => {
+			const result = integrate('(sin(x)+cos(x))^(-1)', 'x');
+			expect(result.isFunction('integrate')).toBe(false);
+		});
+	});
+
+	describe('with composite arguments', () => {
+		it('integrates 1/(1+cos(2*x))', () => {
+			// Argument is 2x → t = tan(x), Jacobian adjusted by factor 2
+			const result = integrate('(1+cos(2*x))^(-1)', 'x');
+			expect(result.isFunction('integrate')).toBe(false);
+		});
+	});
+
+	describe('does not misfire on non-rational-in-trig', () => {
+		it('does not apply to x/(1+cos(x))', () => {
+			// Bare x outside trig — Weierstrass should not fire
+			const start = Date.now();
+			integrate('x/(1+cos(x))', 'x');
+			expect(Date.now() - start).toBeLessThan(5000);
+		});
+
+		it('does not apply to e^x*sin(x)', () => {
+			// e^x is not rational in trig — handled by table instead
+			const result = integrate('e^x*sin(x)', 'x');
+			expect(result.isFunction('integrate')).toBe(false);
+		});
+	});
+});

@@ -104,6 +104,10 @@ export const RANK: { [key: string]: number } = {
 
 // Parser Constants
 export const E = 'e';
+export const ALIASES: Record<string, string> = {
+	π: 'pi',
+	'∞': 'Inf',
+};
 export const PI = ['pi', 'π'];
 export const INFINITY = ['Inf', 'Infinity', '∞'];
 
@@ -130,3 +134,5 @@ export const GAMMA = 'gamma';
 export const DIRAC = 'delta';
 export const HEAVISIDE = 'heaviside';
 export const LOG = 'log';
+export const SGN = 'sign';
+export const CSGN = 'csgn';

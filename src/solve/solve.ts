@@ -97,13 +97,6 @@ function calculateSolutions(factorsVector: Vector, variable: string) {
  * @param variable - The variable to solve for
  * @param _options - The solver options
  * @returns A solution set if any solutions are found. Returns {all} for all solutions.
- *
- * @example
- * ```ts
- * // Some function return a solution with the arbitrary integer _n.
- * solve('cos(x)').text(); // {(1/2)*pi*(1+2*_n)}
- * solve('a*x^2-b', 'x').text(); //{a^(-1/2)*b^(1/2), -a^(-1/2)*b^(1/2)}
- * ```
  */
 export function solve(
 	input: ExpressionInputType | Equation,

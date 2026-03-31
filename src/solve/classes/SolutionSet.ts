@@ -27,9 +27,9 @@ export class SolutionSet extends ValuesSet {
 		}
 	}
 
-	// ─── Set-like uniqueness methods ────────────────────────────────
+	//  Set-like uniqueness methods
 
-	static isSolutionsSet(obj: unknown): obj is SolutionSet {
+	static isSolutionSet(obj: unknown): obj is SolutionSet {
 		if (obj === undefined || obj === null) {
 			return false;
 		}
@@ -50,7 +50,7 @@ export class SolutionSet extends ValuesSet {
 		return this;
 	}
 
-	// ─── Solution-specific methods ──────────────────────────────────
+	//  Solution-specific methods
 
 	public addRawRoot(root: Root) {
 		this.roots.push(root);
@@ -86,7 +86,7 @@ export class SolutionSet extends ValuesSet {
 		forFunction: Expression,
 		variable: string
 	) {
-		const solutions: Expression[] = SolutionSet.isSolutionsSet(arr) ? arr.elements : arr;
+		const solutions: Expression[] = SolutionSet.isSolutionSet(arr) ? arr.elements : arr;
 		for (const sol of solutions) {
 			this.addSolution(sol, forFunction, variable);
 		}
@@ -118,8 +118,6 @@ export class SolutionSet extends ValuesSet {
 		this.excluded.addMany(set.elements);
 		return this;
 	}
-
-	// ─── Required overrides ─────────────────────────────────────────
 
 	override expand(): SolutionSet {
 		const copy = this.copy();

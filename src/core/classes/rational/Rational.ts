@@ -9,16 +9,6 @@ import { RATIONAL, DOT, PARSER_CONSTANTS } from '../parser/constants';
 
 import type { OptionsObject } from '../parser/types';
 
-/**
- * The main class for multipliers. All expression multiplier are converted to `Rationals`, e.g. 0.333 -> 333/1000.
- * Input can be as denominator,numerator or a fraction string.
- *
- * @example
- * ```ts
- * new Rational(1n, 2n);
- * new Rational('1/2');
- * ```
- */
 export class Rational {
 	/**
 	 * The value of e. This must be recalculated if the decimal places change.

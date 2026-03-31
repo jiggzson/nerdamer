@@ -159,15 +159,6 @@ function solutionsToDictionaries(
  * @param equations - A set of linear or non-linear equations
  * @param variables - The variables to solve for.
  * @returns A Vector<Dictionary>[] with all solution sets found. Returns and empty if none are found.
- *
- * @example
- * ```ts
- * // Non-linear polynomial equation
- * solveSystem(['x*y-1', 'x^2+y']).text(); // [{x => -1, y => -1}, {x => -(-1/2+(1/2)*3^(1/2)*i), y => (1/2)*(1+3^(1/2)*i)}, {x => 1/2+(1/2)*3^(1/2)*i, y => (1/2)*(1-3^(1/2)*i)}]
- *
- * // Numeric fallback
- * solveSystem(['tan(x)', 'x^2+y^2-7']).text(); // [{x => 0, y => -2.645751311064595136}, {x => 0, y => 2.6457513110645908161}]
- * ```
  */
 export function solveSystem(
 	equations: Vector | Array<ExpressionInputType | Equation | string>,

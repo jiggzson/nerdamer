@@ -353,7 +353,7 @@ export function power(a: Expression, b: Expression): Expression {
 			retval = simplifyImaginary(retval);
 		}
 	}
-	// printE({ a: a, b: b, retval: retval });
+
 	return retval;
 }
 

@@ -446,3 +446,61 @@ describe('Complex Trig', () => {
 		expect(Parser.parse('(i^(1/2))-((-i)^(1/2))').text()).toEqual('2^(1/2)*i');
 	});
 });
+
+describe('The conjugate function', () => {
+	it('should conjugate pure imaginary expressions', () => {
+		expect(Parser.parse('conjugate(i)').text()).toEqual('-i');
+		expect(Parser.parse('conjugate(3*i)').text()).toEqual('-3*i');
+		expect(Parser.parse('conjugate(-i)').text()).toEqual('i');
+	});
+
+	it('should conjugate complex sums', () => {
+		expect(Parser.parse('conjugate(3+2*i)').text()).toEqual('3-2*i');
+		expect(Parser.parse('conjugate(a+b*i)').text()).toEqual('a-b*i');
+		expect(Parser.parse('conjugate(x+5*i)').text()).toEqual('x-5*i');
+	});
+
+	it('should return real expressions unchanged', () => {
+		expect(Parser.parse('conjugate(5)').text()).toEqual('5');
+		expect(Parser.parse('conjugate(x)').text()).toEqual('x');
+		expect(Parser.parse('conjugate(x^2+1)').text()).toEqual('1+x^2');
+	});
+
+	it('should conjugate products', () => {
+		expect(Parser.parse('conjugate(2*i*x)').text()).toEqual('-2*i*x');
+	});
+
+	it('should handle complex exponents', () => {
+		expect(Parser.parse('conjugate((1+i)^i)').text()).toEqual('(1-i)^(-i)');
+	});
+});
+
+describe('The csgn function', () => {
+	it('should return 1 for positive real part', () => {
+		expect(Parser.parse('csgn(3+2*i)').text()).toEqual('1');
+		expect(Parser.parse('csgn(1)').text()).toEqual('1');
+	});
+
+	it('should return -1 for negative real part', () => {
+		expect(Parser.parse('csgn(-1+3*i)').text()).toEqual('-1');
+		expect(Parser.parse('csgn(-5)').text()).toEqual('-1');
+	});
+
+	it('should use imaginary part when real part is zero', () => {
+		expect(Parser.parse('csgn(2*i)').text()).toEqual('1');
+		expect(Parser.parse('csgn(-5*i)').text()).toEqual('-1');
+	});
+
+	it('should return 0 for zero', () => {
+		expect(Parser.parse('csgn(0)').text()).toEqual('0');
+	});
+
+	it('should return unevaluated csgn for free variables', () => {
+		expect(Parser.parse('csgn(x+2*i)').text()).toEqual('csgn(x+2*i)');
+	});
+	it('should return 1 for positive real part', () => {
+		expect(Parser.parse('csgn(3+2*i)').text()).toEqual('1');
+		expect(Parser.parse('csgn(2-i)').text()).toEqual('1');
+		expect(Parser.parse('csgn(1)').text()).toEqual('1');
+	});
+});

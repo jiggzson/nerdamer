@@ -55,24 +55,12 @@ type ElementsSortType = (a: Expression, b: Expression) => number;
 const { NUM, VAR, EXP, FUN, GRP, PRD, SUM, INF } = EXPRESSION_TYPES;
 
 /**
- * The core symbolic expression class for nerdamer.
+ * The core symbolic expression class for nerdamer2.
  *
  * An `Expression` represents a mathematical expression in a tree structure. It can be
  * a number, variable, function, power (EXP), sum, product, or infinity. Expressions
  * support exact rational arithmetic, symbolic manipulation, and can be evaluated
- * numerically. * All expression carry a numeric multiplier of the `Rational` class.
- *
- * It uses several groups to organize and simplify expressions. Although some line up with
- * general mathematical classifications, they are not to be confused with such. The groups
- * generally are:
- * - NUM: Vanilla numbers
- * - VAR: Symbols/Variables with integer powers
- * - EXP: Not to be confused with exponential functions. These are of the differing exponent group and carry non-integer powers.
- * - FUN: Functions
- * - GRP: All sums with a common base but different power e.g. x+x^y, cos(x)-3*cos(x)^2, ...
- * - PRD: All products of non-numerical symbols. Numeric symbols get moved to the multiplier during parsing.
- * - SUM: All other sums excluding GRP. e.g. x+1. The expression 1+x+x^2, is a SUM which contains a NUM and a GRP.
- * - INF: All infinite values
+ * numerically.
  *
  * Use the static factory method {@link Expression.create} to build expressions from
  * strings, numbers, or other supported input types.
@@ -168,7 +156,7 @@ export class Expression implements Base<Expression> {
 	/**
 	 * Let's the parser know not to treat it as a set of values
 	 */
-	isCollectionOfValues: boolean = false;
+	isEnumerable: boolean = false;
 
 	/**
 	 * A parser flag to let the parser know that this was returned from an internal function call.
@@ -208,6 +196,19 @@ export class Expression implements Base<Expression> {
 	 * For most use cases, prefer the static factory method {@link Expression.create}
 	 * instead. Direct construction is primarily used internally when copying from
 	 * an existing Expression or when creating a plain-value node with `plainConstruct`.
+	 * All expression carry a numeric multiplier of the `Rational` class.
+	 *
+	 * It uses several groups to organize and simplify expressions. Although some line up with
+	 * general mathematical classifications, they are not to be confused with such. The groups
+	 * generally are:
+	 * - NUM: Vanilla numbers
+	 * - VAR: Symbols/Variables with integer powers
+	 * - EXP: Not to be confused with exponential functions. These are of the differing exponent group and carry non-integer powers.
+	 * - FUN: Functions
+	 * - GRP: All sums with a common base but different power e.g. x+x^y, cos(x)-3*cos(x)^2, ...
+	 * - PRD: All products of non-numerical symbols. Numeric symbols get moved to the multiplier during parsing.
+	 * - SUM: All other sums excluding GRP. e.g. x+1. The expression 1+x+x^2, is a SUM which contains a NUM and a GRP.
+	 * - INF: All infinite values
 	 *
 	 * @param x - The input value: an existing Expression, a Rational, a string, a number, or a bigint.
 	 * @param plainConstruct - When `true`, stores `x` as a raw value string without parsing.
@@ -1260,7 +1261,7 @@ export class Expression implements Base<Expression> {
 	 * Expression.create('x + 1').isConstant()    // false
 	 * ```
 	 */
-	isConstant() {
+	isConstant(): boolean {
 		if (this.isSum() || this.isProduct()) {
 			const elements = this.getElements();
 			for (const x in elements) {
@@ -1787,7 +1788,7 @@ export class Expression implements Base<Expression> {
 	 *
 	 * @returns `1`, `-1`, or `0`.
 	 */
-	sign() {
+	sign(): number {
 		// REFACTOR:
 		// Deal with numeric EXP
 		if (this.type === EXP) {

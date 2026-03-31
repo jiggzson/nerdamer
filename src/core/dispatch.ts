@@ -36,6 +36,8 @@ import {
 	Chi,
 	Ci,
 	Ei,
+	defint,
+	contains,
 } from '../math/math';
 import {
 	cos,
@@ -64,14 +66,19 @@ import {
 	acsch,
 	acoth,
 } from '../math/trig';
+import { count } from '../math/utils';
 import { solve } from '../solve/solve';
+import { solveSystem } from '../solve/solveSystem';
 
 import { assuming, forget } from './classes/assumption/assume';
+import { determinant } from './classes/matrix/functions';
 import { imatrix } from './classes/matrix/utils';
 import { FACTORIAL, DOUBLE_FACTORIAL } from './classes/parser/constants';
 import { RETURN, IF, BLOCK } from './classes/parser/functions';
 import { unassign } from './classes/parser/operations/functions';
-import { imagPart, realPart, polarForm, rectForm, arg } from './functions/complex';
+import { content, deg } from './classes/polynomial/functions';
+import { dot, cross } from './classes/vector/functions';
+import { imagPart, realPart, polarForm, rectForm, arg, csgn, conjugate } from './functions/complex';
 import { expand } from './functions/expand/expand';
 import { subst } from './functions/subst';
 
@@ -152,11 +159,7 @@ export const mathFunctions: { [functionName: string]: MathFunctionEntry } = {
 	factorial: entry({ fn: factorial, minArgs: 1, maxArgs: 1 }),
 	[DOUBLE_FACTORIAL]: entry({ fn: doubleFactorial, minArgs: 1, maxArgs: 1 }),
 	expand: entry({ fn: expand, minArgs: 1, maxArgs: 1 }),
-	imagpart: entry({ fn: imagPart, minArgs: 1, maxArgs: 1 }),
-	realpart: entry({ fn: realPart, minArgs: 1, maxArgs: 1 }),
-	polarform: entry({ fn: polarForm, minArgs: 1, maxArgs: 1 }),
-	rectform: entry({ fn: rectForm, minArgs: 1, maxArgs: 1 }),
-	arg: entry({ fn: arg, minArgs: 1, maxArgs: 1 }),
+
 	round: entry({ fn: round, minArgs: 1, maxArgs: 2 }),
 	sign: entry({ fn: sign, minArgs: 1, maxArgs: 1 }),
 	floor: entry({ fn: floor, minArgs: 1, maxArgs: 1 }),
@@ -165,10 +168,28 @@ export const mathFunctions: { [functionName: string]: MathFunctionEntry } = {
 	mod: entry({ fn: mod, minArgs: 2, maxArgs: 2 }),
 	modinv: entry({ fn: modInv, minArgs: 2, maxArgs: 2 }),
 	parens: entry({ fn: parens, minArgs: 1, maxArgs: 1 }),
+	count: entry({ fn: count, minArgs: 1, maxArgs: 1 }),
+	contains: entry({ fn: contains, minArgs: 2, maxArgs: 2 }),
+
+	// Complex
+	imagpart: entry({ fn: imagPart, minArgs: 1, maxArgs: 1 }),
+	realpart: entry({ fn: realPart, minArgs: 1, maxArgs: 1 }),
+	polarform: entry({ fn: polarForm, minArgs: 1, maxArgs: 1 }),
+	rectform: entry({ fn: rectForm, minArgs: 1, maxArgs: 1 }),
+	arg: entry({ fn: arg, minArgs: 1, maxArgs: 1 }),
+	csgn: entry({ fn: csgn, minArgs: 1, maxArgs: 1 }),
+	conjugate: entry({ fn: conjugate, minArgs: 1, maxArgs: 1 }),
 
 	// Matrices and Vector
 	matrix: entry({ fn: matrix, minArgs: 1, maxArgs: -1 }),
 	imatrix: entry({ fn: imatrix, minArgs: 1, maxArgs: 1 }),
+	determinant: entry({ fn: determinant, minArgs: 1, maxArgs: 1 }),
+	dot: entry({ fn: dot, minArgs: 2, maxArgs: 2 }),
+	cross: entry({ fn: cross, minArgs: 2, maxArgs: 2 }),
+
+	// Polynomials
+	deg: entry({ fn: deg, minArgs: 1, maxArgs: 1 }),
+	content: entry({ fn: content, minArgs: 1, maxArgs: 1 }),
 
 	// Calculus
 	diff: entry({ fn: diff, minArgs: 1, maxArgs: 3 }),
@@ -178,6 +199,7 @@ export const mathFunctions: { [functionName: string]: MathFunctionEntry } = {
 	ilaplace: entry({ fn: ilaplace, minArgs: 3, maxArgs: 3 }),
 	sum: entry({ fn: sum, minArgs: 4, maxArgs: 4 }),
 	product: entry({ fn: product, minArgs: 4, maxArgs: 4 }),
+	defint: entry({ fn: defint, minArgs: 4, maxArgs: 4 }),
 
 	// Algebra
 	polyfactors: entry({ fn: polyFactors, minArgs: 1, maxArgs: 1 }),
@@ -189,6 +211,7 @@ export const mathFunctions: { [functionName: string]: MathFunctionEntry } = {
 
 	// Solver
 	solve: entry({ fn: solve, minArgs: 2, maxArgs: 2 }),
+	solveeqs: entry({ fn: solveSystem, minArgs: 1, maxArgs: 1 }),
 
 	// Assumptions and Sets
 	assume: entry({ fn: assuming, minArgs: 1, maxArgs: 1 }),

@@ -2,8 +2,6 @@ import { Expression } from '../../src/core/classes/expression/Expression';
 import { Vector } from '../../src/core/classes/vector/Vector';
 import { solveLinearSystem, type LinearSystemResult } from '../../src/solve/linsolve';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 /** Shorthand for Expression.create */
 const e = (s: string) => Expression.create(s);
 
@@ -25,8 +23,6 @@ function expectUnique(result: LinearSystemResult, expected: Record<string, strin
 // ═════════════════════════════════════════════════════════════════════════════
 
 describe('solveLinearSystem', () => {
-	// ── Unique solutions ─────────────────────────────────────────────────
-
 	describe('unique solutions', () => {
 		it('should solve a 2×2 system', () => {
 			// x + y - 3 = 0, 2x + 3y - 8 = 0 → x=1, y=2
@@ -84,8 +80,6 @@ describe('solveLinearSystem', () => {
 			expectUnique(result, { x: '2', y: '1' });
 		});
 	});
-
-	// ── Inconsistent systems ─────────────────────────────────────────────
 
 	describe('inconsistent systems', () => {
 		it('should detect parallel lines (no solution)', () => {
@@ -178,8 +172,6 @@ describe('solveLinearSystem', () => {
 		});
 	});
 
-	// ── Edge cases ───────────────────────────────────────────────────────
-
 	describe('edge cases', () => {
 		it('should handle empty input', () => {
 			const result = solveLinearSystem([]);
@@ -223,8 +215,6 @@ describe('solveLinearSystem', () => {
 		});
 	});
 
-	// ── Symbolic coefficients ────────────────────────────────────────────
-
 	describe('symbolic coefficients', () => {
 		it('should solve with symbolic constants on the RHS', () => {
 			// x + y - a = 0, x - y - b = 0
@@ -241,8 +231,6 @@ describe('solveLinearSystem', () => {
 			expect(xVal.minus(yVal).eq(e('b'))).toBe(true);
 		});
 	});
-
-	// ── Larger systems ───────────────────────────────────────────────────
 
 	describe('larger systems', () => {
 		it('should solve a 4×4 system', () => {

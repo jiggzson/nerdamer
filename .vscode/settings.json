@@ -1,5 +1,5 @@
 {
-	"workbench.colorTheme": "Default Dark Modern",
+	"workbench.colorTheme": "Dark Modern",
 	"security.workspace.trust.untrustedFiles": "open",
 	"[python]": {
 		"editor.formatOnType": true

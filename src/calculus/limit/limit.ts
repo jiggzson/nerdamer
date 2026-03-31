@@ -409,7 +409,7 @@ function tryRewriteIndeterminate(
 			// limit(f^g) = e^(limit(g · ln(f)))
 			// The inner product g·ln(f) will typically be a 0·∞ form,
 			// which the 0·∞ handler above will rewrite into 0/0 for L'Hôpital.
-			const innerExpr = simplify(exponent.times(Expression.toFunction('log', [base])));
+			const innerExpr = exponent.times(Expression.toFunction('log', [base]));
 			const innerLimit = limit(innerExpr, x, val, dir, depth + 1);
 
 			// If the inner limit resolved to a concrete value, exponentiate it

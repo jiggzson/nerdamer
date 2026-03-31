@@ -29,7 +29,8 @@ export function formatMultiplierString(x: Expression, options?: OptionsObject) {
 		}
 
 		// Don't show the minus one as -1* but just -
-		if (retval === '-1') {
+		// When wrapPow is set, keep -1* to avoid unary minus before **
+		if (retval === '-1' && !options?.wrapPow) {
 			retval = '-';
 		} else {
 			retval += '*';
@@ -75,6 +76,10 @@ export function formatPowerString(x: Expression, options?: OptionsObject) {
 			}
 		}
 
+		if (options?.wrapPow && !retval.startsWith('(')) {
+			retval = `(${retval})`;
+		}
+
 		retval = `${Expression.POW_OPR}${retval}`;
 	}
 
@@ -96,7 +101,11 @@ export function toText(x: Expression, options?: OptionsObject, asId?: boolean) {
 		switch (x.type) {
 			case VAR:
 			case INF:
-				retval = `${multiplier}${x.value}`;
+				if (options?.wrapPow && power) {
+					retval = `${multiplier}(${x.value})`;
+				} else {
+					retval = `${multiplier}${x.value}`;
+				}
 				break;
 			case FUN:
 				// TODO: See Expression.toFunction for possible refactoring.
@@ -129,6 +138,7 @@ export function toText(x: Expression, options?: OptionsObject, asId?: boolean) {
 				// 3 - (2/3)^x
 				// 4 - (x^x)^x
 				if (
+					options?.wrapPow ||
 					arg.elements ||
 					value.startsWith('-') ||
 					value.includes('/') ||

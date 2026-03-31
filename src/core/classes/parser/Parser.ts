@@ -2,7 +2,7 @@ import { remove } from '../../../utils/array';
 import { Scope } from '../../common/classes/Scope';
 import { brackets, ASSERTIVE_FUNCTIONS } from '../../common/common';
 import { getOperators } from '../../common/functions/functions';
-import { isCollectionOfValues } from '../../common/functions/structuredEntityUtils';
+import { isEnumerable } from '../../common/functions/structuredEntityUtils';
 import { mathFunctions } from '../../dispatch';
 import { UnexpectedTokenError, ParserError, message } from '../../errors';
 import { scientificToDecimal } from '../../functions/string';
@@ -26,6 +26,7 @@ import {
 	VECTOR,
 	MATRIX,
 	COLLECTION,
+	ALIASES,
 } from './constants';
 import { scopedBlock, evaluate } from './helpers';
 import { _, route } from './operations/functions';
@@ -49,7 +50,7 @@ import type {
 } from './types';
 
 /**
- * The expression parser for nerdamer.
+ * The expression parser for nerdamer2.
  *
  * `ExpressionParser` is responsible for tokenizing, converting to Reverse Polish
  * Notation (RPN), and evaluating mathematical expression strings into {@link Expression}
@@ -131,17 +132,17 @@ class ExpressionParser {
 		if (Vector.isVector(indexExpr)) {
 			for (let j = 0; j < indexExpr.elements.length; j++) {
 				result.push(
-					Number(Expression.create(indexExpr.elements[j]).evaluate().text()) -
+					Number(Expression.create(indexExpr.elements[j]).evaluate()!.text()) -
 						Settings.INDEX_BASE
 				);
 			}
 		} else if (indexExpr.dataType === COLLECTION) {
 			for (const el of (indexExpr as Collection).getElements()) {
-				result.push(Number(Expression.create(el).evaluate().text()) - Settings.INDEX_BASE);
+				result.push(Number(Expression.create(el).evaluate()!.text()) - Settings.INDEX_BASE);
 			}
 		} else {
 			result.push(
-				Number(Expression.create(indexExpr).evaluate().text()) - Settings.INDEX_BASE
+				Number(Expression.create(indexExpr).evaluate()!.text()) - Settings.INDEX_BASE
 			);
 		}
 
@@ -269,7 +270,7 @@ class ExpressionParser {
 		// Convert the values to Expressions
 		if (values) {
 			// We don't want to modify the object.
-			const valuesObj = {};
+			const valuesObj: Record<string, Expression> = {};
 			for (const value in values) {
 				// Ignore values such as e or pi
 				// if (SPECIAL.includes(value)) {
@@ -332,11 +333,8 @@ class ExpressionParser {
 				// is a standalone vector literal (e.g. in matrix([1,0],[2,3]) where commas
 				// separate the square scopes).
 				if (token.type === 'square' && token.implicitMultiply && lastOutput) {
-					if (
-						isCollectionOfValues(lastOutput) ||
-						lastOutput instanceof IndexedReference
-					) {
-						// ── Indexing: target[indices] ──
+					if (isEnumerable(lastOutput) || lastOutput instanceof IndexedReference) {
+						//  Indexing: target[indices]
 						const resolvedTarget =
 							lastOutput instanceof IndexedReference
 								? lastOutput.resolve()
@@ -362,7 +360,7 @@ class ExpressionParser {
 							) as unknown as ParserInputType
 						);
 					} else if (token.implicitMultiply && Settings.ALLOW_IMPLICIT_MULTIPLICATION) {
-						// ── Implicit multiplication: x[1,2] where x is not a structured entity ──
+						//  Implicit multiplication: x[1,2] where x is not a structured entity
 						const indexExpr = this.parseRPN(token, values, assertive);
 						const mulFn = _['multiply'] as Operation;
 						const a = output.pop()!;
@@ -432,7 +430,7 @@ class ExpressionParser {
 								assertive ? operator.assertiveAction! : operator.action
 							] as Operation;
 
-							if (a.isCollectionOfValues || b.isCollectionOfValues) {
+							if (a.isEnumerable || b.isEnumerable) {
 								// Delegate this to the router who can handle more
 								result = route(a, b, operator.action);
 							} else {
@@ -670,7 +668,7 @@ class ExpressionParser {
 					case 'Re':
 					case 'Im': {
 						output.push(
-							`${functionMap[command] || command}(${this.parseTeXRPN(rpn[i] as Scope)})`
+							`${(functionMap as Record<string, string>)[command] || command}(${this.parseTeXRPN(rpn[i] as Scope)})`
 						);
 						break;
 					}
@@ -780,10 +778,10 @@ class ExpressionParser {
 	set(setting: string | OptionsObject, value?: boolean | string | number | bigint) {
 		if (typeof setting === 'object') {
 			for (const x in setting) {
-				Settings[x] = setting[x];
+				(Settings as Record<string, unknown>)[x] = setting[x];
 			}
 		} else {
-			Settings[setting] = value;
+			(Settings as Record<string, unknown>)[setting] = value;
 		}
 
 		return this;
@@ -851,7 +849,7 @@ class ExpressionParser {
 	 * @param variable - The new imaginary variable name.
 	 * @returns This parser instance (for chaining).
 	 */
-	setImaginary(variable) {
+	setImaginary(variable: string) {
 		return this.setI(variable);
 	}
 
@@ -892,7 +890,8 @@ class ExpressionParser {
 	 * ```
 	 */
 	tokenize(inputStr: string, options?: OptionsObject) {
-		options = Object.assign({ pure: false, keepWhiteSpace: false }, options);
+		// options = Object.assign({ pure: false, keepWhiteSpace: false }, options);
+		options = { ...{ pure: false, keepWhiteSpace: false }, ...options };
 
 		// A key element to be aware of is that a terminating character is appended to the string.
 		// This avoids an extra step since the last item is ignored. Brackets are wrapped in a Scope object
@@ -938,11 +937,11 @@ class ExpressionParser {
 		for (; col < str.length; col++) {
 			const ch = str.charAt(col);
 
-			// Get the character type for comparison. We're searching for changes is the character type to determine
+			// Get the character type for comparison. Search for changes in the character type to determine
 			// the end of a token.
 			const charType = Token.getCharType(ch, col, tokenBuffer);
 
-			// Brackets point to a new scope. Once one is encountered, we update the target and point to the new scope
+			// Brackets point to a new scope. Once one is encountered, update the target and point to the new scope
 			// Subsequent tokens are now pushed to that scope
 			if (tokenBuffer.is(Token.BRACKET)) {
 				// Get the bracket.
@@ -962,7 +961,7 @@ class ExpressionParser {
 					}
 
 					// Implicit multiplication
-					// Track whether we should mark the new scope for deferred implicit multiplication
+					// Track whether to mark the new scope for deferred implicit multiplication
 					let deferImplicitMultiply = false;
 
 					if (
@@ -1016,6 +1015,11 @@ class ExpressionParser {
 			if (tokenBuffer.tokenType !== Token.UNDEFINED && tokenBuffer.tokenType !== charType) {
 				// Collapse the tokenBuffer
 				let tokenStr = tokenBuffer.chars.join(BLANK);
+				// If there's an alias then use that instead
+				const alias = ALIASES[tokenStr];
+				if (alias) {
+					tokenStr = alias;
+				}
 				// Mark the beginning of the token
 				const SOT = col - tokenBuffer.chars.length;
 
@@ -1324,7 +1328,7 @@ class ExpressionParser {
 }
 
 /**
- * The singleton parser instance used throughout nerdamer.
+ * The singleton parser instance used throughout nerdamer2.
  *
  * @example
  * ```ts

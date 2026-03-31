@@ -539,6 +539,11 @@ describe('The Parser.parse method', () => {
 	it('should not falsely subtract two values', () => {
 		expect(Parser.parse('(x^(1/2))-((-x)^(1/2))').text()).toEqual('x^(1/2)-(-x)^(1/2)');
 	});
+
+	it('should recognized aliases', () => {
+		expect(Parser.parse('π+pi').text()).toEqual('2*pi');
+		expect(Parser.parse('∞+Inf').text()).toEqual('2*Inf');
+	});
 });
 
 describe('scoped blocks', () => {

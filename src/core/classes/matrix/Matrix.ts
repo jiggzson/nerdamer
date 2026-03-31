@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 import { mod, modInv } from '../../../math/math';
 import { StructuredEntity } from '../../common/classes/StructuredEntity';
-import {
-	toParserInputType,
-	isCollectionOfValues,
-} from '../../common/functions/structuredEntityUtils';
+import { toParserInputType, isEnumerable } from '../../common/functions/structuredEntityUtils';
 import { message, MathError, UnexpectedDataType, UnsupportedOperationError } from '../../errors';
 import { Expression } from '../expression/Expression';
 import { one, zero } from '../expression/shortcuts';
@@ -25,7 +22,7 @@ export class Matrix extends StructuredEntity<Matrix> {
 	private _rowSwaps: number = 0;
 	dataType = MATRIX;
 	elements: Expression[][];
-	isCollectionOfValues: boolean = true;
+	isEnumerable: boolean = true;
 	/**
 	 * A parser flag to let the parser know that this was returned from an internal function call.
 	 */
@@ -41,7 +38,7 @@ export class Matrix extends StructuredEntity<Matrix> {
 		for (let i = 0; i < elements.length; i++) {
 			let row = toParserInputType(elements[i]);
 
-			if (isCollectionOfValues(row)) {
+			if (isEnumerable(row)) {
 				row = row.elements as ParserInputType[];
 			}
 

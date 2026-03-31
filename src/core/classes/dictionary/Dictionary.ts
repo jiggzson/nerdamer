@@ -19,7 +19,7 @@ export class Dictionary extends StructuredEntity<Dictionary> {
 	 */
 	private _entries: Map<string, ParserInputType> = new Map();
 	dataType = DICTIONARY;
-	isCollectionOfValues: boolean = true;
+	isEnumerable: boolean = true;
 	/**
 	 * A parser flag to let the parser know that this was returned from the RETURN function.
 	 */

@@ -22,9 +22,9 @@ export function scopedBlock(setting: string, value: boolean, callback: () => Par
 	let error: Error | undefined = undefined;
 	let result;
 	// Store the value being currently used
-	const currentSettingValue = Settings[setting];
+	const currentSettingValue = (Settings as Record<string, unknown>)[setting];
 	// Update the setting to the desired value
-	Settings[setting] = value;
+	(Settings as Record<string, unknown>)[setting] = value;
 	try {
 		// Call the function and store the result
 		result = callback();
@@ -32,7 +32,7 @@ export function scopedBlock(setting: string, value: boolean, callback: () => Par
 		error = e as Error;
 	}
 	// Restore the value
-	Settings[setting] = currentSettingValue;
+	(Settings as Record<string, unknown>)[setting] = currentSettingValue;
 
 	// Rethrow the error if there was one
 	if (error) {
@@ -77,5 +77,5 @@ export function isStructuredEntity(obj: unknown): obj is StructuredEntityType {
 	if (typeof obj === 'undefined') {
 		return false;
 	}
-	return (obj as { isCollectionOfValues: boolean }).isCollectionOfValues;
+	return (obj as { isEnumerable: boolean }).isEnumerable;
 }

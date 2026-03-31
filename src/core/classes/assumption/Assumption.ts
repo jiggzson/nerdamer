@@ -40,7 +40,7 @@ function parseNumber(value: string) {
 
 function decimalValue(x: Expression) {
 	if (!x.isNUM()) {
-		x = x.evaluate();
+		x = x.evaluate() as Expression;
 	}
 	return x.getMultiplier().toDecimal();
 }

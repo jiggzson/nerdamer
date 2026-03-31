@@ -6,6 +6,7 @@ import { message, UnsupportedOperationError } from '../../core/errors';
 import { log } from '../../math/math';
 
 import type { ExpressionInputType } from '../../core/classes/parser/types';
+import type { Vector } from '../../core/classes/vector/Vector';
 
 /**
  * Applies the product rule to an expression
@@ -38,19 +39,19 @@ function productRule(expression: Expression, variable: Expression): Expression {
 /**
  * Calculates the derivative of a given expression
  *
- * @param expression The expression from which the derivative is calculated
+ * @param x The expression from which the derivative is calculated
  * @param variable The variable with respect to the derivative is calculated
  * @param nth The nth derivative
  * @returns
  */
 export function diff(
-	expression: ExpressionInputType,
+	x: ExpressionInputType | Vector,
 	variable?: ExpressionInputType,
 	n?: Expression | number
 ): Expression {
-	expression = Expression.create(expression);
+	x = Expression.create(x);
 
-	const variables = expression.variables();
+	const variables = x.variables();
 	// Set the variable if none was provided
 	variable ??= Expression.Variable(variables[0]);
 
@@ -63,22 +64,18 @@ export function diff(
 
 	let retval: Expression | undefined;
 
-	if (
-		variables.length === 0 ||
-		!expression.hasVariable(variable.value) ||
-		expression.isConstant()
-	) {
+	if (variables.length === 0 || !x.hasVariable(variable.value) || x.isConstant()) {
 		retval = zero();
 	}
 	// If the variable is not of type VAR or nth is not an integer then return it untouched until either or both are resolved
 	else if ((variable && !variable.isVAR()) || (nth && !nth.isInteger())) {
-		retval = Expression.toFunction('diff', [expression, variable, nth]);
-	} else if (expression.isEXP()) {
+		retval = Expression.toFunction('diff', [x, variable, nth]);
+	} else if (x.isEXP()) {
 		// Apply rule a^x*(d/dx x*log(a))
-		const a = log(expression.getBase());
-		const p = expression.getPower();
+		const a = log(x.getBase());
+		const p = x.getPower();
 		const dx = diff(a.times(p), variable);
-		retval = expression.times(dx);
+		retval = x.times(dx);
 	}
 	// If the expression doesn't have a variable or if it's a constant then we're done
 	else {
@@ -86,9 +83,9 @@ export function diff(
 		const n = nth ? Number(nth) - 1 : 0;
 
 		// Pull the derivate of the outside. At this point we've already performed all the required checks.
-		const m = expression.getMultiplier().times(expression.getPower());
-		const p = expression.getPower().minus('1');
-		const f = Expression.create(expression.value);
+		const m = x.getMultiplier().times(x.getPower());
+		const p = x.getPower().minus('1');
+		const f = Expression.create(x.value);
 		const fp = f.pow(p).times(m);
 		// Pull the derivative of the inside
 		if (f.isVAR()) {
@@ -228,5 +225,5 @@ export function diff(
 		}
 	}
 
-	return retval || Expression.toFunction('diff', [expression, variable, nth]);
+	return retval || Expression.toFunction('diff', [x, variable, nth]);
 }

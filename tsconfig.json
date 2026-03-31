@@ -1,24 +1,37 @@
 {
 	"compilerOptions": {
 		"target": "ES2022",
-		"lib": ["ES2022"],
+		"lib": [
+			"ES2022"
+		],
 		"module": "commonjs",
 		"moduleResolution": "node",
 		"resolveJsonModule": true,
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"strict": true,
-		"noImplicitAny": false,
 		"skipLibCheck": true,
 		"noEmit": true,
+		"noImplicitAny": false,
 		"rootDir": ".",
-		"types": ["node", "jest"]
+		"types": [
+			"node",
+			"jest"
+		]
 	},
 	"include": [
 		"src/**/*.ts",
 		"tools/**/*.ts",
 		"spec/bigintUtils.spec.ts",
-		"spec/stringUtils.spec.ts"
+		"spec/stringUtils.spec.ts",
+		"src/utils/debug.ts",
+		"src/utils/array.ts"
 	],
-	"exclude": ["node_modules", "dist", "output", "docs", "generated"]
+	"exclude": [
+		"node_modules",
+		"dist",
+		"output",
+		"docs",
+		"generated"
+	]
 }

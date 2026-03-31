@@ -1,4 +1,5 @@
 import { Expression } from '../../core/classes/expression/Expression';
+import { one, zero } from '../../core/classes/expression/shortcuts';
 import { product } from '../../math/utils';
 import { polyFactors } from '../factor/factor';
 
@@ -28,6 +29,8 @@ export function simplify(x: Expression | string, modifiers: { [name: string]: st
 	const unchanged = modifiers.image === x.text();
 
 	if (!unchanged) {
+		retval = simplifyArguments(retval);
+
 		// Early factorial simplification for bare factorial ratios
 		if (retval.isProduct() && hasFactorialRatio(retval)) {
 			retval = simplifyFactorials(retval);
@@ -61,14 +64,44 @@ export function simplify(x: Expression | string, modifiers: { [name: string]: st
 	return retval;
 }
 
-/** Shared exit: factor numerator and denominator, or return as-is for pure numbers. */
-function factorResult(retval: Expression): Expression {
-	if (retval.isNUM()) {
-		return retval;
+function simplifyArguments(x: Expression): Expression {
+	let retval: Expression | undefined = undefined;
+	const m = x.getMultiplier();
+	const p = x.getPower();
+	if (x.isFunction()) {
+		retval = Expression.toFunction(
+			x.name!,
+			x.getArguments().map(e => simplify(e))
+		);
+	} else if (x.isProduct()) {
+		retval = one();
+		for (const element of x.elementsArray()) {
+			const simplified = simplifyArguments(element);
+			retval = retval.times(simplified);
+		}
+	} else if (x.isSum()) {
+		retval = zero();
+		for (const element of x.elementsArray()) {
+			retval = retval.plus(simplifyArguments(element));
+		}
 	}
 
-	const num = product(...(polyFactors(retval.getNumerator()).elements as Expression[]));
-	const den = product(...(polyFactors(retval.getDenominator()).elements as Expression[]));
+	if (retval) {
+		retval = retval.pow(p).times(m);
+	} else {
+		retval = x;
+	}
+	return retval;
+}
+
+/** Shared exit: factor numerator and denominator, or return as-is for pure numbers. */
+function factorResult(x: Expression): Expression {
+	if (x.isNUM()) {
+		return x;
+	}
+
+	const num = product(...(polyFactors(x.getNumerator()).elements as Expression[]));
+	const den = product(...(polyFactors(x.getDenominator()).elements as Expression[]));
 	return num.div(den);
 }
 /**

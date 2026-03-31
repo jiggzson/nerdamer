@@ -1,12 +1,15 @@
 import { Expression } from '../../classes/expression/Expression';
 
+import type { SolutionSet } from '../../../solve/classes/SolutionSet';
 import type { Collection } from '../../classes/collection/Collection';
+import type { Dictionary } from '../../classes/dictionary/Dictionary';
 import type { Matrix } from '../../classes/matrix/Matrix';
 import type {
 	SupportedInputType,
 	ParserInputType,
 	ExpressionInputType,
 } from '../../classes/parser/types';
+import type { ValuesSet } from '../../classes/valuesSet/ValuesSet';
 import type { Vector } from '../../classes/vector/Vector';
 
 /**
@@ -15,12 +18,15 @@ import type { Vector } from '../../classes/vector/Vector';
  * @param obj
  * @returns
  */
-export function isCollectionOfValues(obj: unknown): obj is Vector | Collection | Matrix {
+export function isEnumerable(
+	obj: unknown
+): obj is Vector | Collection | Matrix | ValuesSet | SolutionSet | Dictionary {
 	if (obj === undefined) {
 		return false;
 	}
 
-	return !!(obj as Vector | Collection | Matrix).isCollectionOfValues;
+	return !!(obj as Vector | Collection | Matrix | ValuesSet | SolutionSet | Dictionary)
+		.isEnumerable;
 }
 
 /**
@@ -39,7 +45,7 @@ export function toParserInputType(elements: SupportedInputType[]): ParserInputTy
 			let e = elements[i];
 
 			if (
-				!isCollectionOfValues(e) ||
+				!isEnumerable(e) ||
 				typeof e === 'string' ||
 				typeof e === 'bigint' ||
 				typeof e === 'number'

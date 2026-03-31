@@ -1,4 +1,9 @@
-console.log('Dev started!!!');
-import { solve } from '../src/typedoc.entry';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { simplify } from '../src/algebra/simplify/simplify';
+import { Expression } from '../src/core/classes/expression/Expression';
+import { Parser } from '../src/core/classes/parser/Parser';
+import { Vector } from '../src/core/classes/vector/Vector';
+import { Dictionary } from '../src/core/classes/dictionary/Dictionary';
+import { contains } from '../src/math/math';
 
-console.log(solve('a*x^2-b', 'x').text());
+// console.log(Parser.parse('diff([x, y, z], x)').text());

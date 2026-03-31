@@ -7,7 +7,7 @@ import type { ExpressionInputType, ParserInputType, SupportedInputType } from '.
 
 export class Equation {
 	dataType = EQUATION;
-	isCollectionOfValues: boolean = false;
+	isEnumerable: boolean = false;
 	/**
 	 * A parser flag to let the parser know that this was returned from an internal function call.
 	 */

@@ -4,7 +4,7 @@ import { ValuesSet } from '../../src/core/classes/valuesSet/ValuesSet';
 describe('ValuesSet', () => {
 	it('should expose required parser flags', () => {
 		const s = new ValuesSet();
-		expect(s.isCollectionOfValues).toBe(true);
+		expect(s.isEnumerable).toBe(true);
 		expect(s.isFunctionReturn).toBe(false);
 		expect(Boolean(s.dataType)).toBe(true);
 	});

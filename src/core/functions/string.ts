@@ -80,7 +80,7 @@ export function decimalSplit(str: string) {
  * @param replacements
  * @returns
  */
-export function format(str, replacements: { [replacement: string]: string } | string[]) {
+export function format(str: string, replacements: { [replacement: string]: string } | string[]) {
 	const replace = function (str: string, replacement: string, newValue: string) {
 		return str.replace(new RegExp(`{{${replacement}}}`, 'g'), newValue);
 	};

@@ -6,7 +6,7 @@ The goal of Nerdamer 2 is not just a direct port of the earlier codebase, but a 
 
 ## Project status
 
-The project is still in active development. Much of the library has already been moved to TypeScript, but some areas are still being refined and some compatibility gaps with earlier versions remain.
+Much of the library has already been moved to TypeScript, but some areas are still being refined and some compatibility gaps with earlier versions remain.
 
 If your project depends heavily on the older API, you may be better off staying with [Nerdamer-Prime](https://github.com/together-science/nerdamer-prime) for now.
 
@@ -52,6 +52,7 @@ Although still a work in progress, version 2 already includes a number of improv
 - **Solver redesign.** The solver now has a more uniform return model and better symbolic support for functions. The system solver returns `Vector<Dictionary>[]` and uses Gröbner bases for polynomial systems, falling back to Jacobian/Newton-style methods for non-polynomial systems.
 - **New `Expression` class.** The old `Symbol` abstraction has been replaced by `Expression`, which simplifies several parts of the library's design and usage.
 - **Standalone converters.** Extending `text` and `TeX` conversion is now easier.
+- **A first pass at assumptions**
 - **Improvements to calculus routines.** `diff`, `integrate`, and related functionality have seen substantial work. One of the main integration problems was selecting appropriate stopping conditions in a heavily recursive process. The newer approach reduces that recursion by incorporating lookup-table-based logic. A large part of that work depends on the `Pattern` class, which rewrites expressions into canonical forms.
 - **Numerous other fixes and improvements.**
 

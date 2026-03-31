@@ -15,7 +15,7 @@ import type { ParserInputType, ExpressionInputType, SupportedInputType } from '.
 export class Vector extends MathematicalAggregate<Vector> {
 	dataType = VECTOR;
 	elements: ParserInputType[];
-	isCollectionOfValues: boolean = true;
+	isEnumerable: boolean = true;
 	/**
 	 * A parser flag to let the parser know that this was returned from an internal function call.
 	 */

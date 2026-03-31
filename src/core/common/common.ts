@@ -1,6 +1,6 @@
 export interface Base<Type> {
 	dataType: string;
-	isCollectionOfValues: boolean;
+	isEnumerable: boolean;
 	text: () => void;
 	copy: () => Type;
 }

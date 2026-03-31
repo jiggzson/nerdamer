@@ -7,7 +7,7 @@ import type { ParserInputType } from '../parser/types';
 export class Collection extends StructuredEntity<Collection> {
 	dataType = COLLECTION;
 	elements: ParserInputType[] | Scope = [];
-	isCollectionOfValues: boolean = true;
+	isEnumerable: boolean = true;
 	/**
 	 * A parser flag to let the parser know that this was returned from an internal function call.
 	 */
@@ -59,12 +59,10 @@ export class Collection extends StructuredEntity<Collection> {
 		this.elements[index] = value;
 	}
 
-	// ─── Element access ────────────────────────────────────────────
-
 	copy() {
 		const copy = new Collection();
 		this.each((e, i) => {
-			copy.elements[i] = e.copy();
+			copy.elements[i as number] = e.copy();
 			return e;
 		});
 		return copy;
@@ -73,8 +71,6 @@ export class Collection extends StructuredEntity<Collection> {
 	count() {
 		return this.elements.length;
 	}
-
-	// ─── Comparisons ───────────────────────────────────────────────
 
 	dimensions(): number[] {
 		return [this.elements.length];
@@ -104,7 +100,9 @@ export class Collection extends StructuredEntity<Collection> {
 	}
 
 	evaluate() {
-		return this.copy().each(e => e.evaluate());
+		const copy = this.copy();
+		copy.each(e => e.evaluate());
+		return copy;
 	}
 
 	expand(): Collection {

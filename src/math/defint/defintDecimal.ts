@@ -321,7 +321,7 @@ function tryAutoSplitFinite(
  * - Smooth functions: typically very fast.
  * - Nasty cases: supports breakpoints, best-effort singular handling, optional infinite bounds.
  */
-export function defint(
+export function definiteIntegrate(
 	f: DecimalFn,
 	a: Decimal.Value,
 	b: Decimal.Value,

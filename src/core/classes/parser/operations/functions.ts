@@ -255,14 +255,14 @@ export function route(a: ParserInputType, b: ParserInputType, operation: string)
 			return comma(a, b);
 		case 'pow':
 		case 'minus':
-			if (a.isCollectionOfValues) {
+			if (a.isEnumerable) {
 				return a[operation](b);
 			}
 		// NOTE that this is loosely defined on purpose as it would blow up badly.
 		// This may have to be buttoned up at some point in the future.
 		// The actions that allowed to fall through are commutative.
 		default: {
-			if (a.isCollectionOfValues) {
+			if (a.isEnumerable) {
 				const retval = a[operation](b) as ParserInputType;
 				// Wrap booleans since those are used both inside and outside of the parser
 				return typeof retval === 'boolean' ? Expression.create(Number(retval)) : retval;

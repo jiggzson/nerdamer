@@ -39,16 +39,16 @@ export function simplifyRadicals(x: Expression) {
 	const p = x.getPower();
 	let retval = one();
 
-	const elements = x
-		.toLinearAndUnitMultiplier()
-		.elementsArray()
-		.map(e => {
-			// Only rationalize if it actually has a radical (fractional power)
-			if (e.hasRadical()) {
-				return rationalize(e);
-			}
-			return e;
-		});
+	const linearized = x.toLinearAndUnitMultiplier();
+	const linearMultiplier = linearized.getMultiplier();
+
+	const elements = linearized.elementsArray().map(e => {
+		// Only rationalize if it actually has a radical (fractional power)
+		if (e.hasRadical()) {
+			return rationalize(e);
+		}
+		return e;
+	});
 
 	// The array of indices that have already been used
 	const seen: number[] = [];
@@ -82,7 +82,7 @@ export function simplifyRadicals(x: Expression) {
 		retval = retval.times(a);
 	}
 
-	return retval.pow(p).times(m);
+	return retval.pow(p).times(m).times(linearMultiplier);
 }
 
 /**

@@ -328,7 +328,7 @@ export class SymbolicSolver {
 		const nPi = n.times(pi);
 		const oddPiOver2 = two().times(n).plus(one()).times(pi).div(two());
 
-		// ─── Sum decomposition: f(u) + c = 0 ──────────────────────────
+		//  Sum decomposition: f(u) + c = 0
 		if (input.isSum()) {
 			const elements = input.elementsArray();
 			if (elements.length === 2) {
@@ -379,7 +379,7 @@ export class SymbolicSolver {
 			}
 		}
 
-		// ─── Direct function: f(u) = 0 ─────────────────────────────────
+		//  Direct function: f(u) = 0
 		if (input.isFunction(SIN)) {
 			const u = input.getArguments()[0];
 			return solveForX(u, nPi);

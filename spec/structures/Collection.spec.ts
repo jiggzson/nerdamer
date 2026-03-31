@@ -4,7 +4,7 @@ import { Expression } from '../../src/core/classes/expression/Expression';
 describe('Collection', () => {
 	it('should construct from array and be iterable', () => {
 		const c = new Collection([Expression.create('a'), Expression.create('b')]);
-		expect(c.isCollectionOfValues).toBe(true);
+		expect(c.isEnumerable).toBe(true);
 		expect(c.count()).toBe(2);
 	});
 

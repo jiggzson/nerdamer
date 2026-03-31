@@ -1,8 +1,12 @@
 import Decimal from 'decimal.js';
 
+import { Dictionary } from '../core/classes/dictionary/Dictionary';
 import { Expression } from '../core/classes/expression/Expression';
 import { four, half, one, two, zero } from '../core/classes/expression/shortcuts';
-import { getNumericOrAssumedValue } from '../core/classes/expression/utils';
+import {
+	assertPlainVariableAndGetString,
+	getNumericOrAssumedValue,
+} from '../core/classes/expression/utils';
 import { Matrix } from '../core/classes/matrix/Matrix';
 import {
 	SQRT,
@@ -13,14 +17,18 @@ import {
 	WRAP,
 	DIRAC,
 	HEAVISIDE,
+	SGN,
 } from '../core/classes/parser/constants';
 import { FACTORIAL } from '../core/classes/parser/constants';
 import { multiply } from '../core/classes/parser/operations/multiply';
 import { power, sqrtToPow } from '../core/classes/parser/operations/power';
 import { subtract } from '../core/classes/parser/operations/subtract';
+import { ValuesSet } from '../core/classes/valuesSet/ValuesSet';
+import { Vector } from '../core/classes/vector/Vector';
 import { message, MathError, UndefinedError } from '../core/errors';
 import { factorial as fact } from '../core/functions/bigint/bigint';
 import { primeFactorCounts } from '../core/functions/bigint/primeFactor';
+import { csgn } from '../core/functions/complex';
 import {
 	erf as decErf,
 	gamma as decGamma,
@@ -33,7 +41,9 @@ import {
 	Li as decLi,
 } from '../core/functions/decimal';
 import { Settings } from '../core/Settings';
+import { SolutionSet } from '../solve/classes/SolutionSet';
 
+import { definiteIntegrateNative } from './defint/defintNative';
 import { hypot } from './geometry';
 import { atan2, cos, sin } from './trig';
 import { stripPower } from './utils';
@@ -452,12 +462,14 @@ export function round(x: ExpressionInputType, n?: ExpressionInputType) {
 export function sign(x: ExpressionInputType) {
 	x = Expression.create(x);
 	let retval;
-	if (x.isPosInf() || x.isNegInf()) {
+	if (x.isComplex()) {
+		retval = csgn(x);
+	} else if (x.isPosInf() || x.isNegInf()) {
 		retval = Expression.create(x.isNegInf() ? -1 : 1);
 	} else if (x.isConstant()) {
 		retval = Expression.create((x.isNUM() ? x : x.evaluate()).getMultiplier().sign());
 	} else {
-		retval = Expression.toFunction('sign', [x]);
+		retval = Expression.toFunction(SGN, [x]);
 	}
 	return retval;
 }
@@ -1552,4 +1564,82 @@ export function product(
 	}
 
 	return acc;
+}
+
+/**
+ * Calculates the definite integral using Adaptive Simpson. Note that this function uses
+ * native JS number due to severe computational overhead when implemented with Decimal.js.
+ *
+ * @param f The function being integrated
+ * @param dx The variable of integration
+ * @param from The lower limit of the integral
+ * @param to The upper limit of the integral
+ * @returns The numeric value if possible else a symbolic function
+ *
+ * @example
+ * ```ts
+ * defint('cos(x)-x^2+6', 'x', 1, 6); // -42.787553149673464
+ * ```
+ */
+export function defint(
+	f: ExpressionInputType,
+	dx: ExpressionInputType,
+	from: ExpressionInputType,
+	to: ExpressionInputType
+) {
+	let retval: Expression;
+	f = Expression.create(f);
+	dx = Expression.create(dx);
+	from = Expression.create(from);
+	to = Expression.create(to);
+
+	const inputVars = f.variables();
+	// Get the variable
+	const v = assertPlainVariableAndGetString(dx);
+	// Make sure the integral can be pulled
+	if (inputVars.length === 0) {
+		retval = f;
+	} else if (inputVars.length === 1 && inputVars[0] === v && from.isNUM() && to.isNUM()) {
+		const a = Number(from.getMultiplier().toDecimal());
+		const b = Number(to.getMultiplier().toDecimal());
+		retval = Expression.create(definiteIntegrateNative(f.buildFunction(), a, b));
+		retval.precision = 17; // Mark it as limited precision
+	} else {
+		retval = Expression.toFunction('defint', [f, dx, from, to]);
+	}
+
+	return retval;
+}
+
+/**
+ *
+ * @param x Verifies whether the value exists within a `Vector`, `ValuesSet`, `SolutionSet`, or `Dictionary`;
+ * otherwise, returns a symbolic value. Searches the keys of `Dictionary` type.
+ * @param value An expression
+ * @returns `1` if found else `0`
+ *
+ * @example
+ * ```ts
+ * const d = Parser.parse('{x=>1, y=>a}') as Dictionary;
+ * contains(d, 'x').text(); // 1
+ *
+ * const v = new Vector(['x', 1, 2]);
+ * contains(v, 10).text(); // 0
+ * ```
+ */
+export function contains(
+	x: Expression | Vector | ValuesSet | SolutionSet | Dictionary,
+	value: ExpressionInputType
+) {
+	value = Expression.create(value);
+	let retval: Expression | undefined = undefined;
+	if (Vector.isVector(x)) {
+		retval = Expression.create(Number(x.indexOf(value) !== -1));
+	} else if (ValuesSet.isValuesSet(x) || SolutionSet.isSolutionSet(x)) {
+		retval = Expression.create(Number(x.has(x)));
+	} else if (Dictionary.isDictionary(x)) {
+		retval = Expression.create(Number(x.has(value.text())));
+	}
+
+	return retval ?? Expression.toFunction('contains', [x as Expression, value]);
 }

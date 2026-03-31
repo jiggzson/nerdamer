@@ -17,7 +17,6 @@ describe('solveSystem', () => {
 		expect(result.text()).toEqual(new Vector([new Dictionary()]).text());
 	});
 
-	// ─── Linear systems ─────────────────────────────────────────────
 	it('solves a unique linear system', () => {
 		const result = solveSystem(['x+y-3', '2*x+3*y-8']);
 		expect(result.text()).toEqual(new Vector([Parser.parse('{x => 1, y => 2}')]).text());
@@ -112,7 +111,6 @@ describe('solveSystem', () => {
 		expect(texts).toContain('{x => 1, y => 1}');
 	});
 
-	// ─── Error cases ────────────────────────────────────────────────
 	it('throws for nonlinear systems with infinitely many solutions in v1', () => {
 		expect(() => solveSystem(['x*y'])).toThrow(UnsupportedOperationError);
 		expect(() => solveSystem(['x*y'])).toThrow(message('solveSystemInfiniteSolutions'));
@@ -141,7 +139,6 @@ describe('solveSystem', () => {
 		);
 	});
 
-	// ─── Trivariate systems ─────────────────────────────────────────
 	it('solves a linear trivariate system', () => {
 		const result = solveSystem(['x+y+z-6', 'x-y+z-2', '2*x+y-z-1']);
 		expect(result.count()).toEqual(1);

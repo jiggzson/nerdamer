@@ -1,19 +1,40 @@
-/* eslint-disable prefer-const */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { simplify } from '../../../algebra/simplify/simplify';
-import { findMatches, getCombinations, polynomialStringFromArray } from '../../../math/utils';
-import { isEqualArray } from '../../../utils/array';
-import { inspectPolynomial, inspectTerm, printE } from '../../../utils/debug';
-import { getFactors } from '../../functions/bigint/primeFactor';
-import { MapObjectType, uSubEXP, uSubFN } from '../../functions/subst';
 import { arrayAddUnique } from '../../functions/utils';
 import { zero } from '../expression/shortcuts';
 
 import { Polynomial } from './Polynomial';
-import { Term } from './Term';
 
 import type { Expression } from '../expression/Expression';
 import type { Ordering, PolyType } from './Polynomial';
+
+function normalizePolynomialInputs(
+	inputs: PolyType[],
+	ordering?: Ordering,
+	variables?: string[]
+): { polynomials: Polynomial[]; variables: string[] | undefined } {
+	const provisional = inputs.map(input => Polynomial.toPolynomial(input, ordering, variables));
+
+	if (variables !== undefined) {
+		return {
+			polynomials: provisional,
+			variables,
+		};
+	}
+
+	const resolvedVariables = combinePolynomialVariables(provisional);
+	if (resolvedVariables.length === 0) {
+		return {
+			polynomials: provisional,
+			variables: undefined,
+		};
+	}
+
+	return {
+		polynomials: inputs.map(input =>
+			Polynomial.toPolynomial(input, ordering, resolvedVariables)
+		),
+		variables: resolvedVariables,
+	};
+}
 
 /**
  * Divides a polynomial by given list of divisors
@@ -30,16 +51,14 @@ export function polyDiv(
 	ordering?: Ordering,
 	variables?: string[]
 ): [Expression[], Expression] {
-	// Make a collection of all the variables in this set
-	let vars: string[] = [];
+	const { polynomials } = normalizePolynomialInputs([...Fs, g], ordering, variables);
+	const F = polynomials.slice(0, Fs.length);
+	let p = polynomials[Fs.length].order(ordering);
 	// The collection of q's to be returned
-	const qArray: Expression[] = Fs.map(f => {
+	const qArray: Expression[] = Fs.map(() => {
 		return zero();
 	});
 	let r: Expression = zero();
-	// Convert to Polynomials
-	const F = Fs.map(f => Polynomial.toPolynomial(f, ordering, variables));
-	let p = Polynomial.toPolynomial(g, ordering, variables);
 	let iter = 0;
 	const maxIter = Fs.length * 1000;
 	// Begin
@@ -53,15 +72,13 @@ export function polyDiv(
 		while (i < s && !divisionOccurred) {
 			const fi = F[i];
 			const fiLT = fi.LT();
-			const fp = fi.minus(fiLT);
 			const pLT = p.LT();
 
 			if (fiLT.divides(pLT)) {
 				const q = pLT.div(fiLT);
 				qArray[i] = qArray[i].plus(q.getExpression());
 				// Guarantees a reduction at each step
-				p = p.minus(fi.times(q)).order();
-				// p = p.minus(pLT).minus(fp.times(q)).order();
+				p = p.minus(fi.times(q)).order(ordering);
 				divisionOccurred = true;
 			} else {
 				i++;
@@ -71,7 +88,7 @@ export function polyDiv(
 		const pLT = p.LT();
 		if (!divisionOccurred) {
 			r = r.plus(pLT.getExpression());
-			p = p.minus(pLT);
+			p = p.minus(pLT).order(ordering);
 		}
 	}
 
@@ -87,9 +104,7 @@ export function polyDiv(
  * @returns [The quotient, The remainder]
  */
 export function divide(f: PolyType, g: PolyType, ordering?: Ordering, variables?: string[]) {
-	const p = Polynomial.toPolynomial(f, ordering, variables);
-	const q = Polynomial.toPolynomial(g, ordering, variables);
-	const [quo, rem] = polyDiv([q], p, ordering);
+	const [quo, rem] = polyDiv([g], f, ordering, variables);
 
 	return [quo[0], rem];
 }
@@ -104,8 +119,9 @@ export function divide(f: PolyType, g: PolyType, ordering?: Ordering, variables?
  * @returns
  */
 export function S(f: PolyType, g: PolyType, ordering?: Ordering, variables?: string[]) {
-	const p = Polynomial.toPolynomial(f, ordering, variables);
-	const q = Polynomial.toPolynomial(g, ordering, variables);
+	const {
+		polynomials: [p, q],
+	} = normalizePolynomialInputs([f, g], ordering, variables);
 	const pLT = p.LT();
 	const qLT = q.LT();
 	const xg = pLT.LCM(qLT);
@@ -138,19 +154,10 @@ export function combinePolynomialVariables(F: Polynomial[]) {
  * @returns
  */
 export function polyMod(f: PolyType, g: PolyType, ordering?: Ordering, variables?: string[]) {
-	let r = new Polynomial('0');
-	let p = Polynomial.toPolynomial(f, ordering, variables);
-	const q = Polynomial.toPolynomial(g, ordering, variables);
+	const { variables: resolvedVariables } = normalizePolynomialInputs([f, g], ordering, variables);
+	const [, rem] = divide(f, g, ordering, resolvedVariables);
 
-	while (!p.isZero() && !q.divides(p)) {
-		const LT = p.LT();
-		p = p.minus(LT);
-		r = r.plus(LT);
-	}
-
-	const [quo, rem] = divide(p, q);
-
-	return r.plus(new Polynomial(rem)).order(ordering);
+	return Polynomial.toPolynomial(rem, ordering, resolvedVariables).order(ordering);
 }
 
 export function maxCommonVariableOccurrence(f: PolyType, g: PolyType) {
@@ -158,7 +165,7 @@ export function maxCommonVariableOccurrence(f: PolyType, g: PolyType) {
 	const b = Polynomial.toPolynomial(g).maxVariableFrequency();
 
 	// At this point any variable will do as long as it occurs in both a and b
-	for (let x in a) {
+	for (const x in a) {
 		if (x in b) {
 			return x;
 		}

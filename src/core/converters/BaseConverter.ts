@@ -1,7 +1,10 @@
+import { SolutionSet } from '../../solve/classes/SolutionSet';
+import { Dictionary } from '../classes/dictionary/Dictionary';
 import { Expression } from '../classes/expression/Expression';
 import { Matrix } from '../classes/matrix/Matrix';
 import { dataTypes } from '../classes/parser/constants';
 import { SQRT } from '../classes/parser/constants';
+import { ValuesSet } from '../classes/valuesSet/ValuesSet';
 import { Vector } from '../classes/vector/Vector';
 import { message } from '../errors';
 
@@ -207,15 +210,16 @@ export class BaseConverter {
 		}
 
 		const addMultiplication = this.requiresMultiplicationSymbol(input);
+		const alwaysMul = this.mode === BaseConverter.modes.TeX;
 		const top = BaseConverter.join(
 			mn,
 			vn,
-			!this.isBracketed(vn) || addMultiplication ? mul : ''
+			alwaysMul || !this.isBracketed(vn) || addMultiplication ? mul : ''
 		);
 		let bottom = BaseConverter.join(
 			md,
 			vd,
-			!this.isBracketed(vd) || addMultiplication ? mul : ''
+			alwaysMul || !this.isBracketed(vd) || addMultiplication ? mul : ''
 		);
 
 		if (md && vd && this.mode === BaseConverter.modes.TEXT) {
@@ -249,9 +253,22 @@ export class BaseConverter {
 
 	protected toFraction(n: string, d: string): string {
 		if (this.mode === 'TeX') {
-			return '\\frac' + this.inBraces(n) + this.inBraces(d);
+			return (
+				'\\frac' +
+				this.inBraces(this.stripOuterBrackets(n)) +
+				this.inBraces(this.stripOuterBrackets(d))
+			);
 		}
 		return `${n}/${d}`;
+	}
+
+	/**
+	 * Removes a single outer \left(...\right) wrapper when the contents
+	 * will already be visually grouped (e.g. inside \frac{}{}).
+	 */
+	private stripOuterBrackets(s: string): string {
+		const m = s.match(/^\\left\((.+)\\right\)$/);
+		return m ? m[1] : s;
 	}
 
 	protected value(
@@ -261,6 +278,23 @@ export class BaseConverter {
 		_options?: OptionsObject
 	): FracArray {
 		return ['', ''];
+	}
+
+	private convertDictionary(input: Dictionary, options: OptionsObject): string {
+		const pairs = input.entries().map(([key, value]) => {
+			const convertedValue = this.convert(value, options);
+			if (this.mode === BaseConverter.modes.TeX) {
+				return `${key} \\mapsto ${convertedValue}`;
+			}
+			return `${key} => ${convertedValue}`;
+		});
+
+		const inner = pairs.join(this.mode === BaseConverter.modes.TeX ? ', \\, ' : ', ');
+
+		if (this.mode === BaseConverter.modes.TeX) {
+			return `\\left\\{${inner}\\right\\}`;
+		}
+		return `{${inner}}`;
 	}
 
 	private convertExpression(input: Expression, options: OptionsObject): string {
@@ -296,23 +330,57 @@ export class BaseConverter {
 
 	private convertMatrix(input: Matrix, options: OptionsObject): string {
 		const style = options.matrixStyle || '';
-		const rows = input.elements.map(row => row.map(e => this.convert(e, options)).join(' & '));
+		const matrixOptions = { ...options, insideMatrix: true };
+		const rows = input.elements.map(row =>
+			row.map(e => this.convert(e, matrixOptions)).join(' & ')
+		);
 		return `\\begin{${style}matrix} ${rows.join(' \\\\ ')} \\end{${style}matrix}`;
 	}
 
-	convert(input: ParserInputType | string, options?: OptionsObject): string {
+	private convertValuesSet(input: ValuesSet, options: OptionsObject): string {
+		const elements = input.elements.map(e => this.convert(e, options));
+		const inner = elements.join(this.mode === BaseConverter.modes.TeX ? ', \\, ' : ', ');
+
+		if (this.mode === BaseConverter.modes.TeX) {
+			return `\\left\\{${inner}\\right\\}`;
+		}
+		return `{${inner}}`;
+	}
+
+	convert(input: ParserInputType | string | number, options?: OptionsObject): string {
 		options = { convertRoots: true, ...options };
+
+		if (typeof input === 'number') {
+			return String(input);
+		}
 
 		if (typeof input === 'string' || Expression.isExpression(input)) {
 			return this.convertExpression(Expression.create(input), options);
 		}
 
 		if (Vector.isVector(input)) {
-			return input.arrayMap(e => this.convert(e as Vector, options)).join(' & ');
+			const separator = options.insideMatrix
+				? ' & '
+				: this.mode === BaseConverter.modes.TeX
+					? ', \\, '
+					: ', ';
+			return input.arrayMap(e => this.convert(e as Vector, options)).join(separator);
 		}
 
 		if (Matrix.isMatrix(input)) {
 			return this.convertMatrix(input, options);
+		}
+
+		if (SolutionSet.isSolutionSet(input)) {
+			return this.convertValuesSet(input, options);
+		}
+
+		if (ValuesSet.isValuesSet(input)) {
+			return this.convertValuesSet(input, options);
+		}
+
+		if (Dictionary.isDictionary(input)) {
+			return this.convertDictionary(input, options);
 		}
 
 		throw new Error(

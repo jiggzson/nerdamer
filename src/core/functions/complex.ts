@@ -2,6 +2,7 @@ import { hypot } from '../../math/geometry';
 import { ATAN, atan2, ATANH, cos, sin } from '../../math/trig';
 import { Expression } from '../classes/expression/Expression';
 import { minusOne, one, two, zero } from '../classes/expression/shortcuts';
+import { CSGN } from '../classes/parser/constants';
 import { add } from '../classes/parser/operations/add';
 import { divide } from '../classes/parser/operations/divide';
 import { multiply } from '../classes/parser/operations/multiply';
@@ -290,4 +291,87 @@ export function arg(x: ExpressionInputType) {
 	x = Expression.create(x);
 	const [, theta] = toPolarFormArray(x);
 	return theta;
+}
+
+/**
+ * Returns the complex conjugate of an expression.
+ * For a complex number z = a + bi, the conjugate is a - bi.
+ * Distributes over sums and products, and for expressions with
+ * non-integer powers, conjugates both the base and the power
+ * (handling complex exponents via conj(z^p) = conj(z)^conj(p)).
+ *
+ * @param expr - The expression to conjugate
+ * @returns The complex conjugate of the expression
+ *
+ * @example
+ * conjugate('3+2*i')    // 3-2*i
+ * conjugate('i')        // -i
+ * conjugate('a+b*i')    // a-b*i
+ * conjugate('(1+i)^i')  // (1-i)^(-i)
+ */
+export function conjugate(x: ExpressionInputType): Expression {
+	x = Expression.create(x);
+	const expr = expand(x);
+	let retval: Expression | undefined = undefined;
+
+	if (expr.isVAR() && expr.isI()) {
+		retval = expr.neg();
+	} else if (expr.isSum()) {
+		retval = zero();
+		for (const e of expr.elementsArray()) {
+			retval = retval.plus(conjugate(e));
+		}
+	} else if (expr.isProduct()) {
+		retval = Expression.fromRational(expr.getMultiplier());
+		for (const e of expr.elementsArray()) {
+			retval = retval.times(conjugate(e));
+		}
+	} else if (expr.isEXP()) {
+		const base = Expression.fromRational(expr.getMultiplier()).times(expr.getBase());
+		const p = expr.getPower();
+		const conjBase = conjugate(base);
+		const conjPow = p.isComplex() ? conjugate(p) : p;
+		retval = conjBase.pow(conjPow);
+	}
+
+	return retval ?? x;
+}
+
+/**
+ * Returns the complex signum (csgn) of an expression, following the
+ * Maple/SymPy convention. Returns 1 if Re(z) > 0, -1 if Re(z) < 0,
+ * and sgn(Im(z)) if Re(z) = 0. Returns 0 for z = 0.
+ *
+ * For expressions containing free variables where the sign cannot be
+ * determined, returns an unevaluated symbolic csgn(z).
+ *
+ * Useful for branch cut decisions in sqrt, log, and power simplification.
+ *
+ * @param expr - The expression to evaluate the complex sign of
+ * @returns 1, -1, 0, or an unevaluated csgn expression
+ *
+ * @example
+ * csgn('3+2*i')   // 1
+ * csgn('-1+3*i')  // -1
+ * csgn('2*i')     // 1
+ * csgn('-5*i')    // -1
+ * csgn('0')       // 0
+ * csgn('x+2*i')   // csgn(x+2*i)
+ */
+export function csgn(x: ExpressionInputType): Expression {
+	x = Expression.create(x);
+	const expr = expand(x);
+	const re = realPart(expr);
+	const im = imagPart(expr);
+	let retval: Expression | undefined = undefined;
+
+	if (re.isZero() && im.isZero()) {
+		retval = zero();
+	} else if (!re.isZero() && re.isConstant()) {
+		retval = re.sign() > 0 ? one() : minusOne();
+	} else if (re.isZero() && im.isConstant()) {
+		retval = im.sign() > 0 ? one() : minusOne();
+	}
+
+	return retval ?? Expression.toFunction(CSGN, [expr]);
 }

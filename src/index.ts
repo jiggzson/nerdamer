@@ -9,15 +9,20 @@ import { ilaplace } from './calculus/laplace/ilaplace';
 import { laplace } from './calculus/laplace/laplace';
 import { limit } from './calculus/limit/limit';
 import { assume } from './core/classes/assumption/assume';
+import { Assumption } from './core/classes/assumption/Assumption';
 import { Collection } from './core/classes/collection/Collection';
 import { Dictionary } from './core/classes/dictionary/Dictionary';
 import { Expression } from './core/classes/expression/Expression';
+import { symbols } from './core/classes/expression/shortcuts';
+import { determinant } from './core/classes/matrix/functions';
 import { Matrix } from './core/classes/matrix/Matrix';
 import { imatrix } from './core/classes/matrix/utils';
 import { Parser } from './core/classes/parser/Parser';
+import { content, deg } from './core/classes/polynomial/functions';
 import { Polynomial } from './core/classes/polynomial/Polynomial';
 import { Rational } from './core/classes/rational/Rational';
 import { ValuesSet } from './core/classes/valuesSet/ValuesSet';
+import { cross, dot } from './core/classes/vector/functions';
 import { Vector } from './core/classes/vector/Vector';
 import { Converter } from './core/converters/Converter';
 import { mathFunctions } from './core/dispatch';
@@ -31,6 +36,8 @@ import {
 	ceiling,
 	Chi,
 	Ci,
+	contains,
+	defint,
 	dirac,
 	doubleFactorial,
 	Ei,
@@ -88,6 +95,7 @@ import type {
 	OptionsObject,
 	ExpressionInputType,
 	ParserValuesObject,
+	ParserInputType,
 } from './core/classes/parser/types';
 
 // Add additional methods to Expression. Do not link modules internally
@@ -95,6 +103,8 @@ declare module './core/classes/expression/Expression' {
 	interface Expression {
 		simplify(): Expression;
 		factor(): Expression;
+		toTeX(): string;
+		toText(): string;
 	}
 }
 
@@ -167,7 +177,7 @@ export function nerdamer(e: ExpressionInputType, values?: ParserValuesObject) {
  * nerdamer.pretty('a*x+b*x^2+cos(x)', 'text'); // 'cos(x)+a*x+b*x^2'
  * ```
  */
-nerdamer.pretty = function (e: Expression | string, type: 'TeX' | 'text') {
+nerdamer.pretty = function (e: ParserInputType | string, type: 'TeX' | 'text') {
 	const converter = type === 'TeX' ? latexConverter : textConverter;
 	return converter.convert(e);
 };
@@ -185,6 +195,8 @@ nerdamer.pretty = function (e: Expression | string, type: 'TeX' | 'text') {
 nerdamer.convertFromLaTeX = function (TeX: string) {
 	return latexConverter.fromTeX(TeX);
 };
+
+nerdamer.symbols = symbols;
 
 /**
  * Returns the current version being used.
@@ -253,7 +265,8 @@ nerdamer.classes = {
 	Dictionary,
 	ValuesSet,
 	SolutionSet,
-	static: {
+	Assumption,
+	instance: {
 		Parser: Parser,
 	},
 };
@@ -315,6 +328,7 @@ nerdamer.floor = floor;
 nerdamer.ceil = ceiling;
 nerdamer.mod = mod;
 nerdamer.modInv = modInv;
+nerdamer.contains = contains;
 
 // Special
 nerdamer.Ci = Ci;
@@ -333,7 +347,7 @@ nerdamer.groebner = groebner;
 
 // Solve
 nerdamer.solve = solve;
-nerdamer.solveSystem = solveSystem;
+nerdamer.solveeqs = solveSystem;
 
 // Calculus
 nerdamer.diff = diff;
@@ -343,8 +357,22 @@ nerdamer.ilaplace = ilaplace;
 nerdamer.sum = sum;
 nerdamer.product = product;
 nerdamer.limit = limit;
+nerdamer.defint = defint;
+
+// Matrix
+nerdamer.matrix = matrix;
+nerdamer.imatrix = imatrix;
+nerdamer.determinant = determinant;
+
+// Vector
+nerdamer.dot = dot;
+nerdamer.cross = cross;
+
+// Polynomial
+nerdamer.deg = deg;
+nerdamer.content = content;
 
 // Assumptions
 nerdamer.assume = assume;
 
-module.exports = nerdamer;
+export default nerdamer;

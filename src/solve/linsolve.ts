@@ -71,7 +71,7 @@ export function solveLinearSystem(
 		return { type: 'unique', solutions: {} };
 	}
 
-	// ── Extract coefficients and build augmented matrix ───────────────────
+	//  Extract coefficients and build augmented matrix
 	const { coeffMatrix, constants } = extractCoefficients(exprs, vars);
 
 	// Build augmented matrix [A | -b] where each equation is a_1*x_1 + ... + a_n*x_n + c = 0

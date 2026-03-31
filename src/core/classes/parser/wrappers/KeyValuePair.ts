@@ -6,7 +6,7 @@ import type { ParserInputType } from '../types';
  */
 export class KeyValuePair {
 	dataType = 'KEY_VALUE_PAIR';
-	isCollectionOfValues = false;
+	isEnumerable = false;
 
 	constructor(
 		public key: string,

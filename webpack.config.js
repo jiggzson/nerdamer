@@ -12,6 +12,7 @@ const config = {
 		library: {
 			name: 'nerdamer',
 			type: 'umd',
+			export: 'default',
 		},
 	},
 	module: {
