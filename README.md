@@ -1,459 +1,394 @@
-[![Build Status](https://travis-ci.org/jiggzson/nerdamer.svg?branch=master)](https://travis-ci.org/jiggzson/nerdamer)
-
 # Nerdamer
 
-As of version 0.5.0, the library is split into the core and optional add-ons which can be loaded after the core has been loaded.
+Nerdamer is a symbolic math library for JavaScript and TypeScript. It can parse and manipulate algebraic expressions, solve equations, work with matrices and vectors, perform calculus, and evaluate expressions numerically.
 
-## UPDATE
+Nerdamer 2.0 is a TypeScript rewrite of the library. Everyday usage remains familiar, while the parser, solvers, numeric handling, public types, and internal architecture have been substantially reworked.
 
-April, 2025
-Nerdamer is currently being ported to TypeScript. This will have substantial breaking changes. A full list of changes will be published with the official release. You can track the TypeScript port [here](https://github.com/jiggzson/nerdamer/tree/2.0)
+## Getting started with Nerdamer
 
-March, 2026
-The TS port is mostly complete. The work is ongoing depending on available time.
+Install Nerdamer from npm:
 
----
+```bash
+npm install nerdamer
+```
 
-Note: The Together-science project decided to pick up the banner where Nerdamer left off. See [Nerdamer-Prime](https://github.com/together-science/nerdamer-prime).
+In Node.js, require the package and start working with expressions:
 
-Getting started with Nerdamer
+```javascript
+const nerdamer = require('nerdamer');
 
-Load the library in your html page
+const e = nerdamer('x^2+2*(cos(x)+x*x)');
+console.log(e.text());
+// 2*cos(x)+3*x^2
+```
+
+TypeScript and ESM users can use the default import:
+
+```typescript
+import nerdamer from 'nerdamer';
+
+console.log(nerdamer('expand((x+1)^3)').text());
+```
+
+TypeScript projects that compile to CommonJS should enable `esModuleInterop`.
+
+### Browser use
+
+The complete browser bundle is included in the package at `dist/bundle.js`. A standalone parser bundle is also available at `dist/parser.js`.
 
 ```html
-<!-- assuming you've saved the file in the root of course -->
-<!-- This the core and the only file needed if all you'll be doing is evaluating expresssions -->
-<script src="nerdamer.core.js"></script>
-<!-- LOAD ADD-ONS. These files contain extended functions. See documentation -->
-<!-- again assuming you've saved the files in root -->
-<script src="Algebra.js"></script>
-<script src="Calculus.js"></script>
-<script src="Solve.js"></script>
-<script src="Extra.js"></script>
+<script src="./node_modules/nerdamer/dist/bundle.js"></script>
+<script>
+    const e = nerdamer('x^2+2*x+1');
+    console.log(e.text());
+</script>
 ```
 
-Or import everything
+## Everything is included
 
-```html
-<script src="all.min.js"></script>
-<!-- assuming you've saved the file in the root -->
-```
-
-If you're using node.js install it using `npm i nerdamer` and then
+Nerdamer 1.x was split into the core plus add-ons such as `Algebra.js`, `Calculus.js`, `Solve.js`, and `Extra.js`. Nerdamer 2.0 includes the commonly used algebra, calculus, solving, matrix, vector, and special-function features in the main package. Additional add-on imports are no longer required.
 
 ```javascript
-// const cannot be used since nerdamer gets modified when other modules are loaded
-var nerdamer = require('nerdamer');
-// Load additional modules. These are not required.
-require('nerdamer/Algebra');
-require('nerdamer/Calculus');
-require('nerdamer/Solve');
-require('nerdamer/Extra');
+const nerdamer = require('nerdamer');
+
+console.log(nerdamer.factor('x^2-1').text());
+console.log(nerdamer.diff('x^3', 'x').text());
+console.log(nerdamer.solve('x^2-4', 'x').text());
 ```
 
-Or do a single import to import everything
+## Expressions and substitutions
+
+As in earlier versions, calling `nerdamer(...)` parses an expression and returns a Nerdamer value.
 
 ```javascript
-const nerdamer = require('nerdamer/all.min');
-```
-
-Some functions have dependencies from other add-ons.
-
-You can see nerdamer in action at http://nerdamer.com/demo
-
-For full documentation go to http://nerdamer.com/documentation
-
-All operations are done using the 'nerdamer' object.
-
-To add an expression just add it to the nerdamer object which will return a `Expression` object.
-
-```javascript
-var e = nerdamer('x^2+2*(cos(x)+x*x)');
+const e = nerdamer('x^2+2*(cos(x)+x*x)', { x: 6 });
 console.log(e.text());
-
-//result:
-//2*cos(x)+3*x^2
 ```
 
-It is also possible to use `nerdamer` functions directly within the need for string manipulation of the input. The input will be parsed and the output will of type `Expression`. For example:
+Only substitution is performed by the values object. To numerically evaluate the result, call `evaluate()`:
 
 ```javascript
-var ans = nerdamer.expand('(x-1)^5');
-console.log(ans.text());
-// -1-10*x^2-5*x^4+10*x^3+5*x+x^5
-
-var sol = nerdamer.solve('x^2-4', 'x');
-console.log(sol.text());
-// [2,-2]
-```
-
-You can also pass in an object with known values as the second parameter.
-
-```javascript
-var e = nerdamer('x^2+2*(cos(x)+x*x)', { x: 6 });
+const e = nerdamer('x^2+2*(cos(x)+x*x)', { x: 6 }).evaluate();
 console.log(e.text());
-
-//result:
-//108+2*cos(6)
 ```
 
-As you can see only the substitution is performed. To evaluate the result just call evaluate.
-Note that evaluate returns a text string or a number not an object.
+Values can themselves be expressions:
 
 ```javascript
-var e = nerdamer('x^2+2*(cos(x)+x*x)', { x: 6 }).evaluate();
+const e = nerdamer('x^2+2*(cos(x)+x*x)', { x: 'x^2+1' });
 console.log(e.text());
-
-//result:
-//109.9203405733006
 ```
 
-To get back the text as a fraction, call the text method and pass in the string 'fractions'.
+Parser results are always represented by Nerdamer-native values. A scalar expression returns an `Expression`; equations, vectors, matrices, sets, collections, dictionaries, and other supported structured inputs return the corresponding Nerdamer type rather than a JavaScript-native result shape.
+
+## Text output and term ordering
+
+`text()` returns Nerdamer's normal symbolic representation. For example, a polynomial
+may place the constant term first:
 
 ```javascript
-var e = nerdamer('x^2+2*(cos(x)+x*x)', { x: 6 }).evaluate();
-console.log(e.text('fractions'));
+const e = nerdamer('x^2+2*x+1');
 
-//result:
-//429607273/3908351
+e.text();
+// 1+2*x+x^2
 ```
 
-You can get your expression back as LaTeX by calling the toTeX method
+Use the per-call `sort` option when conventional display order is preferred:
 
 ```javascript
-var LaTeX = nerdamer('x^2+2*(cos(x)+x*x)', { x: 0.25 }).toTeX();
-console.log(LaTeX);
+e.text({ sort: true });
+// x^2+2*x+1
 
-//result:
-//2 \cdot \mathrm{cos}\left(\frac{1}{4}\right)+\frac{3}{16}
+nerdamer('(x+1)^2').expand().text({ sort: true });
+// x^2+2*x+1
 ```
 
-To have numbers returned as decimals pass in the string 'decimals' to the toTeX method
+Sorting affects only the returned string. It does not modify the expression or change the
+process-wide `SORT_TERMS` setting. TypeScript users can import `TextOptions` from
+`nerdamer` or `nerdamer/core`.
+
+The full package also provides the chainable converter-based form:
 
 ```javascript
-var LaTeX = nerdamer('x^2+2*(cos(x)+x*x)', { x: 0.25 }).toTeX('decimal');
-console.log(LaTeX);
-
-//result:
-//2 \cdot \mathrm{cos}\left(0.25\right)+0.1875
+e.toText();
+// x^2+2*x+1
 ```
 
-Alternatively you can pass an object containing known values into evaluate method instead. The values passed in don't have to be number they can be another expression if needed.
+Use `text({ sort: true })` when you want Nerdamer text syntax with explicit per-call
+ordering control. Use `toText()` when you simply want the conventional formatted-text
+representation.
+
+## Algebra
+
+Nerdamer can expand, factor, simplify, compute polynomial GCDs, and perform related symbolic algebra operations.
 
 ```javascript
-var e = nerdamer('x^2+2*(cos(x)+x*x)', { x: 'x^2+1' });
-console.log(e.text());
+nerdamer('expand((x+1)^4)').text();
+nerdamer.factor('x^4-1').text();
+nerdamer.simplify('sin(x)^2+cos(x)^2').text();
+nerdamer.gcd('x^2-1', 'x^2-2*x+1').text();
 
-//result:
-//2*cos(1+x^2)+3*(1+x^2)^2
+const completed = nerdamer.completeSquare('x^2+6*x+1');
+completed.expression.text({ sort: true });
+
+const [substituted, substitutions] = nerdamer.uSub(
+    'cos(x)^2+cos(x)+1',
+    'cos(x)'
+);
+nerdamer.uUnSub(substituted, substitutions);
 ```
 
-Every time you parse an expression it's stored in nerdamer. To get a list of all the expressions you just call
-nerdamer.expressions().
+## Solving equations
+
+Use `solve` for a single equation:
 
 ```javascript
-var knownValues = { x: 'x^2+1' };
-nerdamer('x^2+2*(cos(x)+x*x)').evaluate(knownValues);
-nerdamer('sin(x)^2+cos(x)^2').evaluate(knownValues);
+const roots = nerdamer.solve('x^2-1', 'x');
+console.log(roots.text());
 
-console.log(nerdamer.expressions());
-
-//result:
-//[ 46.692712758272776, 1 ]
+roots.each(root => {
+    console.log(root.text());
+});
 ```
 
-You can request it as an object as well by passing in true. This can be convenient in some
-situations as the numbering starts at 1;
+Single-variable solving returns a `SolutionSet`. System solving returns Nerdamer structures rather than the compatibility-only arrays used by older releases.
 
 ```javascript
-var knownValues = { x: 'x^2+1' };
-nerdamer('x^2+2*(cos(x)+x*x)', knownValues);
-nerdamer('sin(x)^2+cos(x)^2', knownValues);
+const solutions = nerdamer.solveSystem(
+    ['x+y=3', 'x-y=1'],
+    ['x', 'y']
+);
 
-console.log(nerdamer.expressions(true));
-
-//{ '1': '2*cos(1+x^(2))+3*(1+x^(2))^(2)',
-//'2': 'cos(1+x^(2))^(2)+sin(1+x^(2))^(2)' }
+console.log(solutions.text());
 ```
 
-Functions aren't always immediately parsed to numbers. For example
+## Calculus
+
+Differentiation, integration, limits, sums, products, and transforms are available without loading a separate add-on.
 
 ```javascript
-var result = nerdamer('cos(x)', { x: 6 });
-console.log(result.text());
-//cos(6)
+nerdamer.diff('x^3+sin(x)', 'x').text();
+nerdamer.integrate('x^2', 'x').text();
+nerdamer.limit('sin(x)/x', 'x', '0').text();
 ```
 
-will only subsitute out the variable name. To change this behaviour numer should be passed in as the 3rd argument.
+You can also use calculus functions inside expression strings:
 
 ```javascript
-var result = nerdamer('cos(x)', { x: 6 }, 'numer');
-console.log(result.text());
-//0.960170286650366
+nerdamer('diff(x^2+2*(cos(x)+x*x),x)').text();
 ```
 
-or alternatively
+## Matrices and vectors
+
+Matrices and vectors are supported directly by the parser and are also available as public TypeScript classes.
 
 ```javascript
-var result = nerdamer('cos(x)').evaluate({ x: 6 });
-console.log(result.text());
-//0.960170286650366
+const m = nerdamer('matrix([1,2],[3,4])');
+console.log(m.text());
+
+const v = nerdamer('vector(1,2,3)');
+console.log(v.text());
+
+const basis = nerdamer.nullspace(nerdamer('matrix([1,2,3],[2,4,6])'));
+console.log(basis.text());
 ```
 
-The difference however is that the first option directly substitutes the variables while the second first evaluates
-the expression and then makes the substitutions. This library utilizes native javascript functions as much as possible. As a result it inherits whatever rounding errors they possess. One major change with version 0.6.0 however, is dealing with floating point issues.
+## Runtime functions and constants
+
+Custom symbolic functions can be defined with Nerdamer syntax:
 
 ```javascript
-var result = nerdamer('sqrt(x)*sqrt(x)-2', { x: 2 });
-console.log(result.text());
-//0
+nerdamer('hyp(a,b):=sqrt(a^2+b^2)');
+console.log(nerdamer('hyp(3,4)').evaluate().text());
 ```
 
-The above expample now returns zero whereas in previous version the result would be 4.440892098500626e-16. Same goes for 0.1+0.2.
-
-An expression can be replaced directly by passing in the index of which expression to override. For example
+Or use the public function API:
 
 ```javascript
-nerdamer('cos(x)', { x: 6 }, 'numer');
-nerdamer('sin(x)+y', { x: 6 }, null, 1);
-console.log(nerdamer.expressions());
-//[ 'sin(6)+y' ]
+nerdamer.setFunction('line', ['x', 'm', 'b'], 'm*x+b');
+console.log(nerdamer('line(2,3,4)').text());
 ```
 
-If multiple modifier options need to be passed into nerdamer you can do so using an array. For example ...
-
-```javascript
-var e = nerdamer('cos(x)+(y-x)^2', { x: 7 }, ['expand', 'numer']);
-console.log(e.text());
-//-14*y+y^2+49.7539022543433
-```
-
-If you need the code as LaTeX you can pass in true as the second parameter when requesting the expressions.
-
-```javascript
-nerdamer('x^2+2*(cos(x)+x*x)');
-nerdamer('sin(x)^0.25+cos(x)^0.5');
-var asObject = true;
-var asLaTeX = true;
-console.log(nerdamer.expressions(asObject, asLaTeX));
-
-/*{ '1': '2 \\cdot \\mathrm{cos}\\left(x\\right)+3 \\cdot x^{2}',
-  '2': '\\sqrt{\\mathrm{cos}\\left(x\\right)}+\\mathrm{sin}\\left(x\\right)^{\\frac{1}{4}}' }*/
-```
-
-You can specify a particular location when adding an expression, which is specified with the third parameter.
-
-```javascript
-nerdamer('x^2+2*(cos(x)+x*x)');
-nerdamer('sin(x)^0.25+cos(x)^0.5');
-nerdamer('expr-override', undefined, 2);
-var asObject = false;
-var asLaTeX = true;
-console.log(nerdamer.expressions(asObject, asLaTeX));
-
-/* [ '2 \\cdot \\mathrm{cos}\\left(x\\right)+3 \\cdot x^{2}',
-  '\\sqrt{\\mathrm{cos}\\left(x\\right)}+\\mathrm{sin}\\left(x\\right)^{\\frac{1}{4}}',
-  'expr-override' ]
- */
-```
-
-Here's an example of reserved variable and function names.
-
-```javascript
-var reserved = nerdamer.reserved();
-console.log(reserved);
-//result:
-/* csc, sec, cot, erf, fact, mod, GCD, QGCD, LCM, pow, PI, E, cos, sin, tan, acos, asin, atan, sinh, cosh, tanh, asinh, acosh, atanh, exp, min, max, floor, ceil, round, vector, matrix, parens, sqrt, log, expand, abs, invert, transpose, dot */
-
-//or as an array
-
-var reserved = nerdamer.reserved(true);
-console.log(reserved);
-//result:
-/* [ 'csc', 'sec', 'cot', 'erf', 'fact', 'mod', 'GCD', 'QGCD', 'LCM', 'pow', 'PI', 'E', 'cos', 'sin', 'tan', 'acos', 'asin', 'atan', 'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh', 'exp', 'min', 'max', 'floor', 'ceil', 'round', 'vector', 'matrix',
-  'parens', 'sqrt', 'log', 'expand', 'abs', 'invert', 'transpose', 'dot' ]  */
-```
-
-Most math functions are passed in as part of the expression. If you want to differentiate for instance you just use the function diff which is located in the Calculus add-on as of version 0.5.0
-
-```javascript
-var e = nerdamer('diff(x^2+2*(cos(x)+x*x),x)');
-
-console.log(e.text());
-
-//result:
-//-2*sin(x)+6*x
-```
-
-Nerdamer can also handle runtime functions. To do this use the method setFunction.
-The runtime functions do have symbolic capabilities and support for imaginary numbers.
-The setfunction method is used as follows:
-
-nerdamer.setFunction( function_name, parameter_array, function_body )
-
-For Example:
-
-```javascript
-//generate some points
-var f = function (x) {
-    return 5 * x - 1;
-};
-console.log(f(1)); //4
-console.log(f(2)); //9 - value to be found
-console.log(f(7)); //34
-
-nerdamer.setFunction('interpolate', ['y0', 'x0', 'y1', 'x1', 'x'], 'y0+(y1-y0)*((x-x0)/(x1-x0))');
-var answer = nerdamer('interpolate(4,1,34,7,2)').evaluate();
-
-console.log(answer);
-
-//result: 9
-```
-
-Custom functions alternatively be set in following manner.
-
-```javascript
-nerdamer('hyp(a, b) := sqrt(a^2 + b^2) ');
-var result = nerdamer('hyp(3, 4)').evaluate().text();
-console.log(result);
-//result: 5
-```
-
-If you need to add a constant use the setConstant method
+Constants can be registered as well:
 
 ```javascript
 nerdamer.setConstant('g', 9.81);
-var weight = nerdamer('100*g').text();
-console.log(weight);
-//result:
-//981
+console.log(nerdamer('100*g').text());
 ```
 
-To delete just set it to delete
+## Nerdamer scripting
+
+Nerdamer includes a small symbolic scripting language in addition to ordinary expression notation. It supports user-defined functions, assignments, local bindings, conditionals, loops, blocks, logical operations, `return`, `break`, `continue`, and error-handling helpers.
 
 ```javascript
-nerdamer.setConstant('g', 9.81);
-var weight = nerdamer('100*g').text();
-console.log(weight);
-//981
-nerdamer.setConstant('g', 'delete');
-var weight = nerdamer('100*g').text();
-console.log(weight);
-//100*g
+const result = nerdamer('let(x,4,if(x>3,x^2,0))');
+console.log(result.text());
 ```
 
-You also have the option of exporting your function to a javascript function which can be useful if you need some
-filtering from user input. Do keep in mind that the parameters are sorted alphabetically for more than one
-parameter. To use it add the expression to nerdamer and use the buildFunction method.
+Multiple statements use semicolons as statement separators:
 
 ```javascript
-var f = nerdamer('x^2+5').buildFunction();
+const result = nerdamer(`
+    f(x):=x^2+1;
+    f(12)
+`);
+
+console.log(result.text());
+```
+
+## Build a JavaScript function
+
+An expression can be compiled to a JavaScript function:
+
+```javascript
+const f = nerdamer('x^2+5').buildFunction();
 console.log(f(9));
-
-//result:
-//86
+// 86
 ```
 
-If you have a particular order in which you need the parameters to be set, then you pass in an array with the variables in the order in which you want them for instance:
+You can specify the parameter order explicitly:
 
 ```javascript
-var f = nerdamer('z+x^2+y').buildFunction(['y', 'x', 'z']);
+const f = nerdamer('z+x^2+y').buildFunction(['y', 'x', 'z']);
 console.log(f(9, 2, 1));
-//result
-//14
+// 14
 ```
 
-Every time you add an expression to nerdamer it's stored. To list the expressions currently in nerdamer call
-the 'expressions' method. To delete an expression use the 'clear' method and pass in the expression you want to delete.
-To clear everything pass in the string 'all'.
+The chained `buildFunction()` method is available on values returned by `nerdamer(...)` so this form remains convenient in TypeScript. Only scalar `Expression` results can be compiled. If the input parses to an `Equation`, `Vector`, `Matrix`, set, or another structured result, calling `buildFunction()` throws `UnexpectedDataType` rather than compiling the contained values independently.
+
+`buildFunction()` uses dynamic JavaScript function construction. Applications with a Content Security Policy that forbids dynamic code generation should use Nerdamer's ordinary symbolic and numeric evaluation APIs instead.
+
+## TeX
+
+Convert Nerdamer expressions to TeX math markup with `toTeX()` or `convertToTeX()`:
 
 ```javascript
-nerdamer('n*R*T/v');
-nerdamer('mc^2');
-nerdamer('G*m1*m2/d^2');
+const e = nerdamer('x^2+2*x+1');
+console.log(e.toTeX());
 
-nerdamer.clear(2);
-
-console.log(nerdamer.expressions(true));
-
-//result:
-//{ '1': 'R*T*n*v^(-1)', '2': 'G*d^(-2)*m1*m2' }
-
-nerdamer.clear('all');
-console.log(nerdamer.expressions(true));
-//result:
-//{}
+console.log(nerdamer.convertToTeX('sqrt(x^2+1)'));
 ```
 
-If you need go get the variables of an expression use the variables method. This method can be called after
-nerdamer was provided an expression. For example
+The legacy `convertToLaTeX()` name remains available as a deprecated compatibility alias.
+
+Nerdamer can also parse supported LaTeX expressions:
 
 ```javascript
-var variables = nerdamer('csc(x*cos(y))-no_boring_x').variables();
-console.log(variables);
-//result:
-//[ 'no_boring_x', 'x', 'y' ]
+const e = nerdamer.convertFromLaTeX('\\frac{x^2+1}{2}');
+console.log(e.text());
 ```
 
-The order in which the variables appear require a little bit of knowledge of how nerdamer organizes symbols. For the
-sake of simplicity we'll just assume that there is no particular order
+## Direct TypeScript imports
 
----
+The callable `nerdamer` API remains available, but Nerdamer 2.0 also exposes public classes and functions through package subpaths:
 
-# Using the solver
+```typescript
+import { Expression, Rational, type TextOptions } from 'nerdamer/core';
+import {
+    Polynomial,
+    completeSquare,
+    gcd,
+    isPrime,
+    lcm,
+    polyFactors,
+    uSub,
+    uUnSub,
+} from 'nerdamer/algebra';
+import { diff, integrate, limit } from 'nerdamer/calculus';
+import { solve, PolynomialSolver } from 'nerdamer/solve';
+import { Matrix, Vector, ValuesSet, nullspace } from 'nerdamer/structures';
+```
 
-To solve equations first load Solve.js. Just remember that Solve also required Algebra.js and Calculus.js to be loaded. You can then solve equations using nerdamer. Important: State the variable for which you are trying to solve.
+Additional entry points are available for assumptions, selected parser APIs, advanced algorithms, and debugging tools.
+
+## Assumptions
+
+Nerdamer can register numeric interval assumptions for symbols. Assumptions are process-wide and are used by symbolic comparisons and simplifications that depend on sign or range information.
+
+```typescript
+import nerdamer from 'nerdamer';
+import { assume, clearAssumptions } from 'nerdamer/assumptions';
+
+assume('x > 0');
+
+console.log(nerdamer('sqrt(x^2)').text());
+// x
+
+clearAssumptions();
+```
+
+Repeated assumptions for the same symbol are intersected. Contradictory assumptions are rejected instead of silently replacing the existing range.
+
+## Localized error messages
+
+Nerdamer includes localized built-in error messages for English, Spanish, French, German, Portuguese, Italian, and Dutch. Select the language through the shared parser settings:
 
 ```javascript
-var sol = nerdamer.solveEquations('x^3+8=x^2+6', 'x');
-console.log(sol.toString());
-//1+i,-i+1,-1
+nerdamer.set('LANGUAGE', 'spa');
+
+// Restore English when needed.
+nerdamer.set('LANGUAGE', 'eng');
 ```
 
-Notice that we use toString rather than text as this returns a javascript array.
+The language codes are `eng`, `spa`, `fra`, `deu`, `por`, `ita`, and `nld`.
 
-You can also solve an expression
+## Numeric precision
+
+Nerdamer keeps exact rational and integer arithmetic where possible. Decimal arithmetic uses Decimal.js and large integers use native `BigInt`.
 
 ```javascript
-var e = nerdamer.solveEquations('x^2+4-y', 'y');
-console.log(e[0].text());
-//4+x^2
+nerdamer('0.1+0.2').text();
+nerdamer('sqrt(2)').evaluate().text();
 ```
 
-You can also solve multivariate equations
+## What changed in 2.0
 
-```javascript
-var sol = nerdamer.solveEquations('x^2+8+y=x+6', 'x');
-console.log(sol.toString());
-//0.5*((-4*y-7)^0.5+1),0.5*(-(-4*y-7)^0.5+1)
+Nerdamer 2.0 keeps the familiar expression-oriented API, but it is a new implementation rather than a continuation of the 1.x source tree. Important changes include:
+
+- the old add-on loading system is gone;
+- TypeScript declarations ship with the package;
+- Nerdamer no longer keeps a global history of every parsed expression;
+- parser-facing APIs consistently return Nerdamer-native values instead of mixing Nerdamer types with JavaScript-native result shapes;
+- solver result types are explicit public structures;
+- lower-level 1.x extension hooks such as `getCore()` and `register()` are not exposed in the same way;
+- decimal, complex-number, parser, solver, assumptions, and set handling have been substantially revised.
+
+For the current documentation, examples, and migration information, visit [nerdamer.com](https://nerdamer.com/).
+
+## Documentation and demo
+
+- Website: [nerdamer.com](https://nerdamer.com/)
+- Documentation: [nerdamer.com/documentation](https://nerdamer.com/documentation)
+- Demo: [nerdamer.com/demo](https://nerdamer.com/demo)
+
+## Development
+
+Run the type checker:
+
+```bash
+npm run typecheck
 ```
 
-You can do up to 3rd order polynomials for multivariate polynomials
+Run the tests:
 
-Additionally you can try for equations containing functions. This is more of a hit or miss approach unlike single variable polynomials (which uses Mr. David Binner's Jenkins-Traub port - http://www.akiti.ca/PolyRootRe.html) but it's there if you want to give it a try.
-
-```javascript
-var sol = nerdamer.solveEquations('cos(x)+cos(3*x)=1', 'x');
-console.log(sol.toString());
-//5.7981235959208695,0.4850617112587174
+```bash
+npm test
 ```
 
-To solve a system of linear equations pass them in as an array. For example
+Build the complete package:
 
-```javascript
-var sol = nerdamer.solveEquations(['x+y=1', '2*x=6', '4*z+y=6']);
-console.log(sol);
-//[ [ 'x', 3 ], [ 'y', -2 ], [ 'z', 2 ] ]
+```bash
+npm run build
 ```
 
-In version 0.7.2 and up the solver can additionally be used in the following way
+Validate the npm package as an installed consumer:
 
-```javascript
-//first parse the equation
-var x = nerdamer('x^2+2=y-7*a');
-//You can make substitutions to the equation
-x = x.evaluate({ a: 'x^2-3' });
-console.log(x.toString()); //2+x^2=-7*x^2+21+y
-var solutions = x.solveFor('x');
-console.log(solutions.toString()); //(1/16)*sqrt(32*y+608),(-1/16)*sqrt(32*y+608)
+```bash
+npm run validate:package
 ```
+
+The publish hook runs tests, builds the package and parser bundle, generates parser documentation data, and validates the packed npm artifact before publication.
+
+## License
+
+Nerdamer 2.0 is licensed under the Apache License 2.0.

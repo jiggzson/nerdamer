@@ -1,0 +1,242 @@
+import { arrayAddUnique } from '../../functions/utils';
+import { zero } from '../expression/shortcuts';
+
+import { Polynomial } from './Polynomial';
+
+import type { Expression } from '../expression/Expression';
+import type { Ordering, PolyType } from './Polynomial';
+
+function normalizePolynomialInputs(
+	inputs: PolyType[],
+	ordering?: Ordering,
+	variables?: string[]
+): { polynomials: Polynomial[]; variables: string[] | undefined } {
+	const provisional = inputs.map(input => Polynomial.toPolynomial(input, ordering, variables));
+
+	if (variables !== undefined) {
+		return {
+			polynomials: provisional,
+			variables,
+		};
+	}
+
+	const resolvedVariables = combinePolynomialVariables(provisional);
+	if (resolvedVariables.length === 0) {
+		return {
+			polynomials: provisional,
+			variables: undefined,
+		};
+	}
+
+	return {
+		polynomials: inputs.map(input =>
+			Polynomial.toPolynomial(input, ordering, resolvedVariables)
+		),
+		variables: resolvedVariables,
+	};
+}
+
+/**
+ * Divides a polynomial by given list of divisors
+ * See - Ideals Varieties and Algorithms 4th ed. p.81
+ *
+ * @param Fs The array of divisors
+ * @param g The dividend
+ * @param ordering The ordering to be used (optional).
+ * @returns
+ */
+export function polyDiv(
+	Fs: PolyType[],
+	g: PolyType,
+	ordering?: Ordering,
+	variables?: string[]
+): [Expression[], Expression] {
+	const { polynomials } = normalizePolynomialInputs([...Fs, g], ordering, variables);
+	const F = polynomials.slice(0, Fs.length);
+	let p = polynomials[Fs.length].order(ordering);
+	// The collection of q's to be returned
+	const qArray: Expression[] = Fs.map(() => {
+		return zero();
+	});
+	let r: Expression = zero();
+	let iter = 0;
+	const maxIter = Fs.length * 1000;
+	// Begin
+	while (!p.isZero()) {
+		if (iter++ > maxIter) {
+			throw new Error('Maximum iterations reached');
+		}
+		let divisionOccurred = false;
+		const s = F.length;
+		let i = 0; // Use zero since TS arrays are zero based
+		while (i < s && !divisionOccurred) {
+			const fi = F[i];
+			const fiLT = fi.LT();
+			const pLT = p.LT();
+
+			if (fiLT.divides(pLT)) {
+				const q = pLT.div(fiLT);
+				qArray[i] = qArray[i].plus(q.getExpression());
+				// Guarantees a reduction at each step
+				p = p.minus(fi.times(q)).order(ordering);
+				divisionOccurred = true;
+			} else {
+				i++;
+			}
+		}
+
+		const pLT = p.LT();
+		if (!divisionOccurred) {
+			r = r.plus(pLT.getExpression());
+			p = p.minus(pLT).order(ordering);
+		}
+	}
+
+	return [qArray, r];
+}
+
+/**
+ * Divides one polynomial by another
+ *
+ * @param f The dividend
+ * @param g The divisor
+ * @param ordering The ordering to be used (optional).
+ * @returns [The quotient, The remainder]
+ */
+export function divide(f: PolyType, g: PolyType, ordering?: Ordering, variables?: string[]) {
+	const [quo, rem] = polyDiv([g], f, ordering, variables);
+
+	return [quo[0], rem];
+}
+
+/**
+ * Computes the S-Polynomial given two polynomials
+ *
+ * @param f
+ * @param g
+ * @param ordering
+ * @param variables
+ * @returns
+ */
+export function S(f: PolyType, g: PolyType, ordering?: Ordering, variables?: string[]) {
+	const {
+		polynomials: [p, q],
+	} = normalizePolynomialInputs([f, g], ordering, variables);
+	const pLT = p.LT();
+	const qLT = q.LT();
+	const xg = pLT.LCM(qLT);
+
+	return p.times(xg.div(pLT)).minus(q.times(xg.div(qLT)));
+}
+
+/**
+ * Combines all the variables of a set of polynomials
+ *
+ * @param F
+ * @returns
+ */
+export function combinePolynomialVariables(F: Polynomial[]) {
+	let variables: string[] = [];
+	F.forEach(f => {
+		variables = arrayAddUnique(variables, f.variables);
+	});
+	variables.sort();
+	return variables;
+}
+
+/**
+ * Calculates the polynomial modulus of two polynomials as f mod g
+ *
+ * @param f
+ * @param g
+ * @param ordering
+ * @param variables
+ * @returns
+ */
+export function polyMod(f: PolyType, g: PolyType, ordering?: Ordering, variables?: string[]) {
+	const { variables: resolvedVariables } = normalizePolynomialInputs([f, g], ordering, variables);
+	const [, rem] = divide(f, g, ordering, resolvedVariables);
+
+	return Polynomial.toPolynomial(rem, ordering, resolvedVariables).order(ordering);
+}
+
+export function maxCommonVariableOccurrence(f: PolyType, g: PolyType) {
+	const a = Polynomial.toPolynomial(f).maxVariableFrequency();
+	const b = Polynomial.toPolynomial(g).maxVariableFrequency();
+
+	// At this point any variable will do as long as it occurs in both a and b
+	for (const x in a) {
+		if (x in b) {
+			return x;
+		}
+	}
+}
+
+/**
+ * Convert number to polynomial form.
+ * e.g. polynomialFromNumber (89, 1) = [8, 9] = 8*x+9
+ * e.g. polynomialFromNumber (89, 2) = [1, -1, -1] = x^2-x-1
+ * Try (x+4)(x+5)
+ *
+ * @param n The number
+ * @param p The power of the lead monomial
+ * @param base The base to use for the polynomial. Default = 10
+ * @returns
+ */
+export function polynomialFromNumber(
+	n: number,
+	p: number,
+	base: number = 10,
+	startingCoeff?: number,
+	endingCoeff?: number
+) {
+	const remainder = function (a: number, b: number) {
+		if (a === 0) {
+			return 0;
+		}
+		return Math.abs(a) < Math.abs(b) ? -(b % a) : a % b;
+	};
+
+	const coeffs: number[] = [];
+
+	for (let i = p; i >= 0; i--) {
+		// Calculate the base
+		const m = base ** i;
+		// console.log(`m: ${m}, n: ${n}`)
+		// Get the mod. This will be negative if the
+		const rem = remainder(n, m);
+		const d = n - rem;
+
+		const coeff = d / m;
+
+		if (i === p && (coeff < 1 || startingCoeff !== undefined)) {
+			const c = startingCoeff || 1;
+			coeffs.push(c);
+			n -= c * m;
+			continue;
+		}
+		// Avoid fractions as coefficients
+		if (Math.abs(d) < Math.abs(m)) {
+			coeffs.push(0);
+		} else {
+			// console.log(`d: ${d}, rem: ${rem}, n: ${n}, coeff: ${coeff}`)
+			// Push the coefficient
+			coeffs.push(coeff);
+			// Point to the remainder as the new number
+			n = rem;
+		}
+	}
+
+	// Adjust if the ending coeff is provided. If it cannot be adjusted then the current
+	// constant will be used
+	if (endingCoeff !== undefined) {
+		const lastIndex = coeffs.length - 1;
+		const newCoeff = coeffs[lastIndex] - endingCoeff;
+		if (newCoeff % base === 0) {
+			coeffs[lastIndex] = endingCoeff;
+			coeffs[lastIndex - 1] += newCoeff / base;
+		}
+	}
+
+	return coeffs.reverse();
+}

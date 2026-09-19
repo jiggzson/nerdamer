@@ -1,0 +1,249 @@
+import { Settings } from '../../Settings';
+import { RATIONAL, SYMBOLIC_ACCESSOR } from '../parser/constants';
+import { EXPRESSION_TYPES } from '../parser/constants';
+
+import type { TextOptions } from '../parser/types';
+import type { Expression } from './Expression';
+
+type ExpressionSortFunction = (a: Expression, b: Expression) => number;
+type ExpressionTextOptions = TextOptions & { internalAccessor?: boolean };
+
+const { NUM, FUN, VAR, INF, GRP, EXP, PRD, SUM } = EXPRESSION_TYPES;
+
+/**
+ * Formats the multiplier string for string output.
+ * The multiplier string can be blank, include an *, or be formatted as a decimal or fraction.
+ *
+ * @param x
+ * @param options
+ * @returns
+ */
+export function formatMultiplierString(x: Expression, options?: ExpressionTextOptions) {
+	let retval = '';
+	const m = x.getMultiplier();
+	const mString = m.text(options);
+
+	if (mString !== '1' && mString !== '1.0') {
+		retval = mString;
+
+		if (!m.isInteger() && !(m.asDecimal || options?.decimal)) {
+			retval = `(${retval})`;
+		}
+
+		// Don't show the minus one as -1* but just -
+		// When wrapPow is set, keep -1* to avoid unary minus before **
+		if (retval === '-1' && !options?.wrapPow) {
+			retval = '-';
+		} else {
+			retval += '*';
+		}
+	}
+
+	return retval;
+}
+
+/**
+ * The power string can be blank, include a ^, or be formatted as a decimal or fraction.
+ * Since it can be fraction or an expression, it will also determine if brackets are needed.
+ *
+ * @param x
+ * @param options
+ * @param powerOperator
+ * @returns
+ */
+export function formatPowerString(
+	x: Expression,
+	options: ExpressionTextOptions | undefined,
+	powerOperator: string
+) {
+	let retval = '';
+	const power = x.getPower();
+	const powerString: string = power.text(options);
+
+	if (powerString !== '1' && powerString !== '1.0') {
+		retval = powerString;
+
+		// Wrap fractions in brackets
+		if (power.dataType === RATIONAL && !power.isInteger()) {
+			retval = `(${retval})`;
+		} else {
+			const power = x.getPower();
+			let needsBrackets = false;
+
+			if (power.type === SUM || power.type === PRD) {
+				needsBrackets = true;
+			} else if (x.type === EXP) {
+				if (power.isNUM() && !power.isInteger()) {
+					needsBrackets = true;
+				} else if (!power.isNUM() && !power.getMultiplier().isOne()) {
+					needsBrackets = true;
+				}
+			}
+
+			if (needsBrackets || retval.includes('/')) {
+				retval = `(${retval})`;
+			}
+		}
+
+		if (options?.wrapPow && !retval.startsWith('(')) {
+			retval = `(${retval})`;
+		}
+
+		retval = `${powerOperator}${retval}`;
+	}
+
+	return retval;
+}
+
+/**
+ * Formats an expression using the current formatting policy supplied by Expression.
+ *
+ * @param x
+ * @param options
+ * @param asId
+ * @param powerOperator
+ * @param sortFunction
+ * @returns
+ */
+export function toText(
+	x: Expression,
+	options: ExpressionTextOptions | undefined,
+	asId: boolean | undefined,
+	powerOperator: string,
+	sortFunction: ExpressionSortFunction
+) {
+	options = { ...{ precision: x.precision! }, ...options };
+
+	let retval: string = '';
+	if (x.type === NUM) {
+		retval = x.getMultiplier().text(options);
+	} else {
+		// Get the multiplier but don't add it for the top level. Only
+		// format sub-elements
+		const multiplier = asId && !x.elements ? '' : formatMultiplierString(x, options);
+		const power = formatPowerString(x, options, powerOperator);
+		let value: string;
+		switch (x.type) {
+			case VAR:
+			case INF:
+				if (options?.wrapPow && power) {
+					retval = `${multiplier}(${x.value})`;
+				} else {
+					retval = `${multiplier}${x.value}`;
+				}
+				break;
+			case FUN: {
+				// Symbolic access is stored as an ordinary function node so it can participate
+				// in Expression logic without allowing Vector or Matrix objects into args.
+				if (x.name === SYMBOLIC_ACCESSOR) {
+					const args = x.getArguments();
+					if (options?.internalAccessor) {
+						// Evaluation needs a parseable form that cannot be confused with
+						// implicit multiplication when the target type is still unknown.
+						retval = `${multiplier}${SYMBOLIC_ACCESSOR}(${args
+							.map(argument => argument.text(options))
+							.join(', ')})`;
+					} else {
+						const target = args[0];
+						const indices = args.slice(1);
+						retval = `${multiplier}${target.text(options)}[${indices
+							.map(index => index.text(options))
+							.join(', ')}]`;
+					}
+				} else {
+					// TODO: See Expression.toFunction for possible refactoring.
+					retval = `${multiplier}${x.name || ''}(${x
+						.getArguments()
+						.map(x => x.text(options))
+						.join(', ')})`;
+				}
+				break;
+			}
+			case GRP:
+			case SUM: {
+				value = formatExpressionString(x, options, sortFunction);
+				value = multiplier || power ? `(${value})` : value;
+				// The value has already been calculated when the values were added
+				retval = `${multiplier}${value}`;
+				break;
+			}
+			case PRD: {
+				value = formatExpressionString(x, options, sortFunction);
+				value = power ? `(${value})` : value;
+				retval = `${multiplier}${value}`;
+				break;
+			}
+			case EXP: {
+				const arg = x.getBase();
+				const p = arg.getPower();
+				value = toText(arg, options, undefined, powerOperator, sortFunction);
+				// The following cases get brackets.
+				// 1 - (x+1)^x
+				// 2 - (-x)^x
+				// 3 - (2/3)^x
+				// 4 - (x^x)^x
+				if (
+					options?.wrapPow ||
+					arg.elements ||
+					value.startsWith('-') ||
+					value.includes('/') ||
+					!(p.isOne() || p.isZero())
+				) {
+					value = `(${value})`;
+				}
+				retval = `${multiplier}${value}`;
+
+				break;
+			}
+		}
+
+		retval += power;
+	}
+
+	return retval.replace(/\+-/g, '-');
+}
+
+// export function toTeX(x: Expression, options?: ExpressionTextOptions) {
+
+// }
+
+export function formatExpressionString(
+	x: Expression,
+	options: ExpressionTextOptions | undefined,
+	sortFunction: ExpressionSortFunction
+) {
+	const glue = x.type === PRD ? '*' : '+';
+	const elements: Expression[] = Object.values(x.getElements());
+
+	if (Settings.SORT_TERMS || options?.sort) {
+		elements.sort(sortFunction);
+	}
+
+	return elements
+		.map(e => {
+			let value = e.text(options);
+			// Wrap it in brackets for certain conditions
+			if (x.type === PRD && e.isSum()) {
+				value = `(${value})`;
+			}
+			return value;
+		})
+		.join(glue)
+		.replace('+-', '-');
+}
+
+/**
+ * Converts to capital letter e.g. 1=A, 2=B, ..., 100=CV
+ *
+ * @param n
+ * @returns
+ */
+export function convertToTitle(n: number) {
+	let result = '';
+	while (n > 0) {
+		n--;
+		result = String.fromCharCode(65 + (n % 26)) + result;
+		n = Math.floor(n / 26);
+	}
+	return result;
+}

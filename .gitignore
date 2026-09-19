@@ -1,7 +1,9 @@
-/nbproject/private/
-/nbproject/
-/Algebra.temp.js
-/.idea/
-/node_modules/
-/package-lock.json
-/.vscode
+*node_modules/*
+*output/*
+.idea/
+.venv
+/dist/*
+/docs/*
+!/docs/*.md
+test-results.json
+coverage/

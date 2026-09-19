@@ -1,59 +1,215 @@
 {
-    "author": {
-        "name": "Martin Donk",
-        "email": "martin.r.donk@gmail.com"
-    },
-    "description": "javascript light-weight symbolic math expression evaluator",
-    "name": "nerdamer",
-    "license": "MIT",
-    "version": "1.1.13",
-    "homepage": "http://nerdamer.com/",
-    "directory": {
-        "lib": "./"
-    },
-    "main": "nerdamer.core.js",
-    "typings": "index.d.ts",
-    "keywords": [
-        "math",
-        "matrix",
-        "complex",
-        "number",
-        "parser",
-        "expression",
-        "functions",
-        "numeric",
-        "equation solver",
-        "linear algebra",
-        "vectors",
-        "symbolic",
-        "integration",
-        "differentiation",
-        "derivative",
-        "algebra",
-        "calculus",
-        "mathematics",
-        "constants",
-        "symbolic math"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/jiggzson/nerdamer.git"
-    },
-    "bugs": {
-        "url": "https://github.com/jiggzson/nerdamer/issues"
-    },
-    "engines": {
-        "node": ">=0.10.0"
-    },
-    "scripts": {
-        "test": "jasmine"
-    },
-    "devDependencies": {
-        "gulp": "^4.0.2",
-        "gulp-cli": "^2.3.0",
-        "gulp-concat": "^2.6.1",
-        "gulp-uglify": "^3.0.2",
-        "gulp-watch": "^5.0.1",
-        "jasmine": "^2.99.0"
-    }
+	"name": "nerdamer",
+	"version": "2.0.0-rc.1",
+	"publishConfig": {
+		"tag": "next"
+	},
+	"description": "A symbolic math library and computer algebra system for JavaScript and TypeScript.",
+	"directory": {
+		"lib": "./src"
+	},
+	"main": "dist/bundle.js",
+	"types": "index.d.ts",
+	"files": [
+		"dist",
+		"output",
+		"docs-data",
+		"index.d.ts",
+		"README.md"
+	],
+	"scripts": {
+		"dev": "nodemon ./tools/dev.ts",
+		"lint": "eslint ./src/**/*.ts",
+		"lint:fix": "eslint ./src/**/*.ts --fix",
+		"typecheck": "tsc -p tsconfig.json --noEmit",
+		"test": "jest",
+		"test:coverage": "jest --coverage --runInBand",
+		"test:dump": "npm test -- --json --outputFile=test-results.json --testFailureExitCode=1 --testNamePattern=\"^(?!.*\\[slow\\])\"",
+		"test:all": "npm test -- --json --outputFile=test-results.json --testFailureExitCode=1",
+		"build:types": "tsc -p tsconfig.build.json",
+		"build:modules": "npm run build:types",
+		"build:bundle": "webpack --mode=production --node-env=production --env target=full",
+		"build:parser": "webpack --mode=production --node-env=production --env target=parser && node tools/smoke-build.cjs parser",
+		"build:full": "npm run build:modules && npm run build:bundle && node tools/smoke-build.cjs full",
+		"build": "npm run build:full",
+		"build:dev": "webpack --mode=development",
+		"build:prod": "npm run build",
+		"watch": "webpack --watch",
+		"serve": "webpack serve",
+		"docs:parser": "ts-node tools/generate-parser-docs.ts",
+		"docs": "npm run docs:parser && typedoc --options typedoc.json --out docs/api",
+		"docs:check": "typedoc --options typedoc.json --emit none",
+		"docs:api": "typedoc --options typedoc.json --json generated/typedoc/typedoc.json",
+		"docs:all": "npm run docs:parser && typedoc --options typedoc.json --json generated/typedoc/typedoc.json --plugin typedoc-material-theme --themeColor '#e63420' --out docs/html",
+		"docs:html": "typedoc --options typedoc.json --plugin typedoc-material-theme --themeColor '#e63420' --out docs/html",
+		"validate:package": "ts-node tools/validate-package.ts",
+		"prepublishOnly": "npm run test && npm run build && npm run build:parser && npm run docs:parser && npm run validate:package"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/jiggzson/nerdamer.git"
+	},
+	"keywords": [
+		"math",
+		"mathematics",
+		"algebra",
+		"calculus",
+		"symbolic",
+		"symbolic math",
+		"symbolic computation",
+		"computer algebra",
+		"computer algebra system",
+		"cas",
+		"parser",
+		"expression parser",
+		"equation solver",
+		"solve",
+		"simplify",
+		"factorization",
+		"polynomials",
+		"derivative",
+		"differentiation",
+		"integral",
+		"integration",
+		"limits",
+		"laplace transform",
+		"linear algebra",
+		"matrix",
+		"vectors",
+		"complex numbers",
+		"numeric",
+		"javascript",
+		"typescript"
+	],
+	"author": "Martin Donk",
+	"license": "Apache-2.0",
+	"bugs": {
+		"url": "https://github.com/jiggzson/nerdamer/issues"
+	},
+	"homepage": "http://nerdamer.com",
+	"engines": {
+		"node": ">=18"
+	},
+	"dependencies": {
+		"decimal.js": "^10.4.3"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.8.0",
+		"@types/eslint__js": "^8.42.3",
+		"@types/jest": "^30.0.0",
+		"@types/node": "^25.0.10",
+		"@webpack-cli/generators": "^2.5.0",
+		"css-loader": "^7.1.2",
+		"eslint": "^9.39.3",
+		"eslint-plugin-import": "^2.32.0",
+		"eslint-plugin-perfectionist": "^5.6.0",
+		"html-webpack-plugin": "^5.6.3",
+		"jasmine": "^5.1.0",
+		"jest": "^30.2.0",
+		"mini-css-extract-plugin": "^2.9.2",
+		"nodemon": "^3.1.4",
+		"prettier": "^3.8.1",
+		"sass": "^1.86.0",
+		"sass-loader": "^16.0.5",
+		"style-loader": "^4.0.0",
+		"terser-webpack-plugin": "^5.3.14",
+		"ts-jest": "^29.4.6",
+		"ts-loader": "^9.5.2",
+		"ts-node": "^10.9.2",
+		"typedoc": "^0.28.17",
+		"typedoc-material-theme": "^1.4.1",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.0.0",
+		"webpack": "^5.98.0",
+		"webpack-cli": "^5.1.4",
+		"webpack-dev-server": "^5.2.0",
+		"workbox-webpack-plugin": "^7.3.0"
+	},
+	"exports": {
+		".": {
+			"types": "./index.d.ts",
+			"require": "./dist/bundle.js",
+			"default": "./dist/bundle.js"
+		},
+		"./core": {
+			"types": "./output/api/core.d.ts",
+			"require": "./output/api/core.js",
+			"default": "./output/api/core.js"
+		},
+		"./algebra": {
+			"types": "./output/api/algebra.d.ts",
+			"require": "./output/api/algebra.js",
+			"default": "./output/api/algebra.js"
+		},
+		"./calculus": {
+			"types": "./output/api/calculus.d.ts",
+			"require": "./output/api/calculus.js",
+			"default": "./output/api/calculus.js"
+		},
+		"./solve": {
+			"types": "./output/api/solve.d.ts",
+			"require": "./output/api/solve.js",
+			"default": "./output/api/solve.js"
+		},
+		"./structures": {
+			"types": "./output/api/structures.d.ts",
+			"require": "./output/api/structures.js",
+			"default": "./output/api/structures.js"
+		},
+		"./assumptions": {
+			"types": "./output/api/assumptions.d.ts",
+			"require": "./output/api/assumptions.js",
+			"default": "./output/api/assumptions.js"
+		},
+		"./parser": {
+			"types": "./output/api/parser.d.ts",
+			"require": "./output/api/parser.js",
+			"default": "./output/api/parser.js"
+		},
+		"./advanced": {
+			"types": "./output/api/advanced.d.ts",
+			"require": "./output/api/advanced.js",
+			"default": "./output/api/advanced.js"
+		},
+		"./debug": {
+			"types": "./output/api/debug.d.ts",
+			"require": "./output/api/debug.js",
+			"default": "./output/api/debug.js"
+		},
+		"./docs-data/parser-functions.json": "./docs-data/parser-functions.json",
+		"./dist/bundle.js": "./dist/bundle.js",
+		"./dist/parser.js": "./dist/parser.js",
+		"./package.json": "./package.json"
+	},
+	"typesVersions": {
+		"*": {
+			"core": [
+				"output/api/core.d.ts"
+			],
+			"algebra": [
+				"output/api/algebra.d.ts"
+			],
+			"calculus": [
+				"output/api/calculus.d.ts"
+			],
+			"solve": [
+				"output/api/solve.d.ts"
+			],
+			"structures": [
+				"output/api/structures.d.ts"
+			],
+			"assumptions": [
+				"output/api/assumptions.d.ts"
+			],
+			"parser": [
+				"output/api/parser.d.ts"
+			],
+			"advanced": [
+				"output/api/advanced.d.ts"
+			],
+			"debug": [
+				"output/api/debug.d.ts"
+			]
+		}
+	}
 }
