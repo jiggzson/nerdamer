@@ -86,7 +86,7 @@
 	"bugs": {
 		"url": "https://github.com/jiggzson/nerdamer/issues"
 	},
-	"homepage": "http://nerdamer.com",
+	"homepage": "https://nerdamer.com",
 	"engines": {
 		"node": ">=18"
 	},

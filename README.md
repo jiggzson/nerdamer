@@ -6,11 +6,23 @@ Nerdamer 2.0 is a TypeScript rewrite of the library. Everyday usage remains fami
 
 ## Getting started with Nerdamer
 
-Install Nerdamer from npm:
+Nerdamer 2.0 is currently available as a release candidate under the npm `next` tag:
 
 ```bash
-npm install nerdamer
+npm install nerdamer@next
 ```
+
+When Nerdamer 2.0 becomes the stable `latest` release, the normal `npm install nerdamer` command will install the 2.x line.
+
+### Need to stay on the 1.x line?
+
+Nerdamer 2.0 contains substantial API and behavior changes. If an existing application cannot migrate to 2.0 yet, use [Nerdamer-Prime](https://github.com/together-science/nerdamer-prime), a separately maintained continuation of the earlier Nerdamer codebase:
+
+```bash
+npm install nerdamer-prime
+```
+
+Nerdamer-Prime is maintained separately from Nerdamer 2.0 and is the appropriate option for projects that need to remain closer to the 1.x API and package structure.
 
 In Node.js, require the package and start working with expressions:
 
@@ -353,13 +365,15 @@ Nerdamer 2.0 keeps the familiar expression-oriented API, but it is a new impleme
 - lower-level 1.x extension hooks such as `getCore()` and `register()` are not exposed in the same way;
 - decimal, complex-number, parser, solver, assumptions, and set handling have been substantially revised.
 
+If an existing project cannot move to Nerdamer 2.0 yet, use [Nerdamer-Prime](https://github.com/together-science/nerdamer-prime), which continues the earlier Nerdamer line under the `nerdamer-prime` npm package.
+
 For the current documentation, examples, and migration information, visit [nerdamer.com](https://nerdamer.com/).
 
-## Documentation and demo
+## Documentation and playground
 
 - Website: [nerdamer.com](https://nerdamer.com/)
-- Documentation: [nerdamer.com/documentation](https://nerdamer.com/documentation)
-- Demo: [nerdamer.com/demo](https://nerdamer.com/demo)
+- Documentation: [nerdamer.com/docs](https://nerdamer.com/docs/)
+- Playground: [nerdamer.com/playground](https://nerdamer.com/playground/)
 
 ## Development
 
