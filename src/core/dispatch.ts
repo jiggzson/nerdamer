@@ -132,8 +132,8 @@ import { subst } from './functions/subst';
 
 import type { LimitDir } from '../calculus/limit/limit';
 import type { Expression } from './classes/expression/Expression';
-import type { Scope } from './common/classes/Scope';
 import type { DeferredFunctionArgument } from './classes/parser/types';
+import type { Scope } from './common/classes/Scope';
 import type { ParserEntity } from './types';
 
 export type RegisteredMathFunction = (...args: never[]) => ParserEntity;

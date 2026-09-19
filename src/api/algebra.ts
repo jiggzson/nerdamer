@@ -16,11 +16,11 @@ export type {
 	VariableFrequency,
 } from '../core/classes/polynomial/Polynomial';
 export { Term } from '../core/classes/polynomial/Term';
-export { isprime as isPrime } from '../math/utils';
 export type { PowersObject } from '../core/classes/polynomial/Term';
-
 export { uSub, uUnSub } from '../core/functions/subst';
+
 export type {
 	SubstitutionMap,
 	USubstitutionResult,
 } from '../core/functions/subst';
+export { isprime as isPrime } from '../math/utils';

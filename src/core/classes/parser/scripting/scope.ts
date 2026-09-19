@@ -1,10 +1,10 @@
+import { Scope } from '../../../common/classes/Scope';
 import {
 	AssignmentError,
 	message,
 	ParserError,
 	UnexpectedInputError,
 } from '../../../errors';
-import { Scope } from '../../../common/classes/Scope';
 import { RESTRICTED } from '../../../Settings';
 import { Expression } from '../../expression/Expression';
 import { assertPlainVariableAndGetString } from '../../expression/utils';

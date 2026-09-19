@@ -53,7 +53,6 @@ import { expand } from './core/functions/expand/expand';
 import { setFunction as registerFunction } from './core/functions/setFunction';
 import { subst, uSub, uUnSub } from './core/functions/subst';
 import { hypot } from './math/geometry';
-import { isprime } from './math/utils';
 import {
 	abs,
 	cbrt,
@@ -119,6 +118,7 @@ import {
 	acoth,
 } from './math/trig';
 import { trunc } from './math/trunc';
+import { isprime } from './math/utils';
 import { SolutionSet } from './solve/classes/SolutionSet';
 import { solve } from './solve/solve';
 import { solveSystem } from './solve/solveSystem';

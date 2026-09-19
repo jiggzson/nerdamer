@@ -8,7 +8,6 @@ import {
 	getNumericOrAssumedValue,
 } from '../core/classes/expression/utils';
 import { Matrix } from '../core/classes/matrix/Matrix';
-import { Rational } from '../core/classes/rational/Rational';
 import {
 	SQRT,
 	ABS,
@@ -47,6 +46,7 @@ import { multiply } from '../core/classes/parser/operations/multiply';
 import { power, sqrtToPow } from '../core/classes/parser/operations/power';
 import { subtract } from '../core/classes/parser/operations/subtract';
 import { maxCommonVariableOccurrence, polyMod } from '../core/classes/polynomial/utils';
+import { Rational } from '../core/classes/rational/Rational';
 import { message, MathError, UndefinedError, UnexpectedInputError } from '../core/errors';
 import { factorial as fact, fibonacci as fib } from '../core/functions/bigint/bigint';
 import { primeFactorCounts } from '../core/functions/bigint/primeFactor';

@@ -1,4 +1,5 @@
 import { numeric as numericScalar } from '../../../../math/math';
+import { DimensionError, message, UnexpectedDataType } from '../../../errors';
 import { Collection } from '../../collection/Collection';
 import { Dictionary } from '../../dictionary/Dictionary';
 import { Equation } from '../../equation/Equation';
@@ -9,10 +10,8 @@ import { ValuesSet } from '../../valuesSet/ValuesSet';
 import { Vector } from '../../vector/Vector';
 import { dataTypes } from '../constants';
 
-import { DimensionError, message, UnexpectedDataType } from '../../../errors';
-
-import type { DeferredFunctionArgument, ParserValuesObject } from '../types';
 import type { ParserEntity } from '../../../types';
+import type { DeferredFunctionArgument, ParserValuesObject } from '../types';
 
 const EVALUATE_FUNCTION = 'evaluate';
 
