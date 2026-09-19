@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Developing Nerdamer — Nerdamer Documentation</title>
+  <meta name="description" content="Contributor setup and development workflow for Nerdamer.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../styles/internals.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="internals-page">
+  <div class="eyebrow">Contributors</div>
+  <h1>Developing Nerdamer</h1>
+  <p class="internals-lead">This is the practical path from cloning the repository to making and validating a change. The Nerdamer repository and its main development line are the source for current commands, file locations, and contributor guidance.</p>
+
+  <div class="internals-callout"><strong>Keep the feedback loop short.</strong> For most changes, type-check and run the relevant tests while you work, then run the full test and build commands before considering the change complete.</div>
+
+  <h2>Set up the repository</h2>
+  <pre class="codeblock language-shell"><code class="language-shell"><span class="token function">git</span> <span class="token variable">clone</span> <span class="token variable">https</span><span class="token operator">:</span><span class="token operator">/</span><span class="token operator">/</span><span class="token variable">github</span><span class="token punctuation">.</span><span class="token variable">com</span><span class="token operator">/</span><span class="token variable">jiggzson</span><span class="token operator">/</span><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">git</span>
+<span class="token function">cd</span> <span class="token variable">nerdamer</span>
+<span class="token function">npm</span> <span class="token variable">install</span></code></pre>
+  <p>The source is TypeScript. The build produces JavaScript bundle artifacts and generated TypeScript declarations for consumers.</p>
+
+  <h2>The normal contributor loop</h2>
+  <div class="internals-stage-row">
+    <div class="internals-stage"><small>1 · Edit</small><code>src/</code><p>Make the smallest change in the subsystem that owns the behavior.</p></div>
+    <div class="internals-stage"><small>2 · Check</small><code>npm run typecheck</code><code>npm test</code><p>Catch type and behavioral regressions while the change is still small.</p></div>
+    <div class="internals-stage"><small>3 · Build</small><code>npm run build</code><p>Verify the distributable bundles and declaration output still build.</p></div>
+  </div>
+
+  <h2>Development commands</h2>
+  <p>Use the repository scripts for type checking, testing, builds, documentation, and local experiments.</p>
+  <div class="internals-matrix-wrap">
+    <table class="internals-matrix">
+      <thead><tr><th>Command</th><th>Use it for</th><th>What it checks or produces</th></tr></thead>
+      <tbody>
+        <tr><td>npm run typecheck</td><td>Fast correctness check while editing</td><td>Runs TypeScript without emitting files.</td></tr>
+        <tr><td>npx tsc</td><td>Direct TypeScript compiler workflow</td><td>Runs the TypeScript compiler directly.</td></tr>
+        <tr><td>npm test</td><td>Behavior and regression coverage</td><td>Runs the Jest suite.</td></tr>
+        <tr><td>npm run build:modules</td><td>Refresh package API modules</td><td>Rebuilds the generated module output used by the public package subpath imports.</td></tr>
+        <tr><td>npm run build</td><td>Release-facing build validation</td><td>Builds the JavaScript bundle artifacts and TypeScript declarations.</td></tr>
+        <tr><td>npm run dev</td><td>Scratch-driven development</td><td>Runs <code>tools/dev.ts</code> through the development watcher.</td></tr>
+        <tr><td>npm run lint</td><td>Static code checks</td><td>Runs ESLint over the TypeScript source.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Use the development scratch file</h2>
+  <p><code>tools/dev.ts</code> is available for experiments, debugging, and quick local checks.</p>
+  <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;../src&#39;</span><span class="token punctuation">;</span>
+
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;factor(x^4-1)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+  <p>If <code>tools/dev.ts</code> imports through one of the public API package paths, such as <code>nerdamer/core</code>, <code>nerdamer/calculus</code>, or <code>nerdamer/structures</code>, refresh the generated module output after changing the source:</p>
+  <pre class="codeblock language-shell"><code class="language-shell"><span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">build</span><span class="token operator">:</span><span class="token variable">modules</span></code></pre>
+  <p>Those package paths resolve through the generated module output, so without rebuilding them the scratch file can execute stale code.</p>
+  <p>Run the development watcher with:</p>
+  <pre class="codeblock language-shell"><code class="language-shell"><span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">dev</span></code></pre>
+
+  <h2>Where should the change go?</h2>
+  <div class="internals-path-grid">
+    <div class="internals-path-card"><h3><code>src/core</code></h3><p>Parser behavior, symbolic representation, shared operations, converters, settings, rationals, matrices, vectors, and common infrastructure.</p></div>
+    <div class="internals-path-card"><h3><code>src/algebra</code></h3><p>Factoring, simplification, polynomial work, GCD/LCM, partial fractions, and related algebra algorithms.</p></div>
+    <div class="internals-path-card"><h3><code>src/calculus</code></h3><p>Differentiation, integration, limits, sums/products, and transforms.</p></div>
+    <div class="internals-path-card"><h3><code>src/solve</code></h3><p>Single-equation, polynomial, function, and multivariate/system solving.</p></div>
+    <div class="internals-path-card"><h3><code>src/math</code></h3><p>Mathematical functions and lower-level numerical/symbolic helpers used by the higher layers.</p></div>
+    <div class="internals-path-card"><h3><code>spec</code></h3><p>Targeted behavior specs and regression coverage. Add a reproducer here when a bug fix needs permanent protection.</p></div>
+  </div>
+
+  <h2>Read the code conventions</h2>
+  <div class="internals-intro">
+    <div class="internals-intro-card"><strong>Code conventions</strong><p>Implementation patterns for reuse, types, parser entities, return flow, constants, access modifiers, files, and regression tests.</p><a class="internals-source" href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </div>
+
+  <h2>Before you finish</h2>
+  <p>A change that works in one scratch example is not enough. Check the surrounding subsystem, add a targeted regression when fixing a bug, and run the full validation commands before handing the change off.</p>
+  <pre class="codeblock language-shell"><code class="language-shell"><span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">typecheck</span>
+<span class="token function">npm</span> <span class="token variable">test</span>
+<span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">build</span></code></pre>
+
+  <div class="internals-intro">
+    <div class="internals-intro-card"><strong>Nerdamer repository</strong><p>The repository is the source for current code, commands, package entry points, and contributor documentation.</p><a rel="noopener noreferrer" target="_blank" class="internals-source" href="https://github.com/jiggzson/nerdamer">github.com/jiggzson/nerdamer</a></div>
+    <div class="internals-intro-card"><strong>Need the code map first?</strong><p>The Codebase Map shows how the major source areas relate before you decide where to edit.</p><a class="internals-source" href="/docs/internals/codebase-map/">Codebase map</a></div>
+  </div>
+</div></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

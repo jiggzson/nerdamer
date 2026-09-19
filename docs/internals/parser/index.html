@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Parser internals — Nerdamer Documentation</title>
+  <meta name="description" content="A contributor guide to Nerdamer&#39;s tokenization, RPN conversion, parser evaluation, and function dispatch.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../styles/internals.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="internals-page">
+  <div class="eyebrow">Contributors · Internals</div>
+  <h1>Parser</h1>
+  <p class="internals-lead">The notation front end has a clean three-stage shape: tokenize the source, apply the Shunting Yard algorithm to produce reverse Polish notation, then evaluate that RPN into a parser entity.</p>
+
+  <div class="internals-visual">
+    <div class="internals-visual-head"><strong>The parser pipeline</strong><span><code>Parser.parse()</code> runs the full path</span></div>
+    <div class="internals-mermaid">
+      <div class="mermaid">
+flowchart LR
+  A["source string"] --> B["normalize bracketless functions"]
+  B --> C["tokenize"]
+  C --> D["nested token scopes"]
+  D --> E["toRPN"]
+  E --> F["RPN scope"]
+  F --> G["parseRPN"]
+  G --> H["operator routing"]
+  G --> I["function dispatch"]
+  H --> J{"ParserEntity"}
+  I --> J
+      </div>
+    </div>
+  </div>
+
+  <h2>A concrete example</h2>
+  <p>The parser tests use <code>x+3*y</code> as a simple RPN example. Multiplication has higher precedence, so the infix source becomes <code>x 3 y * +</code> before evaluation.</p>
+  <div class="internals-stage-row">
+    <div class="internals-stage"><small>1 · source</small><code>x + 3*y</code><p>Human-facing notation.</p></div>
+    <div class="internals-stage"><small>2 · RPN</small><code>x 3 y * +</code><p>Operator precedence is now encoded by order rather than parentheses.</p></div>
+    <div class="internals-stage"><small>3 · result</small><code>Expression</code><p>The RPN stack is evaluated by parser operations and function dispatch.</p></div>
+  </div>
+
+  <h2>Stage 1: tokenization</h2>
+  <p><code>tokenize()</code> recognizes numbers, variables, operators, functions, brackets, collections, and other parser syntax. Bracketed regions become nested scopes, so later stages can work with structure instead of repeatedly rescanning raw characters.</p>
+  <div class="internals-callout"><strong>Whitespace is syntax-sensitive only where the parser says it is.</strong> Newlines, tabs, and returns are part of the parser's whitespace handling; scripting statements still need their supported separators when multiple statements share one input.</div>
+
+  <h2>Stage 2: Shunting Yard and RPN</h2>
+  <p><code>toRPN()</code> uses operator precedence and associativity to reorder a token scope. Parentheses and nested scopes no longer need to drive precedence once the sequence has been converted.</p>
+  <pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">Parser</span><span class="token punctuation">.</span><span class="token function">toRPN</span><span class="token punctuation">(</span><span class="token variable">Parser</span><span class="token punctuation">.</span><span class="token function">tokenize</span><span class="token punctuation">(</span><span class="token string">&#39;x+3*y&#39;</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token comment">// x 3 y * +</span></code></pre>
+  <p class="internals-code-caption">This exact transformation is protected by the tokenizer/parser specs.</p>
+
+  <h2>Stage 3: evaluate the RPN stack</h2>
+  <p><code>parseRPN()</code> consumes the RPN representation and routes operations to the core arithmetic handlers or registered functions. The stack can produce scalar expressions as well as equations and structured parser values.</p>
+
+  <div class="internals-visual">
+    <div class="internals-visual-head"><strong>Two routes out of the RPN evaluator</strong><span>Operators and named functions meet again as parser entities</span></div>
+    <div class="internals-mermaid">
+      <div class="mermaid">
+flowchart TD
+  A["RPN item"] --> B{"kind"}
+  B -->|operator| C["route operator"]
+  C --> D["add / subtract / multiply / divide / power / compare / ..."]
+  B -->|function| E["mathFunctionRegistry"]
+  E --> F["callFunction"]
+  D --> G["ParserEntity"]
+  F --> G
+      </div>
+    </div>
+  </div>
+
+  <h2>Function dispatch is data-driven</h2>
+  <p><code>src/core/dispatch.ts</code> maps parser-visible names to implementations and metadata. That metadata lets the parser know argument counts, whether equations are accepted in particular positions, whether structured values distribute element-wise, whether argument evaluation is deferred, and whether the entry belongs to ordinary notation or Nerdamer Scripting.</p>
+  <div class="internals-matrix-wrap">
+    <table class="internals-matrix">
+      <thead><tr><th>Example</th><th>Arguments</th><th>Element-wise</th><th>Deferred args</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>factor</td><td>1</td><td>yes</td><td>no</td><td>Nerdamer Notation</td></tr>
+        <tr><td>diff</td><td>1–3</td><td>yes</td><td>no</td><td>Nerdamer Notation</td></tr>
+        <tr><td>matrix</td><td>1+</td><td>no</td><td>no</td><td>Nerdamer Notation</td></tr>
+        <tr><td>if</td><td>2–3</td><td>no</td><td>yes</td><td>Nerdamer Scripting</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Why deferred arguments exist</h2>
+  <p>Some scripting constructs must decide <em>whether</em> or <em>when</em> to evaluate their arguments. An <code>if</code> cannot eagerly evaluate both branches, and loops need to retain executable parser work rather than only final values. The dispatch metadata marks those constructs so the parser can preserve the argument RPN for later evaluation.</p>
+
+  <h2>Parser state is shared more widely than one object</h2>
+  <p><code>Parser.create()</code> returns another parser object with its own known-value table, but it is not a fully isolated parser environment. Settings, constants, operators, precision, and the imaginary-unit symbol are shared at package level. That distinction matters when debugging tests that mutate parser configuration.</p>
+
+  <h2>Useful places to look</h2>
+  <div class="internals-path-grid">
+    <div class="internals-path-card"><h3><code>Parser.ts</code></h3><p>Tokenization, RPN conversion, parsing, values, operators, and parser configuration.</p><a rel="noopener noreferrer" target="_blank" class="internals-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/core/classes/parser/Parser.ts">open source</a></div>
+    <div class="internals-path-card"><h3><code>operations/</code></h3><p>Core parser arithmetic and comparison routes such as addition, multiplication, division, and powers.</p><a rel="noopener noreferrer" target="_blank" class="internals-source" href="https://github.com/jiggzson/nerdamer/tree/HEAD/src/core/classes/parser/operations">open source</a></div>
+    <div class="internals-path-card"><h3><code>dispatch.ts</code></h3><p>The registry connecting parser names to the actual algebra, calculus, math, solver, and scripting implementations.</p><a rel="noopener noreferrer" target="_blank" class="internals-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/core/dispatch.ts">open source</a></div>
+  </div>
+</div></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="../../../scripts/internals.js"></script>
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

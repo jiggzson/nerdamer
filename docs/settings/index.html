@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Settings and configuration — Nerdamer</title>
+  <meta name="description" content="Configure Nerdamer notation, evaluation, indexing, iteration limits, precision, localized errors, and other shared runtime settings.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../styles/site.css">
+  <link rel="stylesheet" href="../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../styles/logo.css">
+  <link rel="stylesheet" href="../../styles/header.css">
+  <link rel="stylesheet" href="../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../styles/api.css">
+  <link rel="stylesheet" href="../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">JavaScript / TypeScript API</div>
+<h1>Settings and configuration</h1>
+<p>Shared runtime settings are exposed through <code>nerdamer.set(...)</code> and <code>nerdamer.get(...)</code>. Settings affect subsequent operations, so application code that changes a setting temporarily should restore its previous value when it is finished.</p>
+
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">previous</span> <span class="token operator">=</span> <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token string">&#39;USE_SINGLE_LETTER_VARIABLES&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">try</span> <span class="token punctuation">{</span>
+  <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span><span class="token string">&#39;USE_SINGLE_LETTER_VARIABLES&#39;</span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;2ab&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 2*a*b</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">finally</span> <span class="token punctuation">{</span>
+  <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span><span class="token string">&#39;USE_SINGLE_LETTER_VARIABLES&#39;</span><span class="token punctuation">,</span> <span class="token variable">previous</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+
+<p>Several settings can also be changed together:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+  <span class="token variable">ALLOW_IMPLICIT_MULTIPLICATION</span><span class="token operator">:</span> <span class="token constant">false</span><span class="token punctuation">,</span>
+  <span class="token variable">INDEX_BASE</span><span class="token operator">:</span> <span class="token number">1</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<div class="docs-callout"><strong>Shared state:</strong> these settings are not local to a single expression. Changing one affects later calls that use the same runtime.</div>
+
+<h2>Notation and indexing</h2>
+<p>These settings directly change how Nerdamer Notation is interpreted. The <a href="/docs/parser/">Expression syntax</a> page shows them in context.</p>
+<div class="api-table-wrap">
+<table class="api-table">
+  <thead><tr><th>Setting</th><th>Default</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>ALLOW_IMPLICIT_MULTIPLICATION</code></td><td><code>true</code></td><td>Allows multiplication to be inferred in forms such as <code>2x</code>, <code>x(9)</code>, and <code>(a+b)(c+d)</code>. Set it to <code>false</code> when input should require an explicit <code>*</code>.</td></tr>
+    <tr><td><code>USE_SINGLE_LETTER_VARIABLES</code></td><td><code>false</code></td><td>Treats adjacent letters as separate variables when enabled. For example, <code>ab</code> is interpreted as <code>a*b</code>. Registered function names are still recognized as functions.</td></tr>
+    <tr><td><code>INDEX_BASE</code></td><td><code>0</code></td><td>Controls the public index base used by vector and matrix access. Use <code>0</code> for zero-based indexing or <code>1</code> for one-based indexing.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Evaluation, substitution, and expression handling</h2>
+<div class="api-table-wrap">
+<table class="api-table">
+  <thead><tr><th>Setting</th><th>Default</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>EVALUATE</code></td><td><code>false</code></td><td>Enables numerical evaluation paths used by constants, functions, powers, and other operations that can produce a numerical value.</td></tr>
+    <tr><td><code>SUBSTITUTE</code></td><td><code>true</code></td><td>Allows values stored in the shared variable state to substitute automatically during parsing.</td></tr>
+    <tr><td><code>SORT_TERMS</code></td><td><code>false</code></td><td>Sorts expression terms during text conversion. The default avoids the additional sorting work unless ordered output is requested.</td></tr>
+    <tr><td><code>DEFER_SIMPLIFICATION</code></td><td><code>false</code></td><td>Preserves more unevaluated operation structure instead of immediately applying the normal simplification paths. This is primarily useful for lower-level parser work.</td></tr>
+    <tr><td><code>ALLOW_RAT_SUBS</code></td><td><code>false</code></td><td>Allows substitution matching to use non-integer rational multipliers where the substitution routine can support them.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="docs-callout"><strong>Per-call term ordering:</strong> prefer <code>expression.text({ sort: true })</code> when only one rendered result needs conventional term ordering. That option does not change <code>SORT_TERMS</code> globally. See <a href="/docs/public-helpers/#text-output-and-term-ordering">Text output and public helpers</a>.</div>
+
+<h2 id="localized-error-messages">Localized error messages</h2>
+<p>The library can select the language used by its built-in error message catalog through the <code>LANGUAGE</code> setting. English is the default.</p>
+
+<h3>Supported language catalog</h3>
+<div class="api-table-wrap">
+<table class="api-table">
+  <thead><tr><th>Language</th><th>Code</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>English</td><td><code>eng</code></td><td>Default catalog.</td></tr>
+    <tr><td>Spanish</td><td><code>spa</code></td><td>Spanish error messages.</td></tr>
+    <tr><td>French</td><td><code>fra</code></td><td>French error messages.</td></tr>
+    <tr><td>German</td><td><code>deu</code></td><td>German error messages.</td></tr>
+    <tr><td>Portuguese</td><td><code>por</code></td><td>Portuguese error messages.</td></tr>
+    <tr><td>Italian</td><td><code>ita</code></td><td>Italian error messages.</td></tr>
+    <tr><td>Dutch</td><td><code>nld</code></td><td>Dutch error messages.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Set the catalog before running the operation whose errors should use that language:</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">previousLanguage</span> <span class="token operator">=</span> <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token string">&#39;LANGUAGE&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">try</span> <span class="token punctuation">{</span>
+  <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span><span class="token string">&#39;LANGUAGE&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;spa&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">try</span> <span class="token punctuation">{</span>
+    <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;0^0&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token variable">error</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token variable">error</span> <span class="token keyword">instanceof</span> <span class="token builtin">Error</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">error</span><span class="token punctuation">.</span><span class="token variable">message</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token comment">// ¡0^0 no está definido!</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">finally</span> <span class="token punctuation">{</span>
+  <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span><span class="token string">&#39;LANGUAGE&#39;</span><span class="token punctuation">,</span> <span class="token variable">previousLanguage</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+
+<div class="docs-callout"><strong>Error text only:</strong> changing <code>LANGUAGE</code> selects the error-message catalog. It does not translate Nerdamer Notation, function names, or the JavaScript / TypeScript API.</div>
+
+<p>The language setting is shared just like the other runtime settings. If an application changes it temporarily, restore the previous value when that operation is finished.</p>
+<p>Typed parser consumers can also import the supported language type. The <code>Language</code> type is derived from the available catalog keys, so it stays aligned with the supported codes:</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">type</span> <span class="token punctuation">{</span> <span class="token class-name">Language</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/parser&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">language</span><span class="token operator">:</span> <span class="token class-name">Language</span> <span class="token operator">=</span> <span class="token string">&#39;fra&#39;</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span><span class="token string">&#39;LANGUAGE&#39;</span><span class="token punctuation">,</span> <span class="token variable">language</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<h2>Limits and numeric precision</h2>
+<div class="api-table-wrap">
+<table class="api-table">
+  <thead><tr><th>Setting</th><th>Default</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>MAX_PRODUCT_AND_SUMMATION_ITERATION</code></td><td><code>10000</code></td><td>Limits direct finite iteration performed by <code>sum</code> and <code>product</code>. Larger ranges can remain symbolic instead of being expanded term by term.</td></tr>
+    <tr><td><code>MAX_LOOP_ITERATIONS</code></td><td><code>10000</code></td><td>Limits completed iterations in Nerdamer Scripting control-flow loops.</td></tr>
+    <tr><td><code>MAX_FRAC_INT</code></td><td><code>BigInt(1e60)</code></td><td>Caps integer sizes used by exact root extraction paths so very large numerator or denominator values do not trigger impractical work.</td></tr>
+    <tr><td><code>LANGUAGE</code></td><td><code>'eng'</code></td><td>Selects one of the supported error-message catalogs listed above.</td></tr>
+    <tr><td><code>PRECISION</code></td><td>current numeric precision</td><td>Controls the shared arbitrary-precision decimal setting and keeps finite-precision values of <code>pi</code> and <code>e</code> synchronized. <code>PRECISION</code> is handled specially by the root <code>nerdamer.set/get</code> API.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Direct parser access</h2>
+<p>If you import the parser API directly, the same shared settings can be read and changed with <code>Parser.get(...)</code> and <code>Parser.set(...)</code>. Precision uses the parser's dedicated precision methods.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Parser</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/parser&#39;</span><span class="token punctuation">;</span>
+
+<span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span><span class="token string">&#39;INDEX_BASE&#39;</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span><span class="token string">&#39;LANGUAGE&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;deu&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">base</span> <span class="token operator">=</span> <span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token string">&#39;INDEX_BASE&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token variable">language</span> <span class="token operator">=</span> <span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token string">&#39;LANGUAGE&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token function">setPrecision</span><span class="token punctuation">(</span><span class="token number">40</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token variable">precision</span> <span class="token operator">=</span> <span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token function">getPrecision</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<h2>Settings retained in the source object without an active runtime read</h2>
+<p>The current <code>SettingsType</code> also contains the names below, but the runtime does not currently read them outside the settings declaration. They are therefore not documented as active behavior switches.</p>
+<div class="api-table-wrap">
+<table class="api-table">
+  <thead><tr><th>Setting</th><th>Current default</th></tr></thead>
+  <tbody>
+    <tr><td><code>USE_FRACTIONS</code></td><td><code>true</code></td></tr>
+    <tr><td><code>ALLOW_BIGINT</code></td><td><code>true</code></td></tr>
+    <tr><td><code>REWRITE_SQRT</code></td><td><code>true</code></td></tr>
+    <tr><td><code>IMMUTABLE_VALUE_SETS</code></td><td><code>true</code></td></tr>
+    <tr><td><code>INITIALIZE_RULES</code></td><td><code>true</code></td></tr>
+  </tbody>
+</table>
+</div>
+<p>Code should not rely on those names changing behavior unless they acquire an active runtime use in a later release.</p></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../scripts/site.js"></script>
+
+<script src="../../scripts/playground-tree.js"></script>
+</body>
+</html>

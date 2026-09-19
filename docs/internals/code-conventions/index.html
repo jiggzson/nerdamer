@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Code conventions — Nerdamer Documentation</title>
+  <meta name="description" content="Practical implementation conventions for contributing to Nerdamer.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../styles/internals.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="internals-page">
+  <div class="eyebrow">Contributors · Style</div>
+  <h1>Code conventions</h1>
+  <p class="internals-lead">These conventions describe the patterns used throughout the TypeScript rewrite and the
+    expectations that make changes easier to review. They complement the compiler, linter, and tests; they do not
+    replace them.</p>
+
+  <div class="internals-callout"><strong>Match the subsystem you are changing.</strong> Nerdamer has a long history and
+    not every file follows every newer convention perfectly. Prefer the established pattern in the surrounding code
+    unless there is a specific reason to improve it as part of the same change.</div>
+
+  <h2>Reuse before adding</h2>
+  <p>Before adding a helper, utility, class, or new file, search the codebase for an existing abstraction that already
+    performs the operation or can be extended cleanly.</p>
+  <div class="internals-stage-row">
+    <div class="internals-stage"><small>1 · Search</small><code>existing function / class / pattern</code>
+      <p>Look in the owning subsystem and shared utilities first.</p>
+    </div>
+    <div class="internals-stage"><small>2 · Extend</small><code>reuse the existing abstraction</code>
+      <p>Prefer one implementation with a broader supported case over a second parallel implementation.</p>
+    </div>
+    <div class="internals-stage"><small>3 · Add only when needed</small><code>new helper / file</code>
+      <p>Create something new when it has a clear responsibility that does not belong in an existing abstraction.</p>
+    </div>
+  </div>
+
+  <h2>Keep the change in the owning subsystem</h2>
+  <p>A parser problem should normally be fixed in parser logic, a TeX problem in converters, and an algebra problem in
+    algebra. Avoid compensating for a lower-level defect in several callers when the underlying representation or
+    operation can be corrected once.</p>
+
+  <h2>Prefer one clear return path</h2>
+  <p>Many Nerdamer functions build a result in a variable named <code>retval</code> and return once at the end. This
+    makes complicated symbolic branches easier to inspect while debugging.</p>
+  <div class="internals-intro">
+    <div class="internals-intro-card">
+      <strong>Preferred for multi-branch logic</strong>
+      <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">operation</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">:</span> <span class="token class-name">Expression</span><span class="token punctuation">)</span><span class="token operator">:</span> <span class="token class-name">Expression</span> <span class="token punctuation">{</span>
+  <span class="token keyword">let</span> <span class="token variable">retval</span><span class="token operator">:</span> <span class="token class-name">Expression</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">.</span><span class="token function">isNUM</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token variable">retval</span> <span class="token operator">=</span> <span class="token function">handleNumber</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token variable">retval</span> <span class="token operator">=</span> <span class="token function">handleSymbolic</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token keyword">return</span> <span class="token variable">retval</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+    </div>
+    <div class="internals-intro-card">
+      <strong>Use judgment for trivial functions</strong>
+      <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">square</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">:</span> <span class="token variable">number</span><span class="token punctuation">)</span><span class="token operator">:</span> <span class="token variable">number</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> <span class="token variable">x</span> <span class="token operator">*</span> <span class="token variable">x</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+    </div>
+  </div>
+  <p>The goal is readable control flow, not a mechanical ban on every early return. Small guards and simple functions
+    can stay simple.</p>
+
+  <h2>Do not weaken types to make an error disappear</h2>
+  <p>TypeScript is part of Nerdamer’s design. When a type error exposes a mismatch between parser entities,
+    containers, expressions, or APIs, resolve the mismatch rather than broadening the type to <code>any</code> or
+    forcing an unsafe cast.</p>
+  <div class="internals-layer-grid">
+    <div class="internals-card">
+      <h3>Narrow explicitly</h3>
+      <p>Use the relevant type guard before calling methods that only exist on <code>Expression</code>,
+        <code>Equation</code>, <code>Matrix</code>, or another parser entity.
+      </p>
+    </div>
+    <div class="internals-card">
+      <h3>Keep public types accurate</h3>
+      <p>A public method should expose the value it really accepts or returns, not the type that is easiest for one
+        implementation branch.</p>
+    </div>
+    <div class="internals-card">
+      <h3>Prefer existing aliases</h3>
+      <p>Reuse project types such as <code>ParserEntity</code>, <code>ExpressionInput</code>, and option aliases instead
+        of recreating overlapping local unions.</p>
+    </div>
+  </div>
+
+  <h2>Preserve parser-entity distinctions</h2>
+  <p>Not every parsed value is an <code>Expression</code>. Equations, vectors, matrices, sets, collections, and
+    dictionaries are real result types. Do not silently coerce one into an Expression merely to reuse an API unless that
+    conversion is part of the documented behavior.</p>
+
+  <h2>Use named constants and existing symbolic shortcuts</h2>
+  <p>When the codebase already has a named constant, enum value, parser constant, or preconstructed symbolic shortcut,
+    use it instead of repeating a magic string or constructing the same symbolic value ad hoc.</p>
+  <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token comment">// Prefer the established project value when one exists.</span>
+<span class="token keyword">const</span> <span class="token variable">value</span> <span class="token operator">=</span> <span class="token function">two</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Avoid repeating an equivalent construction throughout the codebase.</span>
+<span class="token keyword">const</span> <span class="token variable">value</span> <span class="token operator">=</span> <span class="token class-name">Expression</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+  <p>This is especially useful for parser names, expression groups, operator names, common numeric values, and settings
+    shared across modules.</p>
+
+  <h2>Access modifiers should describe intended use</h2>
+  <p>Do not make a method <code>private</code> simply because there is only one caller today. A method should be private
+    when it belongs solely to the implementation of its declaring class. Keep reusable or subclass-facing
+    behavior public or protected as appropriate.</p>
+
+  <h2>Comments should survive the change</h2>
+  <p>If you modify code that already has explanatory comments, preserve them or revise them so they remain true. Do not
+    remove useful context simply because the implementation changed.</p>
+  <p>For new comments, explain the non-obvious reason or mathematical step rather than narrating the next line.</p>
+
+  <h2>Tests should protect the behavior that failed</h2>
+  <p>For a bug fix, add a targeted regression that reproduces the original failure directly. Prefer a small test that
+    clearly states the expected mathematical or API behavior over a broad snapshot that could pass for the wrong reason.
+  </p>
+  <div class="internals-path-grid">
+    <div class="internals-path-card">
+      <h3>Reproduce</h3>
+      <p>Start with the smallest expression or API call that demonstrates the problem.</p>
+    </div>
+    <div class="internals-path-card">
+      <h3>Fix</h3>
+      <p>Change the subsystem that owns the behavior rather than patching individual callers.</p>
+    </div>
+    <div class="internals-path-card">
+      <h3>Protect</h3>
+      <p>Keep the reproducer as a spec so a future refactor cannot silently restore the regression.</p>
+    </div>
+  </div>
+
+  <h2>Be conservative with files and exports</h2>
+  <p>New files, barrel exports, and public symbols add complexity to the project. Introduce them when they clarify the
+    structure or expose an API intended for ongoing support, not simply to make a local change appear cleaner.</p>
+  <p>Likewise, do not delete apparently unused code until you have checked for public exports, parser registration,
+    string dispatch, reflection, compatibility hooks, test-only use, or library utilities.</p>
+
+  <h2>Validate at the right levels</h2>
+  <pre class="codeblock language-shell"><code class="language-shell"><span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">typecheck</span>
+<span class="token function">npm</span> <span class="token variable">test</span>
+<span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">build</span></code></pre>
+  <p>Use targeted tests while iterating, then run the full checks before considering a change complete. If the change
+    affects generated documentation or package exports, run the corresponding documentation or package-validation
+    commands as well.</p>
+
+  <h2>Quick review checklist</h2>
+  <div class="internals-matrix-wrap">
+    <table class="internals-matrix">
+      <thead>
+        <tr>
+          <th>Area</th>
+          <th>Check</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Reuse</td>
+          <td>Did you search for an existing implementation before adding another helper or file?</td>
+        </tr>
+        <tr>
+          <td>Types</td>
+          <td>Did you solve the type mismatch rather than hide it with a broader type or unsafe cast?</td>
+        </tr>
+        <tr>
+          <td>Entities</td>
+          <td>Are Expression, Equation, Matrix, Vector, and other parser result types kept distinct where required?</td>
+        </tr>
+        <tr>
+          <td>Constants</td>
+          <td>Are existing named constants, enums, and symbolic shortcuts reused?</td>
+        </tr>
+        <tr>
+          <td>Comments</td>
+          <td>Are existing comments still accurate, and do new comments explain something non-obvious?</td>
+        </tr>
+        <tr>
+          <td>Tests</td>
+          <td>Does a regression test directly protect the behavior that was fixed?</td>
+        </tr>
+        <tr>
+          <td>Public API scope</td>
+          <td>Are new files, exports, and public methods actually necessary?</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="internals-intro">
+    <div class="internals-intro-card"><strong>Development workflow</strong>
+      <p>Setup, scratch-file use, tests, type checking, and builds are covered separately.</p><a
+        class="internals-source" href="/docs/internals/development/">How to develop</a>
+    </div>
+  </div>
+</div></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

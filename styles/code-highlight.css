@@ -1,0 +1,124 @@
+pre.codeblock[class*="language-"] {
+  position: relative;
+  overflow: auto;
+  tab-size: 2;
+  text-shadow: none;
+}
+
+pre.codeblock[class*="language-"] code {
+  display: block;
+  font-family: var(--mono);
+  color: rgb(var(--fg));
+  text-shadow: none;
+  white-space: inherit;
+}
+
+pre.codeblock .token {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  line-height: inherit;
+  white-space: inherit;
+  text-shadow: none;
+}
+
+.code-example {
+  position: relative;
+}
+
+.code-example pre.codeblock {
+  padding-right: 76px;
+  line-height: 1.4;
+}
+
+.code-copy {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  min-height: 28px;
+  padding: 3px 9px;
+  border: 1px solid rgb(var(--border));
+  border-radius: 7px;
+  background: rgb(var(--bg-elevated));
+  color: rgb(var(--muted));
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.code-copy:hover {
+  border-color: rgba(var(--accent), .45);
+  color: rgb(var(--fg));
+}
+
+.code-copy.copied {
+  color: rgb(var(--accent-deep));
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: rgb(var(--muted-2));
+  font-style: italic;
+}
+
+.token.punctuation,
+.token.operator {
+  color: rgb(var(--muted));
+}
+
+.token.keyword,
+.token.control {
+  color: #7646b8;
+  font-weight: 700;
+}
+
+.token.function {
+  color: #0876b9;
+  font-weight: 700;
+}
+
+.token.class-name {
+  color: rgb(var(--accent-deep));
+}
+
+.token.string,
+.token.char,
+.token.attr-value {
+  color: #247a51;
+}
+
+.token.number,
+.token.boolean,
+.token.constant {
+  color: #a85d00;
+}
+
+.token.property,
+.token.parameter,
+.token.variable {
+  color: rgb(var(--fg));
+}
+
+.token.builtin,
+.token.type-annotation {
+  color: #a13c63;
+}
+
+html.dark .token.keyword,
+html.dark .token.control { color: #b89af1; }
+html.dark .token.function { color: #69c5f0; }
+html.dark .token.string,
+html.dark .token.char,
+html.dark .token.attr-value { color: #6dcc98; }
+html.dark .token.number,
+html.dark .token.boolean,
+html.dark .token.constant { color: #e5a54d; }
+html.dark .token.builtin,
+html.dark .token.type-annotation { color: #f08fb0; }

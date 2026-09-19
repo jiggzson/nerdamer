@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Nerdamer Scripting examples — Documentation</title>
+  <meta name="description" content="Larger examples written directly in the Nerdamer Scripting language.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">Nerdamer Scripting</div>
+<h1>Scripting examples</h1>
+<p>
+    These examples are written as Nerdamer Scripting source only. Paste the text into a Nerdamer scripting input,
+    the Playground, or another interface that evaluates Nerdamer language input.
+</p>
+<div class="docs-callout">
+    <strong>Performance:</strong> Nerdamer Scripting adds parser and deferred-execution overhead compared with
+    equivalent
+    direct JavaScript / TypeScript code. It is useful when keeping the algorithm inside Nerdamer's language is valuable,
+    but use it cautiously for performance-sensitive loops or repeated numerical work. The direct API may be a better fit
+    for those workloads.
+</div>
+
+<h2 id="newton-system">Newton's method for a nonlinear system</h2>
+<p>
+    This example solves three nonlinear equations using a symbolic Jacobian, Newton iteration, and a multistart search
+    for distinct real roots. The Jacobian is built once and then evaluated at each trial point with
+    <code>evaluate(value, variables, point)</code>.
+</p>
+<p>
+    Based on the multivariable Newton method described in Courtney Remani,
+    <a rel="noopener noreferrer" target="_blank" href="https://www.lakeheadu.ca/sites/default/files/uploads/77/docs/RemaniFinal.pdf">Numerical Methods for Solving
+        Systems of Nonlinear Equations</a>, Lakehead University.
+</p>
+<div class="docs-callout">
+    <strong>JavaScript / TypeScript alternative:</strong> The same example is available using the direct
+    <a href="/docs/examples/#newton-system">JavaScript / TypeScript API</a>. That version moves the iteration and
+    multistart control into application code instead of the Nerdamer scripting layer.
+</div>
+
+<div class="code-example" data-example="scripting-newton-system">
+    <button class="code-copy" type="button" data-copy-code aria-label="Copy Nerdamer Scripting example">Copy</button>
+    <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token function">jacobian</span><span class="token punctuation">(</span><span class="token variable">residuals</span><span class="token punctuation">,</span><span class="token variable">variables</span><span class="token punctuation">)</span><span class="token operator">:=</span>
+    <span class="token keyword">let</span><span class="token punctuation">(</span>
+        <span class="token variable">dimension</span><span class="token operator">:</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token variable">variables</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token class-name">J</span><span class="token operator">:</span><span class="token function">imatrix</span><span class="token punctuation">(</span><span class="token variable">dimension</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">row</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token variable">col</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token function">block</span><span class="token punctuation">(</span>
+            <span class="token keyword">for</span><span class="token punctuation">(</span>
+                <span class="token variable">row</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token variable">dimension</span><span class="token operator">-</span><span class="token variable">row</span><span class="token punctuation">,</span>
+                <span class="token variable">row</span><span class="token operator">:</span><span class="token variable">row</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span>
+                <span class="token keyword">for</span><span class="token punctuation">(</span>
+                    <span class="token variable">col</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                    <span class="token variable">dimension</span><span class="token operator">-</span><span class="token variable">col</span><span class="token punctuation">,</span>
+                    <span class="token variable">col</span><span class="token operator">:</span><span class="token variable">col</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span>
+                    <span class="token class-name">J</span><span class="token punctuation">[</span><span class="token variable">row</span><span class="token punctuation">,</span><span class="token variable">col</span><span class="token punctuation">]</span><span class="token operator">:</span><span class="token function">diff</span><span class="token punctuation">(</span><span class="token variable">residuals</span><span class="token punctuation">[</span><span class="token variable">row</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token variable">variables</span><span class="token punctuation">[</span><span class="token variable">col</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+                <span class="token punctuation">)</span>
+            <span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token class-name">J</span><span class="token punctuation">)</span>
+        <span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">solveLinear</span><span class="token punctuation">(</span><span class="token variable">coefficients</span><span class="token punctuation">,</span><span class="token variable">rhsVector</span><span class="token punctuation">)</span><span class="token operator">:=</span>
+    <span class="token keyword">let</span><span class="token punctuation">(</span>
+        <span class="token variable">dimension</span><span class="token operator">:</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token variable">rhsVector</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">rhsMatrix</span><span class="token operator">:</span><span class="token function">transpose</span><span class="token punctuation">(</span><span class="token function">matrix</span><span class="token punctuation">(</span><span class="token variable">rhsVector</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">reduced</span><span class="token operator">:</span><span class="token function">rref</span><span class="token punctuation">(</span><span class="token function">augment</span><span class="token punctuation">(</span><span class="token variable">coefficients</span><span class="token punctuation">,</span><span class="token variable">rhsMatrix</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">solution</span><span class="token operator">:</span><span class="token variable">rhsVector</span><span class="token operator">*</span><span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token variable">row</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token function">block</span><span class="token punctuation">(</span>
+            <span class="token keyword">for</span><span class="token punctuation">(</span>
+                <span class="token variable">row</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token variable">dimension</span><span class="token operator">-</span><span class="token variable">row</span><span class="token punctuation">,</span>
+                <span class="token variable">row</span><span class="token operator">:</span><span class="token variable">row</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span>
+                <span class="token variable">solution</span><span class="token punctuation">[</span><span class="token variable">row</span><span class="token punctuation">]</span><span class="token operator">:</span><span class="token variable">reduced</span><span class="token punctuation">[</span><span class="token variable">row</span><span class="token punctuation">,</span><span class="token variable">dimension</span><span class="token punctuation">]</span>
+            <span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token variable">solution</span><span class="token punctuation">)</span>
+        <span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">newtonSystem</span><span class="token punctuation">(</span><span class="token variable">residuals</span><span class="token punctuation">,</span><span class="token variable">variables</span><span class="token punctuation">,</span><span class="token class-name">J</span><span class="token punctuation">,</span><span class="token variable">initial</span><span class="token punctuation">,</span><span class="token variable">iterations</span><span class="token punctuation">,</span><span class="token variable">tolerance</span><span class="token punctuation">)</span><span class="token operator">:=</span>
+    <span class="token keyword">let</span><span class="token punctuation">(</span>
+        <span class="token variable">point</span><span class="token operator">:</span><span class="token variable">initial</span><span class="token punctuation">,</span>
+        <span class="token variable">iteration</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token function">block</span><span class="token punctuation">(</span>
+            <span class="token keyword">for</span><span class="token punctuation">(</span>
+                <span class="token variable">iteration</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token variable">iterations</span><span class="token operator">-</span><span class="token variable">iteration</span><span class="token punctuation">,</span>
+                <span class="token variable">iteration</span><span class="token operator">:</span><span class="token variable">iteration</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span>
+                <span class="token keyword">let</span><span class="token punctuation">(</span>
+                    <span class="token variable">values</span><span class="token operator">:</span><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">residuals</span><span class="token punctuation">,</span><span class="token variable">variables</span><span class="token punctuation">,</span><span class="token variable">point</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                    <span class="token keyword">if</span><span class="token punctuation">(</span>
+                        <span class="token function">dot</span><span class="token punctuation">(</span><span class="token variable">values</span><span class="token punctuation">,</span><span class="token variable">values</span><span class="token punctuation">)</span><span class="token operator">&lt;</span><span class="token variable">tolerance</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">,</span>
+                        <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token variable">point</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                        <span class="token keyword">let</span><span class="token punctuation">(</span>
+                            <span class="token variable">numericJacobian</span><span class="token operator">:</span><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token class-name">J</span><span class="token punctuation">,</span><span class="token variable">variables</span><span class="token punctuation">,</span><span class="token variable">point</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                            <span class="token variable">step</span><span class="token operator">:</span><span class="token function">solveLinear</span><span class="token punctuation">(</span><span class="token variable">numericJacobian</span><span class="token punctuation">,</span><span class="token variable">values</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                            <span class="token variable">point</span><span class="token operator">:</span><span class="token function">numeric</span><span class="token punctuation">(</span><span class="token variable">point</span><span class="token operator">-</span><span class="token variable">step</span><span class="token punctuation">,</span><span class="token number">20</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">)</span>
+                    <span class="token punctuation">)</span>
+                <span class="token punctuation">)</span>
+            <span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token keyword">let</span><span class="token punctuation">(</span>
+                <span class="token variable">values</span><span class="token operator">:</span><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">residuals</span><span class="token punctuation">,</span><span class="token variable">variables</span><span class="token punctuation">,</span><span class="token variable">point</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                <span class="token keyword">if</span><span class="token punctuation">(</span>
+                    <span class="token function">dot</span><span class="token punctuation">(</span><span class="token variable">values</span><span class="token punctuation">,</span><span class="token variable">values</span><span class="token punctuation">)</span><span class="token operator">&lt;</span><span class="token variable">tolerance</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">,</span>
+                    <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token variable">point</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                    <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+                <span class="token punctuation">)</span>
+            <span class="token punctuation">)</span>
+        <span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">containsRoot</span><span class="token punctuation">(</span><span class="token variable">roots</span><span class="token punctuation">,</span><span class="token variable">rootCount</span><span class="token punctuation">,</span><span class="token variable">candidate</span><span class="token punctuation">,</span><span class="token variable">tolerance</span><span class="token punctuation">)</span><span class="token operator">:=</span>
+    <span class="token keyword">let</span><span class="token punctuation">(</span>
+        <span class="token variable">rootIndex</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token variable">coordinate</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token variable">found</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token function">block</span><span class="token punctuation">(</span>
+            <span class="token keyword">for</span><span class="token punctuation">(</span>
+                <span class="token variable">rootIndex</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token variable">rootCount</span><span class="token operator">-</span><span class="token variable">rootIndex</span><span class="token punctuation">,</span>
+                <span class="token variable">rootIndex</span><span class="token operator">:</span><span class="token variable">rootIndex</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span>
+                <span class="token keyword">let</span><span class="token punctuation">(</span>
+                    <span class="token variable">same</span><span class="token operator">:</span><span class="token number">1</span><span class="token punctuation">,</span>
+                    <span class="token function">block</span><span class="token punctuation">(</span>
+                        <span class="token keyword">for</span><span class="token punctuation">(</span>
+                            <span class="token variable">coordinate</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                            <span class="token function">count</span><span class="token punctuation">(</span><span class="token variable">candidate</span><span class="token punctuation">)</span><span class="token operator">-</span><span class="token variable">coordinate</span><span class="token punctuation">,</span>
+                            <span class="token variable">coordinate</span><span class="token operator">:</span><span class="token variable">coordinate</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span>
+                            <span class="token keyword">if</span><span class="token punctuation">(</span>
+                                <span class="token function">abs</span><span class="token punctuation">(</span>
+                                    <span class="token variable">candidate</span><span class="token punctuation">[</span><span class="token variable">coordinate</span><span class="token punctuation">]</span>
+                                    <span class="token operator">-</span><span class="token variable">roots</span><span class="token punctuation">[</span><span class="token variable">coordinate</span><span class="token punctuation">,</span><span class="token variable">rootIndex</span><span class="token punctuation">]</span>
+                                <span class="token punctuation">)</span><span class="token operator">&gt;</span><span class="token variable">tolerance</span><span class="token punctuation">,</span>
+                                <span class="token function">block</span><span class="token punctuation">(</span>
+                                    <span class="token variable">same</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                                    <span class="token keyword">break</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                                <span class="token punctuation">)</span>
+                            <span class="token punctuation">)</span>
+                        <span class="token punctuation">)</span><span class="token punctuation">,</span>
+                        <span class="token keyword">if</span><span class="token punctuation">(</span>
+                            <span class="token variable">same</span><span class="token punctuation">,</span>
+                            <span class="token function">block</span><span class="token punctuation">(</span>
+                                <span class="token variable">found</span><span class="token operator">:</span><span class="token number">1</span><span class="token punctuation">,</span>
+                                <span class="token keyword">break</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                            <span class="token punctuation">)</span>
+                        <span class="token punctuation">)</span>
+                    <span class="token punctuation">)</span>
+                <span class="token punctuation">)</span>
+            <span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token variable">found</span><span class="token punctuation">)</span>
+        <span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">buildStarts</span><span class="token punctuation">(</span><span class="token variable">seeds</span><span class="token punctuation">,</span><span class="token variable">variables</span><span class="token punctuation">)</span><span class="token operator">:=</span>
+    <span class="token keyword">let</span><span class="token punctuation">(</span>
+        <span class="token variable">dimension</span><span class="token operator">:</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token variable">variables</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">seedCount</span><span class="token operator">:</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token variable">seeds</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">total</span><span class="token operator">:</span><span class="token variable">seedCount</span><span class="token operator">^</span><span class="token variable">dimension</span><span class="token punctuation">,</span>
+        <span class="token variable">columns</span><span class="token operator">:</span><span class="token function">imatrix</span><span class="token punctuation">(</span><span class="token variable">dimension</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">startIndex</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token variable">coordinate</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token variable">startCount</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token function">block</span><span class="token punctuation">(</span>
+            <span class="token keyword">for</span><span class="token punctuation">(</span>
+                <span class="token variable">startIndex</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token variable">total</span><span class="token operator">-</span><span class="token variable">startIndex</span><span class="token punctuation">,</span>
+                <span class="token variable">startIndex</span><span class="token operator">:</span><span class="token variable">startIndex</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span>
+                <span class="token keyword">let</span><span class="token punctuation">(</span>
+                    <span class="token variable">candidate</span><span class="token operator">:</span><span class="token variable">variables</span><span class="token operator">*</span><span class="token number">0</span><span class="token punctuation">,</span>
+                    <span class="token function">block</span><span class="token punctuation">(</span>
+                        <span class="token keyword">for</span><span class="token punctuation">(</span>
+                            <span class="token variable">coordinate</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                            <span class="token variable">dimension</span><span class="token operator">-</span><span class="token variable">coordinate</span><span class="token punctuation">,</span>
+                            <span class="token variable">coordinate</span><span class="token operator">:</span><span class="token variable">coordinate</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span>
+                            <span class="token variable">candidate</span><span class="token punctuation">[</span><span class="token variable">coordinate</span><span class="token punctuation">]</span><span class="token operator">:</span>
+                                <span class="token variable">seeds</span><span class="token punctuation">[</span>
+                                    <span class="token function">mod</span><span class="token punctuation">(</span>
+                                        <span class="token function">floor</span><span class="token punctuation">(</span>
+                                            <span class="token variable">startIndex</span><span class="token operator">/</span>
+                                            <span class="token punctuation">(</span>
+                                                <span class="token variable">seedCount</span><span class="token operator">^</span>
+                                                <span class="token punctuation">(</span><span class="token variable">dimension</span><span class="token operator">-</span><span class="token variable">coordinate</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span>
+                                            <span class="token punctuation">)</span>
+                                        <span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                        <span class="token variable">seedCount</span>
+                                    <span class="token punctuation">)</span>
+                                <span class="token punctuation">]</span>
+                        <span class="token punctuation">)</span><span class="token punctuation">,</span>
+                        <span class="token keyword">if</span><span class="token punctuation">(</span>
+                            <span class="token variable">startCount</span><span class="token punctuation">,</span>
+                            <span class="token variable">columns</span><span class="token operator">:</span><span class="token function">augment</span><span class="token punctuation">(</span>
+                                <span class="token variable">columns</span><span class="token punctuation">,</span>
+                                <span class="token function">transpose</span><span class="token punctuation">(</span><span class="token function">matrix</span><span class="token punctuation">(</span><span class="token variable">candidate</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                            <span class="token punctuation">)</span><span class="token punctuation">,</span>
+                            <span class="token variable">columns</span><span class="token operator">:</span><span class="token function">transpose</span><span class="token punctuation">(</span><span class="token function">matrix</span><span class="token punctuation">(</span><span class="token variable">candidate</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">)</span><span class="token punctuation">,</span>
+                        <span class="token variable">startCount</span><span class="token operator">:</span><span class="token variable">startCount</span><span class="token operator">+</span><span class="token number">1</span>
+                    <span class="token punctuation">)</span>
+                <span class="token punctuation">)</span>
+            <span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token function">transpose</span><span class="token punctuation">(</span><span class="token variable">columns</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">findRoots</span><span class="token punctuation">(</span><span class="token variable">residuals</span><span class="token punctuation">,</span><span class="token variable">variables</span><span class="token punctuation">,</span><span class="token class-name">J</span><span class="token punctuation">,</span><span class="token variable">starts</span><span class="token punctuation">,</span><span class="token variable">iterations</span><span class="token punctuation">,</span><span class="token variable">tolerance</span><span class="token punctuation">)</span><span class="token operator">:=</span>
+    <span class="token keyword">let</span><span class="token punctuation">(</span>
+        <span class="token variable">dimensions</span><span class="token operator">:</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token variable">starts</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">startCount</span><span class="token operator">:</span><span class="token variable">dimensions</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+        <span class="token variable">rootCount</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token variable">roots</span><span class="token operator">:</span><span class="token function">imatrix</span><span class="token punctuation">(</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token variable">variables</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">startIndex</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+        <span class="token function">block</span><span class="token punctuation">(</span>
+            <span class="token keyword">for</span><span class="token punctuation">(</span>
+                <span class="token variable">startIndex</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
+                <span class="token variable">startCount</span><span class="token operator">-</span><span class="token variable">startIndex</span><span class="token punctuation">,</span>
+                <span class="token variable">startIndex</span><span class="token operator">:</span><span class="token variable">startIndex</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span>
+                <span class="token keyword">let</span><span class="token punctuation">(</span>
+                    <span class="token variable">attempt</span><span class="token operator">:</span><span class="token function">iferror</span><span class="token punctuation">(</span>
+                        <span class="token function">newtonSystem</span><span class="token punctuation">(</span>
+                            <span class="token variable">residuals</span><span class="token punctuation">,</span>
+                            <span class="token variable">variables</span><span class="token punctuation">,</span>
+                            <span class="token class-name">J</span><span class="token punctuation">,</span>
+                            <span class="token variable">starts</span><span class="token punctuation">[</span><span class="token variable">startIndex</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+                            <span class="token variable">iterations</span><span class="token punctuation">,</span>
+                            <span class="token variable">tolerance</span>
+                        <span class="token punctuation">)</span><span class="token punctuation">,</span>
+                        <span class="token punctuation">[</span><span class="token punctuation">]</span>
+                    <span class="token punctuation">)</span><span class="token punctuation">,</span>
+                    <span class="token keyword">if</span><span class="token punctuation">(</span>
+                        <span class="token function">count</span><span class="token punctuation">(</span><span class="token variable">attempt</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                        <span class="token keyword">if</span><span class="token punctuation">(</span>
+                            <span class="token function">not</span><span class="token punctuation">(</span>
+                                <span class="token function">containsRoot</span><span class="token punctuation">(</span>
+                                    <span class="token variable">roots</span><span class="token punctuation">,</span>
+                                    <span class="token variable">rootCount</span><span class="token punctuation">,</span>
+                                    <span class="token variable">attempt</span><span class="token punctuation">,</span>
+                                    <span class="token variable">tolerance</span>
+                                <span class="token punctuation">)</span>
+                            <span class="token punctuation">)</span><span class="token punctuation">,</span>
+                            <span class="token function">block</span><span class="token punctuation">(</span>
+                                <span class="token keyword">if</span><span class="token punctuation">(</span>
+                                    <span class="token variable">rootCount</span><span class="token punctuation">,</span>
+                                    <span class="token variable">roots</span><span class="token operator">:</span><span class="token function">augment</span><span class="token punctuation">(</span>
+                                        <span class="token variable">roots</span><span class="token punctuation">,</span>
+                                        <span class="token function">transpose</span><span class="token punctuation">(</span><span class="token function">matrix</span><span class="token punctuation">(</span><span class="token variable">attempt</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                                    <span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                    <span class="token variable">roots</span><span class="token operator">:</span><span class="token function">transpose</span><span class="token punctuation">(</span><span class="token function">matrix</span><span class="token punctuation">(</span><span class="token variable">attempt</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                                <span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                <span class="token variable">rootCount</span><span class="token operator">:</span><span class="token variable">rootCount</span><span class="token operator">+</span><span class="token number">1</span>
+                            <span class="token punctuation">)</span>
+                        <span class="token punctuation">)</span>
+                    <span class="token punctuation">)</span>
+                <span class="token punctuation">)</span>
+            <span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token keyword">if</span><span class="token punctuation">(</span>
+                <span class="token variable">rootCount</span><span class="token punctuation">,</span>
+                <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token function">transpose</span><span class="token punctuation">(</span><span class="token variable">roots</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+            <span class="token punctuation">)</span>
+        <span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">runNewtonExample</span><span class="token punctuation">(</span><span class="token variable">residuals</span><span class="token punctuation">,</span><span class="token variable">variables</span><span class="token punctuation">,</span><span class="token variable">seeds</span><span class="token punctuation">,</span><span class="token variable">iterations</span><span class="token punctuation">,</span><span class="token variable">tolerance</span><span class="token punctuation">)</span><span class="token operator">:=</span>
+    <span class="token keyword">let</span><span class="token punctuation">(</span>
+        <span class="token class-name">J</span><span class="token operator">:</span><span class="token function">jacobian</span><span class="token punctuation">(</span><span class="token variable">residuals</span><span class="token punctuation">,</span><span class="token variable">variables</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">starts</span><span class="token operator">:</span><span class="token function">buildStarts</span><span class="token punctuation">(</span><span class="token variable">seeds</span><span class="token punctuation">,</span><span class="token variable">variables</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">roots</span><span class="token operator">:</span><span class="token function">findRoots</span><span class="token punctuation">(</span>
+            <span class="token variable">residuals</span><span class="token punctuation">,</span>
+            <span class="token variable">variables</span><span class="token punctuation">,</span>
+            <span class="token class-name">J</span><span class="token punctuation">,</span>
+            <span class="token variable">starts</span><span class="token punctuation">,</span>
+            <span class="token variable">iterations</span><span class="token punctuation">,</span>
+            <span class="token variable">tolerance</span>
+        <span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token function">numeric</span><span class="token punctuation">(</span><span class="token variable">roots</span><span class="token punctuation">,</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">runNewtonExample</span><span class="token punctuation">(</span>
+    <span class="token punctuation">[</span>
+        <span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token variable">y</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token variable">z</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">-</span><span class="token number">14</span><span class="token punctuation">,</span>
+        <span class="token variable">x</span><span class="token operator">*</span><span class="token variable">y</span><span class="token operator">+</span><span class="token variable">y</span><span class="token operator">*</span><span class="token variable">z</span><span class="token operator">+</span><span class="token variable">z</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">-</span><span class="token number">11</span><span class="token punctuation">,</span>
+        <span class="token variable">x</span><span class="token operator">*</span><span class="token variable">y</span><span class="token operator">*</span><span class="token variable">z</span><span class="token operator">-</span><span class="token number">6</span>
+    <span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token punctuation">[</span><span class="token variable">x</span><span class="token punctuation">,</span><span class="token variable">y</span><span class="token punctuation">,</span><span class="token variable">z</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token number">12</span><span class="token punctuation">,</span>
+    <span class="token number">1e-8</span>
+<span class="token punctuation">)</span></code></pre>
+</div>
+
+<p>
+    The 27 starting points generated from <code>[0,2,4]</code> recover all six permutations of
+    <code>[1,2,3]</code> for this system. The substitution-aware <code>evaluate</code> calls avoid repeatedly rebuilding
+    the residuals and Jacobian with <code>subst()</code>.
+</p>
+
+<h2 id="normal-modes">Derive the normal modes of coupled oscillators</h2>
+<p>
+    Two identical masses connected by three springs have symmetric and antisymmetric normal modes. This scripting
+    version builds the symbolic mass and stiffness matrices, solves the characteristic equation, and derives a
+    normalized
+    nullspace basis for each mode.
+</p>
+<p>
+    Follow the same physical system in McGill University's PHYS 232 notes:
+    <a rel="noopener noreferrer" target="_blank" href="https://www.physics.mcgill.ca/~hilke/232/232.html">Coupled oscillators — 2 masses and 3 springs</a>.
+</p>
+<div class="docs-callout">
+    <strong>JavaScript / TypeScript alternative:</strong> The same calculation is available using the direct
+    <a href="/docs/examples/#normal-modes">JavaScript / TypeScript API</a>. The scripting form keeps the entire symbolic
+    workflow inside Nerdamer's language.
+</div>
+
+<div class="code-example" data-example="scripting-normal-modes">
+    <button class="code-copy" type="button" data-copy-code aria-label="Copy normal modes Nerdamer Scripting example">
+        Copy
+    </button>
+    <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token function">modeShape</span><span class="token punctuation">(</span><span class="token variable">dynamic</span><span class="token punctuation">,</span><span class="token variable">eigenvalue</span><span class="token punctuation">)</span><span class="token operator">:=</span>
+    <span class="token keyword">let</span><span class="token punctuation">(</span>
+        <span class="token variable">basis</span><span class="token operator">:</span><span class="token function">nullspace</span><span class="token punctuation">(</span>
+            <span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">dynamic</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">q</span><span class="token operator">=&gt;</span><span class="token variable">eigenvalue</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+        <span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">shape</span><span class="token operator">:</span><span class="token variable">basis</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+        <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token variable">shape</span><span class="token operator">/</span><span class="token variable">shape</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">normalModes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">:=</span>
+    <span class="token keyword">let</span><span class="token punctuation">(</span>
+        <span class="token class-name">K</span><span class="token operator">:</span><span class="token function">matrix</span><span class="token punctuation">(</span>
+            <span class="token punctuation">[</span><span class="token variable">k</span><span class="token operator">+</span><span class="token variable">kappa</span><span class="token punctuation">,</span><span class="token operator">-</span><span class="token variable">kappa</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            <span class="token punctuation">[</span><span class="token operator">-</span><span class="token variable">kappa</span><span class="token punctuation">,</span><span class="token variable">k</span><span class="token operator">+</span><span class="token variable">kappa</span><span class="token punctuation">]</span>
+        <span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token class-name">M</span><span class="token operator">:</span><span class="token function">matrix</span><span class="token punctuation">(</span>
+            <span class="token punctuation">[</span><span class="token variable">m</span><span class="token punctuation">,</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token variable">m</span><span class="token punctuation">]</span>
+        <span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">dynamic</span><span class="token operator">:</span><span class="token class-name">K</span><span class="token operator">-</span><span class="token class-name">M</span><span class="token operator">*</span><span class="token variable">q</span><span class="token punctuation">,</span>
+        <span class="token variable">characteristic</span><span class="token operator">:</span><span class="token function">factor</span><span class="token punctuation">(</span><span class="token function">determinant</span><span class="token punctuation">(</span><span class="token variable">dynamic</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">eigenvalues</span><span class="token operator">:</span><span class="token function">solve</span><span class="token punctuation">(</span><span class="token variable">characteristic</span><span class="token punctuation">,</span><span class="token variable">q</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">frequencies</span><span class="token operator">:</span><span class="token punctuation">[</span>
+            <span class="token function">simplify</span><span class="token punctuation">(</span><span class="token variable">eigenvalues</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">^</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">/</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token function">simplify</span><span class="token punctuation">(</span><span class="token variable">eigenvalues</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token operator">^</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">/</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">]</span><span class="token punctuation">,</span>
+        <span class="token variable">modes</span><span class="token operator">:</span><span class="token punctuation">[</span>
+            <span class="token function">modeShape</span><span class="token punctuation">(</span><span class="token variable">dynamic</span><span class="token punctuation">,</span><span class="token variable">eigenvalues</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token function">modeShape</span><span class="token punctuation">(</span><span class="token variable">dynamic</span><span class="token punctuation">,</span><span class="token variable">eigenvalues</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+        <span class="token punctuation">]</span><span class="token punctuation">,</span>
+        <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token punctuation">[</span>
+            <span class="token variable">characteristic</span><span class="token punctuation">,</span>
+            <span class="token variable">eigenvalues</span><span class="token punctuation">,</span>
+            <span class="token variable">frequencies</span><span class="token punctuation">,</span>
+            <span class="token variable">modes</span>
+        <span class="token punctuation">]</span><span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">assume</span><span class="token punctuation">(</span><span class="token variable">k</span><span class="token operator">&gt;</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">assume</span><span class="token punctuation">(</span><span class="token variable">m</span><span class="token operator">&gt;</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">assume</span><span class="token punctuation">(</span><span class="token variable">kappa</span><span class="token operator">&gt;</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">normalModes</span><span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+</div>
+
+<p>
+    The returned value contains the factored characteristic expression, the two eigenvalues
+    (<code>omega^2</code>), their square roots, and the normalized mode shapes. The assumptions restrict the symbolic
+    parameters to the physical positive domain, as in the direct API example.
+</p>
+
+<h2>Where to go next</h2>
+<p>
+    See the <a href="/docs/language/">Nerdamer Scripting reference</a> for the language constructs used above, or
+    compare
+    this example with the <a href="/docs/examples/#newton-system">direct JavaScript / TypeScript version</a>.
+</p></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+<script src="../../../scripts/code-copy.js"></script>
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

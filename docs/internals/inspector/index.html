@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Internals inspector — Nerdamer Documentation</title>
+  <meta name="description" content="Inspect Nerdamer tokens, RPN, parser entities, expression groups, and generated TeX in the browser.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/temml@0.13.5/dist/Temml-Local.css">
+<link rel="stylesheet" href="../../../styles/internals.css">
+<link rel="stylesheet" href="../../../styles/internals-inspector.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="internals-page inspector-page">
+  <div class="eyebrow">Contributors · Internals</div>
+  <h1>Internals inspector</h1>
+  <p class="internals-lead">Run an expression through the library and inspect the parser stages and object structure that sit behind the final result. This page uses the same browser bundle as the Playground and Showcase.</p>
+
+  <div class="inspector-workbench">
+    <div class="inspector-editor-panel">
+      <div class="inspector-panel-head"><strong>Input</strong><span>Ctrl/Cmd + Enter to inspect</span></div>
+      <textarea id="inspector-input" spellcheck="false">2*x + sin(x)^2</textarea>
+      <div class="inspector-actions">
+        <button class="btn btn-primary" id="inspector-run" type="button">Inspect expression</button>
+        <span class="engine-status" id="inspector-status">Waiting for engine</span>
+      </div>
+      <div class="inspector-examples" aria-label="Inspector examples">
+        <button type="button" data-inspector-example="2*x + sin(x)^2">sum + function</button>
+        <button type="button" data-inspector-example="(x+1)*(x+2)/x">fraction + products</button>
+        <button type="button" data-inspector-example="[x,y,3]">vector</button>
+        <button type="button" data-inspector-example="matrix([a,b],[c,d])">matrix</button>
+        <button type="button" data-inspector-example="x^2=2">equation</button>
+      </div>
+    </div>
+
+    <div class="inspector-result-panel">
+      <div class="inspector-panel-head"><strong>Result</strong><span id="inspector-result-meta">—</span></div>
+      <div class="inspector-result-math" id="inspector-result-math">—</div>
+      <div class="inspector-result-lines">
+        <div><span>Canonical text</span><code id="inspector-result-text">—</code></div>
+        <div><span>TeX</span><code id="inspector-result-tex">—</code></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="inspector-error" id="inspector-error" hidden></div>
+
+  <h2>From source to object</h2>
+  <p>The first two stages come from the internal parser instance exposed by the compatibility registry. The final result uses the normal <code>nerdamer(...)</code> entry point.</p>
+  <div class="inspector-pipeline" aria-label="Parser pipeline result">
+    <div class="inspector-pipeline-stage"><small>1 · source</small><code id="inspector-stage-source">—</code></div>
+    <div class="inspector-pipeline-stage"><small>2 · tokens</small><code id="inspector-stage-tokens">—</code></div>
+    <div class="inspector-pipeline-stage"><small>3 · RPN</small><code id="inspector-stage-rpn">—</code></div>
+    <div class="inspector-pipeline-stage"><small>4 · entity</small><code id="inspector-stage-entity">—</code></div>
+  </div>
+
+  <div class="internals-callout"><strong>Browser debug boundary.</strong> The ordinary UMD bundle does not include the contributor-only <code>nerdamer/debug</code> subpath. Until a browser debug artifact is wired into this page, token and RPN inspection uses the exposed parser instance directly. That means bracketless-function preprocessing performed inside <code>Parser.parse()</code> is not represented in the token/RPN panels.</div>
+
+  <h2>Tokens</h2>
+  <p>Tokenization identifies numbers, variables, functions, operators, and nested scopes. Hover a token to see its source position when one is available.</p>
+  <div class="inspector-data-panel" id="inspector-tokens"></div>
+
+  <h2>Reverse Polish notation</h2>
+  <p>RPN encodes operator precedence by order. The parser can then evaluate the sequence with a stack rather than repeatedly resolving infix precedence.</p>
+  <div class="inspector-data-panel" id="inspector-rpn"></div>
+
+  <h2>Parser entity structure</h2>
+  <p><code>ParserEntity</code> is the outer runtime family, not one expression-node shape. A result can be an <code>Expression</code>, <code>Equation</code>, <code>Vector</code>, <code>Matrix</code>, <code>ValuesSet</code>, <code>Collection</code>, or <code>Dictionary</code>. Expression nodes then have their own group/type plus multiplier, power, base, elements, and function arguments.</p>
+  <div class="internals-callout"><strong>How to read the tree.</strong> <code>typeName</code> is the expression group such as <code>SUM</code> or <code>PRD</code>; <code>multiplier</code> stores the coefficient; <code>power</code> and <code>base</code> are shown as child expressions when present; <code>elements</code> and <code>args</code> hold the remaining symbolic children. Structured parser entities expose their rows, sides, entries, or elements instead.</div>
+  <div class="inspector-tree" id="inspector-tree"></div>
+
+  <div class="internals-callout"><strong>Diagnostic view, not a serialization format.</strong> The inspector exposes implementation details that may change as the library evolves. It is meant to help contributors understand and debug the current engine, not to define a persistence format for expressions.</div>
+</div></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+<script src="../../../bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/temml@0.13.5/dist/temml.min.js"></script>
+<script src="../../../scripts/internals-inspector.js"></script>
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

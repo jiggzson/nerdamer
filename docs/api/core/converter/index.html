@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Converter — Nerdamer core API</title>
+  <meta name="description" content="Formats Nerdamer values as TeX or normalized text and imports supported TeX input.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../../styles/site.css">
+  <link rel="stylesheet" href="../../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../../styles/header.css">
+  <link rel="stylesheet" href="../../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../../styles/api.css">
+  <link rel="stylesheet" href="../../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/core/">nerdamer/core</a></div><div class="api-member-title"><div><span class="api-kind">Class</span><h1>Converter</h1></div><a class="api-source" href="https://github.com/N00bie-to-Github/nerdamer2/blob/ff74b9eb6ce7e954de9323fc9b54be86591d257e/src/core/converters/Converter.ts#L62" target="_blank" rel="noreferrer">src/core/converters/Converter.ts:62</a></div><div class="api-description"><p>Formats Nerdamer values as TeX or normalized text and imports supported TeX input.</p><div class="api-note"><strong>remarks</strong><p>A converter retains its output mode between calls. The default mode is</p><pre class="api-example"><code>`&quot;TeX&quot;`</code></pre><p>;
+construct a separate</p><pre class="api-example"><code>`&quot;text&quot;`</code></pre><p>converter when both representations are needed.
+Formatting a string parses it with the process-wide parser, so registered functions,
+constants, settings, and known values can affect the result.
+
+Converter.fromTeX recognizes the TeX forms emitted by this converter and a
+practical subset of common mathematical notation. It is not a general TeX parser:
+unsupported macros, ambiguous implicit notation, or nesting outside the recognized
+forms can produce parser errors or a different symbolic interpretation.</p></div></div><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>import nerdamer from &#39;nerdamer&#39;;
+
+const text = new nerdamer.classes.Converter(&#39;text&#39;);
+const tex = new nerdamer.classes.Converter();
+
+text.convert(&#39;x^2 + 2*x + 1&#39;); // &quot;1+2*x+x^2&quot;
+tex.convert(&#39;sqrt(x)&#39;);        // &quot;\\sqrt{x}&quot;</code></pre></section><section class="api-detail"><h2>Members</h2><div class="api-children"><article class="api-child" id="constructor"><div class="api-child-head"><code>Converter(mode?: &quot;text&quot; | &quot;TeX&quot;): <a class="api-type-link" href="/docs/api/core/converter/">Converter</a></code><span>Constructor</span></div><div class="api-description"><p>Creates a converter with persistent output mode.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>mode</code></td><td><code>&quot;text&quot; | &quot;TeX&quot;</code></td><td>`&quot;TeX&quot;` (the default) or `&quot;text&quot;`.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/converter/">Converter</a></code></p></section></article><article class="api-child" id="convert"><div class="api-child-head"><code>convert(input: string | number | <a class="api-type-link" href="/docs/api/core/parser-entity/">ParserEntity</a>, options?: <a class="api-type-link" href="/docs/api/core/options-object/">OptionsObject</a>): string</code><span>Method</span></div><div class="api-description"><p>Formats supported values while retaining ordinary Converter semantics by default.
+Source preservation is an internal compatibility option used by convertToLaTeX.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>input</code></td><td><code>string | number | <a class="api-type-link" href="/docs/api/core/parser-entity/">ParserEntity</a></code></td><td>—</td></tr><tr><td><code>options</code></td><td><code><a class="api-type-link" href="/docs/api/core/options-object/">OptionsObject</a></code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>string</code></p></section></article><article class="api-child" id="convert-nt-root"><div class="api-child-head"><code>convertNtRoot(input: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, root: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code><span>Method</span></div><div class="api-description"><p>No description is available yet.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>input</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>—</td></tr><tr><td><code>root</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></p></section></article><article class="api-child" id="convert-sqrt"><div class="api-child-head"><code>convertSQRT(input: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code><span>Method</span></div><div class="api-description"><p>No description is available yet.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>input</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></p></section></article><article class="api-child" id="from-te-x"><div class="api-child-head"><code>fromTeX(input: string): <a class="api-type-link" href="/docs/api/core/parser-entity/">ParserEntity</a></code><span>Method</span></div><div class="api-description"><p>Parses a supported TeX subset into a Nerdamer parser entity.</p><div class="api-note"><strong>remarks</strong><p>Set notation is recognized before ordinary expression preprocessing and produces a
+value set or dictionary when appropriate. Other input is rewritten to Nerdamer
+parser syntax, tokenized in pure mode, and evaluated through the process-wide parser.
+Consequently, parser settings or registered functions can affect the result.
+
+The importer supports the converter&#39;s common function forms, roots, arbitrary-base
+logarithms, transforms, derivatives, integrals, limits, sums, products, floor and
+ceiling notation, equations, vectors, matrices, finite sets, and dictionaries. It does
+not promise round-tripping arbitrary third-party TeX.</p></div><div class="api-note"><strong>throws</strong><p>Error When preprocessing leaves syntax that the parser cannot interpret.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>input</code></td><td><code>string</code></td><td>TeX text in the supported conversion subset.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/parser-entity/">ParserEntity</a></code> — The parser entity represented by the supported TeX input.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>import nerdamer from &#39;nerdamer&#39;;
+
+const converter = new nerdamer.classes.Converter();
+nerdamer.pretty(converter.fromTeX(&#39;\\log_{2}{256}&#39;), &#39;text&#39;); // &quot;8&quot;</code></pre></section></article><article class="api-child" id="modes"><div class="api-child-head"><code>modes: { … }</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="set-mode"><div class="api-child-head"><code>setMode(mode: string): void</code><span>Method</span></div><div class="api-description"><p>Selects the output syntax used by subsequent conversions.</p><div class="api-note"><strong>remarks</strong><p>The mode is mutable converter state. Supported values are</p><pre class="api-example"><code>`&quot;TeX&quot;`</code></pre><p>and</p><pre class="api-example"><code>`&quot;text&quot;`</code></pre><p>;
+changing the mode does not alter parser settings or previously returned strings.</p></div><div class="api-note"><strong>throws</strong><p>Error When</p><pre class="api-example"><code>`mode`</code></pre><p>is not</p><pre class="api-example"><code>`&quot;TeX&quot;`</code></pre><p>or</p><pre class="api-example"><code>`&quot;text&quot;`</code></pre><p>.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>mode</code></td><td><code>string</code></td><td>The output mode to activate.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>void</code></p></section></article></div></section></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../../scripts/site.js"></script>
+
+<script src="../../../../scripts/playground-tree.js"></script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Documentation — Nerdamer</title>
+  <meta name="description" content="Learn Nerdamer Notation, Nerdamer Scripting, and the JavaScript / TypeScript API.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../styles/site.css">
+  <link rel="stylesheet" href="../styles/code-highlight.css">
+  <link rel="stylesheet" href="../styles/logo.css">
+  <link rel="stylesheet" href="../styles/header.css">
+  <link rel="stylesheet" href="../styles/back-to-top.css">
+  <link rel="stylesheet" href="../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../styles/playground-tree.css">
+  
+  <link rel="stylesheet" href="../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">Start here</div>
+<h1>Nerdamer documentation</h1>
+<p>
+	The library offers three main ways of interacting with symbolic mathematics. The documentation is organized around
+	those interfaces so you can go directly to the form you are using.
+</p>
+<div class="docs-callout">
+	<strong>User input is parsed, not evaluated as JavaScript.</strong> Nerdamer Notation and Nerdamer Scripting are
+	handled by the library's parser. Normal parsing, simplification, solving, evaluation, and symbolic manipulation do
+	not use <code>eval()</code> or <code>new Function</code>, so a string passed to <code>nerdamer(...)</code> should
+	not be treated as JavaScript source. The exception is <code>buildFunction()</code>, which explicitly compiles an
+	expression to a JavaScript-number function with <code>new Function(...)</code> and can therefore be affected by
+	Content Security Policy restrictions.
+</div>
+<div class="docs-callout">
+	<strong>New to Nerdamer?</strong> Start with <a href="/docs/getting-started/">Getting started</a>. If you are unsure
+	which interface fits your project, see <a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a>.
+</div>
+<div class="docs-callout">
+	<strong>Localized errors.</strong> The library includes built-in error messages for each supported language.
+	Use the <code>LANGUAGE</code> setting to select the error-message language. See
+	<a href="/docs/settings/#localized-error-messages">Settings and configuration</a> for the supported language codes
+	and an example.
+</div>
+
+<h2>Nerdamer Notation</h2>
+<p>
+	Use the mathematical notation accepted by <code>nerdamer('...')</code>. This includes expressions, equations,
+	vectors, matrices, and functions such as <code>factor</code>, <code>diff</code>, and <code>solve</code>.
+</p>
+<pre class="codeblock language-javascript"><code class="language-javascript">
+<span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">result</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;factor(x^4-1)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">result</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>
+	Start with <a href="/docs/parser/">Expression syntax</a> or browse the
+	<a href="/docs/functions/">Nerdamer Notation function reference</a>.
+</p>
+
+<h2>Nerdamer Scripting</h2>
+<p>
+	Use Nerdamer Scripting when the text passed to <code>nerdamer(...)</code> needs assignments, user-defined functions,
+	conditions, loops, blocks, or local scope.
+</p>
+<pre class="codeblock language-javascript"><code class="language-javascript">
+<span class="token keyword">const</span> <span class="token variable">result</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">`
+  block(
+    x: 4,
+    if(x &gt; 3, x^2, x)
+  )
+`</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">result</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 16</span></code></pre>
+<p>
+	See <a href="/docs/language/">Nerdamer Scripting</a>, browse the
+	<a href="/docs/language/examples/">Scripting examples</a>, or go directly to
+	<a href="/docs/language/user-defined-functions/">User-defined functions</a> to compare scripting with
+	<code>nerdamer.setFunction(...)</code>.
+</p>
+
+<h2>JavaScript / TypeScript API</h2>
+<p>
+	Use the API when you want to call the library directly from application code. The default
+	<code>nerdamer</code> import is callable and also exposes functions such as <code>nerdamer.pretty(...)</code>,
+	<code>nerdamer.setFunction(...)</code>, <code>nerdamer.factor(...)</code>, and <code>nerdamer.solve(...)</code>.
+	Public package paths are also available for direct imports of functions, classes, and types.
+</p>
+<pre class="codeblock language-javascript"><code class="language-javascript">
+<span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Matrix</span><span class="token punctuation">,</span> <span class="token variable">determinant</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">formatted</span> <span class="token operator">=</span> <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">pretty</span><span class="token punctuation">(</span><span class="token string">&#39;x^2+1&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;TeX&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token class-name">M</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">Matrix</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token string">&#39;x&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;y&#39;</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token variable">d</span> <span class="token operator">=</span> <span class="token function">determinant</span><span class="token punctuation">(</span><span class="token class-name">M</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>
+	See the <a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a>, the full
+	<a href="/docs/api/">JavaScript / TypeScript API</a>, <a href="/docs/public-helpers/">text output and public helpers</a>, or <a href="/docs/examples/">larger API examples</a> that
+	combine several operations.
+</p>
+
+<h2>Where to go next</h2>
+<div class="docs-cards">
+	<a class="card docs-card" href="/docs/getting-started/"
+		><span class="arrow">→</span>
+		<h3>Getting started</h3>
+		<p>Install the library and run your first expressions.</p></a
+	>
+	<a class="card docs-card" href="/docs/parser/"
+		><span class="arrow">→</span>
+		<h3>Nerdamer Notation</h3>
+		<p>Learn expression syntax, then browse the notation function reference.</p></a
+	>
+	<a class="card docs-card" href="/docs/language/"
+		><span class="arrow">→</span>
+		<h3>Nerdamer Scripting</h3>
+		<p>Use variables, functions, conditions, loops, blocks, and local scope.</p></a
+	>
+	<a class="card docs-card" href="/docs/api/nerdamer/"
+		><span class="arrow">→</span>
+		<h3><code>nerdamer</code> API</h3>
+		<p>Reference for the callable default import and the functions and properties attached to it.</p></a
+	>
+	<a class="card docs-card" href="/docs/api/"
+		><span class="arrow">→</span>
+		<h3>JavaScript / TypeScript API</h3>
+		<p>Reference for the <code>nerdamer</code> API, package imports, classes, functions, and types.</p></a
+	>
+	<a class="card docs-card" href="/docs/public-helpers/"
+		><span class="arrow">→</span>
+		<h3>Text output &amp; public helpers</h3>
+		<p>Control rendered term ordering and use the promoted algebra, substitution, complex, and linear-algebra helpers.</p></a
+	>
+	<a class="card docs-card" href="/docs/examples/"
+		><span class="arrow">→</span>
+		<h3>API examples</h3>
+		<p>
+			Solve a nonlinear system with a symbolic Jacobian and derive coupled-oscillator normal modes with exact
+			matrix algebra.
+		</p></a
+	>
+	<a class="card docs-card" href="/docs/migration/"
+		><span class="arrow">→</span>
+		<h3>Migrating from Nerdamer 1.xx</h3>
+		<p>Update existing 1.xx applications for version 2.xx.</p></a
+	>
+	<a class="card docs-card" href="/playground/"
+		><span class="arrow">→</span>
+		<h3>Playground</h3>
+		<p>Try the library in the browser without installing anything.</p></a
+	>
+</div></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../scripts/site.js"></script>
+
+<script src="../scripts/playground-tree.js"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Complex — Nerdamer advanced API</title>
+  <meta name="description" content="Represents a numerical complex value backed by `decimal.js` components.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../../styles/site.css">
+  <link rel="stylesheet" href="../../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../../styles/header.css">
+  <link rel="stylesheet" href="../../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../../styles/api.css">
+  <link rel="stylesheet" href="../../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/advanced/">nerdamer/advanced</a></div><div class="api-member-title"><div><span class="api-kind">Class</span><h1>Complex</h1></div><a class="api-source" href="https://github.com/N00bie-to-Github/nerdamer2/blob/ff74b9eb6ce7e954de9323fc9b54be86591d257e/src/core/classes/complex/Complex.ts#L18" target="_blank" rel="noreferrer">src/core/classes/complex/Complex.ts:18</a></div><div class="api-description"><p>Represents a numerical complex value backed by</p><pre class="api-example"><code>`decimal.js`</code></pre><p>components.</p><div class="api-note"><strong>remarks</strong><p>This class is a numerical helper used by algorithms such as polynomial root solving. It is
+distinct from Nerdamer&#39;s symbolic complex expressions: it does not parse expressions, carry
+symbolic structure, or implement branch-sensitive transcendental functions. Component
+arithmetic follows the active global</p><pre class="api-example"><code>`decimal.js`</code></pre><p>precision.
+
+Arithmetic methods return new</p><pre class="api-example"><code>`Complex`</code></pre><p>objects rather than modifying the receiver. The
+Complex.re and Complex.im fields are public, however, so callers can reassign
+components directly.</p></div></div><section class="api-detail"><h2>Members</h2><div class="api-children"><article class="api-child" id="abs"><div class="api-child-head"><code>abs(): Decimal</code><span>Method</span></div><div class="api-description"><p>Computes the modulus</p><pre class="api-example"><code>`sqrt(re^2 + im^2)`</code></pre><p>.</p></div><section class="api-detail"><h2>Returns</h2><p><code>Decimal</code> — A new Decimal containing the nonnegative magnitude.</p></section></article><article class="api-child" id="add"><div class="api-child-head"><code>add(other: <a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a>): <a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code><span>Method</span></div><div class="api-description"><p>Adds another complex value component-wise.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>other</code></td><td><code><a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code></td><td>Complex value to add.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code> — A new complex sum.</p></section></article><article class="api-child" id="conjugate"><div class="api-child-head"><code>conjugate(): <a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code><span>Method</span></div><div class="api-description"><p>Returns the complex conjugate</p><pre class="api-example"><code>`re - im*i`</code></pre><p>.</p></div><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code> — A new complex value with the imaginary component negated.</p></section></article><article class="api-child" id="constructor"><div class="api-child-head"><code>Complex(re: number | Decimal, im: number | Decimal): <a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code><span>Constructor</span></div><div class="api-description"><p>Creates a numerical complex value.</p><div class="api-note"><strong>remarks</strong><p>Existing Decimal components are retained by reference; numeric inputs are converted to
+new Decimal values.</p><pre class="api-example"><code>`decimal.js`</code></pre><p>arithmetic itself returns new Decimal objects.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>re</code></td><td><code>number | Decimal</code></td><td>Real component.</td></tr><tr><td><code>im</code></td><td><code>number | Decimal</code></td><td>Imaginary component; defaults to zero.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code></p></section></article><article class="api-child" id="create"><div class="api-child-head"><code>create(re: number | Decimal, im: number | Decimal): <a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code><span>Method</span></div><div class="api-description"><p>Creates a numerical complex value from Decimal or native-number components.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>re</code></td><td><code>number | Decimal</code></td><td>Real component.</td></tr><tr><td><code>im</code></td><td><code>number | Decimal</code></td><td>Imaginary component; defaults to zero.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code> — A new `Complex` value.</p></section></article><article class="api-child" id="div"><div class="api-child-head"><code>div(other: <a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a>): <a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code><span>Method</span></div><div class="api-description"><p>Divides this complex value by another using the standard rectangular formula.</p><div class="api-note"><strong>remarks</strong><p>Division rejects an exactly zero squared modulus. No numerical tolerance is applied at
+this arithmetic layer; iterative algorithms are responsible for choosing any tolerance
+appropriate to their convergence logic.</p></div><div class="api-note"><strong>throws</strong><p>DivisionByZeroError
+Thrown when both components of</p><pre class="api-example"><code>`other`</code></pre><p>are exactly zero at the current Decimal value.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>other</code></td><td><code><a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code></td><td>Complex divisor.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code> — A new complex quotient.</p></section></article><article class="api-child" id="im"><div class="api-child-head"><code>im: Decimal</code><span>Property</span></div><div class="api-description"><p>Imaginary component.</p></div></article><article class="api-child" id="mul"><div class="api-child-head"><code>mul(other: <a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a>): <a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code><span>Method</span></div><div class="api-description"><p>Multiplies two rectangular complex values.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>other</code></td><td><code><a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code></td><td>Complex factor.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code> — A new complex product.</p></section></article><article class="api-child" id="neg"><div class="api-child-head"><code>neg(): <a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code><span>Method</span></div><div class="api-description"><p>Returns the additive inverse of this complex value.</p></div><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code> — A new complex value with both components negated.</p></section></article><article class="api-child" id="re"><div class="api-child-head"><code>re: Decimal</code><span>Property</span></div><div class="api-description"><p>Real component.</p></div></article><article class="api-child" id="scale"><div class="api-child-head"><code>scale(s: number | Decimal): <a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code><span>Method</span></div><div class="api-description"><p>Multiplies both complex components by a real scalar.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>s</code></td><td><code>number | Decimal</code></td><td>Decimal or native-number scale factor.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code> — A new scaled complex value.</p></section></article><article class="api-child" id="sub"><div class="api-child-head"><code>sub(other: <a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a>): <a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code><span>Method</span></div><div class="api-description"><p>Subtracts another complex value component-wise.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>other</code></td><td><code><a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code></td><td>Complex value to subtract.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/complex/">Complex</a></code> — A new complex difference.</p></section></article></div></section></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../../scripts/site.js"></script>
+
+<script src="../../../../scripts/playground-tree.js"></script>
+</body>
+</html>

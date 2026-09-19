@@ -1,0 +1,44 @@
+/* Sizing for the wordmark and the wider header shell. */
+:root {
+  --header-h: 82px;
+}
+
+.nav-shell {
+  width: min(calc(100% - 40px), 1360px);
+}
+
+.brand img {
+  width: 330px;
+  height: auto;
+  object-fit: contain;
+  object-position: left center;
+  display: block;
+}
+
+.footer-logo {
+  width: 266px;
+  height: auto;
+  object-fit: contain;
+  object-position: left center;
+  display: block;
+}
+
+@media (max-width: 1000px) {
+  .brand img {
+    width: 255px;
+    height: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .nav-shell {
+    width: min(calc(100% - 28px), 1360px);
+  }
+}
+
+@media (max-width: 520px) {
+  .brand img {
+    width: 210px;
+    height: auto;
+  }
+}

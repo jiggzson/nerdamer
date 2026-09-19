@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>structures API — Nerdamer Documentation</title>
+  <meta name="description" content="Nerdamer structures JavaScript and TypeScript API.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../styles/api.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">JavaScript / TypeScript API</div><h1><code>nerdamer/structures</code></h1><p>Matrices, vectors, sets, collections, dictionaries, and related operations.</p><div class="docs-callout"><strong>Direct npm import.</strong> The items on this page are JavaScript / TypeScript exports from <code>nerdamer/structures</code>. For functions used inside <code>nerdamer('...')</code>, see <a href="/docs/functions/">Nerdamer Notation</a>.</div><div class="reference-toolbar"><input class="reference-search" type="search" placeholder="Filter structures API…" data-reference-search><span class="reference-count">9 exports</span></div><section class="api-group"><h2>Functions</h2><div class="api-list"><a class="api-list-item" href="/docs/api/structures/cross/" data-reference-item data-search="cross computes a three-dimensional cross product or preserves symbolic operands. function"><div><code>cross(a: ParserEntity, b: ParserEntity): Expression | Vector</code><span>Function</span></div><p>Computes a three-dimensional cross product or preserves symbolic operands.</p></a><a class="api-list-item" href="/docs/api/structures/determinant/" data-reference-item data-search="determinant computes the determinant without mutating the supplied matrix. function"><div><code>determinant(M: Matrix): Expression</code><span>Function</span></div><p>Computes the determinant without mutating the supplied Matrix.</p></a><a class="api-list-item" href="/docs/api/structures/dot/" data-reference-item data-search="dot computes the dot product of two vectors or preserves two symbolic operands. function"><div><code>dot(a: ParserEntity, b: ParserEntity): Expression</code><span>Function</span></div><p>Computes the dot product of two Vectors or preserves two symbolic operands.</p></a><a class="api-list-item" href="/docs/api/structures/imatrix/" data-reference-item data-search="imatrix creates an identity matrix of integer size. function"><div><code>imatrix(x: Expression): Expression | Matrix</code><span>Function</span></div><p>Creates an identity matrix of integer size.</p></a></div></section><section class="api-group"><h2>Classes</h2><div class="api-list"><a class="api-list-item" href="/docs/api/structures/collection/" data-reference-item data-search="collection an ordered heterogeneous collection of parser entities. class"><div><code>Collection: unknown</code><span>Class</span></div><p>An ordered heterogeneous collection of parser entities.</p></a><a class="api-list-item" href="/docs/api/structures/dictionary/" data-reference-item data-search="dictionary a key-value container where keys are strings (variable names) and values are any parserentity. supports element-wise arithmetic operations. class"><div><code>Dictionary: unknown</code><span>Class</span></div><p>A key-value container where keys are strings (variable names) and values are any ParserEntity. Supports element-wise arithmetic operations.</p></a><a class="api-list-item" href="/docs/api/structures/matrix/" data-reference-item data-search="matrix a rectangular two-dimensional matrix of scalar expression elements. class"><div><code>Matrix: unknown</code><span>Class</span></div><p>A rectangular two-dimensional matrix of scalar Expression elements.</p></a><a class="api-list-item" href="/docs/api/structures/values-set/" data-reference-item data-search="valuesset a finite mathematical set of nerdamer parser values. class"><div><code>ValuesSet: unknown</code><span>Class</span></div><p>A finite mathematical set of Nerdamer parser values.</p></a><a class="api-list-item" href="/docs/api/structures/vector/" data-reference-item data-search="vector an ordered, operable parser aggregate with heterogeneous parserentity elements. class"><div><code>Vector: unknown</code><span>Class</span></div><p>An ordered, operable parser aggregate with heterogeneous ParserEntity elements.</p></a></div></section></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+<script src="../../../scripts/reference.js"></script>
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

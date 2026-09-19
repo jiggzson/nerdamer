@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>JavaScript / TypeScript examples — Nerdamer Documentation</title>
+  <meta name="description" content="Larger Nerdamer examples that combine public JavaScript and TypeScript APIs into reusable algorithms.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../styles/site.css">
+  <link rel="stylesheet" href="../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../styles/logo.css">
+  <link rel="stylesheet" href="../../styles/header.css">
+  <link rel="stylesheet" href="../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">JavaScript / TypeScript API</div>
+<h1>API examples</h1>
+<p>
+	These examples show how Nerdamer can be used as part of a larger JavaScript or TypeScript algorithm rather than only
+	through individual symbolic calls. They are somewhat lengthy so they can illustrate the different
+	capabilities of the API.
+</p>
+<div class="docs-callout">
+	<strong>Application code:</strong> Nerdamer supplies symbolic expressions, derivatives, exact algebra, vectors,
+	matrices, determinants, solving, evaluation, row reduction, and nullspaces. Ordinary TypeScript provides the
+	surrounding algorithm structure.
+</div>
+
+<h2 id="newton-system">Newton's method for a nonlinear system</h2>
+<p>
+	This example solves three nonlinear equations with Newton's method. Nerdamer builds and evaluates the symbolic
+	Jacobian while ordinary TypeScript controls the iteration, linear solves, and a multistart search for distinct real
+	roots.
+</p>
+<p>
+	Based on the multivariable Newton method described in Courtney Remani,
+	<a rel="noopener noreferrer" target="_blank" href="https://www.lakeheadu.ca/sites/default/files/uploads/77/docs/RemaniFinal.pdf"
+		>Numerical Methods for Solving Systems of Nonlinear Equations</a
+	>, Lakehead University.
+</p>
+<div class="code-example" data-example="newton-system">
+	<button class="code-copy" type="button" data-copy-code aria-label="Copy TypeScript example">Copy</button>
+	<pre class="codeblock language-typescript"><code class="language-typescript"><span class="token keyword">import</span> <span class="token punctuation">{</span>
+    <span class="token class-name">Expression</span><span class="token punctuation">,</span>
+    <span class="token keyword">type</span> <span class="token class-name">ExpressionInput</span><span class="token punctuation">,</span>
+    <span class="token keyword">type</span> <span class="token class-name">ParserValuesObject</span>
+<span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/core&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">diff</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/calculus&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Matrix</span><span class="token punctuation">,</span> <span class="token class-name">Vector</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">function</span> <span class="token function">jacobian</span><span class="token punctuation">(</span>
+    <span class="token variable">functions</span><span class="token operator">:</span> <span class="token keyword">readonly</span> <span class="token class-name">Expression</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token variable">variables</span><span class="token operator">:</span> <span class="token keyword">readonly</span> <span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token punctuation">)</span><span class="token operator">:</span> <span class="token class-name">Matrix</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token variable">rows</span> <span class="token operator">=</span> <span class="token variable">functions</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token variable">expression</span> <span class="token operator">=&gt;</span>
+        <span class="token variable">variables</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token variable">variable</span> <span class="token operator">=&gt;</span> <span class="token function">diff</span><span class="token punctuation">(</span><span class="token variable">expression</span><span class="token punctuation">,</span> <span class="token variable">variable</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token function">Matrix</span><span class="token punctuation">(</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token variable">rows</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">function</span> <span class="token function">solveLinearSystem</span><span class="token punctuation">(</span><span class="token class-name">A</span><span class="token operator">:</span> <span class="token class-name">Matrix</span><span class="token punctuation">,</span> <span class="token variable">b</span><span class="token operator">:</span> <span class="token class-name">Vector</span><span class="token punctuation">)</span><span class="token operator">:</span> <span class="token class-name">Vector</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token variable">rhs</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">Matrix</span><span class="token punctuation">(</span>
+        <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token builtin">Array</span><span class="token punctuation">.</span><span class="token keyword">from</span><span class="token punctuation">(</span>
+            <span class="token punctuation">{</span> <span class="token variable">length</span><span class="token operator">:</span> <span class="token variable">b</span><span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token punctuation">(</span><span class="token variable">_</span><span class="token punctuation">,</span> <span class="token variable">i</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">[</span><span class="token variable">b</span><span class="token punctuation">.</span><span class="token function">getExpressionAt</span><span class="token punctuation">(</span><span class="token variable">i</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+        <span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">const</span> <span class="token variable">reduced</span> <span class="token operator">=</span> <span class="token class-name">A</span><span class="token punctuation">.</span><span class="token function">augment</span><span class="token punctuation">(</span><span class="token variable">rhs</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">rref</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token variable">solutionColumn</span> <span class="token operator">=</span> <span class="token class-name">A</span><span class="token punctuation">.</span><span class="token function">cols</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> <span class="token class-name">Vector</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span>
+        <span class="token builtin">Array</span><span class="token punctuation">.</span><span class="token keyword">from</span><span class="token punctuation">(</span>
+            <span class="token punctuation">{</span> <span class="token variable">length</span><span class="token operator">:</span> <span class="token class-name">A</span><span class="token punctuation">.</span><span class="token function">rows</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token punctuation">(</span><span class="token variable">_</span><span class="token punctuation">,</span> <span class="token variable">i</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token variable">reduced</span><span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token variable">i</span><span class="token punctuation">,</span> <span class="token variable">solutionColumn</span><span class="token punctuation">)</span>
+        <span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">function</span> <span class="token function">newtonSystem</span><span class="token punctuation">(</span>
+    <span class="token variable">residuals</span><span class="token operator">:</span> <span class="token keyword">readonly</span> <span class="token class-name">ExpressionInput</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token variable">variables</span><span class="token operator">:</span> <span class="token keyword">readonly</span> <span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token variable">initial</span><span class="token operator">:</span> <span class="token class-name">ExpressionInput</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token variable">iterations</span> <span class="token operator">=</span> <span class="token number">5</span>
+<span class="token punctuation">)</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token variable">solution</span><span class="token operator">:</span> <span class="token class-name">Vector</span><span class="token punctuation">;</span>
+    <span class="token variable">jacobian</span><span class="token operator">:</span> <span class="token class-name">Matrix</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token variable">functions</span> <span class="token operator">=</span> <span class="token variable">residuals</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token variable">expression</span> <span class="token operator">=&gt;</span>
+        <span class="token class-name">Expression</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token variable">expression</span><span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// Compute the symbolic Jacobian once and reuse it.</span>
+    <span class="token keyword">const</span> <span class="token class-name">J</span> <span class="token operator">=</span> <span class="token function">jacobian</span><span class="token punctuation">(</span><span class="token variable">functions</span><span class="token punctuation">,</span> <span class="token variable">variables</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">let</span> <span class="token variable">point</span> <span class="token operator">=</span> <span class="token class-name">Vector</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token variable">initial</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">let</span> <span class="token variable">i</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token variable">i</span> <span class="token operator">&lt;</span> <span class="token variable">iterations</span><span class="token punctuation">;</span> <span class="token variable">i</span><span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">const</span> <span class="token variable">values</span><span class="token operator">:</span> <span class="token class-name">ParserValuesObject</span> <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">let</span> <span class="token variable">j</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token variable">j</span> <span class="token operator">&lt;</span> <span class="token variable">variables</span><span class="token punctuation">.</span><span class="token variable">length</span><span class="token punctuation">;</span> <span class="token variable">j</span><span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token variable">values</span><span class="token punctuation">[</span><span class="token variable">variables</span><span class="token punctuation">[</span><span class="token variable">j</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token variable">point</span><span class="token punctuation">.</span><span class="token function">getExpressionAt</span><span class="token punctuation">(</span><span class="token variable">j</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">const</span> <span class="token class-name">F</span> <span class="token operator">=</span> <span class="token class-name">Vector</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span>
+            <span class="token variable">functions</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token variable">expression</span> <span class="token operator">=&gt;</span>
+                <span class="token variable">expression</span><span class="token punctuation">.</span><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">values</span><span class="token punctuation">)</span>
+            <span class="token punctuation">)</span>
+        <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">const</span> <span class="token class-name">Jn</span> <span class="token operator">=</span> <span class="token class-name">J</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token variable">entry</span> <span class="token operator">=&gt;</span>
+            <span class="token variable">entry</span><span class="token punctuation">.</span><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">values</span><span class="token punctuation">)</span>
+        <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// J(x_n) Δx = F(x_n)</span>
+        <span class="token keyword">const</span> <span class="token variable">step</span> <span class="token operator">=</span> <span class="token function">solveLinearSystem</span><span class="token punctuation">(</span><span class="token class-name">Jn</span><span class="token punctuation">,</span> <span class="token class-name">F</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// x_(n+1) = x_n - Δx</span>
+        <span class="token variable">point</span> <span class="token operator">=</span> <span class="token variable">point</span><span class="token punctuation">.</span><span class="token function">minus</span><span class="token punctuation">(</span><span class="token variable">step</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">return</span> <span class="token punctuation">{</span>
+        <span class="token variable">solution</span><span class="token operator">:</span> <span class="token variable">point</span><span class="token punctuation">,</span>
+        <span class="token variable">jacobian</span><span class="token operator">:</span> <span class="token class-name">J</span>
+    <span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">function</span> <span class="token function">nearlyZero</span><span class="token punctuation">(</span><span class="token variable">expression</span><span class="token operator">:</span> <span class="token class-name">Expression</span><span class="token punctuation">,</span> <span class="token variable">tolerance</span> <span class="token operator">=</span> <span class="token number">1e-8</span><span class="token punctuation">)</span><span class="token operator">:</span> <span class="token keyword">boolean</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token variable">value</span> <span class="token operator">=</span> <span class="token builtin">Number</span><span class="token punctuation">(</span><span class="token variable">expression</span><span class="token punctuation">.</span><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toDecimal</span><span class="token punctuation">(</span><span class="token number">12</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token builtin">Number</span><span class="token punctuation">.</span><span class="token function">isFinite</span><span class="token punctuation">(</span><span class="token variable">value</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token builtin">Math</span><span class="token punctuation">.</span><span class="token function">abs</span><span class="token punctuation">(</span><span class="token variable">value</span><span class="token punctuation">)</span> <span class="token operator">&lt;=</span> <span class="token variable">tolerance</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">function</span> <span class="token function">sameRoot</span><span class="token punctuation">(</span><span class="token variable">a</span><span class="token operator">:</span> <span class="token class-name">Vector</span><span class="token punctuation">,</span> <span class="token variable">b</span><span class="token operator">:</span> <span class="token class-name">Vector</span><span class="token punctuation">)</span><span class="token operator">:</span> <span class="token keyword">boolean</span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">let</span> <span class="token variable">i</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token variable">i</span> <span class="token operator">&lt;</span> <span class="token variable">a</span><span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token variable">i</span><span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">nearlyZero</span><span class="token punctuation">(</span>
+            <span class="token variable">a</span><span class="token punctuation">.</span><span class="token function">getExpressionAt</span><span class="token punctuation">(</span><span class="token variable">i</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">minus</span><span class="token punctuation">(</span><span class="token variable">b</span><span class="token punctuation">.</span><span class="token function">getExpressionAt</span><span class="token punctuation">(</span><span class="token variable">i</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">function</span> <span class="token function">satisfiesSystem</span><span class="token punctuation">(</span>
+    <span class="token variable">solution</span><span class="token operator">:</span> <span class="token class-name">Vector</span><span class="token punctuation">,</span>
+    <span class="token variable">residuals</span><span class="token operator">:</span> <span class="token keyword">readonly</span> <span class="token class-name">ExpressionInput</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token variable">variables</span><span class="token operator">:</span> <span class="token keyword">readonly</span> <span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token punctuation">)</span><span class="token operator">:</span> <span class="token keyword">boolean</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token variable">values</span><span class="token operator">:</span> <span class="token class-name">ParserValuesObject</span> <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">let</span> <span class="token variable">i</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token variable">i</span> <span class="token operator">&lt;</span> <span class="token variable">variables</span><span class="token punctuation">.</span><span class="token variable">length</span><span class="token punctuation">;</span> <span class="token variable">i</span><span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token variable">values</span><span class="token punctuation">[</span><span class="token variable">variables</span><span class="token punctuation">[</span><span class="token variable">i</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token variable">solution</span><span class="token punctuation">.</span><span class="token function">getExpressionAt</span><span class="token punctuation">(</span><span class="token variable">i</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">return</span> <span class="token variable">residuals</span><span class="token punctuation">.</span><span class="token function">every</span><span class="token punctuation">(</span><span class="token variable">residual</span> <span class="token operator">=&gt;</span>
+        <span class="token function">nearlyZero</span><span class="token punctuation">(</span><span class="token class-name">Expression</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token variable">residual</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">values</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">function</span> <span class="token function">findRoots</span><span class="token punctuation">(</span>
+    <span class="token variable">residuals</span><span class="token operator">:</span> <span class="token keyword">readonly</span> <span class="token class-name">ExpressionInput</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token variable">variables</span><span class="token operator">:</span> <span class="token keyword">readonly</span> <span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token variable">starts</span><span class="token operator">:</span> <span class="token class-name">ExpressionInput</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token punctuation">)</span><span class="token operator">:</span> <span class="token class-name">Vector</span><span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token variable">roots</span><span class="token operator">:</span> <span class="token class-name">Vector</span><span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token variable">start</span> <span class="token keyword">of</span> <span class="token variable">starts</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            <span class="token keyword">const</span> <span class="token punctuation">{</span> <span class="token variable">solution</span> <span class="token punctuation">}</span> <span class="token operator">=</span> <span class="token function">newtonSystem</span><span class="token punctuation">(</span>
+                <span class="token variable">residuals</span><span class="token punctuation">,</span>
+                <span class="token variable">variables</span><span class="token punctuation">,</span>
+                <span class="token variable">start</span><span class="token punctuation">,</span>
+                <span class="token number">12</span>
+            <span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>
+                <span class="token function">satisfiesSystem</span><span class="token punctuation">(</span><span class="token variable">solution</span><span class="token punctuation">,</span> <span class="token variable">residuals</span><span class="token punctuation">,</span> <span class="token variable">variables</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+                <span class="token operator">!</span><span class="token variable">roots</span><span class="token punctuation">.</span><span class="token function">some</span><span class="token punctuation">(</span><span class="token variable">root</span> <span class="token operator">=&gt;</span> <span class="token function">sameRoot</span><span class="token punctuation">(</span><span class="token variable">root</span><span class="token punctuation">,</span> <span class="token variable">solution</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token variable">roots</span><span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span><span class="token variable">solution</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">catch</span> <span class="token punctuation">{</span>
+            <span class="token comment">// Some starting points may not converge.</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">return</span> <span class="token variable">roots</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">const</span> <span class="token variable">residuals</span> <span class="token operator">=</span> <span class="token punctuation">[</span>
+    <span class="token string">&#39;x^2+y^2+z^2-14&#39;</span><span class="token punctuation">,</span>
+    <span class="token string">&#39;x*y+y*z+z*x-11&#39;</span><span class="token punctuation">,</span>
+    <span class="token string">&#39;x*y*z-6&#39;</span>
+<span class="token punctuation">]</span> <span class="token keyword">as</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token variable">vars</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token string">&#39;x&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;y&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;z&#39;</span><span class="token punctuation">]</span> <span class="token keyword">as</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token variable">seeds</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">4</span><span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token variable">starts</span> <span class="token operator">=</span> <span class="token variable">seeds</span><span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span><span class="token variable">x</span> <span class="token operator">=&gt;</span>
+    <span class="token variable">seeds</span><span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span><span class="token variable">y</span> <span class="token operator">=&gt;</span>
+        <span class="token variable">seeds</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token variable">z</span> <span class="token operator">=&gt;</span> <span class="token punctuation">[</span><span class="token variable">x</span><span class="token punctuation">,</span> <span class="token variable">y</span><span class="token punctuation">,</span> <span class="token variable">z</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+    <span class="token punctuation">)</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">roots</span> <span class="token operator">=</span> <span class="token function">findRoots</span><span class="token punctuation">(</span><span class="token variable">residuals</span><span class="token punctuation">,</span> <span class="token variable">vars</span><span class="token punctuation">,</span> <span class="token variable">starts</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token punctuation">{</span> <span class="token variable">jacobian</span><span class="token operator">:</span> <span class="token class-name">J</span> <span class="token punctuation">}</span> <span class="token operator">=</span> <span class="token function">newtonSystem</span><span class="token punctuation">(</span><span class="token variable">residuals</span><span class="token punctuation">,</span> <span class="token variable">vars</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token variable">roots</span><span class="token punctuation">.</span><span class="token function">sort</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token variable">a</span><span class="token punctuation">,</span> <span class="token variable">b</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">let</span> <span class="token variable">i</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token variable">i</span> <span class="token operator">&lt;</span> <span class="token variable">vars</span><span class="token punctuation">.</span><span class="token variable">length</span><span class="token punctuation">;</span> <span class="token variable">i</span><span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">const</span> <span class="token variable">av</span> <span class="token operator">=</span> <span class="token builtin">Number</span><span class="token punctuation">(</span><span class="token variable">a</span><span class="token punctuation">.</span><span class="token function">getExpressionAt</span><span class="token punctuation">(</span><span class="token variable">i</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toDecimal</span><span class="token punctuation">(</span><span class="token number">12</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">const</span> <span class="token variable">bv</span> <span class="token operator">=</span> <span class="token builtin">Number</span><span class="token punctuation">(</span><span class="token variable">b</span><span class="token punctuation">.</span><span class="token function">getExpressionAt</span><span class="token punctuation">(</span><span class="token variable">i</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toDecimal</span><span class="token punctuation">(</span><span class="token number">12</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token builtin">Math</span><span class="token punctuation">.</span><span class="token function">abs</span><span class="token punctuation">(</span><span class="token variable">av</span> <span class="token operator">-</span> <span class="token variable">bv</span><span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token number">1e-8</span><span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token variable">av</span> <span class="token operator">-</span> <span class="token variable">bv</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">&#39;Jacobian:&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token class-name">J</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">&#39;Solutions:&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">roots</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token variable">root</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token variable">values</span> <span class="token operator">=</span> <span class="token variable">vars</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token variable">_</span><span class="token punctuation">,</span> <span class="token variable">index</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span>
+        <span class="token variable">root</span><span class="token punctuation">.</span><span class="token function">getExpressionAt</span><span class="token punctuation">(</span><span class="token variable">index</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toDecimal</span><span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">`    [${values.join(&#39;, &#39;)}]`</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Output:</span>
+<span class="token comment">// Jacobian:</span>
+<span class="token comment">// matrix([2*x, 2*y, 2*z], [y+z, x+z, x+y], [y*z, x*z, x*y])</span>
+<span class="token comment">// Solutions:</span>
+<span class="token comment">//     [1.0, 2.0, 3.0]</span>
+<span class="token comment">//     [1.0, 3.0, 2.0]</span>
+<span class="token comment">//     [2.0, 1.0, 3.0]</span>
+<span class="token comment">//     [2.0, 3.0, 1.0]</span>
+<span class="token comment">//     [3.0, 1.0, 2.0]</span>
+<span class="token comment">//     [3.0, 2.0, 1.0]</span></code></pre>
+</div>
+
+<p>
+	The symbolic Jacobian is reused during each Newton solve. Trying a grid of starting points and merging numerically
+	equivalent results recovers the distinct real solutions reached by the multistart search.
+</p>
+
+<div class="docs-callout">
+	<strong>Scripting alternative:</strong> The same nonlinear-system workflow can be written entirely in
+	<a href="/docs/language/examples/#newton-system">Nerdamer Scripting</a>. The direct JavaScript / TypeScript version
+	shown here avoids the extra scripting-layer overhead and is generally preferable when repeated numerical work is
+	performance-sensitive.
+</div>
+
+<h2 id="normal-modes">Derive the normal modes of coupled oscillators</h2>
+<p>
+	Two identical masses connected by three springs have symmetric and antisymmetric normal modes. Instead of
+	recognizing those modes by inspection, this example lets Nerdamer derive them from the symbolic mass and stiffness
+	matrices.
+</p>
+<p>
+	Follow the same physical system in McGill University's PHYS 232 notes:
+	<a rel="noopener noreferrer" target="_blank" href="https://www.physics.mcgill.ca/~hilke/232/232.html">Coupled oscillators — 2 masses and 3 springs</a>. The
+	notes first derive the two equations of motion and then introduce the matrix method for larger systems.
+</p>
+<p>This example demonstrates how assumptions can be used to restrict the domain of the solutions.</p>
+<div class="code-example" data-example="normal-modes">
+	<button class="code-copy" type="button" data-copy-code aria-label="Copy normal modes TypeScript example">
+		Copy
+	</button>
+	<pre
+		class="codeblock language-typescript"
+	><code class="language-typescript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">factor</span><span class="token punctuation">,</span> <span class="token variable">simplify</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/algebra&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Expression</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/core&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">solve</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/solve&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Matrix</span><span class="token punctuation">,</span> <span class="token class-name">Vector</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">assume</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/assumptions&#39;</span><span class="token punctuation">;</span>
+
+<span class="token comment">// K x = omega^2 M x. Use q = omega^2 while solving.</span>
+<span class="token keyword">const</span> <span class="token class-name">K</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">Matrix</span><span class="token punctuation">(</span>
+    <span class="token punctuation">[</span><span class="token string">&#39;k+kappa&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;-kappa&#39;</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token punctuation">[</span><span class="token string">&#39;-kappa&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;k+kappa&#39;</span><span class="token punctuation">]</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token class-name">M</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">Matrix</span><span class="token punctuation">(</span>
+    <span class="token punctuation">[</span><span class="token string">&#39;m&#39;</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token string">&#39;m&#39;</span><span class="token punctuation">]</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">q</span> <span class="token operator">=</span> <span class="token class-name">Expression</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token string">&#39;q&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token variable">dynamic</span> <span class="token operator">=</span> <span class="token class-name">K</span><span class="token punctuation">.</span><span class="token function">minus</span><span class="token punctuation">(</span><span class="token class-name">M</span><span class="token punctuation">.</span><span class="token function">times</span><span class="token punctuation">(</span><span class="token variable">q</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token variable">characteristic</span> <span class="token operator">=</span> <span class="token function">factor</span><span class="token punctuation">(</span><span class="token variable">dynamic</span><span class="token punctuation">.</span><span class="token function">determinant</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token variable">eigenvalues</span> <span class="token operator">=</span> <span class="token function">solve</span><span class="token punctuation">(</span><span class="token variable">characteristic</span><span class="token punctuation">,</span> <span class="token string">&#39;q&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Restrict to the physical domain</span>
+<span class="token function">assume</span><span class="token punctuation">(</span><span class="token string">&#39;k&gt;0&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">assume</span><span class="token punctuation">(</span><span class="token string">&#39;m&gt;0&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">assume</span><span class="token punctuation">(</span><span class="token string">&#39;kappa&gt;0&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">function</span> <span class="token function">modeShape</span><span class="token punctuation">(</span><span class="token variable">eigenvalue</span><span class="token operator">:</span> <span class="token class-name">Expression</span><span class="token punctuation">)</span><span class="token operator">:</span> <span class="token class-name">Vector</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token punctuation">[</span><span class="token variable">basis</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token variable">dynamic</span>
+        <span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token variable">entry</span> <span class="token operator">=&gt;</span> <span class="token variable">entry</span><span class="token punctuation">.</span><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token variable">q</span><span class="token operator">:</span> <span class="token variable">eigenvalue</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token function">nullspace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// Normalize the mode so its first coordinate is 1.</span>
+    <span class="token keyword">const</span> <span class="token variable">scale</span> <span class="token operator">=</span> <span class="token variable">basis</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> <span class="token class-name">Vector</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span>
+        <span class="token variable">basis</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token variable">entry</span> <span class="token operator">=&gt;</span> <span class="token variable">entry</span><span class="token punctuation">.</span><span class="token function">div</span><span class="token punctuation">(</span><span class="token variable">scale</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">const</span> <span class="token variable">frequencies</span> <span class="token operator">=</span> <span class="token variable">eigenvalues</span><span class="token punctuation">.</span><span class="token variable">elements</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token variable">eigenvalue</span> <span class="token operator">=&gt;</span>
+    <span class="token function">simplify</span><span class="token punctuation">(</span><span class="token variable">eigenvalue</span><span class="token punctuation">.</span><span class="token function">pow</span><span class="token punctuation">(</span><span class="token string">&#39;1/2&#39;</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">modes</span> <span class="token operator">=</span> <span class="token variable">eigenvalues</span><span class="token punctuation">.</span><span class="token variable">elements</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token variable">modeShape</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">&#39;Characteristic equation:&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">`${characteristic.text()} = 0`</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">&#39;Normal modes:&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">eigenvalues</span><span class="token punctuation">.</span><span class="token variable">elements</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token variable">eigenvalue</span><span class="token punctuation">,</span> <span class="token variable">index</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">`Mode ${index + 1}:`</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">`    omega^2 = ${eigenvalue.text()}`</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">`    omega = ${frequencies[index].text()}`</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">`    shape = ${modes[index].text()}`</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+
+<span class="token comment">// Characteristic equation:</span>
+<span class="token comment">// (-k+m*q)*(-2*kappa-k+m*q) = 0</span>
+<span class="token comment">// Normal modes:</span>
+<span class="token comment">// Mode 1:</span>
+<span class="token comment">//     omega^2 = k*m^-1</span>
+<span class="token comment">//     omega = (m^-1*k)^(1/2)</span>
+<span class="token comment">//     shape = [1, 1]</span>
+<span class="token comment">// Mode 2:</span>
+<span class="token comment">//     omega^2 = -m^-1*(-2*kappa-k)</span>
+<span class="token comment">//     omega = (m^-1)^(1/2)*((-k-2*kappa)^(1/2))</span>
+<span class="token comment">//     shape = [1, -1]</span></code></pre>
+</div>
+
+<div class="docs-callout">
+	<strong>Scripting alternative:</strong> The same normal-mode derivation can be written entirely in
+	<a href="/docs/language/examples/#normal-modes">Nerdamer Scripting</a>. The direct API version shown here keeps
+	control flow in JavaScript / TypeScript and avoids the scripting-layer overhead.
+</div>
+
+<h2>Where to go next</h2>
+<p>
+	Browse the <a href="/docs/api/">JavaScript / TypeScript API</a> for the functions and classes used above, or use the
+	<a href="/playground/">Playground</a> for Nerdamer notation and scripting.
+</p></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../scripts/site.js"></script>
+<script src="../../scripts/code-copy.js"></script>
+<script src="../../scripts/playground-tree.js"></script>
+</body>
+</html>

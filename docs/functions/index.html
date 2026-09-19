@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Nerdamer Notation function reference — Nerdamer Documentation</title>
+  <meta name="description" content="Searchable reference for functions available inside Nerdamer Notation.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../styles/site.css">
+  <link rel="stylesheet" href="../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../styles/logo.css">
+  <link rel="stylesheet" href="../../styles/header.css">
+  <link rel="stylesheet" href="../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../styles/reference.css">
+  <link rel="stylesheet" href="../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">Nerdamer Notation</div>
+<h1>Function reference</h1>
+<p>These are the functions recognized inside expressions passed to <code>nerdamer('...')</code>. Open a function to see its syntax, parameters, examples, aliases, and its JavaScript / TypeScript counterpart when one is available.</p>
+<div class="docs-callout"><strong>Looking for programming features?</strong> Conditions, loops, local bindings, blocks, and return flow are documented separately under <a href="/docs/language/">Nerdamer Scripting</a>.</div>
+<div class="reference-toolbar"><input class="reference-search" data-reference-search type="search" placeholder="Search factor, derivative, matrix…"><span class="reference-count" data-reference-count></span></div>
+<section class="reference-group"><h2>Algebra</h2><div class="reference-list"><a class="reference-item docs-card" href="/docs/reference/factor/" data-reference-item data-search="factor algebra factor(expression) factors an expression into a product of simpler factors."><code>factor(expression)</code><p>Factors an expression into a product of simpler factors.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/gcd/" data-reference-item data-search="gcd algebra gcd(arg1, arg2) returns the greatest common divisor of two symbolic expressions when their polynomial structure can be resolved."><code>gcd(arg1, arg2)</code><p>Returns the greatest common divisor of two symbolic expressions when their polynomial structure can be resolved.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/groebner/" data-reference-item data-search="groebner algebra groebner(arg1, [arg2]) computes a gröbner basis for a polynomial system."><code>groebner(arg1, [arg2])</code><p>Computes a Gröbner basis for a polynomial system.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/lcm/" data-reference-item data-search="lcm algebra lcm(arg1, arg2) returns the least common multiple of two expressions."><code>lcm(arg1, arg2)</code><p>Returns the least common multiple of two expressions.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/partfrac/" data-reference-item data-search="partfrac algebra partfrac(arg1, [arg2]) decomposes a rational expression into partial fractions with respect to a variable."><code>partfrac(arg1, [arg2])</code><p>Decomposes a rational expression into partial fractions with respect to a variable.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/poly-factors/" data-reference-item data-search="polyfactors algebra polyfactors(arg1) returns polynomial factors as a vector of separate factor expressions."><code>polyfactors(arg1)</code><p>Returns polynomial factors as a Vector of separate factor expressions.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/simplify/" data-reference-item data-search="simplify algebra simplify(arg1) rewrites an expression into a simpler equivalent form using nerdamer&#39;s symbolic simplification rules."><code>simplify(arg1)</code><p>Rewrites an expression into a simpler equivalent form using Nerdamer&#39;s symbolic simplification rules.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/complete-square/" data-reference-item data-search="sqcomp algebra sqcomp(arg1, [arg2]) rewrites a quadratic in completed-square form."><code>sqcomp(arg1, [arg2])</code><p>Rewrites a quadratic in completed-square form.</p></a></div></section>
+<section class="reference-group"><h2>Assumptions and sets</h2><div class="reference-list"><a class="reference-item docs-card" href="/docs/reference/assume/" data-reference-item data-search="assume assumptions and sets assume(arg1) adds a real numeric interval assumption for a symbol so assumption-aware operations can use the known range."><code>assume(arg1)</code><p>Adds a real numeric interval assumption for a symbol so assumption-aware operations can use the known range.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/forget/" data-reference-item data-search="forget assumptions and sets forget(arg1) removes stored assumptions for a symbol or clears all assumptions."><code>forget(arg1)</code><p>Removes stored assumptions for a symbol or clears all assumptions.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/unassign/" data-reference-item data-search="unassign assumptions and sets unassign(arg1) removes a parser-known value assigned to a variable."><code>unassign(arg1)</code><p>Removes a parser-known value assigned to a variable.</p></a></div></section>
+<section class="reference-group"><h2>Calculus</h2><div class="reference-list"><a class="reference-item docs-card" href="/docs/reference/c/" data-reference-item data-search="c calculus c(x) computes the normalized fresnel cosine integral."><code>C(x)</code><p>Computes the normalized Fresnel cosine integral.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/defint/" data-reference-item data-search="defint calculus defint(arg1, arg2, arg3, arg4) evaluates a definite integral over an interval."><code>defint(arg1, arg2, arg3, arg4)</code><p>Evaluates a definite integral over an interval.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/diff/" data-reference-item data-search="diff calculus diff(expression[, variable][, order]) differentiates an expression symbolically with respect to a variable."><code>diff(expression[, variable][, order])</code><p>Differentiates an expression symbolically with respect to a variable.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/ilaplace/" data-reference-item data-search="ilaplace calculus ilaplace(arg1, arg2, arg3) computes a symbolic inverse laplace transform of an expression."><code>ilaplace(arg1, arg2, arg3)</code><p>Computes a symbolic inverse Laplace transform of an expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/integrate/" data-reference-item data-search="integrate calculus integrate(expression[, variable]) computes a symbolic antiderivative with respect to a variable when nerdamer has a supported integration path."><code>integrate(expression[, variable])</code><p>Computes a symbolic antiderivative with respect to a variable when Nerdamer has a supported integration path.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/laplace/" data-reference-item data-search="laplace calculus laplace(arg1, arg2, arg3) computes the symbolic laplace transform of an expression."><code>laplace(arg1, arg2, arg3)</code><p>Computes the symbolic Laplace transform of an expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/limit/" data-reference-item data-search="limit calculus limit(expression, variable, value[, direction]) computes a symbolic limit of an expression as a variable approaches a value."><code>limit(expression, variable, value[, direction])</code><p>Computes a symbolic limit of an expression as a variable approaches a value.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/product/" data-reference-item data-search="product calculus product(arg1, arg2, arg3, arg4) evaluates a finite symbolic product over an integer index."><code>product(arg1, arg2, arg3, arg4)</code><p>Evaluates a finite symbolic product over an integer index.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/s/" data-reference-item data-search="s calculus s(x) computes the normalized fresnel sine integral."><code>S(x)</code><p>Computes the normalized Fresnel sine integral.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/sum/" data-reference-item data-search="sum calculus sum(arg1, arg2, arg3, arg4) evaluates a finite symbolic sum over an integer index."><code>sum(arg1, arg2, arg3, arg4)</code><p>Evaluates a finite symbolic sum over an integer index.</p></a></div></section>
+<section class="reference-group"><h2>Complex</h2><div class="reference-list"><a class="reference-item docs-card" href="/docs/reference/arg/" data-reference-item data-search="arg complex arg(arg1) returns the principal argument of a complex expression."><code>arg(arg1)</code><p>Returns the principal argument of a complex expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/conjugate/" data-reference-item data-search="conjugate complex conjugate(arg1) returns the complex conjugate of an expression."><code>conjugate(arg1)</code><p>Returns the complex conjugate of an expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/csgn/" data-reference-item data-search="csgn complex csgn(arg1) returns the complex sign used by nerdamer&#39;s branch-sensitive simplification rules."><code>csgn(arg1)</code><p>Returns the complex sign used by Nerdamer&#39;s branch-sensitive simplification rules.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/imagpart/" data-reference-item data-search="imagpart complex imagpart(arg1) returns the imaginary component of a complex expression."><code>imagpart(arg1)</code><p>Returns the imaginary component of a complex expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/polarform/" data-reference-item data-search="polarform complex polarform(arg1) converts a complex expression toward polar exponential form."><code>polarform(arg1)</code><p>Converts a complex expression toward polar exponential form.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/realpart/" data-reference-item data-search="realpart complex realpart(arg1) returns the real component of a complex expression."><code>realpart(arg1)</code><p>Returns the real component of a complex expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/rectform/" data-reference-item data-search="rectform complex rectform(arg1) converts supported polar complex forms toward rectangular form."><code>rectform(arg1)</code><p>Converts supported polar complex forms toward rectangular form.</p></a></div></section>
+<section class="reference-group"><h2>Linear algebra</h2><div class="reference-list"><a class="reference-item docs-card" href="/docs/reference/augment/" data-reference-item data-search="augment linear algebra augment(left, right) horizontally joins two matrices with the same number of rows."><code>augment(left, right)</code><p>Horizontally joins two matrices with the same number of rows.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/cross/" data-reference-item data-search="cross linear algebra cross(arg1, arg2) computes the cross product of two three-dimensional vectors."><code>cross(arg1, arg2)</code><p>Computes the cross product of two three-dimensional vectors.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/determinant/" data-reference-item data-search="determinant linear algebra determinant(arg1) computes the determinant of a square matrix."><code>determinant(arg1)</code><p>Computes the determinant of a square matrix.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/dot/" data-reference-item data-search="dot linear algebra dot(arg1, arg2) computes the dot product of two vectors."><code>dot(arg1, arg2)</code><p>Computes the dot product of two vectors.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/imatrix/" data-reference-item data-search="imatrix linear algebra imatrix(arg1) creates an identity matrix of the requested integer size."><code>imatrix(arg1)</code><p>Creates an identity matrix of the requested integer size.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/matrix/" data-reference-item data-search="matrix linear algebra matrix(row1[, row2, ...]) constructs a matrix from row vectors."><code>matrix(row1[, row2, ...])</code><p>Constructs a matrix from row vectors.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/nullspace/" data-reference-item data-search="nullspace linear algebra nullspace(matrix[, prime]) returns a basis for the nullspace of a matrix."><code>nullspace(matrix[, prime])</code><p>Returns a basis for the nullspace of a matrix.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/rref/" data-reference-item data-search="rref linear algebra rref(matrix[, prime]) returns the reduced row-echelon form of a matrix."><code>rref(matrix[, prime])</code><p>Returns the reduced row-echelon form of a matrix.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/transpose/" data-reference-item data-search="transpose linear algebra transpose(matrix) returns the transpose of a matrix."><code>transpose(matrix)</code><p>Returns the transpose of a matrix.</p></a></div></section>
+<section class="reference-group"><h2>Math</h2><div class="reference-list"><a class="reference-item docs-card" href="/docs/reference/abs/" data-reference-item data-search="abs math abs(arg1) computes the absolute value of an expression."><code>abs(arg1)</code><p>Computes the absolute value of an expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/cbrt/" data-reference-item data-search="cbrt math cbrt(arg1) computes the cube root of an expression."><code>cbrt(arg1)</code><p>Computes the cube root of an expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/ceil/" data-reference-item data-search="ceil math ceil(arg1) rounds a numeric expression up to the nearest integer. ceiling"><code>ceil(arg1)</code><p>Rounds a numeric expression up to the nearest integer.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/ceil/" data-reference-item data-search="ceiling math ceiling(arg1) rounds a numeric expression up to the nearest integer. ceil"><code>ceiling(arg1)</code><p>Rounds a numeric expression up to the nearest integer.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/contains/" data-reference-item data-search="contains math contains(arg1, arg2) tests membership in a supported finite container."><code>contains(arg1, arg2)</code><p>Tests membership in a supported finite container.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/count/" data-reference-item data-search="count math count(arg1) returns the number of entries in a supported container."><code>count(arg1)</code><p>Returns the number of entries in a supported container.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/delta/" data-reference-item data-search="delta math delta(arg1) represents the dirac delta distribution."><code>delta(arg1)</code><p>Represents the Dirac delta distribution.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/dfact/" data-reference-item data-search="dfact math dfact(arg1) computes the double factorial of an expression."><code>dfact(arg1)</code><p>Computes the double factorial of an expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/erf/" data-reference-item data-search="erf math erf(arg1) computes the error function."><code>erf(arg1)</code><p>Computes the error function.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/erfc/" data-reference-item data-search="erfc math erfc(arg1) computes the complementary error function 1-erf(x)."><code>erfc(arg1)</code><p>Computes the complementary error function 1-erf(x).</p></a>
+<a class="reference-item docs-card" href="/docs/reference/exp/" data-reference-item data-search="exp math exp(arg1) computes the exponential function e raised to an expression."><code>exp(arg1)</code><p>Computes the exponential function e raised to an expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/expand/" data-reference-item data-search="expand math expand(arg1) expands an expression algebraically."><code>expand(arg1)</code><p>Expands an expression algebraically.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/factorial/" data-reference-item data-search="fact math fact(arg1) computes the factorial of an expression. factorial"><code>fact(arg1)</code><p>Computes the factorial of an expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/factorial/" data-reference-item data-search="factorial math factorial(arg1) computes the factorial of an expression. fact"><code>factorial(arg1)</code><p>Computes the factorial of an expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/floor/" data-reference-item data-search="floor math floor(arg1) rounds a numeric expression down to the nearest integer."><code>floor(arg1)</code><p>Rounds a numeric expression down to the nearest integer.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/gamma/" data-reference-item data-search="gamma math gamma(arg1) computes the gamma function."><code>gamma(arg1)</code><p>Computes the gamma function.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/heaviside/" data-reference-item data-search="heaviside math heaviside(arg1) computes the heaviside step function."><code>heaviside(arg1)</code><p>Computes the Heaviside step function.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/hypot/" data-reference-item data-search="hypot math hypot(arg1, arg2) computes the euclidean magnitude sqrt(x^2+y^2)."><code>hypot(arg1, arg2)</code><p>Computes the Euclidean magnitude sqrt(x^2+y^2).</p></a>
+<a class="reference-item docs-card" href="/docs/reference/log/" data-reference-item data-search="log math log(arg1, [arg2]) computes the natural logarithm or a logarithm with an explicit base."><code>log(arg1, [arg2])</code><p>Computes the natural logarithm or a logarithm with an explicit base.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/max/" data-reference-item data-search="max math max(arg1, arg2, ...) returns the greatest value when the arguments can be ordered."><code>max(arg1, arg2, ...)</code><p>Returns the greatest value when the arguments can be ordered.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/min/" data-reference-item data-search="min math min(arg1, arg2, ...) returns the smallest value when the arguments can be ordered."><code>min(arg1, arg2, ...)</code><p>Returns the smallest value when the arguments can be ordered.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/mod/" data-reference-item data-search="mod math mod(arg1, arg2) computes the remainder modulo another expression for supported numeric inputs."><code>mod(arg1, arg2)</code><p>Computes the remainder modulo another expression for supported numeric inputs.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/modinv/" data-reference-item data-search="modinv math modinv(arg1, arg2) computes a modular multiplicative inverse."><code>modinv(arg1, arg2)</code><p>Computes a modular multiplicative inverse.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/nthroot/" data-reference-item data-search="nthroot math nthroot(arg1, arg2) computes the nth root as a principal fractional power."><code>nthroot(arg1, arg2)</code><p>Computes the nth root as a principal fractional power.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/numeric/" data-reference-item data-search="numeric math numeric(value[, precision]) evaluates a numeric value to a finite number of significant decimal digits."><code>numeric(value[, precision])</code><p>Evaluates a numeric value to a finite number of significant decimal digits.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/parens/" data-reference-item data-search="parens math parens(arg1) wraps an expression in explicit parentheses for output."><code>parens(arg1)</code><p>Wraps an expression in explicit parentheses for output.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/round/" data-reference-item data-search="round math round(arg1, [arg2]) rounds a number to a requested number of decimal places."><code>round(arg1, [arg2])</code><p>Rounds a number to a requested number of decimal places.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/sign/" data-reference-item data-search="sign math sign(arg1) returns the sign of a real expression when it can be determined."><code>sign(arg1)</code><p>Returns the sign of a real expression when it can be determined.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/size/" data-reference-item data-search="size math size(value) returns the dimensions of a structured parser value."><code>size(value)</code><p>Returns the dimensions of a structured parser value.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/sqrt/" data-reference-item data-search="sqrt math sqrt(arg1) computes the principal square root of an expression."><code>sqrt(arg1)</code><p>Computes the principal square root of an expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/subst/" data-reference-item data-search="subst math subst(arg1, arg2, arg3) substitutes one expression for another inside an expression tree."><code>subst(arg1, arg2, arg3)</code><p>Substitutes one expression for another inside an expression tree.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/trunc/" data-reference-item data-search="trunc math trunc(arg1) truncates a numeric expression toward zero."><code>trunc(arg1)</code><p>Truncates a numeric expression toward zero.</p></a></div></section>
+<section class="reference-group"><h2>Polynomials</h2><div class="reference-list"><a class="reference-item docs-card" href="/docs/reference/content/" data-reference-item data-search="content polynomials content(arg1) returns the exact numeric content of a polynomial."><code>content(arg1)</code><p>Returns the exact numeric content of a polynomial.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/deg/" data-reference-item data-search="deg polynomials deg(arg1, [arg2]) returns the degree of a polynomial expression."><code>deg(arg1, [arg2])</code><p>Returns the degree of a polynomial expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/div/" data-reference-item data-search="div polynomials div(arg1, arg2) performs polynomial division and returns quotient and remainder."><code>div(arg1, arg2)</code><p>Performs polynomial division and returns quotient and remainder.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/divide/" data-reference-item data-search="divide polynomials divide(arg1, arg2) divides expressions using polynomial quotient/remainder reconstruction when possible."><code>divide(arg1, arg2)</code><p>Divides expressions using polynomial quotient/remainder reconstruction when possible.</p></a></div></section>
+<section class="reference-group"><h2>Solving</h2><div class="reference-list"><a class="reference-item docs-card" href="/docs/reference/solve/" data-reference-item data-search="solve solving solve(expressionorequation, variable) solves an expression or equation for a variable and returns the solutions as a solutionset."><code>solve(expressionOrEquation, variable)</code><p>Solves an expression or equation for a variable and returns the solutions as a SolutionSet.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/solve-system/" data-reference-item data-search="solveeqs solving solveeqs(arg1) solves a system of equations and returns the solution assignments."><code>solveeqs(arg1)</code><p>Solves a system of equations and returns the solution assignments.</p></a></div></section>
+<section class="reference-group"><h2>Special functions</h2><div class="reference-list"><a class="reference-item docs-card" href="/docs/reference/chi/" data-reference-item data-search="chi special functions chi(arg1) computes the hyperbolic cosine integral."><code>Chi(arg1)</code><p>Computes the hyperbolic cosine integral.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/ci/" data-reference-item data-search="ci special functions ci(arg1) computes the cosine integral."><code>Ci(arg1)</code><p>Computes the cosine integral.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/ei/" data-reference-item data-search="ei special functions ei(arg1) computes the exponential integral."><code>Ei(arg1)</code><p>Computes the exponential integral.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/fib/" data-reference-item data-search="fib special functions fib(arg1) computes a fibonacci number for an integer index."><code>fib(arg1)</code><p>Computes a Fibonacci number for an integer index.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/is-prime/" data-reference-item data-search="isprime special functions isprime(arg1) tests whether an exact integer is prime."><code>isprime(arg1)</code><p>Tests whether an exact integer is prime.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/li/" data-reference-item data-search="li special functions li(arg1) computes the logarithmic integral."><code>Li(arg1)</code><p>Computes the logarithmic integral.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/shi/" data-reference-item data-search="shi special functions shi(arg1) computes the hyperbolic sine integral."><code>Shi(arg1)</code><p>Computes the hyperbolic sine integral.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/si/" data-reference-item data-search="si special functions si(arg1) computes the sine integral."><code>Si(arg1)</code><p>Computes the sine integral.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/sinc/" data-reference-item data-search="sinc special functions sinc(arg1) computes the normalized sinc function, sin(x)/x."><code>sinc(arg1)</code><p>Computes the normalized sinc function, sin(x)/x.</p></a></div></section>
+<section class="reference-group"><h2>Trigonometry</h2><div class="reference-list"><a class="reference-item docs-card" href="/docs/reference/acos/" data-reference-item data-search="acos trigonometry acos(arg1) computes the principal arccosine in radians."><code>acos(arg1)</code><p>Computes the principal arccosine in radians.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/acosh/" data-reference-item data-search="acosh trigonometry acosh(arg1) computes the principal inverse hyperbolic cosine."><code>acosh(arg1)</code><p>Computes the principal inverse hyperbolic cosine.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/acot/" data-reference-item data-search="acot trigonometry acot(arg1) computes the principal inverse cotangent."><code>acot(arg1)</code><p>Computes the principal inverse cotangent.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/acoth/" data-reference-item data-search="acoth trigonometry acoth(arg1) computes the principal inverse hyperbolic cotangent."><code>acoth(arg1)</code><p>Computes the principal inverse hyperbolic cotangent.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/acsc/" data-reference-item data-search="acsc trigonometry acsc(arg1) computes the principal inverse cosecant."><code>acsc(arg1)</code><p>Computes the principal inverse cosecant.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/acsch/" data-reference-item data-search="acsch trigonometry acsch(arg1) computes the principal inverse hyperbolic cosecant."><code>acsch(arg1)</code><p>Computes the principal inverse hyperbolic cosecant.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/asec/" data-reference-item data-search="asec trigonometry asec(arg1) computes the principal inverse secant."><code>asec(arg1)</code><p>Computes the principal inverse secant.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/asech/" data-reference-item data-search="asech trigonometry asech(arg1) computes the principal inverse hyperbolic secant."><code>asech(arg1)</code><p>Computes the principal inverse hyperbolic secant.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/asin/" data-reference-item data-search="asin trigonometry asin(arg1) computes the principal arcsine in radians."><code>asin(arg1)</code><p>Computes the principal arcsine in radians.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/asinh/" data-reference-item data-search="asinh trigonometry asinh(arg1) computes the principal inverse hyperbolic sine."><code>asinh(arg1)</code><p>Computes the principal inverse hyperbolic sine.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/atan/" data-reference-item data-search="atan trigonometry atan(arg1) computes the principal arctangent in radians."><code>atan(arg1)</code><p>Computes the principal arctangent in radians.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/atan2/" data-reference-item data-search="atan2 trigonometry atan2(arg1, arg2) computes the quadrant-aware two-argument arctangent atan2(y,x)."><code>atan2(arg1, arg2)</code><p>Computes the quadrant-aware two-argument arctangent atan2(y,x).</p></a>
+<a class="reference-item docs-card" href="/docs/reference/atanh/" data-reference-item data-search="atanh trigonometry atanh(arg1) computes the principal inverse hyperbolic tangent."><code>atanh(arg1)</code><p>Computes the principal inverse hyperbolic tangent.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/cos/" data-reference-item data-search="cos trigonometry cos(arg1) computes the cosine of an angle in radians."><code>cos(arg1)</code><p>Computes the cosine of an angle in radians.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/cosh/" data-reference-item data-search="cosh trigonometry cosh(arg1) computes the hyperbolic cosine."><code>cosh(arg1)</code><p>Computes the hyperbolic cosine.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/cot/" data-reference-item data-search="cot trigonometry cot(arg1) computes the cotangent cos(x)/sin(x)."><code>cot(arg1)</code><p>Computes the cotangent cos(x)/sin(x).</p></a>
+<a class="reference-item docs-card" href="/docs/reference/coth/" data-reference-item data-search="coth trigonometry coth(arg1) computes the hyperbolic cotangent 1/tanh(x)."><code>coth(arg1)</code><p>Computes the hyperbolic cotangent 1/tanh(x).</p></a>
+<a class="reference-item docs-card" href="/docs/reference/csc/" data-reference-item data-search="csc trigonometry csc(arg1) computes the cosecant 1/sin(x)."><code>csc(arg1)</code><p>Computes the cosecant 1/sin(x).</p></a>
+<a class="reference-item docs-card" href="/docs/reference/csch/" data-reference-item data-search="csch trigonometry csch(arg1) computes the hyperbolic cosecant 1/sinh(x)."><code>csch(arg1)</code><p>Computes the hyperbolic cosecant 1/sinh(x).</p></a>
+<a class="reference-item docs-card" href="/docs/reference/sec/" data-reference-item data-search="sec trigonometry sec(arg1) computes the secant 1/cos(x)."><code>sec(arg1)</code><p>Computes the secant 1/cos(x).</p></a>
+<a class="reference-item docs-card" href="/docs/reference/sech/" data-reference-item data-search="sech trigonometry sech(arg1) computes the hyperbolic secant 1/cosh(x)."><code>sech(arg1)</code><p>Computes the hyperbolic secant 1/cosh(x).</p></a>
+<a class="reference-item docs-card" href="/docs/reference/sin/" data-reference-item data-search="sin trigonometry sin(arg1) computes the sine of an angle in radians."><code>sin(arg1)</code><p>Computes the sine of an angle in radians.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/sinh/" data-reference-item data-search="sinh trigonometry sinh(arg1) computes the hyperbolic sine."><code>sinh(arg1)</code><p>Computes the hyperbolic sine.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/tan/" data-reference-item data-search="tan trigonometry tan(arg1) computes the tangent of an angle in radians."><code>tan(arg1)</code><p>Computes the tangent of an angle in radians.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/tanh/" data-reference-item data-search="tanh trigonometry tanh(arg1) computes the hyperbolic tangent."><code>tanh(arg1)</code><p>Computes the hyperbolic tangent.</p></a></div></section></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../scripts/site.js"></script>
+<script src="../../scripts/reference.js"></script>
+<script src="../../scripts/playground-tree.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Expression model — Nerdamer Documentation</title>
+  <meta name="description" content="A contributor guide to Nerdamer&#39;s Expression representation, internal groups, multipliers, powers, and child elements.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../styles/internals.css">
+<link rel="stylesheet" href="../../../styles/expression-model.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="internals-page">
+  <div class="eyebrow">Contributors · Internals</div>
+  <h1>Expression model</h1>
+  <p class="internals-lead"><code>Expression</code> is the library's primary symbolic scalar representation. Rather than thinking of it as a generic AST node, it is better understood as a typed internal value: each expression has a required type and value, with additional fields present only when that form of expression needs them.</p>
+
+  <div class="internals-callout"><strong>Groups describe storage and canonicalization.</strong> The categories <code>NUM</code>, <code>VAR</code>, <code>EXP</code>, <code>FUN</code>, <code>GRP</code>, <code>PRD</code>, <code>SUM</code>, and <code>INF</code> reflect how expressions are represented and canonicalized internally. They are implementation details rather than a general classification of mathematical objects.</div>
+
+  <h2>Anatomy of an Expression</h2>
+  <p><code>type</code> and <code>value</code> identify the stored node. Other fields are representation-dependent. In particular, <code>multiplier</code> and <code>power</code> can be absent from storage even though <code>getMultiplier()</code> and <code>getPower()</code> still provide the effective values algorithms should use.</p>
+
+  <div class="expression-storage-legend" aria-label="Expression field legend">
+    <span class="expression-storage-key">Always stored</span>
+    <span class="expression-storage-key conditional">Conditional / optional storage</span>
+  </div>
+
+  <div class="internals-anatomy">
+    <div class="internals-anatomy-node expression-conditional"><strong>multiplier</strong><span>Outer exact coefficient when explicitly stored, normally a <code>Rational</code>.</span><span class="expression-field-state">Optional storage</span></div>
+    <div class="internals-anatomy-node expression-required"><strong>type + value</strong><span>The internal group code and canonical key identifying the node.</span><span class="expression-field-state">Always stored</span></div>
+    <div class="internals-anatomy-node expression-conditional"><strong>power</strong><span>Outer symbolic exponent when explicitly stored.</span><span class="expression-field-state">Optional storage</span></div>
+    <div class="internals-anatomy-node expression-conditional"><strong>elements</strong><span>Keyed child expressions used by aggregate groups such as sums and products.</span><span class="expression-field-state">By group</span></div>
+    <div class="internals-anatomy-node expression-conditional"><strong>args / name</strong><span>Function name and arguments for <code>FUN</code> nodes.</span><span class="expression-field-state">FUN only</span></div>
+    <div class="internals-anatomy-node expression-conditional"><strong>base</strong><span>Explicit base stored by <code>EXP</code> nodes.</span><span class="expression-field-state">EXP only</span></div>
+  </div>
+
+  <div class="internals-visual">
+    <div class="internals-visual-head"><strong>Representative node relationships</strong><span>Solid = always stored · dashed = conditional</span></div>
+    <div class="internals-mermaid">
+      <div class="mermaid">
+flowchart LR
+  E["Expression"] --> T["type / value"]
+  E -.-> M["multiplier: Rational"]
+  E -.-> P["power: Expression"]
+  E -.-> C["elements: child Expressions"]
+  E -.-> A["args: function arguments"]
+  E -.-> B["base: EXP base"]
+  E -.-> N["name: function name"]
+  T --> G["NUM · VAR · EXP · FUN · GRP · PRD · SUM · INF"]
+      </div>
+    </div>
+  </div>
+
+  <h2>Why the multiplier matters</h2>
+  <p>Numeric coefficients are usually kept outside the symbolic child structure. That is why a contributor should not picture <code>2*x</code> simply as a product node containing the children <code>2</code> and <code>x</code>.</p>
+  <div class="internals-stage-row">
+    <div class="internals-stage"><small>Input</small><code>2*x</code><p>Ordinary mathematical notation.</p></div>
+    <div class="internals-stage"><small>Core representation</small><code>multiplier = 2</code><code>value = x</code><code>power = 1</code><p>The numeric coefficient can live on the symbolic node.</p></div>
+    <div class="internals-stage"><small>Benefit</small><code>like terms combine structurally</code><p>Arithmetic can reason about the symbolic base separately from its coefficient.</p></div>
+  </div>
+
+  <h2>The expression groups</h2>
+  <p>The <code>type</code> field identifies how an <code>Expression</code> is represented internally. These groups are organizational categories used by Nerdamer's canonicalization logic; they are not general mathematical classifications.</p>
+  <div class="internals-group-grid">
+    <div class="internals-group-card"><div class="internals-group-badge">NUM</div><div><h3>Plain numeric value</h3><p>Stores plain numeric values.</p><span class="internals-group-example">3/2</span></div></div>
+    <div class="internals-group-card"><div class="internals-group-badge">VAR</div><div><h3>Variable representation</h3><p>Stores symbols or variables whose powers fit the variable representation.</p><span class="internals-group-example">x^2</span></div></div>
+    <div class="internals-group-card"><div class="internals-group-badge">EXP</div><div><h3>Separate exponential node</h3><p>Stores bases with powers that require a separate exponential node. It is not the same thing as the function <code>exp(...)</code>.</p><span class="internals-group-example">x^y</span></div></div>
+    <div class="internals-group-card"><div class="internals-group-badge">FUN</div><div><h3>Function call</h3><p>Stores function calls and their argument expressions.</p><span class="internals-group-example">sin(x)</span></div></div>
+    <div class="internals-group-card"><div class="internals-group-badge">GRP</div><div><h3>Common-base sum</h3><p>Stores sums with a common base but differing powers.</p><span class="internals-group-example">x + x^y</span><span class="internals-group-example">cos(x) - 3*cos(x)^2</span></div></div>
+    <div class="internals-group-card"><div class="internals-group-badge">PRD</div><div><h3>Symbolic product</h3><p>Stores products of non-numeric symbolic factors. Numeric coefficients are normally moved to the outer multiplier during parsing.</p><span class="internals-group-example">x*y</span></div></div>
+    <div class="internals-group-card"><div class="internals-group-badge">SUM</div><div><h3>Other sums</h3><p>Stores sums that do not fit the common-base grouping. For example, <code>1 + x + x^2</code> contains a numeric term and a grouped polynomial-like component.</p><span class="internals-group-example">1 + x + x^2</span></div></div>
+    <div class="internals-group-card"><div class="internals-group-badge">INF</div><div><h3>Infinite value</h3><p>Stores infinite values.</p><span class="internals-group-example">Infinity</span></div></div>
+  </div>
+
+  <h2>A node is canonical structure, not source text</h2>
+  <p>Parsing normalizes expressions. Ordering, grouping, multipliers, and powers are chosen to make later symbolic operations predictable, so the tree is not intended to preserve the exact spelling of the input. That is why <code>text()</code> should be read as the canonical representation rather than a source-code round trip.</p>
+
+  <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">const</span> <span class="token variable">expression</span> <span class="token operator">=</span> <span class="token class-name">Expression</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token string">&#39;2*x + 1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token variable">expression</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>                    <span class="token comment">// &quot;1+2*x&quot;</span>
+<span class="token variable">expression</span><span class="token punctuation">.</span><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token variable">x</span><span class="token operator">:</span> <span class="token number">3</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// &quot;7&quot;</span></code></pre>
+
+  <h2>Expression is only one parser result type</h2>
+  <p>Most scalar mathematics lands here, but the parser's result union is wider. Algorithms that require an <code>Expression</code> should narrow or convert explicitly rather than assume every parsed value is scalar.</p>
+  <div class="internals-entity-strip">
+    <div class="internals-entity"><code>Expression</code><span>symbolic scalar</span></div>
+    <div class="internals-entity"><code>Equation</code><span>LHS / RHS structure</span></div>
+    <div class="internals-entity"><code>Vector</code><span>ordered values</span></div>
+    <div class="internals-entity"><code>Matrix</code><span>two-dimensional values</span></div>
+    <div class="internals-entity"><code>Collection</code><span>ordered aggregate</span></div>
+    <div class="internals-entity"><code>ValuesSet</code><span>finite set</span></div>
+    <div class="internals-entity"><code>Dictionary</code><span>key/value aggregate</span></div>
+  </div>
+
+  <div class="internals-intro">
+    <div class="internals-intro-card"><strong>Primary source</strong><p>The class documentation in <code>Expression.ts</code> describes the group meanings and representation fields directly.</p><a rel="noopener noreferrer" target="_blank" class="internals-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/core/classes/expression/Expression.ts">src/core/classes/expression/Expression.ts</a></div>
+    <div class="internals-intro-card"><strong>Next stop</strong><p>The parser page explains how source notation is turned into these objects in the first place.</p><a class="internals-source" href="/docs/internals/parser/">Parser internals</a></div>
+  </div>
+</div></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="../../../scripts/internals.js"></script>
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

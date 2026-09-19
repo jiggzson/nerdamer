@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Text output and public helpers — Nerdamer</title>
+  <meta name="description" content="Format Nerdamer text output and use the public helper APIs added for substitution, algebra, number theory, complex values, linear algebra, and system solving.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../styles/site.css">
+  <link rel="stylesheet" href="../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../styles/logo.css">
+  <link rel="stylesheet" href="../../styles/header.css">
+  <link rel="stylesheet" href="../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../styles/api.css">
+  <link rel="stylesheet" href="../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">JavaScript / TypeScript API</div>
+<h1>Text output and public helpers</h1>
+<p>This page covers text-formatting controls and public helper APIs that are useful when application code needs more than the shortest Nerdamer Notation form.</p>
+
+<h2>Text output and term ordering</h2>
+<p><code>text()</code> returns Nerdamer's normal textual representation. Pass <code>{ sort: true }</code> when the returned string should use the conventional sorted term order for that call.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">expression</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;x^2+2*x+1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token variable">expression</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 1+2*x+x^2</span>
+
+<span class="token variable">expression</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token variable">sort</span><span class="token operator">:</span> <span class="token boolean">true</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// x^2+2*x+1</span></code></pre>
+
+<p>The option is local to that formatting call. It does not modify the expression and does not change the process-wide <code>SORT_TERMS</code> setting.</p>
+
+<h3><code>TextOptions</code></h3>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">type</span> <span class="token punctuation">{</span> <span class="token class-name">TextOptions</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">options</span><span class="token operator">:</span> <span class="token class-name">TextOptions</span> <span class="token operator">=</span> <span class="token punctuation">{</span>
+  <span class="token variable">sort</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+  <span class="token variable">decimal</span><span class="token operator">:</span> <span class="token boolean">false</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+
+<span class="token variable">expression</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token variable">options</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p><code>TextOptions</code> is also exported from <code>nerdamer/core</code>. The supported fields are <code>sort</code>, <code>decimal</code>, <code>precision</code>, and <code>wrapPow</code>.</p>
+
+<h3><code>toText()</code></h3>
+<p>Expressions loaded through the full package also provide <code>toText()</code>, which uses Nerdamer's text converter and produces conventional display ordering.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">const</span> <span class="token variable">expression</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;x^2+2*x+1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token variable">classes</span><span class="token punctuation">.</span><span class="token class-name">Expression</span><span class="token punctuation">.</span><span class="token function">isExpression</span><span class="token punctuation">(</span><span class="token variable">expression</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token variable">expression</span><span class="token punctuation">.</span><span class="token function">toText</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token comment">// x^2+2*x+1</span>
+<span class="token punctuation">}</span></code></pre>
+<div class="docs-callout"><strong>TypeScript note:</strong> <code>nerdamer(...)</code> can return several parser entity types. Narrow the result to <code>Expression</code> before calling the Expression-only <code>toText()</code> method. <code>text(...)</code> is available across parser entities.</div>
+
+<h2>Complete the square</h2>
+<p>Nerdamer Notation uses the lowercase parser name <code>sqcomp(...)</code>. JavaScript and TypeScript use <code>completeSquare(...)</code>.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">completeSquare</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/algebra&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">notation</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;sqcomp(x^2+6*x+1)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">result</span> <span class="token operator">=</span> <span class="token function">completeSquare</span><span class="token punctuation">(</span><span class="token string">&#39;x^2+6*x+1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">result</span><span class="token punctuation">.</span><span class="token variable">expression</span><span class="token punctuation">;</span>
+<span class="token variable">result</span><span class="token punctuation">.</span><span class="token variable">a</span><span class="token punctuation">;</span>
+<span class="token variable">result</span><span class="token punctuation">.</span><span class="token variable">h</span><span class="token punctuation">;</span>
+<span class="token variable">result</span><span class="token punctuation">.</span><span class="token variable">k</span><span class="token punctuation">;</span>
+<span class="token variable">result</span><span class="token punctuation">.</span><span class="token variable">variable</span><span class="token punctuation">;</span></code></pre>
+<p>The notation form returns the completed-square expression. The direct API returns a <code>CompleteSquareResult</code> so callers can also inspect the coefficient, shift, remainder, and selected variable.</p>
+
+<h2>Polynomial factors</h2>
+<p><code>polyfactors(...)</code> is the Nerdamer Notation spelling. The direct API uses <code>polyFactors(...)</code> and returns the individual factors in a <code>Vector</code>.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">polyFactors</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/algebra&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">factors</span> <span class="token operator">=</span> <span class="token function">polyFactors</span><span class="token punctuation">(</span><span class="token string">&#39;x^2-1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<h2>U-substitution</h2>
+<p><code>uSub()</code> and <code>uUnSub()</code> are JavaScript / TypeScript helpers. They are not Nerdamer Notation functions.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">uSub</span><span class="token punctuation">,</span> <span class="token variable">uUnSub</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/algebra&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token punctuation">[</span><span class="token variable">substituted</span><span class="token punctuation">,</span> <span class="token variable">substitutions</span><span class="token punctuation">]</span> <span class="token operator">=</span>
+  <span class="token function">uSub</span><span class="token punctuation">(</span><span class="token string">&#39;cos(x)^2+cos(x)+1&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;cos(x)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token variable">substituted</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token variable">sort</span><span class="token operator">:</span> <span class="token boolean">true</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// u0^2+u0+1</span>
+
+<span class="token function">uUnSub</span><span class="token punctuation">(</span><span class="token variable">substituted</span><span class="token punctuation">,</span> <span class="token variable">substitutions</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// restores the original expression</span></code></pre>
+<p><code>uSub()</code> chooses a generated variable name that does not collide with the expression or an existing substitution map. Preserve the returned map when several substitutions need to share the same generated-variable namespace.</p>
+
+<h2>Primality</h2>
+<p>Use <code>isprime(...)</code> in Nerdamer Notation and <code>isPrime(...)</code> in JavaScript or TypeScript.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">isPrime</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/algebra&#39;</span><span class="token punctuation">;</span>
+
+<span class="token function">isPrime</span><span class="token punctuation">(</span><span class="token number">29</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 1</span>
+<span class="token function">isPrime</span><span class="token punctuation">(</span><span class="token number">21</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 0</span></code></pre>
+<p>Inputs that cannot be classified as exact integers remain symbolic.</p>
+
+<h2>Complex helpers</h2>
+<p><code>conjugate(...)</code> and <code>csgn(...)</code> remain valid Nerdamer Notation names and are also callable directly from the full <code>nerdamer</code> export.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">conjugate</span><span class="token punctuation">(</span><span class="token string">&#39;3+2*i&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 3-2*i</span>
+
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">csgn</span><span class="token punctuation">(</span><span class="token string">&#39;-3+2*i&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// -1</span></code></pre>
+<p><code>csgn</code> returns the sign of the real part when that sign is known. If the real part is zero, it uses the sign of the imaginary part. An unresolved symbolic sign remains as <code>csgn(...)</code>.</p>
+
+<h2>Matrix nullspace</h2>
+<p><code>nullspace(...)</code> is available through Nerdamer Notation, the root API, and <code>nerdamer/structures</code>.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Matrix</span><span class="token punctuation">,</span> <span class="token variable">nullspace</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token class-name">M</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">Matrix</span><span class="token punctuation">(</span>
+  <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">]</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">nullspace</span><span class="token punctuation">(</span><span class="token class-name">M</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// [[-2, 1, 0], [-3, 0, 1]]</span></code></pre>
+<p>An optional prime modulus selects finite-field arithmetic.</p>
+
+<h2>System solving</h2>
+<p>The canonical JavaScript / TypeScript function is <code>solveSystem(...)</code>. Nerdamer Notation and the retained root compatibility spelling use <code>solveeqs(...)</code>.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">solveSystem</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/solve&#39;</span><span class="token punctuation">;</span>
+
+<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;solveeqs([x+y=3,x-y=1])&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// [{x =&gt; 2, y =&gt; 1}]</span>
+
+<span class="token function">solveSystem</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token string">&#39;x+y=3&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;x-y=1&#39;</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// [{x =&gt; 2, y =&gt; 1}]</span></code></pre>
+<div class="docs-callout"><strong>Naming:</strong> <code>solveEquations</code> is not part of the current public API.</div>
+
+<h2>Related references</h2>
+<p>See the <a href="/docs/functions/">Nerdamer Notation function reference</a> for parser syntax and the <a href="/docs/api/">JavaScript / TypeScript API</a> for package-level APIs.</p></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../scripts/site.js"></script>
+
+<script src="../../scripts/playground-tree.js"></script>
+</body>
+</html>

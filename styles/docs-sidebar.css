@@ -1,0 +1,119 @@
+.docs-sidebar {
+  height: calc(100vh - var(--header-h) - 56px);
+  max-height: calc(100vh - var(--header-h) - 56px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(196 211 226) transparent;
+  padding-right: 6px;
+}
+
+html.dark .docs-sidebar {
+  scrollbar-color: rgb(75 94 112) transparent;
+}
+
+.docs-sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.docs-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.docs-sidebar::-webkit-scrollbar-thumb {
+  background: rgb(196 211 226);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.docs-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgb(176 196 216);
+  background-clip: padding-box;
+}
+
+html.dark .docs-sidebar::-webkit-scrollbar-thumb {
+  background: rgb(75 94 112);
+  background-clip: padding-box;
+}
+
+html.dark .docs-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgb(96 118 139);
+  background-clip: padding-box;
+}
+
+.docs-sidebar::-webkit-scrollbar-button {
+  display: none;
+}
+
+.docs-nav-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 5px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: rgb(var(--muted-2));
+  font: 800 .69rem/1.35 var(--sans);
+  letter-spacing: .07em;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.docs-nav-toggle:hover {
+  color: rgb(var(--accent));
+}
+
+.docs-nav-toggle:focus-visible {
+  outline: 2px solid rgba(var(--accent), .55);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.docs-nav-chevron {
+  flex: 0 0 auto;
+  color: rgb(var(--muted-2));
+  font-size: .9rem;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform .15s ease;
+}
+
+.docs-nav-group.is-collapsed > .docs-nav-toggle .docs-nav-chevron {
+  transform: rotate(-90deg);
+}
+
+.docs-nav-group.is-collapsed > a {
+  display: none;
+}
+
+.docs-nav-group > a[hidden] {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .docs-sidebar {
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
+    overscroll-behavior: auto;
+    scrollbar-gutter: auto;
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+    padding-right: 0;
+  }
+}
+
+
+.docs-content h1[id],
+.docs-content h2[id],
+.docs-content h3[id],
+.docs-content h4[id],
+.docs-content section[id] {
+  scroll-margin-top: calc(var(--header-h) + 24px);
+}

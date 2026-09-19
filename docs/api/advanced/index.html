@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>advanced API — Nerdamer Documentation</title>
+  <meta name="description" content="Nerdamer advanced JavaScript and TypeScript API.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../styles/api.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">JavaScript / TypeScript API</div><h1><code>nerdamer/advanced</code></h1><p>Advanced symbolic tools including complex values and Gröbner-basis operations.</p><div class="docs-callout"><strong>Direct npm import.</strong> The items on this page are JavaScript / TypeScript exports from <code>nerdamer/advanced</code>. For functions used inside <code>nerdamer('...')</code>, see <a href="/docs/functions/">Nerdamer Notation</a>.</div><div class="reference-toolbar"><input class="reference-search" type="search" placeholder="Filter advanced API…" data-reference-search><span class="reference-count">14 exports</span></div><section class="api-group"><h2>Functions</h2><div class="api-list"><a class="api-list-item" href="/docs/api/advanced/eliminate/" data-reference-item data-search="eliminate computes the part of the ideal that lies in the polynomial ring generated by `keepvars`. function"><div><code>eliminate(polys: MultiPoly[], vars: string[], keepVars: string[], opts?: Omit&lt;GroebnerBasisOptions, &quot;order&quot;&gt;): MultiPoly[]</code><span>Function</span></div><p>Computes the part of the ideal that lies in the polynomial ring generated by `keepVars`.</p></a><a class="api-list-item" href="/docs/api/advanced/groebner/" data-reference-item data-search="groebner computes a groebner basis for an exact integer-coefficient ideal. function"><div><code>Groebner(polys: MultiPoly[], vars: string[], order: MonomialOrder, reduced: boolean): MultiPoly[]</code><span>Function</span></div><p>Computes a Groebner basis for an exact integer-coefficient ideal.</p></a><a class="api-list-item" href="/docs/api/advanced/groebner-basis-with-options/" data-reference-item data-search="groebnerbasiswithoptions computes a groebner basis with ordering, strategy, and budget control. function"><div><code>groebnerBasisWithOptions(polys: readonly MultiPoly[], opts?: GroebnerBasisOptions): MultiPoly[]</code><span>Function</span></div><p>Computes a Groebner basis with ordering, strategy, and budget control.</p></a><a class="api-list-item" href="/docs/api/advanced/ideal-membership/" data-reference-item data-search="idealmembership tests exact ideal membership by reducing against a computed groebner basis. function"><div><code>idealMembership(f: MultiPoly, polys: MultiPoly[], order: MonomialOrder, opts?: Omit&lt;GroebnerBasisOptions, &quot;order&quot; | &quot;reduced&quot;&gt;): boolean</code><span>Function</span></div><p>Tests exact ideal membership by reducing against a computed Groebner basis.</p></a><a class="api-list-item" href="/docs/api/advanced/reduce-by-basis/" data-reference-item data-search="reducebybasis reduces a polynomial by a basis or arbitrary reducer set using fraction-free arithmetic. function"><div><code>reduceByBasis(f: MultiPoly, basis: readonly MultiPoly[], order: MonomialOrder): MultiPoly</code><span>Function</span></div><p>Reduces a polynomial by a basis or arbitrary reducer set using fraction-free arithmetic.</p></a><a class="api-list-item" href="/docs/api/advanced/solve-rational-system/" data-reference-item data-search="solverationalsystem solves a zero-dimensional polynomial system for rational coordinates. function"><div><code>solveRationalSystem(polys: MultiPoly[], vars: string[], opts?: Omit&lt;GroebnerBasisOptions, &quot;order&quot; | &quot;reduced&quot;&gt;): RationalSolution[]</code><span>Function</span></div><p>Solves a zero-dimensional polynomial system for rational coordinates.</p></a></div></section><section class="api-group"><h2>Classes</h2><div class="api-list"><a class="api-list-item" href="/docs/api/advanced/complex/" data-reference-item data-search="complex represents a numerical complex value backed by `decimal.js` components. class"><div><code>Complex: unknown</code><span>Class</span></div><p>Represents a numerical complex value backed by `decimal.js` components.</p></a><a class="api-list-item" href="/docs/api/advanced/function-solver/" data-reference-item data-search="functionsolver searches a bounded interval for real roots of a univariate expression. class"><div><code>FunctionSolver: unknown</code><span>Class</span></div><p>Searches a bounded interval for real roots of a univariate expression.</p></a><a class="api-list-item" href="/docs/api/advanced/groebner-budget-exceeded/" data-reference-item data-search="groebnerbudgetexceeded thrown when a groebner pair-count or basis-size budget is exhausted. groebnerbudgetexceeded.stats is the live counter snapshot from the aborted computation. the error keeps that object by reference and does not freeze it. class"><div><code>GroebnerBudgetExceeded: unknown</code><span>Class</span></div><p>Thrown when a Groebner pair-count or basis-size budget is exhausted. GroebnerBudgetExceeded.stats is the live counter snapshot from the aborted computation. The error keeps that object by reference and does not freeze it.</p></a><a class="api-list-item" href="/docs/api/advanced/multi-poly/" data-reference-item data-search="multipoly sparse multivariate polynomial over integer coefficients. class"><div><code>MultiPoly: unknown</code><span>Class</span></div><p>Sparse multivariate polynomial over integer coefficients.</p></a></div></section><section class="api-group"><h2>APIs</h2><div class="api-list"><a class="api-list-item" href="/docs/api/advanced/groebner-basis-options/" data-reference-item data-search="groebnerbasisoptions controls monomial order, result normalization, pair strategy, and deterministic budgets. api"><div><code>GroebnerBasisOptions: unknown</code><span>API</span></div><p>Controls monomial order, result normalization, pair strategy, and deterministic budgets.</p></a><a class="api-list-item" href="/docs/api/advanced/groebner-stats/" data-reference-item data-search="groebnerstats deterministic work counters captured when a groebner resource budget is exceeded. api"><div><code>GroebnerStats: unknown</code><span>API</span></div><p>Deterministic work counters captured when a Groebner resource budget is exceeded.</p></a><a class="api-list-item" href="/docs/api/advanced/monomial-order/" data-reference-item data-search="monomialorder monomial order used for leading terms, pair processing, and reduction. api"><div><code>MonomialOrder: &quot;LEX&quot; | &quot;GRLEX&quot; | &quot;GREVLEX&quot;</code><span>API</span></div><p>Monomial order used for leading terms, pair processing, and reduction.</p></a><a class="api-list-item" href="/docs/api/advanced/rational-solution/" data-reference-item data-search="rationalsolution maps each solved variable to a reduced rational numerator/denominator pair. only rational coordinates discovered by triangular back-substitution are represented. api"><div><code>RationalSolution: Map&lt;string, { … }&gt;</code><span>API</span></div><p>Maps each solved variable to a reduced rational numerator/denominator pair. Only rational coordinates discovered by triangular back-substitution are represented.</p></a></div></section></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+<script src="../../../scripts/reference.js"></script>
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

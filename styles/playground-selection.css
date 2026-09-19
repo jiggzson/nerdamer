@@ -1,0 +1,10 @@
+.playground-editor-panel .CodeMirror-selectedtext {
+  background-color: rgb(var(--accent) / .34) !important;
+  color: rgb(var(--fg)) !important;
+  border-radius: 2px;
+}
+
+html.dark .playground-editor-panel .CodeMirror-selectedtext {
+  background-color: rgb(var(--accent) / .48) !important;
+  color: rgb(var(--fg)) !important;
+}

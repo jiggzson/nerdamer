@@ -1,0 +1,75 @@
+.reference-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 28px;
+}
+
+.reference-search {
+  width: min(100%, 520px);
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid rgb(var(--border));
+  border-radius: 10px;
+  outline: none;
+  background: rgb(var(--bg-elevated));
+  color: rgb(var(--fg));
+}
+
+.reference-search::placeholder {
+  color: rgb(var(--muted-2));
+}
+
+.reference-search:focus {
+  border-color: rgba(var(--accent), .52);
+  box-shadow: 0 0 0 3px rgba(var(--accent), .08);
+}
+
+.reference-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgb(var(--bg-soft));
+  color: rgb(var(--muted));
+  font-size: .78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.reference-item {
+  grid-template-columns: minmax(235px, .42fr) minmax(0, 1fr);
+  gap: 18px;
+  padding: 14px 16px;
+}
+
+.reference-item > code {
+  font-size: .84rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.reference-item > p {
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .reference-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .reference-search {
+    width: 100%;
+  }
+
+  .reference-count {
+    align-self: flex-start;
+  }
+
+  .reference-item {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}

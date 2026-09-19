@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>MultiPoly — Nerdamer advanced API</title>
+  <meta name="description" content="Sparse multivariate polynomial over integer coefficients.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../../styles/site.css">
+  <link rel="stylesheet" href="../../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../../styles/header.css">
+  <link rel="stylesheet" href="../../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../../styles/api.css">
+  <link rel="stylesheet" href="../../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/advanced/">nerdamer/advanced</a></div><div class="api-member-title"><div><span class="api-kind">Class</span><h1>MultiPoly</h1></div><a class="api-source" href="https://github.com/N00bie-to-Github/nerdamer2/blob/ff74b9eb6ce7e954de9323fc9b54be86591d257e/src/algebra/algorithms/multiPoly/MultiPoly.ts#L20" target="_blank" rel="noreferrer">src/algebra/algorithms/multiPoly/MultiPoly.ts:20</a></div><div class="api-description"><p>Sparse multivariate polynomial over integer coefficients.</p><div class="api-note"><strong>remarks</strong><p>Monomials are stored in a mutable map from canonical exponent keys to</p><pre class="api-example"><code>`bigint`</code></pre><p>coefficients. Variable indices, rather than names, define the polynomial ring; every
+polynomial combined by an algorithm must use the same index-to-name mapping.
+Exponents are expected to be non-negative integers, but construction helpers do not
+validate that invariant.
+
+The constructor copies the supplied map, so MultiPoly.clone has independent
+term storage. The public MultiPoly.terms property, on the other hand, exposes
+the live map. Direct edits must use canonical keys and remove zero coefficients;
+MultiPoly.setCoeff is the safer choice for ordinary updates.
+
+This is the exact representation used by the advanced Groebner layer. It does not
+represent rational coefficients directly; expression-facing adapters clear
+denominators before conversion.</p></div></div><section class="api-detail"><h2>Members</h2><div class="api-children"><article class="api-child" id="clone"><div class="api-child-head"><code>clone(): <a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code><span>Method</span></div><div class="api-description"><p>Creates an independent copy of the term map.</p></div><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code></p></section></article><article class="api-child" id="constant"><div class="api-child-head"><code>constant(c: bigint): <a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code><span>Method</span></div><div class="api-description"><p>Creates a constant polynomial, omitting storage for zero.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>c</code></td><td><code>bigint</code></td><td>Integer constant.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code></p></section></article><article class="api-child" id="constant-term"><div class="api-child-head"><code>constantTerm(): bigint</code><span>Method</span></div><div class="api-description"><p>Returns the constant coefficient, or zero when absent.</p></div><section class="api-detail"><h2>Returns</h2><p><code>bigint</code></p></section></article><article class="api-child" id="constructor"><div class="api-child-head"><code>MultiPoly(terms?: Map&lt;string, bigint&gt;): <a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code><span>Constructor</span></div><div class="api-description"><p>Creates a polynomial by copying the supplied term map.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>terms</code></td><td><code>Map&lt;string, bigint&gt;</code></td><td>Initial canonical-monomial-key to integer-coefficient map.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code></p></section></article><article class="api-child" id="degree"><div class="api-child-head"><code>degree(varIndex: number): number</code><span>Method</span></div><div class="api-description"><p>Returns the greatest exponent of one variable.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>varIndex</code></td><td><code>number</code></td><td>Variable index to inspect.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>number</code> — `-1` for zero; otherwise a non-negative degree.</p></section></article><article class="api-child" id="get-coeff"><div class="api-child-head"><code>getCoeff(exponents: number[]): bigint</code><span>Method</span></div><div class="api-description"><p>Returns a monomial coefficient from dense exponents.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>exponents</code></td><td><code>number[]</code></td><td>Exponents indexed by variable number.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>bigint</code> — The stored coefficient, or zero when absent.</p></section></article><article class="api-child" id="is-constant"><div class="api-child-head"><code>isConstant(): boolean</code><span>Method</span></div><div class="api-description"><p>Tests whether this polynomial is zero or contains only a constant term.</p></div><section class="api-detail"><h2>Returns</h2><p><code>boolean</code></p></section></article><article class="api-child" id="is-zero"><div class="api-child-head"><code>isZero(): boolean</code><span>Method</span></div><div class="api-description"><p>Tests whether the term map is empty.</p></div><section class="api-detail"><h2>Returns</h2><p><code>boolean</code></p></section></article><article class="api-child" id="leading-coeff"><div class="api-child-head"><code>leadingCoeff(varIndex: number): <a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code><span>Method</span></div><div class="api-description"><p>Extracts the coefficient of the highest power of one variable.
+
+The selected variable is removed from those leading terms, so the coefficient is
+itself returned as a new polynomial in the remaining variables.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>varIndex</code></td><td><code>number</code></td><td>Variable whose greatest power is selected and removed.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code> — A new polynomial in the remaining variables.</p></section></article><article class="api-child" id="monomial"><div class="api-child-head"><code>monomial(coeff: bigint, exponents: number[]): <a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code><span>Method</span></div><div class="api-description"><p>Creates the monomial</p><pre class="api-example"><code>`coeff * x₀^e₀ * x₁^e₁ * ...`</code></pre><p>.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>coeff</code></td><td><code>bigint</code></td><td>Integer coefficient.</td></tr><tr><td><code>exponents</code></td><td><code>number[]</code></td><td>Exponents indexed by variable number.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code></p></section></article><article class="api-child" id="one"><div class="api-child-head"><code>one(): <a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code><span>Method</span></div><div class="api-description"><p>Creates the constant polynomial one.</p></div><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code></p></section></article><article class="api-child" id="set-coeff"><div class="api-child-head"><code>setCoeff(exponents: number[], coeff: bigint): void</code><span>Method</span></div><div class="api-description"><p>Sets or removes a monomial coefficient in place.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>exponents</code></td><td><code>number[]</code></td><td>Dense exponents indexed by variable number.</td></tr><tr><td><code>coeff</code></td><td><code>bigint</code></td><td>Integer coefficient; zero removes the monomial.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>void</code></p></section></article><article class="api-child" id="terms"><div class="api-child-head"><code>terms: Map&lt;string, bigint&gt;</code><span>Property</span></div><div class="api-description"><p>Live term map keyed by canonical monomial strings.</p></div></article><article class="api-child" id="text"><div class="api-child-head"><code>text(varNames: string[]): string</code><span>Method</span></div><div class="api-description"><p>Formats this polynomial using caller-supplied variable names.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>varNames</code></td><td><code>string[]</code></td><td>Names aligned with variable indices; missing names fall back to `xN`.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>string</code> — Deterministic text ordered by descending total degree and canonical key.</p></section></article><article class="api-child" id="total-degree"><div class="api-child-head"><code>totalDegree(): number</code><span>Method</span></div><div class="api-description"><p>Returns the maximum sum of exponents among all monomials.</p></div><section class="api-detail"><h2>Returns</h2><p><code>number</code> — `-1` for the zero polynomial.</p></section></article><article class="api-child" id="trim"><div class="api-child-head"><code>trim(): void</code><span>Method</span></div><div class="api-description"><p>Removes zero-coefficient entries from the live term map in place.</p></div><section class="api-detail"><h2>Returns</h2><p><code>void</code></p></section></article><article class="api-child" id="variable"><div class="api-child-head"><code>variable(varIndex: number): <a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code><span>Method</span></div><div class="api-description"><p>Creates the single-variable polynomial</p><pre class="api-example"><code>`xᵢ`</code></pre><p>.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>varIndex</code></td><td><code>number</code></td><td>Variable index to raise to the first power.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code></p></section></article><article class="api-child" id="variables"><div class="api-child-head"><code>variables(): Set&lt;number&gt;</code><span>Method</span></div><div class="api-description"><p>Collects variable indices with at least one nonzero exponent.</p></div><section class="api-detail"><h2>Returns</h2><p><code>Set&lt;number&gt;</code> — A new set of variable indices.</p></section></article><article class="api-child" id="zero"><div class="api-child-head"><code>zero(): <a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code><span>Method</span></div><div class="api-description"><p>Creates the zero polynomial with empty term storage.</p></div><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/multi-poly/">MultiPoly</a></code></p></section></article></div></section></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../../scripts/site.js"></script>
+
+<script src="../../../../scripts/playground-tree.js"></script>
+</body>
+</html>

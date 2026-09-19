@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>UnexpectedInputError — Nerdamer core API</title>
+  <meta name="description" content="Used when input parses successfully but does not have the form an operation requires.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../../styles/site.css">
+  <link rel="stylesheet" href="../../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../../styles/header.css">
+  <link rel="stylesheet" href="../../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../../styles/api.css">
+  <link rel="stylesheet" href="../../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/core/">nerdamer/core</a></div><div class="api-member-title"><div><span class="api-kind">Class</span><h1>UnexpectedInputError</h1></div><a class="api-source" href="https://github.com/N00bie-to-Github/nerdamer2/blob/ff74b9eb6ce7e954de9323fc9b54be86591d257e/src/core/errors.ts#L9" target="_blank" rel="noreferrer">src/core/errors.ts:9</a></div><div class="api-description"><p>Used when input parses successfully but does not have the form an operation requires.</p></div><section class="api-detail"><h2>Members</h2><div class="api-children"><article class="api-child" id="capture-stack-trace"><div class="api-child-head"><code>captureStackTrace(targetObject: object, constructorOpt?: Function): void</code><span>Method</span></div><div class="api-description"><p>Creates a</p><pre class="api-example"><code>`.stack`</code></pre><p>property on</p><pre class="api-example"><code>`targetObject`</code></pre><p>, which when accessed returns
+a string representing the location in the code at which</p><pre class="api-example"><code>`Error.captureStackTrace()`</code></pre><p>was called.</p><pre class="api-example"><code>const myObject = {};
+Error.captureStackTrace(myObject);
+myObject.stack;  // Similar to `new Error().stack`</code></pre><p>The first line of the trace will be prefixed with</p><pre class="api-example"><code>`${myObject.name}: ${myObject.message}`</code></pre><p>.
+
+The optional</p><pre class="api-example"><code>`constructorOpt`</code></pre><p>argument accepts a function. If given, all frames
+above</p><pre class="api-example"><code>`constructorOpt`</code></pre><p>, including</p><pre class="api-example"><code>`constructorOpt`</code></pre><p>, will be omitted from the
+generated stack trace.
+
+The</p><pre class="api-example"><code>`constructorOpt`</code></pre><p>argument is useful for hiding implementation
+details of error generation from the user. For instance:</p><pre class="api-example"><code>function a() {
+  b();
+}
+
+function b() {
+  c();
+}
+
+function c() {
+  // Create an error without stack trace to avoid calculating the stack trace twice.
+  const { stackTraceLimit } = Error;
+  Error.stackTraceLimit = 0;
+  const error = new Error();
+  Error.stackTraceLimit = stackTraceLimit;
+
+  // Capture the stack trace above function b
+  Error.captureStackTrace(error, b); // Neither function c, nor b is included in the stack trace
+  throw error;
+}
+
+a();</code></pre></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>targetObject</code></td><td><code>object</code></td><td>—</td></tr><tr><td><code>constructorOpt</code></td><td><code>Function</code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>void</code></p></section></article><article class="api-child" id="cause"><div class="api-child-head"><code>cause: unknown</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="constructor"><div class="api-child-head"><code>UnexpectedInputError(message?: string): <a class="api-type-link" href="/docs/api/core/unexpected-input-error/">UnexpectedInputError</a></code><span>Constructor</span></div><div class="api-description"><p>No description is available yet.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>message</code></td><td><code>string</code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/unexpected-input-error/">UnexpectedInputError</a></code></p></section></article><article class="api-child" id="message"><div class="api-child-head"><code>message: string</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="name"><div class="api-child-head"><code>name: string</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="prepare-stack-trace"><div class="api-child-head"><code>prepareStackTrace(err: Error, stackTraces: CallSite[]): any</code><span>Method</span></div><div class="api-description"><div class="api-note"><strong>see</strong><p>https://v8.dev/docs/stack-trace-api#customizing-stack-traces</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>err</code></td><td><code>Error</code></td><td>—</td></tr><tr><td><code>stackTraces</code></td><td><code>CallSite[]</code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>any</code></p></section></article><article class="api-child" id="stack"><div class="api-child-head"><code>stack: string</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="stack-trace-limit"><div class="api-child-head"><code>stackTraceLimit: number</code><span>Property</span></div><div class="api-description"><p>The</p><pre class="api-example"><code>`Error.stackTraceLimit`</code></pre><p>property specifies the number of stack frames
+collected by a stack trace (whether generated by</p><pre class="api-example"><code>`new Error().stack`</code></pre><p>or</p><pre class="api-example"><code>`Error.captureStackTrace(obj)`</code></pre><p>).
+
+The default value is</p><pre class="api-example"><code>`10`</code></pre><p>but may be set to any valid JavaScript number. Changes
+will affect any stack trace captured _after_ the value has been changed.
+
+If set to a non-number value, or set to a negative number, stack traces will
+not capture any frames.</p></div></article></div></section></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../../scripts/site.js"></script>
+
+<script src="../../../../scripts/playground-tree.js"></script>
+</body>
+</html>

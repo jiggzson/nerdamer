@@ -1,0 +1,1960 @@
+{
+  "schemaVersion": 2,
+  "packageVersion": "2.0.0",
+  "functions": [
+    {
+      "name": "C",
+      "category": "Calculus",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "C(x)",
+      "summary": "Computes the normalized Fresnel cosine integral.",
+      "parameters": [
+        {
+          "name": "x",
+          "description": "Upper integration limit."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('C(x)').text()",
+          "output": "C(x)"
+        }
+      ],
+      "directApi": {
+        "package": "nerdamer/calculus",
+        "name": "C"
+      }
+    },
+    {
+      "name": "Chi",
+      "category": "Special functions",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "Chi(arg1)"
+    },
+    {
+      "name": "Ci",
+      "category": "Special functions",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "Ci(arg1)"
+    },
+    {
+      "name": "Ei",
+      "category": "Special functions",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "Ei(arg1)"
+    },
+    {
+      "name": "Li",
+      "category": "Special functions",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "Li(arg1)"
+    },
+    {
+      "name": "S",
+      "category": "Calculus",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "S(x)",
+      "summary": "Computes the normalized Fresnel sine integral.",
+      "parameters": [
+        {
+          "name": "x",
+          "description": "Upper integration limit."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('S(x)').text()",
+          "output": "S(x)"
+        }
+      ],
+      "directApi": {
+        "package": "nerdamer/calculus",
+        "name": "S"
+      }
+    },
+    {
+      "name": "Shi",
+      "category": "Special functions",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "Shi(arg1)"
+    },
+    {
+      "name": "Si",
+      "category": "Special functions",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "Si(arg1)"
+    },
+    {
+      "name": "abs",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "abs(arg1)"
+    },
+    {
+      "name": "acos",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "acos(arg1)"
+    },
+    {
+      "name": "acosh",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "acosh(arg1)"
+    },
+    {
+      "name": "acot",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "acot(arg1)"
+    },
+    {
+      "name": "acoth",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "acoth(arg1)"
+    },
+    {
+      "name": "acsc",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "acsc(arg1)"
+    },
+    {
+      "name": "acsch",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "acsch(arg1)"
+    },
+    {
+      "name": "and",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 2,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": true,
+      "registrationLevel": "system",
+      "syntax": "and(arg1, arg2, ...)"
+    },
+    {
+      "name": "arg",
+      "category": "Complex",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "arg(arg1)"
+    },
+    {
+      "name": "asec",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "asec(arg1)"
+    },
+    {
+      "name": "asech",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "asech(arg1)"
+    },
+    {
+      "name": "asin",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "asin(arg1)"
+    },
+    {
+      "name": "asinh",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "asinh(arg1)"
+    },
+    {
+      "name": "assume",
+      "category": "Assumptions and sets",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "assume(arg1)",
+      "directApi": {
+        "package": "nerdamer/assumptions",
+        "name": "assume"
+      }
+    },
+    {
+      "name": "atan",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "atan(arg1)"
+    },
+    {
+      "name": "atan2",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "atan2(arg1, arg2)"
+    },
+    {
+      "name": "atanh",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "atanh(arg1)"
+    },
+    {
+      "name": "augment",
+      "category": "Linear algebra",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "augment(left, right)",
+      "summary": "Horizontally joins two matrices with the same number of rows.",
+      "parameters": [
+        {
+          "name": "left",
+          "description": "Matrix placed on the left."
+        },
+        {
+          "name": "right",
+          "description": "Matrix appended on the right."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('augment(matrix([1,2],[3,4]),matrix([5],[6]))').text()",
+          "output": "matrix([1, 2, 5], [3, 4, 6])"
+        }
+      ]
+    },
+    {
+      "name": "block",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": -1,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": true,
+      "registrationLevel": "system",
+      "syntax": "block(...)",
+      "summary": "Evaluates a sequence of Nerdamer Language expressions as a block.",
+      "parameters": [
+        {
+          "name": "expression",
+          "description": "One or more deferred expressions evaluated in sequence."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('block(return(7),9)').text()",
+          "output": "7"
+        }
+      ]
+    },
+    {
+      "name": "break",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 0,
+      "maxArgs": 0,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "break()"
+    },
+    {
+      "name": "cbrt",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "cbrt(arg1)"
+    },
+    {
+      "name": "ceil",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "ceil(arg1)",
+      "aliases": [
+        "ceiling"
+      ]
+    },
+    {
+      "name": "ceiling",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "ceiling(arg1)",
+      "canonicalName": "ceil"
+    },
+    {
+      "name": "conjugate",
+      "category": "Complex",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "conjugate(arg1)"
+    },
+    {
+      "name": "contains",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "contains(arg1, arg2)"
+    },
+    {
+      "name": "content",
+      "category": "Polynomials",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "content(arg1)",
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "content"
+      }
+    },
+    {
+      "name": "continue",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 0,
+      "maxArgs": 0,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "continue()"
+    },
+    {
+      "name": "cos",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "cos(arg1)"
+    },
+    {
+      "name": "cosh",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "cosh(arg1)"
+    },
+    {
+      "name": "cot",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "cot(arg1)"
+    },
+    {
+      "name": "coth",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "coth(arg1)"
+    },
+    {
+      "name": "count",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "count(arg1)"
+    },
+    {
+      "name": "cross",
+      "category": "Linear algebra",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "cross(arg1, arg2)",
+      "directApi": {
+        "package": "nerdamer/structures",
+        "name": "cross"
+      }
+    },
+    {
+      "name": "csc",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "csc(arg1)"
+    },
+    {
+      "name": "csch",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "csch(arg1)"
+    },
+    {
+      "name": "csgn",
+      "category": "Complex",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "csgn(arg1)"
+    },
+    {
+      "name": "defint",
+      "category": "Calculus",
+      "usage": "notation",
+      "minArgs": 4,
+      "maxArgs": 4,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "defint(arg1, arg2, arg3, arg4)",
+      "directApi": {
+        "package": "nerdamer/calculus",
+        "name": "defint"
+      }
+    },
+    {
+      "name": "deg",
+      "category": "Polynomials",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "deg(arg1, [arg2])",
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "deg"
+      }
+    },
+    {
+      "name": "delta",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "delta(arg1)"
+    },
+    {
+      "name": "determinant",
+      "category": "Linear algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "determinant(arg1)",
+      "directApi": {
+        "package": "nerdamer/structures",
+        "name": "determinant"
+      }
+    },
+    {
+      "name": "dfact",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "dfact(arg1)"
+    },
+    {
+      "name": "diff",
+      "category": "Calculus",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 3,
+      "equationArgs": [
+        0
+      ],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "diff(expression[, variable][, order])",
+      "summary": "Differentiates an expression symbolically.",
+      "parameters": [
+        {
+          "name": "expression",
+          "description": "Expression to differentiate."
+        },
+        {
+          "name": "variable",
+          "description": "Variable to differentiate with respect to."
+        },
+        {
+          "name": "order",
+          "description": "Optional derivative order."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('diff(x^3,x)').text()",
+          "output": "3*x^2"
+        }
+      ],
+      "directApi": {
+        "package": "nerdamer/calculus",
+        "name": "diff"
+      }
+    },
+    {
+      "name": "div",
+      "category": "Polynomials",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "div(arg1, arg2)"
+    },
+    {
+      "name": "divide",
+      "category": "Polynomials",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "divide(arg1, arg2)"
+    },
+    {
+      "name": "dot",
+      "category": "Linear algebra",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "dot(arg1, arg2)",
+      "directApi": {
+        "package": "nerdamer/structures",
+        "name": "dot"
+      }
+    },
+    {
+      "name": "each",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 3,
+      "maxArgs": 3,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": true,
+      "registrationLevel": "system",
+      "syntax": "each(container, value, body)",
+      "summary": "Evaluates a body once for each value in a parser container.",
+      "parameters": [
+        {
+          "name": "container",
+          "description": "Vector, matrix, set, collection, or dictionary to traverse."
+        },
+        {
+          "name": "value",
+          "description": "Local variable bound to the current value."
+        },
+        {
+          "name": "body",
+          "description": "Deferred body evaluated for each value. Matrices are traversed in row-major order."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('block(total:0,each([1,2,3],x,total:total+x),total)').text()",
+          "output": "6"
+        }
+      ]
+    },
+    {
+      "name": "erf",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "erf(arg1)"
+    },
+    {
+      "name": "erfc",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "erfc(arg1)"
+    },
+    {
+      "name": "evaluate",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 1,
+      "maxArgs": 3,
+      "equationArgs": [
+        0
+      ],
+      "distElWise": false,
+      "deferArguments": true,
+      "registrationLevel": "system",
+      "syntax": "evaluate(value[, substitutions]) | evaluate(value, variables, point)",
+      "summary": "Evaluates a parser value immediately, optionally with substitutions, and returns the input unchanged if evaluation cannot complete.",
+      "parameters": [
+        {
+          "name": "value",
+          "description": "Expression, equation, or structured parser value to evaluate."
+        },
+        {
+          "name": "substitutions",
+          "description": "Optional Dictionary mapping variable names to substitution values."
+        },
+        {
+          "name": "variables",
+          "description": "Variable Vector used with point in the three-argument form."
+        },
+        {
+          "name": "point",
+          "description": "Value Vector corresponding positionally to variables."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('evaluate(sin(2))').text()",
+          "output": "0.9092974268256816954"
+        },
+        {
+          "input": "nerdamer('evaluate([x+y,x*y],{x=>2,y=>3})').text()",
+          "output": "[5, 6]"
+        },
+        {
+          "input": "nerdamer('evaluate([u+v,u*v],[u,v],[2,3])').text()",
+          "output": "[5, 6]"
+        }
+      ]
+    },
+    {
+      "name": "exp",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "exp(arg1)"
+    },
+    {
+      "name": "expand",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "expand(arg1)"
+    },
+    {
+      "name": "fact",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "fact(arg1)",
+      "canonicalName": "factorial"
+    },
+    {
+      "name": "factor",
+      "category": "Algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "factor(expression)",
+      "summary": "Factors an expression symbolically.",
+      "parameters": [
+        {
+          "name": "expression",
+          "description": "Expression to factor."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('factor(x^2-1)').text()",
+          "output": "(-1+x)*(1+x)"
+        }
+      ],
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "factor"
+      }
+    },
+    {
+      "name": "factorial",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "factorial(arg1)",
+      "aliases": [
+        "fact"
+      ]
+    },
+    {
+      "name": "fib",
+      "category": "Special functions",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "fib(arg1)"
+    },
+    {
+      "name": "floor",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "floor(arg1)"
+    },
+    {
+      "name": "for",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 4,
+      "maxArgs": 4,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": true,
+      "registrationLevel": "system",
+      "syntax": "for(arg1, arg2, arg3, arg4)"
+    },
+    {
+      "name": "forget",
+      "category": "Assumptions and sets",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "forget(arg1)"
+    },
+    {
+      "name": "gamma",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "gamma(arg1)"
+    },
+    {
+      "name": "gcd",
+      "category": "Algebra",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "gcd(arg1, arg2)",
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "gcd"
+      }
+    },
+    {
+      "name": "groebner",
+      "category": "Algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "groebner(arg1, [arg2])",
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "groebner"
+      }
+    },
+    {
+      "name": "heaviside",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "heaviside(arg1)"
+    },
+    {
+      "name": "hypot",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "hypot(arg1, arg2)"
+    },
+    {
+      "name": "if",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 2,
+      "maxArgs": 3,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": true,
+      "registrationLevel": "system",
+      "syntax": "if(condition, whenTrue[, whenFalse])",
+      "summary": "Evaluates one of two parser expressions based on a condition.",
+      "parameters": [
+        {
+          "name": "condition",
+          "description": "Condition evaluated by the Nerdamer Language runtime."
+        },
+        {
+          "name": "whenTrue",
+          "description": "Expression evaluated when the condition is true."
+        },
+        {
+          "name": "whenFalse",
+          "description": "Optional expression evaluated when the condition is false."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('if(1,5,6)').text()",
+          "output": "5"
+        }
+      ]
+    },
+    {
+      "name": "iferror",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": true,
+      "registrationLevel": "system",
+      "syntax": "iferror(arg1, arg2)"
+    },
+    {
+      "name": "ilaplace",
+      "category": "Calculus",
+      "usage": "notation",
+      "minArgs": 3,
+      "maxArgs": 3,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "ilaplace(arg1, arg2, arg3)",
+      "directApi": {
+        "package": "nerdamer/calculus",
+        "name": "ilaplace"
+      }
+    },
+    {
+      "name": "imagpart",
+      "category": "Complex",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "imagpart(arg1)"
+    },
+    {
+      "name": "imatrix",
+      "category": "Linear algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "imatrix(arg1)",
+      "directApi": {
+        "package": "nerdamer/structures",
+        "name": "imatrix"
+      }
+    },
+    {
+      "name": "integrate",
+      "category": "Calculus",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [
+        0
+      ],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "integrate(expression[, variable])",
+      "summary": "Computes an indefinite integral symbolically.",
+      "parameters": [
+        {
+          "name": "expression",
+          "description": "Expression to integrate."
+        },
+        {
+          "name": "variable",
+          "description": "Optional integration variable."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('integrate(x^2,x)').text()"
+        }
+      ],
+      "directApi": {
+        "package": "nerdamer/calculus",
+        "name": "integrate"
+      }
+    },
+    {
+      "name": "iserror",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": true,
+      "registrationLevel": "system",
+      "syntax": "iserror(arg1)"
+    },
+    {
+      "name": "isprime",
+      "category": "Special functions",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "isprime(arg1)",
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "isPrime"
+      }
+    },
+    {
+      "name": "laplace",
+      "category": "Calculus",
+      "usage": "notation",
+      "minArgs": 3,
+      "maxArgs": 3,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "laplace(arg1, arg2, arg3)",
+      "directApi": {
+        "package": "nerdamer/calculus",
+        "name": "laplace"
+      }
+    },
+    {
+      "name": "lcm",
+      "category": "Algebra",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "lcm(arg1, arg2)",
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "lcm"
+      }
+    },
+    {
+      "name": "let",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 3,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": true,
+      "registrationLevel": "system",
+      "syntax": "let(arg1, arg2, arg3, ...)"
+    },
+    {
+      "name": "limit",
+      "category": "Calculus",
+      "usage": "notation",
+      "minArgs": 3,
+      "maxArgs": 4,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "limit(expression, variable, value[, direction])",
+      "summary": "Computes the symbolic limit of an expression.",
+      "parameters": [
+        {
+          "name": "expression",
+          "description": "Expression whose limit should be evaluated."
+        },
+        {
+          "name": "variable",
+          "description": "Variable approaching the requested value."
+        },
+        {
+          "name": "value",
+          "description": "Value approached by the variable."
+        },
+        {
+          "name": "direction",
+          "description": "Optional one-sided or two-sided limit direction."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('limit(sin(x)/x,x,0)').text()"
+        }
+      ],
+      "directApi": {
+        "package": "nerdamer/calculus",
+        "name": "limit"
+      }
+    },
+    {
+      "name": "log",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "log(arg1, [arg2])"
+    },
+    {
+      "name": "matrix",
+      "category": "Linear algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "matrix(row1[, row2, ...])",
+      "summary": "Constructs a matrix from parser arguments.",
+      "parameters": [
+        {
+          "name": "row",
+          "description": "One or more row vectors or row expressions."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('matrix([1,2],[3,4])').text()"
+        }
+      ]
+    },
+    {
+      "name": "max",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "max(arg1, arg2, ...)"
+    },
+    {
+      "name": "min",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "min(arg1, arg2, ...)"
+    },
+    {
+      "name": "mod",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "mod(arg1, arg2)"
+    },
+    {
+      "name": "modinv",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "modinv(arg1, arg2)"
+    },
+    {
+      "name": "not",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "not(arg1)"
+    },
+    {
+      "name": "nthroot",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "nthroot(arg1, arg2)"
+    },
+    {
+      "name": "nullspace",
+      "category": "Linear algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "nullspace(matrix[, prime])",
+      "summary": "Returns a vector containing a basis for the nullspace of a matrix.",
+      "parameters": [
+        {
+          "name": "matrix",
+          "description": "Matrix whose nullspace should be computed."
+        },
+        {
+          "name": "prime",
+          "description": "Optional modulus for finite-field arithmetic."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('nullspace(matrix([1,2,3],[2,4,6]))').text()",
+          "output": "[[-2, 1, 0], [-3, 0, 1]]"
+        }
+      ],
+      "directApi": {
+        "package": "nerdamer/structures",
+        "name": "nullspace"
+      }
+    },
+    {
+      "name": "numeric",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [
+        0
+      ],
+      "distElWise": false,
+      "deferArguments": true,
+      "registrationLevel": "system",
+      "syntax": "numeric(value[, precision])",
+      "summary": "Evaluates a numeric value to a finite number of significant decimal digits.",
+      "parameters": [
+        {
+          "name": "value",
+          "description": "Value to evaluate numerically."
+        },
+        {
+          "name": "precision",
+          "description": "Optional positive number of significant digits. Defaults to the active Nerdamer precision."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('numeric(1/3,5)').text()",
+          "output": "0.33333"
+        },
+        {
+          "input": "nerdamer('numeric([1/3,2/3],5)').text()",
+          "output": "[0.33333, 0.66667]"
+        }
+      ]
+    },
+    {
+      "name": "or",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 2,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": true,
+      "registrationLevel": "system",
+      "syntax": "or(arg1, arg2, ...)"
+    },
+    {
+      "name": "parens",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "parens(arg1)"
+    },
+    {
+      "name": "partfrac",
+      "category": "Algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "partfrac(arg1, [arg2])",
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "partfrac"
+      }
+    },
+    {
+      "name": "polarform",
+      "category": "Complex",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "polarform(arg1)"
+    },
+    {
+      "name": "polyfactors",
+      "category": "Algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "polyfactors(arg1)",
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "polyFactors"
+      }
+    },
+    {
+      "name": "product",
+      "category": "Calculus",
+      "usage": "notation",
+      "minArgs": 4,
+      "maxArgs": 4,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "product(arg1, arg2, arg3, arg4)",
+      "directApi": {
+        "package": "nerdamer/calculus",
+        "name": "product"
+      }
+    },
+    {
+      "name": "realpart",
+      "category": "Complex",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "realpart(arg1)"
+    },
+    {
+      "name": "rectform",
+      "category": "Complex",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "rectform(arg1)"
+    },
+    {
+      "name": "return",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [
+        0
+      ],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "return(arg1)"
+    },
+    {
+      "name": "round",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "round(arg1, [arg2])"
+    },
+    {
+      "name": "rref",
+      "category": "Linear algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "rref(matrix[, prime])",
+      "summary": "Returns the reduced row-echelon form of a matrix.",
+      "parameters": [
+        {
+          "name": "matrix",
+          "description": "Matrix to reduce."
+        },
+        {
+          "name": "prime",
+          "description": "Optional modulus for finite-field arithmetic."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('rref(matrix([1,2],[3,4]))').text()",
+          "output": "matrix([1, 0], [0, 1])"
+        }
+      ]
+    },
+    {
+      "name": "sec",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "sec(arg1)"
+    },
+    {
+      "name": "sech",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "sech(arg1)"
+    },
+    {
+      "name": "sign",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "sign(arg1)"
+    },
+    {
+      "name": "simplify",
+      "category": "Algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "simplify(arg1)",
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "simplify"
+      }
+    },
+    {
+      "name": "sin",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "sin(arg1)"
+    },
+    {
+      "name": "sinc",
+      "category": "Special functions",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "sinc(arg1)"
+    },
+    {
+      "name": "sinh",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "sinh(arg1)"
+    },
+    {
+      "name": "size",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "size(value)",
+      "summary": "Returns the dimensions of a structured parser value.",
+      "parameters": [
+        {
+          "name": "value",
+          "description": "Vector, matrix, set, collection, or dictionary whose dimensions should be returned."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('size([a,b,c])').text()",
+          "output": "[3]"
+        },
+        {
+          "input": "nerdamer('size(matrix([1,2,3],[4,5,6]))').text()",
+          "output": "[2, 3]"
+        }
+      ]
+    },
+    {
+      "name": "solve",
+      "category": "Solving",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [
+        0
+      ],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "solve(expressionOrEquation, variable)",
+      "summary": "Solves an expression or equation for a variable.",
+      "parameters": [
+        {
+          "name": "expressionOrEquation",
+          "description": "Expression or equation to solve."
+        },
+        {
+          "name": "variable",
+          "description": "Variable to solve for."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('solve(x^2-4,x)').text()"
+        }
+      ],
+      "directApi": {
+        "package": "nerdamer/solve",
+        "name": "solve"
+      }
+    },
+    {
+      "name": "solveeqs",
+      "category": "Solving",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "solveeqs(arg1)",
+      "directApi": {
+        "package": "nerdamer/solve",
+        "name": "solveSystem"
+      }
+    },
+    {
+      "name": "sqcomp",
+      "category": "Algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "sqcomp(arg1, [arg2])",
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "completeSquare"
+      }
+    },
+    {
+      "name": "sqrt",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "sqrt(arg1)"
+    },
+    {
+      "name": "subst",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 3,
+      "maxArgs": 3,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "subst(arg1, arg2, arg3)"
+    },
+    {
+      "name": "sum",
+      "category": "Calculus",
+      "usage": "notation",
+      "minArgs": 4,
+      "maxArgs": 4,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "sum(arg1, arg2, arg3, arg4)",
+      "directApi": {
+        "package": "nerdamer/calculus",
+        "name": "sum"
+      }
+    },
+    {
+      "name": "tan",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "tan(arg1)"
+    },
+    {
+      "name": "tanh",
+      "category": "Trigonometry",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "tanh(arg1)"
+    },
+    {
+      "name": "transpose",
+      "category": "Linear algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "transpose(matrix)",
+      "summary": "Returns the transpose of a matrix.",
+      "parameters": [
+        {
+          "name": "matrix",
+          "description": "Matrix to transpose."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('transpose(matrix([1,2],[3,4]))').text()",
+          "output": "matrix([1, 3], [2, 4])"
+        }
+      ]
+    },
+    {
+      "name": "trunc",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "trunc(arg1)"
+    },
+    {
+      "name": "unassign",
+      "category": "Assumptions and sets",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": true,
+      "registrationLevel": "system",
+      "syntax": "unassign(arg1)"
+    },
+    {
+      "name": "while",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": true,
+      "registrationLevel": "system",
+      "syntax": "while(arg1, arg2)"
+    },
+    {
+      "name": "xor",
+      "category": "Nerdamer Language",
+      "usage": "scripting",
+      "minArgs": 2,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "xor(arg1, arg2, ...)"
+    }
+  ]
+}

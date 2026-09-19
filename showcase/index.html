@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Examples — Nerdamer</title>
+  <meta name="description" content="Explore Nerdamer examples across algebra, solving, calculus, vectors and matrices, complex numbers, functions, and scripting.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../styles/site.css">
+  <link rel="stylesheet" href="../styles/code-highlight.css">
+  <link rel="stylesheet" href="../styles/logo.css">
+  <link rel="stylesheet" href="../styles/header.css">
+  <link rel="stylesheet" href="../styles/back-to-top.css">
+  <link rel="stylesheet" href="../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../styles/playground-tree.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/temml@0.13.5/dist/Temml-Local.css">
+<link rel="stylesheet" href="../styles/showcase.css">
+  <link rel="stylesheet" href="../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<section class="page-hero showcase-hero">
+  <div class="shell">
+    <div class="eyebrow">Examples</div>
+    <h1>Examples</h1>
+    <p>Explore Nerdamer across algebra, solving, calculus, matrices, complex numbers, special functions, and scripting.</p>
+  </div>
+</section>
+
+<section class="section showcase-section">
+  <div class="shell showcase-shell">
+    <div class="showcase-intro">
+      <div>
+        <h2>Run the examples</h2>
+        <p>Run the full set to see the results and a rough timing on this device.</p>
+      </div>
+      <button class="btn btn-primary" id="showcase-run" type="button">Run examples</button>
+    </div>
+
+    <div class="showcase-summary" id="showcase-summary" aria-live="polite">
+      <div class="showcase-stat"><span>Examples</span><strong id="showcase-expression-count">—</strong></div>
+      <div class="showcase-stat"><span>Nerdamer</span><strong id="showcase-eval-time">—</strong></div>
+      <div class="showcase-stat"><span>TeX</span><strong id="showcase-tex-time">—</strong></div>
+      <div class="showcase-stat"><span>Display</span><strong id="showcase-render-time">—</strong></div>
+      <div class="showcase-stat showcase-stat-issues"><span>Issues</span><strong id="showcase-issues">—</strong></div>
+    </div>
+
+    <div class="showcase-run-meta">
+      <span class="engine-status" id="showcase-status">Waiting for Nerdamer</span>
+      <p>Times are a quick browser comparison, not a formal benchmark.</p>
+      <small id="showcase-environment"></small>
+    </div>
+
+    <nav class="showcase-jump" aria-label="Example categories">
+      <a href="#showcase-algebra">Algebra</a>
+      <a href="#showcase-solving">Solving</a>
+      <a href="#showcase-calculus">Calculus</a>
+      <a href="#showcase-linear-algebra">Vectors &amp; matrices</a>
+      <a href="#showcase-complex">Complex numbers</a>
+      <a href="#showcase-functions">Math &amp; special functions</a>
+      <a href="#showcase-scripting">Scripting</a>
+    </nav>
+
+    <div id="showcase-categories"></div>
+  </div>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../scripts/site.js"></script>
+<script src="../bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/temml@0.13.5/dist/temml.min.js"></script>
+<script src="../scripts/showcase.js"></script>
+<script src="../scripts/playground-tree.js"></script>
+</body>
+</html>

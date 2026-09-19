@@ -1,247 +1,415 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="A symbolic math expression evaluator library for JavaScript. Nerdamer can also integrate, differentiate, partial fractions, solver, simplify, factor and some other CAS (Computer Algebra System) abilities.">
-    <meta name="keywords" content="symbolic math, mathematics, javascript, js, online computation ,algebra system, intergration, differentiation, derivative, formula, math engine, CAS, trigonometry, solver, solve linear, solve nonlinear, math library, functions, vector, matrix, partial fractions, latex, parse, tree parser, continued fraction, gcd, lcm, laplace, limit">
-    <meta name="author" content="Martin Donk">
-
-    <title>Nerdamer | Symbolic Math for Javascript</title>
-
-    <!-- Bootstrap Core CSS -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Custom CSS -->
-    <link href="css/site.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
-    <link rel="icon" type="image/png" href="./img/favicon.png">
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-    <script>
-        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-        ga('create', 'UA-58729441-1', 'auto');
-        ga('send', 'pageview');
-    </script>
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Nerdamer — Symbolic Mathematics for JavaScript and TypeScript</title>
+  <meta name="description" content="Nerdamer is a lightweight computer algebra system for JavaScript and TypeScript with symbolic algebra, calculus, solving, linear algebra, and a built-in scripting language.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="./images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="./images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="./styles/site.css">
+  <link rel="stylesheet" href="./styles/code-highlight.css">
+  <link rel="stylesheet" href="./styles/logo.css">
+  <link rel="stylesheet" href="./styles/header.css">
+  <link rel="stylesheet" href="./styles/back-to-top.css">
+  <link rel="stylesheet" href="./styles/docs-sidebar.css">
+  <link rel="stylesheet" href="./styles/playground-tree.css">
+  <link rel="stylesheet" href="./styles/index.css">
+<link rel="stylesheet" href="./styles/home-hero-image.css">
+  <link rel="stylesheet" href="./styles/background.css">
 </head>
-
 <body>
-
-    <!-- Navigation -->
-    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-        <div class="container">
-            <!-- Brand and toggle get grouped for better mobile display -->
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="#"><!--<img src="./img/logo.png" alt="Nerdamer"/>--></a>
-            </div>
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                <ul class="nav navbar-nav">
-                    <li>
-                        <a href="./documentation.html">Documentation</a>
-                    </li>
-                    <li>
-                        <a href="./examples.html">Examples</a>
-                    </li>
-                    <li>
-                        <a href="./demo.html">Demo</a>
-                    </li>
-                    <li>
-                        <a href="./quickstart.html">Quick start</a>
-                    </li>
-                </ul>
-            </div>
-            <!-- /.navbar-collapse -->
-        </div>
-        <!-- /.container -->
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="./images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
     </nav>
-
-    <header class="index-header">
-        <div class="container center-trans-container">
-            <div class="row center-trans-row" >
-                <div class="col-lg-12 center-trans-wrapper">
-                    <div class="center-trans">
-                        <img src="./img/logo_large.png" alt="" class="logo-large"/>
-                        <h1>| <span class="bright">Symbolic</span> Math for <span class="bright">Javascript</span> |</h1>
-                        <h2 class="hidden-xs hidden-sm">No server side program needed</h2>
-                        <h2 class="hidden-xs hidden-sm">Flexible and easily extended</h2>
-                        <div class="row">
-                            <div class="btn-wrapper">
-                                <div class="col-lg-6">
-                                    <a href="./demo.html" class="btn btn-lg intro-btn" style="margin-bottom: 30px;">Test it out</a>
-                                </div>
-                                <div class="col-lg-6">
-                                    <a href="https://github.com/jiggzson/nerdamer" class="btn btn-lg intro-btn" style="margin-bottom: 30px;">Fork it on Github</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Page Content -->
-    <div class="container">
-
-        <hr>
-
-        <div class="row">
-            <div class="col-sm-8">
-                <div class="btn-group" role="group">
-                        <a href="https://github.com/jiggzson/nerdamer/zipball/master" class="btn btn-default">Download <strong>ZIP File</strong></a>
-                        <a href="https://github.com/jiggzson/nerdamer/tarball/master" class="btn btn-default">Download <strong>TAR Ball</strong></a>
-                        <a href="https://github.com/jiggzson/nerdamer" class="btn btn-default">View On <strong>GitHub</strong></a>
-                    </div>
-                <h2>What Is Nerdamer?</h2>
-                <p>
-                    Nerdamer is a small and light-weight symbolic math expression evaluator written in javaScript. The parsing is done purely in 
-                    javascript and uses no server-side program whatsoever. It can export to a pure javascript function, ideal for filtering user input.
-                </p>
-                <p>
-                    Nerdamer is modular so you only need to load the parts you need. Because of this and its small footprint, it can easily be embedded into your 
-                    applications.
-                </p>
-                <p>
-                    If you have a feature request or a suggestion, please leave a message below or let us know on <a href="https://github.com/jiggzson/nerdamer">Github</a>.
-                    We can only help if we know what it is that you need and look forward to your suggestions.
-                </p>
-                <p>
-                    You can also send me an email at
-                        <a href='&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#109;&#97;&#114;&#116;&#105;&#110;&#46;&#114;&#46;&#100;&#111;&#110;&#107;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;'>
-                            &#109;&#97;&#114;&#116;&#105;&#110;&#46;&#114;&#46;&#100;&#111;&#110;&#107;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
-                        </a>.
-
-                </p>
-                <p>
-                    <a class="btn btn-default btn-lg" href="./documentation.html">Documentation &raquo;</a>
-                </p>
-                <hr>
-                <h2>Projects using nerdamer</h2>
-                <div class="row">
-                    <div class="col-lg-4">
-                        <ul class="credits">
-                            <li><a href="http://www.mathespass.at/klasse4/gleichungssysteme_rechner.php">Gleichungssysteme Rechner</a></li>
-                            <li><a href="http://www.gamaso.com/">GaMaSo</a></li>
-                            <li><a href="https://mampf.mathi.uni-heidelberg.de/">Mampf</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-lg-4">
-                        <ul class="credits">
-                            <li><a href="http://mathe-coach-janmp.herokuapp.com/sign-in">Mathe-Coach</a></li>
-                            <li><a href="http://mathdemos.xyz">Mathdemos.xyz</a></li>
-                            <li><a href="https://play.google.com/store/apps/details?id=com.app.Routh  ">Routh</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-lg-4">
-                        <ul class="credits">
-                            <li><a href="https://menzelths.github.io/Mathematik-Kursstufe/Analytische_Geometrie_Abstand_windschiefe_Geraden.html#tags_@">Menzelths.github.io</a></li>
-                            <li><a href="https://openomnia.com">Open Omnia</a></li>
-                            <li><a href="https://www.matheretter.de/rechner/rechenfreund/">Rechenfreund</a></li>
-                            
-                        </ul>
-                    </div>
-                </div>
-                        
-                <small>If you have a project and it's not listed please let me know</small>
-                <!--
-                <h2>Donate</h2>
-                
-                <div>
-                    Nerdamer is 100% free and you are under no obligation to donate anything 
-                    but since the question has been asked several times, the link below was provided in case you ever wanted to
-                    <a href="http://paypal.me/martindonk" class="btn btn-default btn-xs">make a donation</a>. 
-                </div>
-                -->
-                
-
-            </div>
-            <div class="col-sm-4">
-                <h2>Project Credits</h2>
-                <ul class="credits">
-                    <li><a href="http://www.dafont.com/ancient-geek.font">Ancient Geek (Logo font)</a></li>
-                    <li><a href="http://www.akiti.ca/PolyRootRe.html">David Binner (Jenkins Traub javascript port)</a></li>
-                    <li><a href="https://github.com/peterolson/BigInteger.js/tree/master">Peter Olson (BigInteger.js)</a></li>
-                    <li><a href="http://sylvester.jcoglan.com/">Sylvester.js (Matrix & Vector)</a></li>
-                    <li><a href="http://codemirror.net/">CodeMirror (Editor)</a></li>
-                </ul>
-                <h2>Other links</h2>
-                <ul class="credits">
-                    <li><a href="http://www.algebrite.org">Algebrite (JavaScript CAS)</a></li>
-                    <li><a href="https://github.com/Yaffle/Expression">Yaffle Expression</a></li>
-                    <li><a href="https://mathjs.org/docs/expressions/algebra.html">Mathjs</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-12">
-                <h2>Comments</h2>
-                <div id="disqus_thread"></div>
-                <script>
-                    /**
-                     *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
-                     *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
-                     */
-                    
-                    var disqus_config = function () {
-                        this.page.url = 'http://nerdamer.com';  // Replace PAGE_URL with your page's canonical URL variable
-                        //this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-                    };
-                    
-                    (function() {  // DON'T EDIT BELOW THIS LINE
-                        var d = document, s = d.createElement('script');
-
-                        s.src = 'https://nerdamer.disqus.com/embed.js';
-
-                        s.setAttribute('data-timestamp', +new Date());
-                        (d.head || d.body).appendChild(s);
-                    })();
-                </script>
-                <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
-            </div>
-        </div>
-        <!-- /.row -->
-
-        <!-- Footer -->
-        <footer>
-            <div class="row">
-                <div class="col-lg-12 text-center">
-                    <p>Copyright &copy; Martin Donk | Nerdamer.com <span class="date"></span></p>
-                </div>
-            </div>
-            <!-- /.row -->
-        </footer>
-
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
     </div>
-    <!-- /.container -->
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
 
-    <!-- jQuery -->
-    <script src="js/jquery.js"></script>
+<main class="page">
+<div class="home-page-root">
+	<div class="home-content-column">
+		<section class="hero home-hero">
+			<div class="shell hero-inner">
+				<div>
+					<div class="eyebrow">Computer Algebra System</div>
+					<h1>Symbolic math.<br /><span>For JavaScript &amp; TypeScript.</span></h1>
+					<p class="tagline">
+						Nerdamer is a lightweight Computer Algebra System for the JavaScript and TypeScript ecosystem.
+					</p>
+					<p class="hero-copy">
+						Use it to simplify expressions, solve equations, work with calculus and linear algebra, or build
+						your own math tools. Nerdamer includes a math parser, a JavaScript and TypeScript API, and a
+						simple scripting language.
+					</p>
+					<div class="hero-actions">
+						<a class="btn btn-primary" href="/playground/">Open Playground →</a>
+						<a class="btn" href="/docs/getting-started/">Get started</a>
+					</div>
+					<div class="install-line"><span>Install</span><code>npm install nerdamer</code></div>
+				</div>
+				<div class="hero-console console" aria-label="Nerdamer example console">
+					<div class="console-head">
+						<span>nerdamer</span>
+						<div class="console-dots"><i></i><i></i><i></i></div>
+					</div>
+					<div class="console-body">
+						<div class="console-row">
+							<span class="console-comment">// exact arithmetic</span><br /><span class="console-prompt"
+								>›</span
+							>1/3+1/6
+						</div>
+						<div class="console-result">1/2</div>
+						<div class="console-row">
+							<span class="console-comment">// factor an expression</span><br /><span
+								class="console-prompt"
+								>›</span
+							>factor(x^4-1)
+						</div>
+						<div class="console-result">(-1+x)*(1+x)*(1+x^2)</div>
+						<div class="console-row">
+							<span class="console-comment">// differentiate</span><br /><span class="console-prompt"
+								>›</span
+							>diff(sin(x^2),x)
+						</div>
+						<div class="console-result">2*x*cos(x^2)</div>
+					</div>
+				</div>
+			</div>
+		</section>
 
-    <!-- Bootstrap Core JavaScript -->
-    <script src="js/bootstrap.min.js"></script>
-    <script>
-        $('.date').html(new Date().getFullYear());
-    </script>
+		<section class="section home-about" id="about">
+			<div class="shell">
+				<div class="eyebrow">What is Nerdamer?</div>
+				<div class="about-grid">
+					<div>
+						<h2>Computer algebra that runs with your JavaScript.</h2>
+						<p>
+							Nerdamer works with mathematical expressions symbolically. That means values such as
+							<code class="code-inline">x</code>, fractions, roots, constants, and complex numbers can
+							stay in mathematical form instead of being turned into decimal numbers right away.
+						</p>
+						<p>
+							You can use Nerdamer in the browser, in Node.js, or in a TypeScript project. It runs on the
+							client, so a web page can do symbolic calculations without sending each expression to a
+							server.
+						</p>
+						<p>
+							Current releases no longer use the 1.x core-plus-add-ons loading model. The complete package
+							can be used directly, and application code can import documented public APIs from the
+							package entry points. It is open source under the Apache-2.0 license.
+						</p>
+					</div>
+					<div class="home-facts" aria-label="Nerdamer at a glance">
+						<div>
+							<strong>Symbolic + numerical</strong
+							><span>Keep expressions exact, then evaluate them when you need a number.</span>
+						</div>
+						<div>
+							<strong>Browser + Node.js</strong
+							><span
+								>Use the same math library in a web page, a server application, or a command-line
+								project.</span
+							>
+						</div>
+						<div>
+							<strong>Typed public APIs</strong
+							><span
+								>Use the root package or documented JavaScript and TypeScript entry points in
+								application code.</span
+							>
+						</div>
+						<div>
+							<strong>Open source</strong
+							><span>Read the source, extend it, and use it in your own projects.</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
 
+		<section class="section section-alt" id="features">
+			<div class="shell">
+				<div class="eyebrow">Features</div>
+				<h2>From everyday algebra to larger symbolic problems.</h2>
+				<p class="section-intro">
+					Nerdamer covers the common building blocks of a computer algebra system while keeping the library
+					approachable for small applications and classroom tools.
+				</p>
+				<div class="home-feature-list">
+					<div>
+						<span class="feature-mark">x²</span>
+						<p>
+							<strong>Symbolic algebra</strong> Simplify, expand, factor, substitute, work with rational
+							expressions, and manipulate polynomials.
+						</p>
+					</div>
+					<div>
+						<span class="feature-mark">=</span>
+						<p>
+							<strong>Equation solving</strong> Solve many equations and systems of equations symbolically
+							or numerically.
+						</p>
+					</div>
+					<div>
+						<span class="feature-mark">∂</span>
+						<p>
+							<strong>Calculus</strong> Differentiate, integrate, evaluate limits, and work with sums,
+							products, and transforms.
+						</p>
+					</div>
+					<div>
+						<span class="feature-mark">[ ]</span>
+						<p>
+							<strong>Matrices and vectors</strong> Create matrices and vectors and perform common linear
+							algebra operations.
+						</p>
+					</div>
+					<div>
+						<span class="feature-mark">ℂ</span>
+						<p>
+							<strong>Complex numbers</strong> Work with real and imaginary parts, arguments, rectangular
+							form, and polar form.
+						</p>
+					</div>
+					<div>
+						<span class="feature-mark">1/3</span>
+						<p>
+							<strong>Exact arithmetic</strong> Keep fractions, radicals, constants, and symbolic values
+							exact when possible.
+						</p>
+					</div>
+					<div>
+						<span class="feature-mark">0.1</span>
+						<p>
+							<strong>Arbitrary-precision decimals</strong> Choose the precision you need when a decimal
+							answer is more useful.
+						</p>
+					</div>
+					<div>
+						<span class="feature-mark">{ }</span>
+						<p>
+							<strong>Sets and assumptions</strong> Work with sets and add information about variables
+							when a calculation needs it.
+						</p>
+					</div>
+					<div>
+						<span class="feature-mark">f(x)</span>
+						<p>
+							<strong>Math parser</strong> Enter familiar mathematical expressions and call built-in or
+							user-defined functions.
+						</p>
+					</div>
+					<div>
+						<span class="feature-mark">:=</span>
+						<p>
+							<strong>Built-in scripting language</strong> Define variables and functions and use local
+							values, conditions, and loops.
+						</p>
+					</div>
+					<div>
+						<span class="feature-mark">TS</span>
+						<p>
+							<strong>JavaScript and TypeScript API</strong> Use Nerdamer from application code with typed
+							public entry points.
+						</p>
+					</div>
+					<div>
+						<span class="feature-mark">TeX</span>
+						<p>
+							<strong>Display and reuse results</strong> Convert expressions to text or TeX, evaluate
+							them, or compile supported expressions to JavaScript functions.
+						</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="section" id="ways-to-use">
+			<div class="shell">
+				<div class="eyebrow">Use it your way</div>
+				<h2>Parser, application code, or a small math script.</h2>
+				<p class="section-intro">
+					You do not have to learn every part of Nerdamer before using it. Start with the style that fits what
+					you are building.
+				</p>
+				<div class="use-grid">
+					<article class="use-card">
+						<div class="use-card-head"><span>Math-like input</span><small>Parser</small></div>
+						<pre class="codeblock language-nerdamer"><code class="language-nerdamer">
+<span class="token function">factor</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">4</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token function">diff</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span>
+<span class="token function">solve</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">-</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span></code></pre>
+						<p>
+							Useful for calculators, forms, lessons, and anywhere users enter mathematical expressions.
+						</p>
+					</article>
+					<article class="use-card">
+						<div class="use-card-head"><span>JavaScript / TypeScript</span><small>API</small></div>
+						<pre class="codeblock language-javascript"><code class="language-javascript">
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">factor</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/algebra&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">result</span> <span class="token operator">=</span> <span class="token function">factor</span><span class="token punctuation">(</span><span class="token string">&#39;x^4-1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">result</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+						<p>
+							Import public functions and classes directly when Nerdamer is part of a larger application.
+							See the <a href="/docs/examples/">API examples</a> for larger programs.
+						</p>
+					</article>
+					<article class="use-card">
+						<div class="use-card-head"><span>Nerdamer language</span><small>Scripting</small></div>
+						<pre class="codeblock language-nerdamer"><code class="language-nerdamer">
+<span class="token function">square</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token operator">:=</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">;</span>
+<span class="token function">f</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token operator">:=</span><span class="token function">square</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token function">f</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span></code></pre>
+						<p>
+							Define reusable calculations and combine them into small programs without leaving Nerdamer
+							notation.
+						</p>
+					</article>
+				</div>
+			</div>
+		</section>
+
+		<section class="section section-alt" id="projects">
+			<div class="shell">
+				<div class="eyebrow">Projects using Nerdamer</div>
+				<h2>Nerdamer in calculators, lessons, and learning tools.</h2>
+				<p class="section-intro">
+					These projects are still online and have used Nerdamer as part of their math features.
+				</p>
+				<div class="project-grid project-grid-live">
+					<a rel="noopener noreferrer" target="_blank" class="project-card" href="https://www.mathespass.at/klasse4/gleichungssysteme_rechner.php"
+						><span>Gleichungssysteme Rechner</span
+						><small>Equation-system calculator · mathespass.at ↗</small></a
+					>
+					<a rel="noopener noreferrer" target="_blank" class="project-card" href="https://mampf.mathi.uni-heidelberg.de/"
+						><span>MaMpf</span><small>Mathematical media platform · Heidelberg University ↗</small></a
+					>
+					<a rel="noopener noreferrer" target="_blank" class="project-card" href="https://mathdemos.xyz/"
+						><span>Mathdemos.xyz</span><small>Interactive mathematics demonstrations ↗</small></a
+					>
+					<a rel="noopener noreferrer" target="_blank"
+						class="project-card"
+						href="https://menzelths.github.io/Mathematik-Kursstufe/Analytische_Geometrie_Abstand_windschiefe_Geraden.html"
+						><span>Menzelths.github.io</span><small>Interactive analytic geometry ↗</small></a
+					>
+					<a rel="noopener noreferrer" target="_blank" class="project-card" href="https://www.matheretter.de/rechner/rechenfreund"
+						><span>Rechenfreund</span><small>Symbolic calculator · Matheretter ↗</small></a
+					>
+				</div>
+				<p class="project-note">
+					Using Nerdamer in your own project? Share it in the comments below or
+					<a rel="noopener noreferrer" target="_blank" href="https://github.com/jiggzson/nerdamer">send it through GitHub</a>.
+				</p>
+
+				<div class="similar-projects">
+					<div class="eyebrow">Similar projects</div>
+					<h3>Other JavaScript math libraries.</h3>
+					<div class="project-grid">
+						<a rel="noopener noreferrer" target="_blank" class="project-card" href="https://algebrite.org/"
+							><span>Algebrite</span
+							><small>Computer algebra system for JavaScript and TypeScript ↗</small></a
+						>
+						<a rel="noopener noreferrer" target="_blank" class="project-card" href="https://github.com/Yaffle/Expression"
+							><span>Yaffle Expression</span><small>Symbolic expression and algebra library ↗</small></a
+						>
+						<a rel="noopener noreferrer" target="_blank" class="project-card" href="https://mathjs.org/"
+							><span>math.js</span
+							><small>General-purpose mathematics library for JavaScript and Node.js ↗</small></a
+						>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="section" id="examples">
+			<div class="shell">
+				<div class="eyebrow">Examples</div>
+				<h2>Try a few expressions.</h2>
+				<div class="home-example-grid"></div>
+				<div class="examples-cta">
+					<a class="btn btn-primary" href="/playground/">Try your own expression →</a
+					><a class="btn" href="/docs/">Browse the documentation</a>
+				</div>
+			</div>
+		</section>
+
+		<section class="section section-alt home-comments" id="comments">
+			<div class="shell">
+				<div class="eyebrow">Community</div>
+				<h2>Questions, suggestions, or something you built?</h2>
+				<p class="section-intro">
+					Leave a comment below. The same Disqus discussion from the original Nerdamer homepage is kept here.
+				</p>
+				<div class="disqus-wrap">
+					<div id="disqus_thread"></div>
+					<script>
+						var disqus_config = function () {
+							this.page.url = 'http://nerdamer.com';
+						};
+						(function () {
+							var d = document,
+								s = d.createElement('script');
+							s.src = 'https://nerdamer.disqus.com/embed.js';
+							s.setAttribute('data-timestamp', +new Date());
+							(d.head || d.body).appendChild(s);
+						})();
+					</script>
+					<noscript
+						>Please enable JavaScript to view the
+						<a target="_blank" href="https://disqus.com/?ref_noscript" rel="nofollow"
+							>comments powered by Disqus.</a
+						></noscript
+					>
+				</div>
+			</div>
+		</section>
+	</div>
+</div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="./images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="./scripts/site.js"></script>
+
+<script src="./scripts/playground-tree.js"></script>
 </body>
-
 </html>

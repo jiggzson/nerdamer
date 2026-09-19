@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Architecture — Nerdamer Documentation</title>
+  <meta name="description" content="A contributor-oriented overview of how Nerdamer is assembled and how input moves through the symbolic engine.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../styles/site.css">
+  <link rel="stylesheet" href="../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../styles/logo.css">
+  <link rel="stylesheet" href="../../styles/header.css">
+  <link rel="stylesheet" href="../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../styles/internals.css">
+  <link rel="stylesheet" href="../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="internals-page">
+  <div class="eyebrow">Contributors</div>
+  <h1>How Nerdamer works</h1>
+  <p class="internals-lead">This is a short tour of the current codebase: where a call enters, how notation becomes a symbolic object, where algebra and calculus take over, and how the result becomes text or TeX.</p>
+
+  <div class="internals-intro">
+    <div class="internals-intro-card">
+      <strong>Start with one call</strong>
+      <p><code>nerdamer('factor(x^2-1)')</code> enters through the package root. The callable export is thin: it forwards notation to <code>Parser.parse()</code>.</p>
+      <a rel="noopener noreferrer" target="_blank" class="internals-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts">src/index.ts</a>
+    </div>
+    <div class="internals-intro-card">
+      <strong>Then follow the object</strong>
+      <p>The parser can return more than an <code>Expression</code>. Equations, vectors, matrices, collections, sets, and dictionaries all participate in the same package.</p>
+      <a rel="noopener noreferrer" target="_blank" class="internals-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/core/types.ts">src/core/types.ts</a>
+    </div>
+  </div>
+
+  <div class="internals-callout"><strong>Internal implementation guide.</strong> These pages explain how the current source is organized. Internal classes and file paths can change independently of the supported package API.</div>
+
+  <h2>One expression through the engine</h2>
+  <p>The root entry point assembles the full package, but notation still flows through one central parser pipeline. Once a parser entity exists, higher-level algorithms can work with that object directly rather than converting back through strings.</p>
+
+  <div class="internals-visual">
+    <div class="internals-visual-head"><strong>From notation to output</strong><span>High-level execution flow</span></div>
+    <div class="internals-mermaid">
+      <div class="mermaid">
+flowchart TD
+  A["nerdamer(input)"] --> B["src/index.ts"]
+  B --> C["Parser.parse(input, values)"]
+  C --> D["normalize input"]
+  D --> E["tokenize"]
+  E --> F["toRPN"]
+  F --> G["parseRPN"]
+  G --> H{"ParserEntity"}
+  H --> I["Expression"]
+  H --> J["Equation"]
+  H --> K["Vector / Matrix"]
+  H --> L["Collection / Set / Dictionary"]
+  I --> M["algebra / calculus / math / solve"]
+  J --> M
+  K --> M
+  L --> M
+  M --> N["Converter"]
+  N --> O["text"]
+  N --> P["TeX"]
+      </div>
+    </div>
+  </div>
+
+  <h2>Three layers to keep in mind</h2>
+  <div class="internals-layer-grid">
+    <div class="internals-card">
+      <div class="internals-number">1</div>
+      <h3>Package assembly</h3>
+      <p><code>src/index.ts</code> is the full-package entry point. It imports the domain modules, exposes the callable <code>nerdamer</code> function, and adds selected chainable operations to the core object model.</p>
+    </div>
+    <div class="internals-card">
+      <div class="internals-number">2</div>
+      <h3>Core symbolic engine</h3>
+      <p><code>src/core</code> contains the parser, <code>Expression</code>, equations, vectors, matrices, rationals, dispatch, converters, settings, and the shared operations that hold the symbolic representation together.</p>
+    </div>
+    <div class="internals-card">
+      <div class="internals-number">3</div>
+      <h3>Mathematical domains</h3>
+      <p><code>algebra</code>, <code>calculus</code>, <code>math</code>, and <code>solve</code> operate on those core objects. They contain the higher-level algorithms rather than a second expression system.</p>
+    </div>
+  </div>
+
+  <h2>The entry point is small</h2>
+  <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token variable">e</span><span class="token operator">:</span> <span class="token class-name">ExpressionInput</span><span class="token punctuation">,</span> <span class="token variable">values</span><span class="token operator">?</span><span class="token operator">:</span> <span class="token class-name">ParserValuesObject</span><span class="token punctuation">)</span><span class="token operator">:</span> <span class="token class-name">ParserEntity</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> <span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token variable">e</span><span class="token punctuation">,</span> <span class="token variable">values</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+  <p class="internals-code-caption">The package root does much more assembly around this function, but the notation-to-object handoff itself is direct.</p>
+  <p>This split is useful when reading the code. If the problem is “what does this string mean?”, start with the parser. If the parser produced the right object and the mathematics is wrong afterward, move into the relevant algebra, calculus, math, or solver module.</p>
+
+  <h2>How buildFunction() compiles expressions</h2>
+  <p><code>buildFunction()</code> does not pass raw input directly to JavaScript. The input is first parsed into the library's expression representation, then emitted from that parsed, canonicalized expression as JavaScript-number code. Function calls are limited to registered numerical implementations, and unsupported symbolic operations are rejected rather than inserted into the generated function.</p>
+  <p>The final compilation step uses <code>new Function(...)</code> to create the callable JavaScript function. Normal parsing, simplification, solving, evaluation, and symbolic manipulation do not use <code>eval()</code> or <code>new Function</code>.</p>
+  <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token function">Function</span><span class="token punctuation">(</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token variable">functionArgs</span><span class="token punctuation">,</span> <span class="token variable">functionDef</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+  <div class="internals-callout"><strong>Content Security Policy.</strong> Because the final compilation step uses <code>new Function</code>, <code>buildFunction()</code> may be unavailable under a CSP that blocks dynamic code generation. This restriction applies to the compilation mechanism; the library does not evaluate the original input string as arbitrary JavaScript.</div>
+
+  <h2>What can come back from the parser?</h2>
+  <p><code>ParserEntity</code> is the common result family. Ordinary symbolic notation usually produces an <code>Expression</code>, but syntax and functions can produce structured entities as well.</p>
+  <div class="internals-entity-strip">
+    <div class="internals-entity"><code>Expression</code><span>scalar symbolic value</span></div>
+    <div class="internals-entity"><code>Equation</code><span>left and right sides</span></div>
+    <div class="internals-entity"><code>Vector</code><span>ordered parser values</span></div>
+    <div class="internals-entity"><code>Matrix</code><span>row/column structure</span></div>
+    <div class="internals-entity"><code>Collection</code><span>ordered collection</span></div>
+    <div class="internals-entity"><code>ValuesSet</code><span>finite set semantics</span></div>
+    <div class="internals-entity"><code>Dictionary</code><span>keyed parser values</span></div>
+  </div>
+
+  <h2>Where to go next</h2>
+  <div class="internals-link-grid">
+    <a class="internals-card internals-link-card" href="/docs/internals/expression-model/"><span class="internals-arrow">→</span><h3>Expression model</h3><p>See how multipliers, powers, elements, and the internal expression groups represent symbolic structure.</p></a>
+    <a class="internals-card internals-link-card" href="/docs/internals/parser/"><span class="internals-arrow">→</span><h3>Parser</h3><p>Follow source text through tokenization, Shunting Yard/RPN conversion, dispatch, and evaluation.</p></a>
+    <a class="internals-card internals-link-card" href="/docs/internals/codebase-map/"><span class="internals-arrow">→</span><h3>Codebase map</h3><p>Learn what each top-level source directory owns and where to start when tracing a bug.</p></a>
+    <a class="internals-card internals-link-card" href="/docs/internals/development/"><span class="internals-arrow">→</span><h3>How to develop</h3><p>Set up the repository, use the normal typecheck/test/build loop, and learn where to put a change.</p></a>
+    <a class="internals-card internals-link-card" href="/docs/internals/code-conventions/"><span class="internals-arrow">→</span><h3>Code conventions</h3><p>See the implementation patterns used for types, return flow, reuse, constants, comments, and regression tests.</p></a>
+  </div>
+</div></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../scripts/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="../../scripts/internals.js"></script>
+<script src="../../scripts/playground-tree.js"></script>
+</body>
+</html>

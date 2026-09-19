@@ -1,0 +1,53 @@
+html {
+  background: rgb(var(--bg));
+}
+
+body {
+  position: relative;
+  background: transparent;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: rgb(var(--accent));
+  background-image: url("../assets/background.svg");
+  background-size: 760px 760px;
+  background-repeat: repeat;
+  background-position: center top;
+  background-blend-mode: luminosity;
+  opacity: .15;
+  filter: contrast(.68) brightness(1.03);
+}
+
+html.dark body::before {
+  opacity: .075;
+  filter: contrast(.62) brightness(.82);
+}
+
+.page,
+.site-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.page {
+  width: min(100%, 1440px);
+  margin: 0 auto;
+  background: rgb(var(--bg));
+  box-shadow: 0 0 70px rgba(var(--shadow), .12);
+}
+
+/* The background is now site-wide, so the homepage no longer needs its own copy. */
+.home-page-root::before,
+html.dark .home-page-root::before {
+  content: none;
+}
+
+.home-content-column {
+  width: 100%;
+  box-shadow: none;
+}

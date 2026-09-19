@@ -1,0 +1,66 @@
+.expression-storage-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 14px 0 4px;
+}
+
+.expression-storage-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  border: 1px solid rgb(var(--border));
+  border-radius: 999px;
+  color: rgb(var(--muted));
+  font-size: .76rem;
+  background: rgb(var(--bg-elevated));
+}
+
+.expression-storage-key::before {
+  content: "";
+  width: 11px;
+  height: 11px;
+  border: 2px solid rgb(var(--accent));
+  border-radius: 3px;
+  background: rgb(var(--accent) / .10);
+}
+
+.expression-storage-key.conditional::before {
+  border-style: dashed;
+  border-color: rgb(var(--muted-2));
+  background: rgb(var(--bg-soft));
+}
+
+.internals-anatomy-node.expression-required {
+  border-color: rgb(var(--accent) / .50);
+  background: rgb(var(--accent) / .065);
+}
+
+.internals-anatomy-node.expression-conditional {
+  border-style: dashed;
+  background: rgb(var(--bg-soft) / .45);
+}
+
+.expression-field-state {
+  display: inline-flex;
+  margin-top: 10px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: .66rem;
+  font-weight: 750;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.expression-required .expression-field-state {
+  color: rgb(var(--accent-deep));
+  background: rgb(var(--accent) / .10);
+}
+
+.expression-conditional .expression-field-state {
+  color: rgb(var(--muted));
+  background: rgb(var(--bg-soft));
+  border: 1px dashed rgb(var(--border-strong));
+}

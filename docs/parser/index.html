@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Expression syntax — Nerdamer Notation</title>
+  <meta name="description" content="Syntax for expressions, equations, operators, collections, and other values written in Nerdamer Notation.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../styles/site.css">
+  <link rel="stylesheet" href="../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../styles/logo.css">
+  <link rel="stylesheet" href="../../styles/header.css">
+  <link rel="stylesheet" href="../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../styles/playground-tree.css">
+  
+  <link rel="stylesheet" href="../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">Nerdamer Notation</div>
+<h1>Expression syntax</h1>
+<p>Nerdamer Notation is the mathematical text accepted by <code>nerdamer('...')</code>. The parser turns that text into expressions, equations, vectors, matrices, sets, and other supported values.</p>
+<div class="docs-callout">This section explains what you can write inside <code>nerdamer('...')</code>. Programmatic parser access and runtime configuration are documented separately in the <a href="/docs/api/">API reference</a> and <a href="/docs/settings/">Settings and configuration</a>.</div>
+
+<h2>Expressions</h2>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token number">2</span><span class="token operator">*</span><span class="token variable">x</span> <span class="token operator">+</span> <span class="token number">3</span>
+<span class="token number">2</span><span class="token variable">x</span> <span class="token operator">+</span> <span class="token number">3</span>
+<span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token function">sqrt</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token operator">^</span><span class="token number">2</span> <span class="token operator">+</span> <span class="token function">cos</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token operator">^</span><span class="token number">2</span></code></pre>
+
+<h2>Operator precedence and associativity</h2>
+<p>The parser applies the usual arithmetic precedence rules. Parentheses can be used whenever the grouping should be explicit.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token number">2</span><span class="token operator">+</span><span class="token number">3</span><span class="token operator">*</span><span class="token number">4</span>       <span class="token comment">// 14</span>
+<span class="token punctuation">(</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token number">4</span>     <span class="token comment">// 20</span>
+<span class="token number">8</span><span class="token operator">/</span><span class="token number">4</span><span class="token operator">/</span><span class="token number">2</span>       <span class="token comment">// 1</span>
+<span class="token number">2</span><span class="token operator">^</span><span class="token number">3</span><span class="token operator">^</span><span class="token number">2</span>       <span class="token comment">// 512</span></code></pre>
+<p>Multiplication and division associate from left to right. Exponentiation associates from right to left, so <code>2^3^2</code> means <code>2^(3^2)</code>.</p>
+<p>Prefix signs and postfix operators also participate in precedence. For example, factorial binds to its operand before a leading minus:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token operator">-</span><span class="token number">4</span><span class="token operator">!</span><span class="token operator">+</span><span class="token number">1</span>       <span class="token comment">// -23</span>
+<span class="token punctuation">(</span><span class="token number">3</span><span class="token operator">!</span><span class="token punctuation">)</span><span class="token operator">!</span>       <span class="token comment">// 720</span></code></pre>
+
+<h2>Implicit multiplication</h2>
+<p>Implicit multiplication is enabled by default. The parser can infer multiplication between adjacent values in common mathematical forms:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token number">2</span><span class="token variable">x</span>                  <span class="token comment">// 2*x</span>
+<span class="token function">x</span><span class="token punctuation">(</span><span class="token number">9</span><span class="token punctuation">)</span>                 <span class="token comment">// 9*x</span>
+<span class="token punctuation">(</span><span class="token variable">a</span><span class="token operator">+</span><span class="token variable">b</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token variable">c</span><span class="token operator">+</span><span class="token variable">d</span><span class="token punctuation">)</span>           <span class="token comment">// (a+b)*(c+d)</span>
+<span class="token number">2</span><span class="token operator">+</span><span class="token number">4</span><span class="token punctuation">(</span><span class="token number">9</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span>             <span class="token comment">// 42</span>
+<span class="token variable">y</span><span class="token operator">^</span><span class="token operator">-</span><span class="token number">2</span><span class="token variable">z</span>                <span class="token comment">// y^-2*z</span></code></pre>
+<p>A registered function name followed by parentheses is treated as a function call. An ordinary symbol followed by parentheses can instead represent multiplication, as in <code>x(9)</code>.</p>
+
+<h2>Unary signs, percentage, and modulo</h2>
+<p>Repeated prefix <code>+</code> and <code>-</code> signs are parsed as unary operators. The percent sign has two forms: postfix percentage and infix modulo.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token operator">--</span><span class="token number">1</span>          <span class="token comment">// 1</span>
+<span class="token number">5</span><span class="token operator">^</span><span class="token operator">-</span><span class="token number">3</span>         <span class="token comment">// 1/125</span>
+<span class="token number">50</span><span class="token operator">%</span>          <span class="token comment">// 1/2</span>
+<span class="token number">10</span><span class="token operator">%</span><span class="token number">3</span>         <span class="token comment">// 1</span>
+<span class="token number">4</span><span class="token operator">%</span><span class="token number">5</span>          <span class="token comment">// 4</span></code></pre>
+<p>When <code>%</code> follows a value without a right operand, it means percentage. Between two operands it means modulo.</p>
+
+<h2>Numbers and whitespace</h2>
+<p>Integers, decimal input, and scientific notation are accepted. Leading and trailing whitespace around an expression is ignored.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token number">42</span>
+<span class="token number">3.14159</span>
+<span class="token number">1.234e+1</span>     <span class="token comment">// 12.34</span>
+<span class="token number">12.3e-1</span>      <span class="token comment">// 1.23</span>
+ <span class="token variable">x</span> <span class="token operator">+</span> <span class="token number">1</span> </code></pre>
+
+<h2>Symbols and aliases</h2>
+<p>Variable names can contain more than one letter by default, so <code>velocity</code> and <code>xy</code> are each single symbols unless single-letter-variable mode is enabled.</p>
+<p>Common mathematical aliases normalize to the library's built-in names:</p>
+<pre class="codeblock">π + pi       // 2*pi
+∞ + Inf      // Inf</pre>
+<p>The names <code>e</code>, <code>pi</code>, <code>i</code>, <code>_n</code>, and <code>all</code> have built-in meanings and cannot be used as assignment targets in Nerdamer Scripting. <code>e</code> and <code>pi</code> are mathematical constants, <code>i</code> is the imaginary unit by default, <code>_n</code> is used for solver-generated indexed families, and <code>all</code> is used for non-finite solution results.</p>
+
+<h2>Known caveats</h2>
+
+<h3><code>i</code> is the imaginary unit by default</h3>
+<p>An assignment such as <code>i:0</code> throws because the active imaginary-unit symbol is reserved. If an application needs <code>i</code> as an ordinary variable, move the imaginary unit to another unused symbol through the parser API:</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Parser</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/parser&#39;</span><span class="token punctuation">;</span>
+
+<span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token function">setImaginary</span><span class="token punctuation">(</span><span class="token string">&#39;_&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// Free up i</span>
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;i:x; i*i&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// x^2</span></code></pre>
+<div class="docs-callout"><strong>This moves the imaginary unit; it does not disable complex numbers.</strong> After the call above, <code>_</code> is the reserved imaginary-unit symbol. Complex-number operations parsed afterward will treat <code>_</code> as the imaginary unit. Choose a replacement symbol that the application will not otherwise use. The change is shared runtime state.</div>
+
+<h3>Multiple statements need semicolons</h3>
+<p>Newlines, tabs, and carriage returns are parser whitespace, not statement separators. When one call contains multiple root statements, separate them with <code>;</code> even when each statement appears on its own line.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">f</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token operator">:=</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token function">f</span><span class="token punctuation">(</span><span class="token number">12</span><span class="token punctuation">)</span></code></pre>
+
+<h3>Assignments persist until they are removed</h3>
+<p>Nerdamer Scripting assignments are stored as parser-known values and are substituted into later parses while substitution is enabled. Use <code>unassign(name)</code> to remove one scripting assignment, <code>nerdamer.clearVars()</code> to clear all stored variables from application code, or <code>let(...)</code> when the binding should be local.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;x:4&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;x^2&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>     <span class="token comment">// 16</span>
+<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;unassign(x)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;x^2&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>     <span class="token comment">// x^2</span></code></pre>
+
+<h3>Parsing is symbolic unless evaluation is requested</h3>
+<p>Ordinary parsing preserves exact symbolic values when possible. For example, <code>nerdamer('sqrt(2)')</code> stays symbolic rather than immediately becoming a decimal approximation. Call <code>.evaluate()</code> when numerical evaluation is wanted.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">const</span> <span class="token variable">exact</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;sqrt(2)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token variable">numeric</span> <span class="token operator">=</span> <span class="token variable">exact</span><span class="token punctuation">.</span><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<h3>Parser configuration is shared</h3>
+<p>Settings, registered constants and operators, numeric precision, and the imaginary-unit symbol are shared runtime state. <code>Parser.create()</code> creates another parser object with its own known-value table, but it does not create an isolated parser configuration. Changes made through APIs such as <code>Parser.setImaginary(...)</code> affect subsequent parsing elsewhere in the same runtime.</p>
+
+<h2>Equations</h2>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">x</span> <span class="token operator">=</span> <span class="token variable">y</span> <span class="token operator">+</span> <span class="token number">2</span>
+<span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span> <span class="token operator">-</span> <span class="token number">4</span> <span class="token operator">=</span> <span class="token number">0</span></code></pre>
+<p>Equations are structured parser values rather than ordinary expressions. Functions that accept equations say so in their reference pages.</p>
+
+<h2>Collections and linear algebra</h2>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token punctuation">[</span><span class="token variable">a</span><span class="token punctuation">,</span> <span class="token variable">b</span><span class="token punctuation">,</span> <span class="token variable">c</span><span class="token punctuation">]</span>
+<span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">,</span> <span class="token variable">b</span><span class="token punctuation">,</span> <span class="token variable">c</span><span class="token punctuation">}</span>
+<span class="token function">matrix</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token function">dot</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">a</span><span class="token punctuation">,</span><span class="token variable">b</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token punctuation">,</span><span class="token variable">y</span><span class="token punctuation">]</span><span class="token punctuation">)</span></code></pre>
+<p>Square brackets create vectors. Curly braces create sets unless their contents use dictionary key/value syntax. Matrix construction and linear-algebra operations are available through their notation functions.</p>
+
+<h2>Indexing</h2>
+<p>Vector and matrix element access uses bracket notation. Public indices are zero-based by default; <code>INDEX_BASE</code> can switch the notation to one-based indexing.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">v</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token variable">a</span><span class="token punctuation">,</span><span class="token variable">b</span><span class="token punctuation">,</span><span class="token variable">c</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+<span class="token variable">v</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span></code></pre>
+<p>The assignment above is Nerdamer Scripting, so statements are separated with a semicolon. See <a href="/docs/language/">Nerdamer Scripting</a> for assignments, blocks, loops, and user-defined functions.</p>
+
+<h2>Functions</h2>
+<p>Functions such as <code>factor</code>, <code>diff</code>, <code>solve</code>, and <code>matrix</code> are part of Nerdamer Notation when they appear inside parsed input. Browse the <a href="/docs/functions/">function reference</a> for the generated list.</p>
+
+<h2>Malformed input</h2>
+<p>The parser rejects incomplete or unbalanced notation rather than guessing what was intended. Examples such as the following are syntax errors:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">cos</span><span class="token punctuation">(</span>
+<span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token operator">/</span><span class="token number">2</span>
+<span class="token number">5</span><span class="token operator">+</span></code></pre>
+
+<h2>Syntax-affecting settings</h2>
+<p>Three shared settings directly change how notation is interpreted:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token string">&#39;ALLOW_IMPLICIT_MULTIPLICATION&#39;</span><span class="token punctuation">,</span> <span class="token constant">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token string">&#39;USE_SINGLE_LETTER_VARIABLES&#39;</span><span class="token punctuation">,</span> <span class="token constant">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token string">&#39;INDEX_BASE&#39;</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p><code>ALLOW_IMPLICIT_MULTIPLICATION</code> controls inferred multiplication. <code>USE_SINGLE_LETTER_VARIABLES</code> changes a name such as <code>ab</code> from one symbol to <code>a*b</code>. <code>INDEX_BASE</code> changes the public base used for vector and matrix indexing.</p>
+<p>These settings are shared runtime state, not options local to a single expression. See <a href="/docs/settings/">Settings and configuration</a> for defaults, temporary-setting patterns, precision, evaluation settings, iteration limits, and the complete currently active settings list.</p></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../scripts/site.js"></script>
+
+<script src="../../scripts/playground-tree.js"></script>
+</body>
+</html>

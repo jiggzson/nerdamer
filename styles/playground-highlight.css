@@ -1,0 +1,64 @@
+.editor-highlight {
+  display: none;
+}
+
+.editor-wrap.syntax-highlighted .editor-highlight {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  border: 0;
+  padding: 18px 18px 70px;
+  background: rgb(var(--bg-elevated));
+  color: rgb(var(--fg));
+  font-family: var(--mono);
+  font-size: .92rem;
+  line-height: 1.65;
+  tab-size: 4;
+  white-space: pre-wrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  pointer-events: none;
+}
+
+.editor-highlight code {
+  display: block;
+  min-height: 100%;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  white-space: inherit;
+}
+
+.editor-highlight .token {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: inherit;
+}
+
+.editor-wrap.syntax-highlighted .editor {
+  position: relative;
+  z-index: 2;
+  background: transparent;
+  color: transparent;
+  caret-color: rgb(var(--fg));
+  font-family: var(--mono);
+}
+
+.editor-wrap.syntax-highlighted .editor::selection,
+.editor-wrap.syntax-highlighted .editor::-moz-selection {
+  background: rgba(var(--accent), .34);
+  color: #fff;
+}
+
+.editor-wrap.syntax-highlighted .editor-actions {
+  z-index: 4;
+}

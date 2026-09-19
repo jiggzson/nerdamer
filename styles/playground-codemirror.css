@@ -1,0 +1,120 @@
+.playground-source .editor-wrap {
+  box-sizing: border-box;
+  padding: 14px;
+  background: rgb(var(--bg-soft) / .35);
+}
+
+.playground-source .editor-wrap .CodeMirror {
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 390px;
+  overflow: hidden;
+  border: 1px solid rgb(var(--border));
+  border-radius: 10px;
+  background: rgb(var(--bg-elevated));
+  color: rgb(var(--fg));
+  font: .92rem/1.65 var(--mono);
+  box-shadow: none;
+}
+
+.playground-source .CodeMirror-scroll {
+  min-height: 390px;
+  background: transparent;
+}
+
+.playground-source .CodeMirror-lines {
+  padding: 18px 18px 70px;
+}
+
+.playground-source .CodeMirror pre.CodeMirror-line,
+.playground-source .CodeMirror pre.CodeMirror-line-like {
+  padding: 0;
+  font-family: var(--mono);
+}
+
+.playground-source .editor-wrap .CodeMirror.CodeMirror-focused {
+  border-color: rgb(var(--accent) / .62);
+  box-shadow: 0 0 0 3px rgb(var(--accent) / .14), 0 5px 14px rgb(var(--shadow) / .12);
+}
+
+.playground-source .CodeMirror-cursor {
+  border-left-color: rgb(var(--fg));
+}
+
+.playground-source .CodeMirror-selected,
+.playground-source .CodeMirror-focused .CodeMirror-selected {
+  background: rgb(var(--accent) / .34) !important;
+}
+
+.playground-source .CodeMirror-line::selection,
+.playground-source .CodeMirror-line > span::selection,
+.playground-source .CodeMirror-line > span > span::selection {
+  background: rgb(var(--accent) / .34);
+  color: #fff;
+}
+
+.playground-source .CodeMirror-line::-moz-selection,
+.playground-source .CodeMirror-line > span::-moz-selection,
+.playground-source .CodeMirror-line > span > span::-moz-selection {
+  background: rgb(var(--accent) / .34);
+  color: #fff;
+}
+
+.playground-source .CodeMirror-matchingbracket {
+  color: rgb(var(--accent-deep)) !important;
+  background: rgb(var(--accent) / .12);
+  border-radius: 3px;
+}
+
+.playground-source .cm-comment {
+  color: rgb(var(--muted-2));
+}
+
+.playground-source .cm-string {
+  color: rgb(var(--good));
+}
+
+.playground-source .cm-number,
+.playground-source .cm-atom {
+  color: rgb(var(--accent-2));
+}
+
+.playground-source .cm-keyword {
+  color: rgb(var(--danger));
+  font-weight: 700;
+}
+
+.playground-source .cm-builtin {
+  color: rgb(var(--accent-deep));
+  font-weight: 700;
+}
+
+.playground-source .cm-variable {
+  color: rgb(var(--fg));
+}
+
+.playground-source .cm-operator,
+.playground-source .cm-bracket {
+  color: rgb(var(--muted));
+}
+
+.playground-source .editor-actions {
+  right: 28px;
+  bottom: 27px;
+}
+
+.playground-source .suggestion-box {
+  left: 28px;
+  right: 28px;
+  bottom: 68px;
+}
+
+@media (max-width: 980px) {
+  .playground-source .editor-wrap .CodeMirror,
+  .playground-source .CodeMirror-scroll {
+    min-height: 330px;
+  }
+}

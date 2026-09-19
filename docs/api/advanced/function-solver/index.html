@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>FunctionSolver — Nerdamer advanced API</title>
+  <meta name="description" content="Searches a bounded interval for real roots of a univariate expression.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../../styles/site.css">
+  <link rel="stylesheet" href="../../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../../styles/header.css">
+  <link rel="stylesheet" href="../../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../../styles/api.css">
+  <link rel="stylesheet" href="../../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/advanced/">nerdamer/advanced</a></div><div class="api-member-title"><div><span class="api-kind">Class</span><h1>FunctionSolver</h1></div><a class="api-source" href="https://github.com/N00bie-to-Github/nerdamer2/blob/ff74b9eb6ce7e954de9323fc9b54be86591d257e/src/solve/classes/FunctionSolver.ts#L82" target="_blank" rel="noreferrer">src/solve/classes/FunctionSolver.ts:82</a></div><div class="api-description"><p>Searches a bounded interval for real roots of a univariate expression.</p><div class="api-note"><strong>remarks</strong><p>roots scans the configured interval from its center toward both
+endpoints. It refines sign-changing intervals with Brent&#39;s method or
+Newton-Raphson, verifies residuals, merges nearby results, and returns roots
+in ascending order. This is a heuristic search: an even-multiplicity root
+can be missed unless a scan point lands sufficiently close to it, and
+periodic functions are limited by both the interval and</p><pre class="api-example"><code>`maxRoots`</code></pre><p>.
+
+Calculations use the ambient</p><pre class="api-example"><code>`decimal.js`</code></pre><p>precision. An Expression supplied
+to the constructor is retained rather than copied, and the public settings
+may be adjusted before a search.</p></div></div><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>const solver = new FunctionSolver(&#39;cos(x)-x&#39;, &#39;x&#39;, {
+    lowerBound: 0,
+    upperBound: 1,
+});
+const roots = solver.roots();</code></pre></section><section class="api-detail"><h2>Members</h2><div class="api-children"><article class="api-child" id="brent"><div class="api-child-head"><code>Brent(a: Decimal, b: Decimal): <a class="api-type-link" href="/docs/api/solve/root/">Root</a></code><span>Method</span></div><div class="api-description"><p>Refines a bracket using Brent&#39;s combination of bisection, secant, and
+inverse-quadratic interpolation.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>a</code></td><td><code>Decimal</code></td><td>First bracket endpoint.</td></tr><tr><td><code>b</code></td><td><code>Decimal</code></td><td>Second bracket endpoint.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/solve/root/">Root</a></code> — Refinement metadata. Invalid brackets and exhausted iterations are represented in the returned Root; they are not thrown.</p></section></article><article class="api-child" id="constructor"><div class="api-child-head"><code>FunctionSolver(func: string | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, variable?: string, options: <a class="api-type-link" href="/docs/api/solve/function-solver-options/">FunctionSolverOptions</a>): <a class="api-type-link" href="/docs/api/advanced/function-solver/">FunctionSolver</a></code><span>Constructor</span></div><div class="api-description"><p>Creates a bounded real-root solver.</p><div class="api-note"><strong>throws</strong><p>UnsupportedOperationError If</p><pre class="api-example"><code>`variable`</code></pre><p>is omitted and the
+expression contains more than one variable.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>func</code></td><td><code>string | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>Expression to evaluate, or a string parsed as an Expression.</td></tr><tr><td><code>variable</code></td><td><code>string</code></td><td>Variable to substitute. When omitted, the expression must contain at most one variable.</td></tr><tr><td><code>options</code></td><td><code><a class="api-type-link" href="/docs/api/solve/function-solver-options/">FunctionSolverOptions</a></code></td><td>Search interval, refinement method, and tolerances.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/function-solver/">FunctionSolver</a></code></p></section></article><article class="api-child" id="derivative-step"><div class="api-child-head"><code>derivativeStep: Decimal</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="df"><div class="api-child-head"><code>df(x: Decimal, h: Decimal): Decimal</code><span>Method</span></div><div class="api-description"><p>Approximates the derivative with a central difference.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code>Decimal</code></td><td>—</td></tr><tr><td><code>h</code></td><td><code>Decimal</code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>Decimal</code></p></section></article><article class="api-child" id="evaluate"><div class="api-child-head"><code>evaluate(at: string | number | Decimal): Decimal</code><span>Method</span></div><div class="api-description"><p>Evaluates the configured expression at a real value.</p><div class="api-note"><strong>throws</strong><p>UnexpectedInputError If evaluation does not produce a scalar
+Expression.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>at</code></td><td><code>string | number | Decimal</code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>Decimal</code></p></section></article><article class="api-child" id="func"><div class="api-child-head"><code>func: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="lower-bound"><div class="api-child-head"><code>lowerBound: Decimal</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="max-iters"><div class="api-child-head"><code>maxIters: number</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="max-roots"><div class="api-child-head"><code>maxRoots: number</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="method"><div class="api-child-head"><code>method: RootFindingMethod</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="newton-raphson"><div class="api-child-head"><code>NewtonRaphson(guess: Decimal): { … } | { … }</code><span>Method</span></div><div class="api-description"><p>Refines a root from an initial guess using Newton-Raphson and a numerical
+derivative.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>guess</code></td><td><code>Decimal</code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>{ … } | { … }</code> — Refinement metadata, including non-convergence or a zero derivative.</p></section></article><article class="api-child" id="roots"><div class="api-child-head"><code>roots(): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>[]</code><span>Method</span></div><div class="api-description"><p>Searches the configured interval for real roots.</p></div><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a>[]</code> — Verified, deduplicated roots in ascending order, limited by `maxRoots`. Failed evaluations and failed refinements are skipped.</p></section></article><article class="api-child" id="step-size"><div class="api-child-head"><code>stepSize: number</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="tolerance"><div class="api-child-head"><code>tolerance: Decimal</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="upper-bound"><div class="api-child-head"><code>upperBound: Decimal</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="variable"><div class="api-child-head"><code>variable: string</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="verbose"><div class="api-child-head"><code>verbose: boolean</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article></div></section></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../../scripts/site.js"></script>
+
+<script src="../../../../scripts/playground-tree.js"></script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Nerdamer Scripting — Documentation</title>
+  <meta name="description" content="Use variables, user-defined functions, conditions, loops, local scope, and control flow inside Nerdamer input.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../styles/site.css">
+  <link rel="stylesheet" href="../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../styles/logo.css">
+  <link rel="stylesheet" href="../../styles/header.css">
+  <link rel="stylesheet" href="../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../styles/reference.css">
+  <link rel="stylesheet" href="../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">Nerdamer Scripting</div>
+<h1>Nerdamer Scripting</h1>
+<p>
+	Nerdamer Scripting is the compact programming layer available inside text passed to <code>nerdamer(...)</code>. Use
+	it when a single mathematical expression is not enough and you need assignments, user-defined functions, conditions,
+	loops, or local scope.
+</p>
+<div class="docs-callout">
+	<strong>Not JavaScript:</strong> the scripting layer is evaluated by the library's parser. For ordinary mathematical expressions
+	and functions, see <a href="/docs/functions/">Nerdamer Notation</a>. For methods and imported APIs, see the
+	<a href="/docs/api/">JavaScript / TypeScript API</a>.
+</div>
+
+<h2>Notation and scripting side by side</h2>
+<pre class="codeblock language-javascript"><code class="language-javascript">
+<span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Nerdamer Notation: one mathematical expression</span>
+<span class="token keyword">const</span> <span class="token variable">expression</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;factor(x^2-1)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Nerdamer Scripting: define and use a function</span>
+<span class="token keyword">const</span> <span class="token variable">script</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">`
+square(x):=x^2;
+square(6)
+`</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<h2>User-defined functions</h2>
+<p>
+	Define a symbolic function in scripting with <code>f(x):=...</code>, or define it from application code with
+	<code>nerdamer.setFunction(...)</code>. See
+	<a href="/docs/language/user-defined-functions/">User-defined functions</a> for both forms and how they relate.
+</p>
+
+<p>
+	For larger workflows built entirely in the scripting language, see the
+	<a href="/docs/language/examples/">Scripting examples</a>.
+</p>
+
+<h2>Scripting reference</h2>
+<p>The entries below are the parser functions classified as scripting by the generated documentation data.</p>
+<div class="reference-toolbar">
+	<input
+		class="reference-search"
+		data-reference-search
+		type="search"
+		placeholder="Search if, for, let, block…"
+	/><span class="reference-count" data-reference-count></span>
+</div>
+<div class="reference-list"><a class="reference-item docs-card" href="/docs/reference/and/" data-reference-item data-search="and nerdamer language and(arg1, arg2, ...) returns 1 when every argument is nonzero and 0 otherwise."><code>and(arg1, arg2, ...)</code><p>Returns 1 when every argument is nonzero and 0 otherwise.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/block/" data-reference-item data-search="block nerdamer language block(...) evaluates a sequence of nerdamer scripting expressions in order."><code>block(...)</code><p>Evaluates a sequence of Nerdamer Scripting expressions in order.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/break/" data-reference-item data-search="break nerdamer language break() exits the nearest nerdamer scripting loop."><code>break()</code><p>Exits the nearest Nerdamer Scripting loop.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/continue/" data-reference-item data-search="continue nerdamer language continue() skips the remainder of the current nerdamer scripting loop iteration."><code>continue()</code><p>Skips the remainder of the current Nerdamer Scripting loop iteration.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/each/" data-reference-item data-search="each nerdamer language each(container, value, body) evaluates a body once for each value in a parser container."><code>each(container, value, body)</code><p>Evaluates a body once for each value in a parser container.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/evaluate/" data-reference-item data-search="evaluate nerdamer language evaluate(value[, substitutions]) | evaluate(value, variables, point) evaluates a parser value immediately, optionally with substitutions."><code>evaluate(value[, substitutions]) | evaluate(value, variables, point)</code><p>Evaluates a parser value immediately, optionally with substitutions.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/for/" data-reference-item data-search="for nerdamer language for(arg1, arg2, arg3, arg4) runs a four-part nerdamer scripting loop."><code>for(arg1, arg2, arg3, arg4)</code><p>Runs a four-part Nerdamer Scripting loop.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/if/" data-reference-item data-search="if nerdamer language if(condition, whentrue[, whenfalse]) evaluates one branch based on a nerdamer scripting condition."><code>if(condition, whenTrue[, whenFalse])</code><p>Evaluates one branch based on a Nerdamer Scripting condition.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/iferror/" data-reference-item data-search="iferror nerdamer language iferror(arg1, arg2) evaluates a fallback expression only when the first expression throws an ordinary error."><code>iferror(arg1, arg2)</code><p>Evaluates a fallback expression only when the first expression throws an ordinary error.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/iserror/" data-reference-item data-search="iserror nerdamer language iserror(arg1) returns 1 when evaluating an expression throws an ordinary error and 0 otherwise."><code>iserror(arg1)</code><p>Returns 1 when evaluating an expression throws an ordinary error and 0 otherwise.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/let/" data-reference-item data-search="let nerdamer language let(arg1, arg2, arg3, ...) creates temporary nerdamer scripting bindings for a body expression."><code>let(arg1, arg2, arg3, ...)</code><p>Creates temporary Nerdamer Scripting bindings for a body expression.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/not/" data-reference-item data-search="not nerdamer language not(arg1) returns 1 for a zero argument and 0 for a nonzero argument."><code>not(arg1)</code><p>Returns 1 for a zero argument and 0 for a nonzero argument.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/or/" data-reference-item data-search="or nerdamer language or(arg1, arg2, ...) returns 1 when at least one argument is nonzero and 0 otherwise."><code>or(arg1, arg2, ...)</code><p>Returns 1 when at least one argument is nonzero and 0 otherwise.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/return/" data-reference-item data-search="return nerdamer language return(arg1) returns a value from the current symbolic function or outer scripting block."><code>return(arg1)</code><p>Returns a value from the current symbolic function or outer scripting block.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/while/" data-reference-item data-search="while nerdamer language while(arg1, arg2) repeats a nerdamer scripting body while its condition is nonzero."><code>while(arg1, arg2)</code><p>Repeats a Nerdamer Scripting body while its condition is nonzero.</p></a>
+<a class="reference-item docs-card" href="/docs/reference/xor/" data-reference-item data-search="xor nerdamer language xor(arg1, arg2, ...) returns 1 when an odd number of arguments are nonzero."><code>xor(arg1, arg2, ...)</code><p>Returns 1 when an odd number of arguments are nonzero.</p></a></div>
+
+<h2>Assignment</h2>
+<p>Use <code>:</code> to assign a parser variable. Assignments are retained by the parser and can affect later calls until they are removed.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer">
+<span class="token variable">a</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">;</span>
+<span class="token variable">b</span><span class="token operator">:</span><span class="token variable">a</span><span class="token operator">+</span><span class="token number">2</span><span class="token punctuation">;</span>
+<span class="token variable">b</span></code></pre>
+<p>Use <code>unassign(a)</code> to remove one stored assignment, <code>nerdamer.clearVars()</code> from application code to clear them all, or <code>let(...)</code> for temporary local bindings.</p>
+
+<h2>Statement separators</h2>
+<p>Newlines are formatting whitespace, not statement separators. Use <code>;</code> between multiple statements passed in one call.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer">
+<span class="token function">f</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token operator">:=</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token function">f</span><span class="token punctuation">(</span><span class="token number">12</span><span class="token punctuation">)</span></code></pre>
+
+<h2>Blocks and local scope</h2>
+<p>
+	<code>block(...)</code> evaluates expressions in sequence. <code>let(...)</code> creates temporary local bindings
+	while its body is evaluated.
+</p>
+<pre class="codeblock language-javascript"><code class="language-javascript">
+<span class="token function">block</span><span class="token punctuation">(</span><span class="token variable">a</span><span class="token operator">:</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token variable">b</span><span class="token operator">:</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token variable">a</span><span class="token operator">+</span><span class="token variable">b</span><span class="token punctuation">)</span>
+<span class="token keyword">let</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token operator">^</span><span class="token number">3</span><span class="token punctuation">)</span></code></pre>
+
+<h2>Conditions and loops</h2>
+<p><code>if</code>, <code>while</code>, and <code>for</code> let a script choose or repeat expressions.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript">
+<span class="token keyword">if</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&gt;</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token punctuation">,</span> <span class="token operator">-</span><span class="token variable">x</span><span class="token punctuation">)</span>
+
+<span class="token keyword">let</span><span class="token punctuation">(</span><span class="token variable">k</span><span class="token punctuation">,</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token function">block</span><span class="token punctuation">(</span>
+  <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token operator">-</span><span class="token variable">k</span><span class="token punctuation">,</span> <span class="token variable">k</span><span class="token operator">:</span><span class="token variable">k</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+  <span class="token variable">k</span>
+<span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre>
+
+<h2>Control flow</h2>
+<p>
+	<code>return</code>, <code>break</code>, and <code>continue</code> control how blocks, functions, and loops finish.
+	Their individual reference pages describe where each form applies.
+</p></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../scripts/site.js"></script>
+<script src="../../scripts/reference.js"></script>
+<script src="../../scripts/playground-tree.js"></script>
+</body>
+</html>

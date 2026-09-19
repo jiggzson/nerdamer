@@ -1,0 +1,2298 @@
+{
+  "schemaVersion": 1,
+  "functions": [
+    {
+      "name": "C",
+      "summary": "Computes the normalized Fresnel cosine integral.",
+      "description": [
+        "C(x) represents integral(cos(pi*t^2/2), t, 0, x). Numeric real arguments are evaluated numerically; symbolic arguments remain as C(x)."
+      ],
+      "examples": [
+        {
+          "expression": "C(0)",
+          "output": "0",
+          "description": "Evaluate the normalized Fresnel cosine integral at zero."
+        },
+        {
+          "expression": "C(x)",
+          "output": "C(x)",
+          "description": "Keep a symbolic argument symbolic."
+        }
+      ]
+    },
+    {
+      "name": "S",
+      "summary": "Computes the normalized Fresnel sine integral.",
+      "description": [
+        "S(x) represents integral(sin(pi*t^2/2), t, 0, x). Numeric real arguments are evaluated numerically; symbolic arguments remain as S(x)."
+      ],
+      "examples": [
+        {
+          "expression": "S(0)",
+          "output": "0",
+          "description": "Evaluate the normalized Fresnel sine integral at zero."
+        },
+        {
+          "expression": "S(x)",
+          "output": "S(x)",
+          "description": "Keep a symbolic argument symbolic."
+        }
+      ]
+    },
+    {
+      "name": "realpart",
+      "summary": "Returns the real component of a complex expression.",
+      "description": [
+        "Nerdamer expands supported algebraic structure and separates known real and complex factors. Expressions whose complex component cannot yet be resolved can remain under realpart(...)."
+      ],
+      "examples": [
+        {
+          "expression": "realpart(3+2*i)",
+          "output": "3",
+          "description": "Extract the real component of a numeric complex value."
+        },
+        {
+          "expression": "realpart(z)",
+          "description": "Keep an unresolved symbolic component."
+        }
+      ]
+    },
+    {
+      "name": "imagpart",
+      "summary": "Returns the imaginary component of a complex expression.",
+      "description": [
+        "Nerdamer expands supported algebraic structure and separates known real and complex factors. Purely real expressions return zero; unresolved complex functions can remain under imagpart(...)."
+      ],
+      "examples": [
+        {
+          "expression": "imagpart(3+2*i)",
+          "output": "2",
+          "description": "Extract the imaginary coefficient."
+        },
+        {
+          "expression": "imagpart(x)",
+          "output": "0",
+          "description": "A plain real symbol has zero imaginary component."
+        }
+      ]
+    },
+    {
+      "name": "arg",
+      "summary": "Returns the principal argument of a complex expression.",
+      "description": [
+        "The argument is computed from the real and imaginary components using quadrant-aware atan2 behavior. Pure imaginary axis cases are handled explicitly."
+      ],
+      "examples": [
+        {
+          "expression": "arg(1+i)",
+          "output": "(1/4)*pi",
+          "description": "Return the principal angle of 1+i."
+        }
+      ]
+    },
+    {
+      "name": "conjugate",
+      "summary": "Returns the complex conjugate of an expression.",
+      "description": [
+        "Conjugation changes i to -i and distributes through supported sums, products, and powers when the transformation is valid for the represented branch.",
+        "The same operation is available directly as nerdamer.conjugate(...)."
+      ],
+      "examples": [
+        {
+          "expression": "conjugate(3+2*i)",
+          "description": "Flip the sign of the imaginary component."
+        },
+        {
+          "expression": "conjugate(i)",
+          "output": "-i",
+          "description": "Conjugate the imaginary unit."
+        }
+      ]
+    },
+    {
+      "name": "csgn",
+      "summary": "Returns the complex sign used by Nerdamer's branch-sensitive simplification rules.",
+      "description": [
+        "csgn returns 1 when the real part is positive and -1 when the real part is negative. If the real part is zero, it uses the sign of the imaginary part. Zero returns 0.",
+        "When the sign cannot be determined symbolically, Nerdamer keeps csgn(...) unevaluated. The same operation is available directly as nerdamer.csgn(...)."
+      ],
+      "examples": [
+        {
+          "expression": "csgn(3+2*i)",
+          "output": "1",
+          "description": "Use the sign of a positive real part."
+        },
+        {
+          "expression": "csgn(-3+2*i)",
+          "output": "-1",
+          "description": "Use the sign of a negative real part."
+        },
+        {
+          "expression": "csgn(x+2*i)",
+          "description": "Keep an unresolved symbolic complex sign."
+        }
+      ]
+    },
+    {
+      "name": "polarform",
+      "summary": "Converts a complex expression toward polar exponential form.",
+      "description": [
+        "Nerdamer derives a magnitude and principal argument, then represents the result using r*e^(i*theta) when conversion is meaningful. Already simple real or purely imaginary linear values may remain compact."
+      ],
+      "examples": [
+        {
+          "expression": "polarform(1+i)",
+          "description": "Convert a rectangular complex value to polar form."
+        }
+      ]
+    },
+    {
+      "name": "rectform",
+      "summary": "Converts supported polar complex forms toward rectangular form.",
+      "description": [
+        "Nerdamer recognizes exponential polar forms and rewrites them with cosine and sine components. If no exact identity is available, an evaluable complex expression can be returned in rectangular form."
+      ],
+      "examples": [
+        {
+          "expression": "rectform(e^(i*pi/3))",
+          "description": "Convert a polar exponential to real and imaginary components."
+        }
+      ]
+    },
+    {
+      "name": "abs",
+      "summary": "Computes the absolute value of an expression.",
+      "description": [
+        "Nerdamer simplifies absolute values when sign information is available from numbers, algebraic structure, or assumptions. Even powers are recognized as non-negative, while genuinely sign-unknown expressions remain wrapped in abs.",
+        "For complex inputs, absolute value is the complex modulus."
+      ],
+      "examples": [
+        {
+          "expression": "abs(-5)",
+          "output": "5",
+          "description": "Take the absolute value of a negative number."
+        },
+        {
+          "expression": "abs(x^2)",
+          "output": "x^2",
+          "description": "Recognize an even power as non-negative."
+        },
+        {
+          "expression": "abs(x)",
+          "description": "Preserve an unknown sign symbolically."
+        }
+      ]
+    },
+    {
+      "name": "cbrt",
+      "summary": "Computes the cube root of an expression.",
+      "description": [
+        "Ordinary parsing preserves cbrt as a function node instead of forcing numerical evaluation, which avoids changing branch behavior or introducing unnecessary approximation.",
+        "Call evaluate() when a numeric value is required. Real numeric arguments then use the real cube root, so negative reals remain real; complex arguments use the principal cube root."
+      ],
+      "examples": [
+        {
+          "expression": "cbrt(8)",
+          "description": "Keep the cube root symbolic until evaluation is requested."
+        },
+        {
+          "expression": "cbrt(-27)",
+          "description": "Preserve the real negative cube-root expression during ordinary parsing."
+        },
+        {
+          "expression": "cbrt(x)",
+          "description": "Keep a symbolic cube root."
+        }
+      ]
+    },
+    {
+      "name": "ceil",
+      "summary": "Rounds a numeric expression up to the nearest integer.",
+      "description": [
+        "Numeric inputs return the least integer greater than or equal to the value. Symbolic inputs remain as ceil(x).",
+        "The compatibility spelling ceiling is an alias of ceil."
+      ],
+      "examples": [
+        {
+          "expression": "ceil(3.2)",
+          "output": "4",
+          "description": "Round a positive decimal upward."
+        },
+        {
+          "expression": "ceil(-2.7)",
+          "output": "-2",
+          "description": "Round a negative decimal toward positive infinity."
+        }
+      ]
+    },
+    {
+      "name": "contains",
+      "summary": "Tests membership in a supported finite container.",
+      "description": [
+        "Vector membership compares elements, finite sets and solution sets use set membership, and Dictionary membership checks keys. The result is 1 when present and 0 when absent.",
+        "Unsupported container types remain as a symbolic contains(container,value) call."
+      ],
+      "examples": [
+        {
+          "expression": "contains([x,1,2],1)",
+          "output": "1",
+          "description": "Find a value in a vector."
+        },
+        {
+          "expression": "contains([x,1,2],10)",
+          "output": "0",
+          "description": "Return zero when the value is absent."
+        }
+      ]
+    },
+    {
+      "name": "numeric",
+      "summary": "Evaluates a numeric value to a finite number of significant decimal digits.",
+      "description": [
+        "numeric(value[,precision]) is the explicit finite-precision evaluation boundary. It evaluates fully numeric input and returns decimal-origin values at the requested significant-digit precision.",
+        "Symbolic results remain symbolic rather than having individual symbolic coefficients approximated. The full JavaScript / TypeScript package also exposes nerdamer.numeric(...)."
+      ],
+      "examples": [
+        {
+          "expression": "numeric(1/3,5)",
+          "output": "0.33333",
+          "description": "Evaluate a rational value to five significant digits."
+        },
+        {
+          "expression": "numeric([1/3,2/3],5)",
+          "output": "[0.33333, 0.66667]",
+          "description": "Apply finite-precision evaluation to a structured value."
+        }
+      ]
+    },
+    {
+      "name": "size",
+      "summary": "Returns the dimensions of a structured parser value.",
+      "description": [
+        "size(...) reports the public dimensions of vectors, matrices, sets, collections, and dictionaries.",
+        "The result is returned as a Vector of dimension sizes."
+      ],
+      "examples": [
+        {
+          "expression": "size([a,b,c])",
+          "output": "[3]",
+          "description": "Return the length of a Vector."
+        },
+        {
+          "expression": "size(matrix([1,2,3],[4,5,6]))",
+          "output": "[2, 3]",
+          "description": "Return matrix row and column counts."
+        }
+      ]
+    },
+    {
+      "name": "count",
+      "summary": "Returns the number of entries in a supported container.",
+      "description": [
+        "count evaluates Vectors, finite value sets, solution sets, and Dictionaries. Other inputs remain as a symbolic count(...) call."
+      ],
+      "examples": [
+        {
+          "expression": "count([a,b,c])",
+          "output": "3",
+          "description": "Count vector elements."
+        }
+      ]
+    },
+    {
+      "name": "exp",
+      "summary": "Computes the exponential function e raised to an expression.",
+      "description": [
+        "exp(x) is represented using Nerdamer's symbolic exponential form. Exact simplifications are applied where available, and numeric inputs can be evaluated."
+      ],
+      "examples": [
+        {
+          "expression": "exp(0)",
+          "output": "1",
+          "description": "Evaluate e^0."
+        },
+        {
+          "expression": "exp(x)",
+          "description": "Keep a symbolic exponential."
+        }
+      ]
+    },
+    {
+      "name": "expand",
+      "summary": "Expands an expression algebraically.",
+      "description": [
+        "expand distributes products over sums, expands supported integer powers, and recursively expands algebraic structure. It is useful when a multiplied or powered form needs to be rewritten as an explicit sum of terms.",
+        "Expansion does not mean numerical evaluation; symbols and supported functions remain symbolic."
+      ],
+      "examples": [
+        {
+          "expression": "expand((x+1)^3)",
+          "description": "Expand a binomial power."
+        },
+        {
+          "expression": "expand((x+y)*(x-y))",
+          "description": "Distribute a product of sums."
+        }
+      ]
+    },
+    {
+      "name": "floor",
+      "summary": "Rounds a numeric expression down to the nearest integer.",
+      "description": [
+        "Numeric inputs return the greatest integer less than or equal to the value. Symbolic inputs remain as floor(x)."
+      ],
+      "examples": [
+        {
+          "expression": "floor(3.7)",
+          "output": "3",
+          "description": "Round a positive decimal downward."
+        },
+        {
+          "expression": "floor(-2.3)",
+          "output": "-3",
+          "description": "Round a negative decimal toward negative infinity."
+        }
+      ]
+    },
+    {
+      "name": "log",
+      "summary": "Computes the natural logarithm or a logarithm with an explicit base.",
+      "description": [
+        "With one argument, log uses base e. An optional second argument selects a base. Exact integer-base powers and common symbolic forms are simplified when safe.",
+        "Complex inputs use the principal logarithm, and real-domain logarithm rewrites are only applied when their sign requirements are established."
+      ],
+      "examples": [
+        {
+          "expression": "log(e)",
+          "output": "1",
+          "description": "Evaluate the natural logarithm of e."
+        },
+        {
+          "expression": "log(8,2)",
+          "output": "3",
+          "description": "Evaluate an exact logarithm with base 2."
+        },
+        {
+          "expression": "log(x)",
+          "description": "Keep a symbolic logarithm."
+        }
+      ]
+    },
+    {
+      "name": "matrix",
+      "summary": "Constructs a matrix from row vectors.",
+      "description": [
+        "Each argument supplies one row. Rows must have matching lengths, and their elements are converted to Nerdamer expressions.",
+        "The result is a Matrix entity that can be used by determinant, matrix methods, and other linear-algebra operations."
+      ],
+      "examples": [
+        {
+          "expression": "matrix([1,2],[3,4])",
+          "output": "matrix([1, 2], [3, 4])",
+          "description": "Construct a 2 by 2 matrix."
+        }
+      ]
+    },
+    {
+      "name": "max",
+      "summary": "Returns the greatest value when the arguments can be ordered.",
+      "description": [
+        "Numeric and otherwise comparable arguments are reduced to the maximum. If Nerdamer cannot establish an ordering between symbolic arguments, the unresolved part remains symbolic.",
+        "Available assumptions can help determine ordering for symbolic values."
+      ],
+      "examples": [
+        {
+          "expression": "max(2,5,-1)",
+          "output": "5",
+          "description": "Select the largest numeric argument."
+        },
+        {
+          "expression": "max(x,y)",
+          "description": "Keep unresolved symbolic ordering explicit."
+        }
+      ]
+    },
+    {
+      "name": "min",
+      "summary": "Returns the smallest value when the arguments can be ordered.",
+      "description": [
+        "Numeric and otherwise comparable arguments are reduced to the minimum. If Nerdamer cannot establish an ordering between symbolic arguments, the unresolved part remains symbolic.",
+        "Available assumptions can help determine ordering for symbolic values."
+      ],
+      "examples": [
+        {
+          "expression": "min(2,5,-1)",
+          "output": "-1",
+          "description": "Select the smallest numeric argument."
+        },
+        {
+          "expression": "min(x,y)",
+          "description": "Keep unresolved symbolic ordering explicit."
+        }
+      ]
+    },
+    {
+      "name": "nthroot",
+      "summary": "Computes the nth root as a principal fractional power.",
+      "description": [
+        "nthroot(x,n) is represented as x^(1/n), so branch behavior follows Nerdamer's power rules. Use cbrt when the real cube root of a negative real is specifically required."
+      ],
+      "examples": [
+        {
+          "expression": "nthroot(81,4)",
+          "description": "Take a fourth root using the principal power."
+        },
+        {
+          "expression": "nthroot(x,n)",
+          "description": "Keep a symbolic root degree."
+        }
+      ]
+    },
+    {
+      "name": "parens",
+      "summary": "Wraps an expression in explicit parentheses for output.",
+      "description": [
+        "parens creates a grouping node whose main purpose is preserving visible parentheses in formatted output. It does not change the mathematical value of the wrapped expression."
+      ],
+      "examples": [
+        {
+          "expression": "parens(x+1)",
+          "description": "Preserve explicit grouping around a sum."
+        }
+      ]
+    },
+    {
+      "name": "round",
+      "summary": "Rounds a number to a requested number of decimal places.",
+      "description": [
+        "With no second argument, round uses integer precision. An optional integer precision selects decimal places. Symbolic values or unsupported precisions remain symbolic."
+      ],
+      "examples": [
+        {
+          "expression": "round(3.7)",
+          "output": "4",
+          "description": "Round to the nearest integer."
+        },
+        {
+          "expression": "round(2.555,2)",
+          "output": "2.56",
+          "description": "Round to two decimal places."
+        }
+      ]
+    },
+    {
+      "name": "sign",
+      "summary": "Returns the sign of a real expression when it can be determined.",
+      "description": [
+        "The result is 1, -1, or 0 for known positive, negative, or zero values. Assumptions can resolve symbolic signs; otherwise sign(x) remains symbolic.",
+        "Complex inputs are delegated to the complex sign function."
+      ],
+      "examples": [
+        {
+          "expression": "sign(5)",
+          "output": "1",
+          "description": "Identify a positive number."
+        },
+        {
+          "expression": "sign(-3)",
+          "output": "-1",
+          "description": "Identify a negative number."
+        },
+        {
+          "expression": "sign(x)",
+          "description": "Preserve an unknown sign."
+        }
+      ]
+    },
+    {
+      "name": "sqrt",
+      "summary": "Computes the principal square root of an expression.",
+      "description": [
+        "Square roots are represented through a one-half power and simplified with Nerdamer's radical rules. Perfect squares and compatible radical products are reduced exactly.",
+        "For symbolic squares, sign information matters: without a sign assumption sqrt(x^2) simplifies to abs(x)."
+      ],
+      "examples": [
+        {
+          "expression": "sqrt(9)",
+          "output": "3",
+          "description": "Reduce a perfect square exactly."
+        },
+        {
+          "expression": "sqrt(-9)",
+          "output": "3*i",
+          "description": "Return the exact principal complex square root."
+        },
+        {
+          "expression": "sqrt(x^2)",
+          "output": "abs(x)",
+          "description": "Preserve the sign ambiguity of a symbolic square."
+        }
+      ]
+    },
+    {
+      "name": "subst",
+      "summary": "Substitutes one expression for another inside an expression tree.",
+      "description": [
+        "subst(expression,value,replacement) replaces matching variables or supported compound subexpressions while preserving the surrounding symbolic structure. The substitution recurses into sums, products, functions, and powers.",
+        "It can replace more than a single symbol when the requested subexpression can be matched structurally."
+      ],
+      "examples": [
+        {
+          "expression": "subst(cos(x+1)^x,x,u)",
+          "output": "cos(1+u)^u",
+          "description": "Replace a variable throughout nested structure."
+        },
+        {
+          "expression": "subst(x+1,x+1,u)",
+          "output": "u",
+          "description": "Replace a complete subexpression."
+        }
+      ]
+    },
+    {
+      "name": "trunc",
+      "summary": "Truncates a numeric expression toward zero.",
+      "description": [
+        "Numeric inputs discard the fractional part without changing the sign of the integer portion. Symbolic inputs remain as trunc(x)."
+      ],
+      "examples": [
+        {
+          "expression": "trunc(3.7)",
+          "output": "3",
+          "description": "Discard a positive fractional part."
+        },
+        {
+          "expression": "trunc(-2.7)",
+          "output": "-2",
+          "description": "Truncate a negative number toward zero."
+        }
+      ]
+    },
+    {
+      "name": "div",
+      "summary": "Performs polynomial division and returns quotient and remainder.",
+      "description": [
+        "When both arguments are polynomial-like, div returns a two-element Vector containing the quotient and remainder. Inputs outside the polynomial domain use the compatibility fallback [0, dividend].",
+        "Multivariable input is handled as a multivariable polynomial rather than by silently choosing one main variable."
+      ],
+      "examples": [
+        {
+          "expression": "div(x^2-1,x-1)",
+          "description": "Return the polynomial quotient and remainder."
+        }
+      ]
+    },
+    {
+      "name": "divide",
+      "summary": "Divides expressions using polynomial quotient/remainder reconstruction when possible.",
+      "description": [
+        "For polynomial inputs, divide reconstructs quotient+remainder/divisor as a reusable Expression. Inputs outside the polynomial domain fall back to ordinary symbolic division.",
+        "Unlike div, the result is a single expression rather than a quotient/remainder Vector."
+      ],
+      "examples": [
+        {
+          "expression": "divide(x^2-1,x-1)",
+          "output": "1+x",
+          "description": "Reconstruct an exact polynomial quotient."
+        }
+      ]
+    },
+    {
+      "name": "polyFactors",
+      "summary": "Returns polynomial factors as a Vector of separate factor expressions.",
+      "description": [
+        "In Nerdamer Notation, use polyfactors(...). In JavaScript or TypeScript, use polyFactors(...) from the root API or nerdamer/algebra.",
+        "The result is a Vector containing the factor expressions rather than a single product."
+      ],
+      "examples": [
+        {
+          "expression": "polyfactors(x^2-1)",
+          "description": "Return the factors of a difference of squares as separate Vector entries."
+        }
+      ]
+    },
+    {
+      "name": "forget",
+      "summary": "Removes stored assumptions for a symbol or clears all assumptions.",
+      "description": [
+        "forget(x) removes the current assumption for x. The special form forget(all) clears the complete assumption store."
+      ],
+      "examples": [
+        {
+          "expression": "assume(x>0); forget(x)",
+          "description": "Remove the stored assumption for x."
+        },
+        {
+          "expression": "forget(all)",
+          "description": "Clear all stored assumptions."
+        }
+      ]
+    },
+    {
+      "name": "unassign",
+      "summary": "Removes a parser-known value assigned to a variable.",
+      "description": [
+        "unassign restores a known parser variable to its unassigned symbolic form. It affects assigned values, not the separate assumption store."
+      ],
+      "examples": [
+        {
+          "expression": "x:5; unassign(x); x",
+          "output": "x",
+          "description": "Remove a parser assignment and recover the symbol."
+        }
+      ]
+    },
+    {
+      "name": "factor",
+      "summary": "Factors an expression into a product of simpler factors.",
+      "description": [
+        "Use factor to expose multiplicative structure in polynomial-like expressions. It can factor univariate and multivariate polynomials, extract common factors, recognize repeated factors, and prime-factor exact integers.",
+        "If Nerdamer cannot factor an input using its supported symbolic methods, the expression may remain unchanged or as an unevaluated factor call."
+      ],
+      "examples": [
+        {
+          "expression": "factor(x^2+5*x+6)",
+          "output": "(2+x)*(3+x)",
+          "description": "Factor a quadratic over the integers."
+        },
+        {
+          "expression": "factor(x^2+2*x*y+y^2)",
+          "output": "(x+y)^2",
+          "description": "Recognize a multivariable perfect square."
+        },
+        {
+          "expression": "factor(4677271)",
+          "output": "2089*2239",
+          "description": "Prime-factor an exact integer."
+        }
+      ]
+    },
+    {
+      "name": "simplify",
+      "summary": "Rewrites an expression into a simpler equivalent form using Nerdamer's symbolic simplification rules.",
+      "description": [
+        "Simplification includes algebraic cancellation, polynomial and rational reduction, selected identities, factorial cancellation, radical simplification, and simplification inside function arguments.",
+        "The result remains symbolic. Nerdamer only applies transformations it can justify from the expression and any available assumptions."
+      ],
+      "examples": [
+        {
+          "expression": "simplify((x^2+2*x+1)/(x+1))",
+          "output": "1+x",
+          "description": "Cancel a common polynomial factor."
+        },
+        {
+          "expression": "simplify(sin(x)^2+cos(x)^2)",
+          "output": "1",
+          "description": "Apply a trigonometric identity."
+        },
+        {
+          "expression": "simplify(n!/(n+1)!)",
+          "output": "(1+n)^-1",
+          "description": "Cancel adjacent factorials symbolically."
+        }
+      ]
+    },
+    {
+      "name": "gcd",
+      "summary": "Returns the greatest common divisor of two symbolic expressions when their polynomial structure can be resolved.",
+      "description": [
+        "Nerdamer preserves common numeric, monomial, univariate, and multivariable polynomial factors. Rational polynomial structure is normalized before the common divisor is computed.",
+        "If the supported polynomial methods cannot resolve the inputs, the operation can remain symbolic as gcd(a,b)."
+      ],
+      "examples": [
+        {
+          "expression": "gcd(6*(x-1)*(x+2),15*(x-1)*(x^3+1))",
+          "output": "-3+3*x",
+          "description": "Keep the common numeric and polynomial factor."
+        },
+        {
+          "expression": "gcd(x*y*(x+y+1),x*y*(x^2-y+3))",
+          "output": "x*y",
+          "description": "Extract a common multivariable monomial."
+        },
+        {
+          "expression": "gcd((x^2+a)*(x^3+1),(x^2+a)*(x^4+b*x+1))",
+          "output": "x^2+a",
+          "description": "Preserve a common factor containing symbolic parameters."
+        }
+      ]
+    },
+    {
+      "name": "lcm",
+      "summary": "Returns the least common multiple of two expressions.",
+      "description": [
+        "Numeric inputs use exact rational arithmetic. For symbolic polynomial expressions, Nerdamer computes the product divided by the symbolic greatest common divisor so shared factors are retained.",
+        "If either operand is zero, the result is zero."
+      ],
+      "examples": [
+        {
+          "expression": "lcm(6,4)",
+          "output": "12",
+          "description": "Compute an exact integer least common multiple."
+        },
+        {
+          "expression": "lcm(x,x)",
+          "output": "x",
+          "description": "Recognize that identical symbolic factors need only appear once."
+        },
+        {
+          "expression": "lcm(0,x)",
+          "output": "0",
+          "description": "Apply the zero case."
+        }
+      ]
+    },
+    {
+      "name": "groebner",
+      "summary": "Computes a Gröbner basis for a polynomial system.",
+      "description": [
+        "The public function accepts a collection of polynomial expressions and returns the resulting basis as a Vector. The default public basis uses lexicographic ordering, and the JavaScript / TypeScript API can also receive an explicit variable order.",
+        "A Gröbner basis can expose elimination structure or rewrite a polynomial system into an equivalent form that is easier to analyze."
+      ],
+      "examples": [
+        {
+          "expression": "groebner([x^2+y^2-1,y-x])",
+          "output": "[x-y, -1+2*y^2]",
+          "description": "Rewrite a circle-line system into a triangular form."
+        },
+        {
+          "expression": "groebner([x+y+z,x*y+x*z+y*z,x*y*z-1])",
+          "output": "[x+y+z, y^2+y*z+z^2, -1+z^3]",
+          "description": "Compute the Cyclic-3 basis."
+        }
+      ]
+    },
+    {
+      "name": "partfrac",
+      "summary": "Decomposes a rational expression into partial fractions with respect to a variable.",
+      "description": [
+        "Nerdamer handles rational expressions with distinct or repeated linear factors, supported irreducible quadratic factors, and improper fractions that first require polynomial division.",
+        "When no useful decomposition is available, the original expression is returned unchanged."
+      ],
+      "examples": [
+        {
+          "expression": "partfrac((4*k-1)/(k*(k+2)),k)",
+          "output": "(-1/2)*k^-1+(9/2)*(2+k)^-1",
+          "description": "Decompose a rational function with two distinct linear factors."
+        },
+        {
+          "expression": "partfrac((x^2-1)/(x-1),x)",
+          "output": "1+x",
+          "description": "Reduce an improper rational expression when the remainder is zero."
+        },
+        {
+          "expression": "partfrac(1/(x^2*(x-1)),x)",
+          "description": "Decompose a denominator containing a repeated linear factor."
+        }
+      ]
+    },
+    {
+      "name": "completeSquare",
+      "summary": "Rewrites a quadratic in completed-square form.",
+      "description": [
+        "Use sqcomp(...) in Nerdamer Notation. In JavaScript or TypeScript, completeSquare(...) returns the completed-square expression together with the quadratic coefficient, shift, remainder, and selected variable.",
+        "The direct API is available from the root nerdamer export and from nerdamer/algebra."
+      ],
+      "examples": [
+        {
+          "expression": "sqcomp(x^2+6*x+1)",
+          "description": "Complete the square through Nerdamer Notation."
+        }
+      ],
+      "notes": [
+        "The parser form returns the completed-square expression. The JavaScript / TypeScript completeSquare(...) helper returns a CompleteSquareResult object whose expression field contains that expression."
+      ]
+    },
+    {
+      "name": "content",
+      "summary": "Returns the exact numeric content of a polynomial.",
+      "description": [
+        "The content is the greatest common divisor of the polynomial's numeric coefficients. It is a numeric coefficient measure, not a polynomial-valued greatest common divisor of symbolic coefficient expressions.",
+        "If the input cannot be converted to a polynomial, the operation remains symbolic."
+      ],
+      "examples": [
+        {
+          "expression": "content(6*x^2+15*x-3)",
+          "output": "3",
+          "description": "Extract the greatest common divisor of the coefficients."
+        },
+        {
+          "expression": "content(3*x-3*y+7)",
+          "output": "1",
+          "description": "Return 1 when the coefficients are primitive."
+        }
+      ]
+    },
+    {
+      "name": "deg",
+      "summary": "Returns the degree of a polynomial expression.",
+      "description": [
+        "With no variable argument, deg returns the total degree: the largest sum of powers in any term. With a variable, it returns the largest power of that variable while treating other variables as coefficients.",
+        "If the input cannot be converted to a polynomial, the operation remains symbolic."
+      ],
+      "examples": [
+        {
+          "expression": "deg(x^2*y^3+x)",
+          "output": "5",
+          "description": "Return the total degree of a multivariable polynomial."
+        },
+        {
+          "expression": "deg(x^2*y^3+x,x)",
+          "output": "2",
+          "description": "Return the degree with respect to x."
+        },
+        {
+          "expression": "deg(x^2*y^3+x,y)",
+          "output": "3",
+          "description": "Return the degree with respect to y."
+        }
+      ]
+    },
+    {
+      "name": "solve",
+      "summary": "Solves an expression or equation for a variable and returns the solutions as a SolutionSet.",
+      "description": [
+        "Nerdamer solves exact symbolic equations when supported, including polynomial equations with symbolic parameters. Expressions are treated as equations equal to zero; explicit equations can be supplied directly.",
+        "The solver returns distinct solutions in a SolutionSet rather than a plain JavaScript array."
+      ],
+      "examples": [
+        {
+          "expression": "solve(6-5*x+x^2,x)",
+          "output": "{3, 2}",
+          "description": "Solve a quadratic with two exact roots."
+        },
+        {
+          "expression": "solve(-6+11*x-6*x^2+x^3,x)",
+          "output": "{1, 2, 3}",
+          "description": "Return all distinct roots of a factorable cubic."
+        },
+        {
+          "expression": "solve(a*x^2+b*x+c,x)",
+          "output": "{(1/2)*a^-1*(-b+(b^2-4*a*c)^(1/2)), (1/2)*a^-1*(-b-(b^2-4*a*c)^(1/2))}",
+          "description": "Keep symbolic parameters in the quadratic formula."
+        }
+      ]
+    },
+    {
+      "name": "solveSystem",
+      "summary": "Solves a system of equations and returns the solution assignments.",
+      "description": [
+        "Nerdamer can solve linear symbolic systems and supported nonlinear polynomial systems. The JavaScript / TypeScript API uses solveSystem(...), while Nerdamer Notation uses solveeqs(...).",
+        "The JavaScript / TypeScript form can also receive an explicit variable order."
+      ],
+      "examples": [
+        {
+          "expression": "solveeqs([x+y=3,x-y=1])",
+          "output": "[{x => 2, y => 1}]",
+          "description": "Solve a two-equation linear system through Nerdamer Notation."
+        }
+      ],
+      "notes": [
+        "Systems whose solutions are not isolated, or unsupported underdetermined nonlinear systems, may throw rather than return incomplete assignments."
+      ]
+    },
+    {
+      "name": "diff",
+      "summary": "Differentiates an expression symbolically with respect to a variable.",
+      "description": [
+        "Nerdamer applies the standard differentiation rules to algebraic expressions and supported functions, including product, quotient, power, and chain rules. Higher-order derivatives can be requested with the optional order argument."
+      ],
+      "examples": [
+        {
+          "expression": "diff(x^2+2*x+1,x)",
+          "output": "2+2*x",
+          "description": "Differentiate a polynomial."
+        },
+        {
+          "expression": "diff(5*sin(x^2)^2,x)",
+          "output": "20*x*cos(x^2)*sin(x^2)",
+          "description": "Apply the chain rule through a trigonometric power."
+        },
+        {
+          "expression": "diff(x^sin(x),x)",
+          "output": "x^sin(x)*(x^-1*sin(x)+cos(x)*log(x))",
+          "description": "Differentiate a variable raised to a variable-dependent power."
+        }
+      ]
+    },
+    {
+      "name": "integrate",
+      "summary": "Computes a symbolic antiderivative with respect to a variable when Nerdamer has a supported integration path.",
+      "description": [
+        "Integration handles linear combinations, constant factors, common elementary functions, scaled arguments, and a broader set of algebraic and trigonometric forms through Nerdamer's integration routines.",
+        "When an antiderivative is not available, Nerdamer can leave the integral unevaluated instead of inventing a result."
+      ],
+      "examples": [
+        {
+          "expression": "integrate(x^2+3*x+1,x)",
+          "output": "x+(3/2)*x^2+(1/3)*x^3",
+          "description": "Integrate a polynomial term by term."
+        },
+        {
+          "expression": "integrate(sin(x)+cos(x),x)",
+          "output": "-cos(x)+sin(x)",
+          "description": "Use linearity across elementary functions."
+        },
+        {
+          "expression": "integrate(sec(2*x)^2,x)",
+          "output": "(1/2)*tan(2*x)",
+          "description": "Account for a scaled inner argument."
+        }
+      ]
+    },
+    {
+      "name": "limit",
+      "summary": "Computes a symbolic limit of an expression as a variable approaches a value.",
+      "description": [
+        "Nerdamer first uses direct evaluation where possible, then applies symbolic strategies for supported indeterminate forms and common rational, logarithmic, and exponential growth patterns. One-sided limits are available through the optional direction argument.",
+        "When the limit cannot be resolved by the supported methods, the operation remains symbolic."
+      ],
+      "examples": [
+        {
+          "expression": "limit(sin(x)/x,x,0)",
+          "output": "1",
+          "description": "Resolve the standard removable singularity at zero."
+        },
+        {
+          "expression": "limit((4*x^2-x)/(3*x^2+x),x,Infinity)",
+          "output": "4/3",
+          "description": "Compare leading polynomial terms at infinity."
+        },
+        {
+          "expression": "limit(log(x)/x,x,Infinity)",
+          "output": "0",
+          "description": "Recognize that linear growth dominates logarithmic growth."
+        }
+      ]
+    },
+    {
+      "name": "laplace",
+      "summary": "Computes the symbolic Laplace transform of an expression.",
+      "description": [
+        "The transform maps an expression from a source variable to a transform variable. Supported forms include powers, exponentials, trigonometric and hyperbolic functions, linear combinations, and common shift and scaling patterns.",
+        "If no supported transform rule applies, Nerdamer leaves the Laplace transform unevaluated."
+      ],
+      "examples": [
+        {
+          "expression": "laplace(t^2,t,s)",
+          "output": "2*s^-3",
+          "description": "Transform a polynomial power."
+        },
+        {
+          "expression": "laplace(e^(-t),t,s)",
+          "description": "Apply the exponential shift rule."
+        },
+        {
+          "expression": "laplace(sin(t),t,s)",
+          "description": "Transform a trigonometric function."
+        }
+      ]
+    },
+    {
+      "name": "ilaplace",
+      "summary": "Computes a symbolic inverse Laplace transform of an expression.",
+      "description": [
+        "The inverse transform handles common rational forms, repeated poles, shifted linear and quadratic factors, and supported trigonometric and hyperbolic transform pairs.",
+        "If Nerdamer cannot resolve the inverse transform, it leaves the ilaplace call unevaluated."
+      ],
+      "examples": [
+        {
+          "expression": "ilaplace((-1+s)^-2,s,t)",
+          "output": "t*e^t",
+          "description": "Invert a repeated shifted pole."
+        },
+        {
+          "expression": "ilaplace(1/(s^2+2*s+1),s,t)",
+          "description": "Invert a repeated pole at -1."
+        },
+        {
+          "expression": "ilaplace(1/(s^2+s+1),s,t)",
+          "description": "Invert an irreducible quadratic into a damped sinusoidal form."
+        }
+      ]
+    },
+    {
+      "name": "sum",
+      "summary": "Evaluates a finite symbolic sum over an integer index.",
+      "description": [
+        "With concrete integer bounds, Nerdamer substitutes the index through the inclusive range and adds the resulting symbolic terms. If a bound is still symbolic, the sum remains unevaluated."
+      ],
+      "examples": [
+        {
+          "expression": "sum(k,k,1,5)",
+          "output": "15",
+          "description": "Sum the first five positive integers."
+        },
+        {
+          "expression": "sum(k^2,k,1,4)",
+          "output": "30",
+          "description": "Sum a polynomial expression over a finite range."
+        }
+      ]
+    },
+    {
+      "name": "product",
+      "summary": "Evaluates a finite symbolic product over an integer index.",
+      "description": [
+        "With concrete integer bounds, Nerdamer substitutes the index through the inclusive range and multiplies the resulting symbolic terms. If a bound is still symbolic, the product remains unevaluated."
+      ],
+      "examples": [
+        {
+          "expression": "product(k,k,1,5)",
+          "output": "120",
+          "description": "Multiply the first five positive integers."
+        },
+        {
+          "expression": "product(k+1,k,1,3)",
+          "output": "24",
+          "description": "Multiply a simple symbolic term over a finite range."
+        }
+      ]
+    },
+    {
+      "name": "defint",
+      "summary": "Evaluates a definite integral over an interval.",
+      "description": [
+        "Nerdamer uses symbolic integration when available and can use numerical evaluation for supported numeric bounds. Symbols that are independent of the integration variable are treated as constants.",
+        "Supplying the integration variable explicitly avoids ambiguity in expressions containing more than one symbol."
+      ],
+      "examples": [
+        {
+          "expression": "defint(x,x,0,1)",
+          "output": "0.5",
+          "description": "Evaluate a simple polynomial definite integral with numeric bounds."
+        },
+        {
+          "expression": "defint(log(x),x,0,1)",
+          "description": "Evaluate the singular-endpoint integral numerically; the result is approximately -1."
+        },
+        {
+          "expression": "defint(2*z,x,1,4)",
+          "output": "6*z",
+          "description": "Keep parameters that are independent of the integration variable."
+        }
+      ]
+    },
+    {
+      "name": "assume",
+      "summary": "Adds a real numeric interval assumption for a symbol so assumption-aware operations can use the known range.",
+      "description": [
+        "Assumptions narrow a plain variable to a non-empty interval of real numeric values. Repeated constraints for the same variable are intersected, and contradictory constraints are rejected without replacing the previous assumption.",
+        "Assumptions are used conservatively. They can influence comparisons and transformations that depend on sign or ordering, but they are not a general logical theorem system."
+      ],
+      "examples": [
+        {
+          "expression": "assume(x>=0); assume(x<10)",
+          "description": "Intersect repeated constraints to restrict x to [0, 10)."
+        },
+        {
+          "expression": "assume(x>0); assume(y>0); simplify(log(x)+log(y))",
+          "output": "log(x*y)",
+          "description": "Use positivity information in a sign-sensitive logarithm simplification."
+        },
+        {
+          "expression": "assume(x==1/3)",
+          "description": "The parser form can preserve an exact rational bound."
+        }
+      ],
+      "notes": [
+        "The direct string API accepts a variable, a comparison operator, and a numeric bound. Parser notation can evaluate arithmetic such as 1/3 before storing the bound.",
+        "Assumption state is process-wide until it is cleared or forgotten."
+      ]
+    },
+    {
+      "name": "transpose",
+      "summary": "Returns the transpose of a matrix.",
+      "description": [
+        "transpose(...) swaps matrix rows and columns and returns a new matrix value.",
+        "The same operation is also available as Matrix.transpose() in the JavaScript / TypeScript object API."
+      ],
+      "examples": [
+        {
+          "expression": "transpose(matrix([1,2],[3,4]))",
+          "output": "matrix([1, 3], [2, 4])",
+          "description": "Transpose a 2 by 2 matrix."
+        }
+      ]
+    },
+    {
+      "name": "augment",
+      "summary": "Horizontally joins two matrices with the same number of rows.",
+      "description": [
+        "augment(left,right) appends the columns of the right matrix to the left matrix.",
+        "Both matrices must have the same number of rows."
+      ],
+      "examples": [
+        {
+          "expression": "augment(matrix([1,2],[3,4]),matrix([5],[6]))",
+          "output": "matrix([1, 2, 5], [3, 4, 6])",
+          "description": "Append one column to a two-column matrix."
+        }
+      ]
+    },
+    {
+      "name": "rref",
+      "summary": "Returns the reduced row-echelon form of a matrix.",
+      "description": [
+        "rref(...) performs row reduction and returns the reduced row-echelon form.",
+        "An optional prime modulus selects finite-field arithmetic."
+      ],
+      "examples": [
+        {
+          "expression": "rref(matrix([1,2],[3,4]))",
+          "output": "matrix([1, 0], [0, 1])",
+          "description": "Reduce an invertible 2 by 2 matrix."
+        }
+      ]
+    },
+    {
+      "name": "nullspace",
+      "summary": "Returns a basis for the nullspace of a matrix.",
+      "description": [
+        "nullspace(...) returns a Vector whose entries are basis vectors for the matrix nullspace.",
+        "The operation is available in Nerdamer Notation, on the root nerdamer API, and as a direct import from nerdamer/structures."
+      ],
+      "examples": [
+        {
+          "expression": "nullspace(matrix([1,2,3],[2,4,6]))",
+          "output": "[[-2, 1, 0], [-3, 0, 1]]",
+          "description": "Find a basis for a rank-deficient matrix."
+        }
+      ],
+      "notes": [
+        "An optional second argument selects finite-field arithmetic with the supplied prime modulus."
+      ]
+    },
+    {
+      "name": "determinant",
+      "summary": "Computes the determinant of a square matrix.",
+      "description": [
+        "The determinant can contain symbolic entries as well as numbers. The direct helper works on a copy of the supplied Matrix, so computing the determinant does not mutate the original matrix.",
+        "A non-square matrix does not have a determinant and is rejected."
+      ],
+      "examples": [
+        {
+          "expression": "determinant(matrix([1,2],[3,4]))",
+          "output": "-2",
+          "description": "Compute the determinant of a 2 by 2 matrix."
+        },
+        {
+          "expression": "determinant(imatrix(3))",
+          "output": "1",
+          "description": "The determinant of an identity matrix is 1."
+        }
+      ]
+    },
+    {
+      "name": "imatrix",
+      "summary": "Creates an identity matrix of the requested integer size.",
+      "description": [
+        "For an integer n, imatrix creates an n by n Matrix with ones on the main diagonal and zeros elsewhere. A non-integer symbolic size remains as an unevaluated imatrix call."
+      ],
+      "examples": [
+        {
+          "expression": "imatrix(3)",
+          "output": "matrix([1, 0, 0], [0, 1, 0], [0, 0, 1])",
+          "description": "Create a 3 by 3 identity matrix."
+        }
+      ]
+    },
+    {
+      "name": "dot",
+      "summary": "Computes the dot product of two vectors.",
+      "description": [
+        "Concrete vectors must have the same length. Their corresponding elements are multiplied and summed to produce a scalar Expression. Symbolic non-vector operands can remain as an unevaluated dot call."
+      ],
+      "examples": [
+        {
+          "expression": "dot([1,2,3],[4,5,6])",
+          "output": "32",
+          "description": "Compute a numeric three-dimensional dot product."
+        },
+        {
+          "expression": "dot([x,y],[a,b])",
+          "description": "Keep symbolic vector components in the scalar result."
+        }
+      ]
+    },
+    {
+      "name": "cross",
+      "summary": "Computes the cross product of two three-dimensional vectors.",
+      "description": [
+        "Concrete Vector operands must each contain exactly three elements. The result is a Vector perpendicular to the two input vectors. Symbolic non-vector operands can remain as an unevaluated cross call."
+      ],
+      "examples": [
+        {
+          "expression": "cross([1,0,0],[0,1,0])",
+          "output": "[0, 0, 1]",
+          "description": "Compute the cross product of the first two standard basis vectors."
+        },
+        {
+          "expression": "cross([a,b,c],[x,y,z])",
+          "description": "Compute a cross product with symbolic components."
+        }
+      ]
+    },
+    {
+      "name": "and",
+      "summary": "Returns 1 when every argument is nonzero and 0 otherwise.",
+      "description": [
+        "and uses Nerdamer Scripting truthiness, where zero is false and nonzero expressions are true. Arguments are deferred and evaluation stops at the first false value."
+      ],
+      "examples": [
+        {
+          "expression": "and(1,2,3)",
+          "output": "1",
+          "description": "All nonzero arguments are true."
+        },
+        {
+          "expression": "and(1,0,3)",
+          "output": "0",
+          "description": "Stop at a false argument."
+        }
+      ]
+    },
+    {
+      "name": "or",
+      "summary": "Returns 1 when at least one argument is nonzero and 0 otherwise.",
+      "description": [
+        "or uses Nerdamer Scripting truthiness, where zero is false and nonzero expressions are true. Arguments are deferred and evaluation stops at the first true value."
+      ],
+      "examples": [
+        {
+          "expression": "or(0,0,4)",
+          "output": "1",
+          "description": "Return true when one argument is nonzero."
+        },
+        {
+          "expression": "or(0,0,0)",
+          "output": "0",
+          "description": "Return false when every argument is zero."
+        }
+      ]
+    },
+    {
+      "name": "not",
+      "summary": "Returns 1 for a zero argument and 0 for a nonzero argument.",
+      "description": [
+        "not applies Nerdamer Scripting truthiness to one evaluated expression."
+      ],
+      "examples": [
+        {
+          "expression": "not(0)",
+          "output": "1",
+          "description": "Negate a false value."
+        },
+        {
+          "expression": "not(5)",
+          "output": "0",
+          "description": "Negate a true value."
+        }
+      ]
+    },
+    {
+      "name": "xor",
+      "summary": "Returns 1 when an odd number of arguments are nonzero.",
+      "description": [
+        "xor evaluates all arguments using Nerdamer Scripting truthiness and toggles the result for each true value."
+      ],
+      "examples": [
+        {
+          "expression": "xor(1,1,1)",
+          "output": "1",
+          "description": "Three true arguments have odd parity."
+        },
+        {
+          "expression": "xor(1,1)",
+          "output": "0",
+          "description": "Two true arguments have even parity."
+        }
+      ]
+    },
+    {
+      "name": "if",
+      "summary": "Evaluates one branch based on a Nerdamer Scripting condition.",
+      "description": [
+        "The condition is evaluated first. Only the selected branch is evaluated, so errors or assignments in the unselected branch do not run.",
+        "The false branch is optional."
+      ],
+      "examples": [
+        {
+          "expression": "if(1,5,6)",
+          "output": "5",
+          "description": "Evaluate only the true branch."
+        },
+        {
+          "expression": "if(0,5,6)",
+          "output": "6",
+          "description": "Evaluate only the false branch."
+        }
+      ]
+    },
+    {
+      "name": "iferror",
+      "summary": "Evaluates a fallback expression only when the first expression throws an ordinary error.",
+      "description": [
+        "The first argument is deferred. If it succeeds, its value is returned and the fallback is not evaluated. Parser control-flow signals such as return, break, and continue are not treated as ordinary errors."
+      ],
+      "examples": [
+        {
+          "expression": "iferror(5,0/0)",
+          "output": "5",
+          "description": "Do not evaluate the fallback when the first expression succeeds."
+        },
+        {
+          "expression": "iferror(0/0,7)",
+          "output": "7",
+          "description": "Evaluate the fallback after an error."
+        }
+      ]
+    },
+    {
+      "name": "iserror",
+      "summary": "Returns 1 when evaluating an expression throws an ordinary error and 0 otherwise.",
+      "description": [
+        "The expression is evaluated lazily. Parser control-flow signals are allowed to continue to their enclosing scripting construct instead of being reported as ordinary errors."
+      ],
+      "examples": [
+        {
+          "expression": "iserror(5)",
+          "output": "0",
+          "description": "A successful expression is not an error."
+        },
+        {
+          "expression": "iserror(0/0)",
+          "output": "1",
+          "description": "Detect an evaluation error."
+        }
+      ]
+    },
+    {
+      "name": "block",
+      "summary": "Evaluates a sequence of Nerdamer Scripting expressions in order.",
+      "description": [
+        "block evaluates its deferred arguments from left to right and returns the final completed result. return, break, and continue are allowed to propagate to the enclosing function or loop boundary.",
+        "At the outer parser boundary, an escaping return supplies the block result."
+      ],
+      "examples": [
+        {
+          "expression": "block(x:2,y:3,x+y)",
+          "output": "5",
+          "description": "Run assignments in sequence and return the last value."
+        },
+        {
+          "expression": "block(return(7),9)",
+          "output": "7",
+          "description": "Stop at a return value."
+        }
+      ]
+    },
+    {
+      "name": "while",
+      "summary": "Repeats a Nerdamer Scripting body while its condition is nonzero.",
+      "description": [
+        "The deferred condition is reevaluated before every iteration. The final completed body value is returned, and a loop that never completes a body produces an empty result.",
+        "break exits the nearest loop, continue starts the next iteration, and a configurable iteration limit prevents runaway loops."
+      ],
+      "examples": [
+        {
+          "expression": "block(x:0,while(3-x,x:x+1),x)",
+          "output": "3",
+          "description": "Update parser state until the condition becomes zero."
+        }
+      ]
+    },
+    {
+      "name": "for",
+      "summary": "Runs a four-part Nerdamer Scripting loop.",
+      "description": [
+        "for evaluates its initializer once, then reevaluates the condition before each iteration. After a completed body the update expression runs before the next condition check.",
+        "continue still runs the pending update; break and return skip it. The same loop-iteration limit used by while applies."
+      ],
+      "examples": [
+        {
+          "expression": "block(k:0,total:0,for(k:0,4-k,k:k+1,total:total+k),total)",
+          "output": "6",
+          "description": "Accumulate values across a finite loop."
+        }
+      ]
+    },
+    {
+      "name": "each",
+      "summary": "Evaluates a body once for each value in a parser container.",
+      "description": [
+        "each(container,value,body) traverses a Vector, Matrix, ValuesSet, Collection, or Dictionary and binds each visited value to the supplied local variable while the body runs.",
+        "Matrices are traversed in row-major order. The iteration variable is local to each body evaluation."
+      ],
+      "examples": [
+        {
+          "expression": "block(total:0,each([1,2,3],x,total:total+x),total)",
+          "output": "6",
+          "description": "Accumulate values from a Vector."
+        }
+      ]
+    },
+    {
+      "name": "evaluate",
+      "summary": "Evaluates a parser value immediately, optionally with substitutions.",
+      "description": [
+        "evaluate(value) invokes the value's existing evaluation behavior from Nerdamer Scripting.",
+        "The two-argument form accepts a Dictionary of substitutions. The three-argument form accepts a variable Vector and a same-length point Vector, which is useful for repeated numerical evaluation without rebuilding substitution dictionaries."
+      ],
+      "examples": [
+        {
+          "expression": "evaluate(sin(2))",
+          "output": "0.9092974268256816954",
+          "description": "Evaluate a numerical expression immediately."
+        },
+        {
+          "expression": "evaluate([x+y,x*y],{x=>2,y=>3})",
+          "output": "[5, 6]",
+          "description": "Evaluate a structured value with Dictionary substitutions."
+        },
+        {
+          "expression": "evaluate([u+v,u*v],[u,v],[2,3])",
+          "output": "[5, 6]",
+          "description": "Evaluate from parallel variable and point Vectors."
+        }
+      ],
+      "notes": [
+        "If evaluation cannot complete, evaluate returns the resolved input unchanged rather than creating a symbolic evaluate(...) node."
+      ]
+    },
+    {
+      "name": "break",
+      "summary": "Exits the nearest Nerdamer Scripting loop.",
+      "description": [
+        "break can only be used inside while or for. It is consumed by the nearest loop and cannot cross a symbolic-function boundary."
+      ],
+      "examples": [
+        {
+          "expression": "block(x:0,while(1,block(x:x+1,break())),x)",
+          "output": "1",
+          "description": "Exit the loop after the first iteration."
+        }
+      ]
+    },
+    {
+      "name": "continue",
+      "summary": "Skips the remainder of the current Nerdamer Scripting loop iteration.",
+      "description": [
+        "continue is consumed by the nearest loop. In a for loop, the update expression still runs before the next condition check."
+      ],
+      "examples": [
+        {
+          "expression": "block(k:0,s:0,while(3-k,block(k:k+1,continue(),s:s+1)),[k,s])",
+          "output": "[3, 0]",
+          "description": "Skip the statements after continue."
+        }
+      ]
+    },
+    {
+      "name": "return",
+      "summary": "Returns a value from the current symbolic function or outer scripting block.",
+      "description": [
+        "Inside a parser-defined symbolic function, return stops evaluation of the current function body and supplies its value. The outermost scripting block can also consume an escaping return."
+      ],
+      "examples": [
+        {
+          "expression": "block(return(7),9)",
+          "output": "7",
+          "description": "Stop evaluation and return 7."
+        }
+      ]
+    },
+    {
+      "name": "let",
+      "summary": "Creates temporary Nerdamer Scripting bindings for a body expression.",
+      "description": [
+        "let accepts variable/value pairs followed by a body. The bindings are local to that body and prior parser values are restored afterward, which makes it suitable for function-local loop variables and temporaries."
+      ],
+      "examples": [
+        {
+          "expression": "let(x,2,y,3,x+y)",
+          "output": "5",
+          "description": "Evaluate a body with two local bindings."
+        }
+      ]
+    },
+    {
+      "name": "Chi",
+      "summary": "Computes the hyperbolic cosine integral.",
+      "description": [
+        "Chi is the hyperbolic analogue of the cosine integral. Exact endpoint cases are simplified, numeric inputs can be evaluated, and symbolic inputs remain as Chi(x).",
+        "The implementation treats Chi as an even function on its supported principal real form; Chi(0) tends to negative infinity."
+      ],
+      "examples": [
+        {
+          "expression": "Chi(0)",
+          "output": "-Inf",
+          "description": "Use the singular value at the origin."
+        },
+        {
+          "expression": "Chi(x)",
+          "description": "Keep a symbolic argument unevaluated."
+        }
+      ]
+    },
+    {
+      "name": "Ci",
+      "summary": "Computes the cosine integral.",
+      "description": [
+        "Ci evaluates supported numeric inputs and preserves symbolic arguments. It is treated as even on the supported principal real form.",
+        "Ci(0) tends to negative infinity, while Ci approaches zero at positive or negative infinity."
+      ],
+      "examples": [
+        {
+          "expression": "Ci(0)",
+          "output": "-Inf",
+          "description": "Use the singular value at the origin."
+        },
+        {
+          "expression": "Ci(x)",
+          "description": "Keep a symbolic cosine integral."
+        }
+      ]
+    },
+    {
+      "name": "Ei",
+      "summary": "Computes the exponential integral.",
+      "description": [
+        "Ei evaluates supported numeric arguments and otherwise remains symbolic. The implementation uses the principal real exponential-integral behavior for real inputs.",
+        "Ei(0) tends to negative infinity; Ei approaches zero at negative infinity and positive infinity at positive infinity."
+      ],
+      "examples": [
+        {
+          "expression": "Ei(0)",
+          "output": "-Inf",
+          "description": "Use the singular value at the origin."
+        },
+        {
+          "expression": "Ei(x)",
+          "description": "Keep a symbolic exponential integral."
+        }
+      ]
+    },
+    {
+      "name": "Li",
+      "summary": "Computes the logarithmic integral.",
+      "description": [
+        "Li evaluates supported non-negative numeric arguments and otherwise remains symbolic. The function has a logarithmic singularity at 1.",
+        "Negative numeric inputs are retained symbolically rather than forced through a real-valued numerical approximation."
+      ],
+      "examples": [
+        {
+          "expression": "Li(1)",
+          "output": "-Inf",
+          "description": "Use the singular value at 1."
+        },
+        {
+          "expression": "Li(x)",
+          "description": "Keep a symbolic logarithmic integral."
+        }
+      ]
+    },
+    {
+      "name": "Shi",
+      "summary": "Computes the hyperbolic sine integral.",
+      "description": [
+        "Shi evaluates supported numeric arguments and otherwise remains symbolic. It is an odd function, so negative arguments are reduced through Shi(-x)=-Shi(x)."
+      ],
+      "examples": [
+        {
+          "expression": "Shi(0)",
+          "output": "0",
+          "description": "Evaluate the origin exactly."
+        },
+        {
+          "expression": "Shi(x)",
+          "description": "Keep a symbolic hyperbolic sine integral."
+        }
+      ]
+    },
+    {
+      "name": "Si",
+      "summary": "Computes the sine integral.",
+      "description": [
+        "Si evaluates supported numeric arguments and otherwise remains symbolic. It is an odd function, and its limits at positive and negative infinity are plus or minus pi/2."
+      ],
+      "examples": [
+        {
+          "expression": "Si(0)",
+          "output": "0",
+          "description": "Evaluate the origin exactly."
+        },
+        {
+          "expression": "Si(x)",
+          "description": "Keep a symbolic sine integral."
+        }
+      ]
+    },
+    {
+      "name": "delta",
+      "summary": "Represents the Dirac delta distribution.",
+      "description": [
+        "For non-zero numeric inputs, delta evaluates to zero. At zero it remains symbolic because the Dirac delta is a distribution rather than an ordinary finite-valued function.",
+        "Symbolic inputs remain as delta(x), and assumptions can reduce a symbol known to be non-zero to zero."
+      ],
+      "examples": [
+        {
+          "expression": "delta(5)",
+          "output": "0",
+          "description": "A non-zero numeric argument evaluates to zero."
+        },
+        {
+          "expression": "delta(0)",
+          "description": "Keep the singular point symbolic."
+        }
+      ]
+    },
+    {
+      "name": "dfact",
+      "summary": "Computes the double factorial of an expression.",
+      "description": [
+        "Ordinary parsing preserves dfact as a symbolic function instead of forcing numerical evaluation. Call evaluate() when a numeric value is required; non-negative integers are then computed exactly and supported non-integers use the generalized gamma-based form.",
+        "The parser name dfact corresponds to Nerdamer's double-factorial implementation."
+      ],
+      "examples": [
+        {
+          "expression": "dfact(6)",
+          "description": "Keep an integer double factorial symbolic until evaluation is requested."
+        },
+        {
+          "expression": "dfact(7)",
+          "description": "Preserve the odd double factorial during ordinary parsing."
+        }
+      ]
+    },
+    {
+      "name": "erf",
+      "summary": "Computes the error function.",
+      "description": [
+        "Numeric inputs are evaluated to high-precision decimal values, while symbolic inputs remain as erf(x). The function approaches 1 at positive infinity and -1 at negative infinity."
+      ],
+      "examples": [
+        {
+          "expression": "erf(0)",
+          "output": "0",
+          "description": "Evaluate the origin exactly."
+        },
+        {
+          "expression": "erf(x)",
+          "description": "Keep a symbolic error function."
+        }
+      ]
+    },
+    {
+      "name": "erfc",
+      "summary": "Computes the complementary error function 1-erf(x).",
+      "description": [
+        "erfc reuses the error-function implementation and subtracts its result from 1. Numeric inputs therefore evaluate whenever erf does."
+      ],
+      "examples": [
+        {
+          "expression": "erfc(0)",
+          "output": "1",
+          "description": "Use erfc(0)=1."
+        },
+        {
+          "expression": "erfc(100)",
+          "output": "0",
+          "description": "Resolve a large positive argument to zero."
+        }
+      ]
+    },
+    {
+      "name": "factorial",
+      "summary": "Computes the factorial of an expression.",
+      "description": [
+        "Non-negative integers are evaluated exactly. Supported half-integers are reduced to closed forms involving sqrt(pi), and non-integer numerical evaluation can use the gamma function.",
+        "The compatibility spelling fact is an alias of factorial."
+      ],
+      "examples": [
+        {
+          "expression": "factorial(5)",
+          "output": "120",
+          "description": "Evaluate an integer factorial exactly."
+        },
+        {
+          "expression": "factorial(1/2)",
+          "output": "(1/2)*pi^(1/2)",
+          "description": "Reduce a half-integer factorial symbolically."
+        }
+      ]
+    },
+    {
+      "name": "fib",
+      "summary": "Computes a Fibonacci number for an integer index.",
+      "description": [
+        "Integer inputs are evaluated exactly, including negative indices through the negafibonacci relation. Symbolic and non-integer inputs remain as fib(x)."
+      ],
+      "examples": [
+        {
+          "expression": "fib(10)",
+          "output": "55",
+          "description": "Evaluate an exact Fibonacci number."
+        },
+        {
+          "expression": "fib(-4)",
+          "output": "-3",
+          "description": "Use the negafibonacci relation for a negative index."
+        }
+      ]
+    },
+    {
+      "name": "gamma",
+      "summary": "Computes the gamma function.",
+      "description": [
+        "Nerdamer evaluates supported integer, half-integer, and numeric arguments, using exact symbolic forms where available. Other symbolic arguments remain as gamma(x).",
+        "Gamma extends factorial through gamma(n)=(n-1)! for positive integers."
+      ],
+      "examples": [
+        {
+          "expression": "gamma(5)",
+          "output": "24",
+          "description": "Use gamma(n)=(n-1)! for a positive integer."
+        },
+        {
+          "expression": "gamma(1/2)",
+          "output": "pi^(1/2)",
+          "description": "Use the exact half-integer value."
+        }
+      ]
+    },
+    {
+      "name": "heaviside",
+      "summary": "Computes the Heaviside step function.",
+      "description": [
+        "Nerdamer uses the half-maximum convention: the result is 0 for negative inputs, 1/2 at zero, and 1 for positive inputs. Symbolic inputs remain as heaviside(x) unless assumptions determine their sign."
+      ],
+      "examples": [
+        {
+          "expression": "heaviside(-2)",
+          "output": "0",
+          "description": "Evaluate a negative argument."
+        },
+        {
+          "expression": "heaviside(0)",
+          "output": "1/2",
+          "description": "Use the half-maximum value at zero."
+        },
+        {
+          "expression": "heaviside(3)",
+          "output": "1",
+          "description": "Evaluate a positive argument."
+        }
+      ]
+    },
+    {
+      "name": "hypot",
+      "summary": "Computes the Euclidean magnitude sqrt(x^2+y^2).",
+      "description": [
+        "hypot combines two components through a square root and lets Nerdamer simplify the resulting algebraic form. This is also used internally for complex magnitudes."
+      ],
+      "examples": [
+        {
+          "expression": "hypot(3,4)",
+          "output": "5",
+          "description": "Evaluate the 3-4-5 triangle."
+        },
+        {
+          "expression": "hypot(2*a,b)",
+          "output": "(4*a^2+b^2)^(1/2)",
+          "description": "Keep symbolic components in the magnitude."
+        }
+      ]
+    },
+    {
+      "name": "mod",
+      "summary": "Computes the remainder modulo another expression for supported numeric inputs.",
+      "description": [
+        "Numeric arguments use Nerdamer's modulus implementation. Unsupported symbolic cases remain as mod(a,b), and undefined inputs such as a zero modulus are rejected."
+      ],
+      "examples": [
+        {
+          "expression": "mod(7,2)",
+          "output": "1",
+          "description": "Compute a simple integer remainder."
+        }
+      ]
+    },
+    {
+      "name": "modinv",
+      "summary": "Computes a modular multiplicative inverse.",
+      "description": [
+        "For supported integers a and m, modinv returns a value x such that a*x is congruent to 1 modulo m. The inverse only exists when the inputs satisfy the required coprimality conditions."
+      ],
+      "examples": [
+        {
+          "expression": "modinv(3,7)",
+          "output": "5",
+          "description": "Find the inverse of 3 modulo 7."
+        },
+        {
+          "expression": "modinv(10,17)",
+          "output": "12",
+          "description": "Find the inverse of 10 modulo 17."
+        }
+      ]
+    },
+    {
+      "name": "sinc",
+      "summary": "Computes the normalized sinc function, sin(x)/x.",
+      "description": [
+        "Nerdamer uses the removable-singularity value sinc(0)=1 and treats sinc as an even function. Numeric inputs can be evaluated, while unresolved symbolic inputs remain as sinc(x)."
+      ],
+      "examples": [
+        {
+          "expression": "sinc(0)",
+          "output": "1",
+          "description": "Use the conventional value at the origin."
+        },
+        {
+          "expression": "sinc(x)",
+          "description": "Keep an unresolved symbolic argument in sinc form."
+        }
+      ]
+    },
+    {
+      "name": "isPrime",
+      "summary": "Tests whether an exact integer is prime.",
+      "description": [
+        "Use isprime(...) in Nerdamer Notation and isPrime(...) from the JavaScript / TypeScript API.",
+        "Exact integer inputs return 1 for prime and 0 for non-prime values. Inputs that cannot be classified as exact integers remain symbolic."
+      ],
+      "examples": [
+        {
+          "expression": "isprime(29)",
+          "output": "1",
+          "description": "Recognize a prime integer."
+        },
+        {
+          "expression": "isprime(21)",
+          "output": "0",
+          "description": "Reject a composite integer."
+        },
+        {
+          "expression": "isprime(1)",
+          "output": "0",
+          "description": "Treat 1 as non-prime."
+        }
+      ]
+    },
+    {
+      "name": "cos",
+      "summary": "Computes the cosine of an angle in radians.",
+      "description": [
+        "Nerdamer returns exact symbolic values for common rational multiples of pi, simplifies cosine's even symmetry, and evaluates supported inverse-trigonometric compositions."
+      ],
+      "examples": [
+        {
+          "expression": "cos(pi/3)",
+          "output": "1/2",
+          "description": "Use an exact special angle."
+        },
+        {
+          "expression": "cos(x)",
+          "description": "Keep a symbolic angle."
+        }
+      ]
+    },
+    {
+      "name": "sin",
+      "summary": "Computes the sine of an angle in radians.",
+      "description": [
+        "Nerdamer returns exact symbolic values for common rational multiples of pi, simplifies sine's odd symmetry, and evaluates supported inverse-trigonometric compositions."
+      ],
+      "examples": [
+        {
+          "expression": "sin(pi/6)",
+          "output": "1/2",
+          "description": "Use an exact special angle."
+        },
+        {
+          "expression": "sin(x)",
+          "description": "Keep a symbolic angle."
+        }
+      ]
+    },
+    {
+      "name": "tan",
+      "summary": "Computes the tangent of an angle in radians.",
+      "description": [
+        "Nerdamer returns exact values for supported special angles, simplifies odd symmetry, and rejects points where tangent is undefined."
+      ],
+      "examples": [
+        {
+          "expression": "tan(pi/4)",
+          "output": "1",
+          "description": "Use an exact special angle."
+        },
+        {
+          "expression": "tan(x)",
+          "description": "Keep a symbolic angle."
+        }
+      ]
+    },
+    {
+      "name": "sec",
+      "summary": "Computes the secant 1/cos(x).",
+      "description": [
+        "Exact cosine values are inverted where possible. Inputs at which cosine is zero are undefined."
+      ],
+      "examples": [
+        {
+          "expression": "sec(pi/3)",
+          "output": "2",
+          "description": "Invert an exact cosine value."
+        },
+        {
+          "expression": "sec(x)",
+          "description": "Keep a symbolic secant."
+        }
+      ]
+    },
+    {
+      "name": "csc",
+      "summary": "Computes the cosecant 1/sin(x).",
+      "description": [
+        "Exact sine values are inverted where possible. Integer multiples of pi are undefined because sine vanishes there."
+      ],
+      "examples": [
+        {
+          "expression": "csc(pi/6)",
+          "output": "2",
+          "description": "Invert an exact sine value."
+        },
+        {
+          "expression": "csc(x)",
+          "description": "Keep a symbolic cosecant."
+        }
+      ]
+    },
+    {
+      "name": "cot",
+      "summary": "Computes the cotangent cos(x)/sin(x).",
+      "description": [
+        "Exact sine and cosine values are combined where possible. Integer multiples of pi are undefined because the denominator vanishes."
+      ],
+      "examples": [
+        {
+          "expression": "cot(pi/4)",
+          "output": "1",
+          "description": "Use an exact special angle."
+        },
+        {
+          "expression": "cot(x)",
+          "description": "Keep a symbolic cotangent."
+        }
+      ]
+    },
+    {
+      "name": "acos",
+      "summary": "Computes the principal arccosine in radians.",
+      "description": [
+        "Known real inputs are reduced to exact multiples of pi. Numeric inputs outside the real interval [-1,1] can produce complex principal values."
+      ],
+      "examples": [
+        {
+          "expression": "acos(1)",
+          "output": "0",
+          "description": "Evaluate an endpoint of the real domain."
+        },
+        {
+          "expression": "acos(1/2)",
+          "output": "(1/3)*pi",
+          "description": "Use an exact inverse-trig value."
+        }
+      ]
+    },
+    {
+      "name": "asin",
+      "summary": "Computes the principal arcsine in radians.",
+      "description": [
+        "Known real inputs are reduced to exact multiples of pi. Numeric inputs outside the real interval [-1,1] can produce complex principal values."
+      ],
+      "examples": [
+        {
+          "expression": "asin(0)",
+          "output": "0",
+          "description": "Evaluate the origin."
+        },
+        {
+          "expression": "asin(1/2)",
+          "output": "(1/6)*pi",
+          "description": "Use an exact inverse-trig value."
+        }
+      ]
+    },
+    {
+      "name": "atan",
+      "summary": "Computes the principal arctangent in radians.",
+      "description": [
+        "Known inputs are reduced to exact multiples of pi when possible. Positive and negative infinity map to plus or minus pi/2."
+      ],
+      "examples": [
+        {
+          "expression": "atan(1)",
+          "output": "(1/4)*pi",
+          "description": "Use an exact inverse-trig value."
+        },
+        {
+          "expression": "atan(x)",
+          "description": "Keep a symbolic arctangent."
+        }
+      ]
+    },
+    {
+      "name": "asec",
+      "summary": "Computes the principal inverse secant.",
+      "description": [
+        "asec is evaluated through reciprocal/inverse-trigonometric identities when the input can be simplified; otherwise the expression remains symbolic."
+      ],
+      "examples": [
+        {
+          "expression": "asec(2)",
+          "description": "Evaluate an inverse secant when supported."
+        }
+      ]
+    },
+    {
+      "name": "acsc",
+      "summary": "Computes the principal inverse cosecant.",
+      "description": [
+        "acsc is evaluated through reciprocal/inverse-trigonometric identities when the input can be simplified; otherwise the expression remains symbolic."
+      ],
+      "examples": [
+        {
+          "expression": "acsc(2)",
+          "description": "Evaluate an inverse cosecant when supported."
+        }
+      ]
+    },
+    {
+      "name": "acot",
+      "summary": "Computes the principal inverse cotangent.",
+      "description": [
+        "For real inputs, Nerdamer uses the principal range from 0 to pi and handles zero and infinities explicitly."
+      ],
+      "examples": [
+        {
+          "expression": "acot(1)",
+          "output": "(1/4)*pi",
+          "description": "Use an exact inverse-cotangent value."
+        }
+      ]
+    },
+    {
+      "name": "atan2",
+      "summary": "Computes the quadrant-aware two-argument arctangent atan2(y,x).",
+      "description": [
+        "atan2 uses the signs of both coordinates to return an angle in the range (-pi,pi]. Axis cases and many exact ratios are simplified symbolically."
+      ],
+      "examples": [
+        {
+          "expression": "atan2(1,1)",
+          "output": "(1/4)*pi",
+          "description": "Return the first-quadrant angle."
+        },
+        {
+          "expression": "atan2(1,0)",
+          "output": "(1/2)*pi",
+          "description": "Handle the positive y-axis."
+        }
+      ]
+    },
+    {
+      "name": "cosh",
+      "summary": "Computes the hyperbolic cosine.",
+      "description": [
+        "Numeric inputs can be evaluated, complex inputs use the standard complex identity, and symbolic inputs remain as cosh(x)."
+      ],
+      "examples": [
+        {
+          "expression": "cosh(0)",
+          "output": "1",
+          "description": "Evaluate the origin."
+        },
+        {
+          "expression": "cosh(x)",
+          "description": "Keep a symbolic hyperbolic cosine."
+        }
+      ]
+    },
+    {
+      "name": "sinh",
+      "summary": "Computes the hyperbolic sine.",
+      "description": [
+        "Numeric inputs can be evaluated, complex inputs use the standard complex identity, and symbolic inputs remain as sinh(x)."
+      ],
+      "examples": [
+        {
+          "expression": "sinh(0)",
+          "output": "0",
+          "description": "Evaluate the origin."
+        },
+        {
+          "expression": "sinh(x)",
+          "description": "Keep a symbolic hyperbolic sine."
+        }
+      ]
+    },
+    {
+      "name": "tanh",
+      "summary": "Computes the hyperbolic tangent.",
+      "description": [
+        "Numeric inputs can be evaluated, infinities reduce to plus or minus 1, and symbolic inputs remain as tanh(x)."
+      ],
+      "examples": [
+        {
+          "expression": "tanh(0)",
+          "output": "0",
+          "description": "Evaluate the origin."
+        },
+        {
+          "expression": "tanh(x)",
+          "description": "Keep a symbolic hyperbolic tangent."
+        }
+      ]
+    },
+    {
+      "name": "sech",
+      "summary": "Computes the hyperbolic secant 1/cosh(x).",
+      "description": [
+        "sech evaluates through hyperbolic cosine when possible. It equals 1 at zero and tends to zero at either infinity."
+      ],
+      "examples": [
+        {
+          "expression": "sech(0)",
+          "output": "1",
+          "description": "Evaluate the origin."
+        },
+        {
+          "expression": "sech(x)",
+          "description": "Keep a symbolic hyperbolic secant."
+        }
+      ]
+    },
+    {
+      "name": "csch",
+      "summary": "Computes the hyperbolic cosecant 1/sinh(x).",
+      "description": [
+        "csch evaluates through hyperbolic sine when possible. It is undefined at zero and tends to zero at either infinity."
+      ],
+      "examples": [
+        {
+          "expression": "csch(x)",
+          "description": "Keep a symbolic hyperbolic cosecant."
+        }
+      ]
+    },
+    {
+      "name": "coth",
+      "summary": "Computes the hyperbolic cotangent 1/tanh(x).",
+      "description": [
+        "coth evaluates through hyperbolic tangent when possible. It is undefined at zero and tends to plus or minus 1 at the corresponding infinities."
+      ],
+      "examples": [
+        {
+          "expression": "coth(x)",
+          "description": "Keep a symbolic hyperbolic cotangent."
+        }
+      ]
+    },
+    {
+      "name": "acosh",
+      "summary": "Computes the principal inverse hyperbolic cosine.",
+      "description": [
+        "acosh(1) is zero. Inputs below the real domain can produce complex principal values, while unsupported symbolic cases remain as acosh(x)."
+      ],
+      "examples": [
+        {
+          "expression": "acosh(1)",
+          "output": "0",
+          "description": "Evaluate the real-domain endpoint."
+        },
+        {
+          "expression": "acosh(x)",
+          "description": "Keep a symbolic inverse hyperbolic cosine."
+        }
+      ]
+    },
+    {
+      "name": "asinh",
+      "summary": "Computes the principal inverse hyperbolic sine.",
+      "description": [
+        "asinh evaluates numeric and supported complex arguments and maps positive and negative infinity to the corresponding infinities."
+      ],
+      "examples": [
+        {
+          "expression": "asinh(0)",
+          "output": "0",
+          "description": "Evaluate the origin."
+        },
+        {
+          "expression": "asinh(x)",
+          "description": "Keep a symbolic inverse hyperbolic sine."
+        }
+      ]
+    },
+    {
+      "name": "atanh",
+      "summary": "Computes the principal inverse hyperbolic tangent.",
+      "description": [
+        "atanh evaluates supported numeric and complex arguments using the principal logarithmic form. Symbolic arguments remain as atanh(x) when no simplification applies."
+      ],
+      "examples": [
+        {
+          "expression": "atanh(0)",
+          "output": "0",
+          "description": "Evaluate the origin."
+        },
+        {
+          "expression": "atanh(x)",
+          "description": "Keep a symbolic inverse hyperbolic tangent."
+        }
+      ]
+    },
+    {
+      "name": "asech",
+      "summary": "Computes the principal inverse hyperbolic secant.",
+      "description": [
+        "asech is evaluated through reciprocal inverse-hyperbolic identities when possible; otherwise it remains symbolic."
+      ],
+      "examples": [
+        {
+          "expression": "asech(1)",
+          "description": "Evaluate an inverse hyperbolic secant at a simple value."
+        }
+      ]
+    },
+    {
+      "name": "acsch",
+      "summary": "Computes the principal inverse hyperbolic cosecant.",
+      "description": [
+        "acsch is evaluated through reciprocal inverse-hyperbolic identities when possible; otherwise it remains symbolic."
+      ],
+      "examples": [
+        {
+          "expression": "acsch(2)",
+          "description": "Evaluate an inverse hyperbolic cosecant when supported."
+        }
+      ]
+    },
+    {
+      "name": "acoth",
+      "summary": "Computes the principal inverse hyperbolic cotangent.",
+      "description": [
+        "acoth uses the logarithmic principal form for supported values and tends to zero at positive or negative infinity. Other symbolic cases remain as acoth(x)."
+      ],
+      "examples": [
+        {
+          "expression": "acoth(x)",
+          "description": "Keep a symbolic inverse hyperbolic cotangent."
+        }
+      ]
+    }
+  ]
+}

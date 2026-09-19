@@ -1,0 +1,35 @@
+/* Fixed frosted site header. */
+html {
+  scroll-padding-top: calc(var(--header-h) + 24px);
+}
+
+body {
+  padding-top: calc(var(--header-h) + 3px);
+}
+
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgb(var(--bg-elevated) / .72);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  backdrop-filter: blur(18px) saturate(135%);
+  box-shadow: 0 5px 18px rgb(var(--shadow) / .14);
+  transition: background-color .18s ease, box-shadow .18s ease;
+}
+
+.site-header.is-scrolled {
+  background: rgb(var(--bg-elevated) / .84);
+  box-shadow: 0 8px 26px rgb(var(--shadow) / .22);
+}
+
+html.dark .site-header {
+  background: rgb(var(--bg-elevated) / .68);
+  box-shadow: 0 5px 18px rgb(var(--shadow) / .22);
+}
+
+html.dark .site-header.is-scrolled {
+  background: rgb(var(--bg-elevated) / .78);
+  box-shadow: 0 8px 26px rgb(var(--shadow) / .34);
+}

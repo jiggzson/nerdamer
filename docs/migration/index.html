@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Migrating from Nerdamer 1.xx — Documentation</title>
+  <meta name="description" content="Migration guidance from Nerdamer 1.xx to Nerdamer 2.xx.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../styles/site.css">
+  <link rel="stylesheet" href="../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../styles/logo.css">
+  <link rel="stylesheet" href="../../styles/header.css">
+  <link rel="stylesheet" href="../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../styles/migration.css">
+  <link rel="stylesheet" href="../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">Migration</div>
+<h1>Moving from Nerdamer 1.xx</h1>
+<p class="migration-lead">Version 2.xx is a TypeScript rewrite. Much everyday code still looks familiar, but package loading, structured value handling, stored state, solving results, and lower-level extension APIs have changed enough that a migration deserves more than a version-number swap.</p>
+<p>Migrating to 2.xx provides first-class TypeScript support, clearer package imports, more cohesive structured values, and structured solver results.</p>
+<p>Every effort has been made to carry forward the functionality available in 1.xx. Because 2.xx is a complete rewrite rather than a modification of the previous codebase, some features, aliases, edge cases, or less commonly used APIs may have been missed or may no longer be present. If you find functionality that existed in 1.xx but is missing from 2.xx, please <a rel="noopener noreferrer" target="_blank" href="https://github.com/jiggzson/nerdamer/issues">file an issue on GitHub</a> and include a small example showing the previous behavior. Missing functionality can then be reviewed for restoration where appropriate.</p>
+<p>This migration guide describes the known differences, but it should not be considered an exhaustive list of every difference between the two versions.</p>
+<p>If you cannot migrate yet, version 1.xx is still being maintained by the <a rel="noopener noreferrer" target="_blank" href="https://github.com/together-science/nerdamer-prime">Nerdamer-Prime fork</a>.</p>
+
+<div class="migration-callout">
+  <strong>The short version</strong>
+  <p>If your application mostly calls <code>nerdamer('...')</code>, reads <code>.text()</code> or <code>.toTeX()</code>, and uses common algebra/calculus functions, the move is relatively small. Code that depends on <code>getCore()</code>, expression history, 1.xx add-on loading, or the shape of solver results needs closer review.</p>
+</div>
+
+<h2>What changes most often</h2>
+<div class="migration-grid">
+  <div class="migration-card"><strong>Loading</strong><p>The rewrite replaces the old core-plus-add-ons model with a complete package and documented package entry points. Imports do not attach add-ons to an already-loaded runtime.</p></div>
+  <div class="migration-card"><strong>Structured values</strong><p>Version 1.xx already supported equations, vectors, matrices, sets, and other structured values. Version 2.xx connects those types through the parser and public APIs more consistently instead of relying on implicit wrappers and one-off conversions between subsystems.</p></div>
+  <div class="migration-card"><strong>Expression history</strong><p>Version 2.xx does not maintain the old global list of every parsed expression.</p></div>
+  <div class="migration-card"><strong>Solving</strong><p>Single-equation and system solving return structured containers rather than the old array-oriented shapes.</p></div>
+  <div class="migration-card"><strong>Internals</strong><p>Old <code>getCore()</code> and registration hooks are replaced by supported public APIs and explicit package entry points.</p></div>
+</div>
+
+<h2>Loading the library</h2>
+<p>Version 1.xx was assembled at runtime from a core file plus add-ons. The rewrite does not use that model. Import the complete package when you want the normal root API, or use a documented package entry point when application code needs a specific public API.</p>
+<div class="migration-compare">
+  <div class="migration-example">
+    <strong>Nerdamer 1.xx</strong>
+    <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">var</span> <span class="token variable">nerdamer</span> <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">require</span><span class="token punctuation">(</span><span class="token string">&#39;nerdamer/Algebra&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">require</span><span class="token punctuation">(</span><span class="token string">&#39;nerdamer/Calculus&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">require</span><span class="token punctuation">(</span><span class="token string">&#39;nerdamer/Solve&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">require</span><span class="token punctuation">(</span><span class="token string">&#39;nerdamer/Extra&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+    <p>Each add-on extended the already-loaded runtime.</p>
+  </div>
+  <div class="migration-example">
+    <strong>Nerdamer 2.xx</strong>
+    <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span></code></pre>
+    <p>The root package provides the normal API without a separate add-on loading sequence.</p>
+  </div>
+</div>
+<div class="migration-callout">
+  <strong>Do not reproduce the 1.xx loading order.</strong>
+  <p>Loading a “core” build and then attaching Algebra, Calculus, Solve, or Extra is a 1.xx pattern. In 2.xx, use the root package or documented package entry points.</p>
+</div>
+<p>TypeScript and package consumers can use documented package entry points for direct APIs. Those are package entry points, not browser add-ons:</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Expression</span><span class="token punctuation">,</span> <span class="token class-name">Rational</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/core&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Polynomial</span><span class="token punctuation">,</span> <span class="token variable">gcd</span><span class="token punctuation">,</span> <span class="token variable">partfrac</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/algebra&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">diff</span><span class="token punctuation">,</span> <span class="token variable">integrate</span><span class="token punctuation">,</span> <span class="token variable">limit</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/calculus&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">solve</span><span class="token punctuation">,</span> <span class="token class-name">PolynomialSolver</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/solve&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Matrix</span><span class="token punctuation">,</span> <span class="token class-name">Vector</span><span class="token punctuation">,</span> <span class="token class-name">ValuesSet</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span></code></pre>
+
+<h2>Structured parser results are more cohesive</h2>
+<p>Version 1.xx already supported <code>Expression</code>, <code>Equation</code>, <code>Vector</code>, <code>Matrix</code>, set, and other structured values. The difference in 2.xx is not that these types suddenly exist; it is that they participate in a more consistent parser and API model.</p>
+<p>In 1.xx, different subsystems did not always pass these values between each other cleanly. Code paths sometimes wrapped a structured value as an Expression, converted it to another representation, or used a local adapter before another subsystem could consume it. The rewrite keeps the parsed value as its actual type and makes the surrounding APIs work with those types more consistently.</p>
+<p>For migration purposes, code that can receive more than an ordinary algebraic expression should narrow the returned <code>ParserEntity</code> before calling type-specific methods rather than relying on an older implicit conversion.</p>
+<div class="migration-table-wrap">
+  <table class="migration-table">
+    <thead><tr><th>Input kind</th><th>Typical 2.xx result</th><th>What to review</th></tr></thead>
+    <tbody>
+      <tr><td>x^2+1</td><td><code>Expression</code></td><td>Usually no migration change.</td></tr>
+      <tr><td>x^2=4</td><td><code>Equation</code></td><td>Narrow the returned type before using Expression-only methods.</td></tr>
+      <tr><td>[x,y,z]</td><td><code>Vector</code></td><td>Use vector operations directly instead of converting through an Expression representation.</td></tr>
+      <tr><td>matrix(...)</td><td><code>Matrix</code></td><td>Work with the matrix object and its matrix methods.</td></tr>
+      <tr><td>set / dictionary / collection notation</td><td>Structured <code>ParserEntity</code></td><td>Account for the corresponding container type.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Stored expression history is gone</h2>
+<p>Version 1.xx automatically retained parsed expressions. The related global history helpers are not part of 2.xx:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">expressions</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">getExpression</span><span class="token punctuation">(</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">getEquation</span><span class="token punctuation">(</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">clear</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">numExpressions</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">numEquations</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>Store results in normal JavaScript variables instead:</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">const</span> <span class="token variable">first</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;x^2+1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token variable">second</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;sin(x)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<h2>Variables, constants, settings, and user functions</h2>
+<p>The common state/configuration calls remain available:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">setVar</span><span class="token punctuation">(</span><span class="token string">&#39;a&#39;</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">getVars</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">clearVars</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">setConstant</span><span class="token punctuation">(</span><span class="token string">&#39;g&#39;</span><span class="token punctuation">,</span> <span class="token number">9.81</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">getConstant</span><span class="token punctuation">(</span><span class="token string">&#39;g&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">setConstant</span><span class="token punctuation">(</span><span class="token string">&#39;g&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;delete&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">setFunction</span><span class="token punctuation">(</span><span class="token string">&#39;f&#39;</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token string">&#39;x&#39;</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">&#39;x^2+1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>A substitution supplied directly to <code>nerdamer(...)</code> still takes priority over an assigned variable. The old single-value <code>getVar()</code> helper is not on the 2.xx root object; use <code>getVars()</code> for assigned values.</p>
+
+<h2>Root functions: what stayed and what moved</h2>
+<div class="migration-table-wrap">
+  <table class="migration-table">
+    <thead><tr><th>Nerdamer 1.xx name or area</th><th>Nerdamer 2.xx direction</th></tr></thead>
+    <tbody>
+      <tr><td>factor, simplify, gcd, lcm, divide, div, partfrac, deg</td><td>Available on the 2.xx root API.</td></tr>
+      <tr><td>diff, integrate, sum, product, defint, limit, laplace, ilaplace</td><td>Available on the 2.xx root API.</td></tr>
+      <tr><td>convertToLaTeX</td><td>Use <code>convertToTeX()</code> for TeX math markup. <code>convertToLaTeX()</code> remains as a deprecated compatibility alias.</td></tr>
+      <tr><td>Fresnel S / C</td><td>Available through Nerdamer Notation, the 2.xx root API, and <code>nerdamer/calculus</code>.</td></tr>
+      <tr><td>ilt</td><td>Kept for 1.xx compatibility as an alias for <code>ilaplace</code>.</td></tr>
+      <tr><td>roots</td><td>Use <code>solve()</code> or the current polynomial solver APIs.</td></tr>
+      <tr><td>coeffs</td><td>Use <code>Expression.coeffs()</code> or <code>Polynomial</code>.</td></tr>
+      <tr><td>line</td><td>No matching 2.xx root shortcut.</td></tr>
+      <tr><td>sqcomp</td><td>Retained in Nerdamer Notation as <code>sqcomp(...)</code>. JavaScript / TypeScript uses <code>completeSquare(...)</code>.</td></tr>
+      <tr><td>Extra statistics helpers</td><td><code>mean</code>, <code>median</code>, <code>mode</code>, variance/stdev helpers, and <code>zscore</code> are not part of 2.xx.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Solving returns structured results</h2>
+<p>Single-equation solving returns a <code>SolutionSet</code>:</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">const</span> <span class="token variable">solutions</span> <span class="token operator">=</span> <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">solve</span><span class="token punctuation">(</span><span class="token string">&#39;x^2-4&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;x&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">solutions</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>System solving uses <code>solveSystem()</code> and returns a <code>Vector</code> containing a <code>Dictionary</code> for each solution:</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">const</span> <span class="token variable">solutions</span> <span class="token operator">=</span> <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">solveSystem</span><span class="token punctuation">(</span>
+  <span class="token punctuation">[</span><span class="token string">&#39;x+y=3&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;x-y=1&#39;</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token punctuation">[</span><span class="token string">&#39;x&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;y&#39;</span><span class="token punctuation">]</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// [{x =&gt; 2, y =&gt; 1}]</span></code></pre>
+<p><code>solveeqs(...)</code> is the Nerdamer Notation spelling and is retained on the root API for compatibility. The old <code>solveEquations</code> name is not part of the 2.xx public API. Code that expected nested JavaScript arrays from system solving should be updated for the new container types.</p>
+
+<h2>Expression compatibility details</h2>
+<p>Common methods such as <code>text()</code>, <code>toTeX()</code>, <code>evaluate()</code>, <code>sub()</code>, <code>variables()</code>, <code>solveFor()</code>, arithmetic methods, <code>expand()</code>, <code>simplify()</code>, and <code>factor()</code> remain familiar. Several shorter aliases such as <code>plus()</code>, <code>minus()</code>, <code>times()</code>, <code>div()</code>, and <code>subst()</code> also remain.</p>
+<p>One important distinction: <code>equals()</code> constructs an <code>Equation</code>, while <code>eq()</code> checks equality.</p>
+
+<h2>Replace low-level 1.xx extension hooks</h2>
+<p>Projects that reached through the old internals need the most migration work. The following 1.xx hooks are not restored as 2.xx root APIs:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">getCore</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token function">register</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token function">replaceFunction</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token function">addPeeker</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token function">removePeeker</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token function">load</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token function">tree</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token function">htmlTree</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token function">rpn</span><span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+<p>Use the supported package APIs instead of depending on the old internal object graph. <code>setFunction()</code> remains available for symbolic user functions.</p>
+
+<h2>Migration checklist</h2>
+<ol class="migration-checklist">
+  <li>Replace the 1.xx core-plus-add-ons loading sequence with the 2.xx root package or documented package entry points.</li>
+  <li>Do not treat direct TypeScript package imports as runtime add-ons; they are API entry points.</li>
+  <li>Replace stored-expression-history calls with ordinary JavaScript variables.</li>
+  <li>Review code that assumes every parsed value is an <code>Expression</code>; 2.xx preserves structured parser values more consistently across APIs.</li>
+  <li>Update code that expects the old array shape from system solving.</li>
+  <li>Replace <code>getCore()</code>, <code>register()</code>, and similar internal hooks with supported APIs.</li>
+  <li>Check dependencies on removed Extra statistics helpers and older root shortcuts.</li>
+  <li>Run representative expressions in the Playground with 2.xx and 1.1.13 when behavior needs to be compared.</li>
+</ol>
+
+<h2>Where to go next</h2>
+<div class="migration-next">
+  <a href="/docs/choosing-an-api/"><strong>Choosing how to use Nerdamer</strong><span>Pick between notation, scripting, and direct TypeScript APIs.</span></a>
+  <a href="/playground/"><strong>Compare engines</strong><span>Run the same input against Nerdamer 2.xx, Nerdamer 1.1.13, and Nerdamer-Prime.</span></a>
+  <a href="/docs/internals/"><strong>Understand the 2.xx architecture</strong><span>See how the parser, expression model, and codebase fit together.</span></a>
+</div></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../scripts/site.js"></script>
+
+<script src="../../scripts/playground-tree.js"></script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Codebase map — Nerdamer Documentation</title>
+  <meta name="description" content="A contributor map of Nerdamer&#39;s source directories and public API façades.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../styles/internals.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="internals-page">
+  <div class="eyebrow">Contributors · Internals</div>
+  <h1>Codebase map</h1>
+  <p class="internals-lead">The source tree is easier to read once you separate the symbolic core, the mathematical domains, and the public subpath façades. Most debugging starts by identifying which of those layers owns the behavior you are seeing.</p>
+
+  <h2>The top-level directories</h2>
+  <div class="internals-module-grid">
+    <div class="internals-module"><h3><code>core/</code></h3><p>The symbolic object model and shared machinery: parser, expressions, equations, vectors, matrices, rationals, converters, settings, errors, dispatch, and core helper functions.</p></div>
+    <div class="internals-module"><h3><code>algebra/</code></h3><p>Factoring, simplification, GCD/LCM, partial fractions, polynomial conversion, Gröbner work, and supporting algebraic algorithms.</p></div>
+    <div class="internals-module"><h3><code>calculus/</code></h3><p>Differentiation, integration, limits, Laplace transforms, and calculus-specific helpers and tables.</p></div>
+    <div class="internals-module"><h3><code>math/</code></h3><p>Common mathematical functions, special functions, trigonometry, geometry, truncation, and numerical helpers used by notation and algorithms.</p></div>
+    <div class="internals-module"><h3><code>solve/</code></h3><p>Equation solving, systems, solver classes, root handling, and <code>SolutionSet</code>.</p></div>
+    <div class="internals-module"><h3><code>api/</code></h3><p>Public subpath entry files such as <code>nerdamer/algebra</code>, <code>nerdamer/calculus</code>, <code>nerdamer/parser</code>, and <code>nerdamer/structures</code>. These expose selected source functionality; they are not the implementation domains themselves.</p></div>
+    <div class="internals-module"><h3><code>utils/</code></h3><p>Reusable lower-level utilities shared across the implementation, including debugging helpers.</p></div>
+    <div class="internals-module"><h3><code>index.ts</code></h3><p>The full-package entry point. It assembles the modules, exports the callable Nerdamer API, and attaches selected higher-level operations to core classes.</p></div>
+  </div>
+
+  <h2>A useful way to read <code>src/core</code></h2>
+  <div class="internals-tree"><pre><code>src/core/
+├─ classes/
+│  ├─ expression/      <span class="tree-muted">central symbolic scalar representation</span>
+│  ├─ parser/          <span class="tree-muted">tokenization, RPN, operators, scripting</span>
+│  ├─ equation/        <span class="tree-muted">LHS/RHS equation structure</span>
+│  ├─ rational/        <span class="tree-muted">exact rational arithmetic</span>
+│  ├─ vector/          <span class="tree-muted">ordered aggregate + vector operations</span>
+│  ├─ matrix/          <span class="tree-muted">matrix representation and operations</span>
+│  ├─ valuesSet/       <span class="tree-muted">finite set semantics</span>
+│  └─ ...
+├─ converters/         <span class="tree-muted">text and TeX conversion</span>
+├─ functions/          <span class="tree-muted">shared symbolic functions</span>
+├─ dispatch.ts         <span class="tree-muted">parser-visible function registry</span>
+├─ Settings.ts         <span class="tree-muted">shared parser/engine settings</span>
+├─ errors.ts           <span class="tree-muted">typed errors and messages</span>
+└─ types.ts            <span class="tree-muted">ExpressionInput, NerdamerInput, ParserEntity</span></code></pre></div>
+
+  <h2>Implementation directories are not the same as import paths</h2>
+  <p>A newcomer can easily confuse <code>src/algebra</code> with the package subpath <code>nerdamer/algebra</code>. The first contains implementation code. The second is assembled through a small façade in <code>src/api/algebra.ts</code> that exports the supported API for consumers.</p>
+  <div class="internals-stage-row">
+    <div class="internals-stage"><small>Implementation</small><code>src/algebra/</code><p>Algorithms and internal supporting code.</p></div>
+    <div class="internals-stage"><small>Façade</small><code>src/api/algebra.ts</code><p>Selects what the package subpath exposes.</p></div>
+    <div class="internals-stage"><small>User import</small><code>import { factor } from 'nerdamer/algebra'</code><p>The supported package-facing entry point.</p></div>
+  </div>
+
+  <h2>Follow the data, not just the imports</h2>
+  <p>Many features cross module boundaries. A solver may call algebra helpers; calculus works on the same <code>Expression</code> representation as factoring; a parser-visible function may be registered in <code>dispatch.ts</code> but implemented in another domain. When tracing behavior, identify the object being passed between layers and follow that object.</p>
+
+  <div class="internals-intro">
+    <div class="internals-intro-card"><strong>Browse the source tree</strong><p>The current <code>src</code> directory is the authoritative map for implementation ownership.</p><a rel="noopener noreferrer" target="_blank" class="internals-source" href="https://github.com/jiggzson/nerdamer/tree/HEAD/src">nerdamer/src</a></div>
+    <div class="internals-intro-card"><strong>Understand the object being passed</strong><p>Read the expression model next if the representation itself is still unfamiliar.</p><a class="internals-source" href="/docs/internals/expression-model/">Expression model</a></div>
+  </div>
+</div></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

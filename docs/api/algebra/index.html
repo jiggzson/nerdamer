@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>algebra API — Nerdamer Documentation</title>
+  <meta name="description" content="Nerdamer algebra JavaScript and TypeScript API.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../styles/api.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">JavaScript / TypeScript API</div><h1><code>nerdamer/algebra</code></h1><p>Polynomial tools, factorization, simplification, rational expressions, and related algebra operations.</p><div class="docs-callout"><strong>Direct npm import.</strong> The items on this page are JavaScript / TypeScript exports from <code>nerdamer/algebra</code>. For functions used inside <code>nerdamer('...')</code>, see <a href="/docs/functions/">Nerdamer Notation</a>.</div><div class="reference-toolbar"><input class="reference-search" type="search" placeholder="Filter algebra API…" data-reference-search><span class="reference-count">15 exports</span></div><section class="api-group"><h2>Functions</h2><div class="api-list"><a class="api-list-item" href="/docs/api/algebra/content/" data-reference-item data-search="content returns the exact rational content of polynomial expression input. function"><div><code>content(x: ExpressionInput | Polynomial): Expression</code><span>Function</span></div><p>Returns the exact rational content of polynomial expression input.</p></a><a class="api-list-item" href="/docs/api/algebra/deg/" data-reference-item data-search="deg returns the total degree of polynomial expression input. function"><div><code>deg(x: ExpressionInput | Polynomial): Expression</code><span>Function</span></div><p>Returns the total degree of polynomial expression input.</p></a><a class="api-list-item" href="/docs/api/algebra/factor/" data-reference-item data-search="factor factors polynomial-like numerator and denominator components of an expression. function"><div><code>factor(x: ExpressionInput): Expression</code><span>Function</span></div><p>Factors polynomial-like numerator and denominator components of an expression.</p></a><a class="api-list-item" href="/docs/api/algebra/gcd/" data-reference-item data-search="gcd computes a symbolic greatest common divisor over rational polynomial structure. function"><div><code>gcd(x: ExpressionInput, y: ExpressionInput): Expression</code><span>Function</span></div><p>Computes a symbolic greatest common divisor over rational polynomial structure.</p></a><a class="api-list-item" href="/docs/api/algebra/groebner/" data-reference-item data-search="groebner computes an expression-facing groebner basis for polynomial generators. function"><div><code>groebner(expressionArray: ExpressionInput[], vars?: string[]): Vector</code><span>Function</span></div><p>Computes an expression-facing Groebner basis for polynomial generators.</p></a><a class="api-list-item" href="/docs/api/algebra/lcm/" data-reference-item data-search="lcm returns the least common multiple of two expressions. numeric inputs reuse exact `rational` arithmetic. polynomial expressions use the existing gcd normalization so shared symbolic factors are retained. function"><div><code>lcm(x: ExpressionInput, y: ExpressionInput): Expression</code><span>Function</span></div><p>Returns the least common multiple of two expressions. Numeric inputs reuse exact `Rational` arithmetic. Polynomial expressions use the existing GCD normalization so shared symbolic factors are retained.</p></a><a class="api-list-item" href="/docs/api/algebra/partfrac/" data-reference-item data-search="partfrac decomposes a rational expression p(x)/q(x) into partial fractions. function"><div><code>partfrac(x: ExpressionInput, variable?: ExpressionInput): Expression</code><span>Function</span></div><p>Decomposes a rational expression P(x)/Q(x) into partial fractions.</p></a><a class="api-list-item" href="/docs/api/algebra/simplify/" data-reference-item data-search="simplify applies nerdamer&#39;s finite symbolic simplification strategy to an expression. function"><div><code>simplify(x: string | Expression, modifiers: { … }): Expression</code><span>Function</span></div><p>Applies Nerdamer&#39;s finite symbolic simplification strategy to an expression.</p></a></div></section><section class="api-group"><h2>Classes</h2><div class="api-list"><a class="api-list-item" href="/docs/api/algebra/polynomial/" data-reference-item data-search="polynomial represents a polynomial as ordered term objects with symbolic coefficients. class"><div><code>Polynomial: unknown</code><span>Class</span></div><p>Represents a polynomial as ordered Term objects with symbolic coefficients.</p></a><a class="api-list-item" href="/docs/api/algebra/term/" data-reference-item data-search="term represents one coefficient-monomial term in a polynomial. class"><div><code>Term: unknown</code><span>Class</span></div><p>Represents one coefficient-monomial term in a Polynomial.</p></a></div></section><section class="api-group"><h2>APIs</h2><div class="api-list"><a class="api-list-item" href="/docs/api/algebra/eval-input-type/" data-reference-item data-search="evalinputtype exact values accepted when evaluating a polynomial. api"><div><code>EvalInputType: number | bigint | Rational</code><span>API</span></div><p>Exact values accepted when evaluating a polynomial.</p></a><a class="api-list-item" href="/docs/api/algebra/ordering/" data-reference-item data-search="ordering monomial ordering labels understood by polynomial.order. api"><div><code>Ordering: &quot;none&quot; | &quot;deg&quot; | &quot;lex&quot; | &quot;revlex&quot; | &quot;grlex&quot; | &quot;grevlex&quot; | &quot;byvar&quot;</code><span>API</span></div><p>Monomial ordering labels understood by Polynomial.order.</p></a><a class="api-list-item" href="/docs/api/algebra/poly-type/" data-reference-item data-search="polytype inputs accepted by polynomial conversion helpers. api"><div><code>PolyType: string | Polynomial | Expression</code><span>API</span></div><p>Inputs accepted by polynomial conversion helpers.</p></a><a class="api-list-item" href="/docs/api/algebra/powers-object/" data-reference-item data-search="powersobject powers keyed by variable name. missing variables have degree zero. api"><div><code>PowersObject: Record&lt;string, number&gt;</code><span>API</span></div><p>Powers keyed by variable name. Missing variables have degree zero.</p></a><a class="api-list-item" href="/docs/api/algebra/variable-frequency/" data-reference-item data-search="variablefrequency api exported by nerdamer. api"><div><code>VariableFrequency: unknown</code><span>API</span></div><p>API exported by Nerdamer.</p></a></div></section></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+<script src="../../../scripts/reference.js"></script>
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

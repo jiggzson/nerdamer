@@ -1,0 +1,33 @@
+.back-to-top {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 90;
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid rgb(var(--border));
+  border-radius: 11px;
+  background: rgb(var(--bg-elevated) / .94);
+  color: rgb(var(--muted));
+  box-shadow: 0 8px 24px rgb(var(--shadow) / .12);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  font-size: .82rem;
+  font-weight: 720;
+}
+
+.back-to-top:hover {
+  border-color: rgb(var(--accent) / .55);
+  color: rgb(var(--accent-deep));
+}
+
+.back-to-top[hidden] {
+  display: none;
+}
+
+@media (max-width: 620px) {
+  .back-to-top {
+    right: 14px;
+    bottom: 14px;
+  }
+}

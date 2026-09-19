@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>calculus API — Nerdamer Documentation</title>
+  <meta name="description" content="Nerdamer calculus JavaScript and TypeScript API.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../styles/api.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">JavaScript / TypeScript API</div><h1><code>nerdamer/calculus</code></h1><p>Differentiation, integration, limits, sums, products, and Laplace transforms.</p><div class="docs-callout"><strong>Direct npm import.</strong> The items on this page are JavaScript / TypeScript exports from <code>nerdamer/calculus</code>. For functions used inside <code>nerdamer('...')</code>, see <a href="/docs/functions/">Nerdamer Notation</a>.</div><div class="reference-toolbar"><input class="reference-search" type="search" placeholder="Filter calculus API…" data-reference-search><span class="reference-count">9 exports</span></div><section class="api-group"><h2>Functions</h2><div class="api-list"><a class="api-list-item" href="/docs/api/calculus/defint/" data-reference-item data-search="defint calculates the definite integral using adaptive simpson. note that this function uses native js number due to severe computational overhead when implemented with decimal.js. function"><div><code>defint(f: ExpressionInput, dx: ExpressionInput, from: ExpressionInput, to: ExpressionInput): Expression</code><span>Function</span></div><p>Calculates the definite integral using Adaptive Simpson. Note that this function uses native JS number due to severe computational overhead when implemented with Decimal.js.</p></a><a class="api-list-item" href="/docs/api/calculus/diff/" data-reference-item data-search="diff differentiates an expression symbolically. the chain, product, sum, and power rules are applied recursively, together with the built-in derivative table for recognized functions. an omitted variable is inferred as the first variable in the expression. existing expression input is reused during normalization. function"><div><code>diff(x: ExpressionInput, variable?: ExpressionInput, n?: number | Expression): Expression</code><span>Function</span></div><p>Differentiates an expression symbolically. The chain, product, sum, and power rules are applied recursively, together with the built-in derivative table for recognized functions. An omitted variable is inferred as the first variable in the expression. Existing Expression input is reused during normalization.</p></a><a class="api-list-item" href="/docs/api/calculus/ilaplace/" data-reference-item data-search="ilaplace computes a symbolic inverse laplace transform from a transform variable to a time variable. the strategy applies linearity, extracts constants, consults the inverse transform table, normalizes supported shifted quadratics and exponential delays, and finally tries partial-fraction decomposition. function"><div><code>ilaplace(expr: ExpressionInput, s: ExpressionInput, t: ExpressionInput): Expression</code><span>Function</span></div><p>Computes a symbolic inverse Laplace transform from a transform variable to a time variable. The strategy applies linearity, extracts constants, consults the inverse transform table, normalizes supported shifted quadratics and exponential delays, and finally tries partial-fraction decomposition.</p></a><a class="api-list-item" href="/docs/api/calculus/integrate/" data-reference-item data-search="integrate finds a symbolic indefinite integral with respect to a plain variable. constants and linear sums are separated first. the remaining integrand is tried against the integral table and bounded strategies for radical and algebraic substitution, quadratic radicals, integration by parts, derivative-pattern substitution, rational decomposition, and the weierstrass tangent half-angle substitution. function"><div><code>integrate(expr: ExpressionInput, dx: ExpressionInput, depth: number): Expression</code><span>Function</span></div><p>Finds a symbolic indefinite integral with respect to a plain variable. Constants and linear sums are separated first. The remaining integrand is tried against the integral table and bounded strategies for radical and algebraic substitution, quadratic radicals, integration by parts, derivative-pattern substitution, rational decomposition, and the Weierstrass tangent half-angle substitution.</p></a><a class="api-list-item" href="/docs/api/calculus/laplace/" data-reference-item data-search="laplace computes a symbolic laplace transform from a time variable to a transform variable. the expression is expanded, linear sums are transformed term by term, constants independent of the time variable are extracted, and the remaining expression is matched against the transform table. function"><div><code>laplace(expr: ExpressionInput, t: ExpressionInput, s: ExpressionInput): Expression</code><span>Function</span></div><p>Computes a symbolic Laplace transform from a time variable to a transform variable. The expression is expanded, linear sums are transformed term by term, constants independent of the time variable are extracted, and the remaining expression is matched against the transform table.</p></a><a class="api-list-item" href="/docs/api/calculus/limit/" data-reference-item data-search="limit computes a symbolic finite or infinite limit. the implementation combines direct substitution, side-aware pole analysis, simplification, bounded l&#39;hopital recursion, indeterminate-form rewrites, composition rules, dominant-growth analysis at infinity, and a table of known limits. function"><div><code>limit(expr: ExpressionInput, x: ExpressionInput, val: ExpressionInput, dir: LimitDir, depth: number): Expression</code><span>Function</span></div><p>Computes a symbolic finite or infinite limit. The implementation combines direct substitution, side-aware pole analysis, simplification, bounded L&#39;Hopital recursion, indeterminate-form rewrites, composition rules, dominant-growth analysis at infinity, and a table of known limits.</p></a><a class="api-list-item" href="/docs/api/calculus/product/" data-reference-item data-search="product computes a finite product: `product(expr, k, a, b) = π_{k=a}^{b} expr`. - if bounds are integers and the number of terms ≤ `settings.max_product_and_summation_iteration`, evaluates by multiplying each term. - if `lower &gt; upper`, returns `1` (empty product). - if `expr` does not depend on the index variable, simplifies to `expr^(b − a + 1)`. - otherwise returns a symbolic `product(expr, k, a, b)` node. function"><div><code>product(expr: Expression, index: Expression, lower: Expression, upper: Expression): Expression</code><span>Function</span></div><p>Computes a finite product: `product(expr, k, a, b) = Π_{k=a}^{b} expr`. - If bounds are integers and the number of terms ≤ `Settings.MAX_PRODUCT_AND_SUMMATION_ITERATION`, evaluates by multiplying each term. - If `lower &gt; upper`, returns `1` (empty product). - If `expr` does not depend on the index variable, simplifies to `expr^(b − a + 1)`. - Otherwise returns a symbolic `product(expr, k, a, b)` node.</p></a><a class="api-list-item" href="/docs/api/calculus/sum/" data-reference-item data-search="sum computes a finite summation: `sum(expr, k, a, b) = σ_{k=a}^{b} expr`. - if bounds are integers and the number of terms ≤ `settings.max_product_and_summation_iteration`, evaluates by accumulating each term. - if `lower &gt; upper`, returns `0` (empty range). - if `expr` does not depend on the index variable, simplifies to `expr · (b − a + 1)`. - otherwise returns a symbolic `sum(expr, k, a, b)` node. function"><div><code>sum(expr: Expression, index: Expression, lower: Expression, upper: Expression): Expression</code><span>Function</span></div><p>Computes a finite summation: `sum(expr, k, a, b) = Σ_{k=a}^{b} expr`. - If bounds are integers and the number of terms ≤ `Settings.MAX_PRODUCT_AND_SUMMATION_ITERATION`, evaluates by accumulating each term. - If `lower &gt; upper`, returns `0` (empty range). - If `expr` does not depend on the index variable, simplifies to `expr · (b − a + 1)`. - Otherwise returns a symbolic `sum(expr, k, a, b)` node.</p></a></div></section><section class="api-group"><h2>API</h2><div class="api-list"><a class="api-list-item" href="/docs/api/calculus/limit-dir/" data-reference-item data-search="limitdir direction from which the independent variable approaches a finite point. api"><div><code>LimitDir: &quot;both&quot; | &quot;left&quot; | &quot;right&quot;</code><span>API</span></div><p>Direction from which the independent variable approaches a finite point.</p></a></div></section></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+<script src="../../../scripts/reference.js"></script>
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>partfrac — Nerdamer Documentation</title>
+  <meta name="description" content="Decomposes a rational expression into partial fractions with respect to a variable.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../styles/api.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/functions/">Reference</a></div>
+<div class="eyebrow">Function reference · Algebra</div>
+<h1><code>partfrac</code></h1>
+<p>Decomposes a rational expression into partial fractions with respect to a variable.</p>
+<div class="api-description"><p>Nerdamer handles rational expressions with distinct or repeated linear factors, supported irreducible quadratic factors, and improper fractions that first require polynomial division.</p><p>When no useful decomposition is available, the original expression is returned unchanged.</p></div>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Decompose a rational function with two distinct linear factors.</p><pre class="codeblock">partfrac((4*k-1)/(k*(k+2)),k)
+// → (-1/2)*k^-1+(9/2)*(2+k)^-1</pre></div>
+<div class="api-example-block"><p>Reduce an improper rational expression when the remainder is zero.</p><pre class="codeblock">partfrac((x^2-1)/(x-1),x)
+// → 1+x</pre></div>
+<div class="api-example-block"><p>Decompose a denominator containing a repeated linear factor.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">partfrac</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">/</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span></code></pre></div></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
+<section class="api-detail" id="notation">
+<h2>Nerdamer Notation</h2>
+<p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
+<pre class="api-signature"><code>partfrac(arg1, [arg2])</code></pre>
+
+
+</section>
+<section class="api-detail" id="nerdamer-api">
+<h2><code>nerdamer.partfrac</code></h2>
+<p>Call the operation through the default <code>nerdamer</code> import.</p>
+<pre class="api-signature"><code>nerdamer.partfrac(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, variable?: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Rational expression to decompose.</td></tr><tr><td><code>variable</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Main variable; defaults to the first variable reported by the expression.</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — A new decomposition when one is found, otherwise the original parsed expression.</p></section>
+<p><a href="/docs/api/nerdamer/">Browse the <code>nerdamer</code> API →</a></p>
+</section>
+<section class="api-detail" id="direct-api">
+<h2>Direct JavaScript / TypeScript API</h2>
+<p>Import the operation directly from its package entry point.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">partfrac</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/algebra&#39;</span><span class="token punctuation">;</span></code></pre>
+<pre class="api-signature"><code>partfrac(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, variable?: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Rational expression to decompose.</td></tr><tr><td><code>variable</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Main variable; defaults to the first variable reported by the expression.</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — A new decomposition when one is found, otherwise the original parsed expression.</p></section>
+<p><a href="/docs/api/algebra/">Browse <code>nerdamer/algebra</code> →</a></p>
+</section>
+
+
+<p><a href="/docs/functions/">← Back to Reference</a></p></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

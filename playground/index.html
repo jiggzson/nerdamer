@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Playground — Nerdamer</title>
+  <meta name="description" content="Interactive Nerdamer playground with engine comparison, parser-function autocomplete, signature help, expression inspection, and 2-D/3-D plotting.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../styles/site.css">
+  <link rel="stylesheet" href="../styles/code-highlight.css">
+  <link rel="stylesheet" href="../styles/logo.css">
+  <link rel="stylesheet" href="../styles/header.css">
+  <link rel="stylesheet" href="../styles/back-to-top.css">
+  <link rel="stylesheet" href="../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../styles/playground-tree.css">
+  <link rel="stylesheet" href="../styles/playground.css">
+<link rel="stylesheet" href="../styles/playground-highlight.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.21/codemirror.min.css">
+<link rel="stylesheet" href="../styles/playground-codemirror.css">
+<link rel="stylesheet" href="../styles/playground-session.css">
+  <link rel="stylesheet" href="../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<section class="page-hero">
+	<div class="shell">
+		<!-- <div class="eyebrow">Interactive</div>
+		<h1>Playground</h1>
+		<p>
+			Write Nerdamer Notation or small Nerdamer scripts, compare Nerdamer 2.0 with earlier engines, inspect
+			results, and plot symbolic expressions in two or three dimensions.
+		</p> -->
+	</div>
+</section>
+
+<div class="playground-wrap">
+	<div class="playground-titlebar">
+		<div>
+			<h1>Playground</h1>
+			<p>Shift + Enter runs the current input. Tab / Shift + Tab indents or unindents.</p>
+			<p>
+				Write Nerdamer Notation or small Nerdamer scripts, compare Nerdamer 2.0 with earlier engines, inspect
+				results, and plot symbolic expressions in two or three dimensions.
+			</p>
+		</div>
+		<div class="playground-engine-controls">
+			<label for="engine-select">Engine</label>
+			<select id="engine-select" aria-label="Nerdamer engine">
+				<option value="v2">Nerdamer 2.0</option>
+				<option value="legacy">Nerdamer 1.1.13</option>
+				<option value="prime">Nerdamer-Prime 1.5.0</option>
+			</select>
+			<div class="engine-status" id="engine-status" aria-live="polite">Loading engine</div>
+		</div>
+	</div>
+
+	<div class="playground-grid">
+		<section class="instrument playground-source" aria-label="Nerdamer source">
+			<div class="instrument-head">
+				<strong>Source</strong>
+				<div class="editor-toolbar">
+					<span>Nerdamer Notation / Scripting</span>
+					<select class="small-select" id="editor-indent-size" aria-label="Indent size">
+						<option value="1">1 space</option>
+						<option value="2">2 spaces</option>
+						<option value="3">3 spaces</option>
+						<option value="4" selected>4 spaces</option>
+						<option value="5">5 spaces</option>
+						<option value="6">6 spaces</option>
+						<option value="7">7 spaces</option>
+						<option value="8">8 spaces</option>
+					</select>
+				</div>
+			</div>
+			<div class="editor-wrap">
+				<pre
+					class="editor-highlight"
+					id="editor-highlight"
+					aria-hidden="true"
+				><code id="editor-highlight-code"></code></pre>
+				<textarea class="editor" id="editor" spellcheck="false" aria-label="Nerdamer expression or script">
+factor(x^4 - 1)</textarea
+				>
+				<div class="suggestion-box" id="suggestions" hidden></div>
+				<div class="editor-actions">
+					<input id="evaluate-output" type="checkbox" hidden aria-hidden="true" />
+					<button class="btn btn-quiet" id="clear" type="button">Clear</button>
+					<button class="btn btn-primary" id="run" type="button">Run →</button>
+				</div>
+			</div>
+			<div class="signature-bar" id="signature">Type a function name to see signature help.</div>
+		</section>
+
+		<section class="instrument playground-output" aria-label="Nerdamer output">
+			<div class="instrument-head"><strong>Output</strong><span>result + inspection</span></div>
+			<div class="output-tabs" role="tablist" aria-label="Output view">
+				<button class="output-tab active" data-tab="result" type="button" role="tab" aria-selected="true">
+					Result
+				</button>
+				<button class="output-tab" data-tab="text" type="button" role="tab" aria-selected="false">Text</button>
+				<button class="output-tab" data-tab="tex" type="button" role="tab" aria-selected="false">TeX</button>
+				<button class="output-tab" data-tab="tree" type="button" role="tab" aria-selected="false">
+					Expression Tree
+				</button>
+			</div>
+			<div class="output-pane active" data-pane="result" role="tabpanel">
+				<div class="result-primary" id="result">Ready.</div>
+				<div class="result-meta" id="result-meta"></div>
+				<pre class="error-box" id="error-output" hidden></pre>
+			</div>
+			<div class="output-pane" data-pane="text" role="tabpanel">
+				<pre class="codeblock" id="raw-output"></pre>
+			</div>
+			<div class="output-pane" data-pane="tex" role="tabpanel"><pre class="codeblock" id="tex-output"></pre></div>
+			<div class="output-pane" data-pane="tree" role="tabpanel">
+				<div class="tree-toolbar">
+					<span>Returned parser entity</span><small>Expand a node to inspect it.</small>
+				</div>
+				<div class="tree-view" id="tree-output"></div>
+			</div>
+		</section>
+	</div>
+
+	<section class="instrument playground-plotter" aria-labelledby="plotter-title">
+		<div class="instrument-head playground-plotter-head">
+			<div>
+				<strong id="plotter-title">Plotter</strong>
+				<span id="plot-source">Waiting for a symbolic expression.</span>
+			</div>
+			<button class="btn btn-primary" id="plot-run" type="button">Plot</button>
+		</div>
+		<div class="playground-plotter-body">
+			<div class="plot-message" id="plot-message">Use an expression with at least one variable to plot.</div>
+			<div class="plot-controls" id="plot-controls" hidden>
+				<div class="plot-control-grid">
+					<label
+						><span>x variable</span
+						><select id="plot-xvar"></select
+					></label>
+					<label><span>x min</span><input id="plot-xmin" type="number" step="any" value="-10" /></label>
+					<label><span>x max</span><input id="plot-xmax" type="number" step="any" value="10" /></label>
+					<label
+						><span>samples</span
+						><input id="plot-samples" type="number" min="64" max="4096" step="64" value="768"
+					/></label>
+				</div>
+				<div class="plot-mode-row">
+					<label class="plot-check"><input id="plot-3d" type="checkbox" /><span>3-D plot</span></label>
+					<div class="plot-3d-options" id="plot-3d-options" hidden>
+						<label
+							><span>y variable</span
+							><select id="plot-yvar"></select
+						></label>
+						<label><span>y min</span><input id="plot-ymin" type="number" step="any" value="-10" /></label>
+						<label><span>y max</span><input id="plot-ymax" type="number" step="any" value="10" /></label>
+					</div>
+				</div>
+				<div class="plot-fixed-wrap">
+					<span>Fixed variables</span>
+					<div class="plot-fixed-vars" id="plot-fixed-vars"><span class="plot-fixed-empty">None</span></div>
+				</div>
+			</div>
+			<div class="plot-container" id="plot-container" aria-label="Interactive Nerdamer plot"></div>
+		</div>
+	</section>
+
+	<div class="example-strip" aria-label="Playground examples">
+		<button class="example-chip" data-example="factor(x^6-1)" type="button">
+			<strong>Factor</strong><code>factor(x^6-1)</code>
+		</button>
+		<button class="example-chip" data-example="diff(sin(x)^2,x)" type="button">
+			<strong>Differentiate</strong><code>diff(sin(x)^2,x)</code>
+		</button>
+		<button class="example-chip" data-example="solve(x^2-5*x+6,x)" type="button">
+			<strong>Solve</strong><code>solve(x^2-5*x+6,x)</code>
+		</button>
+		<button class="example-chip" data-example="block(x:5,y:8,x+y)" type="button">
+			<strong>Script</strong><code>block(x:5,y:8,x+y)</code>
+		</button>
+		<button class="example-chip" data-example="sin(x)*cos(x)" type="button">
+			<strong>2-D plot</strong><code>sin(x)*cos(x)</code>
+		</button>
+		<button class="example-chip" data-example="sin(x)*cos(y)" type="button">
+			<strong>3-D plot</strong><code>sin(x)*cos(y)</code>
+		</button>
+	</div>
+</div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../scripts/site.js"></script>
+<script src="../bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@4.1.0/plotly.min.js"></script>
+<script src="../scripts/playground-prime-asset.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.21/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.21/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.21/addon/edit/matchbrackets.min.js"></script>
+<script src="../scripts/playground-codemirror.js"></script>
+<script src="../scripts/playground.js"></script>
+<script src="../scripts/playground-session.js"></script>
+<script src="../scripts/playground-highlight.js"></script>
+<script src="../scripts/playground-tree.js"></script>
+</body>
+</html>

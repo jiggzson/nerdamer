@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>CoeffObject — Nerdamer core API</title>
+  <meta name="description" content="Stores coefficients indexed by the power or multidegree collected from an expression.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../../styles/site.css">
+  <link rel="stylesheet" href="../../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../../styles/header.css">
+  <link rel="stylesheet" href="../../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../../styles/api.css">
+  <link rel="stylesheet" href="../../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/core/">nerdamer/core</a></div><div class="api-member-title"><div><span class="api-kind">Class</span><h1>CoeffObject</h1></div><a class="api-source" href="https://github.com/N00bie-to-Github/nerdamer2/blob/ff74b9eb6ce7e954de9323fc9b54be86591d257e/src/core/classes/expression/CoeffObject.ts#L23" target="_blank" rel="noreferrer">src/core/classes/expression/CoeffObject.ts:23</a></div><div class="api-description"><p>Stores coefficients indexed by the power or multidegree collected from an expression.</p><div class="api-note"><strong>remarks</strong><p>Expression.coeffs and Polynomial.coeffs use string keys. A
+univariate coefficient uses a key such as</p><pre class="api-example"><code>`&quot;2&quot;`</code></pre><p>; multivariate collection uses a
+comma-separated degree tuple such as</p><pre class="api-example"><code>`&quot;1,0&quot;`</code></pre><p>, in the same order as
+CoeffObject.variables.
+
+The object is mutable. The constructor retains the supplied</p><pre class="api-example"><code>`variables`</code></pre><p>array, and
+the public</p><pre class="api-example"><code>`coeffs`</code></pre><p>record exposes the stored expression references directly.
+Methods such as CoeffObject.toArray are intended for univariate numeric power
+keys; a multidegree key cannot be represented by that dense array form.</p></div></div><section class="api-detail"><h2>Members</h2><div class="api-children"><article class="api-child" id="add"><div class="api-child-head"><code>add(key: string, value: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): void</code><span>Method</span></div><div class="api-description"><p>Adds an expression to the coefficient stored at a degree key.
+
+A new key retains</p><pre class="api-example"><code>`value`</code></pre><p>by reference. An existing key is replaced with the
+expression returned by symbolic addition.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>key</code></td><td><code>string</code></td><td>Power or comma-separated multidegree key.</td></tr><tr><td><code>value</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>Coefficient contribution to accumulate.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>void</code></p></section></article><article class="api-child" id="coeffs"><div class="api-child-head"><code>coeffs: { … }</code><span>Property</span></div><div class="api-description"><p>Mutable coefficient expressions keyed by power or comma-separated multidegree.</p></div></article><article class="api-child" id="constructor"><div class="api-child-head"><code>CoeffObject(variables: string[]): <a class="api-type-link" href="/docs/api/core/coeff-object/">CoeffObject</a></code><span>Constructor</span></div><div class="api-description"><p>Creates an empty coefficient collection for the requested variable order.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>variables</code></td><td><code>string[]</code></td><td>Variables used to interpret coefficient degree keys. The array is retained by reference.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/coeff-object/">CoeffObject</a></code></p></section></article><article class="api-child" id="each"><div class="api-child-head"><code>each(fn: (e: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, p: string): void): <a class="api-type-link" href="/docs/api/core/coeff-object/">CoeffObject</a></code><span>Method</span></div><div class="api-description"><p>Visits each stored coefficient and its degree key.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>fn</code></td><td><code>(e: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, p: string): void</code></td><td>Callback receiving the stored expression reference and key.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/coeff-object/">CoeffObject</a></code> — This coefficient object for chaining.</p></section></article><article class="api-child" id="get-power"><div class="api-child-head"><code>getPower(p: string | number): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code><span>Method</span></div><div class="api-description"><p>Returns the stored coefficient for a power or multidegree key.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>p</code></td><td><code>string | number</code></td><td>Key to look up.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The internal expression reference, or `undefined` when the key is absent.</p></section></article><article class="api-child" id="has-power"><div class="api-child-head"><code>hasPower(p: string | number): boolean</code><span>Method</span></div><div class="api-description"><p>Tests whether a power or multidegree key is present, including an explicit zero.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>p</code></td><td><code>string | number</code></td><td>Key to test.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>boolean</code></p></section></article><article class="api-child" id="max"><div class="api-child-head"><code>max(): number</code><span>Method</span></div><div class="api-description"><p>Returns the greatest numeric power key, or</p><pre class="api-example"><code>`NaN`</code></pre><p>when any key is non-numeric.</p></div><section class="api-detail"><h2>Returns</h2><p><code>number</code></p></section></article><article class="api-child" id="text"><div class="api-child-head"><code>text(formatted: boolean): string</code><span>Method</span></div><div class="api-description"><p>Formats the sparse coefficient record for inspection.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>formatted</code></td><td><code>boolean</code></td><td>Add line breaks and indentation between entries.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>string</code></p></section></article><article class="api-child" id="to-array"><div class="api-child-head"><code>toArray(): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>[]</code><span>Method</span></div><div class="api-description"><p>Converts univariate coefficients to a dense array indexed by power.
+
+Missing powers are filled with new zero expressions. With</p><pre class="api-example"><code>`asNumber: true`</code></pre><p>, each
+coefficient is converted using JavaScript numeric conversion, which may lose exact
+precision. The method does not remove or copy coefficients already stored here.</p><div class="api-note"><strong>throws</strong><p>NaNError Thrown when a key, such as a multidegree tuple, cannot be
+interpreted as a numeric univariate power.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>asNumber</code></td><td><code>false</code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a>[]</code></p></section></article><article class="api-child" id="to-expression"><div class="api-child-head"><code>toExpression(): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code><span>Method</span></div><div class="api-description"><p>Reconstructs the stored coefficients as a native symbolic expression.</p></div><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></p></section></article><article class="api-child" id="to-parsable-string"><div class="api-child-head"><code>toParsableString(): string</code><span>Method</span></div><div class="api-description"><p>Builds parser text representing the stored coefficient terms.
+
+Each degree key is interpreted using the configured variable order, including
+comma-separated multidegrees such as</p><pre class="api-example"><code>`&quot;2,1&quot;`</code></pre><p>for</p><pre class="api-example"><code>`x^2*y`</code></pre><p>.</p></div><section class="api-detail"><h2>Returns</h2><p><code>string</code></p></section></article><article class="api-child" id="to-polynomial"><div class="api-child-head"><code>toPolynomial(): <a class="api-type-link" href="/docs/api/algebra/polynomial/">Polynomial</a></code><span>Method</span></div><div class="api-description"><p>Reconstructs the coefficients as a Polynomial without reparsing ordinary terms.
+
+Coefficients that contain one of the configured polynomial variables are passed through
+the normal constructor so overlapping coefficient and monomial powers are canonicalized.</p></div><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/algebra/polynomial/">Polynomial</a></code> — A new polynomial with independent terms and a synchronized expression.</p></section></article><article class="api-child" id="to-string"><div class="api-child-head"><code>toString(): string</code><span>Method</span></div><div class="api-description"><p>No description is available yet.</p></div><section class="api-detail"><h2>Returns</h2><p><code>string</code></p></section></article><article class="api-child" id="to-vector"><div class="api-child-head"><code>toVector(): <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code><span>Method</span></div><div class="api-description"><p>Converts univariate coefficients to a dense Vector ordered by ascending power.
+
+Missing powers are represented by zero expressions.</p></div><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></p></section></article><article class="api-child" id="variables"><div class="api-child-head"><code>variables: string[]</code><span>Property</span></div><div class="api-description"><p>Variables whose order defines the degree keys in coeffs.</p></div></article></div></section></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../../scripts/site.js"></script>
+
+<script src="../../../../scripts/playground-tree.js"></script>
+</body>
+</html>
