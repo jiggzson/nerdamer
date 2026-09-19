@@ -367,6 +367,7 @@ function installPackage(packagePath: string, consumerDirectory: string): void {
 			getNpmCliPath(),
 			'install',
 			packagePath,
+			'--dry-run=false',
 			'--install-links',
 			'--ignore-scripts',
 			'--no-audit',
