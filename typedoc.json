@@ -1,0 +1,75 @@
+{
+	"$schema": "https://typedoc.org/schema.json",
+	"entryPoints": [
+		"src/index.ts",
+		"src/api/core.ts",
+		"src/api/algebra.ts",
+		"src/api/calculus.ts",
+		"src/api/solve.ts",
+		"src/api/structures.ts",
+		"src/api/assumptions.ts",
+		"src/api/parser.ts",
+		"src/api/advanced.ts",
+		"src/api/debug.ts"
+	],
+	"entryPointStrategy": "resolve",
+	"excludeProtected": true,
+	"router": "kind",
+	"intentionallyNotExported": [
+		"Base",
+		"BooleanSettingName",
+		"ErrorMessages",
+		"ExpressionParser",
+		"OperatorFunction",
+		"__module"
+	],
+	"externalSymbolLinkMappings": {
+		"algebra": {
+			"Polynomial": "../classes/algebra.Polynomial.html"
+		},
+		"core": {
+			"DimensionError": "../classes/core.DimensionError.html",
+			"DivisionByZeroError": "../classes/core.DivisionByZeroError.html",
+			"MathError": "../classes/core.MathError.html",
+			"PolynomialError": "../classes/core.PolynomialError.html",
+			"UndefinedError": "../classes/core.UndefinedError.html",
+			"UnexpectedDataType": "../classes/core.UnexpectedDataType.html",
+			"UnexpectedInputError": "../classes/core.UnexpectedInputError.html",
+			"UnsupportedOperationError": "../classes/core.UnsupportedOperationError.html",
+			"ZeroToZeroPowerError": "../classes/core.ZeroToZeroPowerError.html"
+		},
+		"global": {
+			"DimensionError": "../classes/core.DimensionError.html",
+			"DivisionByZeroError": "../classes/core.DivisionByZeroError.html",
+			"MathError": "../classes/core.MathError.html",
+			"PolynomialError": "../classes/core.PolynomialError.html",
+			"UndefinedError": "../classes/core.UndefinedError.html",
+			"UnexpectedDataType": "../classes/core.UnexpectedDataType.html",
+			"UnexpectedInputError": "../classes/core.UnexpectedInputError.html",
+			"UnsupportedOperationError": "../classes/core.UnsupportedOperationError.html",
+			"Polynomial": "../classes/algebra.Polynomial.html"
+		},
+		"nerdamer": {
+			"DimensionError": "../classes/core.DimensionError.html",
+			"DivisionByZeroError": "../classes/core.DivisionByZeroError.html",
+			"MathError": "../classes/core.MathError.html",
+			"PolynomialError": "../classes/core.PolynomialError.html",
+			"UndefinedError": "../classes/core.UndefinedError.html",
+			"UnexpectedDataType": "../classes/core.UnexpectedDataType.html",
+			"UnexpectedInputError": "../classes/core.UnexpectedInputError.html",
+			"UnsupportedOperationError": "../classes/core.UnsupportedOperationError.html",
+			"Polynomial": "../classes/algebra.Polynomial.html",
+			"ExpressionParser.setI": "../interfaces/parser.ParserAPI.html#setI",
+			"ExpressionParser.evaluate": "../interfaces/parser.ParserAPI.html#evaluate",
+			"ExpressionParser.get": "../interfaces/parser.ParserAPI.html#get",
+			"ExpressionParser.setPrecision": "../interfaces/parser.ParserAPI.html#setPrecision",
+			"ExpressionParser.set": "../interfaces/parser.ParserAPI.html#set",
+			"Parser": "../variables/parser.Parser.html"
+		}
+	},
+	"validation": {
+		"invalidLink": true,
+		"notExported": true,
+		"rewrittenLink": true
+	}
+}
