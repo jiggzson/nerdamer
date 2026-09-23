@@ -117,6 +117,7 @@
 <pre class="codeblock">π + pi       // 2*pi
 ∞ + Inf      // Inf</pre>
 <p>The names <code>e</code>, <code>pi</code>, <code>i</code>, <code>_n</code>, and <code>all</code> have built-in meanings and cannot be used as assignment targets in Nerdamer Scripting. <code>e</code> and <code>pi</code> are mathematical constants, <code>i</code> is the imaginary unit by default, <code>_n</code> is used for solver-generated indexed families, and <code>all</code> is used for non-finite solution results.</p>
+<p>A reserved name can still be supplied through an API that accepts call-scoped substitutions. For example, <code>evaluate(solve(sin(x),x),{_n=>0})</code> uses <code>_n</code> only for that evaluation; it does not make <code>_n</code> assignable or store a parser value under that name.</p>
 
 <h2>Known caveats</h2>
 
@@ -149,9 +150,15 @@
 <h3>Parser configuration is shared</h3>
 <p>Settings, registered constants and operators, numeric precision, and the imaginary-unit symbol are shared runtime state. <code>Parser.create()</code> creates another parser object with its own known-value table, but it does not create an isolated parser configuration. Changes made through APIs such as <code>Parser.setImaginary(...)</code> affect subsequent parsing elsewhere in the same runtime.</p>
 
-<h2>Equations</h2>
+<h2>Equations are not assignments</h2>
 <pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">x</span> <span class="token operator">=</span> <span class="token variable">y</span> <span class="token operator">+</span> <span class="token number">2</span>
 <span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span> <span class="token operator">-</span> <span class="token number">4</span> <span class="token operator">=</span> <span class="token number">0</span></code></pre>
+<p>The <code>=</code> operator creates an equation. It does not store the right-hand side under the name on the left. Nerdamer Scripting uses <code>:</code> for assignment.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token variable">x</span><span class="token operator">:</span><span class="token number">5</span>                    <span class="token comment">// assign 5 to x</span>
+<span class="token variable">x</span><span class="token operator">=</span><span class="token number">5</span>                    <span class="token comment">// construct the equation x=5</span>
+
+<span class="token variable">sol</span><span class="token operator">:</span> <span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// store the SolutionSet</span>
+<span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">sol</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">_n</span><span class="token operator">=&gt;</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">)</span>  <span class="token comment">// {0}</span></code></pre>
 <p>Equations are structured parser values rather than ordinary expressions. Functions that accept equations say so in their reference pages.</p>
 
 <h2>Collections and linear algebra</h2>

@@ -72,7 +72,9 @@
 <div class="api-example-block"><p>Return the exact principal complex square root.</p><pre class="codeblock">sqrt(-9)
 // → 3*i</pre></div>
 <div class="api-example-block"><p>Preserve the sign ambiguity of a symbolic square.</p><pre class="codeblock">sqrt(x^2)
-// → abs(x)</pre></div></section>
+// → abs(x)</pre></div>
+<div class="api-example-block"><p>Use a known lower bound to resolve the sign of a shifted square.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">assume</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&gt;=</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">sqrt</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">)</span>
+<span class="token comment">// → -3+x</span></code></pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

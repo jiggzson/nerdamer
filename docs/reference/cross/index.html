@@ -69,7 +69,8 @@
 <div class="api-description"><p>Concrete Vector operands must each contain exactly three elements. The result is a Vector perpendicular to the two input vectors. Symbolic non-vector operands can remain as an unevaluated cross call.</p></div>
 <section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Compute the cross product of the first two standard basis vectors.</p><pre class="codeblock">cross([1,0,0],[0,1,0])
 // → [0, 0, 1]</pre></div>
-<div class="api-example-block"><p>Compute a cross product with symbolic components.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">cross</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">a</span><span class="token punctuation">,</span><span class="token variable">b</span><span class="token punctuation">,</span><span class="token variable">c</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token punctuation">,</span><span class="token variable">y</span><span class="token punctuation">,</span><span class="token variable">z</span><span class="token punctuation">]</span><span class="token punctuation">)</span></code></pre></div></section>
+<div class="api-example-block"><p>Compute a three-dimensional cross product with symbolic components.</p><pre class="codeblock">cross([a,b,c],[x,y,z])
+// → [b*z-c*y, c*x-a*z, a*y-b*x]</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

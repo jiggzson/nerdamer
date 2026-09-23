@@ -67,7 +67,8 @@
 <h1><code>rectform</code></h1>
 <p>Converts supported polar complex forms toward rectangular form.</p>
 <div class="api-description"><p>Nerdamer recognizes exponential polar forms and rewrites them with cosine and sine components. If no exact identity is available, an evaluable complex expression can be returned in rectangular form.</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Convert a polar exponential to real and imaginary components.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">rectform</span><span class="token punctuation">(</span><span class="token constant">e</span><span class="token operator">^</span><span class="token punctuation">(</span><span class="token constant">i</span><span class="token operator">*</span><span class="token constant">pi</span><span class="token operator">/</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre></div></section>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Convert an exact polar exponential back to rectangular form.</p><pre class="codeblock">rectform(sqrt(34)*e^(i*atan(3/5)))
+// → 5+3*i</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

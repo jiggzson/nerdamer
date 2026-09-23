@@ -69,7 +69,8 @@
 <div class="api-description"><p>Nerdamer expands supported algebraic structure and separates known real and complex factors. Expressions whose complex component cannot yet be resolved can remain under realpart(...).</p></div>
 <section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Extract the real component of a numeric complex value.</p><pre class="codeblock">realpart(3+2*i)
 // → 3</pre></div>
-<div class="api-example-block"><p>Keep an unresolved symbolic component.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">realpart</span><span class="token punctuation">(</span><span class="token variable">z</span><span class="token punctuation">)</span></code></pre></div></section>
+<div class="api-example-block"><p>Expand a symbolic complex product and collect its real component.</p><pre class="codeblock">realpart((a+b*i)*(c+d*i))
+// → a*c-b*d</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

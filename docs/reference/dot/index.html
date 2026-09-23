@@ -69,7 +69,8 @@
 <div class="api-description"><p>Concrete vectors must have the same length. Their corresponding elements are multiplied and summed to produce a scalar Expression. Symbolic non-vector operands can remain as an unevaluated dot call.</p></div>
 <section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Compute a numeric three-dimensional dot product.</p><pre class="codeblock">dot([1,2,3],[4,5,6])
 // → 32</pre></div>
-<div class="api-example-block"><p>Keep symbolic vector components in the scalar result.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">dot</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token punctuation">,</span><span class="token variable">y</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token variable">a</span><span class="token punctuation">,</span><span class="token variable">b</span><span class="token punctuation">]</span><span class="token punctuation">)</span></code></pre></div></section>
+<div class="api-example-block"><p>Reduce symbolic Vector components to an exact scalar expression.</p><pre class="codeblock">dot([x,y,z],[a,b,c])
+// → x*a+y*b+z*c</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

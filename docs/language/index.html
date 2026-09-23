@@ -133,6 +133,12 @@ square(6)
 <span class="token variable">a</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">;</span>
 <span class="token variable">b</span><span class="token operator">:</span><span class="token variable">a</span><span class="token operator">+</span><span class="token number">2</span><span class="token punctuation">;</span>
 <span class="token variable">b</span></code></pre>
+<div class="docs-callout"><strong><code>:</code> and <code>=</code> are not interchangeable.</strong> <code>:</code> stores a parser value. <code>=</code> denotes a mathematical equation. For example, <code>x:5</code> assigns 5 to x, while <code>x=5</code> produces the equation x=5.</div>
+<p>This distinction also applies to structured results such as solver output. To store a <code>SolutionSet</code>, assign it with <code>:</code>:</p>
+<pre class="codeblock language-javascript"><code class="language-javascript">
+<span class="token variable">sol</span><span class="token operator">:</span> <span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">sol</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">_n</span><span class="token operator">=&gt;</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">)</span>    <span class="token comment">// {0}</span></code></pre>
+<p><code>_n</code> is the reserved integer index used by solver-generated periodic families. It cannot be assigned globally with <code>_n:0</code>, but it can be supplied in the substitution Dictionary passed to <code>evaluate</code>. That Dictionary applies only to the evaluation and does not create a stored value for <code>_n</code>.</p>
 <p>Use <code>unassign(a)</code> to remove one stored assignment, <code>nerdamer.clearVars()</code> from application code to clear them all, or <code>let(...)</code> for temporary local bindings.</p>
 
 <h2>Statement separators</h2>

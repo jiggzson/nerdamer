@@ -71,7 +71,8 @@
 // → 5</pre></div>
 <div class="api-example-block"><p>Recognize an even power as non-negative.</p><pre class="codeblock">abs(x^2)
 // → x^2</pre></div>
-<div class="api-example-block"><p>Preserve an unknown sign symbolically.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">abs</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span></code></pre></div></section>
+<div class="api-example-block"><p>Use an assumption to determine the sign of an affine expression.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">assume</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&gt;=</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">abs</span><span class="token punctuation">(</span><span class="token number">7</span><span class="token operator">-</span><span class="token number">2</span><span class="token operator">*</span><span class="token variable">x</span><span class="token punctuation">)</span>
+<span class="token comment">// → -(7-2*x)</span></code></pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

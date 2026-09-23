@@ -52,8 +52,9 @@
           "description": "Extract the real component of a numeric complex value."
         },
         {
-          "expression": "realpart(z)",
-          "description": "Keep an unresolved symbolic component."
+          "expression": "realpart((a+b*i)*(c+d*i))",
+          "output": "a*c-b*d",
+          "description": "Expand a symbolic complex product and collect its real component."
         }
       ]
     },
@@ -70,9 +71,9 @@
           "description": "Extract the imaginary coefficient."
         },
         {
-          "expression": "imagpart(x)",
-          "output": "0",
-          "description": "A plain real symbol has zero imaginary component."
+          "expression": "imagpart((a+b*i)*(c+d*i))",
+          "output": "a*d+b*c",
+          "description": "Expand a symbolic complex product and collect its imaginary component."
         }
       ]
     },
@@ -87,6 +88,11 @@
           "expression": "arg(1+i)",
           "output": "(1/4)*pi",
           "description": "Return the principal angle of 1+i."
+        },
+        {
+          "expression": "arg(a*i)",
+          "output": "atan2(a, 0)",
+          "description": "Keep the quadrant of a symbolic imaginary coefficient explicit."
         }
       ]
     },
@@ -99,8 +105,9 @@
       ],
       "examples": [
         {
-          "expression": "conjugate(3+2*i)",
-          "description": "Flip the sign of the imaginary component."
+          "expression": "conjugate(a+b*i)",
+          "output": "a-b*i",
+          "description": "Conjugate a symbolic rectangular complex expression."
         },
         {
           "expression": "conjugate(i)",
@@ -141,8 +148,9 @@
       ],
       "examples": [
         {
-          "expression": "polarform(1+i)",
-          "description": "Convert a rectangular complex value to polar form."
+          "expression": "polarform(x^2+i)",
+          "output": "e^(i*atan2(1, x^2))*((1+x^4)^(1/2))",
+          "description": "Derive an exact magnitude and symbolic principal argument."
         }
       ]
     },
@@ -154,8 +162,9 @@
       ],
       "examples": [
         {
-          "expression": "rectform(e^(i*pi/3))",
-          "description": "Convert a polar exponential to real and imaginary components."
+          "expression": "rectform(sqrt(34)*e^(i*atan(3/5)))",
+          "output": "5+3*i",
+          "description": "Convert an exact polar exponential back to rectangular form."
         }
       ]
     },
@@ -178,8 +187,9 @@
           "description": "Recognize an even power as non-negative."
         },
         {
-          "expression": "abs(x)",
-          "description": "Preserve an unknown sign symbolically."
+          "expression": "assume(x>=4); abs(7-2*x)",
+          "output": "-(7-2*x)",
+          "description": "Use an assumption to determine the sign of an affine expression."
         }
       ]
     },
@@ -327,11 +337,13 @@
       "examples": [
         {
           "expression": "expand((x+1)^3)",
-          "description": "Expand a binomial power."
+          "output": "1+3*x+3*x^2+x^3",
+          "description": "Expand a binomial power exactly."
         },
         {
           "expression": "expand((x+y)*(x-y))",
-          "description": "Distribute a product of sums."
+          "output": "x^2-y^2",
+          "description": "Distribute a symbolic product and collect the result."
         }
       ]
     },
@@ -407,8 +419,9 @@
           "description": "Select the largest numeric argument."
         },
         {
-          "expression": "max(x,y)",
-          "description": "Keep unresolved symbolic ordering explicit."
+          "expression": "assume(x>0); assume(y<0); max(x,y)",
+          "output": "x",
+          "description": "Use assumptions to order symbolic arguments."
         }
       ]
     },
@@ -426,8 +439,9 @@
           "description": "Select the smallest numeric argument."
         },
         {
-          "expression": "min(x,y)",
-          "description": "Keep unresolved symbolic ordering explicit."
+          "expression": "assume(x>0); assume(y<0); min(x,y)",
+          "output": "y",
+          "description": "Use assumptions to order symbolic arguments."
         }
       ]
     },
@@ -499,8 +513,9 @@
           "description": "Identify a negative number."
         },
         {
-          "expression": "sign(x)",
-          "description": "Preserve an unknown sign."
+          "expression": "assume(x>3); sign(x-3)",
+          "output": "1",
+          "description": "Infer the sign of a symbolic affine expression from an assumption."
         }
       ]
     },
@@ -526,6 +541,11 @@
           "expression": "sqrt(x^2)",
           "output": "abs(x)",
           "description": "Preserve the sign ambiguity of a symbolic square."
+        },
+        {
+          "expression": "assume(x>=3); sqrt((x-3)^2)",
+          "output": "-3+x",
+          "description": "Use a known lower bound to resolve the sign of a shifted square."
         }
       ]
     },
@@ -578,7 +598,8 @@
       "examples": [
         {
           "expression": "div(x^2-1,x-1)",
-          "description": "Return the polynomial quotient and remainder."
+          "output": "[1+x, 0]",
+          "description": "Return the exact polynomial quotient together with a zero remainder."
         }
       ]
     },
@@ -607,6 +628,7 @@
       "examples": [
         {
           "expression": "polyfactors(x^2-1)",
+          "output": "[1+x, -1+x]",
           "description": "Return the factors of a difference of squares as separate Vector entries."
         }
       ]
@@ -731,9 +753,9 @@
           "description": "Compute an exact integer least common multiple."
         },
         {
-          "expression": "lcm(x,x)",
-          "output": "x",
-          "description": "Recognize that identical symbolic factors need only appear once."
+          "expression": "lcm((x-1)*(x+2),(x-1)*(x+3))",
+          "output": "(2+x)*(3+x)*(-1+x)",
+          "description": "Retain the shared polynomial factor once while combining the distinct factors."
         },
         {
           "expression": "lcm(0,x)",
@@ -782,6 +804,7 @@
         },
         {
           "expression": "partfrac(1/(x^2*(x-1)),x)",
+          "output": "-x^-2-x^-1+(-1+x)^-1",
           "description": "Decompose a denominator containing a repeated linear factor."
         }
       ]
@@ -796,7 +819,8 @@
       "examples": [
         {
           "expression": "sqcomp(x^2+6*x+1)",
-          "description": "Complete the square through Nerdamer Notation."
+          "output": "-8+(3+x)^2",
+          "description": "Rewrite a quadratic as a shifted square plus a constant."
         }
       ],
       "notes": [
@@ -852,43 +876,129 @@
       "name": "solve",
       "summary": "Solves an expression or equation for a variable and returns the solutions as a SolutionSet.",
       "description": [
-        "Nerdamer solves exact symbolic equations when supported, including polynomial equations with symbolic parameters. Expressions are treated as equations equal to zero; explicit equations can be supplied directly.",
+        "Nerdamer's solver is not limited to polynomial roots. It combines exact symbolic isolation, polynomial solving, supported radical and rational transformations, complex arithmetic, periodic families, and numerical root finding for equations that do not reduce to a closed symbolic form.",
+        "Expressions are treated as equations equal to zero; explicit equations can be supplied directly. Candidate roots are checked against the source equation in supported transformations so denominator singularities and extraneous roots introduced while isolating radicals or logarithms can be rejected.",
         "The solver returns distinct solutions in a SolutionSet rather than a plain JavaScript array."
       ],
       "examples": [
         {
-          "expression": "solve(6-5*x+x^2,x)",
-          "output": "{3, 2}",
-          "description": "Solve a quadratic with two exact roots."
-        },
-        {
-          "expression": "solve(-6+11*x-6*x^2+x^3,x)",
-          "output": "{1, 2, 3}",
-          "description": "Return all distinct roots of a factorable cubic."
-        },
-        {
           "expression": "solve(a*x^2+b*x+c,x)",
           "output": "{(1/2)*a^-1*(-b+(b^2-4*a*c)^(1/2)), (1/2)*a^-1*(-b-(b^2-4*a*c)^(1/2))}",
-          "description": "Keep symbolic parameters in the quadratic formula."
+          "description": "Derive the quadratic formula while preserving symbolic parameters."
+        },
+        {
+          "expression": "solve(sin(x),x)",
+          "output": "{_n*pi}",
+          "description": "Return the complete periodic family. _n is Nerdamer's reserved integer index, so this represents x=n*pi for every integer n."
+        },
+        {
+          "expression": "sol: solve(sin(x),x); evaluate(sol,{_n=>0})",
+          "output": "{0}",
+          "description": "Store the periodic SolutionSet, then evaluate the family at n=0 with a substitution local to evaluate. Use : to assign sol; = constructs an equation."
+        },
+        {
+          "expression": "solve((a+b)^x=y,x)",
+          "output": "{log(y)*log(a+b)^-1}",
+          "description": "Invert an exponential with a symbolic compound base; the result is equivalent to log(y)/log(a+b)."
+        },
+        {
+          "expression": "solve(0=(x^2-2)/(e^x-1),x)",
+          "output": "{2^(1/2), -2^(1/2)}",
+          "description": "Solve a rational-transcendental equation while excluding x=0, where the original denominator vanishes."
+        },
+        {
+          "expression": "solve(x-sqrt(x+1)=5,x)",
+          "output": "{8}",
+          "description": "Isolate a radical and verify the surviving branch against the original equation."
+        },
+        {
+          "expression": "solve(log(x-1)+log(x+3)+log(3)=log(15),x)",
+          "output": "{2}",
+          "description": "Solve a logarithmic equation and reject roots that violate the original logarithm domains."
+        },
+        {
+          "expression": "solve((z+5)/(3-i)=2-5*i,z)",
+          "output": "{-4-17*i}",
+          "description": "Solve directly over complex values."
+        },
+        {
+          "expression": "solve(x=2^x/4,x)",
+          "output": "{0.30990693238069053546, 4}",
+          "description": "Find both real roots when the unknown also appears in an exponent, including the nontrivial numerical root near 0.309906932380691 and the exact root 4."
+        },
+        {
+          "expression": "solve(E_k=m*c^2*((1-v^2/c^2)^(-1/2)-1),v)",
+          "output": "{-c^2*(c^-2*(1-c^4*m^2*((E_k^2+2*c^2*m*E_k+c^4*m^2)^-1)))^(1/2), c^2*(c^-2*(1-c^4*m^2*((E_k^2+2*c^2*m*E_k+c^4*m^2)^-1)))^(1/2)}",
+          "description": "Isolate velocity in the relativistic kinetic-energy equation and return the two symbolic velocity branches."
         }
+      ],
+      "notes": [
+        "_n is Nerdamer's reserved integer family parameter. In {_n*pi}, substituting _n=-2,-1,0,1,2,... gives ..., -2*pi, -pi, 0, pi, 2*pi, ... and therefore all roots of sin(x)=0.",
+        "In Nerdamer Scripting, a periodic SolutionSet can be stored and evaluated with sol: solve(sin(x),x); evaluate(sol,{_n=>0}), which returns {0}. The : operator stores sol; = denotes an equation and is not assignment syntax.",
+        "The {_n=>0} Dictionary entry is local to evaluate. It does not assign the reserved _n name globally, so _n:0 remains invalid.",
+        "To select a member of a periodic family in JavaScript / TypeScript, take the returned family expression and substitute an integer for _n: const solutions = nerdamer.solve('sin(x)', 'x'); const family = solutions.elements[0]; family.subst('_n', 2).text() returns 2*pi.",
+        "Some non-polynomial equations require numerical root finding; those solutions can therefore be approximate rather than exact symbolic expressions."
       ]
     },
     {
       "name": "solveSystem",
-      "summary": "Solves a system of equations and returns the solution assignments.",
+      "summary": "Solves linear, nonlinear, symbolic, and supported non-polynomial systems and returns solution assignments.",
       "description": [
-        "Nerdamer can solve linear symbolic systems and supported nonlinear polynomial systems. The JavaScript / TypeScript API uses solveSystem(...), while Nerdamer Notation uses solveeqs(...).",
-        "The JavaScript / TypeScript form can also receive an explicit variable order."
+        "System solving goes well beyond square linear systems. Nerdamer can preserve free variables in underdetermined linear systems, accept consistent overdetermined systems, solve supported nonlinear polynomial systems exactly, retain irrational and complex solutions, and fall back to numerical multivariate solving for supported systems containing functions such as trigonometric expressions.",
+        "Nerdamer Notation uses solveeqs(...). The JavaScript / TypeScript API uses solveSystem(...) and can additionally receive an explicit variable order, which is useful when other symbols should be treated as parameters rather than unknowns.",
+        "Solutions are returned as dictionaries inside a Vector. Nonlinear solving can return several isolated assignments, while underdetermined linear systems express pivot variables in terms of the remaining free variables."
       ],
       "examples": [
         {
-          "expression": "solveeqs([x+y=3,x-y=1])",
-          "output": "[{x => 2, y => 1}]",
-          "description": "Solve a two-equation linear system through Nerdamer Notation."
+          "expression": "solveeqs([x+y+z=6,x-y=2])",
+          "output": "[{x => 4+(-1/2)*z, y => 2+(-1/2)*z, z => z}]",
+          "description": "Solve an underdetermined linear system and retain z as a free variable."
+        },
+        {
+          "expression": "solveeqs([y=x^2,y=x+2])",
+          "output": "[{x => 2, y => 4}, {x => -1, y => 1}]",
+          "description": "Find both exact intersections of a parabola and a line: (-1,1) and (2,4)."
+        },
+        {
+          "expression": "solveeqs([x^2+y^2=1,y=x])",
+          "output": "[{x => (1/2)*2^(1/2), y => (1/2)*2^(1/2)}, {x => (-1/2)*2^(1/2), y => (-1/2)*2^(1/2)}]",
+          "description": "Solve a nonlinear geometric system exactly, preserving the two irrational circle-line intersections."
+        },
+        {
+          "expression": "solveeqs([x*y*z=6,x+y+z=6,x^2+y^2+z^2=14])",
+          "output": "[{x => 2, y => 3, z => 1}, {x => 3, y => 2, z => 1}, {x => 1, y => 3, z => 2}, {x => 3, y => 1, z => 2}, {x => 1, y => 2, z => 3}, {x => 2, y => 1, z => 3}]",
+          "description": "Solve a nonlinear three-variable system with six isolated solutions."
+        },
+        {
+          "expression": "solveeqs([cos(x)^2-y-1=0,x^2+y-7=0])",
+          "output": "[{x => -2.6825912868253889607, y => -0.19629601215149626377}, {x => 2.6825912868253889607, y => -0.19629601215149626377}]",
+          "description": "Use numerical multivariate solving for a mixed trigonometric-polynomial system; the real solutions are approximately x=±2.68259128682539 and y=-0.196296012151496."
+        },
+        {
+          "expression": "solveeqs([2*X1-4*X2+2*i=3,-5*X1+8*X2*i-4*i*X1=2])",
+          "output": "[{X1 => -6/5+(-6/5)*i, X2 => (-1/10)*(27/2+i)}]",
+          "description": "Solve a linear system whose coefficients and solutions are complex."
+        },
+        {
+          "expression": "solveeqs([x+y=1,2*x=6,4*z+y=6,y=-z])",
+          "output": "[{x => 3, y => -2, z => 2}]",
+          "description": "Accept a consistent overdetermined system instead of requiring exactly one equation per unknown."
+        },
+        {
+          "expression": "solveeqs([x=5,3/5=1-x/(10+y)])",
+          "output": "[{x => 5, y => 5/2}]",
+          "description": "Clear a rational denominator while preserving the valid exact system solution."
+        },
+        {
+          "expression": "solveeqs([sin(x)=0,y=1])",
+          "output": "[{x => -9.4247779607686356079, y => 1}, {x => 0, y => 1}, {x => 9.4247779607693797154, y => 1}]",
+          "description": "Solve a system containing a transcendental function numerically rather than rejecting it as non-polynomial."
         }
       ],
       "notes": [
-        "Systems whose solutions are not isolated, or unsupported underdetermined nonlinear systems, may throw rather than return incomplete assignments."
+        "Underdetermined linear systems are parameterized using their free variables. Nonlinear systems with a non-isolated infinite solution set are not currently represented this way and can throw an UnsupportedOperationError.",
+        "Numerical multivariate solving returns roots found within the solver's search strategy; it does not turn a periodic function such as sin(x)=0 into an infinite symbolic family. Use solve(...) for symbolic periodic families when solving a single equation.",
+        "Use solveSystem(equations, variables) in JavaScript / TypeScript when the unknown-variable list must be supplied explicitly."
       ]
     },
     {
@@ -980,11 +1090,13 @@
         },
         {
           "expression": "laplace(e^(-t),t,s)",
-          "description": "Apply the exponential shift rule."
+          "output": "(1+s)^-1",
+          "description": "Apply the exponential shift rule exactly."
         },
         {
           "expression": "laplace(sin(t),t,s)",
-          "description": "Transform a trigonometric function."
+          "output": "(1+s^2)^-1",
+          "description": "Transform a trigonometric function symbolically."
         }
       ]
     },
@@ -1003,11 +1115,13 @@
         },
         {
           "expression": "ilaplace(1/(s^2+2*s+1),s,t)",
+          "output": "t*e^(-t)",
           "description": "Invert a repeated pole at -1."
         },
         {
           "expression": "ilaplace(1/(s^2+s+1),s,t)",
-          "description": "Invert an irreducible quadratic into a damped sinusoidal form."
+          "output": "2*3^(-1/2)*e^((-1/2)*t)*sin((1/2)*3^(1/2)*t)",
+          "description": "Recover a damped sinusoid from an irreducible quadratic."
         }
       ]
     },
@@ -1021,12 +1135,17 @@
         {
           "expression": "sum(k,k,1,5)",
           "output": "15",
-          "description": "Sum the first five positive integers."
+          "description": "Sum a simple finite integer range."
         },
         {
-          "expression": "sum(k^2,k,1,4)",
-          "output": "30",
-          "description": "Sum a polynomial expression over a finite range."
+          "expression": "V:[x,x^2-1,2]; sum(3*V[k],k,0,size(V)[0]-1)",
+          "output": "3+3*x+3*x^2",
+          "description": "Combine symbolic indexing, a Vector, size(...), and a finite sum."
+        },
+        {
+          "expression": "sum((a*k+b)^2,k,1,5)",
+          "output": "(b+a)^2+(b+2*a)^2+(b+3*a)^2+(b+4*a)^2+(b+5*a)^2",
+          "description": "Substitute a finite integer range through an expression with symbolic parameters."
         }
       ]
     },
@@ -1040,12 +1159,17 @@
         {
           "expression": "product(k,k,1,5)",
           "output": "120",
-          "description": "Multiply the first five positive integers."
+          "description": "Multiply a simple finite integer range."
         },
         {
-          "expression": "product(k+1,k,1,3)",
-          "output": "24",
-          "description": "Multiply a simple symbolic term over a finite range."
+          "expression": "product(x+k,k,1,4)",
+          "output": "(1+x)*(2+x)*(3+x)*(4+x)",
+          "description": "Build an exact symbolic product of shifted factors."
+        },
+        {
+          "expression": "W:[x,x+1,x+2]; product(W[k],k,0,size(W)[0]-1)",
+          "output": "x*(1+x)*(2+x)",
+          "description": "Multiply indexed symbolic Vector entries over their full range."
         }
       ]
     },
@@ -1082,17 +1206,19 @@
       ],
       "examples": [
         {
-          "expression": "assume(x>=0); assume(x<10)",
-          "description": "Intersect repeated constraints to restrict x to [0, 10)."
+          "expression": "assume(x>0); assume(y<0); max(x,y)",
+          "output": "x",
+          "description": "Use disjoint symbolic ranges to prove which variable is larger."
+        },
+        {
+          "expression": "assume(x>=3); sqrt((x-3)^2)",
+          "output": "-3+x",
+          "description": "Use a lower bound to remove an otherwise necessary absolute value."
         },
         {
           "expression": "assume(x>0); assume(y>0); simplify(log(x)+log(y))",
           "output": "log(x*y)",
           "description": "Use positivity information in a sign-sensitive logarithm simplification."
-        },
-        {
-          "expression": "assume(x==1/3)",
-          "description": "The parser form can preserve an exact rational bound."
         }
       ],
       "notes": [
@@ -1111,7 +1237,12 @@
         {
           "expression": "transpose(matrix([1,2],[3,4]))",
           "output": "matrix([1, 3], [2, 4])",
-          "description": "Transpose a 2 by 2 matrix."
+          "description": "Transpose a numeric 2 by 2 matrix."
+        },
+        {
+          "expression": "transpose(matrix([a,b,c],[x,y,z]))",
+          "output": "matrix([a, x], [b, y], [c, z])",
+          "description": "Transpose a rectangular matrix while preserving symbolic entries."
         }
       ]
     },
@@ -1210,8 +1341,9 @@
           "description": "Compute a numeric three-dimensional dot product."
         },
         {
-          "expression": "dot([x,y],[a,b])",
-          "description": "Keep symbolic vector components in the scalar result."
+          "expression": "dot([x,y,z],[a,b,c])",
+          "output": "x*a+y*b+z*c",
+          "description": "Reduce symbolic Vector components to an exact scalar expression."
         }
       ]
     },
@@ -1229,7 +1361,8 @@
         },
         {
           "expression": "cross([a,b,c],[x,y,z])",
-          "description": "Compute a cross product with symbolic components."
+          "output": "[b*z-c*y, c*x-a*z, a*y-b*x]",
+          "description": "Compute a three-dimensional cross product with symbolic components."
         }
       ]
     },
@@ -1437,7 +1570,8 @@
       "summary": "Evaluates a parser value immediately, optionally with substitutions.",
       "description": [
         "evaluate(value) invokes the value's existing evaluation behavior from Nerdamer Scripting.",
-        "The two-argument form accepts a Dictionary of substitutions. The three-argument form accepts a variable Vector and a same-length point Vector, which is useful for repeated numerical evaluation without rebuilding substitution dictionaries."
+        "The two-argument form accepts a Dictionary whose entries are substitutions for that evaluation only. They do not create or replace parser assignments, and they can be applied to expressions and supported structured values including SolutionSet results.",
+        "The three-argument form accepts a variable Vector and a same-length point Vector, which is useful for repeated numerical evaluation without rebuilding substitution dictionaries."
       ],
       "examples": [
         {
@@ -1451,13 +1585,20 @@
           "description": "Evaluate a structured value with Dictionary substitutions."
         },
         {
+          "expression": "sol: solve(sin(x),x); evaluate(sol,{_n=>0})",
+          "output": "{0}",
+          "description": "Store a periodic SolutionSet with : and evaluate one indexed family member by supplying the reserved _n index locally."
+        },
+        {
           "expression": "evaluate([u+v,u*v],[u,v],[2,3])",
           "output": "[5, 6]",
           "description": "Evaluate from parallel variable and point Vectors."
         }
       ],
       "notes": [
-        "If evaluation cannot complete, evaluate returns the resolved input unchanged rather than creating a symbolic evaluate(...) node."
+        "If evaluation cannot complete, evaluate returns the resolved input unchanged rather than creating a symbolic evaluate(...) node.",
+        "Dictionary substitutions are local to the evaluate call. Supplying {_n=>0} does not assign _n globally; _n remains a reserved solver-family index and _n:0 is still rejected.",
+        "When a value must be stored before evaluation, use Nerdamer Scripting assignment with :. The = operator denotes an equation and does not store a parser value."
       ]
     },
     {
@@ -1893,8 +2034,9 @@
           "description": "Use an exact special angle."
         },
         {
-          "expression": "cos(x)",
-          "description": "Keep a symbolic angle."
+          "expression": "cos(-x)",
+          "output": "cos(x)",
+          "description": "Apply cosine's even symmetry symbolically."
         }
       ]
     },
@@ -1911,8 +2053,9 @@
           "description": "Use an exact special angle."
         },
         {
-          "expression": "sin(x)",
-          "description": "Keep a symbolic angle."
+          "expression": "sin(-x)",
+          "output": "-sin(x)",
+          "description": "Apply sine's odd symmetry symbolically."
         }
       ]
     },
@@ -1929,8 +2072,9 @@
           "description": "Use an exact special angle."
         },
         {
-          "expression": "tan(x)",
-          "description": "Keep a symbolic angle."
+          "expression": "tan(atan(3/4))",
+          "output": "3/4",
+          "description": "Simplify a supported inverse-trigonometric composition exactly."
         }
       ]
     },

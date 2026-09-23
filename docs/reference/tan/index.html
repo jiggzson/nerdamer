@@ -69,7 +69,8 @@
 <div class="api-description"><p>Nerdamer returns exact values for supported special angles, simplifies odd symmetry, and rejects points where tangent is undefined.</p></div>
 <section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Use an exact special angle.</p><pre class="codeblock">tan(pi/4)
 // → 1</pre></div>
-<div class="api-example-block"><p>Keep a symbolic angle.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">tan</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span></code></pre></div></section>
+<div class="api-example-block"><p>Simplify a supported inverse-trigonometric composition exactly.</p><pre class="codeblock">tan(atan(3/4))
+// → 3/4</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

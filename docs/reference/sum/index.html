@@ -67,10 +67,12 @@
 <h1><code>sum</code></h1>
 <p>Evaluates a finite symbolic sum over an integer index.</p>
 <div class="api-description"><p>With concrete integer bounds, Nerdamer substitutes the index through the inclusive range and adds the resulting symbolic terms. If a bound is still symbolic, the sum remains unevaluated.</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Sum the first five positive integers.</p><pre class="codeblock">sum(k,k,1,5)
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Sum a simple finite integer range.</p><pre class="codeblock">sum(k,k,1,5)
 // → 15</pre></div>
-<div class="api-example-block"><p>Sum a polynomial expression over a finite range.</p><pre class="codeblock">sum(k^2,k,1,4)
-// → 30</pre></div></section>
+<div class="api-example-block"><p>Combine symbolic indexing, a Vector, size(...), and a finite sum.</p><pre class="codeblock">V:[x,x^2-1,2]; sum(3*V[k],k,0,size(V)[0]-1)
+// → 3+3*x+3*x^2</pre></div>
+<div class="api-example-block"><p>Substitute a finite integer range through an expression with symbolic parameters.</p><pre class="codeblock">sum((a*k+b)^2,k,1,5)
+// → (b+a)^2+(b+2*a)^2+(b+3*a)^2+(b+4*a)^2+(b+5*a)^2</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

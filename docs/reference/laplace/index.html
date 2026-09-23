@@ -69,8 +69,10 @@
 <div class="api-description"><p>The transform maps an expression from a source variable to a transform variable. Supported forms include powers, exponentials, trigonometric and hyperbolic functions, linear combinations, and common shift and scaling patterns.</p><p>If no supported transform rule applies, Nerdamer leaves the Laplace transform unevaluated.</p></div>
 <section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Transform a polynomial power.</p><pre class="codeblock">laplace(t^2,t,s)
 // → 2*s^-3</pre></div>
-<div class="api-example-block"><p>Apply the exponential shift rule.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">laplace</span><span class="token punctuation">(</span><span class="token constant">e</span><span class="token operator">^</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token variable">t</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">t</span><span class="token punctuation">,</span><span class="token variable">s</span><span class="token punctuation">)</span></code></pre></div>
-<div class="api-example-block"><p>Transform a trigonometric function.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">laplace</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">t</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">t</span><span class="token punctuation">,</span><span class="token variable">s</span><span class="token punctuation">)</span></code></pre></div></section>
+<div class="api-example-block"><p>Apply the exponential shift rule exactly.</p><pre class="codeblock">laplace(e^(-t),t,s)
+// → (1+s)^-1</pre></div>
+<div class="api-example-block"><p>Transform a trigonometric function symbolically.</p><pre class="codeblock">laplace(sin(t),t,s)
+// → (1+s^2)^-1</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

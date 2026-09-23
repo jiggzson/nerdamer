@@ -71,7 +71,8 @@
 // → 1</pre></div>
 <div class="api-example-block"><p>Identify a negative number.</p><pre class="codeblock">sign(-3)
 // → -1</pre></div>
-<div class="api-example-block"><p>Preserve an unknown sign.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">sign</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span></code></pre></div></section>
+<div class="api-example-block"><p>Infer the sign of a symbolic affine expression from an assumption.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">assume</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&gt;</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">sign</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">)</span>
+<span class="token comment">// → 1</span></code></pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

@@ -76,6 +76,25 @@
     for those workloads.
 </div>
 
+<h2 id="periodic-solution-family">Evaluate a periodic solution family</h2>
+<p>
+    A symbolic solve can return an indexed family rather than a finite list. For
+    <code>sin(x)=0</code>, Nerdamer returns <code>{_n*pi}</code>, where <code>_n</code> ranges over the integers.
+    Store the <code>SolutionSet</code> with <code>:</code>, then provide a value for <code>_n</code> only for the
+    evaluation that needs it.
+</p>
+<div class="code-example" data-example="scripting-periodic-solution-family">
+    <button class="code-copy" type="button" data-copy-code aria-label="Copy periodic solution Nerdamer Scripting example">Copy</button>
+    <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token variable">sol</span><span class="token operator">:</span> <span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">sol</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">_n</span><span class="token operator">=&gt;</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">)</span></code></pre>
+</div>
+<p>
+    The result is <code>{0}</code>. The substitution Dictionary is local to <code>evaluate</code>; it does not assign
+    <code>_n</code> globally. <code>_n:0</code> remains invalid because <code>_n</code> is reserved for solver-generated
+    families. Also note that <code>=</code> is equation syntax, not assignment syntax, so
+    <code>sol = solve(sin(x),x)</code> would not store the solver result under <code>sol</code>.
+</p>
+
 <h2 id="newton-system">Newton's method for a nonlinear system</h2>
 <p>
     This example solves three nonlinear equations using a symbolic Jacobian, Newton iteration, and a multistart search

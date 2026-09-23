@@ -66,11 +66,13 @@
 <div class="eyebrow">Scripting reference · Nerdamer Language</div>
 <h1><code>evaluate</code></h1>
 <p>Evaluates a parser value immediately, optionally with substitutions.</p>
-<div class="api-description"><p>evaluate(value) invokes the value&#39;s existing evaluation behavior from Nerdamer Scripting.</p><p>The two-argument form accepts a Dictionary of substitutions. The three-argument form accepts a variable Vector and a same-length point Vector, which is useful for repeated numerical evaluation without rebuilding substitution dictionaries.</p></div>
+<div class="api-description"><p>evaluate(value) invokes the value&#39;s existing evaluation behavior from Nerdamer Scripting.</p><p>The two-argument form accepts a Dictionary whose entries are substitutions for that evaluation only. They do not create or replace parser assignments, and they can be applied to expressions and supported structured values including SolutionSet results.</p><p>The three-argument form accepts a variable Vector and a same-length point Vector, which is useful for repeated numerical evaluation without rebuilding substitution dictionaries.</p></div>
 <section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Scripting.</p><div class="api-example-block"><p>Evaluate a numerical expression immediately.</p><pre class="codeblock">evaluate(sin(2))
 // → 0.9092974268256816954</pre></div>
 <div class="api-example-block"><p>Evaluate a structured value with Dictionary substitutions.</p><pre class="codeblock language-javascript"><code class="language-javascript"><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token operator">+</span><span class="token variable">y</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token operator">*</span><span class="token variable">y</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">x</span><span class="token operator">=&gt;</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token variable">y</span><span class="token operator">=&gt;</span><span class="token number">3</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
 <span class="token comment">// → [5, 6]</span></code></pre></div>
+<div class="api-example-block"><p>Store a periodic SolutionSet with : and evaluate one indexed family member by supplying the reserved _n index locally.</p><pre class="codeblock language-javascript"><code class="language-javascript"><span class="token variable">sol</span><span class="token operator">:</span> <span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">sol</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">_n</span><span class="token operator">=&gt;</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token comment">// → {0}</span></code></pre></div>
 <div class="api-example-block"><p>Evaluate from parallel variable and point Vectors.</p><pre class="codeblock">evaluate([u+v,u*v],[u,v],[2,3])
 // → [5, 6]</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#scripting">Nerdamer Scripting</a></p></section>
@@ -86,7 +88,9 @@
 </section>
 
 
-<section class="api-detail"><h2>Notes</h2><ul><li>If evaluation cannot complete, evaluate returns the resolved input unchanged rather than creating a symbolic evaluate(...) node.</li></ul></section>
+<section class="api-detail"><h2>Notes</h2><ul><li>If evaluation cannot complete, evaluate returns the resolved input unchanged rather than creating a symbolic evaluate(...) node.</li>
+<li>Dictionary substitutions are local to the evaluate call. Supplying {_n=&gt;0} does not assign _n globally; _n remains a reserved solver-family index and _n:0 is still rejected.</li>
+<li>When a value must be stored before evaluation, use Nerdamer Scripting assignment with :. The = operator denotes an equation and does not store a parser value.</li></ul></section>
 
 <p><a href="/docs/language/">← Back to Nerdamer Scripting</a></p></article></div>
 </main>

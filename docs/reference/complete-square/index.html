@@ -67,7 +67,8 @@
 <h1><code>completeSquare</code></h1>
 <p>Rewrites a quadratic in completed-square form.</p>
 <div class="api-description"><p>Use sqcomp(...) in Nerdamer Notation. In JavaScript or TypeScript, completeSquare(...) returns the completed-square expression together with the quadratic coefficient, shift, remainder, and selected variable.</p><p>The direct API is available from the root nerdamer export and from nerdamer/algebra.</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Complete the square through Nerdamer Notation.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">sqcomp</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">6</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span></code></pre></div></section>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Rewrite a quadratic as a shifted square plus a constant.</p><pre class="codeblock">sqcomp(x^2+6*x+1)
+// → -8+(3+x)^2</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#direct-api">Direct API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

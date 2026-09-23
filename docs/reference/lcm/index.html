@@ -69,8 +69,8 @@
 <div class="api-description"><p>Numeric inputs use exact rational arithmetic. For symbolic polynomial expressions, Nerdamer computes the product divided by the symbolic greatest common divisor so shared factors are retained.</p><p>If either operand is zero, the result is zero.</p></div>
 <section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Compute an exact integer least common multiple.</p><pre class="codeblock">lcm(6,4)
 // → 12</pre></div>
-<div class="api-example-block"><p>Recognize that identical symbolic factors need only appear once.</p><pre class="codeblock">lcm(x,x)
-// → x</pre></div>
+<div class="api-example-block"><p>Retain the shared polynomial factor once while combining the distinct factors.</p><pre class="codeblock">lcm((x-1)*(x+2),(x-1)*(x+3))
+// → (2+x)*(3+x)*(-1+x)</pre></div>
 <div class="api-example-block"><p>Apply the zero case.</p><pre class="codeblock">lcm(0,x)
 // → 0</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>

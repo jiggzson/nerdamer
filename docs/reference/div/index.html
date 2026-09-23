@@ -67,7 +67,8 @@
 <h1><code>div</code></h1>
 <p>Performs polynomial division and returns quotient and remainder.</p>
 <div class="api-description"><p>When both arguments are polynomial-like, div returns a two-element Vector containing the quotient and remainder. Inputs outside the polynomial domain use the compatibility fallback [0, dividend].</p><p>Multivariable input is handled as a multivariable polynomial rather than by silently choosing one main variable.</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Return the polynomial quotient and remainder.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">div</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span></code></pre></div></section>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Return the exact polynomial quotient together with a zero remainder.</p><pre class="codeblock">div(x^2-1,x-1)
+// → [1+x, 0]</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

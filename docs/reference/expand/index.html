@@ -67,8 +67,10 @@
 <h1><code>expand</code></h1>
 <p>Expands an expression algebraically.</p>
 <div class="api-description"><p>expand distributes products over sums, expands supported integer powers, and recursively expands algebraic structure. It is useful when a multiplied or powered form needs to be rewritten as an explicit sum of terms.</p><p>Expansion does not mean numerical evaluation; symbols and supported functions remain symbolic.</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Expand a binomial power.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">expand</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token operator">^</span><span class="token number">3</span><span class="token punctuation">)</span></code></pre></div>
-<div class="api-example-block"><p>Distribute a product of sums.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">expand</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">+</span><span class="token variable">y</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">-</span><span class="token variable">y</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre></div></section>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Expand a binomial power exactly.</p><pre class="codeblock">expand((x+1)^3)
+// → 1+3*x+3*x^2+x^3</pre></div>
+<div class="api-example-block"><p>Distribute a symbolic product and collect the result.</p><pre class="codeblock">expand((x+y)*(x-y))
+// → x^2-y^2</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

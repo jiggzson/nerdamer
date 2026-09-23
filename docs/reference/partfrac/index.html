@@ -71,7 +71,8 @@
 // → (-1/2)*k^-1+(9/2)*(2+k)^-1</pre></div>
 <div class="api-example-block"><p>Reduce an improper rational expression when the remainder is zero.</p><pre class="codeblock">partfrac((x^2-1)/(x-1),x)
 // → 1+x</pre></div>
-<div class="api-example-block"><p>Decompose a denominator containing a repeated linear factor.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">partfrac</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">/</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span></code></pre></div></section>
+<div class="api-example-block"><p>Decompose a denominator containing a repeated linear factor.</p><pre class="codeblock">partfrac(1/(x^2*(x-1)),x)
+// → -x^-2-x^-1+(-1+x)^-1</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

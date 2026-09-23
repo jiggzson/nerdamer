@@ -67,7 +67,8 @@
 <h1><code>conjugate</code></h1>
 <p>Returns the complex conjugate of an expression.</p>
 <div class="api-description"><p>Conjugation changes i to -i and distributes through supported sums, products, and powers when the transformation is valid for the represented branch.</p><p>The same operation is available directly as nerdamer.conjugate(...).</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Flip the sign of the imaginary component.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">conjugate</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token operator">+</span><span class="token number">2</span><span class="token operator">*</span><span class="token constant">i</span><span class="token punctuation">)</span></code></pre></div>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Conjugate a symbolic rectangular complex expression.</p><pre class="codeblock">conjugate(a+b*i)
+// → a-b*i</pre></div>
 <div class="api-example-block"><p>Conjugate the imaginary unit.</p><pre class="codeblock">conjugate(i)
 // → -i</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a></p></section>

@@ -67,7 +67,8 @@
 <h1><code>polyFactors</code></h1>
 <p>Returns polynomial factors as a Vector of separate factor expressions.</p>
 <div class="api-description"><p>In Nerdamer Notation, use polyfactors(...). In JavaScript or TypeScript, use polyFactors(...) from the root API or nerdamer/algebra.</p><p>The result is a Vector containing the factor expressions rather than a single product.</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Return the factors of a difference of squares as separate Vector entries.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">polyfactors</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span></code></pre></div></section>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Return the factors of a difference of squares as separate Vector entries.</p><pre class="codeblock">polyfactors(x^2-1)
+// → [1+x, -1+x]</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#direct-api">Direct API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

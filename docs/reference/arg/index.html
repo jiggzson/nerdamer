@@ -68,7 +68,9 @@
 <p>Returns the principal argument of a complex expression.</p>
 <div class="api-description"><p>The argument is computed from the real and imaginary components using quadrant-aware atan2 behavior. Pure imaginary axis cases are handled explicitly.</p></div>
 <section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Return the principal angle of 1+i.</p><pre class="codeblock">arg(1+i)
-// → (1/4)*pi</pre></div></section>
+// → (1/4)*pi</pre></div>
+<div class="api-example-block"><p>Keep the quadrant of a symbolic imaginary coefficient explicit.</p><pre class="codeblock">arg(a*i)
+// → atan2(a, 0)</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

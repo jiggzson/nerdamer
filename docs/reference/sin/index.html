@@ -69,7 +69,8 @@
 <div class="api-description"><p>Nerdamer returns exact symbolic values for common rational multiples of pi, simplifies sine&#39;s odd symmetry, and evaluates supported inverse-trigonometric compositions.</p></div>
 <section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Use an exact special angle.</p><pre class="codeblock">sin(pi/6)
 // → 1/2</pre></div>
-<div class="api-example-block"><p>Keep a symbolic angle.</p><pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span></code></pre></div></section>
+<div class="api-example-block"><p>Apply sine&#39;s odd symmetry symbolically.</p><pre class="codeblock">sin(-x)
+// → -sin(x)</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

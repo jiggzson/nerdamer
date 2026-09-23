@@ -69,8 +69,8 @@
 <div class="api-description"><p>Nerdamer expands supported algebraic structure and separates known real and complex factors. Purely real expressions return zero; unresolved complex functions can remain under imagpart(...).</p></div>
 <section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Extract the imaginary coefficient.</p><pre class="codeblock">imagpart(3+2*i)
 // → 2</pre></div>
-<div class="api-example-block"><p>A plain real symbol has zero imaginary component.</p><pre class="codeblock">imagpart(x)
-// → 0</pre></div></section>
+<div class="api-example-block"><p>Expand a symbolic complex product and collect its imaginary component.</p><pre class="codeblock">imagpart((a+b*i)*(c+d*i))
+// → a*d+b*c</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>

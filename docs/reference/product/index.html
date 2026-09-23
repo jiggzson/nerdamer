@@ -67,10 +67,12 @@
 <h1><code>product</code></h1>
 <p>Evaluates a finite symbolic product over an integer index.</p>
 <div class="api-description"><p>With concrete integer bounds, Nerdamer substitutes the index through the inclusive range and multiplies the resulting symbolic terms. If a bound is still symbolic, the product remains unevaluated.</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Multiply the first five positive integers.</p><pre class="codeblock">product(k,k,1,5)
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Multiply a simple finite integer range.</p><pre class="codeblock">product(k,k,1,5)
 // → 120</pre></div>
-<div class="api-example-block"><p>Multiply a simple symbolic term over a finite range.</p><pre class="codeblock">product(k+1,k,1,3)
-// → 24</pre></div></section>
+<div class="api-example-block"><p>Build an exact symbolic product of shifted factors.</p><pre class="codeblock">product(x+k,k,1,4)
+// → (1+x)*(2+x)*(3+x)*(4+x)</pre></div>
+<div class="api-example-block"><p>Multiply indexed symbolic Vector entries over their full range.</p><pre class="codeblock">W:[x,x+1,x+2]; product(W[k],k,0,size(W)[0]-1)
+// → x*(1+x)*(2+x)</pre></div></section>
 <section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>
