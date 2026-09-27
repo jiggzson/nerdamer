@@ -20,7 +20,7 @@
   </script>
   <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
   <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
-  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='auto';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
   <link rel="stylesheet" href="../../../styles/site.css">
   <link rel="stylesheet" href="../../../styles/code-highlight.css">
   <link rel="stylesheet" href="../../../styles/logo.css">
@@ -55,7 +55,7 @@
 <div class="docs-layout"><aside class="docs-sidebar">
   <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
   <nav class="docs-nav" id="docs-nav">
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/references/">References &amp; citations</a></div>
     <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
     <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
@@ -73,13 +73,13 @@
   <pre class="codeblock language-shell"><code class="language-shell"><span class="token function">git</span> <span class="token variable">clone</span> <span class="token variable">https</span><span class="token operator">:</span><span class="token operator">/</span><span class="token operator">/</span><span class="token variable">github</span><span class="token punctuation">.</span><span class="token variable">com</span><span class="token operator">/</span><span class="token variable">jiggzson</span><span class="token operator">/</span><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">git</span>
 <span class="token function">cd</span> <span class="token variable">nerdamer</span>
 <span class="token function">npm</span> <span class="token variable">install</span></code></pre>
-  <p>The source is TypeScript. The build produces JavaScript bundle artifacts and generated TypeScript declarations for consumers.</p>
+  <p>The source is TypeScript. Nerdamer now builds its public API modules separately from its browser bundles. The full bundle and parser-only bundle are separate targets, while <code>build:modules</code> produces the package subpath modules and declarations.</p>
 
   <h2>The normal contributor loop</h2>
   <div class="internals-stage-row">
     <div class="internals-stage"><small>1 · Edit</small><code>src/</code><p>Make the smallest change in the subsystem that owns the behavior.</p></div>
     <div class="internals-stage"><small>2 · Check</small><code>npm run typecheck</code><code>npm test</code><p>Catch type and behavioral regressions while the change is still small.</p></div>
-    <div class="internals-stage"><small>3 · Build</small><code>npm run build</code><p>Verify the distributable bundles and declaration output still build.</p></div>
+    <div class="internals-stage"><small>3 · Build</small><code>npm run build</code><code>npm run build:parser</code><p>Verify both the complete package and parser-only browser targets.</p></div>
   </div>
 
   <h2>Development commands</h2>
@@ -91,13 +91,22 @@
         <tr><td>npm run typecheck</td><td>Fast correctness check while editing</td><td>Runs TypeScript without emitting files.</td></tr>
         <tr><td>npx tsc</td><td>Direct TypeScript compiler workflow</td><td>Runs the TypeScript compiler directly.</td></tr>
         <tr><td>npm test</td><td>Behavior and regression coverage</td><td>Runs the Jest suite.</td></tr>
-        <tr><td>npm run build:modules</td><td>Refresh package API modules</td><td>Rebuilds the generated module output used by the public package subpath imports.</td></tr>
-        <tr><td>npm run build</td><td>Release-facing build validation</td><td>Builds the JavaScript bundle artifacts and TypeScript declarations.</td></tr>
+        <tr><td>npm run build:modules</td><td>Refresh package API modules</td><td>Builds the generated JavaScript and declarations used by public package subpath imports.</td></tr>
+        <tr><td>npm run build:bundle</td><td>Build the complete browser bundle</td><td>Produces <code>dist/bundle.js</code> from the full package entry point.</td></tr>
+        <tr><td>npm run build:parser</td><td>Build the parser-only browser target</td><td>Produces <code>dist/parser.js</code> from <code>src/api/parser.ts</code> and runs its smoke check.</td></tr>
+        <tr><td>npm run build:full</td><td>Build the complete package</td><td>Runs the module build, complete browser bundle, and full-bundle smoke check.</td></tr>
+        <tr><td>npm run build</td><td>Release-facing complete build</td><td>Runs <code>build:full</code>. The parser-only target remains a separate <code>build:parser</code> step.</td></tr>
         <tr><td>npm run dev</td><td>Scratch-driven development</td><td>Runs <code>tools/dev.ts</code> through the development watcher.</td></tr>
         <tr><td>npm run lint</td><td>Static code checks</td><td>Runs ESLint over the TypeScript source.</td></tr>
       </tbody>
     </table>
   </div>
+
+  <h2>Full package and parser-only composition</h2>
+  <p>The browser builds no longer assume that every parser entry point should pull in the complete CAS. <code>src/index.ts</code> assembles the complete package and calls <code>registerNerdamerFunctions()</code>, which registers parser-visible functions from core, math, algebra, calculus, and solving. The parser façade at <code>src/api/parser.ts</code> calls <code>loadParserFunctions()</code> instead, registering parser/core and math functionality without importing the higher-level algebra, calculus, and solver domains.</p>
+  <pre class="codeblock language-shell"><code class="language-shell"><span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">build</span>          <span class="token comment"># complete package: modules + dist/bundle.js</span>
+<span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">build</span><span class="token operator">:</span><span class="token variable">parser</span>   <span class="token comment"># parser-only browser target: dist/parser.js</span></code></pre>
+  <p>This separation keeps <code>nerdamer/parser</code> and the parser browser target useful without recreating the old dependency from the parser back into the complete package. Domain dispatch modules register their own functions when the complete package is assembled.</p>
 
   <h2>Use the development scratch file</h2>
   <p><code>tools/dev.ts</code> is available for experiments, debugging, and quick local checks.</p>
@@ -129,7 +138,8 @@
   <p>A change that works in one scratch example is not enough. Check the surrounding subsystem, add a targeted regression when fixing a bug, and run the full validation commands before handing the change off.</p>
   <pre class="codeblock language-shell"><code class="language-shell"><span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">typecheck</span>
 <span class="token function">npm</span> <span class="token variable">test</span>
-<span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">build</span></code></pre>
+<span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">build</span>
+<span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">build</span><span class="token operator">:</span><span class="token variable">parser</span></code></pre>
 
   <div class="internals-intro">
     <div class="internals-intro-card"><strong>Nerdamer repository</strong><p>The repository is the source for current code, commands, package entry points, and contributor documentation.</p><a rel="noopener noreferrer" target="_blank" class="internals-source" href="https://github.com/jiggzson/nerdamer">github.com/jiggzson/nerdamer</a></div>
@@ -145,7 +155,7 @@
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
         Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

@@ -20,7 +20,7 @@
   </script>
   <link rel="icon" type="image/png" href="../images/ico.png?v=4">
   <link rel="shortcut icon" type="image/png" href="../images/ico.png?v=4">
-  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='auto';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
   <link rel="stylesheet" href="../styles/site.css">
   <link rel="stylesheet" href="../styles/code-highlight.css">
   <link rel="stylesheet" href="../styles/logo.css">
@@ -55,7 +55,7 @@
 <div class="docs-layout"><aside class="docs-sidebar">
   <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
   <nav class="docs-nav" id="docs-nav">
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/references/">References &amp; citations</a></div>
     <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
     <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
@@ -69,12 +69,10 @@
 	those interfaces so you can go directly to the form you are using.
 </p>
 <div class="docs-callout">
-	<strong>User input is parsed, not evaluated as JavaScript.</strong> Nerdamer Notation and Nerdamer Scripting are
-	handled by the library's parser. Normal parsing, simplification, solving, evaluation, and symbolic manipulation do
-	not use <code>eval()</code> or <code>new Function</code>, so a string passed to <code>nerdamer(...)</code> should
-	not be treated as JavaScript source. The exception is <code>buildFunction()</code>, which explicitly compiles an
-	expression to a JavaScript-number function with <code>new Function(...)</code> and can therefore be affected by
-	Content Security Policy restrictions.
+	<strong>Nerdamer Notation and Nerdamer Scripting are mathematical input, not JavaScript.</strong> Strings passed to
+	<code>nerdamer(...)</code> are parsed as Nerdamer syntax rather than executed as JavaScript. <code>buildFunction()</code>
+	is different: it compiles an expression to a numerical JavaScript function and may be restricted by Content Security
+	Policy.
 </div>
 <div class="docs-callout">
 	<strong>New to Nerdamer?</strong> Start with <a href="/docs/getting-started/">Getting started</a>. If you are unsure
@@ -125,10 +123,11 @@
 
 <h2>JavaScript / TypeScript API</h2>
 <p>
-	Use the API when you want to call the library directly from application code. The default
-	<code>nerdamer</code> import is callable and also exposes functions such as <code>nerdamer.pretty(...)</code>,
-	<code>nerdamer.setFunction(...)</code>, <code>nerdamer.factor(...)</code>, and <code>nerdamer.solve(...)</code>.
-	Public package paths are also available for direct imports of functions, classes, and types.
+	Use the JavaScript / TypeScript API when your application needs to work directly with Nerdamer expressions,
+	functions, matrices, vectors, or other mathematical values. The default <code>nerdamer</code> import is callable and
+	also exposes functions such as <code>nerdamer.pretty(...)</code>, <code>nerdamer.setFunction(...)</code>,
+	<code>nerdamer.factor(...)</code>, and <code>nerdamer.solve(...)</code>. Public package paths are also available for
+	direct imports of functions, classes, and types.
 </p>
 <pre class="codeblock language-javascript"><code class="language-javascript">
 <span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
@@ -173,7 +172,7 @@
 	<a class="card docs-card" href="/docs/public-helpers/"
 		><span class="arrow">→</span>
 		<h3>Text output &amp; public helpers</h3>
-		<p>Control rendered term ordering and use the promoted algebra, substitution, complex, and linear-algebra helpers.</p></a
+		<p>Format expression output and use algebra, substitution, complex-number, and linear-algebra helpers from JavaScript or TypeScript.</p></a
 	>
 	<a class="card docs-card" href="/docs/examples/"
 		><span class="arrow">→</span>
@@ -187,6 +186,11 @@
 		><span class="arrow">→</span>
 		<h3>Migrating from Nerdamer 1.xx</h3>
 		<p>Update existing 1.xx applications for version 2.xx.</p></a
+	>
+	<a class="card docs-card" href="/docs/references/"
+		><span class="arrow">→</span>
+		<h3>References &amp; citations</h3>
+		<p>Academic literature, external algorithm references, and sources used by the documentation examples.</p></a
 	>
 	<a class="card docs-card" href="/playground/"
 		><span class="arrow">→</span>
@@ -203,7 +207,7 @@
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
         Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

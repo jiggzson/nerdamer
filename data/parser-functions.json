@@ -447,6 +447,39 @@
       "canonicalName": "ceil"
     },
     {
+      "name": "coeffs",
+      "category": "Polynomials",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "coeffs(expression[, variable])",
+      "summary": "Returns dense polynomial coefficients ordered from constant term upward.",
+      "parameters": [
+        {
+          "name": "expression",
+          "description": "Polynomial expression whose coefficients should be collected."
+        },
+        {
+          "name": "variable",
+          "description": "Optional polynomial variable. Defaults to the first variable in the expression."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('coeffs(x^2+2*x+1,x)').text()",
+          "output": "[1, 2, 1]"
+        }
+      ],
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "coeffs"
+      }
+    },
+    {
       "name": "conjugate",
       "category": "Complex",
       "usage": "notation",
@@ -497,6 +530,18 @@
       "deferArguments": false,
       "registrationLevel": "system",
       "syntax": "continue()"
+    },
+    {
+      "name": "continued_fraction",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "continued_fraction(arg1, [arg2])"
     },
     {
       "name": "cos",
@@ -641,6 +686,18 @@
         "package": "nerdamer/algebra",
         "name": "deg"
       }
+    },
+    {
+      "name": "degrees",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "degrees(arg1)"
     },
     {
       "name": "delta",
@@ -1007,6 +1064,30 @@
       "syntax": "gamma(arg1)"
     },
     {
+      "name": "gamma_incomplete",
+      "category": "Special functions",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "gamma_incomplete(arg1, arg2)"
+    },
+    {
+      "name": "gamma_incomplete_lower",
+      "category": "Special functions",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "gamma_incomplete_lower(arg1, arg2)"
+    },
+    {
       "name": "gcd",
       "category": "Algebra",
       "usage": "notation",
@@ -1186,6 +1267,22 @@
       }
     },
     {
+      "name": "invert",
+      "category": "Linear algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "invert(arg1)",
+      "directApi": {
+        "package": "nerdamer/structures",
+        "name": "invert"
+      }
+    },
+    {
       "name": "iserror",
       "category": "Nerdamer Language",
       "usage": "scripting",
@@ -1298,6 +1395,18 @@
       }
     },
     {
+      "name": "line",
+      "category": "Linear algebra",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 3,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "line(arg1, arg2, [arg3])"
+    },
+    {
       "name": "log",
       "category": "Math",
       "usage": "notation",
@@ -1308,6 +1417,18 @@
       "deferArguments": false,
       "registrationLevel": "system",
       "syntax": "log(arg1, [arg2])"
+    },
+    {
+      "name": "log10",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "log10(arg1)"
     },
     {
       "name": "matrix",
@@ -1514,6 +1635,64 @@
       }
     },
     {
+      "name": "pfactor",
+      "category": "Algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "pfactor(value)",
+      "summary": "Returns the repeated prime factors of a positive integer in ascending order.",
+      "parameters": [
+        {
+          "name": "value",
+          "description": "Positive integer to prime-factor."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('pfactor(100)').text()",
+          "output": "[2, 2, 5, 5]"
+        }
+      ],
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "pfactor"
+      }
+    },
+    {
+      "name": "pfactord",
+      "category": "Algebra",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "pfactord(value)",
+      "summary": "Returns prime factors and their occurrence counts as a Dictionary.",
+      "parameters": [
+        {
+          "name": "value",
+          "description": "Positive integer to prime-factor."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('pfactord(100)').text()",
+          "output": "{2 => 2, 5 => 2}"
+        }
+      ],
+      "directApi": {
+        "package": "nerdamer/algebra",
+        "name": "pfactord"
+      }
+    },
+    {
       "name": "polarform",
       "category": "Complex",
       "usage": "notation",
@@ -1558,6 +1737,18 @@
       }
     },
     {
+      "name": "radians",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "radians(arg1)"
+    },
+    {
       "name": "realpart",
       "category": "Complex",
       "usage": "notation",
@@ -1568,6 +1759,18 @@
       "deferArguments": false,
       "registrationLevel": "system",
       "syntax": "realpart(arg1)"
+    },
+    {
+      "name": "rect",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "rect(arg1)"
     },
     {
       "name": "rectform",
@@ -1594,6 +1797,38 @@
       "deferArguments": false,
       "registrationLevel": "system",
       "syntax": "return(arg1)"
+    },
+    {
+      "name": "roots",
+      "category": "Solving",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "roots(expression[, variable])",
+      "summary": "Returns legacy-style roots as a Vector, using the polynomial root solver for polynomial input.",
+      "parameters": [
+        {
+          "name": "expression",
+          "description": "Univariate polynomial or numeric constant whose roots should be returned."
+        },
+        {
+          "name": "variable",
+          "description": "Optional polynomial variable."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('roots(x^2-1,x)').text()"
+        }
+      ],
+      "directApi": {
+        "package": "nerdamer/solve",
+        "name": "roots"
+      }
     },
     {
       "name": "round",
@@ -1633,6 +1868,35 @@
         {
           "input": "nerdamer('rref(matrix([1,2],[3,4]))').text()",
           "output": "matrix([1, 0], [0, 1])"
+        }
+      ]
+    },
+    {
+      "name": "scientific",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "scientific(value[, significantDigits])",
+      "summary": "Keeps an expression exact while requesting scientific notation with a fixed significant-digit count.",
+      "parameters": [
+        {
+          "name": "value",
+          "description": "Expression whose numeric values should use scientific notation."
+        },
+        {
+          "name": "significantDigits",
+          "description": "Optional integer from 1 through 1e9. The coefficient retains exactly this many significant digits. Defaults to 10."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('scientific(1200,4)').text()",
+          "output": "1.200e3"
         }
       ]
     },
@@ -1832,6 +2096,18 @@
       "syntax": "sqrt(arg1)"
     },
     {
+      "name": "step",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "step(arg1)"
+    },
+    {
       "name": "subst",
       "category": "Math",
       "usage": "notation",
@@ -1907,6 +2183,18 @@
           "output": "matrix([1, 3], [2, 4])"
         }
       ]
+    },
+    {
+      "name": "tri",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "tri(arg1)"
     },
     {
       "name": "trunc",

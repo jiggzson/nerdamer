@@ -20,7 +20,7 @@
   </script>
   <link rel="icon" type="image/png" href="../images/ico.png?v=4">
   <link rel="shortcut icon" type="image/png" href="../images/ico.png?v=4">
-  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='auto';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
   <link rel="stylesheet" href="../styles/site.css">
   <link rel="stylesheet" href="../styles/code-highlight.css">
   <link rel="stylesheet" href="../styles/logo.css">
@@ -107,14 +107,10 @@
 				</div>
 			</div>
 			<div class="editor-wrap">
-				<pre
-					class="editor-highlight"
-					id="editor-highlight"
-					aria-hidden="true"
-				><code id="editor-highlight-code"></code></pre>
+				<pre class="editor-highlight" id="editor-highlight"
+					aria-hidden="true"><code id="editor-highlight-code"></code></pre>
 				<textarea class="editor" id="editor" spellcheck="false" aria-label="Nerdamer expression or script">
-factor(x^4 - 1)</textarea
-				>
+factor(-b^8-a*b^2*x+a*x^3*b^7+a^2*x^4*b)</textarea>
 				<div class="suggestion-box" id="suggestions" hidden></div>
 				<div class="editor-actions">
 					<input id="evaluate-output" type="checkbox" hidden aria-hidden="true" />
@@ -145,7 +141,9 @@ factor(x^4 - 1)</textarea
 			<div class="output-pane" data-pane="text" role="tabpanel">
 				<pre class="codeblock" id="raw-output"></pre>
 			</div>
-			<div class="output-pane" data-pane="tex" role="tabpanel"><pre class="codeblock" id="tex-output"></pre></div>
+			<div class="output-pane" data-pane="tex" role="tabpanel">
+				<pre class="codeblock" id="tex-output"></pre>
+			</div>
 			<div class="output-pane" data-pane="tree" role="tabpanel">
 				<div class="tree-toolbar">
 					<span>Returned parser entity</span><small>Expand a node to inspect it.</small>
@@ -167,24 +165,16 @@ factor(x^4 - 1)</textarea
 			<div class="plot-message" id="plot-message">Use an expression with at least one variable to plot.</div>
 			<div class="plot-controls" id="plot-controls" hidden>
 				<div class="plot-control-grid">
-					<label
-						><span>x variable</span
-						><select id="plot-xvar"></select
-					></label>
+					<label><span>x variable</span><select id="plot-xvar"></select></label>
 					<label><span>x min</span><input id="plot-xmin" type="number" step="any" value="-10" /></label>
 					<label><span>x max</span><input id="plot-xmax" type="number" step="any" value="10" /></label>
-					<label
-						><span>samples</span
-						><input id="plot-samples" type="number" min="64" max="4096" step="64" value="768"
-					/></label>
+					<label><span>samples</span><input id="plot-samples" type="number" min="64" max="4096" step="64"
+							value="768" /></label>
 				</div>
 				<div class="plot-mode-row">
 					<label class="plot-check"><input id="plot-3d" type="checkbox" /><span>3-D plot</span></label>
 					<div class="plot-3d-options" id="plot-3d-options" hidden>
-						<label
-							><span>y variable</span
-							><select id="plot-yvar"></select
-						></label>
+						<label><span>y variable</span><select id="plot-yvar"></select></label>
 						<label><span>y min</span><input id="plot-ymin" type="number" step="any" value="-10" /></label>
 						<label><span>y max</span><input id="plot-ymax" type="number" step="any" value="10" /></label>
 					</div>
@@ -228,7 +218,7 @@ factor(x^4 - 1)</textarea
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
         Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

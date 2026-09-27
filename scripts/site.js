@@ -57,20 +57,39 @@
       window.addEventListener('load', scheduleDocsHashScroll, { once: true });
       window.addEventListener('pageshow', scheduleDocsHashScroll, { once: true });
     } else {
+      const navigation = performance.getEntriesByType('navigation')[0];
+      const restoreHistoryScroll = navigation?.type === 'back_forward';
+      const scrollKey = `nerdamer-docs-scroll:${normalizedPath(location.pathname)}`;
+      const saveDocsScroll = () => {
+        try {
+          sessionStorage.setItem(scrollKey, String(window.scrollY));
+        } catch {}
+      };
+      const restoreDocsScroll = () => {
+        const savedScroll = Number(sessionStorage.getItem(scrollKey));
+        const targetScroll = Number.isFinite(savedScroll) ? savedScroll : 0;
+        scheduleScroll(() => withImmediateScroll(() => window.scrollTo(0, targetScroll)));
+      };
+
       try {
         history.scrollRestoration = 'manual';
       } catch {}
 
-      const resetDocsScroll = () => withImmediateScroll(() => {
-        root.scrollTop = 0;
-        document.body.scrollTop = 0;
-        window.scrollTo(0, 0);
-      });
-      const scheduleDocsScrollReset = () => scheduleScroll(resetDocsScroll);
+      if (restoreHistoryScroll) restoreDocsScroll();
+      else withImmediateScroll(() => window.scrollTo(0, 0));
 
-      scheduleDocsScrollReset();
-      window.addEventListener('load', scheduleDocsScrollReset, { once: true });
-      window.addEventListener('pageshow', scheduleDocsScrollReset, { once: true });
+      document.addEventListener('click', event => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const link = event.target.closest('a[href]');
+        if (!link) return;
+        const target = siteUrl(link);
+        if (target.origin !== location.origin || target.href === location.href) return;
+        saveDocsScroll();
+      }, { capture: true });
+      window.addEventListener('pageshow', event => {
+        if (event.persisted) restoreDocsScroll();
+      });
+      window.addEventListener('pagehide', saveDocsScroll);
     }
   }
 

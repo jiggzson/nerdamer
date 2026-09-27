@@ -471,7 +471,18 @@
       "examples": [
         {
           "expression": "parens(x+1)",
+          "output": "(1+x)",
           "description": "Preserve explicit grouping around a sum."
+        },
+        {
+          "expression": "2*parens(x+1)",
+          "output": "2*(1+x)",
+          "description": "Keep the grouped sum visible when it is multiplied."
+        },
+        {
+          "expression": "parens(a+b)^2",
+          "output": "(a+b)^2",
+          "description": "Preserve the grouped base of a power."
         }
       ]
     },
@@ -661,6 +672,225 @@
           "expression": "x:5; unassign(x); x",
           "output": "x",
           "description": "Remove a parser assignment and recover the symbol."
+        }
+      ]
+    },
+    {
+      "name": "radians",
+      "summary": "Converts an angle in degrees to radians exactly.",
+      "description": [
+        "radians(x) multiplies the input by pi/180. Symbolic inputs remain exact rather than being converted to a decimal approximation."
+      ],
+      "examples": [
+        {
+          "expression": "radians(180)",
+          "output": "pi",
+          "description": "Convert a half-turn to pi radians."
+        },
+        {
+          "expression": "radians(45)",
+          "output": "(1/4)*pi",
+          "description": "Convert 45 degrees to an exact fraction of pi."
+        },
+        {
+          "expression": "radians(x)",
+          "output": "(1/180)*x*pi",
+          "description": "Keep a symbolic degree measure exact."
+        }
+      ]
+    },
+    {
+      "name": "degrees",
+      "summary": "Converts an angle in radians to degrees exactly.",
+      "description": [
+        "degrees(x) multiplies the input by 180/pi. Symbolic inputs remain exact."
+      ],
+      "examples": [
+        {
+          "expression": "degrees(pi)",
+          "output": "180",
+          "description": "Convert pi radians to 180 degrees."
+        },
+        {
+          "expression": "degrees(2*pi/3)",
+          "output": "120",
+          "description": "Convert an exact rational multiple of pi."
+        },
+        {
+          "expression": "degrees(x)",
+          "output": "180*x*pi^-1",
+          "description": "Keep a symbolic radian measure exact."
+        }
+      ]
+    },
+    {
+      "name": "log10",
+      "summary": "Returns the base-10 logarithm of an expression.",
+      "description": [
+        "log10(x) uses Nerdamer's logarithm implementation with base 10, preserving symbolic input when it cannot be reduced exactly."
+      ],
+      "examples": [
+        {
+          "expression": "log10(1000)",
+          "output": "3",
+          "description": "Evaluate an exact power of ten."
+        },
+        {
+          "expression": "log10(10^7)",
+          "output": "7",
+          "description": "Reduce a larger exact power of ten."
+        },
+        {
+          "expression": "log10(x)",
+          "output": "log(x)*log(10)^-1",
+          "description": "Represent an unresolved symbolic base-10 logarithm exactly."
+        }
+      ]
+    },
+    {
+      "name": "step",
+      "summary": "Computes the legacy unit step function.",
+      "description": [
+        "step(x) returns 0 for resolved negative inputs and 1 for resolved inputs greater than or equal to zero. Symbolic inputs remain as step(x).",
+        "Unlike heaviside(x), step(0) is 1 rather than 1/2."
+      ],
+      "examples": [
+        {
+          "expression": "step(-3)",
+          "output": "0",
+          "description": "Return zero for a negative input."
+        },
+        {
+          "expression": "step(0)",
+          "output": "1",
+          "description": "Use the legacy value at the origin."
+        },
+        {
+          "expression": "step(3)",
+          "output": "1",
+          "description": "Return one for a positive input."
+        },
+        {
+          "expression": "step(x)",
+          "output": "step(x)",
+          "description": "Keep an unresolved symbolic input unevaluated."
+        }
+      ]
+    },
+    {
+      "name": "rect",
+      "summary": "Computes a unit-width rectangular pulse centered at zero.",
+      "description": [
+        "rect(x) is 1 when |x|<1/2, 1/2 when |x|=1/2, and 0 when |x|>1/2. Unresolved symbolic inputs remain as rect(x)."
+      ],
+      "examples": [
+        {
+          "expression": "rect(0)",
+          "output": "1",
+          "description": "Evaluate at the center of the pulse."
+        },
+        {
+          "expression": "rect(1/2)",
+          "output": "1/2",
+          "description": "Use the half-height value at the boundary."
+        },
+        {
+          "expression": "rect(3/4)",
+          "output": "0",
+          "description": "Return zero outside the pulse."
+        },
+        {
+          "expression": "rect(x)",
+          "output": "rect(x)",
+          "description": "Keep an unresolved symbolic input unevaluated."
+        }
+      ]
+    },
+    {
+      "name": "tri",
+      "summary": "Computes a triangular pulse centered at zero.",
+      "description": [
+        "tri(x) returns 1-|x| when |x|<1 and 0 when |x|>=1. Unresolved symbolic inputs remain as tri(x)."
+      ],
+      "examples": [
+        {
+          "expression": "tri(0)",
+          "output": "1",
+          "description": "Evaluate the peak of the triangular pulse."
+        },
+        {
+          "expression": "tri(1/4)",
+          "output": "3/4",
+          "description": "Evaluate an interior point exactly."
+        },
+        {
+          "expression": "tri(1)",
+          "output": "0",
+          "description": "Return zero at the boundary."
+        },
+        {
+          "expression": "tri(x)",
+          "output": "tri(x)",
+          "description": "Keep an unresolved symbolic input unevaluated."
+        }
+      ]
+    },
+    {
+      "name": "continued_fraction",
+      "summary": "Returns a continued-fraction decomposition of a value.",
+      "description": [
+        "continued_fraction(value[, depth]) returns a Collection containing the sign, whole part, and a Vector of partial quotients. The optional depth limits the expansion."
+      ],
+      "examples": [
+        {
+          "expression": "continued_fraction(415/93)",
+          "output": "(1, 4, [2, 6, 7])",
+          "description": "Decompose an exact rational value into its sign, whole part, and partial quotients."
+        },
+        {
+          "expression": "continued_fraction(415/93,2)",
+          "output": "(1, 4, [2, 6])",
+          "description": "Limit the continued-fraction expansion to the requested depth."
+        },
+        {
+          "expression": "continued_fraction(-415/93)",
+          "output": "(-1, 4, [2, 6, 7])",
+          "description": "Preserve the sign separately for a negative rational value."
+        },
+        {
+          "expression": "continued_fraction(355/113)",
+          "output": "(1, 3, [7, 16])",
+          "description": "Expose the compact continued fraction of a familiar rational approximation to pi."
+        }
+      ]
+    },
+    {
+      "name": "scientific",
+      "summary": "Formats numeric values in scientific notation while preserving the expression's mathematical value.",
+      "description": [
+        "scientific(value[, significantDigits]) records a scientific-notation presentation with an optional significant-digit count. The value remains exact for subsequent symbolic work.",
+        "The significant-digit count must be an integer from 1 through 1e9 and defaults to 10."
+      ],
+      "examples": [
+        {
+          "expression": "scientific(12345,3)",
+          "output": "1.23e4",
+          "description": "Round a positive integer to three significant digits in scientific notation."
+        },
+        {
+          "expression": "scientific(1200,4)",
+          "output": "1.200e3",
+          "description": "Preserve trailing zeros required by the requested precision."
+        },
+        {
+          "expression": "scientific(1/8,4)",
+          "output": "1.250e-1",
+          "description": "Format an exact rational value with four significant digits."
+        },
+        {
+          "expression": "scientific(-987654,4)",
+          "output": "-9.877e5",
+          "description": "Format and round a negative value."
         }
       ]
     },
@@ -1367,6 +1597,87 @@
       ]
     },
     {
+      "name": "pfactor",
+      "summary": "Returns the repeated prime factors of a positive integer in ascending order.",
+      "description": [
+        "pfactor(n) uses Nerdamer's exact integer factorization and returns a Vector containing each prime once for every occurrence."
+      ],
+      "examples": [
+        {
+          "expression": "pfactor(100)",
+          "output": "[2, 2, 5, 5]",
+          "description": "Return repeated prime factors in ascending order."
+        }
+      ]
+    },
+    {
+      "name": "pfactord",
+      "summary": "Returns prime factors and their occurrence counts.",
+      "description": [
+        "pfactord(n) returns the exact prime factorization as a Dictionary whose keys are primes and whose values are their occurrence counts."
+      ],
+      "examples": [
+        {
+          "expression": "pfactord(100)",
+          "output": "{2 => 2, 5 => 2}",
+          "description": "Collect repeated factors into occurrence counts."
+        }
+      ]
+    },
+    {
+      "name": "roots",
+      "summary": "Returns legacy-style polynomial roots as a Vector.",
+      "description": [
+        "roots(expression[, variable]) provides the legacy root-return shape while using Nerdamer 2.0's polynomial solver for polynomial input. Numeric constants retain the legacy square-root behavior."
+      ],
+      "examples": [
+        {
+          "expression": "roots(x^2-1,x)",
+          "description": "Return the roots of a univariate polynomial as a Vector."
+        }
+      ]
+    },
+    {
+      "name": "coeffs",
+      "summary": "Returns dense polynomial coefficients from constant term upward.",
+      "description": [
+        "coeffs(expression[, variable]) collects polynomial coefficients and returns them as a Vector ordered by ascending power."
+      ],
+      "examples": [
+        {
+          "expression": "coeffs(x^2+2*x+1,x)",
+          "output": "[1, 2, 1]",
+          "description": "Collect the coefficients of a quadratic."
+        }
+      ]
+    },
+    {
+      "name": "invert",
+      "summary": "Returns the inverse of a square matrix.",
+      "description": [
+        "invert(matrix) computes the matrix inverse without modifying the supplied Matrix."
+      ],
+      "examples": [
+        {
+          "expression": "invert(matrix([1,2],[3,4]))",
+          "description": "Invert a 2 by 2 matrix."
+        }
+      ]
+    },
+    {
+      "name": "line",
+      "summary": "Returns the equation expression for the line through two two-dimensional points.",
+      "description": [
+        "line(p1,p2[, dimension]) accepts two two-element vectors. The optional dimension selects the independent variable and defaults to x."
+      ],
+      "examples": [
+        {
+          "expression": "line([0,0],[1,1])",
+          "description": "Construct the line through the origin and (1,1)."
+        }
+      ]
+    },
+    {
       "name": "and",
       "summary": "Returns 1 when every argument is nonzero and 0 otherwise.",
       "description": [
@@ -2018,6 +2329,54 @@
           "expression": "isprime(1)",
           "output": "0",
           "description": "Treat 1 as non-prime."
+        }
+      ]
+    },
+    {
+      "name": "gamma_incomplete",
+      "summary": "Computes the upper incomplete gamma function.",
+      "description": [
+        "gamma_incomplete(a,z) represents Γ(a,z). Positive integer values of a are expanded exactly with the finite-sum identity; other inputs remain symbolic."
+      ],
+      "examples": [
+        {
+          "expression": "gamma_incomplete(1,x)",
+          "output": "e^(-x)",
+          "description": "Use the simplest positive-integer case."
+        },
+        {
+          "expression": "gamma_incomplete(3,x)",
+          "output": "2*e^(-x)*(1+x+(1/2)*x^2)",
+          "description": "Expand the upper incomplete gamma function for a higher positive integer."
+        },
+        {
+          "expression": "gamma_incomplete(4,x)",
+          "output": "6*e^(-x)*(1+x+(1/2)*x^2+(1/6)*x^3)",
+          "description": "Show the finite polynomial multiplying the exponential for a=4."
+        }
+      ]
+    },
+    {
+      "name": "gamma_incomplete_lower",
+      "summary": "Computes the lower incomplete gamma function.",
+      "description": [
+        "gamma_incomplete_lower(a,z) represents γ(a,z). Positive integer values of a use γ(a,z)=Γ(a)-Γ(a,z); other inputs remain symbolic."
+      ],
+      "examples": [
+        {
+          "expression": "gamma_incomplete_lower(1,x)",
+          "output": "1-e^(-x)",
+          "description": "Use the simplest lower incomplete gamma case."
+        },
+        {
+          "expression": "gamma_incomplete_lower(3,x)",
+          "output": "2-2*e^(-x)*(1+x+(1/2)*x^2)",
+          "description": "Show the exact complement of the upper incomplete gamma result for a=3."
+        },
+        {
+          "expression": "gamma_incomplete_lower(4,x)",
+          "output": "6-6*e^(-x)*(1+x+(1/2)*x^2+(1/6)*x^3)",
+          "description": "Expand the lower incomplete gamma function for a=4."
         }
       ]
     },

@@ -847,8 +847,12 @@
 
   editor.addEventListener('input', () => {
     lastExecution = null;
+    plotContext = null;
+    if (plotControls) plotControls.hidden = true;
+    if (plot3DOptions) plot3DOptions.hidden = true;
+    if (plotSource) plotSource.textContent = 'Run the expression to update plotting.';
+    if (plotMessage) plotMessage.textContent = 'Run the expression to update plotting.';
     updateAutocomplete();
-    syncPlotContext();
   });
   editor.addEventListener('click', updateAutocomplete);
   editor.addEventListener('keydown', event => {

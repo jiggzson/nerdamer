@@ -20,7 +20,7 @@
   </script>
   <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
   <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
-  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='auto';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
   <link rel="stylesheet" href="../../../styles/site.css">
   <link rel="stylesheet" href="../../../styles/code-highlight.css">
   <link rel="stylesheet" href="../../../styles/logo.css">
@@ -55,7 +55,7 @@
 <div class="docs-layout"><aside class="docs-sidebar">
   <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
   <nav class="docs-nav" id="docs-nav">
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/references/">References &amp; citations</a></div>
     <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
     <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
@@ -187,7 +187,7 @@
         <span class="token punctuation">)</span>
     <span class="token punctuation">)</span><span class="token punctuation">;</span>
 
-<span class="token function">containsRoot</span><span class="token punctuation">(</span><span class="token variable">roots</span><span class="token punctuation">,</span><span class="token variable">rootCount</span><span class="token punctuation">,</span><span class="token variable">candidate</span><span class="token punctuation">,</span><span class="token variable">tolerance</span><span class="token punctuation">)</span><span class="token operator">:=</span>
+<span class="token function">containsRoot</span><span class="token punctuation">(</span><span class="token variable">foundRoots</span><span class="token punctuation">,</span><span class="token variable">rootCount</span><span class="token punctuation">,</span><span class="token variable">candidate</span><span class="token punctuation">,</span><span class="token variable">tolerance</span><span class="token punctuation">)</span><span class="token operator">:=</span>
     <span class="token keyword">let</span><span class="token punctuation">(</span>
         <span class="token variable">rootIndex</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
         <span class="token variable">coordinate</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
@@ -207,7 +207,7 @@
                             <span class="token keyword">if</span><span class="token punctuation">(</span>
                                 <span class="token function">abs</span><span class="token punctuation">(</span>
                                     <span class="token variable">candidate</span><span class="token punctuation">[</span><span class="token variable">coordinate</span><span class="token punctuation">]</span>
-                                    <span class="token operator">-</span><span class="token variable">roots</span><span class="token punctuation">[</span><span class="token variable">coordinate</span><span class="token punctuation">,</span><span class="token variable">rootIndex</span><span class="token punctuation">]</span>
+                                    <span class="token operator">-</span><span class="token variable">foundRoots</span><span class="token punctuation">[</span><span class="token variable">coordinate</span><span class="token punctuation">,</span><span class="token variable">rootIndex</span><span class="token punctuation">]</span>
                                 <span class="token punctuation">)</span><span class="token operator">&gt;</span><span class="token variable">tolerance</span><span class="token punctuation">,</span>
                                 <span class="token function">block</span><span class="token punctuation">(</span>
                                     <span class="token variable">same</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
@@ -285,7 +285,7 @@
         <span class="token variable">dimensions</span><span class="token operator">:</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token variable">starts</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
         <span class="token variable">startCount</span><span class="token operator">:</span><span class="token variable">dimensions</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
         <span class="token variable">rootCount</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
-        <span class="token variable">roots</span><span class="token operator">:</span><span class="token function">imatrix</span><span class="token punctuation">(</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token variable">variables</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token variable">foundRoots</span><span class="token operator">:</span><span class="token function">imatrix</span><span class="token punctuation">(</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token variable">variables</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
         <span class="token variable">startIndex</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span>
         <span class="token function">block</span><span class="token punctuation">(</span>
             <span class="token keyword">for</span><span class="token punctuation">(</span>
@@ -309,7 +309,7 @@
                         <span class="token keyword">if</span><span class="token punctuation">(</span>
                             <span class="token function">not</span><span class="token punctuation">(</span>
                                 <span class="token function">containsRoot</span><span class="token punctuation">(</span>
-                                    <span class="token variable">roots</span><span class="token punctuation">,</span>
+                                    <span class="token variable">foundRoots</span><span class="token punctuation">,</span>
                                     <span class="token variable">rootCount</span><span class="token punctuation">,</span>
                                     <span class="token variable">attempt</span><span class="token punctuation">,</span>
                                     <span class="token variable">tolerance</span>
@@ -318,11 +318,11 @@
                             <span class="token function">block</span><span class="token punctuation">(</span>
                                 <span class="token keyword">if</span><span class="token punctuation">(</span>
                                     <span class="token variable">rootCount</span><span class="token punctuation">,</span>
-                                    <span class="token variable">roots</span><span class="token operator">:</span><span class="token function">augment</span><span class="token punctuation">(</span>
-                                        <span class="token variable">roots</span><span class="token punctuation">,</span>
+                                    <span class="token variable">foundRoots</span><span class="token operator">:</span><span class="token function">augment</span><span class="token punctuation">(</span>
+                                        <span class="token variable">foundRoots</span><span class="token punctuation">,</span>
                                         <span class="token function">transpose</span><span class="token punctuation">(</span><span class="token function">matrix</span><span class="token punctuation">(</span><span class="token variable">attempt</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
                                     <span class="token punctuation">)</span><span class="token punctuation">,</span>
-                                    <span class="token variable">roots</span><span class="token operator">:</span><span class="token function">transpose</span><span class="token punctuation">(</span><span class="token function">matrix</span><span class="token punctuation">(</span><span class="token variable">attempt</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                                    <span class="token variable">foundRoots</span><span class="token operator">:</span><span class="token function">transpose</span><span class="token punctuation">(</span><span class="token function">matrix</span><span class="token punctuation">(</span><span class="token variable">attempt</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
                                 <span class="token punctuation">)</span><span class="token punctuation">,</span>
                                 <span class="token variable">rootCount</span><span class="token operator">:</span><span class="token variable">rootCount</span><span class="token operator">+</span><span class="token number">1</span>
                             <span class="token punctuation">)</span>
@@ -332,7 +332,7 @@
             <span class="token punctuation">)</span><span class="token punctuation">,</span>
             <span class="token keyword">if</span><span class="token punctuation">(</span>
                 <span class="token variable">rootCount</span><span class="token punctuation">,</span>
-                <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token function">transpose</span><span class="token punctuation">(</span><span class="token variable">roots</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token function">transpose</span><span class="token punctuation">(</span><span class="token variable">foundRoots</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
                 <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
             <span class="token punctuation">)</span>
         <span class="token punctuation">)</span>
@@ -342,7 +342,7 @@
     <span class="token keyword">let</span><span class="token punctuation">(</span>
         <span class="token class-name">J</span><span class="token operator">:</span><span class="token function">jacobian</span><span class="token punctuation">(</span><span class="token variable">residuals</span><span class="token punctuation">,</span><span class="token variable">variables</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
         <span class="token variable">starts</span><span class="token operator">:</span><span class="token function">buildStarts</span><span class="token punctuation">(</span><span class="token variable">seeds</span><span class="token punctuation">,</span><span class="token variable">variables</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-        <span class="token variable">roots</span><span class="token operator">:</span><span class="token function">findRoots</span><span class="token punctuation">(</span>
+        <span class="token variable">foundRoots</span><span class="token operator">:</span><span class="token function">findRoots</span><span class="token punctuation">(</span>
             <span class="token variable">residuals</span><span class="token punctuation">,</span>
             <span class="token variable">variables</span><span class="token punctuation">,</span>
             <span class="token class-name">J</span><span class="token punctuation">,</span>
@@ -350,7 +350,7 @@
             <span class="token variable">iterations</span><span class="token punctuation">,</span>
             <span class="token variable">tolerance</span>
         <span class="token punctuation">)</span><span class="token punctuation">,</span>
-        <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token function">numeric</span><span class="token punctuation">(</span><span class="token variable">roots</span><span class="token punctuation">,</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span><span class="token punctuation">(</span><span class="token function">numeric</span><span class="token punctuation">(</span><span class="token variable">foundRoots</span><span class="token punctuation">,</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
     <span class="token punctuation">)</span><span class="token punctuation">;</span>
 
 <span class="token function">runNewtonExample</span><span class="token punctuation">(</span>
@@ -459,7 +459,7 @@
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
         Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

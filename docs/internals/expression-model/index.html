@@ -20,7 +20,7 @@
   </script>
   <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
   <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
-  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='manual';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='auto';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
   <link rel="stylesheet" href="../../../styles/site.css">
   <link rel="stylesheet" href="../../../styles/code-highlight.css">
   <link rel="stylesheet" href="../../../styles/logo.css">
@@ -56,7 +56,7 @@
 <div class="docs-layout"><aside class="docs-sidebar">
   <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
   <nav class="docs-nav" id="docs-nav">
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/references/">References &amp; citations</a></div>
     <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
     <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
@@ -125,6 +125,79 @@ flowchart LR
     <div class="internals-group-card"><div class="internals-group-badge">INF</div><div><h3>Infinite value</h3><p>Stores infinite values.</p><span class="internals-group-example">Infinity</span></div></div>
   </div>
 
+  <h2 id="grouping-canonicalization">How grouping drives canonicalization</h2>
+  <p>Nerdamer does more than place parsed input into a tree of addition and multiplication nodes. Arithmetic assigns symbolic expressions canonical lookup identities, separates numeric coefficients from symbolic structure where possible, and uses keyed child collections to combine compatible terms and factors as expressions are built.</p>
+
+  <div class="internals-visual">
+    <div class="internals-visual-head"><strong>Canonical grouping during arithmetic</strong><span>Conceptual flow</span></div>
+    <div class="internals-mermaid">
+      <div class="mermaid">
+flowchart LR
+  A["parsed Expression"] --> B["separate outer multiplier / power"]
+  B --> C["build canonical key"]
+  C --> D{"compatible key already present?"}
+  D -->|"same term"| E["combine coefficients"]
+  D -->|"same base, different power"| F["GRP: key members by power"]
+  D -->|"different additive structure"| G["SUM"]
+  D -->|"product factor"| H["PRD: combine matching bases / powers"]
+      </div>
+    </div>
+  </div>
+
+  <h3>Like terms combine without a later collection pass</h3>
+  <p>For a simple variable term, the numeric coefficient normally lives in the outer <code>multiplier</code>. This lets addition recognize equal symbolic structure directly.</p>
+  <pre class="codeblock"><code>2*x + 3*x
+
+x:
+  multiplier = 2
++
+x:
+  multiplier = 3
+
+→ 5*x</code></pre>
+
+  <p>The two terms have the same symbolic value and the same power, so addition combines their multipliers. The parser does not need to preserve a binary tree such as <code>Add(Mul(2,x), Mul(3,x))</code> and then run a separate like-term pass to discover the result.</p>
+
+  <h3><code>GRP</code> collects powers of a common symbolic base</h3>
+  <p>The more unusual case occurs when two additive terms have the same canonical base but different powers. The ordinary lookup key matches, but the complete terms do not. Nerdamer represents that relationship explicitly with <code>GRP</code>.</p>
+  <pre class="codeblock"><code>x + x^2
+
+GRP: common base x
+  power 1 → x
+  power 2 → x^2</code></pre>
+
+  <p>Members of a group are keyed by power. A heterogeneous term cannot join that common-base group, so an expression such as <code>1 + x + x^2</code> is represented as a <code>SUM</code> containing the numeric term and the grouped polynomial-like component.</p>
+  <pre class="codeblock"><code>1 + x + x^2
+
+SUM
+  #   → 1
+  x   → GRP
+          power 1 → x
+          power 2 → x^2</code></pre>
+
+  <h3>The base does not have to be a polynomial variable</h3>
+  <p><code>GRP</code> belongs to the general <code>Expression</code> model rather than to the separate polynomial classes. Any compatible symbolic expression can act as the common base. Functions are an important example.</p>
+  <pre class="codeblock"><code>cos(x) - 3*cos(x)^2
+
+GRP: common base cos(x)
+  power 1 → cos(x)
+  power 2 → -3*cos(x)^2</code></pre>
+
+  <p>The same idea also permits groups such as <code>x + x^y</code>. This is why <code>GRP</code> should not be read simply as “polynomial”: it is a generalized common-base collection inside ordinary symbolic expressions.</p>
+
+  <h3>Products use the same keyed-structure idea</h3>
+  <p>A <code>PRD</code> keeps the overall numeric coefficient outside its symbolic factor collection and uses canonical factor keys to find repeated bases. Matching factors can therefore combine their powers as the product is formed.</p>
+  <pre class="codeblock"><code>2*x*y*x^2
+
+multiplier = 2
+
+PRD
+  x → x^3
+  y → y</code></pre>
+
+  <h3>Keys are structural helpers, not serialized identities</h3>
+  <p><code>Expression.keyValue()</code> supplies the lookup key used by the addition and multiplication machinery. Atomic expressions generally use a multiplier-free identity; aggregate expressions derive their key from canonical children. When a shorter key collides with a different subexpression, the arithmetic code can fall back to a fuller subexpression key before inserting it. These keys exist to support expression combination and should not be treated as a persistent file format.</p>
+
   <h2>A node is canonical structure, not source text</h2>
   <p>Parsing normalizes expressions. Ordering, grouping, multipliers, and powers are chosen to make later symbolic operations predictable, so the tree is not intended to preserve the exact spelling of the input. That is why <code>text()</code> should be read as the canonical representation rather than a source-code round trip.</p>
 
@@ -159,7 +232,7 @@ flowchart LR
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
         Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

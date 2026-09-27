@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>References and citations — Nerdamer Documentation</title>
+  <meta name="description" content="Academic references, external algorithm sources, and documentation sources consulted while developing Nerdamer.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='auto';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../styles/site.css">
+  <link rel="stylesheet" href="../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../styles/logo.css">
+  <link rel="stylesheet" href="../../styles/header.css">
+  <link rel="stylesheet" href="../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../styles/playground-tree.css">
+  
+  <link rel="stylesheet" href="../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/references/">References &amp; citations</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">Project references</div>
+<h1>References and citations</h1>
+<p>
+	These references document the mathematical literature, external implementations, and teaching material consulted
+	during Nerdamer's development. Each entry identifies where the source relates to the library or its examples.
+</p>
+<div class="docs-callout">
+	<strong>References are tied to the specific algorithms, numerical methods, or examples they informed.</strong> The list
+	will grow as additional sources are documented.
+</div>
+
+<h2 id="foundational-textbooks">Foundational textbooks</h2>
+
+<h3>Algorithms for Computer Algebra</h3>
+<p>
+	Keith O. Geddes, Stephen R. Czapor, and George Labahn,
+	<a rel="noopener noreferrer" target="_blank" href="https://doi.org/10.1007/b102438"><em>Algorithms for Computer Algebra</em></a>,
+	Springer, 1992.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> a foundational reference for Nerdamer's polynomial arithmetic, rational functions, GCD algorithms,
+	factorization, equation solving, Gröbner bases, and symbolic integration.
+</p>
+
+<h3>Ideals, Varieties, and Algorithms</h3>
+<p>
+	David A. Cox, John Little, and Donal O'Shea,
+	<a rel="noopener noreferrer" target="_blank" href="https://doi.org/10.1007/978-3-319-16721-3"><em>Ideals, Varieties, and Algorithms: An Introduction to Computational Algebraic Geometry and Commutative Algebra</em></a>,
+	Springer.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> polynomial rings, monomial orderings, multivariate division and reduction,
+	ideals, Gröbner bases, elimination, and the algebraic framework surrounding those algorithms. The publisher link is
+	to the fourth edition; the cited material is foundational material that also appears in earlier editions.
+</p>
+
+<h2 id="polynomial-gcd">Polynomial GCD</h2>
+
+<h3>Brown's modular GCD algorithm</h3>
+<p>
+	W. S. Brown,
+	<a rel="noopener noreferrer" target="_blank" href="https://doi.org/10.1145/321662.321664">“On Euclid's Algorithm and the Computation of Polynomial Greatest Common Divisors”</a>,
+	<em>Journal of the ACM</em>, 18(4), 478–504, 1971.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> modular polynomial GCD computation, including multivariate evaluation and interpolation and the
+	selection of suitable evaluation points.
+</p>
+
+<h3>Modern treatment of Brown's algorithm</h3>
+<p>
+	Matthew Gibson and Michael Monagan,
+	<a rel="noopener noreferrer" target="_blank" href="https://doi.org/10.1145/2790282.2790293">“Optimizing and Parallelizing the Modular GCD Algorithm”</a>,
+	<em>PASCO '15</em>, Bath, United Kingdom, 2015.
+	<a rel="noopener noreferrer" target="_blank" href="https://www.cecm.sfu.ca/~mmonagan/papers/gcdPASCO.pdf">Author-hosted paper</a>.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> a modern description of Brown's multivariate modular GCD algorithm and its
+	treatment of content, leading coefficients, image computation, interpolation, and unsuitable evaluation points.
+</p>
+
+<h2 id="groebner-bases">Gröbner bases</h2>
+
+<h3>Sugar strategy for Buchberger pair selection</h3>
+<p>
+	Alessandro Giovini, Teo Mora, Gianfranco Niesi, Lorenzo Robbiano, and Carlo Traverso,
+	<a rel="noopener noreferrer" target="_blank" href="https://doi.org/10.1145/120694.120701">“One Sugar Cube, Please” or Selection Strategies in the Buchberger Algorithm</a>,
+	<em>Proceedings of ISSAC '91</em>, 49–54, 1991.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> the sugar-degree pair-selection strategy used by the Gröbner basis engine.
+</p>
+
+<h3>Inhomogeneous Gröbner bases</h3>
+<p>
+	Anna Maria Bigatti, Massimo Caboara, and Lorenzo Robbiano,
+	<a rel="noopener noreferrer" target="_blank" href="https://doi.org/10.1016/j.jsc.2010.10.002">“Computing Inhomogeneous Gröbner Bases”</a>,
+	<em>Journal of Symbolic Computation</em>, 46(5), 498–510, 2011.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> mathematical background for sugar-based processing of inhomogeneous Gröbner
+	basis computations.
+</p>
+
+<h3>Modular Gröbner bases</h3>
+<p>
+	Elizabeth A. Arnold,
+	<a rel="noopener noreferrer" target="_blank" href="https://doi.org/10.1016/S0747-7171(02)00140-2">“Modular Algorithms for Computing Gröbner Bases”</a>,
+	<em>Journal of Symbolic Computation</em>, 35(4), 403–419, 2003.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> modular Gröbner-basis methods over the rational numbers, including prime
+	selection, modular images, lifting, and verification of the reconstructed basis.
+</p>
+
+<h2 id="factorization">Polynomial factorization and finite fields</h2>
+
+<h3>Berlekamp factorization</h3>
+<p>
+	Elwyn R. Berlekamp,
+	<a rel="noopener noreferrer" target="_blank" href="https://doi.org/10.1002/j.1538-7305.1967.tb03174.x">“Factoring Polynomials Over Finite Fields”</a>,
+	<em>Bell System Technical Journal</em>, 46(8), 1853–1859, 1967.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> finite-field factorization of square-free univariate polynomial images before
+	Hensel lifting and integer reconstruction.
+</p>
+
+<h3>Berlekamp–Zassenhaus factorization</h3>
+<p>
+	Jose Divasón, Sebastiaan J. C. Joosten, René Thiemann, and Akihisa Yamada,
+	<a rel="noopener noreferrer" target="_blank" href="https://doi.org/10.1007/s10817-019-09526-y">“A Verified Implementation of the Berlekamp–Zassenhaus Factorization Algorithm”</a>,
+	<em>Journal of Automated Reasoning</em>, 64(4), 699–735, 2020.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> the Berlekamp–Zassenhaus workflow for integer polynomial factorization,
+	including finite-field factorization, factor bounds, Hensel lifting modulo increasing powers of a prime, and
+	reconstruction over the integers.
+</p>
+
+<h3>Wang multivariate factorization</h3>
+<p>
+	Paul S. Wang,
+	<a rel="noopener noreferrer" target="_blank" href="https://doi.org/10.1090/S0025-5718-1978-0568284-3">“An Improved Multivariate Polynomial Factoring Algorithm”</a>,
+	<em>Mathematics of Computation</em>, 32(144), 1215–1231, 1978.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> evaluation-point selection, leading-coefficient recovery, and the Wang/EEZ
+	multivariate factorization and lifting workflow.
+</p>
+
+<h3>Multivariate Hensel lifting</h3>
+<p>
+	Joshua A. Grochow,
+	<a rel="noopener noreferrer" target="_blank" href="https://home.cs.colorado.edu/~jgrochow/hensel-notes.pdf"><em>A note on multivariate Hensel lifting</em></a>,
+	March 6, 2024.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> mathematical background for multivariate Hensel lifting during polynomial
+	factorization.
+</p>
+
+<h2 id="symbolic-integration">Symbolic integration</h2>
+
+<h3>Table of integrals</h3>
+<p>
+	<a rel="noopener noreferrer" target="_blank" href="https://www.integral-table.com/downloads/single-page-integral-table.pdf"><em>Table of Integrals</em></a>,
+	integral-table.com, revised June 14, 2014.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> checking and extending symbolic integration rules for common rational,
+	radical, logarithmic, exponential, trigonometric, and hyperbolic forms.
+</p>
+
+<h2 id="numerical-polynomial-roots">Numerical polynomial roots</h2>
+
+<h3>Lagrange–Fujiwara root bound</h3>
+<p>
+	Siegfried M. Rump,
+	<a rel="noopener noreferrer" target="_blank" href="https://doi.org/10.1016/S0377-0427(03)00381-9">“Ten Methods to Bound Multiple Roots of Polynomials”</a>,
+	<em>Journal of Computational and Applied Mathematics</em>, 156(2), 403–432, 2003.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> the Lagrange–Fujiwara upper bound used by the polynomial solver to limit
+	root magnitudes before numerical root iteration.
+</p>
+
+<h2 id="reference-implementations">External implementations consulted</h2>
+<p>
+	Selected SymPy source files were consulted during development. They are listed separately from the academic
+	literature and linked to the specific revision that was reviewed. These links identify implementations consulted
+	during development; they do not indicate that the corresponding source code is incorporated into Nerdamer.
+</p>
+<ul>
+	<li>
+		<strong>Gröbner bases:</strong>
+		<a rel="noopener noreferrer" target="_blank" href="https://github.com/sympy/sympy/blob/120ee85f346f6292b763cc195afda4f907260d4a/sympy/polys/groebnertools.py">groebnertools.py</a>
+	</li>
+	<li>
+		<strong>Finite-field arithmetic and Berlekamp factorization:</strong>
+		<a rel="noopener noreferrer" target="_blank" href="https://github.com/sympy/sympy/blob/120ee85f346f6292b763cc195afda4f907260d4a/sympy/polys/galoistools.py">galoistools.py</a>
+	</li>
+	<li>
+		<strong>Square-free and integer factorization:</strong>
+		<a rel="noopener noreferrer" target="_blank" href="https://github.com/sympy/sympy/blob/120ee85f346f6292b763cc195afda4f907260d4a/sympy/polys/sqfreetools.py">sqfreetools.py</a>
+		and
+		<a rel="noopener noreferrer" target="_blank" href="https://github.com/sympy/sympy/blob/120ee85f346f6292b763cc195afda4f907260d4a/sympy/polys/factortools.py">factortools.py</a>
+	</li>
+	<li>
+		<strong>Sparse modular GCD and interpolation:</strong>
+		<a rel="noopener noreferrer" target="_blank" href="https://github.com/sympy/sympy/blob/120ee85f346f6292b763cc195afda4f907260d4a/sympy/polys/zippel.py">zippel.py</a>
+	</li>
+	<li>
+		<strong>Chinese remainder reconstruction:</strong>
+		<a rel="noopener noreferrer" target="_blank" href="https://github.com/sympy/sympy/blob/120ee85f346f6292b763cc195afda4f907260d4a/sympy/ntheory/modular.py">modular.py</a>
+	</li>
+	<li>
+		<strong>Sparse polynomial operations and monomial ordering:</strong>
+		<a rel="noopener noreferrer" target="_blank" href="https://github.com/sympy/sympy/blob/120ee85f346f6292b763cc195afda4f907260d4a/sympy/polys/sparsetools.py">sparsetools.py</a>,
+		<a rel="noopener noreferrer" target="_blank" href="https://github.com/sympy/sympy/blob/120ee85f346f6292b763cc195afda4f907260d4a/sympy/polys/monomials.py">monomials.py</a>,
+		and
+		<a rel="noopener noreferrer" target="_blank" href="https://github.com/sympy/sympy/blob/120ee85f346f6292b763cc195afda4f907260d4a/sympy/polys/orderings.py">orderings.py</a>
+	</li>
+</ul>
+
+<h2 id="documentation-examples">Documentation examples</h2>
+
+<h3>Multivariable Newton method</h3>
+<p>
+	Courtney Remani,
+	<a rel="noopener noreferrer" target="_blank" href="https://www.lakeheadu.ca/sites/default/files/uploads/77/docs/RemaniFinal.pdf">“Numerical Methods for Solving Systems of Nonlinear Equations”</a>,
+	Honour's Seminar project, Department of Mathematical Sciences, Lakehead University, 2012–2013.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> the multivariable Newton/Jacobian method demonstrated in the API and scripting
+	examples. The polynomial system shown on the Nerdamer site is an independent illustrative system rather than an
+	example copied from the project.
+</p>
+
+<h3>Coupled oscillators and normal modes</h3>
+<p>
+	McGill University Department of Physics,
+	<a rel="noopener noreferrer" target="_blank" href="https://www.physics.mcgill.ca/~hilke/232/232.html#coupled-oscillators">PHYS 232 course notes: Coupled oscillators</a>,
+	including the “2 masses and 3 springs” derivation.
+</p>
+<p>
+	<strong>Used in Nerdamer for:</strong> the two-mass normal-modes example, including the matrix formulation,
+	characteristic equation, symmetric and antisymmetric modes, and mode frequencies.
+</p></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../scripts/site.js"></script>
+
+<script src="../../scripts/playground-tree.js"></script>
+</body>
+</html>
