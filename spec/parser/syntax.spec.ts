@@ -80,28 +80,31 @@ describe('Parser syntax', () => {
 		expect(Number(extended.evaluate({ l: 0 }).text({ decimal: true }))).toBeCloseTo(10, 12);
 	});
 
-	it('ignores paired-hash comments before other parser normalization', () => {
+	// Regression: Nerdamer 2.0 issue #242
+	it('supports single- and double-hash comments before parser normalization', () => {
+		expect(nerdamer('#comment# deg(x*y^7-1, y)').text()).toEqual('7');
 		expect(nerdamer('2+## ; block(99); sin x ##3').text()).toEqual('5');
 		expect(
 			nerdamer(`
-				2 + ##
-					; block(99); sin x
-				## 3
+				2 + # legacy comment #
+				## ; block(99); sin x ##
+				3
 			`).text()
 		).toEqual('5');
 	});
 
-	it('treats paired-hash comments as whitespace between adjacent tokens', () => {
-		const expression = nerdamer('x## ignored ##y');
+	it('treats either hash-comment form as whitespace between adjacent tokens', () => {
+		const singleHash = nerdamer('x# ignored #y');
+		const doubleHash = nerdamer('x## ignored ##y');
 
-		expect(expression.evaluate({ x: 2, y: 3 }).text()).toEqual('6');
+		expect(singleHash.evaluate({ x: 2, y: 3 }).text()).toEqual('6');
+		expect(doubleHash.evaluate({ x: 2, y: 3 }).text()).toEqual('6');
 	});
 
-	it('does not treat a lone hash as comment syntax', () => {
-		expect(() => nerdamer('2+# not a comment')).toThrow();
-	});
-
-	it('rejects an unterminated paired-hash comment', () => {
+	it('rejects unmatched hash comment delimiters', () => {
+		expect(() => nerdamer('2+# missing closer')).toThrow(
+			'Missing closing comment delimiter "#".'
+		);
 		expect(() => nerdamer('2+## missing closer')).toThrow(
 			'Missing closing comment delimiter "##".'
 		);

@@ -36,7 +36,7 @@ export function prodSubst(
 			// First check the multipliers. This has to be an integer
 			const m = expression.getMultiplier().div(value.getMultiplier());
 			if (!m.isInteger() && !Settings.ALLOW_RAT_SUBS) {
-				retval = new Expression(expression);
+				retval = expression.copy();
 			} else {
 				let power: Expression | undefined;
 				// Get the expression elements
@@ -274,7 +274,7 @@ export function subst(
 		retval = sumSubst(expression, value, withValue, includeNumeric);
 	} else if (expression.isFunction()) {
 		if (expression.value === value.value) {
-			retval = new Expression(withValue);
+			retval = withValue.copy();
 		} else {
 			retval = Expression.Function(expression.name);
 			retval.args = expression.getArguments().map((x: Expression) => {
@@ -515,22 +515,31 @@ export function uSubConstants(
 	map ??= {};
 	const constants: Set<string> = new Set();
 
-	// forEveryElement returns immediately for a VAR root. Check the root first so standalone
-	// mathematical constants and their powers are promoted just like the same constants nested
-	// inside sums and products.
-	if (expression.isVAR() && (expression.isConstant() || expression.isI())) {
-		constants.add(expression.value);
-	}
-
-	expression.forEveryElement(e => {
+	function collectConstants(current: Expression): void {
 		// The imaginary unit is a mathematical constant, but isConstant() only recognizes parser
 		// constants such as pi and e. Promote i here as well so polynomial factorization does not
 		// treat it as an ordinary polynomial variable.
-		if (e.isVAR() && (e.isConstant() || e.isI())) {
-			constants.add(e.value);
+		if (current.isVAR() && (current.isConstant() || current.isI())) {
+			constants.add(current.value);
 		}
-		return e;
-	});
+
+		if (current.args) {
+			for (const argument of current.args) {
+				collectConstants(argument);
+			}
+		}
+		if (current.elements) {
+			for (const element of Object.values(current.elements)) {
+				collectConstants(element);
+			}
+		}
+		if (current.isEXP()) {
+			collectConstants(current.getBase());
+			collectConstants(current.getPower());
+		}
+	}
+
+	collectConstants(expression);
 
 	for (const c of constants) {
 		[expression, map] = uSub(expression, _(c), map);

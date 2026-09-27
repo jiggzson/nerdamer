@@ -1,3 +1,4 @@
+import { message } from '../../../errors';
 import { Settings } from '../../../Settings';
 import { Expression } from '../../expression/Expression';
 
@@ -21,7 +22,7 @@ export function subtract(a: Expression, b: Expression): Expression {
 		}
 
 		if (!retval) {
-			throw new Error(`Subtraction not defined for ${a.type}-${b.type} | ${a}-${b}`);
+			throw new Error(message('subtractionNotDefined', { leftType: String(a.type), rightType: String(b.type), left: String(a), right: String(b) }));
 		}
 	}
 

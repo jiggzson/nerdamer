@@ -6,4 +6,5 @@ export { ilaplace } from '../calculus/laplace/ilaplace';
 export { laplace } from '../calculus/laplace/laplace';
 export { limit } from '../calculus/limit/limit';
 export type { LimitDir } from '../calculus/limit/limit';
-export { defint, product, sum } from '../math/math';
+export { defint } from '../math/defint/defint';
+export { product, sum } from '../math/math';

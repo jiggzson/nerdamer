@@ -63,6 +63,10 @@ describe('Module initialization order', () => {
 
 	it('initializes Expression before geometry without a partial geometry export', () => {
 		jest.isolateModules(() => {
+			const { loadParserFunctions } = jest.requireActual<
+				typeof import('../../src/core/parserFunctions')
+			>('../../src/core/parserFunctions');
+			loadParserFunctions();
 			const { Expression } = jest.requireActual<
 				typeof import('../../src/core/classes/expression/Expression')
 			>('../../src/core/classes/expression/Expression');
@@ -79,6 +83,10 @@ describe('Module initialization order', () => {
 
 	it('initializes geometry before trig without a partial trig export', () => {
 		jest.isolateModules(() => {
+			const { loadParserFunctions } = jest.requireActual<
+				typeof import('../../src/core/parserFunctions')
+			>('../../src/core/parserFunctions');
+			loadParserFunctions();
 			const { hypot } = jest.requireActual<
 				typeof import('../../src/math/geometry')
 			>('../../src/math/geometry');

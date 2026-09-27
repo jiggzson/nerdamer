@@ -419,6 +419,25 @@ describe('Function regressions', () => {
 		expect(nerdamer('min(-5,1)').text()).toEqual('-5');
 	});
 
+	// Issue: Nerdamer 2.0 issue #2
+	it('computes Gaussian integer modulo using Wolfram-compatible quotient rounding', () => {
+		expect(nerdamer('mod(5+3*i,2+i)').text()).toEqual('-1');
+		expect(nerdamer('mod(4+2*i,2+i)').text()).toEqual('0');
+		expect(nerdamer('mod(-5+3*i,2+i)').text()).toEqual('-1');
+		expect(nerdamer('mod(7*i,3*i)').text()).toEqual('i');
+		expect(nerdamer('mod(7,2+i)').text()).toEqual('-i');
+	});
+
+	it('rounds Gaussian quotient midpoint ties to even', () => {
+		expect(nerdamer('mod(3+4*i,1+i)').text()).toEqual('-1');
+		expect(nerdamer('mod(5+3*i,2)').text()).toEqual('1-i');
+		expect(nerdamer('mod(-5-3*i,2)').text()).toEqual('-1+i');
+	});
+
+	it('keeps non-Gaussian complex modulo symbolic', () => {
+		expect(nerdamer('mod(1/2+i,2+i)').text()).toEqual('mod(1/2+i, 2+i)');
+	});
+
 	// Regression: https://github.com/jiggzson/nerdamer/issues/358
 	it('keeps both arguments when mod is symbolic', () => {
 		expect(nerdamer('mod(a,b)').text()).toEqual('mod(a, b)');

@@ -1,5 +1,7 @@
 import Decimal from 'decimal.js';
 
+import { message } from '../../errors';
+
 /**
  * A high-performance set implementation for Decimal.js numbers.
  *
@@ -59,10 +61,10 @@ export class DecimalSet {
 		const stepDec = new Decimal(step);
 
 		if (!startDec.isFinite() || !endDec.isFinite() || !stepDec.isFinite()) {
-			throw new Error('Range values must be finite');
+			throw new Error(message('rangeValuesFinite'));
 		}
 		if (stepDec.isZero()) {
-			throw new Error('Step cannot be zero');
+			throw new Error(message('rangeStepNonzero'));
 		}
 
 		if (stepDec.isPositive()) {
@@ -71,7 +73,7 @@ export class DecimalSet {
 				result.add(current);
 				const next = current.plus(stepDec);
 				if (next.equals(current)) {
-					throw new Error('Step does not advance range at current precision');
+					throw new Error(message('rangeStepNoAdvance'));
 				}
 				current = next;
 			}
@@ -81,7 +83,7 @@ export class DecimalSet {
 				result.add(current);
 				const next = current.plus(stepDec);
 				if (next.equals(current)) {
-					throw new Error('Step does not advance range at current precision');
+					throw new Error(message('rangeStepNoAdvance'));
 				}
 				current = next;
 			}

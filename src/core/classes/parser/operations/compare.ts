@@ -272,6 +272,25 @@ export function equal(a: ExpressionInput, b: ExpressionInput): boolean {
 	let assumptionResult: boolean | undefined = undefined;
 	let retval: boolean;
 
+	if (a.isComplex() && b.isComplex()) {
+		const realA = a.realPart();
+		const imaginaryA = a.imagPart();
+		const realB = b.realPart();
+		const imaginaryB = b.imagPart();
+
+		if (
+			realA.isNUM() &&
+			imaginaryA.isNUM() &&
+			realB.isNUM() &&
+			imaginaryB.isNUM()
+		) {
+			return (
+				realA.getMultiplier().eq(realB.getMultiplier()) &&
+				imaginaryA.getMultiplier().eq(imaginaryB.getMultiplier())
+			);
+		}
+	}
+
 	// An assumption describes the admissible values of a variable; it does not erase
 	// the identity of the variable itself. x == x remains true even when x ranges over
 	// more than one value.

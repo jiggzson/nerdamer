@@ -88,7 +88,7 @@ export function callFunction(
 	const attributes = mathFunctionRegistry[functionName];
 
 	if (attributes === undefined) {
-		throw new ParserError(`Unsupported function ${functionName}`);
+		throw new ParserError(message('unsupportedFunction', { function: functionName }));
 	}
 
 	const {
@@ -105,14 +105,22 @@ export function callFunction(
 	// Complain if the number of arguments provided is less that what is allowed
 	if (minArgs > -1 && args.length < minArgs) {
 		throw new ParserError(
-			`${functionName} requires a minimum of ${minArgs} arguments but ${args.length} provided!`
+			message('functionMinArgs', {
+				function: functionName,
+				min: String(minArgs),
+				actual: String(args.length),
+			})
 		);
 	}
 
 	// Complain if the number of arguments provided is greater than what is allowed
 	if (maxArgs > -1 && args.length > maxArgs) {
 		throw new ParserError(
-			`${functionName} allows a maximum of ${maxArgs} arguments but ${args.length} provided!`
+			message('functionMaxArgs', {
+				function: functionName,
+				max: String(maxArgs),
+				actual: String(args.length),
+			})
 		);
 	}
 
@@ -307,14 +315,18 @@ export function functionAssign(
 	body: DeferredFunctionArgument
 ): ParserEntity {
 	if (!Collection.isCollection(a)) {
-		throw new UnexpectedInputError(`Invalid function declaration ${a.text()}.`);
+		throw new UnexpectedInputError(
+			message('invalidFunctionDeclaration', { declaration: a.text() })
+		);
 	}
 
 	const signature = [...a.getElements()];
 	const functionExpression = signature.pop();
 
 	if (!Expression.isExpression(functionExpression)) {
-		throw new UnexpectedInputError(`Invalid function declaration ${a.text()}.`);
+		throw new UnexpectedInputError(
+			message('invalidFunctionDeclaration', { declaration: a.text() })
+		);
 	}
 
 	const name = assertPlainVariableAndGetString(functionExpression);

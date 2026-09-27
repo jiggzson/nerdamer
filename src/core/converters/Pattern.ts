@@ -164,7 +164,7 @@ export class Pattern extends BaseConverter {
 		_input: Expression,
 		_options?: OptionsObject
 	): void {
-		const ref = this.createConstantReference(new Expression(m));
+		const ref = this.createConstantReference(Expression.create(m));
 		this.multiplier = ref;
 		multiplierArray[0] = ref;
 	}

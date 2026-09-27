@@ -1,5 +1,6 @@
 'use strict';
 
+import '../helpers/registerNerdamerFunctions';
 import { Parser } from '../../src/core/classes/parser/Parser';
 import { Pattern } from '../../src/core/converters/Pattern';
 

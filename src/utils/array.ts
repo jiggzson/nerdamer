@@ -81,7 +81,11 @@ export function intersection<T>(arr1: T[], arr2: T[]) {
  * @param compareFn
  * @returns
  */
-export function syncSort<T>(arr1: T[], arr2: T[], compareFn: (a: T, b: T) => number) {
+export function syncSort<T, U>(
+	arr1: T[],
+	arr2: U[],
+	compareFn: (a: T, b: T) => number
+): [T[], U[]] {
 	const indices = arr1.map((_, index) => index);
 
 	indices.sort((a, b) => compareFn(arr1[a], arr1[b]));

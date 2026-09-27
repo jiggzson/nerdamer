@@ -1,3 +1,4 @@
+import '../helpers/registerNerdamerFunctions';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { Matrix } from '../../src/core/classes/matrix/Matrix';
 import { callFunction } from '../../src/core/classes/parser/operations/functions';

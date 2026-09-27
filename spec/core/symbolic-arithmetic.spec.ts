@@ -19,6 +19,30 @@ describe('Symbolic arithmetic construction', () => {
 	});
 
 
+	it('keeps arithmetic operands independent while avoiding unnecessary copies', () => {
+		const x = Expression.create('x');
+		const x2 = x.copy();
+		const doubled = x.plus(x2);
+
+		expect(doubled.text()).toBe('2*x');
+		expect(doubled).not.toBe(x);
+		expect(x.text()).toBe('x');
+		expect(x2.text()).toBe('x');
+
+		const zero = Expression.Number('0');
+		const fromZero = zero.plus(x);
+		expect(fromZero.text()).toBe('x');
+		expect(fromZero).not.toBe(x);
+
+		const scaled = Expression.create('3*x');
+		const y = Expression.create('y');
+		const product = scaled.times(y);
+
+		expect(product.text()).toBe('3*x*y');
+		expect(scaled.text()).toBe('3*x');
+		expect(y.text()).toBe('y');
+	});
+
 	it('should perform basic operations with variables', () => {
 		expect(Parser.parse('x-y').text()).toEqual('x-y');
 		expect(Parser.parse('x+1').text()).toEqual('1+x');

@@ -1,42 +1,23 @@
-import { multiPolyToExpression, polynomialToMultiPoly } from '../algebra/adapters';
 import { Groebner } from '../algebra/algorithms/groebnerBase';
 import { toCommonDenominator } from '../algebra/simplify/ratsimp';
 import { Dictionary } from '../core/classes/dictionary/Dictionary';
-import { Equation } from '../core/classes/equation/Equation';
-import { normalizeMultiplierDenominators } from '../core/classes/expression/analysis';
 import { collectVariablesSet } from '../core/classes/expression/collect';
 import { Expression } from '../core/classes/expression/Expression';
 import { zero } from '../core/classes/expression/shortcuts';
-import { dataTypes } from '../core/classes/parser/constants';
-import { Parser } from '../core/classes/parser/Parser';
-import { Polynomial } from '../core/classes/polynomial/Polynomial';
+import {
+	expressionToIntegerSparsePolynomial,
+	sparsePolynomialToExpression,
+} from '../core/classes/polynomial/SparsePolynomialAdapter';
 import { Vector } from '../core/classes/vector/Vector';
-import { message, UnexpectedInputError, UnsupportedOperationError } from '../core/errors';
+import { message, UnsupportedOperationError } from '../core/errors';
 
 import { MultivariateSolver } from './classes/MultivariateSolver';
-import { solveLinearSystem } from './linsolve';
+import { NonlinearSystemError, solveLinearSystem } from './linsolve';
 import { solve as solveUnivariate } from './solve';
+import { normalizeSolverExpression } from './utils';
 
-import type { ExpressionInput, NerdamerInput } from '../core/types';
-
-function toExpression(input: NerdamerInput): Expression {
-	if (Equation.isEquation(input)) {
-		return input.toLHS().LHS;
-	}
-	if (Expression.isExpression(input)) {
-		return input;
-	}
-	const parsed = Parser.parse(String(input));
-	if (Equation.isEquation(parsed)) {
-		return parsed.toLHS().LHS;
-	}
-	if (Expression.isExpression(parsed)) {
-		return parsed;
-	}
-	throw new UnexpectedInputError(
-		message('expressionExpected', { type: dataTypes[parsed.dataType] })
-	);
-}
+import type { Equation } from '../core/classes/equation/Equation';
+import type { ExpressionInput } from '../core/types';
 
 function normalizeEquations(
 	equations: Vector | Array<ExpressionInput | Equation | string>
@@ -44,11 +25,11 @@ function normalizeEquations(
 	if (Vector.isVector(equations)) {
 		const result: Expression[] = [];
 		for (let i = 0; i < equations.count(); i++) {
-			result.push(toExpression(equations.__get__([i])));
+			result.push(normalizeSolverExpression(equations.__get__([i])));
 		}
 		return result;
 	}
-	return equations.map(eq => toExpression(eq));
+	return equations.map(eq => normalizeSolverExpression(eq));
 }
 
 function symbolicBackSubstitution(
@@ -298,7 +279,7 @@ export function solveSystem(
 			return new Vector([]);
 		}
 	} catch (error) {
-		if (!(error instanceof Error) || !error.message.includes('Nonlinear term detected')) {
+		if (!(error instanceof NonlinearSystemError)) {
 			throw error;
 		}
 	}
@@ -308,18 +289,18 @@ export function solveSystem(
 
 	if (allPolynomial) {
 		try {
-			const polys = symbolicExpressions.map(expression => {
-				const cleared = normalizeMultiplierDenominators(expression);
-				return polynomialToMultiPoly(new Polynomial(cleared, vars), vars).poly;
-			});
+			const polys = symbolicExpressions.map(
+				expression =>
+					expressionToIntegerSparsePolynomial(expression, vars).polynomial
+			);
 
-			const basis = Groebner(polys, vars, 'LEX', true);
+			const basis = Groebner(polys, 'LEX', true);
 
 			if (basis.length === 1 && basis[0].isConstant() && basis[0].constantTerm() !== 0n) {
 				return new Vector([]);
 			}
 
-			const basisExprs = basis.map(p => multiPolyToExpression(p, vars));
+			const basisExprs = basis.map(p => sparsePolynomialToExpression(p, vars));
 			let solutions = symbolicBackSubstitution(basisExprs, vars);
 
 			if (hasRationalRewrite) {

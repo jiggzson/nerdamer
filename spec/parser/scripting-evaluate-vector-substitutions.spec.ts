@@ -1,3 +1,4 @@
+import '../helpers/registerNerdamerFunctions';
 import { Parser } from '../../src/core/classes/parser/Parser';
 import { DimensionError, UnexpectedInputError } from '../../src/core/errors';
 

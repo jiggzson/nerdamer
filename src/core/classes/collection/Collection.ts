@@ -1,5 +1,6 @@
 import { StructuredEntity } from '../../common/classes/StructuredEntity';
 import { isNerdamerNativeType } from '../../common/common';
+import { message } from '../../errors';
 import { COLLECTION } from '../parser/constants';
 
 import type { ParserEntity } from '../../types';
@@ -59,7 +60,11 @@ export class Collection extends StructuredEntity<Collection> {
 		const index = indices[0];
 		if (index < 0 || index >= this.elements.length) {
 			throw new RangeError(
-				`Index ${index} out of bounds for Collection of length ${this.elements.length}`
+				message('indexOutOfBounds', {
+					index: String(index),
+					type: 'Collection',
+					length: String(this.elements.length),
+				})
 			);
 		}
 		return this.elements[index];
@@ -74,7 +79,11 @@ export class Collection extends StructuredEntity<Collection> {
 		const index = indices[0];
 		if (index < 0 || index >= this.elements.length) {
 			throw new RangeError(
-				`Index ${index} out of bounds for Collection of length ${this.elements.length}`
+				message('indexOutOfBounds', {
+					index: String(index),
+					type: 'Collection',
+					length: String(this.elements.length),
+				})
 			);
 		}
 		this.elements[index] = value;

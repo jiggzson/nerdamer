@@ -13,6 +13,11 @@ export function determinant(M: Matrix) {
 	return M.copy().determinant();
 }
 
+/** Returns the inverse without modifying the supplied Matrix. */
+export function invert(M: Matrix): Matrix {
+	return M.inverse();
+}
+
 /** Returns the nullspace basis as a Vector of basis vectors. */
 export function nullspace(M: Matrix, prime?: string | number | Expression): Vector {
 	return new Vector(M.nullspace(prime).map(vector => new Vector(vector)));

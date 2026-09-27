@@ -118,6 +118,26 @@ describe('Rational LCM', () => {
 	});
 });
 
+describe('Rational copy', () => {
+	it('returns an independent copy with the same representation metadata', () => {
+		const value = Rational.create('3.50');
+		const copy = value.copy();
+
+		expect(copy).not.toBe(value);
+		expect(copy.numerator).toBe(value.numerator);
+		expect(copy.denominator).toBe(value.denominator);
+		expect(copy.value).toBe(value.value);
+		expect(copy.asDecimal).toBe(value.asDecimal);
+
+		copy.numerator = 9n;
+		copy.updateValue();
+
+		expect(value.value).toBe('3.50');
+		expect(value.text()).toBe('3.5');
+		expect(copy.text()).toBe('4.5');
+	});
+});
+
 describe('Rational Construction', () => {
 	it('should normalize direct fraction input', () => {
 		expect(Rational.create('2/4').text()).toEqual('1/2');

@@ -16,10 +16,16 @@ export function add(a: Expression, b: Expression): Expression {
 		const keyA = a.keyValue();
 		const keyB = b.keyValue();
 
-		// Distribute the multiplier if true
+		// Distribute only when an operand can actually change. distributeMultiplier()
+		// returns an independent deep copy, so calling it for ordinary operands adds
+		// substantial copy work without affecting the result.
 		if (Expression.DISTRIBUTE_MULTIPLIER) {
-			a = a.distributeMultiplier();
-			b = b.distributeMultiplier();
+			if (a.isSum() && !a.getMultiplier().isOne() && a.isLinear()) {
+				a = a.distributeMultiplier();
+			}
+			if (b.isSum() && !b.getMultiplier().isOne() && b.isLinear()) {
+				b = b.distributeMultiplier();
+			}
 		}
 
 		// It suffices to check if their keyValues are the same since x+x will be handled.
@@ -35,7 +41,7 @@ export function add(a: Expression, b: Expression): Expression {
 			// Do a zero check here rather than placing that additional burden on join.
 			retval = re.isZero() ? im : im.isZero() ? re : join(re, im); // Don't use add
 		} else if (a.isZero()) {
-			retval = Expression.create(b);
+			retval = b.copy();
 		} else if (a.value === b.value && a.type === b.type && a.getPower().eq(b.getPower())) {
 			// Infinity has no finite coefficient magnitude. Same-sign infinities remain
 			// canonical infinity, while opposite signs are undefined.
@@ -47,27 +53,15 @@ export function add(a: Expression, b: Expression): Expression {
 				}
 				retval = a.isNegInf() ? Expression.NegInf() : Expression.Inf();
 			} else {
-				retval = Expression.create(a);
-
 				const multiplier = a.getMultiplier().plus(b.getMultiplier());
 
 				if (multiplier.isZero()) {
 					retval = Expression.Number('0');
-				}
-				if (a.isSum() && b.isSum() && a.isLinear() && b.isLinear()) {
+				} else if (a.isSum() && b.isSum() && a.isLinear() && b.isLinear()) {
 					retval = join(a, b);
 				} else {
+					retval = a.copy();
 					retval.multiplier = multiplier;
-
-					if (retval.power) {
-						// We can do this since a.power === b.power
-						retval = Expression.setPower(retval, a.getPower().copy());
-					}
-				}
-
-				// Put back the power
-				if (a.power) {
-					retval = Expression.setPower(retval, a.getPower().copy());
 				}
 			}
 		}
@@ -239,8 +233,8 @@ export function join(a: Expression, b: Expression, isGroup = false): Expression 
 		} else {
 			// Set the type
 			retval.type = expressionType;
-			// Update the value
-			retval.value = Expression.getValue(elements, 'text', expressionType);
+			// Update derived aggregate state after the element collection changes.
+			retval.updateValue(elements);
 		}
 	}
 

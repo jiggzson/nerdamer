@@ -84,7 +84,11 @@ export class Vector extends MathematicalAggregate<Vector> {
 		const index = indices[0];
 		if (index < 0 || index >= this.elements.length) {
 			throw new UnexpectedDataType(
-				`Index ${index} out of bounds for Vector of length ${this.elements.length}`
+				message('indexOutOfBounds', {
+					index: String(index),
+					type: 'Vector',
+					length: String(this.elements.length),
+				})
 			);
 		}
 		return this.elements[index];

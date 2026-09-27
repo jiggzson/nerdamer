@@ -95,6 +95,12 @@ export const definitions: { [name: string]: [f: JsFunction, dependencies?: strin
 	min: [(...args) => Math.min(...args)],
 	avg: [(...args) => args.reduce((total, value) => total + value, 0) / args.length],
 	heaviside: [heaviside],
+	step: [x => (Number.isNaN(x) ? NaN : x < 0 ? 0 : 1)],
+	rect: [x => {
+		const a = Math.abs(x);
+		return a < 0.5 ? 1 : a === 0.5 ? 0.5 : 0;
+	}],
+	tri: [x => Math.max(1 - Math.abs(x), 0)],
 
 	// Complex-component helpers are limited to real JavaScript-number inputs. This is
 	// faithful to buildFunction's scalar runtime function without pretending to provide

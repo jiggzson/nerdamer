@@ -5,7 +5,7 @@ import nerdamer from '../../src/index';
 
 describe('GCD', () => {
 	const check = (input: Expression, expected: string) => {
-		expect(input.text()).toEqual(expected);
+		expect(input.eq(Expression.create(expected))).toBe(true);
 	};
 
 	it('gcd(0, 0)', () => {
@@ -224,7 +224,10 @@ describe('GCD', () => {
 	});
 
 	it('gcd(x^2*y + x*y^2 + x^2 + x*y, x*y + y^2 + x + y)', () => {
-		check(gcd('x^2*y + x*y^2 + x^2 + x*y', 'x*y + y^2 + x + y'), 'y+x');
+		check(
+			gcd('x^2*y + x*y^2 + x^2 + x*y', 'x*y + y^2 + x + y'),
+			'(x+y)*(y+1)'
+		);
 	});
 
 	it('gcd((x+y+z)^2 - (x^2+y^2+z^2), (x+y+z)^3 - (x^3+y^3+z^3))', () => {
@@ -242,7 +245,13 @@ describe('GCD', () => {
 	});
 
 	it('gcd(3*a^2*b*x^3-a*b*x^3-3*a*b^2*x+b^2*x, a*x^2*y-b*y+a*x^3-b*x)', () => {
-		check(gcd('3*a^2*b*x^3-a*b*x^3-3*a*b^2*x+b^2*x', 'a*x^2*y-b*y+a*x^3-b*x'), '1');
+		check(
+			gcd(
+				'3*a^2*b*x^3-a*b*x^3-3*a*b^2*x+b^2*x',
+				'a*x^2*y-b*y+a*x^3-b*x'
+			),
+			'a*x^2-b'
+		);
 	});
 
 	it('gcd(44*x^2*y^4+12*x^4*y^3+20*x^2*y^3-22*x*y^2-6*x^3*y-10*x*y+11*y+3*x^2+5, -4*x^2*y^4+20*x^3*y^3+2*x*y^2-10*x^2*y-y+5*x)', () => {

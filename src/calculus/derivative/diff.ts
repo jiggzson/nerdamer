@@ -31,6 +31,7 @@ import {
 	SECH,
 	SGN,
 	SHI,
+	SYMBOLIC_ACCESSOR,
 	SI,
 	SIN,
 	SINH,
@@ -118,7 +119,9 @@ export function diff(
 
 	let retval: Expression | undefined;
 
-	if (variables.length === 0 || !x.hasVariable(variable.value) || x.isConstant()) {
+	if (x.hasFunction(SYMBOLIC_ACCESSOR, true)) {
+		retval = Expression.toFunction(DIFF, [x, variable, nth]);
+	} else if (variables.length === 0 || !x.hasVariable(variable.value) || x.isConstant()) {
 		retval = zero();
 	}
 	// If the variable is not of type VAR or nth is not an integer then return it untouched until either or both are resolved
@@ -140,7 +143,7 @@ export function diff(
 		const m = x.getMultiplier().times(x.getPower());
 		const p = x.getPower().minus('1');
 		const f = Expression.create(x.value);
-		const fp = f.pow(p).times(m);
+		const fp = p.isZero() ? m : f.pow(p).times(m);
 		// Pull the derivative of the inside
 		if (f.isVAR()) {
 			retval = one();

@@ -17,6 +17,35 @@ describe('Symbolic structured access', () => {
 		}
 	});
 
+	it('defers scalar functions until symbolic Vector access resolves', () => {
+		const vectorName = 'issue255v';
+
+		try {
+			nerdamer.setVar(vectorName, '[x^2,x-y]');
+			const derivative = nerdamer(`diff(${vectorName}[k],x)`);
+
+			expect(derivative.text()).toBe(`diff(${vectorName}[k], x)`);
+			expect(derivative.evaluate({ k: 0 }).eq(Expression.create('2*x'))).toBe(true);
+		} finally {
+			nerdamer.setVar(vectorName, 'delete');
+		}
+	});
+
+	// Regression: Nerdamer 2.0 issue #255
+	it('evaluates differentiation inside a sum after indexed access resolves', () => {
+		const vectorName = 'issue255sumv';
+
+		try {
+			const result = nerdamer(
+				`${vectorName}:[x^2,x-y];sum(diff(${vectorName}[k],x),k,0,1)`
+			);
+
+			expect(result.text()).toBe('1+2*x');
+		} finally {
+			nerdamer.setVar(vectorName, 'delete');
+		}
+	});
+
 	it('preserves an unresolved single-index access in a Vector carrier', () => {
 		const access = Parser.parse('V[i]');
 

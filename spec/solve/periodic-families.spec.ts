@@ -1,3 +1,4 @@
+import '../helpers/registerNerdamerFunctions';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { solve } from '../../src/solve/solve';
 

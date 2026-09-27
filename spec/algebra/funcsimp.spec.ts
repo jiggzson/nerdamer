@@ -1,3 +1,4 @@
+import '../helpers/registerNerdamerFunctions';
 import { simplifyFactorials, simplifyLogs } from '../../src/algebra/simplify/funcsimp';
 import { simplify } from '../../src/algebra/simplify/simplify';
 import { assume, clearAssumptions } from '../../src/core/classes/assumption/assume';
@@ -236,6 +237,6 @@ describe('Simplify Regression', () => {
 	});
 
 	it('should still simplify rationals', () => {
-		expect(simplify('a/b+b/a').text()).toEqual('(a*b)^-1*(a^2+b^2)');
+		expect(simplify('a/b+b/a').eq('(a*b)^-1*(a^2+b^2)')).toBe(true);
 	});
 });

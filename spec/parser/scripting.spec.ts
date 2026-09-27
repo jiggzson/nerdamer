@@ -1,6 +1,7 @@
 import { Equation } from '../../src/core/classes/equation/Equation';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { Parser } from '../../src/core/classes/parser/Parser';
+import { loadParserFunctions } from '../../src/core/parserFunctions';
 import { callFunction } from '../../src/core/classes/parser/operations/functions';
 import {
 	BLOCK,
@@ -8,6 +9,7 @@ import {
 	CONTINUE,
 	FOR,
 	IF,
+	NullSignal,
 	RETURN,
 	ReturnSignal,
 	WHILE,
@@ -18,16 +20,16 @@ import { Vector } from '../../src/core/classes/vector/Vector';
 import { mathFunctionRegistry } from '../../src/core/dispatch';
 import { setFunction } from '../../src/core/functions/setFunction';
 
+loadParserFunctions();
+
 describe('Parser scripting', () => {
 	it('supports if without a false branch', () => {
 		const trueResult = Parser.parse('if(1,5)');
-		const falseResult = Parser.parse('if(0,5)');
 
 		expect(trueResult.text()).toEqual('5');
-		expect(Vector.isVector(falseResult)).toBe(true);
-		if (Vector.isVector(falseResult)) {
-			expect(falseResult.count()).toEqual(0);
-		}
+		expect(() => IF(() => Expression.create(0), () => Expression.create(5))).toThrow(
+			NullSignal
+		);
 	});
 
 	it('ignores tabs and line breaks in formatted control flow', () => {
@@ -347,18 +349,16 @@ describe('Control function evaluation', () => {
 
 	it('does not evaluate a while body when its condition starts at zero', () => {
 		let bodyCalls = 0;
-		const result = WHILE(
-			() => Expression.create(0),
-			() => {
-				bodyCalls++;
-				return Expression.create(1);
-			}
-		);
 
-		expect(Vector.isVector(result)).toBe(true);
-		if (Vector.isVector(result)) {
-			expect(result.count()).toEqual(0);
-		}
+		expect(() =>
+			WHILE(
+				() => Expression.create(0),
+				() => {
+					bodyCalls++;
+					return Expression.create(1);
+				}
+			)
+		).toThrow(NullSignal);
 		expect(bodyCalls).toEqual(0);
 	});
 
@@ -550,14 +550,18 @@ describe('Control function evaluation', () => {
 			() => Expression.create(2 - outer),
 			() => {
 				let inner = 0;
-				WHILE(
-					() => Expression.create(1 - inner),
-					() => {
-						inner++;
-						innerBreaks++;
-						return BREAK();
-					}
-				);
+				try {
+					WHILE(
+						() => Expression.create(1 - inner),
+						() => {
+							inner++;
+							innerBreaks++;
+							return BREAK();
+						}
+					);
+				} catch (error) {
+					if (!NullSignal.isNullSignal(error)) throw error;
+				}
 				outer++;
 				return Expression.create(outer);
 			}

@@ -54,6 +54,56 @@ export function stripPower(x: Expression) {
 }
 
 /**
+ * Deep-copies an Expression tree without routing every nested node back through the
+ * Expression constructor and factory.
+ *
+ * Expression.hook is still applied once for each copied node, matching the existing
+ * copy path. Mutable nested values are recreated so the returned tree remains
+ * independent from the source.
+ */
+export function cloneExpressionTree(source: Expression): Expression {
+	const hooked = Expression.hook(source);
+	if (!Expression.isExpression(hooked)) {
+		return Expression.create(hooked);
+	}
+
+	const src = hooked;
+	const target = Object.create(Expression.prototype) as Expression;
+
+	target.dataType = src.dataType;
+	target.deferred = src.deferred;
+	target.isEnumerable = src.isEnumerable;
+	target.type = src.type;
+	target.value = src.value;
+	target.precision = src.precision;
+	target.scientific = src.scientific;
+
+	if (src.multiplier) {
+		target.multiplier = src.multiplier.copy();
+	}
+	if (src.name !== undefined) {
+		target.name = src.name;
+	}
+	if (src.power) {
+		target.power = cloneExpressionTree(src.power);
+	}
+	if (src.args) {
+		target.args = src.args.map(cloneExpressionTree);
+	}
+	if (src.base) {
+		target.base = cloneExpressionTree(src.base);
+	}
+	if (src.elements) {
+		target.elements = {};
+		for (const key in src.elements) {
+			target.elements[key] = cloneExpressionTree(src.elements[key]);
+		}
+	}
+
+	return target;
+}
+
+/**
  * Copies over all the properties of the provided symbolic essentially cloning it to x.
  *
  * @param sym
@@ -66,7 +116,7 @@ export function copyOver(src: Expression, target: Expression, options?: OptionsO
 	};
 	// Copy over the multiplier
 	if (src.multiplier && !options.omitMultiplier) {
-		target.multiplier = Rational.makeCopy(src.multiplier);
+		target.multiplier = src.multiplier.copy();
 	}
 	// toFunctions have name so we need those copied
 	if (src.name !== undefined) {
@@ -74,30 +124,31 @@ export function copyOver(src: Expression, target: Expression, options?: OptionsO
 	}
 	// Copy over the power
 	if (src.power && !options.omitPower) {
-		target.power = Expression.create(src.power, undefined, true);
+		target.power = cloneExpressionTree(src.power);
 	}
 	// Copy over the args if any
 	if (src.args) {
 		target.args = [];
 		for (const arg of src.args) {
-			target.args.push(Expression.create(arg, undefined, true));
+			target.args.push(cloneExpressionTree(arg));
 		}
 	}
 	// Copy over the base if an
 	if (src.base) {
-		target.base = src.base.copy();
+		target.base = cloneExpressionTree(src.base);
 	}
 	// Copy over the elements if any
 	if (src.elements) {
 		target.elements = {};
 		for (const x in src.elements) {
-			target.elements[x] = Expression.create(src.elements[x], undefined, true);
+			target.elements[x] = cloneExpressionTree(src.elements[x]);
 		}
 	}
 	// Last but not least
 	target.type = src.type;
 	target.value = src.value;
 	target.precision = src.precision;
+	target.scientific = src.scientific;
 	target.deferred = src.deferred;
 
 	return target;

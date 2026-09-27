@@ -1,13 +1,14 @@
 import { collectVariablesSet } from '../../core/classes/expression/collect';
 import { Expression } from '../../core/classes/expression/Expression';
-import { one, zero } from '../../core/classes/expression/shortcuts';
+import { zero } from '../../core/classes/expression/shortcuts';
 import { GCD } from '../../core/classes/parser/constants';
-import { Polynomial } from '../../core/classes/polynomial/Polynomial';
-import { divide } from '../../core/classes/polynomial/utils';
+import {
+	expressionToIntegerSparsePolynomial,
+	sparsePolynomialToExpression,
+} from '../../core/classes/polynomial/SparsePolynomialAdapter';
+import { GCD as bigintGCD } from '../../core/functions/bigint/bigint';
 import { uUnSub } from '../../core/functions/subst';
-import { multiPolyToExpression, polynomialToMultiPoly } from '../adapters';
-import { zippelGCDMulti } from '../algorithms/gcd';
-import { factor } from '../factor/factor';
+import { sparsePolynomialGcd } from '../polynomial/SparsePolynomialGcd';
 import { polynomialize } from '../polynomialize';
 
 import type { ExpressionInput } from '../../core/types';
@@ -16,11 +17,12 @@ import type { ExpressionInput } from '../../core/types';
  * Computes a symbolic greatest common divisor over rational polynomial structure.
  *
  * @remarks
- * Numerators and denominators are polynomialized, function-valued or irrational
- * constants may be temporarily substituted, and the multivariate Zippel GCD is
- * verified by exact polynomial division. Factoring supplies an expensive final
- * fallback. When conversion or the supported polynomial algorithms fail, the
- * result remains symbolic as `gcd(x, y)`.
+ * Numerators and denominators are polynomialized before exact sparse integer GCD
+ * reconstruction. Rational polynomial coefficients are cleared to integers and
+ * their shared clearing denominator is restored afterward. Function-valued,
+ * exponential, and irrational constants use the existing polynomialization
+ * substitutions and are restored after the numerator and denominator GCDs are
+ * combined. Unsupported inputs remain symbolic as `gcd(x, y)`.
  *
  * @param x - First expression-compatible operand.
  * @param y - Second expression-compatible operand.
@@ -35,12 +37,12 @@ export function gcd(x: ExpressionInput, y: ExpressionInput) {
 		const { numerator: ax, denominator: bx, map } = polynomialize(x);
 		const { numerator: px, denominator: qx, map: finalMap } = polynomialize(y, map);
 
-		const vars = collectVariablesSet([ax, bx, px, qx]);
+		const variables = collectVariablesSet([ax, bx, px, qx]);
 
-		const g0 = expressionGCD(ax, px, vars);
-		const g1 = expressionGCD(bx, qx, vars);
+		const numeratorGcd = expressionGCD(ax, px, variables);
+		const denominatorGcd = expressionGCD(bx, qx, variables);
 
-		const retval = uUnSub(g0.div(g1), finalMap);
+		const retval = uUnSub(numeratorGcd.div(denominatorGcd), finalMap);
 		retval.getMultiplier().asDecimal = asDecimal;
 		return retval;
 	} catch {}
@@ -50,8 +52,8 @@ export function gcd(x: ExpressionInput, y: ExpressionInput) {
 /**
  * Returns the least common multiple of two expressions.
  *
- * Numeric inputs reuse exact `Rational` arithmetic. Polynomial expressions use
- * the existing GCD normalization so shared symbolic factors are retained.
+ * Numeric inputs reuse exact Rational arithmetic. Polynomial expressions use
+ * the polynomial GCD so shared symbolic factors are retained.
  *
  * @param x - First expression-compatible operand.
  * @param y - Second expression-compatible operand.
@@ -75,77 +77,30 @@ export function lcm(x: ExpressionInput, y: ExpressionInput) {
 }
 
 function expressionGCD(x: Expression, y: Expression, variables?: string[]) {
-	let retval: Expression;
 	if (x.isNUM() && y.isNUM()) {
-		retval = Expression.create(x.getMultiplier().GCD(y.getMultiplier()));
-	} else {
-		const f = new Polynomial(x);
-		const g = new Polynomial(y);
-
-		if (f.isZero() && g.isZero()) {
-			return zero();
-		}
-		if (f.isZero()) {
-			return Expression.create(y);
-		}
-		if (g.isZero()) {
-			return Expression.create(x);
-		}
-
-		const { mGCD, p, q } = f.stripMonomialGCD(g);
-		variables ??= [...new Set(p.variables.concat(q.variables))].sort();
-
-		const { poly: poly1 } = polynomialToMultiPoly(p, variables);
-		const { poly: poly2 } = polynomialToMultiPoly(q, variables);
-		const g0 = zippelGCDMulti(poly1, poly2, variables);
-		retval = multiPolyToExpression(g0, variables);
-
-		// Verify
-		if (!divide(p, retval)[1].isZero()) {
-			retval = one();
-		}
-
-		// Don't give up just yet. Try by factor
-		if (retval.isOne()) {
-			retval = gcdByCommonFactors(p.getExpression(), q.getExpression());
-		}
-
-		// Put back the monomial gcd
-		retval = retval.times(mGCD.getExpression());
-	}
-	return retval;
-}
-
-/**
- * Factors both expressions and compares their factors as a last-resort GCD strategy.
- *
- * Factoring is expensive, so this path runs only after exact polynomial reduction fails
- * to find a nontrivial divisor.
- */
-function gcdByCommonFactors(f: Expression, g: Expression) {
-	let retval = one();
-	if (!f.isProduct()) {
-		f = factor(f);
-	}
-	if (!g.isProduct()) {
-		g = factor(g);
-	}
-	// Only proceed if both are products
-	if (f.isProduct() && g.isProduct()) {
-		const fArray = f.elementsArray();
-		const gArray = g.elementsArray();
-		// Compare them
-		for (const a of fArray) {
-			for (const b of gArray) {
-				// If they're equal then they're a common factor
-				if (a.eq(b)) {
-					retval = retval.times(a);
-				} else if (a.isProduct() && b.isProduct()) {
-					return gcd(a, b);
-				}
-			}
-		}
+		return Expression.create(x.getMultiplier().GCD(y.getMultiplier()));
 	}
 
-	return retval;
+	if (x.isZero() && y.isZero()) {
+		return zero();
+	}
+	if (x.isZero()) {
+		return Expression.create(y);
+	}
+	if (y.isZero()) {
+		return Expression.create(x);
+	}
+
+	variables ??= collectVariablesSet([x, y]);
+
+	const left = expressionToIntegerSparsePolynomial(x, variables);
+	const right = expressionToIntegerSparsePolynomial(y, variables);
+	const variableIndices = variables.map((_variable, index) => index);
+	const sparseGcd = sparsePolynomialGcd(left.polynomial, right.polynomial, variableIndices);
+	const clearingDenominator = bigintGCD(left.denominator, right.denominator);
+	const retval = sparsePolynomialToExpression(sparseGcd, variables);
+
+	return clearingDenominator === 1n
+		? retval
+		: retval.div(Expression.Number(clearingDenominator));
 }

@@ -1,3 +1,4 @@
+import { message } from '../../errors';
 import { arrayAddUnique } from '../../functions/utils';
 import { zero } from '../expression/shortcuts';
 
@@ -64,7 +65,7 @@ export function polyDiv(
 	// Begin
 	while (!p.isZero()) {
 		if (iter++ > maxIter) {
-			throw new Error('Maximum iterations reached');
+			throw new Error(message('polynomialMaximumIterations'));
 		}
 		let divisionOccurred = false;
 		const s = F.length;

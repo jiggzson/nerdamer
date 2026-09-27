@@ -55,6 +55,16 @@ describe('Numeric Complex arithmetic', () => {
 
 		expect(() => numerator.div(denominator)).toThrow(DivisionByZeroError);
 	});
+
+	it('computes the reciprocal without routing through general complex division', () => {
+		const value = new Complex(3, 4);
+		const reciprocal = value.reciprocal();
+		const quotient = new Complex(1, 0).div(value);
+
+		expect(reciprocal.re.eq(quotient.re)).toBe(true);
+		expect(reciprocal.im.eq(quotient.im)).toBe(true);
+		expect(() => new Complex(0, 0).reciprocal()).toThrow(DivisionByZeroError);
+	});
 });
 
 describe('Complex number', () => {
@@ -555,6 +565,15 @@ describe('The csgn function', () => {
 		expect(Parser.parse('csgn(3+2*i)').text()).toEqual('1');
 		expect(Parser.parse('csgn(2-i)').text()).toEqual('1');
 		expect(Parser.parse('csgn(1)').text()).toEqual('1');
+	});
+});
+
+describe('Complex numeric helpers', () => {
+	it('computes squared magnitude without changing the ordinary magnitude', () => {
+		const value = new Complex(new Decimal(3), new Decimal(4));
+
+		expect(value.absSquared().eq(25)).toBe(true);
+		expect(value.abs().eq(5)).toBe(true);
 	});
 });
 

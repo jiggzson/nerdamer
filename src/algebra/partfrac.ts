@@ -14,9 +14,9 @@ import type { ExpressionInput } from '../core/types';
  * @remarks
  * The routine extracts `P(x)/Q(x)`, performs polynomial long division for an improper
  * fraction, factors `Q` over the supported exact polynomial domain, and solves the
- * undetermined coefficients by exact evaluation and row reduction. Repeated linear
- * factors and irreducible quadratic factors are supported. An irreducible factor of
- * higher degree, a singular coefficient system, a denominator independent of the
+ * undetermined coefficients by exact evaluation and row reduction. Each denominator
+ * factor of degree d receives a numerator polynomial of degree less than d, including
+ * repeated factors. A singular coefficient system, a denominator independent of the
  * selected variable, or a factorization that does not expose a useful decomposition
  * leaves the original expression unchanged.
  *
@@ -195,11 +195,9 @@ function collectFactors(factors: Expression[], v: string): DenominatorFactor[] {
 /**
  * Decomposes remainder/den into partial fractions given the factored denominator.
  *
- * For each linear factor (ax+b)^k:
- *   A₁/(ax+b) + A₂/(ax+b)² + ... + Aₖ/(ax+b)^k
- *
- * For each irreducible quadratic factor (ax²+bx+c)^k:
- *   (B₁x+C₁)/(ax²+bx+c) + ... + (Bₖx+Cₖ)/(ax²+bx+c)^k
+ * For each factor f(x)^k of degree d, the numerator at every power level is
+ * a polynomial of degree less than d. For example, a cubic factor receives
+ * A*x^2+B*x+C over each repeated power of that factor.
  *
  * Uses evaluation at strategic points to solve for coefficients.
  */
@@ -210,43 +208,20 @@ function decompose(
 	v: string
 ): Expression | undefined {
 	// Build the list of partial fraction terms and count unknowns.
-	// Each term is: coefficient(s) / factor^power
-	// For linear: 1 unknown per power level
-	// For quadratic: 2 unknowns per power level (Bx + C)
-
+	// A factor of degree d contributes d numerator coefficients at each power level.
 	const terms: PartialFractionTerm[] = [];
 	let totalUnknowns = 0;
-	let supported = true;
 
 	for (const f of factors) {
 		for (let k = 1; k <= f.power; k++) {
-			if (f.degree === 1) {
-				terms.push({
-					factor: f.expr,
-					power: k,
-					degree: f.degree,
-					unknownIndex: totalUnknowns,
-					numUnknowns: 1,
-				});
-				totalUnknowns += 1;
-			} else if (f.degree === 2) {
-				terms.push({
-					factor: f.expr,
-					power: k,
-					degree: f.degree,
-					unknownIndex: totalUnknowns,
-					numUnknowns: 2,
-				});
-				totalUnknowns += 2;
-			} else {
-				// Higher-degree irreducible factors — not supported yet
-				supported = false;
-			}
+			terms.push({
+				factor: f.expr,
+				power: k,
+				unknownIndex: totalUnknowns,
+				numUnknowns: f.degree,
+			});
+			totalUnknowns += f.degree;
 		}
-	}
-
-	if (!supported) {
-		return undefined;
 	}
 
 	// We need to solve: P(x)/Q(x) = Σ terms
@@ -304,15 +279,12 @@ function decompose(
 		const row: Expression[] = [];
 		for (let j = 0; j < terms.length; j++) {
 			const term = terms[j];
-			// The basis for this term: Q(x) / factor^power, evaluated at x
+			// The basis for this term: Q(x) / factor^power, evaluated at x.
 			const cofactor = evaluateAt(cofactors[j], v, x);
 
-			if (term.numUnknowns === 1) {
-				row.push(cofactor);
-			} else {
-				// Quadratic: (Bx + C) contributes B*x*cofactor + C*cofactor
-				row.push(x.times(cofactor)); // coefficient of B
-				row.push(cofactor); // coefficient of C
+			for (let degree = term.numUnknowns - 1; degree >= 0; degree--) {
+				const monomial = degree === 0 ? one() : x.pow(Expression.Number(degree));
+				row.push(monomial.times(cofactor));
 			}
 		}
 		rows.push(row);
@@ -327,23 +299,21 @@ function decompose(
 	// Build the result expression from the solved coefficients
 	let result = zero();
 
+	const variable = Expression.create(v);
 	for (const term of terms) {
 		const denomPart =
 			term.power === 1 ? term.factor : term.factor.pow(Expression.Number(term.power));
+		let numPart = zero();
 
-		if (term.numUnknowns === 1) {
-			const A = solution[term.unknownIndex];
-			if (!A.isZero()) {
-				result = result.plus(A.div(denomPart));
-			}
-		} else {
-			const B = solution[term.unknownIndex];
-			const C = solution[term.unknownIndex + 1];
-			// (Bx + C) / factor^power
-			const numPart = B.times(Expression.create(v)).plus(C);
-			if (!numPart.isZero()) {
-				result = result.plus(numPart.div(denomPart));
-			}
+		for (let i = 0; i < term.numUnknowns; i++) {
+			const coefficient = solution[term.unknownIndex + i];
+			const degree = term.numUnknowns - 1 - i;
+			const monomial = degree === 0 ? one() : variable.pow(Expression.Number(degree));
+			numPart = numPart.plus(coefficient.times(monomial));
+		}
+
+		if (!numPart.isZero()) {
+			result = result.plus(numPart.div(denomPart));
 		}
 	}
 
@@ -353,7 +323,6 @@ function decompose(
 interface PartialFractionTerm {
 	factor: Expression;
 	power: number;
-	degree: number;
 	unknownIndex: number;
 	numUnknowns: number;
 }

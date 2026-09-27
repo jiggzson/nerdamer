@@ -1,6 +1,6 @@
 'use strict';
 
-import { expressionToZPoly } from '../../src/core/adapters';
+import { expressionToZPoly } from '../../src/core/classes/polynomial/adapters';
 import { Polynomial } from '../../src/core/classes/polynomial/Polynomial';
 
 import type { Ordering, PolyType } from '../../src/core/classes/polynomial/Polynomial';
@@ -177,6 +177,40 @@ describe('Polynomial', () => {
 		for (const result of results) {
 			expect(result.getExpression().eq(result.text())).toBe(true);
 		}
+	});
+
+	it('raises numeric rational polynomials through exact sparse arithmetic', () => {
+		const polynomial = new Polynomial('(1/2)*x+1');
+		const powered = polynomial.pow(3);
+
+		expect(
+			powered.getExpression().eq('(1/8)*x^3+(3/4)*x^2+(3/2)*x+1')
+		).toBe(true);
+		expect(powered.getExpression().eq(powered.text())).toBe(true);
+	});
+
+	it('preserves symbolic-coefficient polynomial powers', () => {
+		const polynomial = new Polynomial('a*x+1', ['x']);
+		const powered = polynomial.pow(2);
+
+		expect(powered.getExpression().eq('a^2*x^2+2*a*x+1')).toBe(true);
+	});
+
+	it('multiplies numeric rational polynomials through exact arithmetic', () => {
+		const left = new Polynomial('(1/2)*x+1');
+		const right = new Polynomial('(2/3)*x-3');
+		const product = left.times(right);
+
+		expect(product.getExpression().eq('(1/3)*x^2-(5/6)*x-3')).toBe(true);
+		expect(product.getExpression().eq(product.text())).toBe(true);
+	});
+
+	it('preserves symbolic-coefficient polynomial multiplication', () => {
+		const left = new Polynomial('a*x+1', ['x']);
+		const right = new Polynomial('b*x+2', ['x']);
+		const product = left.times(right);
+
+		expect(product.getExpression().eq('a*b*x^2+2*a*x+b*x+2')).toBe(true);
 	});
 
 	it('keeps multivariate state synchronized when polynomial operations add variables', () => {
@@ -440,7 +474,25 @@ describe('Polynomial', () => {
 	});
 });
 
-describe('MultiPoly', () => {
+describe('Integer polynomial conversion', () => {
+	it('preserves integer content while clearing rational denominators', () => {
+		const { zPoly, content, denominator } = expressionToZPoly(
+			'(2/3)*x+4/3'
+		);
+
+		expect(zPoly.text()).toEqual('x+2');
+		expect(content.text()).toEqual('2');
+		expect(denominator.text()).toEqual('3');
+	});
+
+	it('preserves zero conversion semantics', () => {
+		const { zPoly, content, denominator } = expressionToZPoly('0');
+
+		expect(zPoly.text()).toEqual('0');
+		expect(content.text()).toEqual('1');
+		expect(denominator.text()).toEqual('1');
+	});
+
 	it('should convert from Q to Z', () => {
 		const { zPoly, content, denominator } = expressionToZPoly(
 			'(2*x^3)/3-(169*x^2)/15-(37*x)/6+1/2'

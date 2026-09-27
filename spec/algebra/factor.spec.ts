@@ -1,23 +1,129 @@
 'use strict';
 
-import { factor } from '../../src/algebra/factor/factor';
+import { factor, polyFactors } from '../../src/algebra/factor/factor';
 import nerdamer from '../../src/index';
 import { Expression } from '../../src/core/classes/expression/Expression';
+import { Polynomial } from '../../src/core/classes/polynomial/Polynomial';
+import { polynomialToSparsePolynomial } from '../../src/core/classes/polynomial/SparsePolynomialAdapter';
 
 describe('Factor', () => {
+	const toSparse = (expression: Expression, variables: readonly string[]) =>
+		polynomialToSparsePolynomial(
+			new Polynomial(expression, [...variables]),
+			variables
+		);
+
+	const factorMultiplicityShape = (expression: Expression): string[] => {
+		const factors = expression.isProduct()
+			? expression.elementsArray()
+			: [expression];
+
+		return factors
+			.filter(entry => !entry.isNUM())
+			.map(entry => entry.getPower().text())
+			.sort();
+	};
+
 	const check = (input: string, expected: string) => {
+		const actual = factor(input);
+		const source = Expression.create(input);
+		const expectedExpression = Expression.create(expected);
+		const variables = source.variables().sort();
+
+		expect(toSparse(actual, variables).equals(toSparse(source, variables))).toBe(true);
+		expect(
+			toSparse(expectedExpression, variables).equals(toSparse(source, variables))
+		).toBe(true);
+		expect(factorMultiplicityShape(actual)).toEqual(
+			factorMultiplicityShape(expectedExpression)
+		);
+	};
+
+	const checkText = (input: string, expected: string) => {
 		expect(factor(input).text()).toEqual(expected);
 	};
 
+	const factorLeaves = (expression: Expression): Expression[] => {
+		if (expression.isNUM()) {
+			return [];
+		}
+		if (expression.isProduct() && expression.getPower().isOne()) {
+			return expression.elementsArray().flatMap(factorLeaves);
+		}
+		return [expression];
+	};
+
+	const checkKnownFactors = (
+		source: Expression,
+		expectedFactors: readonly string[]
+	) => {
+		const actual = factor(source);
+		const variables = source.variables().sort();
+		const actualFactors = factorLeaves(actual);
+		const unmatched = [...actualFactors];
+
+		expect(toSparse(actual, variables).equals(toSparse(source, variables))).toBe(true);
+		expect(unmatched).toHaveLength(expectedFactors.length);
+
+		for (const expected of expectedFactors) {
+			const expectedSparse = toSparse(Expression.create(expected), variables);
+			const index = unmatched.findIndex(candidate =>
+				toSparse(candidate, variables).equals(expectedSparse)
+			);
+			expect(index).toBeGreaterThanOrEqual(0);
+			unmatched.splice(index, 1);
+		}
+		expect(unmatched).toHaveLength(0);
+	};
+
+	it('factors an expanded four-variable polynomial through the public API', () => {
+		const source = Expression.create(
+			'(x+y+z+w+1)*(x+y*z+z*w+2)'
+		).expand();
+
+		checkKnownFactors(source, [
+			'x+y+z+w+1',
+			'x+y*z+z*w+2',
+		]);
+	});
+
+	it('factors an expanded five-variable polynomial through the public API', () => {
+		const source = Expression.create(
+			'(x+y+z+w+v+1)*(x+y*z+w*v+2)'
+		).expand();
+
+		checkKnownFactors(source, [
+			'x+y+z+w+v+1',
+			'x+y*z+w*v+2',
+		]);
+	});
+
 	it('prime-factors exact integer input', () => {
-		check('4677271', '2089*2239');
-		check('3825123056546413051', '149491*747451*34233211');
-		check('-12', '-2^2*3');
+		checkText('4677271', '2089*2239');
+		checkText('3825123056546413051', '149491*747451*34233211');
+		checkText('-12', '-2^2*3');
 	});
 
 	it('preserves mathematical constants used in rational factors', () => {
-		check('c*pi^-5', 'c*pi^-5');
-		check('c*e^-5', 'c*e^-5');
+		checkText('c*pi^-5', 'c*pi^-5');
+		checkText('c*e^-5', 'c*e^-5');
+	});
+
+	it('factors polynomial arguments inside functions', () => {
+		const actual = factor('sin(x^2+2*x+1)');
+
+		expect(actual.isFunction('sin')).toBe(true);
+		expect(actual.getArguments()).toHaveLength(1);
+		expect(actual.getArguments()[0].eq(Expression.create('(1+x)^2'))).toBe(true);
+	});
+
+	it('preserves a function multiplier and power while factoring its arguments', () => {
+		const actual = factor('3*sin(x^2-1)^2');
+
+		expect(actual.isFunction('sin')).toBe(true);
+		expect(actual.getMultiplier().eq('3')).toBe(true);
+		expect(actual.getPower().eq(Expression.create('2'))).toBe(true);
+		expect(actual.getArguments()[0].eq(Expression.create('(-1+x)*(1+x)'))).toBe(true);
 	});
 
 	it('x^2*y+3*x*y+2*y+x^2+3*x+2', () => {
@@ -518,6 +624,7 @@ describe('Factor', () => {
 			'(-11+x^2+5*x^3)*(-7+x+13*x^4+7*x^6)'
 		);
 	});
+
 });
 
 describe('Factorization regressions', () => {
@@ -533,6 +640,14 @@ describe('Factorization regressions', () => {
 		expect(Expression.create('a*b*x^2+c*x+d').coeffs('x').text()).toEqual(
 			'{ 0: d, 1: c, 2: a*b }'
 		);
+	});
+
+	it('restores a rational polynomial denominator exactly once', () => {
+		const source = Expression.create('x^2+(3/2)*x+1/2');
+		const factors = polyFactors(source);
+
+		expect(factors.count()).toBeGreaterThan(1);
+		expect(factors.prod().eq(source)).toBe(true);
 	});
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/40

@@ -1,3 +1,4 @@
+import '../helpers/registerNerdamerFunctions';
 import { Parser } from '../../src/core/classes/parser/Parser';
 import { Token } from '../../src/core/classes/parser/Token';
 import { ALLOWED_CHARACTERS } from '../../src/core/classes/parser/Token';
@@ -59,6 +60,14 @@ describe('Tokenizer and RPN conversion', () => {
 			'( [ 1 , 2 , 3 ] ) ( )'
 		);
 	});
+
+	// Regression: Nerdamer 2.0 issue #23
+	it('should reject unsupported characters before numeric conversion', () => {
+		expect(() => Parser.tokenize('2+@3')).toThrow(
+			'Unsupported character "@" at position 2.'
+		);
+	});
+
 	it('should recognize custom characters', () => {
 		ALLOWED_CHARACTERS.push('☺');
 		expect(Parser.tokenize('1+☺-x')[2].type).toEqual(Token.VARIABLE);

@@ -1,5 +1,7 @@
 import Decimal from 'decimal.js';
 
+import { message } from '../errors';
+
 import { factorial } from './bigint/bigint';
 
 import type { DecimalType } from '../classes/parser/types';
@@ -69,7 +71,7 @@ export function erf(x: DecimalType) {
 			sum = result;
 			k++;
 			if (k > max) {
-				throw new Error('erf not converging. Exiting!');
+				throw new Error(message('erfConvergenceFailed'));
 			}
 		}
 		let retval = Decimal.min(twoOverSqrtPi.times(sum), 1);

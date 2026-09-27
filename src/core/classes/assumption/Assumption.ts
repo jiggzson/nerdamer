@@ -1,6 +1,7 @@
 import Decimal from 'decimal.js';
 
 import { isNerdamerNativeType } from '../../common/common';
+import { message } from '../../errors';
 import { Expression } from '../expression/Expression';
 import { ASSUMPTION } from '../parser/constants';
 import { Rational } from '../rational/Rational';
@@ -49,7 +50,7 @@ function normalizeAssumptionValue(value: AssumptionValue): NormalizedAssumptionV
 	let exact: Rational | undefined;
 
 	if (Rational.isRational(value)) {
-		exact = Rational.makeCopy(value);
+		exact = value.copy();
 		decimal = exact.toDecimal();
 	} else {
 		decimal = typeof value === 'number' || typeof value === 'string' ? new Decimal(value) : value;
@@ -99,7 +100,7 @@ function parseNumber(value: string) {
 
 	const n = new Decimal(v);
 	if (n.isNaN()) {
-		throw new Error(`Invalid Decimal: "${value}"`);
+		throw new Error(message('invalidDecimal', { value: String(value) }));
 	}
 	return n;
 }
@@ -216,7 +217,12 @@ export class Assumption {
 			boundComparison > 0 ||
 			(boundComparison === 0 && !(normalizedStartInclusive && normalizedEndInclusive))
 		) {
-			throw new Error(`Invalid interval: (${startValue}, ${endValue})`);
+			throw new Error(
+				message('invalidInterval', {
+					start: startValue.toString(),
+					end: endValue.toString(),
+				})
+			);
 		}
 
 		this.start = Object.freeze({
@@ -291,17 +297,17 @@ export class Assumption {
 	 */
 	static parse(expr: string): ParsedAssumption {
 		if (typeof expr !== 'string') {
-			throw new Error(`Invalid assumption: "${String(expr)}"`);
+			throw new Error(message('invalidAssumption', { input: String(expr) }));
 		}
 
 		const s = expr.replace(/\s+/g, '');
 		if (!s) {
-			throw new Error(`Invalid assumption: "${expr}"`);
+			throw new Error(message('invalidAssumption', { input: expr }));
 		}
 
 		// Must have at least a one-character identifier, operator, and value.
 		if (s.length < 3) {
-			throw new Error(`Invalid assumption: "${expr}"`);
+			throw new Error(message('invalidAssumption', { input: expr }));
 		}
 
 		let i = 0;
@@ -309,7 +315,7 @@ export class Assumption {
 		// Parse the variable identifier first. Assumptions are attached to plain
 		// variables rather than arbitrary symbolic expressions.
 		if (!isIdentStart(s[i])) {
-			throw new Error(`Expected identifier`);
+			throw new Error(message('assumptionIdentifierExpected'));
 		}
 
 		let j = i + 1;
@@ -334,12 +340,12 @@ export class Assumption {
 		}
 
 		if (!op) {
-			throw new Error(`Missing operator`);
+			throw new Error(message('assumptionOperatorMissing'));
 		}
 
 		const valueStr = s.slice(i);
 		if (!valueStr) {
-			throw new Error(`Missing value`);
+			throw new Error(message('assumptionValueMissing'));
 		}
 
 		const value = parseNumber(valueStr);
@@ -363,7 +369,7 @@ export class Assumption {
 				retval = { symbol, assumption: Assumption.exactly(value) };
 				break;
 			default:
-				throw new Error(`Unsupported operator "${op}"`);
+				throw new Error(message('assumptionOperatorUnsupported', { operator: op }));
 		}
 
 		return retval;

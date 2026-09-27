@@ -13,9 +13,10 @@ export type {
 	MonomialOrder,
 	RationalSolution,
 } from '../algebra/algorithms/groebnerBase';
-export { MultiPoly } from '../algebra/algorithms/multiPoly/MultiPoly';
 /** Advanced numerical and exact-polynomial APIs. */
 export { Complex } from '../core/classes/complex/Complex';
+export { SparsePolynomial } from '../core/classes/polynomial/SparsePolynomial';
+export type { SparsePolynomialTerm } from '../core/classes/polynomial/SparsePolynomial';
 export { FunctionSolver } from '../solve/classes/FunctionSolver';
 export type {
 	FunctionSolverOptions,

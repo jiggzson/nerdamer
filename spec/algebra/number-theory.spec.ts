@@ -52,6 +52,21 @@ describe('Polynomial functions', () => {
 		expect(coefficients.map(x => x.text())).toEqual(['x^5', '0', '1']);
 	});
 
+	it('preserves bigint powers in expression-facing degree queries', () => {
+		const exponent = 9007199254740991n + 17n;
+
+		expect(deg(Expression.create(`x^${exponent.toString()}+y^2`)).text()).toEqual(
+			exponent.toString()
+		);
+		expect(
+			deg(Expression.create(`x^${exponent.toString()}+y^2`), 'x').text()
+		).toEqual(exponent.toString());
+	});
+
+	it('computes rational expression content through exact sparse coefficients', () => {
+		expect(content(Expression.create('(2/3)*x+4/9')).text()).toEqual('2/9');
+	});
+
 	it('evaluates direct Polynomial inputs for degree and numeric content', () => {
 		const polynomial = new Polynomial('6*x^2+15*x*y-3*y');
 

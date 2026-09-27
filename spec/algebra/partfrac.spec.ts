@@ -154,6 +154,91 @@ describe('partfrac', () => {
 	});
 
 	// ================================================================
+	// Broader denominator coverage
+	// ================================================================
+	describe('broader denominator coverage', () => {
+		it('decomposes a repeated irreducible quadratic mixed with a linear factor', () => {
+			const source = '1/((x^2+1)^2*(x-1))';
+			const result = partfrac(source, 'x');
+
+			expect(result.text()).not.toEqual(text(source));
+			verifyEquivalence(source, result, 'x', ['0', '2', '3', '-1']);
+		});
+
+		it('decomposes two distinct irreducible quadratics', () => {
+			const source = '1/((x^2+1)*(x^2+4))';
+			const result = partfrac(source, 'x');
+
+			expect(result.text()).not.toEqual(text(source));
+			verifyEquivalence(source, result, 'x', ['0', '1', '2', '-1']);
+		});
+
+		it('decomposes non-monic linear factors', () => {
+			const source = '1/((2*x+1)*(3*x-2))';
+			const result = partfrac(source, 'x');
+
+			expect(result.text()).not.toEqual(text(source));
+			verifyEquivalence(source, result, 'x', ['0', '1', '2', '-1']);
+		});
+
+		it('decomposes repeated linear factors mixed with an irreducible quadratic', () => {
+			const source = '(2*x^2+3*x+5)/(x^2*(x^2+1))';
+			const result = partfrac(source, 'x');
+
+			expect(result.text()).not.toEqual(text(source));
+			verifyEquivalence(source, result, 'x', ['1', '2', '3', '-1']);
+		});
+
+		it('decomposes an improper fraction with repeated denominator factors', () => {
+			const source = '(x^4+1)/(x*(x-1)^2)';
+			const result = partfrac(source, 'x');
+
+			expect(result.text()).not.toEqual(text(source));
+			verifyEquivalence(source, result, 'x', ['2', '3', '-1', '4']);
+		});
+
+		it('decomposes symbolic parameters in denominator factors', () => {
+			const source = '(x+a)/(x*(x-a))';
+			const result = partfrac(source, 'x');
+
+			expect(result.text()).not.toEqual(text(source));
+			verifyEquivalence(source, result, 'x', ['1', '2', '3'], { a: '5' });
+			verifyEquivalence(source, result, 'x', ['1', '2', '3'], { a: '-2' });
+		});
+
+		it('infers the decomposition variable', () => {
+			const source = '1/(x*(x-1))';
+			const result = partfrac(source);
+
+			expect(result.text()).not.toEqual(text(source));
+			verifyEquivalence(source, result, 'x', ['2', '3', '-1', '5']);
+		});
+	});
+
+	// ================================================================
+	// Higher-degree irreducible factors
+	// ================================================================
+	describe('higher-degree irreducible factors', () => {
+		it('decomposes an irreducible cubic factor', () => {
+			const source = '1/((x^3+x+1)*(x-1))';
+			const result = partfrac(source, 'x');
+			const expected = Expression.create('1/(3*(x-1))-(x^2+x+2)/(3*(x^3+x+1))');
+
+			expect(result.text()).not.toEqual(text(source));
+			expect(result.minus(expected).simplify().text()).toEqual('0');
+			verifyEquivalence(source, result, 'x', ['0', '2', '3', '-1']);
+		});
+
+		it('decomposes an irreducible quartic factor', () => {
+			const source = '1/((x^4+x+1)*(x-1))';
+			const result = partfrac(source, 'x');
+
+			expect(result.text()).not.toEqual(text(source));
+			verifyEquivalence(source, result, 'x', ['0', '2', '3', '-1']);
+		});
+	});
+
+	// ================================================================
 	// Improper fractions (deg numerator >= deg denominator)
 	// ================================================================
 	describe('improper fractions', () => {

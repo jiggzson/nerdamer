@@ -5,6 +5,7 @@ import { CONTENT, DEG } from '../parser/constants';
 import { Vector } from '../vector/Vector';
 
 import { Polynomial } from './Polynomial';
+import { expressionToIntegerSparsePolynomial } from './SparsePolynomialAdapter';
 import { divide as polynomialDivide } from './utils';
 
 import type { ExpressionInput } from '../../types';
@@ -39,10 +40,32 @@ export function deg(x: ExpressionInput | Polynomial, variable?: ExpressionInput)
 	}
 
 	let retval: Expression | undefined = undefined;
-	try {
-		const polynomial = Polynomial.isPolynomial(x) ? x : new Polynomial(x);
-		retval = Expression.create(polynomial.deg(variableName));
-	} catch {}
+	if (Polynomial.isPolynomial(x)) {
+		retval = Expression.create(x.deg(variableName));
+	} else {
+		const inputExpression = Expression.create(x);
+		try {
+			const variables = inputExpression.variables().sort();
+			const converted = expressionToIntegerSparsePolynomial(inputExpression, variables);
+			let degree: bigint;
+
+			if (variableName === undefined) {
+				degree = converted.polynomial.totalDegree() ?? 0n;
+			} else {
+				const variableIndex = variables.indexOf(variableName);
+				degree =
+					variableIndex === -1
+						? 0n
+						: (converted.polynomial.degree(variableIndex) ?? 0n);
+			}
+
+			retval = Expression.Number(degree);
+		} catch {
+			try {
+				retval = Expression.create(new Polynomial(inputExpression).deg(variableName));
+			} catch {}
+		}
+	}
 
 	const input = Polynomial.isPolynomial(x) ? x.getExpression() : x;
 	const args = variableExpression === undefined ? [input] : [input, variableExpression];
@@ -69,12 +92,52 @@ export function deg(x: ExpressionInput | Polynomial, variable?: ExpressionInput)
  */
 export function content(x: ExpressionInput | Polynomial) {
 	let retval: Expression | undefined = undefined;
-	try {
-		const polynomial = Polynomial.isPolynomial(x) ? x : new Polynomial(x);
-		retval = Expression.create(polynomial.content());
-	} catch {}
+
+	if (Polynomial.isPolynomial(x)) {
+		retval = Expression.create(x.content());
+	} else {
+		const inputExpression = Expression.create(x);
+		try {
+			if (inputExpression.isZero()) {
+				retval = Expression.create(new Polynomial(inputExpression).content());
+			} else {
+				const variables = inputExpression.variables().sort();
+				const converted = expressionToIntegerSparsePolynomial(inputExpression, variables);
+				retval = Expression.Number(converted.polynomial.content()).div(
+					Expression.Number(converted.denominator)
+				);
+				retval.getMultiplier().asDecimal = inputExpression.hasDecimal();
+			}
+		} catch {
+			try {
+				retval = Expression.create(new Polynomial(inputExpression).content());
+			} catch {}
+		}
+	}
 
 	return retval ?? Expression.toFunction(CONTENT, [Polynomial.isPolynomial(x) ? x.getExpression() : x]);
+}
+
+/**
+ * Returns polynomial coefficients as a dense Vector ordered by ascending power.
+ *
+ * When no variable is supplied, the first variable in the expression is used, matching
+ * the legacy parser helper. A constant expression therefore has the single coefficient
+ * at power zero.
+ */
+export function coeffs(x: ExpressionInput, variable?: ExpressionInput): Vector {
+	const expression = Expression.create(x);
+	let variableName: string | undefined;
+
+	if (variable !== undefined) {
+		variableName = assertPlainVariableAndGetString(Expression.create(variable));
+	} else {
+		variableName = expression.variables()[0];
+	}
+
+	return variableName === undefined
+		? new Vector([expression.copy()])
+		: expression.coeffs(variableName).toVector();
 }
 
 /**

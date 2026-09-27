@@ -1,21 +1,114 @@
 'use strict';
 
 describe('function registry', () => {
-	it('provides built-in implementations through the normal dispatch table', () => {
+	it('loads domain implementations through module dispatch files', () => {
 		jest.isolateModules(() => {
 			const { mathFunctionRegistry } = jest.requireActual<
 				typeof import('../../src/core/dispatch')
 			>('../../src/core/dispatch');
+			const { loadAssumptionFunctions } = jest.requireActual<
+				typeof import('../../src/core/classes/assumption/dispatch')
+			>('../../src/core/classes/assumption/dispatch');
+			const { loadMatrixFunctions } = jest.requireActual<
+				typeof import('../../src/core/classes/matrix/dispatch')
+			>('../../src/core/classes/matrix/dispatch');
+			const { loadVectorFunctions } = jest.requireActual<
+				typeof import('../../src/core/classes/vector/dispatch')
+			>('../../src/core/classes/vector/dispatch');
+			const { loadPolynomialFunctions } = jest.requireActual<
+				typeof import('../../src/core/classes/polynomial/dispatch')
+			>('../../src/core/classes/polynomial/dispatch');
+			const { loadComplexFunctions } = jest.requireActual<
+				typeof import('../../src/core/functions/complex.dispatch')
+			>('../../src/core/functions/complex.dispatch');
+			const { loadMathFunctions } = jest.requireActual<
+				typeof import('../../src/math/dispatch')
+			>('../../src/math/dispatch');
+			const { loadAlgebraFunctions } = jest.requireActual<
+				typeof import('../../src/algebra/dispatch')
+			>('../../src/algebra/dispatch');
+			const { loadCalculusFunctions } = jest.requireActual<
+				typeof import('../../src/calculus/dispatch')
+			>('../../src/calculus/dispatch');
+			const { loadSolveFunctions } = jest.requireActual<
+				typeof import('../../src/solve/dispatch')
+			>('../../src/solve/dispatch');
 			const { DOUBLE_FACTORIAL, FACTORIAL } = jest.requireActual<
 				typeof import('../../src/core/classes/parser/constants')
 			>('../../src/core/classes/parser/constants');
 
+			expect(mathFunctionRegistry.assume).toBeUndefined();
+			expect(mathFunctionRegistry.imatrix).toBeUndefined();
+			expect(mathFunctionRegistry.coeffs).toBeUndefined();
+			expect(mathFunctionRegistry.conjugate).toBeUndefined();
+			expect(mathFunctionRegistry.sin).toBeUndefined();
+			expect(mathFunctionRegistry.diff).toBeUndefined();
+			expect(mathFunctionRegistry.solve).toBeUndefined();
+
+			loadAssumptionFunctions();
+			loadMatrixFunctions();
+			loadVectorFunctions();
+			loadPolynomialFunctions();
+			loadComplexFunctions();
+			loadMathFunctions();
+			loadAlgebraFunctions();
+			loadCalculusFunctions();
+			loadSolveFunctions();
+
+			expect(mathFunctionRegistry.assume.fn).toBeDefined();
+			expect(mathFunctionRegistry.imatrix.fn).toBeDefined();
+			expect(mathFunctionRegistry.coeffs.fn).toBeDefined();
+			expect(mathFunctionRegistry.conjugate.fn).toBeDefined();
 			expect(mathFunctionRegistry.sin.fn).toBeDefined();
 			expect(mathFunctionRegistry.expand.fn).toBeDefined();
 			expect(mathFunctionRegistry.diff.fn).toBeDefined();
 			expect(mathFunctionRegistry.solve.fn).toBeDefined();
 			expect(mathFunctionRegistry[FACTORIAL].fn).toBeDefined();
 			expect(mathFunctionRegistry[DOUBLE_FACTORIAL].fn).toBeDefined();
+		});
+	});
+
+
+	it('keeps higher-level CAS domains out of the parser composition', () => {
+		jest.isolateModules(() => {
+			const { mathFunctionRegistry } = jest.requireActual<
+				typeof import('../../src/core/dispatch')
+			>('../../src/core/dispatch');
+			const { loadParserFunctions } = jest.requireActual<
+				typeof import('../../src/core/parserFunctions')
+			>('../../src/core/parserFunctions');
+
+			loadParserFunctions();
+
+			expect(mathFunctionRegistry.sin.fn).toBeDefined();
+			expect(mathFunctionRegistry.assume.fn).toBeDefined();
+			expect(mathFunctionRegistry.imatrix.fn).toBeDefined();
+			expect(mathFunctionRegistry.dot.fn).toBeDefined();
+			expect(mathFunctionRegistry.coeffs.fn).toBeDefined();
+			expect(mathFunctionRegistry.block.fn).toBeDefined();
+
+			expect(mathFunctionRegistry.factor).toBeUndefined();
+			expect(mathFunctionRegistry.diff).toBeUndefined();
+			expect(mathFunctionRegistry.integrate).toBeUndefined();
+			expect(mathFunctionRegistry.solve).toBeUndefined();
+		});
+	});
+
+	it('adds algebra, calculus, and solving in the full composition', () => {
+		jest.isolateModules(() => {
+			const { mathFunctionRegistry } = jest.requireActual<
+				typeof import('../../src/core/dispatch')
+			>('../../src/core/dispatch');
+			const { registerNerdamerFunctions } = jest.requireActual<
+				typeof import('../../src/core/fullFunctions')
+			>('../../src/core/fullFunctions');
+
+			registerNerdamerFunctions();
+
+			expect(mathFunctionRegistry.factor.fn).toBeDefined();
+			expect(mathFunctionRegistry.diff.fn).toBeDefined();
+			expect(mathFunctionRegistry.integrate.fn).toBeDefined();
+			expect(mathFunctionRegistry.solve.fn).toBeDefined();
 		});
 	});
 

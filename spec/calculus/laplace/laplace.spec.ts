@@ -1,3 +1,4 @@
+import '../../helpers/registerNerdamerFunctions';
 import { laplace } from '../../../src/calculus/laplace/laplace';
 import { Expression } from '../../../src/core/classes/expression/Expression';
 

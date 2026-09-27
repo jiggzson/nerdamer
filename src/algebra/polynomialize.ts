@@ -47,8 +47,10 @@ export function polynomialize(
 } {
 	map ??= {};
 
-	// First simplify the expression
-	let x = simplify(expression);
+	// Ordinary polynomial input is already in the exact domain required below.
+	// Avoid routing it through the full simplifier, which ends by factoring and can
+	// recursively re-enter polynomial GCD preprocessing.
+	let x = expression.isPolynomialLike() ? expression : simplify(expression);
 	// Substitute out all functions
 	[x, map] = uSubFN(x, map);
 	// Substitute out all exponential functions

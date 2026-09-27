@@ -25,6 +25,26 @@ describe('PolynomialSolver input validation', () => {
 		);
 	});
 
+	it('accepts a matching direct univariate Expression', () => {
+		const roots = new PolynomialSolver(Expression.create('x^2-1'), 'x').roots();
+
+		expect(roots.map(root => root.text()).sort()).toEqual(['-1', '1']);
+	});
+
+	it('converts exact rational Expression coefficients directly to Decimal values', () => {
+		const roots = new PolynomialSolver(Expression.create('(1/3)*x-1'), 'x').roots();
+
+		expect(roots).toHaveLength(1);
+		expect(roots[0].eq(Expression.create(3))).toBe(true);
+	});
+
+	it('converts numeric complex Expression coefficients directly to Complex values', () => {
+		const roots = new PolynomialSolver(Expression.create('(1+i)*x+1'), 'x').roots();
+
+		expect(roots).toHaveLength(1);
+		expect(roots[0].eq(Expression.create('(-1+i)/2'))).toBe(true);
+	});
+
 	it('accepts a matching direct univariate Polynomial', () => {
 		const roots = new PolynomialSolver(new Polynomial('x^2-1'), 'x').roots();
 
@@ -102,6 +122,42 @@ describe('Polynomial-root regressions', () => {
 		const solutions = nerdamer.solve('8^2+(6+x)^2=(8+x)^2', 'x');
 
 		expect(solutions.text()).toEqual('{9}');
+	});
+
+	// Regression: Nerdamer 2.0 issue #256
+	it('validates all roots before converting the high-degree numerical solve case', () => {
+		const source = Expression.create('3*x^20+3*x^19-6*x^11+14*x^5-2*x-1');
+		const roots = new PolynomialSolver(source, 'x').validatedRoots();
+
+		expect(roots).toHaveLength(20);
+		for (const root of roots) {
+			const residual = source.evaluate({ x: root }).expand();
+			expect(residual.isNearlyZero()).toBe(true);
+		}
+	});
+
+
+	// Regression: Nerdamer 2.0 issue #270
+	it('preserves roots from distinct exact factors without cross-factor comparisons', () => {
+		const source = Expression.create(
+			'35*x^9+7*x^8+65*x^7-64*x^6-138*x^4-34*x^3-7*x^2-11*x+77'
+		);
+		const factors = [
+			Expression.create('-11+x^2+5*x^3'),
+			Expression.create('-7+x+13*x^4+7*x^6'),
+		];
+		const solutions = solve(source, 'x');
+
+		expect(solutions.count()).toBe(9);
+		expect(solutions.solutionsType).toBe('mixed');
+
+		for (const root of solutions.elements) {
+			const numericRoot = root.evaluate();
+			const matchesFactor = factors.some(factor =>
+				factor.evaluate({ x: numericRoot }).expand().isNearlyZero()
+			);
+			expect(matchesFactor).toBe(true);
+		}
 	});
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/265

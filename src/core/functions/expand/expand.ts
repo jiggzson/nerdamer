@@ -356,7 +356,7 @@ export function expand(x: Expression): Expression {
 
 	if (isExpandable(x)) {
 		if (x.isNUM() || x.isVAR()) {
-			retval = new Expression(x);
+			retval = x.copy();
 		} else {
 			// At the very least the multiplier must be distributed along the expression
 			retval = x.distributeMultiplier();
@@ -401,7 +401,7 @@ export function expand(x: Expression): Expression {
 			}
 		}
 	} else {
-		retval = new Expression(x);
+		retval = x.copy();
 	}
 
 	return retval;

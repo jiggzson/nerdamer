@@ -1,5 +1,6 @@
 'use strict';
 
+import '../helpers/registerNerdamerFunctions';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { Parser } from '../../src/core/classes/parser/Parser';
 import { UnsupportedOperationError } from '../../src/core/errors';
@@ -118,6 +119,9 @@ describe('buildFunction numerical compilation', () => {
 			'x',
 		]);
 		const heaviside = buildUnary('heaviside');
+		const step = buildUnary('step');
+		const rect = buildUnary('rect');
+		const tri = buildUnary('tri');
 		const csgn = buildUnary('csgn');
 
 		expect(cbrt(-8)).toBe(-2);
@@ -130,6 +134,12 @@ describe('buildFunction numerical compilation', () => {
 		expect(heaviside(-1)).toBe(0);
 		expect(heaviside(0)).toBe(0.5);
 		expect(heaviside(1)).toBe(1);
+		expect(step(-1)).toBe(0);
+		expect(step(0)).toBe(1);
+		expect(rect(0.5)).toBe(0.5);
+		expect(rect(1)).toBe(0);
+		expect(tri(0.25)).toBe(0.75);
+		expect(tri(1)).toBe(0);
 		expect(csgn(-4)).toBe(-1);
 	});
 

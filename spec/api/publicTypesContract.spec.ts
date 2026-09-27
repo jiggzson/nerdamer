@@ -7,6 +7,7 @@ import type {
 	RationalSolution,
 	Root as AdvancedRoot,
 	RootFindingMethod,
+	SparsePolynomialTerm,
 } from '../../src/api/advanced';
 import type {
 	EvalInputType,
@@ -129,6 +130,7 @@ type PublicTypeContract = [
 	RationalSolution,
 	AdvancedRoot,
 	RootFindingMethod,
+	SparsePolynomialTerm,
 	DebugCollection,
 	DebugDictionary,
 	DebugDictionaryEntry,

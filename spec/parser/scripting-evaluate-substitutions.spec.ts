@@ -1,3 +1,5 @@
+import nerdamer from '../../src/index';
+
 import { Matrix } from '../../src/core/classes/matrix/Matrix';
 import { Parser } from '../../src/core/classes/parser/Parser';
 import { mathFunctionRegistry } from '../../src/core/dispatch';
@@ -36,6 +38,21 @@ describe('Nerdamer Scripting evaluate substitutions', () => {
 			).toEqual('[5, 6]');
 		} finally {
 			delete mathFunctionRegistry[name];
+		}
+	});
+
+	it('evaluates parametric SolutionSet members with local substitutions', () => {
+		delete Parser.KNOWN_VALUES.sol;
+
+		try {
+			expect(
+				nerdamer('sol: solve(sin(x),x); evaluate(sol,{_n=>0})').text()
+			).toEqual('{0}');
+			expect(nerdamer('evaluate(solve(sin(x),x),{_n=>0})').text()).toEqual('{0}');
+			expect(Parser.parse('_n+1', { _n: 2 }).text()).toEqual('3');
+			expect(() => Parser.parse('_n:0')).toThrow();
+		} finally {
+			delete Parser.KNOWN_VALUES.sol;
 		}
 	});
 

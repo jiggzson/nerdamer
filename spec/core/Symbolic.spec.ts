@@ -1,5 +1,6 @@
 'use strict';
 
+import '../helpers/registerNerdamerFunctions';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { one, two } from '../../src/core/classes/expression/shortcuts';
 import { contains } from '../../src/core/classes/expression/products';

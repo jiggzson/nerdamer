@@ -1,3 +1,5 @@
+import { message } from '../../core/errors';
+
 /**
  * Adaptive Simpson definite integration using native `number` arithmetic.
  *
@@ -106,11 +108,11 @@ function withFiniteBounds(
 
 	const evalF = (x: number): number => {
 		if (++evals > maxEvals) {
-			throw new Error(`defint: maxEvals exceeded (${maxEvals}).`);
+			throw new Error(message('defintMaxEvals', { max: String(maxEvals) }));
 		}
 		const y = f(x);
 		if (singular === 'strict' && !isFinite(y)) {
-			throw new Error(`defint: non-finite f(x) at x=${x}`);
+			throw new Error(message('defintNonFiniteValue', { x: String(x) }));
 		}
 		return y;
 	};
@@ -143,7 +145,7 @@ function withFiniteBounds(
 				const y = f(x) * 2 * span * u;
 
 				if (!isFinite(y)) {
-					throw new Error(`defint: endpoint singularity could not be regularized near x=${x}`);
+					throw new Error(message('defintEndpointSingularity', { x: String(x) }));
 				}
 
 				return y;
@@ -206,7 +208,9 @@ function withFiniteBounds(
 				!isFinite(fr.fb))
 		) {
 			if (fr.depth >= maxDepth || fr.singularTries >= MAX_SINGULAR_TRIES) {
-				throw new Error(`defint: singular/non-finite encountered near [${a0}, ${b0}]`);
+				throw new Error(
+					message('defintSingularity', { a: String(a0), b: String(b0) })
+				);
 			}
 			const nextDepth = fr.depth + 1;
 			const childTolAbs = fr.tolAbs / 2;
@@ -352,7 +356,7 @@ export function definiteIntegrateNative(
 	const isInfB = !isFinite(b) && !isNaN(b);
 
 	if ((isInfA || isInfB) && !allowInfinite) {
-		throw new Error('defint: infinite bounds require allowInfinite: true');
+		throw new Error(message('defintInfiniteBounds'));
 	}
 
 	// ── Infinite-bound substitutions ─────────────────────────────
@@ -394,7 +398,7 @@ export function definiteIntegrateNative(
 			return withFiniteBounds(g, eps, 1 - eps, tolAbs, tolRel, maxDepth, maxEvals, singular);
 		}
 
-		throw new Error('defint: unsupported infinite bound configuration');
+		throw new Error(message('defintUnsupportedInfiniteBounds'));
 	}
 
 	// ── Finite bounds with optional breakpoints ──────────────────

@@ -41,6 +41,28 @@ describe('public parser settings types', () => {
 		}
 	});
 
+	it('reports reserved names and tracks the configured imaginary unit', () => {
+		const previousImaginary = Parser.getI();
+		const replacementImaginary = previousImaginary === 'j' ? 'k' : 'j';
+
+		try {
+			expect(Parser.isReserved('e')).toBe(true);
+			expect(Parser.isReserved('pi')).toBe(true);
+			expect(Parser.isReserved('_n')).toBe(true);
+			expect(Parser.isReserved('all')).toBe(true);
+			expect(Parser.isReserved(previousImaginary)).toBe(true);
+			expect(Parser.isReserved('ordinary_variable')).toBe(false);
+
+			Parser.setI(replacementImaginary);
+			expect(Parser.isReserved(replacementImaginary)).toBe(true);
+			if (!['e', 'pi', '_n', 'all'].includes(previousImaginary)) {
+				expect(Parser.isReserved(previousImaginary)).toBe(false);
+			}
+		} finally {
+			Parser.setI(previousImaginary);
+		}
+	});
+
 	it('limits scopedBlock to Boolean parser settings', () => {
 		const previousEvaluate = Parser.get('EVALUATE');
 		const result = Parser.scopedBlock('EVALUATE', !previousEvaluate, () => {
@@ -58,6 +80,8 @@ describe('public parser settings types', () => {
 		Parser.set('EVALUATE', 1);
 		// @ts-expect-error INDEX_BASE accepts numeric values only.
 		Parser.set('INDEX_BASE', false);
+		// @ts-expect-error DEFER_SIMPLIFICATION is retained internally but is not a supported parser setting.
+		Parser.set('DEFER_SIMPLIFICATION', true);
 		// @ts-expect-error Unknown names are not part of the supported Parser facade.
 		Parser.set('NOT_A_SETTING', true);
 		// @ts-expect-error scopedBlock only accepts Boolean parser settings.

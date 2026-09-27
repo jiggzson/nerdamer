@@ -6,8 +6,11 @@ import * as assumptionsApi from '../src/api/assumptions';
 import * as calculusApi from '../src/api/calculus';
 import * as solveApi from '../src/api/solve';
 import * as structuresApi from '../src/api/structures';
+import { registerNerdamerFunctions } from '../src/core/fullFunctions';
 import { mathFunctionRegistry } from '../src/core/dispatch';
 import type { ParserRegistrationLevel, ParserUsage } from '../src/core/dispatch';
+
+registerNerdamerFunctions();
 
 export type ParserFunctionCategory =
 	| 'Algebra'
@@ -92,22 +95,25 @@ const CATEGORY_MEMBERS: Record<ParserFunctionCategory, readonly string[]> = {
 		'abs', 'sqrt', 'nthroot', 'cbrt', 'subst', 'log', 'exp', 'erf', 'erfc', 'gamma',
 		'delta', 'heaviside', 'hypot', 'fact', 'factorial', 'dfact', 'expand', 'round', 'sign',
 		'floor', 'ceil', 'ceiling', 'trunc', 'mod', 'modinv', 'numeric', 'parens', 'count', 'size', 'contains',
-		'max', 'min',
+		'max', 'min', 'radians', 'degrees', 'log10', 'step', 'rect', 'tri', 'continued_fraction', 'scientific',
 	],
 	Complex: ['imagpart', 'realpart', 'polarform', 'rectform', 'arg', 'csgn', 'conjugate'],
 	'Linear algebra': [
-		'matrix', 'imatrix', 'determinant', 'transpose', 'augment', 'rref', 'nullspace', 'dot', 'cross',
+		'matrix', 'imatrix', 'determinant', 'invert', 'transpose', 'augment', 'rref', 'nullspace', 'dot', 'cross', 'line',
 	],
-	Polynomials: ['deg', 'content', 'div', 'divide'],
+	Polynomials: ['deg', 'content', 'coeffs', 'div', 'divide'],
 	Calculus: ['diff', 'integrate', 'limit', 'laplace', 'ilaplace', 'sum', 'product', 'defint', 'S', 'C'],
-	Algebra: ['polyfactors', 'factor', 'simplify', 'partfrac', 'gcd', 'lcm', 'groebner', 'sqcomp'],
-	Solving: ['solve', 'solveeqs'],
+	Algebra: ['polyfactors', 'factor', 'pfactor', 'pfactord', 'simplify', 'partfrac', 'gcd', 'lcm', 'groebner', 'sqcomp'],
+	Solving: ['solve', 'solveeqs', 'roots'],
 	'Assumptions and sets': ['assume', 'forget', 'unassign'],
 	'Nerdamer Language': [
 		'evaluate', 'return', 'break', 'continue', 'and', 'or', 'not', 'xor', 'iferror', 'iserror',
 		'if', 'while', 'for', 'each', 'let', 'block',
 	],
-	'Special functions': ['isprime', 'fib', 'sinc', 'Shi', 'Si', 'Chi', 'Ci', 'Ei', 'Li'],
+	'Special functions': [
+		'isprime', 'fib', 'sinc', 'Shi', 'Si', 'Chi', 'Ci', 'Ei', 'Li',
+		'gamma_incomplete', 'gamma_incomplete_lower',
+	],
 };
 
 const ALIAS_GROUPS = [
@@ -117,6 +123,8 @@ const ALIAS_GROUPS = [
 
 const DIRECT_API_BY_PARSER_NAME: Record<string, ParserFunctionDirectApi> = {
 	factor: { package: 'nerdamer/algebra', name: 'factor' },
+	pfactor: { package: 'nerdamer/algebra', name: 'pfactor' },
+	pfactord: { package: 'nerdamer/algebra', name: 'pfactord' },
 	polyfactors: { package: 'nerdamer/algebra', name: 'polyFactors' },
 	isprime: { package: 'nerdamer/algebra', name: 'isPrime' },
 	gcd: { package: 'nerdamer/algebra', name: 'gcd' },
@@ -126,6 +134,7 @@ const DIRECT_API_BY_PARSER_NAME: Record<string, ParserFunctionDirectApi> = {
 	simplify: { package: 'nerdamer/algebra', name: 'simplify' },
 	sqcomp: { package: 'nerdamer/algebra', name: 'completeSquare' },
 	content: { package: 'nerdamer/algebra', name: 'content' },
+	coeffs: { package: 'nerdamer/algebra', name: 'coeffs' },
 	deg: { package: 'nerdamer/algebra', name: 'deg' },
 	diff: { package: 'nerdamer/calculus', name: 'diff' },
 	integrate: { package: 'nerdamer/calculus', name: 'integrate' },
@@ -138,8 +147,10 @@ const DIRECT_API_BY_PARSER_NAME: Record<string, ParserFunctionDirectApi> = {
 	S: { package: 'nerdamer/calculus', name: 'S' },
 	C: { package: 'nerdamer/calculus', name: 'C' },
 	solve: { package: 'nerdamer/solve', name: 'solve' },
+	roots: { package: 'nerdamer/solve', name: 'roots' },
 	solveeqs: { package: 'nerdamer/solve', name: 'solveSystem' },
 	determinant: { package: 'nerdamer/structures', name: 'determinant' },
+	invert: { package: 'nerdamer/structures', name: 'invert' },
 	nullspace: { package: 'nerdamer/structures', name: 'nullspace' },
 	imatrix: { package: 'nerdamer/structures', name: 'imatrix' },
 	dot: { package: 'nerdamer/structures', name: 'dot' },
@@ -148,6 +159,59 @@ const DIRECT_API_BY_PARSER_NAME: Record<string, ParserFunctionDirectApi> = {
 };
 
 const AUTHORED_DOCUMENTATION: Record<string, AuthoredParserFunctionDocumentation> = {
+	scientific: {
+		summary: 'Keeps an expression exact while requesting scientific notation with a fixed significant-digit count.',
+		syntax: 'scientific(value[, significantDigits])',
+		parameters: [
+			{ name: 'value', description: 'Expression whose numeric values should use scientific notation.' },
+			{ name: 'significantDigits', description: 'Optional integer from 1 through 1e9. The coefficient retains exactly this many significant digits. Defaults to 10.' },
+		],
+		examples: [
+			{ input: "nerdamer('scientific(1200,4)').text()", output: '1.200e3' },
+		],
+	},
+	coeffs: {
+		summary: 'Returns dense polynomial coefficients ordered from constant term upward.',
+		syntax: 'coeffs(expression[, variable])',
+		parameters: [
+			{ name: 'expression', description: 'Polynomial expression whose coefficients should be collected.' },
+			{ name: 'variable', description: 'Optional polynomial variable. Defaults to the first variable in the expression.' },
+		],
+		examples: [
+			{ input: "nerdamer('coeffs(x^2+2*x+1,x)').text()", output: '[1, 2, 1]' },
+		],
+	},
+	pfactor: {
+		summary: 'Returns the repeated prime factors of a positive integer in ascending order.',
+		syntax: 'pfactor(value)',
+		parameters: [
+			{ name: 'value', description: 'Positive integer to prime-factor.' },
+		],
+		examples: [
+			{ input: "nerdamer('pfactor(100)').text()", output: '[2, 2, 5, 5]' },
+		],
+	},
+	pfactord: {
+		summary: 'Returns prime factors and their occurrence counts as a Dictionary.',
+		syntax: 'pfactord(value)',
+		parameters: [
+			{ name: 'value', description: 'Positive integer to prime-factor.' },
+		],
+		examples: [
+			{ input: "nerdamer('pfactord(100)').text()", output: '{2 => 2, 5 => 2}' },
+		],
+	},
+	roots: {
+		summary: 'Returns legacy-style roots as a Vector, using the polynomial root solver for polynomial input.',
+		syntax: 'roots(expression[, variable])',
+		parameters: [
+			{ name: 'expression', description: 'Univariate polynomial or numeric constant whose roots should be returned.' },
+			{ name: 'variable', description: 'Optional polynomial variable.' },
+		],
+		examples: [
+			{ input: "nerdamer('roots(x^2-1,x)').text()" },
+		],
+	},
 	numeric: {
 		summary: 'Evaluates a numeric value to a finite number of significant decimal digits.',
 		syntax: 'numeric(value[, precision])',

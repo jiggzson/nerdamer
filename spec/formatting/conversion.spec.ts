@@ -114,6 +114,9 @@ describe('Registered function TeX completeness', () => {
 		'erf',
 		'erfc',
 		'gamma',
+		'gamma_incomplete',
+		'gamma_incomplete_lower',
+		'log10',
 		'delta',
 		'heaviside',
 		'fact',
@@ -183,6 +186,14 @@ describe('Registered function TeX completeness', () => {
 		'divide',
 		'isprime',
 		'fib',
+		'continued_fraction',
+		'degrees',
+		'invert',
+		'line',
+		'radians',
+		'rect',
+		'step',
+		'tri',
 	];
 
 	// These are transformations or solver commands rather than mathematical functions
@@ -223,7 +234,15 @@ describe('Registered function TeX completeness', () => {
 
 	// These functions execute immediately and do not persist as symbolic function nodes.
 	// They are classified for registry completeness but have no function-form TeX to render.
-	const nonSymbolicFunctions = ['evaluate', 'numeric'];
+	const nonSymbolicFunctions = [
+		'evaluate',
+		'numeric',
+		'scientific',
+		'coeffs',
+		'roots',
+		'pfactor',
+		'pfactord',
+	];
 
 	const genericTeXFunctions = [
 		...namedOperatorTeXFunctions,
@@ -294,6 +313,9 @@ describe('Registered function TeX completeness', () => {
 		['greatest common divisor', 'gcd(a,b)', '\\gcd\\left(a,b\\right)'],
 		['least common multiple', 'lcm(a,b)', '\\operatorname{lcm}\\left(a,b\\right)'],
 		['logarithmic integral', 'Li(x)', '\\operatorname{Li}\\left(x\\right)'],
+		['base-10 logarithm', 'log10(x)', '\\mathrm{log}_{10}\\left(x\\right)'],
+		['upper incomplete gamma', 'gamma_incomplete(a,z)', '\\Gamma\\left(a,z\\right)'],
+		['lower incomplete gamma', 'gamma_incomplete_lower(a,z)', '\\gamma\\left(a,z\\right)'],
 		['round with precision', 'round(x,2)', '\\operatorname{round}\\left(x,2\\right)'],
 		['implicit derivative variable', 'diff(x^2)', '\\operatorname{diff}\\left(x^{2}\\right)'],
 		['implicit integration variable', 'integrate(x)', '\\operatorname{integrate}\\left(x\\right)'],

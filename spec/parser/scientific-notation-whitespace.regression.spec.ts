@@ -1,5 +1,8 @@
+import { loadScriptingFunctions } from '../../src/core/classes/parser/scripting/dispatch';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { Parser } from '../../src/core/classes/parser/Parser';
+
+loadScriptingFunctions();
 
 describe('Scientific notation after whitespace normalization', () => {
 	it.each([

@@ -1,6 +1,6 @@
 import { StructuredEntity } from '../../common/classes/StructuredEntity';
 import { isNerdamerNativeType } from '../../common/common';
-import { UnexpectedDataType } from '../../errors';
+import { message, UnexpectedDataType } from '../../errors';
 import { DICTIONARY } from '../parser/constants';
 
 import type { ParserEntity } from '../../types';
@@ -59,7 +59,10 @@ export class Dictionary extends StructuredEntity<Dictionary> {
 		const value = this._entries.get(key);
 		if (value === undefined) {
 			throw new UnexpectedDataType(
-				`Key "${key}" not found in Dictionary. Available keys: ${this.keys().join(', ')}`
+				message('dictionaryKeyNotFound', {
+					key,
+					keys: this.keys().join(', '),
+				})
 			);
 		}
 		return value;

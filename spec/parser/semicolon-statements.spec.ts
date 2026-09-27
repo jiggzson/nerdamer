@@ -9,7 +9,6 @@ describe('Semicolon statements', () => {
 
 		try {
 			const result = nerdamer(`${name}(x):=x^2+1; ${name}(12)`);
-
 			expect(result.text()).toEqual('145');
 		} finally {
 			delete mathFunctionRegistry[name];
@@ -22,7 +21,6 @@ describe('Semicolon statements', () => {
 
 		try {
 			const result = nerdamer(`${variable}:5; unassign(${variable}); ${variable};`);
-
 			expect(result.text()).toEqual(variable);
 			expect(Parser.KNOWN_VALUES[variable]).toBeUndefined();
 		} finally {
@@ -30,7 +28,7 @@ describe('Semicolon statements', () => {
 		}
 	});
 
-	it('keeps semicolon statements scoped inside block and nested control flow', () => {
+	it('keeps semicolon statements and return scoped inside nested control flow', () => {
 		const name = 'semicolon_nested_function';
 		const value = 'semicolon_nested_value';
 		delete mathFunctionRegistry[name];
@@ -48,11 +46,35 @@ describe('Semicolon statements', () => {
 					${name}(${value});
 				)
 			`);
-
-			expect(result.text()).toEqual('8');
+			expect(result.text()).toEqual('17');
 		} finally {
 			delete mathFunctionRegistry[name];
 			delete Parser.KNOWN_VALUES[value];
+		}
+	});
+
+	it('keeps a semicolon statement sequence inside the let body', () => {
+		const outer = 'semicolon_let_outer';
+		const after = 'semicolon_let_after';
+		delete Parser.KNOWN_VALUES[outer];
+		delete Parser.KNOWN_VALUES[after];
+
+		try {
+			const result = nerdamer(`
+				${outer}:2;
+				${after}:let(x:3,
+					return(x*${outer});
+					99;
+				);
+				${after};
+			`);
+
+			expect(result.text()).toEqual('6');
+			expect(Parser.KNOWN_VALUES.x).toBeUndefined();
+		} finally {
+			delete Parser.KNOWN_VALUES[outer];
+			delete Parser.KNOWN_VALUES[after];
+			delete Parser.KNOWN_VALUES.x;
 		}
 	});
 
@@ -74,7 +96,6 @@ describe('Semicolon statements', () => {
 					${name}(${value});
 				)
 			`);
-
 			expect(result.text()).toEqual('17');
 		} finally {
 			delete mathFunctionRegistry[name];

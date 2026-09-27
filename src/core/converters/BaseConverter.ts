@@ -116,7 +116,7 @@ export class BaseConverter {
 	}
 
 	private static strip(input: Expression): Expression {
-		const arg = new Expression(input);
+		const arg = input.copy();
 		delete arg.power;
 		delete arg.multiplier;
 		return arg;

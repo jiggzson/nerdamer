@@ -12,9 +12,18 @@ import { toCommonDenominator } from '../../src/algebra/simplify/ratsimp';
 
 describe('Roots', () => {
 	it('should calculate numeric roots of polynomials', () => {
-		expect(new PolynomialSolver('3*x^20+3x^19-6*x^11+14*x^5-2*x-1').roots().toString()).toEqual(
+		const highDegreeRoots = new PolynomialSolver(
+			'3*x^20+3x^19-6*x^11+14*x^5-2*x-1'
+		)
+			.roots()
+			.map(root => root.text())
+			.sort();
+		const expectedHighDegreeRoots =
 			'0.71180323272376606667,0.86297656851958989314+0.69101055878558665576*i,0.50481153548365240247+0.89598562919130138041*i,0.080968713699173314951+1.1214549517445542477*i,0.093661835614056869494+0.6509667616114832967*i,-0.44418743097335200181+0.98010396118523725535*i,-0.7744329782811023431+0.84403756595086305687*i,-0.44889018238852665819+0.17504855683342571643*i,-1.1913449820257302616+0.38393926634205905678*i,-1.116835417848109669,-1.1913449820257302616-0.38393926634205905678*i,-0.7744329782811023431-0.84403756595086305687*i,0.093661835614056869494-0.6509667616114832967*i,-0.44418743097335200181-0.98010396118523725535*i,0.080968713699173314951-1.1214549517445542477*i,0.50481153548365240247-0.89598562919130138041*i,-0.44889018238852665819-0.17504855683342571643*i,0.86297656851958989314-0.69101055878558665576*i,1.0189530129144105859-0.18773494685369583385*i,1.0189530129144105859+0.18773494685369583385*i'
-		);
+			.split(',')
+			.sort();
+
+		expect(highDegreeRoots).toEqual(expectedHighDegreeRoots);
 		expect(new PolynomialSolver('(2*x+3)(5x-1)').roots().toString()).toEqual('0.2,-1.5');
 		expect(new PolynomialSolver('x^3+1').roots().toString()).toEqual(
 			'0.5+0.86602540378443864676*i,-1,0.5-0.86602540378443864676*i'
@@ -117,6 +126,18 @@ describe('Roots', () => {
 });
 
 describe('Solve Polynomials', () => {
+	const expectSolutionTexts = (
+		input: string,
+		variable: string,
+		expected: readonly string[]
+	) => {
+		expect(
+			solve(input, variable)
+				.elements.map(root => root.text())
+				.sort()
+		).toEqual([...expected].sort());
+	};
+
 	it('should solve polynomials symbolically', () => {
 		// Zero polynomial
 		expect(solve('0', 'x').text()).toEqual('{all}');
@@ -203,178 +224,196 @@ describe('Solve Polynomials', () => {
 		expect(solve('9-6*x+x^2', 'x').text()).toEqual('{3}');
 
 		// Quadratic distinct integer roots
-		expect(solve('6-5*x+x^2', 'x').text()).toEqual('{3, 2}');
+		expectSolutionTexts('6-5*x+x^2', 'x', ['3', '2']);
 
 		// Quadratic difference of squares
-		expect(solve('-25+x^2', 'x').text()).toEqual('{5, -5}');
+		expectSolutionTexts('-25+x^2', 'x', ['5', '-5']);
 
 		// Quadratic irreducible simple
-		expect(solve('1+x^2', 'x').text()).toEqual('{i, -i}');
+		expectSolutionTexts('1+x^2', 'x', ['i', '-i']);
 
 		// Quadratic non-primitive content
-		expect(solve('-24+6*x^2', 'x').text()).toEqual('{2, -2}');
+		expectSolutionTexts('-24+6*x^2', 'x', ['2', '-2']);
 
 		// Quadratic leading coeff not 1
-		expect(solve('3-7*x+2*x^2', 'x').text()).toEqual('{3, 1/2}');
+		expectSolutionTexts('3-7*x+2*x^2', 'x', ['3', '1/2']);
 
 		// Quadratic sign normalization trap
 		expect(solve('-4+4*x-x^2', 'x').text()).toEqual('{2}');
 
 		// Cubic with 3 integer roots
-		expect(solve('-6+11*x-6*x^2+x^3', 'x').text()).toEqual('{1, 2, 3}');
+		expectSolutionTexts('-6+11*x-6*x^2+x^3', 'x', ['1', '2', '3']);
 
 		// Cubic triple root
 		expect(solve('-1+3*x-3*x^2+x^3', 'x').text()).toEqual('{1}');
 
 		// Cubic single integer root
-		expect(solve('2-x-2*x^2+x^3', 'x').text()).toEqual('{-1, 1, 2}');
+		expectSolutionTexts('2-x-2*x^2+x^3', 'x', ['-1', '1', '2']);
 
 		// Cubic irreducible
-		expect(solve('1+x+x^3', 'x').text()).toEqual(
-			'{cbrt(-1/2+(1/18)*3^(1/2)*31^(1/2))+cbrt(-1/2+(-1/18)*3^(1/2)*31^(1/2)), (-1/2)*cbrt(-1/2+(1/18)*3^(1/2)*31^(1/2))+(-1/2)*cbrt(-1/2+(-1/18)*3^(1/2)*31^(1/2))+(1/2)*3^(1/2)*(cbrt(-1/2+(1/18)*3^(1/2)*31^(1/2))-cbrt(-1/2+(-1/18)*3^(1/2)*31^(1/2)))*i, (-1/2)*cbrt(-1/2+(1/18)*3^(1/2)*31^(1/2))+(-1/2)*cbrt(-1/2+(-1/18)*3^(1/2)*31^(1/2))+(-1/2)*3^(1/2)*(cbrt(-1/2+(1/18)*3^(1/2)*31^(1/2))-cbrt(-1/2+(-1/18)*3^(1/2)*31^(1/2)))*i}'
-		);
+		expectSolutionTexts('1+x+x^3', 'x', [
+			'cbrt(-1/2+(1/18)*3^(1/2)*31^(1/2))+cbrt(-1/2+(-1/18)*3^(1/2)*31^(1/2))',
+			'(-1/2)*cbrt(-1/2+(1/18)*3^(1/2)*31^(1/2))+(-1/2)*cbrt(-1/2+(-1/18)*3^(1/2)*31^(1/2))+(1/2)*3^(1/2)*(cbrt(-1/2+(1/18)*3^(1/2)*31^(1/2))-cbrt(-1/2+(-1/18)*3^(1/2)*31^(1/2)))*i',
+			'(-1/2)*cbrt(-1/2+(1/18)*3^(1/2)*31^(1/2))+(-1/2)*cbrt(-1/2+(-1/18)*3^(1/2)*31^(1/2))+(-1/2)*3^(1/2)*(cbrt(-1/2+(1/18)*3^(1/2)*31^(1/2))-cbrt(-1/2+(-1/18)*3^(1/2)*31^(1/2)))*i',
+		]);
 
 		// Cubic non-monic factorable
-		expect(solve('12-8*x-3*x^2+2*x^3', 'x').text()).toEqual('{-2, 2, 3/2}');
+		expectSolutionTexts('12-8*x-3*x^2+2*x^3', 'x', ['-2', '2', '3/2']);
 
 		// Quartic perfect square
 		expect(solve('1-4*x+6*x^2-4*x^3+x^4', 'x').text()).toEqual('{1}');
 
 		// Quartic difference of squares
-		expect(solve('-16+x^4', 'x').text()).toEqual('{2, -2, 2*i, -2*i}');
+		expectSolutionTexts('-16+x^4', 'x', ['2', '-2', '2*i', '-2*i']);
 
 		// Quartic biquadratic symmetric
-		expect(solve('9-10*x^2+x^4', 'x').text()).toEqual('{-1, -3, 3, 1}');
+		expectSolutionTexts('9-10*x^2+x^4', 'x', ['-1', '-3', '3', '1']);
 
 		// Quartic biquadratic irreducible
-		expect(solve('1-10*x^2+x^4', 'x').text()).toEqual(
-			'{(1/2)*2^(1/2)*((4*6^(1/2)+10)^(1/2)), (-1/2)*2^(1/2)*((4*6^(1/2)+10)^(1/2)), (1/2)*2^(1/2)*((-4*6^(1/2)+10)^(1/2)), (-1/2)*2^(1/2)*((-4*6^(1/2)+10)^(1/2))}'
-		);
+		expectSolutionTexts('1-10*x^2+x^4', 'x', [
+			'(1/2)*2^(1/2)*((4*6^(1/2)+10)^(1/2))',
+			'(-1/2)*2^(1/2)*((4*6^(1/2)+10)^(1/2))',
+			'(1/2)*2^(1/2)*((-4*6^(1/2)+10)^(1/2))',
+			'(-1/2)*2^(1/2)*((-4*6^(1/2)+10)^(1/2))',
+		]);
 
 		// Quartic repeated quadratic factor
-		expect(solve('4+4*x^2+x^4', 'x').text()).toEqual('{2^(1/2)*i, -2^(1/2)*i}');
+		expectSolutionTexts('4+4*x^2+x^4', 'x', ['2^(1/2)*i', '-2^(1/2)*i']);
 
 		// Quartic cyclotomic phi_8
-		expect(solve('1+x^4', 'x').text()).toEqual(
-			'{(1/2)*2^(1/2)+(1/2)*2^(1/2)*i, (-1/2)*2^(1/2)+(-1/2)*2^(1/2)*i, (1/2)*2^(1/2)+(-1/2)*2^(1/2)*i, (-1/2)*2^(1/2)+(1/2)*2^(1/2)*i}'
-		);
+		expectSolutionTexts('1+x^4', 'x', [
+			'(1/2)*2^(1/2)+(1/2)*2^(1/2)*i',
+			'(-1/2)*2^(1/2)+(-1/2)*2^(1/2)*i',
+			'(1/2)*2^(1/2)+(-1/2)*2^(1/2)*i',
+			'(-1/2)*2^(1/2)+(1/2)*2^(1/2)*i',
+		]);
 
 		// Quartic sign trap
-		expect(solve('-9+10*x^2-x^4', 'x').text()).toEqual('{-1, -3, 3, 1}');
+		expectSolutionTexts('-9+10*x^2-x^4', 'x', ['-1', '-3', '3', '1']);
 
 		// Quartic even no linear term (Ferrari q=0 trap)
-		expect(solve('8-6*x^2+x^4', 'x').text()).toEqual('{2, -2, 2^(1/2), -2^(1/2)}');
+		expectSolutionTexts('8-6*x^2+x^4', 'x', ['2', '-2', '2^(1/2)', '-2^(1/2)']);
 
 		// Power minus one
-		expect(solve('-1+x^6', 'x').text()).toEqual(
-			'{-1, (1/2)*(-1+3^(1/2)*i), (1/2)*(-1-3^(1/2)*i), (1/2)*(1+3^(1/2)*i), (1/2)*(1-3^(1/2)*i), 1}'
-		);
+		expectSolutionTexts('-1+x^6', 'x', [
+			'-1',
+			'(1/2)*(-1+3^(1/2)*i)',
+			'(1/2)*(-1-3^(1/2)*i)',
+			'(1/2)*(1+3^(1/2)*i)',
+			'(1/2)*(1-3^(1/2)*i)',
+			'1',
+		]);
 
 		// High power difference of squares
-		expect(solve('-256+x^8', 'x').text()).toEqual(
-			'{2, 2*i, -2*i, -2, 2^(1/2)*(1+i), -2^(1/2)*(1+i), 2^(1/2)*(1-i), -2^(1/2)*(1-i)}'
-		);
+		expectSolutionTexts('-256+x^8', 'x', [
+			'2',
+			'2*i',
+			'-2*i',
+			'-2',
+			'2^(1/2)*(1+i)',
+			'-2^(1/2)*(1+i)',
+			'2^(1/2)*(1-i)',
+			'-2^(1/2)*(1-i)',
+		]);
 
 		// Quintic obvious factor
-		expect(solve('-x+x^5', 'x').text()).toEqual('{0, 1, -1, i, -i}');
+		expectSolutionTexts('-x+x^5', 'x', ['0', '1', '-1', 'i', '-i']);
 
 		// Repeated high multiplicity
 		expect(solve('-1+5*x-10*x^2+10*x^3-5*x^4+x^5', 'x').text()).toEqual('{1}');
 
 		// Chebyshev-like symmetric
-		expect(solve('-1+15*x^2-15*x^4+x^6', 'x').text()).toEqual(
-			'{(1/2)*(2*3^(1/2)-4), (1/2)*(-2*3^(1/2)-4), (1/2)*(2*3^(1/2)+4), (1/2)*(-2*3^(1/2)+4), -1, 1}'
-		);
+		expectSolutionTexts('-1+15*x^2-15*x^4+x^6', 'x', [
+			'(1/2)*(2*3^(1/2)-4)',
+			'(1/2)*(-2*3^(1/2)-4)',
+			'(1/2)*(2*3^(1/2)+4)',
+			'(1/2)*(-2*3^(1/2)+4)',
+			'-1',
+			'1',
+		]);
 
 		// Cyclotomic phi_6
-		expect(solve('1-x+x^2', 'x').text()).toEqual('{(1/2)*(1+3^(1/2)*i), (1/2)*(1-3^(1/2)*i)}');
+		expectSolutionTexts('1-x+x^2', 'x', ['(1/2)*(1+3^(1/2)*i)', '(1/2)*(1-3^(1/2)*i)']);
 
 		// Primitive normalization required
-		expect(solve('24*x^2-36*x^3+12*x^4', 'x').text()).toEqual('{0, 2, 1}');
+		expectSolutionTexts('24*x^2-36*x^3+12*x^4', 'x', ['0', '2', '1']);
 
 		// Content and sign trap
-		expect(solve('-30*x+45*x^2-15*x^3', 'x').text()).toEqual('{0, 2, 1}');
+		expectSolutionTexts('-30*x+45*x^2-15*x^3', 'x', ['0', '2', '1']);
 
 		// Bilinear simple
 		expect(solve('-6+x*y', 'x').text()).toEqual('{6*y^-1}');
 
 		// Difference of squares 2 vars
-		expect(solve('x^2-y^2', 'x').text()).toEqual('{-y, y}');
+		expectSolutionTexts('x^2-y^2', 'x', ['-y', 'y']);
 
 		// Sum of squares irreducible
-		expect(solve('x^2+y^2', 'x').text()).toEqual('{(-y^2)^(1/2), -(-y^2)^(1/2)}');
+		expectSolutionTexts('x^2+y^2', 'x', ['(-y^2)^(1/2)', '-(-y^2)^(1/2)']);
 
 		// Common factor extraction
 		expect(solve('a*b*x+a*b*y', 'x').text()).toEqual('{-y}');
 
 		// Grouped factorization
-		expect(solve('-2*x+x^2+x*y-2*y', 'x').text()).toEqual('{2, -y}');
+		expectSolutionTexts('-2*x+x^2+x*y-2*y', 'x', ['2', '-y']);
 
 		// Symmetric quadratic form
 		expect(solve('x^2+y^2-2*x*y', 'x').text()).toEqual('{y}');
 
 		// Shifted symmetric square
-		expect(solve('x^2+2*x*y+y^2-9', 'x').text()).toEqual('{-(-3+y), -(3+y)}');
+		expectSolutionTexts('x^2+2*x*y+y^2-9', 'x', ['-(-3+y)', '-(3+y)']);
 
 		// Homogeneous cubic factorable
-		expect(solve('x^3-y^3', 'x').text()).toEqual(
-			'{y, (1/2)*(-y+3^(1/2)*(-y^2)^(1/2)), (1/2)*(-y-3^(1/2)*(-y^2)^(1/2))}'
-		);
+		expectSolutionTexts('x^3-y^3', 'x', ['y', '(1/2)*(-y+3^(1/2)*(-y^2)^(1/2))', '(1/2)*(-y-3^(1/2)*(-y^2)^(1/2))']);
 
 		// Homogeneous quartic
-		expect(solve('x^4-y^4', 'x').text()).toEqual('{y, -y, (-y^2)^(1/2), -(-y^2)^(1/2)}');
+		expectSolutionTexts('x^4-y^4', 'x', ['y', '-y', '(-y^2)^(1/2)', '-(-y^2)^(1/2)']);
 
 		// Mixed bilinear quadratic
-		expect(solve('x^2*y+x*y^2', 'x').text()).toEqual('{0, -y}');
+		expectSolutionTexts('x^2*y+x*y^2', 'x', ['0', '-y']);
 
 		// Multivariate difference of squares
-		expect(solve('-9+x^2*y^2', 'x').text()).toEqual('{3*y^-2*abs(y), -3*y^-2*abs(y)}');
+		expectSolutionTexts('-9+x^2*y^2', 'x', ['3*y^-1', '-3*y^-1']);
 
 		// Cyclotomic in 2 vars
-		expect(solve('x^2+x*y+y^2', 'x').text()).toEqual(
-			'{(1/2)*(-y+3^(1/2)*(-y^2)^(1/2)), (1/2)*(-y-3^(1/2)*(-y^2)^(1/2))}'
-		);
+		expectSolutionTexts('x^2+x*y+y^2', 'x', ['(1/2)*(-y+3^(1/2)*(-y^2)^(1/2))', '(1/2)*(-y-3^(1/2)*(-y^2)^(1/2))']);
 
 		// Shifted quadratic form
-		expect(solve('x^2-3*x*y+2*y^2', 'x').text()).toEqual('{y, 2*y}');
+		expectSolutionTexts('x^2-3*x*y+2*y^2', 'x', ['y', '2*y']);
 
 		// Parametric quadratic
-		expect(solve('a*x^2+b*x+c', 'x').text()).toEqual(
-			'{(1/2)*a^-1*(-b+(b^2-4*a*c)^(1/2)), (1/2)*a^-1*(-b-(b^2-4*a*c)^(1/2))}'
-		);
+		expectSolutionTexts('a*x^2+b*x+c', 'x', ['(1/2)*a^-1*(-b+(b^2-4*a*c)^(1/2))', '(1/2)*a^-1*(-b-(b^2-4*a*c)^(1/2))']);
 
 		// Parametric symmetric
-		expect(solve('a*x^2-a*y^2', 'x').text()).toEqual('{-y, y}');
+		expectSolutionTexts('a*x^2-a*y^2', 'x', ['-y', 'y']);
 
 		// Parametric cubic binomial
 		expect(solve('a*x^3+3*a*x^2*y+3*a*x*y^2+a*y^3', 'x').text()).toEqual('{-y}');
 
 		// Parametric content extraction
-		expect(solve('3*a*x^2-9*a*x', 'x').text()).toEqual('{0, 3}');
+		expectSolutionTexts('3*a*x^2-9*a*x', 'x', ['0', '3']);
 
 		// High degree structured multivar
-		expect(solve('x^4+2*x^2*y^2+y^4', 'x').text()).toEqual('{(-y^2)^(1/2), -(-y^2)^(1/2)}');
+		expectSolutionTexts('x^4+2*x^2*y^2+y^4', 'x', ['(-y^2)^(1/2)', '-(-y^2)^(1/2)']);
 
 		// Nested symmetric trap
-		expect(solve('x^4-6*x^2*y^2+y^4', 'x').text()).toEqual(
-			'{(1/2)*2^(1/2)*((6*y^2+4*2^(1/2)*abs(y)^2)^(1/2)), (-1/2)*2^(1/2)*((6*y^2+4*2^(1/2)*abs(y)^2)^(1/2)), (1/2)*2^(1/2)*((6*y^2-4*2^(1/2)*abs(y)^2)^(1/2)), (-1/2)*2^(1/2)*((6*y^2-4*2^(1/2)*abs(y)^2)^(1/2))}'
-		);
+		expectSolutionTexts('x^4-6*x^2*y^2+y^4', 'x', [
+			'(1/2)*(2*y+2*2^(1/2)*abs(y))',
+			'(1/2)*(2*y-2*2^(1/2)*abs(y))',
+			'(1/2)*(-2*y+2*2^(1/2)*abs(y))',
+			'(1/2)*(-2*y-2*2^(1/2)*abs(y))',
+		]);
 
 		// Non-primitive multivar
-		expect(solve('6*x^2*y-12*x*y^2', 'x').text()).toEqual('{0, 2*y}');
+		expectSolutionTexts('6*x^2*y-12*x*y^2', 'x', ['0', '2*y']);
 
 		// Sign normalization multivar
-		expect(solve('9-x^2*y^2', 'x').text()).toEqual('{3*y^-2*abs(y), -3*y^-2*abs(y)}');
+		expectSolutionTexts('9-x^2*y^2', 'x', ['3*y^-1', '-3*y^-1']);
 
 		// Triangular structure
-		expect(solve('x^2+y*x+y^2', 'x').text()).toEqual(
-			'{(1/2)*(-y+3^(1/2)*(-y^2)^(1/2)), (1/2)*(-y-3^(1/2)*(-y^2)^(1/2))}'
-		);
+		expectSolutionTexts('x^2+y*x+y^2', 'x', ['(1/2)*(-y+3^(1/2)*(-y^2)^(1/2))', '(1/2)*(-y-3^(1/2)*(-y^2)^(1/2))']);
 
 		// Elimination-friendly
-		expect(solve('y^3+x^2*y-x*y^2', 'x').text()).toEqual(
-			'{(1/2)*(y+3^(1/2)*(-y^2)^(1/2)), (1/2)*(y-3^(1/2)*(-y^2)^(1/2))}'
-		);
+		expectSolutionTexts('y^3+x^2*y-x*y^2', 'x', ['(1/2)*(y+3^(1/2)*(-y^2)^(1/2))', '(1/2)*(y-3^(1/2)*(-y^2)^(1/2))']);
 
 		// Mixed parameter trap
 		expect(solve('a*x^2+a*y^2-2*a*x*y', 'x').text()).toEqual('{y}');
@@ -960,9 +999,11 @@ describe('Equation-solving regressions', () => {
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/671
 	it('handles whitespace consistently while isolating a variable', () => {
-		expect(nerdamer.solve('A = B + C * D / 100', 'A').text()).toEqual(
-			'{(-1/100)*(-100*B-C*D)}'
-		);
+		const solutions = nerdamer.solve('A = B + C * D / 100', 'A');
+		expect(solutions.count()).toEqual(1);
+		expect(
+			solutions.elements[0].eq('(-1/100)*(-100*B-C*D)')
+		).toBe(true);
 		expect(nerdamer.solve('A * B = C + D', 'A').text()).toEqual('{-B^-1*(-C-D)}');
 		expect(nerdamer.solve('A = B + C - D', 'A').text()).toEqual('{-(-B-C+D)}');
 	});

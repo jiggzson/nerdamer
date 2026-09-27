@@ -1,5 +1,6 @@
 import nerdamer from '../../src/index';
 import { Dictionary } from '../../src/core/classes/dictionary/Dictionary';
+import { Equation } from '../../src/core/classes/equation/Equation';
 import { Parser } from '../../src/core/classes/parser/Parser';
 import { Vector } from '../../src/core/classes/vector/Vector';
 import { message, UnsupportedOperationError } from '../../src/core/errors';
@@ -27,6 +28,16 @@ describe('solveSystem', () => {
 	it('accepts vector input for a unique linear system', () => {
 		const equations = new Vector(['x+y-3', '2*x+3*y-8']);
 		const result = solveSystem(equations);
+		expect(result.text()).toEqual(new Vector([Parser.parse('{x => 1, y => 2}')]).text());
+	});
+
+	it('normalizes Equation objects through the shared solver input path', () => {
+		const equations = [
+			new Equation(Expression.create('x+y'), Expression.create('3')),
+			new Equation(Expression.create('2*x+3*y'), Expression.create('8')),
+		];
+		const result = solveSystem(equations);
+
 		expect(result.text()).toEqual(new Vector([Parser.parse('{x => 1, y => 2}')]).text());
 	});
 

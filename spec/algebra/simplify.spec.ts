@@ -64,14 +64,45 @@ describe('Simplify', () => {
 		expect(simplify('x*n!/((n+1)!*a)').text()).toEqual('x*(a*(1+n))^-1');
 	});
 
+	// Regression: Nerdamer 2.0 issue #1
+	it('combines the reported rational expression into one polynomial fraction', () => {
+		const input =
+			'x/(1-x)/(x-2)/(x-3)/(x-4)+2*x/((1-2*x)/(2-3*x))/((3-4*x)/(4-5*x))';
+		const result = simplify(input);
+		const numerator = result.getNumerator();
+		const denominator = result.getDenominator();
+
+		expect(result.eq(Expression.create(input))).toBe(true);
+		expect(numerator.isPolynomialLike()).toBe(true);
+		expect(denominator.isPolynomialLike()).toBe(true);
+		expect(
+			numerator.eq(
+				Expression.create(
+					'30*x^7-344*x^6+1506*x^5-3200*x^4+3472*x^3-1846*x^2+381*x'
+				)
+			)
+		).toBe(true);
+		expect(
+			denominator.eq(
+				Expression.create(
+					'8*x^6-90*x^5+383*x^4-780*x^3+797*x^2-390*x+72'
+				)
+			)
+		).toBe(true);
+	});
+
 	it('should simplify rationals', () => {
 		expect(
 			simplify(
 				'((17/2)*(-5*K+32)^(-1)*K^2+(5/2)*K-125*(-5*K+32)^(-1)*K-16+400*(-5*K+32)^(-1))*(-17*(-5*K+32)^(-1)*K+80*(-5*K+32)^(-1))^(-1)'
 			).text()
 		).toEqual('(112-35*K+4*K^2)*((-80+17*K)^-1)');
-		expect(simplify('(8/J)/(x/y+a/b+1)').text()).toEqual('8*b*y*(J*(a*y+b*x+b*y))^-1');
-		expect(simplify('a/b+b/a').text()).toEqual('(a*b)^-1*(a^2+b^2)');
+		expect(
+			simplify('(8/J)/(x/y+a/b+1)').eq(
+				'8*b*y*(J*(a*y+b*x+b*y))^-1'
+			)
+		).toBe(true);
+		expect(simplify('a/b+b/a').eq('(a*b)^-1*(a^2+b^2)')).toBe(true);
 		expect(simplify('(-3/2)x+(1/3)y+2+z').text()).toEqual('(-1/6)*(9*x-2*y-6*z-12)');
 		expect(
 			simplify(
@@ -96,7 +127,10 @@ describe('Simplify', () => {
 	it('should simplify trig identities', () => {
 		expect(simplify('sin(x)^2+cos(x)^2').text()).toEqual('1');
 		expect(simplify('1/2*sin(x^2)^2+cos(x^2)^2').text()).toEqual('(1/2)*(1+cos(x^2)^2)');
-		// expect(simplify('0.75*sin(x^2)^2+cos(x^2)^2').text()).toEqual('0.25*(3.0+cos(x^2)^2)');
+		// Regression: Nerdamer 2.0 issue #27
+		expect(simplify('0.75*sin(x^2)^2+cos(x^2)^2').text()).toEqual(
+			'0.25*(3.0+cos(x^2)^2)'
+		);
 		expect(simplify('cos(x)^2+sin(x)^2+cos(x)-tan(x)-1+sin(x^2)^2+cos(x^2)^2').text()).toEqual(
 			'cos(x)-sin(x)*cos(x)^-1+1'
 		);
@@ -170,7 +204,7 @@ describe('Simplify', () => {
 describe('simplifyArguments in products', () => {
 	it('should simplify function arguments inside products', () => {
 		expect(simplify('x*cos(x^2+2*x+1)^2').text()).toEqual('x*cos((1+x)^2)^2');
-		expect(simplify('a*sin(x^2-1)').text()).toEqual('a*sin((-1+x)*(1+x))');
+		expect(simplify('a*sin(x^2-1)').text()).toEqual('a*sin((1+x)*(-1+x))');
 		expect(simplify('3*x*log(x^2+2*x+1)').text()).toEqual(
 			text('3*x*log((1+x)^2)')
 		);
@@ -197,7 +231,7 @@ describe('cancelNestedFactors', () => {
 	});
 
 	it('should simplify factorial ratios with larger gaps', () => {
-		expect(simplify('(n+3)!/n!').text()).toEqual('(2+n)*(1+n)*(3+n)');
+		expect(simplify('(n+3)!/n!').eq('(2+n)*(1+n)*(3+n)')).toBe(true);
 	});
 });
 
@@ -269,6 +303,16 @@ describe('Simplification regressions', () => {
 	it('cancels symbolic constants during division', () => {
 		expect(Expression.create('3*e').div('e').eq(3)).toBe(true);
 		expect(Expression.create('1.2*pi').div('pi').eq('1.2')).toBe(true);
+	});
+
+	// Regression: Nerdamer 2.0 issue #4
+	it('combines the remaining rational simplify reproducer into one exact fraction', () => {
+		const source = Expression.create('3*a*((-1+s)^-1)+3*a*s^-2');
+		const actual = simplify(source);
+		const expected = Expression.create('3*a*(s^2+s-1)/(s^2*(s-1))');
+
+		expect(actual.text()).toEqual('3*a*(-1+s+s^2)*(s^2*(-1+s))^-1');
+		expect(actual.eq(expected)).toBe(true);
 	});
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/331

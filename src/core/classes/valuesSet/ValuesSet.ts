@@ -1,9 +1,11 @@
 import { MathematicalAggregate } from '../../common/classes/MathematicalAggregate';
 import { isNerdamerNativeType } from '../../common/common';
 import { message, UnexpectedDataType, UnsupportedOperationError } from '../../errors';
+import { Expression } from '../expression/Expression';
 import { SET, SOLUTIONS_SET } from '../parser/constants';
 
 import type { NerdamerInput, ParserEntity } from '../../types';
+import type { ParserValuesObject } from '../parser/types';
 
 /**
  * A finite mathematical set of Nerdamer parser values.
@@ -57,6 +59,16 @@ export class ValuesSet extends MathematicalAggregate<ValuesSet> {
 		);
 	}
 
+	/**
+	 * Stores a value whose uniqueness has already been established by a specialized subclass.
+	 *
+	 * The value is still copied so the set retains ownership of its members. Callers must check
+	 * uniqueness before using this method.
+	 */
+	protected addKnownUnique(x: ParserEntity): void {
+		this._elements.push(x.copy());
+	}
+
 	protected getValuesArray(): ParserEntity[] {
 		return this.elements;
 	}
@@ -101,7 +113,11 @@ export class ValuesSet extends MathematicalAggregate<ValuesSet> {
 		const index = indices[0];
 		if (index < 0 || index >= this._elements.length) {
 			throw new RangeError(
-				`Index ${index} out of bounds for ${this.dataType} of length ${this._elements.length}`
+				message('indexOutOfBounds', {
+					index: String(index),
+					type: String(this.dataType),
+					length: String(this._elements.length),
+				})
 			);
 		}
 		return this._elements[index].copy();
@@ -121,7 +137,11 @@ export class ValuesSet extends MathematicalAggregate<ValuesSet> {
 		const index = indices[0];
 		if (index < 0 || index >= this._elements.length) {
 			throw new RangeError(
-				`Index ${index} out of bounds for ${this.dataType} of length ${this._elements.length}`
+				message('indexOutOfBounds', {
+					index: String(index),
+					type: String(this.dataType),
+					length: String(this._elements.length),
+				})
 			);
 		}
 
@@ -265,8 +285,10 @@ export class ValuesSet extends MathematicalAggregate<ValuesSet> {
 	}
 
 	/** Evaluates every member and returns a new set, collapsing equal results. */
-	evaluate(): ValuesSet {
-		return this.copy().each(e => e.evaluate());
+	evaluate(values?: ParserValuesObject): ValuesSet {
+		return this.copy().each(e =>
+			Expression.isExpression(e) ? e.evaluate(values) : e.evaluate()
+		);
 	}
 
 	/** Expands every member and returns a new set, collapsing equal results. */

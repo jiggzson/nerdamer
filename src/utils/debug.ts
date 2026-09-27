@@ -10,6 +10,7 @@ import { ValuesSet } from '../core/classes/valuesSet/ValuesSet';
 import { Vector } from '../core/classes/vector/Vector';
 import { Scope } from '../core/common/classes/Scope';
 import { mathFunctionRegistry } from '../core/dispatch';
+import { message } from '../core/errors';
 
 import type { ParserValuesObject } from '../core/classes/parser/types';
 import type { Term } from '../core/classes/polynomial/Term';
@@ -271,7 +272,7 @@ export function inspectEntity(entity: ParserEntity): DebugEntity {
 			elements: entity.getElements().map(element => inspectEntity(element)),
 		};
 	} else {
-		throw new TypeError('Unsupported parser entity');
+		throw new TypeError(message('unsupportedParserEntity'));
 	}
 
 	return retval;

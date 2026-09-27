@@ -1,4 +1,4 @@
-import { sign, abs } from './bigint';
+import { sign, abs, powMod } from './bigint';
 
 export type factorCountType = Record<string, bigint>;
 
@@ -73,19 +73,6 @@ export function isPrimeBig(num: bigint): boolean {
 		d /= 2n;
 	}
 
-	const modPow = (base: bigint, exp: bigint, mod: bigint): bigint => {
-		let result = 1n;
-		base %= mod;
-		while (exp > 0n) {
-			if (exp % 2n === 1n) {
-				result = (result * base) % mod;
-			}
-			base = (base * base) % mod;
-			exp /= 2n;
-		}
-		return result;
-	};
-
 	// These witnesses are deterministic for every unsigned 64-bit integer. For larger
 	// BigInts they remain a stable probable-prime test rather than a randomized result.
 	const witnesses =
@@ -98,7 +85,7 @@ export function isPrimeBig(num: bigint): boolean {
 		if (a < 2n) {
 			continue;
 		}
-		let x = modPow(a, d, num);
+		let x = powMod(a, d, num);
 
 		if (x === 1n || x === num - 1n) {
 			continue;
@@ -117,6 +104,19 @@ export function isPrimeBig(num: bigint): boolean {
 		}
 	}
 	return true;
+}
+
+/** Returns the least prime greater than or equal to start. */
+export function nextPrimeBig(start: bigint): bigint {
+	let candidate = start <= 2n ? 2n : start;
+	if (candidate > 2n && candidate % 2n === 0n) {
+		candidate++;
+	}
+
+	while (!isPrimeBig(candidate)) {
+		candidate += candidate === 2n ? 1n : 2n;
+	}
+	return candidate;
 }
 
 /**

@@ -143,7 +143,7 @@ export class Term {
 	 * @returns A term with copied coefficient, powers, and variable array. Lazy caches are rebuilt on demand.
 	 */
 	copy() {
-		return new Term(new Expression(this.coeff), { ...this.powers }, this.variables);
+		return new Term(this.coeff.copy(), { ...this.powers }, this.variables);
 	}
 
 	/**
@@ -271,7 +271,7 @@ export class Term {
 	 */
 	getExpression() {
 		if (this.expression === undefined) {
-			let expression = new Expression(this.coeff);
+			let expression = this.coeff.copy();
 
 			for (const variable of this.variables) {
 				const power = this.deg(variable);

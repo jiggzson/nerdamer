@@ -1,3 +1,4 @@
+import '../helpers/registerNerdamerFunctions';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { four, one, three, two } from '../../src/core/classes/expression/shortcuts';
 import { Matrix } from '../../src/core/classes/matrix/Matrix';

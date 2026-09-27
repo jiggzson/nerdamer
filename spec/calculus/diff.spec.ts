@@ -77,6 +77,10 @@ describe('Derivative', () => {
 });
 
 describe('Differentiation regressions', () => {
+	it('does not retain zero powers when differentiating during evaluation', () => {
+		expect(Parser.evaluate('diff(x-y,x)').text()).toEqual('1');
+	});
+
 	// Regression: https://github.com/jiggzson/nerdamer/issues/675
 	it('treats radicals independent of the differentiation variable as constants', () => {
 		expect(nerdamer.diff('y*sqrt(x)', 'y').text()).toEqual('x^(1/2)');

@@ -7,6 +7,8 @@
  * - Modular routines assume a prime modulus `p` when inverses are required.
  */
 
+import { message } from '../../core/errors';
+
 /**
  * Shared integer + modular arithmetic primitives used across Zippel GCD and
  * multivariate factorization.
@@ -46,7 +48,7 @@ export function gcd(a: bigint, b: bigint): bigint {
  */
 export function pow(base: bigint, exp: bigint): bigint {
 	if (exp < 0n) {
-		throw new Error('pow: negative exponent');
+		throw new Error(message('arithPowNegativeExponent'));
 	}
 	let b = base;
 	let e = exp;
@@ -69,7 +71,7 @@ export function pow(base: bigint, exp: bigint): bigint {
  */
 export function powN(base: bigint, exp: number): bigint {
 	if (!Number.isInteger(exp) || exp < 0) {
-		throw new Error('powN: exponent must be a nonnegative integer');
+		throw new Error(message('arithPowNNonnegativeInteger'));
 	}
 	return pow(base, BigInt(exp));
 }
@@ -83,7 +85,7 @@ export function powN(base: bigint, exp: number): bigint {
  */
 export function bigIntSqrt(n: bigint): bigint {
 	if (n < 0n) {
-		throw new Error('bigIntSqrt: negative input');
+		throw new Error(message('arithBigIntSqrtNegative'));
 	}
 	if (n < 2n) {
 		return n;
@@ -104,7 +106,7 @@ export function bigIntSqrt(n: bigint): bigint {
  */
 export function intNthRootExact(value: bigint, n: number): bigint | null {
 	if (!Number.isInteger(n) || n <= 0) {
-		throw new Error('intNthRootExact: n must be a positive integer');
+		throw new Error(message('arithNthRootPositiveInteger'));
 	}
 	if (value < 0n) {
 		// Only odd roots exist for negative values.
@@ -151,7 +153,7 @@ export function intNthRootExact(value: bigint, n: number): bigint | null {
  */
 export function getDivisors(n: bigint): bigint[] {
 	if (n <= 0n) {
-		throw new Error('getDivisors: n must be positive');
+		throw new Error(message('arithDivisorsPositive'));
 	}
 	const out: bigint[] = [];
 	const r = bigIntSqrt(n);
@@ -196,7 +198,7 @@ function egcd(a: bigint, b: bigint): { g: bigint; x: bigint; y: bigint } {
 /** Normalize a into the range [0, |p|). Throws if p is zero. */
 export function modNorm(a: bigint, p: bigint): bigint {
 	if (p === 0n) {
-		throw new Error('modNorm: modulus must be nonzero');
+		throw new Error(message('arithModNormNonzeroModulus'));
 	}
 	const m = abs(p);
 	const r = a % m;
@@ -206,7 +208,7 @@ export function modNorm(a: bigint, p: bigint): bigint {
 /** Map a to the symmetric residue class (-|p|/2, |p|/2]. */
 export function modSymmetric(a: bigint, p: bigint): bigint {
 	if (p === 0n) {
-		throw new Error('modSymmetric: modulus must be nonzero');
+		throw new Error(message('arithModSymmetricNonzeroModulus'));
 	}
 	const m = abs(p);
 	const r = modNorm(a, m);
@@ -218,11 +220,11 @@ export function modSymmetric(a: bigint, p: bigint): bigint {
 export function modInv(a: bigint, p: bigint): bigint {
 	const aa = modNorm(a, p);
 	if (aa === 0n) {
-		throw new Error('modInv: non-invertible (0)');
+		throw new Error(message('arithModInvZeroNoninvertible'));
 	}
 	const { g, x } = egcd(aa, p);
 	if (g !== 1n && g !== -1n) {
-		throw new Error('modInv: non-invertible');
+		throw new Error(message('arithModInvNoninvertible'));
 	}
 	return modNorm(x, p);
 }

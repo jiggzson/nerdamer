@@ -1,5 +1,4 @@
-import { UndefinedError } from '../../../errors';
-import { ErrorMessages } from '../../../errors';
+import { message, UndefinedError } from '../../../errors';
 import { simplifyImaginary } from '../../../functions/complex';
 import { Settings } from '../../../Settings';
 import { Expression } from '../../expression/Expression';
@@ -28,9 +27,7 @@ export function multiply(a: Expression, b: Expression): Expression {
 	} else {
 		if (a.isZero()) {
 			if (b.isInf()) {
-				throw new UndefinedError(
-					ErrorMessages[Settings.LANGUAGE].infinityTimesZero
-				);
+				throw new UndefinedError(message('infinityTimesZero'));
 			}
 			retval = Expression.Number('0');
 		} else if (a.isNUM() && b.isNUM()) {
@@ -57,7 +54,7 @@ export function multiply(a: Expression, b: Expression): Expression {
 			if (a.getMultiplier().times(b.getMultiplier()).isNegative()) {
 				retval = retval.neg();
 			} else if (a.isZero() || b.isZero()) {
-				throw new UndefinedError('Infinity times zero is undefined!');
+				throw new UndefinedError(message('infinityTimesZero'));
 			}
 		} else if (a.value === b.value) {
 			// Define Rule: i * i = -1
@@ -153,13 +150,21 @@ export function merge(a: Expression, b: Expression): Expression {
 	let setProperties = true;
 
 	// The multiplier is carried at the top of the expression they get moved and stripped from a and b;
+	const aHasMultiplier = a.multiplier !== undefined;
+	const bHasMultiplier = b.multiplier !== undefined;
 	let multiplier =
-		a.multiplier || b.multiplier ? a.getMultiplier().times(b.getMultiplier()) : undefined;
+		aHasMultiplier || bHasMultiplier
+			? a.getMultiplier().times(b.getMultiplier())
+			: undefined;
 	if (multiplier) {
-		a = new Expression(a);
-		b = new Expression(b);
-		a.multiplier = undefined;
-		b.multiplier = undefined;
+		if (aHasMultiplier) {
+			a = a.copy();
+			a.multiplier = undefined;
+		}
+		if (bHasMultiplier) {
+			b = b.copy();
+			b.multiplier = undefined;
+		}
 	}
 
 	if (a.elements && !b.elements) {
@@ -208,7 +213,7 @@ export function merge(a: Expression, b: Expression): Expression {
 				retval = retval.invert();
 				elements = Object.values(retval.getElements());
 			} else {
-				[retval, elements] = combine(new Expression(a), new Expression(b), keyA, keyB);
+				[retval, elements] = combine(a, b, keyA, keyB);
 			}
 		}
 	}
@@ -216,7 +221,7 @@ export function merge(a: Expression, b: Expression): Expression {
 	// the right type. The first object gets added to the second object's expression container.
 	else if (!aCanMerge && bCanMerge) {
 		const key = a.keyValue();
-		retval = new Expression(b);
+		retval = b.copy();
 		const subExpressions = retval.getElements();
 
 		let result: Expression;
@@ -238,7 +243,7 @@ export function merge(a: Expression, b: Expression): Expression {
 			if (existing) {
 				result = multiply(a, existing);
 			} else {
-				result = new Expression(a);
+				result = a.copy();
 			}
 		}
 
@@ -257,7 +262,7 @@ export function merge(a: Expression, b: Expression): Expression {
 	}
 	// Case 3: They both have expression objects
 	else {
-		retval = new Expression(a);
+		retval = a.copy();
 		retval.multiplier = a.getMultiplier().times(b.getMultiplier());
 		const retvalElements = retval.getElements();
 		const bExpressions = b.getElements();
@@ -273,7 +278,7 @@ export function merge(a: Expression, b: Expression): Expression {
 					retvalElements[x] = result;
 				}
 			} else {
-				retvalElements[x] = new Expression(e);
+				retvalElements[x] = e.copy();
 			}
 		}
 
@@ -285,8 +290,8 @@ export function merge(a: Expression, b: Expression): Expression {
 		// Set the type
 		retval.type = expressionType;
 
-		// Update the value
-		retval.value = Expression.getValue(elements, 'text', expressionType);
+		// Update derived aggregate state after the element collection changes.
+		retval.updateValue(elements);
 	}
 
 	// Put the multiplier back

@@ -1,3 +1,4 @@
+import '../helpers/registerNerdamerFunctions';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import {
 	eight,
@@ -10,6 +11,87 @@ import {
 	twoHundredFiftySix,
 } from '../../src/core/classes/expression/shortcuts';
 import { Parser } from '../../src/core/classes/parser/Parser';
+import { Rational } from '../../src/core/classes/rational/Rational';
+
+describe('Expression construction', () => {
+	it('preserves identity for ordinary Expression.create coercion', () => {
+		const expression = Expression.create('x+1');
+
+		expect(Expression.create(expression)).toBe(expression);
+	});
+
+	it('creates an independent clone when Expression.create is asked to copy', () => {
+		const expression = Expression.create('x+1');
+		const copy = Expression.create(expression, undefined, true);
+
+		copy.multiplier = Rational.create('3');
+
+		expect(copy).not.toBe(expression);
+		expect(copy.text()).toEqual('3*(1+x)');
+		expect(expression.text()).toEqual('1+x');
+	});
+
+	it('uses direct construction for explicit clone semantics', () => {
+		const expression = Expression.create('x+1');
+		const copy = new Expression(expression);
+
+		copy.multiplier = Rational.create('3');
+
+		expect(copy).not.toBe(expression);
+		expect(copy.text()).toEqual('3*(1+x)');
+		expect(expression.text()).toEqual('1+x');
+	});
+
+
+	it('deep-copies aggregate children', () => {
+		const expression = Expression.create('x+y');
+		const copy = expression.copy();
+		const copiedX = Object.values(copy.getElements()).find(element => element.value === 'x');
+
+		expect(copiedX).toBeDefined();
+		copiedX!.multiplier = Rational.create('3');
+
+		expect(copy.text()).toEqual('3*x+y');
+		expect(expression.text()).toEqual('x+y');
+		expect(copiedX).not.toBe(
+			Object.values(expression.getElements()).find(element => element.value === 'x')
+		);
+	});
+
+	it('deep-copies powers, function arguments, and exponential bases', () => {
+		const powered = Expression.create('x^(y+1)');
+		const poweredCopy = powered.copy();
+		const fn = Expression.create('sin(x+y)');
+		const fnCopy = fn.copy();
+		const exponential = Expression.create('2^(x+y)');
+		const exponentialCopy = exponential.copy();
+
+		expect(poweredCopy.power).not.toBe(powered.power);
+		expect(fnCopy.args?.[0]).not.toBe(fn.args?.[0]);
+		expect(exponentialCopy.base).not.toBe(exponential.base);
+
+		poweredCopy.power!.multiplier = Rational.create('2');
+		fnCopy.args![0].multiplier = Rational.create('3');
+		exponentialCopy.base!.multiplier = Rational.create('5');
+
+		expect(powered.text()).toEqual('x^(1+y)');
+		expect(fn.text()).toEqual('sin(x+y)');
+		expect(exponential.text()).toEqual('2^(x+y)');
+	});
+
+	it('continues to apply the Expression hook when copying', () => {
+		const expression = Expression.create('x');
+		const replacement = Expression.create('y');
+		const originalHook = Expression.hook;
+
+		try {
+			Expression.hook = value => value === expression ? replacement : value;
+			expect(expression.copy().text()).toEqual('y');
+		} finally {
+			Expression.hook = originalHook;
+		}
+	});
+});
 
 describe('preconstructed numeric shortcuts', () => {
 	it('reuses frozen expressions for common solver constants', () => {
@@ -26,6 +108,88 @@ describe('preconstructed numeric shortcuts', () => {
 			expect(getValue()).toBe(value);
 			expect(Object.isFrozen(value)).toBe(true);
 		}
+	});
+});
+
+describe('aggregate key caching', () => {
+	it('reuses the ordinary SUM/PRD key until the aggregate is rebuilt', () => {
+		const expression = Expression.create('x+y+1');
+		const originalGetValue = Expression.getValue;
+		let getValueCalls = 0;
+
+		try {
+			Expression.getValue = function (
+				...args: Parameters<typeof originalGetValue>
+			): string {
+				getValueCalls++;
+				return originalGetValue.apply(Expression, args);
+			};
+
+			const first = expression.keyValue();
+			const afterFirst = getValueCalls;
+			const second = expression.keyValue();
+
+			expect(second).toBe(first);
+			expect(getValueCalls).toBe(afterFirst);
+
+			const term = Object.values(expression.getElements()).find(element => element.value === 'x');
+			expect(term).toBeDefined();
+			term!.multiplier = Rational.create('3');
+			expression.updateValue();
+			const afterUpdate = getValueCalls;
+
+			const rebuilt = expression.keyValue();
+			expect(rebuilt).not.toBe(first);
+			expect(afterUpdate).toBeGreaterThan(afterFirst);
+			expect(getValueCalls).toBeGreaterThan(afterUpdate);
+		} finally {
+			Expression.getValue = originalGetValue;
+		}
+	});
+
+	it('reuses the aggregate key generated during arithmetic rebuild', () => {
+		const expression = Expression.create('x').plus(Expression.create('y'));
+		const originalGetValue = Expression.getValue;
+		let getValueCalls = 0;
+
+		try {
+			Expression.getValue = function (
+				...args: Parameters<typeof originalGetValue>
+			): string {
+				getValueCalls++;
+				return originalGetValue.apply(Expression, args);
+			};
+
+			expect(expression.keyValue()).toBe('x+y');
+			expect(getValueCalls).toBe(0);
+		} finally {
+			Expression.getValue = originalGetValue;
+		}
+	});
+
+	it('does not transfer an aggregate key cache to an independent copy', () => {
+		const expression = Expression.create('x+y');
+		expression.keyValue();
+		const copy = expression.copy();
+
+		const copiedY = Object.values(copy.getElements()).find(element => element.value === 'y');
+		expect(copiedY).toBeDefined();
+		copiedY!.multiplier = Rational.create('2');
+		copy.updateValue();
+
+		expect(copy.keyValue()).not.toBe(expression.keyValue());
+	});
+});
+
+describe('aggregate value maintenance', () => {
+	it('refreshes the stored sum value after distributing a multiplier', () => {
+		const expression = Expression.create('2*(x+1)');
+		const distributed = expression.distributeMultiplier();
+
+		expect(distributed.text()).toEqual('2+2*x');
+		expect(distributed.value).toEqual(
+			Expression.getValue(Object.values(distributed.getElements()), 'text', distributed.type)
+		);
 	});
 });
 

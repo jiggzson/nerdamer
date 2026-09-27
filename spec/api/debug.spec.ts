@@ -1,3 +1,4 @@
+import '../helpers/registerNerdamerFunctions';
 import { Polynomial } from '../../src/api/algebra';
 import { Collection } from '../../src/api/structures';
 import {

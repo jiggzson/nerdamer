@@ -46,9 +46,18 @@ import { multiply } from '../core/classes/parser/operations/multiply';
 import { power, sqrtToPow } from '../core/classes/parser/operations/power';
 import { subtract } from '../core/classes/parser/operations/subtract';
 import { maxCommonVariableOccurrence, polyMod } from '../core/classes/polynomial/utils';
-import { Rational } from '../core/classes/rational/Rational';
+import {
+	Rational,
+	validateScientificSignificantDigits,
+} from '../core/classes/rational/Rational';
 import { message, MathError, UndefinedError, UnexpectedInputError } from '../core/errors';
-import { factorial as fact, fibonacci as fib } from '../core/functions/bigint/bigint';
+import {
+	abs as bigintAbs,
+	factorial as fact,
+	fibonacci as fib,
+	isEven,
+	sign as bigintSign,
+} from '../core/functions/bigint/bigint';
 import { primeFactorCounts } from '../core/functions/bigint/primeFactor';
 import { csgn } from '../core/functions/complex';
 import {
@@ -64,7 +73,6 @@ import {
 } from '../core/functions/decimal';
 import { scopedBlock, Settings } from '../core/Settings';
 
-import { definiteIntegrateNative } from './defint/defintNative';
 import { hypot } from './geometry';
 import { atan2, cos, sin } from './trig';
 import { stripPower } from './utils';
@@ -78,8 +86,8 @@ import type { Vector } from '../core/classes/vector/Vector';
 import type { ExpressionInput, NerdamerInput } from '../core/types';
 import type { SolutionSet } from '../solve/classes/SolutionSet';
 
-const NATIVE_DEFINITE_INTEGRATION_PRECISION = 17;
 const POSITIVE_INTEGER_PRECISION = 'a positive integer precision';
+const DEFAULT_SCIENTIFIC_SIGNIFICANT_DIGITS = 10;
 
 /**
  * Computes the square root of an expression. Equivalent to raising to the power of 1/2.
@@ -130,6 +138,30 @@ export function sqrt(x: ExpressionInput): Expression {
 }
 
 /**
+ * Returns a copy that renders numeric values in scientific notation.
+ *
+ * The legacy implementation stored a formatting flag that its formatter did not
+ * consume. Nerdamer 2.0 keeps the expression exact and records the requested number
+ * of significant digits for formatting. Precision validation follows decimal.js and accepts
+ * integer values from 1 through 1e9.
+ */
+export function scientific(
+	x: ExpressionInput,
+	significantDigits: ExpressionInput = DEFAULT_SCIENTIFIC_SIGNIFICANT_DIGITS
+): Expression {
+	const digits = Expression.create(significantDigits);
+	const requestedDigits =
+		digits.isNUM() && digits.isInteger()
+			? Number(digits.getMultiplier().numerator)
+			: Number.NaN;
+	const precision = validateScientificSignificantDigits(requestedDigits, digits.text());
+
+	const retval = Expression.create(x, undefined, true);
+	retval.scientific = precision;
+	return retval;
+}
+
+/**
  * Computes the nth root of an expression as its principal power.
  *
  * @param x - The expression whose root is requested.
@@ -138,6 +170,21 @@ export function sqrt(x: ExpressionInput): Expression {
  */
 export function nthroot(x: ExpressionInput, n: ExpressionInput): Expression {
 	return power(Expression.create(x), one().div(Expression.create(n)));
+}
+
+/** Converts degrees to radians exactly. */
+export function radians(x: ExpressionInput): Expression {
+	return Expression.create(x).times(Expression.Pi()).div(180);
+}
+
+/** Converts radians to degrees exactly. */
+export function degrees(x: ExpressionInput): Expression {
+	return Expression.create(x).times(180).div(Expression.Pi());
+}
+
+/** Returns the base-10 logarithm using the ordinary logarithm implementation. */
+export function log10(x: ExpressionInput): Expression {
+	return log(x, 10);
 }
 
 /**
@@ -187,7 +234,7 @@ export function cbrt(x: ExpressionInput): Expression {
 			const d = xe.getMultiplier().toDecimal();
 			const oneThird = new Decimal(1).div(3);
 			const r = d.isNeg() ? d.abs().pow(oneThird).neg() : d.pow(oneThird);
-			return new Expression(r);
+			return Expression.create(r);
 		}
 
 		if (xe.isComplex()) {
@@ -230,8 +277,8 @@ export function cbrt(x: ExpressionInput): Expression {
  * parens(Expression.create('x+1')).text()  // "(x+1)"
  * ```
  */
-export function parens(x: Expression) {
-	return Expression.toFunction(WRAP, [x]);
+export function parens(x: ExpressionInput): Expression {
+	return Expression.toFunction(WRAP, [Expression.create(x)]);
 }
 
 /**
@@ -257,7 +304,7 @@ export function fibonacci(x: ExpressionInput): Expression {
 	if (x.isNUM() && x.isInteger()) {
 		retval = Expression.Number(fib(x.getMultiplier().numerator));
 	} else {
-		retval = Expression.toFunction(FIB, [new Expression(x)]);
+		retval = Expression.toFunction(FIB, [Expression.create(x)]);
 	}
 
 	return retval;
@@ -301,7 +348,7 @@ export function factorial(x: Expression): Expression {
 		if (x.isNUM() && m.denominator === 2n) {
 			const sign = m.sign();
 			m = m.abs();
-			const n = new Expression(m.numerator - 1n).div(two());
+			const n = Expression.create(m.numerator - 1n).div(two());
 			const sqrtPi = sqrt(Expression.Pi());
 			if (sign === -1) {
 				retval = four()
@@ -316,7 +363,7 @@ export function factorial(x: Expression): Expression {
 					.times(sqrtPi);
 			}
 		} else {
-			retval = Expression.toFunction(FACTORIAL, [new Expression(x)]);
+			retval = Expression.toFunction(FACTORIAL, [Expression.create(x)]);
 		}
 	}
 
@@ -383,7 +430,7 @@ export function doubleFactorial(x: Expression) {
 			retval = a.times(b).times(c);
 		}
 	} else {
-		retval = Expression.toFunction(DOUBLE_FACTORIAL, [new Expression(x)]);
+		retval = Expression.toFunction(DOUBLE_FACTORIAL, [Expression.create(x)]);
 	}
 
 	return retval;
@@ -433,10 +480,70 @@ export function heaviside(x: Expression): Expression {
 	} else if (useAssumptions && x.gte(0) && x.lte(0)) {
 		retval = half();
 	} else {
-		retval = Expression.toFunction(HEAVISIDE, [new Expression(x)]);
+		retval = Expression.toFunction(HEAVISIDE, [Expression.create(x)]);
 	}
 
 	return retval;
+}
+
+/**
+ * Legacy unit-step function. Unlike {@link heaviside}, the value at zero is 1.
+ */
+export function step(x: ExpressionInput): Expression {
+	x = Expression.create(x);
+	const useAssumptions = !x.isConstant() && !x.isComplex() && hasAssumptions();
+
+	if (x.isPosInf() || x.isNegInf()) {
+		return x.isNegInf() ? zero() : one();
+	}
+	if (x.isNUM()) {
+		return x.sign() < 0 ? zero() : one();
+	}
+	if (useAssumptions && x.lt(zero())) {
+		return zero();
+	}
+	if (useAssumptions && x.gte(zero())) {
+		return one();
+	}
+
+	return Expression.toFunction('step', [x]);
+}
+
+/**
+ * Rectangular pulse with unit width centered at zero.
+ *
+ * Returns 1 for |x| < 1/2, 1/2 at |x| = 1/2, and 0 for |x| > 1/2.
+ */
+export function rect(x: ExpressionInput): Expression {
+	const input = Expression.create(x);
+	const magnitude = abs(input);
+
+	if (magnitude.lt(half())) {
+		return one();
+	}
+	if (magnitude.eq(half())) {
+		return half();
+	}
+	if (magnitude.gt(half())) {
+		return zero();
+	}
+
+	return Expression.toFunction('rect', [input]);
+}
+
+/** Triangular pulse: max(1 - |x|, 0) when the comparison can be resolved. */
+export function tri(x: ExpressionInput): Expression {
+	const input = Expression.create(x);
+	const magnitude = abs(input);
+
+	if (magnitude.lt(one())) {
+		return one().minus(magnitude);
+	}
+	if (magnitude.gte(one())) {
+		return zero();
+	}
+
+	return Expression.toFunction('tri', [input]);
 }
 
 /**
@@ -467,14 +574,14 @@ export function dirac(x: Expression): Expression {
 		if (x.isZero()) {
 			// Dirac delta at zero is technically infinite, but we return
 			// the symbolic form to avoid misleading numeric results.
-			retval = Expression.toFunction(DIRAC, [new Expression(x)]);
+			retval = Expression.toFunction(DIRAC, [Expression.create(x)]);
 		} else {
 			retval = zero();
 		}
 	} else if (useAssumptions && (x.gt(0) || x.lt(0))) {
 		retval = zero();
 	} else {
-		retval = Expression.toFunction(DIRAC, [new Expression(x)]);
+		retval = Expression.toFunction(DIRAC, [Expression.create(x)]);
 	}
 
 	return retval;
@@ -593,7 +700,7 @@ export function round(x: ExpressionInput, n?: ExpressionInput) {
 		const d = x.getMultiplier().toDecimal();
 		const s = n.getMultiplier().toDecimal();
 		const t = new Decimal(10).pow(s);
-		retval = new Expression(Decimal.round(d.times(t)).div(t));
+		retval = Expression.create(Decimal.round(d.times(t)).div(t));
 	} else {
 		retval = Expression.toFunction(ROUND, [x, n]);
 	}
@@ -665,7 +772,7 @@ export function floor(x: ExpressionInput) {
 	} else if (x.isNUM()) {
 		// Convert n & x to a decimals
 		const d = x.getMultiplier().toDecimal();
-		retval = new Expression(d.floor());
+		retval = Expression.create(d.floor());
 	} else {
 		retval = Expression.toFunction(FLOOR, [x]);
 	}
@@ -697,7 +804,7 @@ export function ceiling(x: ExpressionInput) {
 	} else if (x.isNUM()) {
 		// Convert n & x to a decimals
 		const d = x.getMultiplier().toDecimal();
-		retval = new Expression(d.ceil());
+		retval = Expression.create(d.ceil());
 	} else {
 		retval = Expression.toFunction(CEIL, [x]);
 	}
@@ -850,7 +957,38 @@ export function modInv(a: Expression, p: Expression) {
 }
 
 /**
+ * Rounds an exact rational quotient to the nearest integer, choosing the even
+ * integer when the value lies exactly halfway between two integers.
+ */
+function roundRatioToNearestEven(numerator: bigint, denominator: bigint): bigint {
+	const quotient = numerator / denominator;
+	const remainder = numerator % denominator;
+	const twiceRemainder = bigintAbs(remainder) * 2n;
+	const direction = BigInt(bigintSign(numerator));
+
+	if (twiceRemainder < denominator) {
+		return quotient;
+	}
+	if (twiceRemainder > denominator) {
+		return quotient + direction;
+	}
+
+	return isEven(quotient) ? quotient : quotient + direction;
+}
+
+/**
  * Computes the modulo (remainder) of `x` divided by `y`.
+ *
+ * Exact Gaussian integers use the same quotient rule as Wolfram Language:
+ * divide, round the real and imaginary quotient components independently to
+ * the nearest integers with midpoint ties going to even, then subtract
+ * `y * quotient` from `x`.
+ *
+ * Complex values outside the Gaussian integers remain symbolic.
+ *
+ * @see https://reference.wolfram.com/language/ref/Mod.html
+ * @see https://reference.wolfram.com/language/ref/Quotient.html
+ * @see https://reference.wolfram.com/language/ref/Round.html
  *
  * @param x - The dividend.
  * @param y - The divisor.
@@ -859,8 +997,8 @@ export function modInv(a: Expression, p: Expression) {
  *
  * @example
  * ```ts
- * mod(Expression.create(10), Expression.create(3)).text()   // "1"
- * mod(Expression.create(7), Expression.create(2)).text()    // "1"
+ * mod(Expression.create(10), Expression.create(3)).text()          // "1"
+ * mod(Expression.create('5+3*i'), Expression.create('2+i')).text() // "-1"
  * ```
  */
 export function mod(x: Expression, y: Expression): Expression {
@@ -870,6 +1008,41 @@ export function mod(x: Expression, y: Expression): Expression {
 	}
 	if (x.isNUM() && y.isNUM()) {
 		retval = Expression.create(x.getMultiplier().mod(y.getMultiplier()));
+	} else if (x.isComplex() || y.isComplex()) {
+		const xReal = x.realPart();
+		const xImag = x.imagPart();
+		const yReal = y.realPart();
+		const yImag = y.imagPart();
+
+		if (
+			xReal.isNUM() &&
+			xReal.isInteger() &&
+			xImag.isNUM() &&
+			xImag.isInteger() &&
+			yReal.isNUM() &&
+			yReal.isInteger() &&
+			yImag.isNUM() &&
+			yImag.isInteger()
+		) {
+			const a = xReal.getMultiplier().numerator;
+			const b = xImag.getMultiplier().numerator;
+			const c = yReal.getMultiplier().numerator;
+			const d = yImag.getMultiplier().numerator;
+			const denominator = c * c + d * d;
+
+			if (denominator === 0n) {
+				retval = Expression.toFunction(MOD, [Expression.create(x), Expression.create(y)]);
+			} else {
+				const quotientReal = roundRatioToNearestEven(a * c + b * d, denominator);
+				const quotientImag = roundRatioToNearestEven(b * c - a * d, denominator);
+				const remainderReal = a - c * quotientReal + d * quotientImag;
+				const remainderImag = b - c * quotientImag - d * quotientReal;
+
+				retval = Expression.Number(remainderReal).plus(Expression.Number(remainderImag).i());
+			}
+		} else {
+			retval = Expression.toFunction(MOD, [Expression.create(x), Expression.create(y)]);
+		}
 	} else if (
 		x.isPolynomialLike() &&
 		y.isPolynomialLike() &&
@@ -877,11 +1050,67 @@ export function mod(x: Expression, y: Expression): Expression {
 	) {
 		retval = polyMod(x, y).getExpression();
 	} else {
-		retval = Expression.toFunction(MOD, [new Expression(x), new Expression(y)]);
+		retval = Expression.toFunction(MOD, [Expression.create(x), Expression.create(y)]);
 	}
 
 	return retval;
 }
+
+/**
+ * Upper incomplete gamma Γ(a, z).
+ *
+ * Positive integer first arguments are expanded exactly using the finite-sum formula.
+ * Other inputs remain symbolic.
+ *
+ * @see https://dlmf.nist.gov/8.4.E8
+ */
+export function gammaIncomplete(a: ExpressionInput, z: ExpressionInput): Expression {
+	const order = Expression.create(a);
+	const argument = Expression.create(z);
+
+	if (!order.isNUM() || !order.isInteger() || order.lte(zero())) {
+		return Expression.toFunction('gamma_incomplete', [order, argument]);
+	}
+
+	const n = order.getMultiplier().numerator;
+	if (n > BigInt(Settings.MAX_PRODUCT_AND_SUMMATION_ITERATION)) {
+		return Expression.toFunction('gamma_incomplete', [order, argument]);
+	}
+
+	let term = one();
+	let series = one();
+	let k = 1n;
+	while (k < n) {
+		term = term.times(argument).div(Expression.Number(k));
+		series = series.plus(term);
+		k++;
+	}
+
+	return factorial(Expression.Number(n - 1n)).times(exp(argument.neg())).times(series);
+}
+
+/**
+ * Lower incomplete gamma γ(a, z).
+ *
+ * Positive integer first arguments use γ(a,z) = Γ(a) - Γ(a,z).
+ * Other inputs remain symbolic.
+ *
+ * @see https://dlmf.nist.gov/8.2.E3
+ */
+export function gammaIncompleteLower(a: ExpressionInput, z: ExpressionInput): Expression {
+	const order = Expression.create(a);
+	const argument = Expression.create(z);
+
+	if (!order.isNUM() || !order.isInteger() || order.lte(zero())) {
+		return Expression.toFunction('gamma_incomplete_lower', [order, argument]);
+	}
+	if (order.getMultiplier().numerator > BigInt(Settings.MAX_PRODUCT_AND_SUMMATION_ITERATION)) {
+		return Expression.toFunction('gamma_incomplete_lower', [order, argument]);
+	}
+
+	return gamma(order).minus(gammaIncomplete(order, argument));
+}
+
 
 /**
  * Computes the gamma function Γ(x).
@@ -1017,7 +1246,7 @@ export function erf(x: Expression): Expression {
 			retval = Expression.Number(decErf(m.toDecimal()));
 		}
 	} else {
-		retval = Expression.toFunction(ERF, [new Expression(x)]);
+		retval = Expression.toFunction(ERF, [Expression.create(x)]);
 	}
 
 	return retval;
@@ -1054,7 +1283,7 @@ export function sinc(x: Expression): Expression {
 	} else if (Settings.EVALUATE) {
 		retval = sin(x).div(x);
 	} else {
-		retval = Expression.toFunction(SINC, [new Expression(x)]);
+		retval = Expression.toFunction(SINC, [Expression.create(x)]);
 	}
 
 	return retval;
@@ -1091,7 +1320,7 @@ export function Si(x: Expression): Expression {
 	} else if (x.isNUM() && Settings.EVALUATE) {
 		retval = Expression.Number(decSi(x.getMultiplier().toDecimal()));
 	} else {
-		retval = Expression.toFunction(SI, [new Expression(x)]);
+		retval = Expression.toFunction(SI, [Expression.create(x)]);
 	}
 
 	return retval;
@@ -1125,7 +1354,7 @@ export function Shi(x: Expression): Expression {
 	} else if (x.isNUM() && Settings.EVALUATE) {
 		retval = Expression.Number(decShi(x.getMultiplier().toDecimal()));
 	} else {
-		retval = Expression.toFunction(SHI, [new Expression(x)]);
+		retval = Expression.toFunction(SHI, [Expression.create(x)]);
 	}
 
 	return retval;
@@ -1159,7 +1388,7 @@ export function Ci(x: Expression): Expression {
 	} else if (x.isNUM() && Settings.EVALUATE) {
 		retval = Expression.Number(decCi(x.getMultiplier().toDecimal()));
 	} else {
-		retval = Expression.toFunction(CI, [new Expression(x)]);
+		retval = Expression.toFunction(CI, [Expression.create(x)]);
 	}
 
 	return retval;
@@ -1193,7 +1422,7 @@ export function Chi(x: Expression): Expression {
 	} else if (x.isNUM() && Settings.EVALUATE) {
 		retval = Expression.Number(decChi(x.getMultiplier().toDecimal()));
 	} else {
-		retval = Expression.toFunction(CHI, [new Expression(x)]);
+		retval = Expression.toFunction(CHI, [Expression.create(x)]);
 	}
 
 	return retval;
@@ -1224,7 +1453,7 @@ export function Ei(x: Expression): Expression {
 	} else if (x.isNUM() && Settings.EVALUATE) {
 		retval = Expression.Number(decEi(x.getMultiplier().toDecimal()));
 	} else {
-		retval = Expression.toFunction(EI, [new Expression(x)]);
+		retval = Expression.toFunction(EI, [Expression.create(x)]);
 	}
 
 	return retval;
@@ -1255,12 +1484,12 @@ export function Li(x: Expression): Expression {
 	} else if (x.isNUM() && Settings.EVALUATE) {
 		const m = x.getMultiplier();
 		if (m.isNegative()) {
-			retval = Expression.toFunction(LI, [new Expression(x)]);
+			retval = Expression.toFunction(LI, [Expression.create(x)]);
 		} else {
 			retval = Expression.Number(decLi(m.toDecimal()));
 		}
 	} else {
-		retval = Expression.toFunction(LI, [new Expression(x)]);
+		retval = Expression.toFunction(LI, [Expression.create(x)]);
 	}
 
 	return retval;
@@ -1338,7 +1567,7 @@ export function log(x: ExpressionInput, base?: ExpressionInput, expandPrimes = f
 		if (!exponent.isComplex()) {
 			retval = one().times(exponent);
 		} else {
-			retval = Expression.toFunction(Expression.LOG, [new Expression(x)]);
+			retval = Expression.toFunction(Expression.LOG, [Expression.create(x)]);
 		}
 	} else if (!x.isComplex() && x.lt(0)) {
 		retval = Expression.Pi().times(Expression.Img()).plus(log(x.abs()));
@@ -1468,7 +1697,7 @@ export function log(x: ExpressionInput, base?: ExpressionInput, expandPrimes = f
 		}
 	}
 
-	retval = retval || Expression.toFunction(Expression.LOG, [new Expression(x)]);
+	retval = retval || Expression.toFunction(Expression.LOG, [Expression.create(x)]);
 
 	// Handle base conversion: log_b(x) = log(x) / log(b)
 	if (baseExpr && retval && !exactBaseLog) {
@@ -1848,67 +2077,6 @@ export function product(
 	return acc;
 }
 
-/**
- * Calculates the definite integral using Adaptive Simpson. Note that this function uses
- * native JS number due to severe computational overhead when implemented with Decimal.js.
- *
- * @param f The function being integrated
- * @param dx The variable of integration
- * @param from The lower limit of the integral
- * @param to The upper limit of the integral
- * @returns The numeric value if possible else a symbolic function
- *
- * @example
- * ```ts
- * defint('cos(x)-x^2+6', 'x', 1, 6); // -42.787553149673464
- * ```
- */
-export function defint(
-	f: ExpressionInput,
-	dx: ExpressionInput,
-	from: ExpressionInput,
-	to: ExpressionInput
-) {
-	let retval: Expression;
-	f = Expression.create(f);
-	dx = Expression.create(dx);
-	from = Expression.create(from);
-	to = Expression.create(to);
-
-	const inputVars = f.variables();
-	// Get the variable
-	const v = assertPlainVariableAndGetString(dx);
-	// Pull factors that are constant with respect to the integration variable across the bounds.
-	if (!inputVars.includes(v)) {
-		retval = f.times(to.minus(from));
-	} else {
-		let numericFrom = from;
-		let numericTo = to;
-
-		if (!numericFrom.isNUM() && numericFrom.isConstant()) {
-			numericFrom = numericFrom.evaluate();
-		}
-		if (!numericTo.isNUM() && numericTo.isConstant()) {
-			numericTo = numericTo.evaluate();
-		}
-
-		if (
-			inputVars.length === 1 &&
-			inputVars[0] === v &&
-			numericFrom.isNUM() &&
-			numericTo.isNUM()
-		) {
-			const a = Number(numericFrom.getMultiplier().toDecimal());
-			const b = Number(numericTo.getMultiplier().toDecimal());
-			retval = Expression.create(definiteIntegrateNative(f.buildFunction(), a, b));
-			retval.precision = NATIVE_DEFINITE_INTEGRATION_PRECISION; // Mark it as limited precision
-		} else {
-			retval = Expression.toFunction(DEFINT, [f, dx, from, to]);
-		}
-	}
-
-	return retval;
-}
 
 /**
  * Tests whether a value is present in a supported finite container.

@@ -19,6 +19,7 @@ import { ValuesSet } from '../classes/valuesSet/ValuesSet';
 import { Vector } from '../classes/vector/Vector';
 import { Scope } from '../common/classes/Scope';
 import { mathFunctionRegistry } from '../dispatch';
+import { message } from '../errors';
 
 import { BaseConverter } from './BaseConverter';
 
@@ -246,7 +247,7 @@ export class Converter extends BaseConverter {
 			} else if (item.type === Token.FUNCTION) {
 				const argsScope = rpn[++i];
 				if (!Scope.isScope(argsScope)) {
-					throw new Error(`Missing argument scope for function ${item.value}`);
+					throw new Error(message('converterMissingArgumentScope', { function: item.value }));
 				}
 
 				let args: SourceTeXPart[] = [];
@@ -298,7 +299,7 @@ export class Converter extends BaseConverter {
 			} else if (item.type === Token.PREFIX) {
 				const operand = stack.pop();
 				if (!operand) {
-					throw new Error(`Missing operand for prefix operator ${item.value}`);
+					throw new Error(message('converterMissingPrefixOperand', { operator: item.value }));
 				}
 
 				stack.push({
@@ -310,7 +311,7 @@ export class Converter extends BaseConverter {
 				const right = stack.pop();
 
 				if (!operator || !right) {
-					throw new Error(`Missing operand or metadata for operator ${item.value}`);
+					throw new Error(message('converterMissingOperandMetadata', { operator: item.value }));
 				}
 
 				if (operator.isPostfix) {
@@ -324,7 +325,7 @@ export class Converter extends BaseConverter {
 
 				const left = stack.pop();
 				if (!left) {
-					throw new Error(`Missing left operand for operator ${item.value}`);
+					throw new Error(message('converterMissingLeftOperand', { operator: item.value }));
 				}
 
 				if (operator.action === 'comma') {
@@ -385,7 +386,7 @@ export class Converter extends BaseConverter {
 		}
 
 		if (stack.length !== 1) {
-			throw new Error('Unable to convert source expression to TeX');
+			throw new Error(message('converterTexConversionFailed'));
 		}
 
 		const retval = stack[0];
@@ -481,10 +482,14 @@ export class Converter extends BaseConverter {
 			},
 			[Expression.LOG10]: () =>
 				`\\mathrm${this.inBraces(Expression.LOG)}_${this.inBraces('10')}${this.inBrackets(output[0])}`,
+			log10: () =>
+				`\\mathrm${this.inBraces(Expression.LOG)}_${this.inBraces('10')}${this.inBrackets(output[0])}`,
 
 			// Special functions
 			exp: std,
 			gamma: () => `\\Gamma${this.inBrackets(output[0])}`,
+			gamma_incomplete: () => `\\Gamma${this.inBrackets(output.join(','), 'parens')}`,
+			gamma_incomplete_lower: () => `\\gamma${this.inBrackets(output.join(','), 'parens')}`,
 			erf: std,
 			erfc: std,
 			sinc: std,

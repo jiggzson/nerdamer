@@ -6,7 +6,10 @@ import type { TextOptions } from '../parser/types';
 import type { Expression } from './Expression';
 
 type ExpressionSortFunction = (a: Expression, b: Expression) => number;
-type ExpressionTextOptions = TextOptions & { internalAccessor?: boolean };
+type ExpressionTextOptions = TextOptions & {
+	internalAccessor?: boolean;
+	exactScientific?: boolean;
+};
 
 const { NUM, FUN, VAR, INF, GRP, EXP, PRD, SUM } = EXPRESSION_TYPES;
 
@@ -22,17 +25,21 @@ export function formatMultiplierString(x: Expression, options?: ExpressionTextOp
 	let retval = '';
 	const m = x.getMultiplier();
 	const mString = m.text(options);
+	const isScientific = options?.scientific !== undefined;
+	const isUnit = isScientific ? m.isOne() : mString === '1' || mString === '1.0';
 
-	if (mString !== '1' && mString !== '1.0') {
+	if (!isUnit) {
 		retval = mString;
 
-		if (!m.isInteger() && !(m.asDecimal || options?.decimal)) {
+		if (!m.isInteger() && !(m.asDecimal || options?.decimal || options?.scientific)) {
 			retval = `(${retval})`;
 		}
 
-		// Don't show the minus one as -1* but just -
-		// When wrapPow is set, keep -1* to avoid unary minus before **
-		if (retval === '-1' && !options?.wrapPow) {
+		// Keep the established display behavior for approximate decimal values that render as -1.0.
+		const isMinusUnit = isScientific
+			? m.isMinusOne()
+			: mString === '-1' || mString === '-1.0';
+		if (isMinusUnit && !options?.wrapPow) {
 			retval = '-';
 		} else {
 			retval += '*';
@@ -58,7 +65,11 @@ export function formatPowerString(
 ) {
 	let retval = '';
 	const power = x.getPower();
-	const powerString: string = power.text(options);
+	const powerOptions: ExpressionTextOptions = {
+		...options,
+		exactScientific: true,
+	};
+	const powerString: string = power.text(powerOptions);
 
 	if (powerString !== '1' && powerString !== '1.0') {
 		retval = powerString;
@@ -95,6 +106,148 @@ export function formatPowerString(
 	return retval;
 }
 
+function formatDefaultPowerString(
+	x: Expression,
+	powerOperator: string,
+	sortFunction: ExpressionSortFunction
+): string {
+	let retval = '';
+	const power = x.getPower();
+	const powerString = toDefaultText(power, powerOperator, sortFunction);
+
+	if (powerString !== '1' && powerString !== '1.0') {
+		retval = powerString;
+
+		if (power.dataType === RATIONAL && !power.isInteger()) {
+			retval = `(${retval})`;
+		} else {
+			let needsBrackets = false;
+
+			if (power.type === SUM || power.type === PRD) {
+				needsBrackets = true;
+			} else if (x.type === EXP) {
+				if (power.isNUM() && !power.isInteger()) {
+					needsBrackets = true;
+				} else if (!power.isNUM() && !power.getMultiplier().isOne()) {
+					needsBrackets = true;
+				}
+			}
+
+			if (needsBrackets || retval.includes('/')) {
+				retval = `(${retval})`;
+			}
+		}
+
+		retval = `${powerOperator}${retval}`;
+	}
+
+	return retval;
+}
+
+function formatDefaultExpressionString(
+	x: Expression,
+	powerOperator: string,
+	sortFunction: ExpressionSortFunction
+): string {
+	const glue = x.type === PRD ? '*' : '+';
+	const elements = Object.values(x.getElements());
+
+	if (Settings.SORT_TERMS) {
+		elements.sort(sortFunction);
+	}
+
+	return elements
+		.map(element => {
+			let value = toDefaultText(element, powerOperator, sortFunction);
+			if (x.type === PRD && element.isSum()) {
+				value = `(${value})`;
+			}
+			return value;
+		})
+		.join(glue)
+		.replace('+-', '-');
+}
+
+/**
+ * Formats the ordinary no-options text form without creating formatting option objects
+ * while descending the expression tree.
+ *
+ * This routine follows the same default rendering rules as {@link toText}. Calls that
+ * request explicit formatting options continue through {@link toText}.
+ */
+export function toDefaultText(
+	x: Expression,
+	powerOperator: string,
+	sortFunction: ExpressionSortFunction
+): string {
+	let retval = '';
+
+	if (x.type === NUM) {
+		retval = x.getMultiplier().text();
+	} else {
+		const multiplier = formatMultiplierString(x);
+		const power = formatDefaultPowerString(x, powerOperator, sortFunction);
+		let value: string;
+
+		switch (x.type) {
+			case VAR:
+			case INF:
+				retval = `${multiplier}${x.value}`;
+				break;
+			case FUN: {
+				if (x.name === SYMBOLIC_ACCESSOR) {
+					const args = x.getArguments();
+					const target = args[0];
+					const indices = args.slice(1);
+					retval = `${multiplier}${toDefaultText(
+						target,
+						powerOperator,
+						sortFunction
+					)}[${indices
+						.map(index => toDefaultText(index, powerOperator, sortFunction))
+						.join(', ')}]`;
+				} else {
+					retval = `${multiplier}${x.name || ''}(${x
+						.getArguments()
+						.map(argument => toDefaultText(argument, powerOperator, sortFunction))
+						.join(', ')})`;
+				}
+				break;
+			}
+			case GRP:
+			case SUM:
+				value = formatDefaultExpressionString(x, powerOperator, sortFunction);
+				value = multiplier || power ? `(${value})` : value;
+				retval = `${multiplier}${value}`;
+				break;
+			case PRD:
+				value = formatDefaultExpressionString(x, powerOperator, sortFunction);
+				value = power ? `(${value})` : value;
+				retval = `${multiplier}${value}`;
+				break;
+			case EXP: {
+				const arg = x.getBase();
+				const p = arg.getPower();
+				value = toDefaultText(arg, powerOperator, sortFunction);
+				if (
+					arg.elements ||
+					value.startsWith('-') ||
+					value.includes('/') ||
+					!(p.isOne() || p.isZero())
+				) {
+					value = `(${value})`;
+				}
+				retval = `${multiplier}${value}`;
+				break;
+			}
+		}
+
+		retval += power;
+	}
+
+	return retval.replace(/\+-/g, '-');
+}
+
 /**
  * Formats an expression using the current formatting policy supplied by Expression.
  *
@@ -112,7 +265,7 @@ export function toText(
 	powerOperator: string,
 	sortFunction: ExpressionSortFunction
 ) {
-	options = { ...{ precision: x.precision! }, ...options };
+	options = { ...{ precision: x.precision!, scientific: x.scientific }, ...options };
 
 	let retval: string = '';
 	if (x.type === NUM) {

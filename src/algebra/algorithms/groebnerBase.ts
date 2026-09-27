@@ -11,22 +11,23 @@
  * - elimination ideals
  * - ideal membership testing
  * - triangular back-substitution solver
+ *
+ * External references consulted:
+ * - SymPy Gröbner basis implementation:
+ *   https://github.com/sympy/sympy/blob/120ee85f346f6292b763cc195afda4f907260d4a/sympy/polys/groebnertools.py
+ * - Giovini, Mora, Niesi, Robbiano, Traverso, "One Sugar Cube, Please":
+ *   https://doi.org/10.1145/120694.120701
+ * - Bigatti, Caboara, Robbiano, "Computing inhomogeneous Gröbner bases":
+ *   https://doi.org/10.1016/j.jsc.2010.10.002
  */
 
-import { GCD as bigintGCD, abs as bigintAbs } from '../../core/functions/bigint/bigint';
-
-import { MultiPoly, keyToExp, expToKey, type Exponents } from './multiPoly/MultiPoly';
 import {
-	monoDividesDense,
-	monoSubDense,
-	mvDivideByCoeffContent,
-	mvNormalize,
-	mulPoly,
-	subPoly,
-	scalePoly,
-	negPoly,
-	substituteVarIndex,
-} from './poly';
+	SparsePolynomial,
+	type MonomialOrder as SparseMonomialOrder,
+	type SparsePolynomialTerm,
+} from '../../core/classes/polynomial/SparsePolynomial';
+import { message } from '../../core/errors';
+import { GCD as bigintGCD, abs as bigintAbs } from '../../core/functions/bigint/bigint';
 
 // ============================================================================
 // Public types
@@ -96,102 +97,100 @@ export class GroebnerBudgetExceeded extends Error {
 // Internal helpers
 // ============================================================================
 
-type DenseLT = { exp: number[]; coeff: bigint };
+type DenseLT = { exp: readonly bigint[]; coeff: bigint };
 
-function ltOrNull(p: MultiPoly, order: MonomialOrder, nVars: number): DenseLT | null {
-	return mvLeadTermDense(p, order, nVars);
-}
-
-function polyIsZero(p: MultiPoly): boolean {
-	return p.terms.size === 0;
-}
-
-function numVarsFromPolys(...polys: readonly MultiPoly[]): number {
-	let maxIndex = -1;
-	for (const p of polys) {
-		for (const key of p.terms.keys()) {
-			const exp = keyToExp(key);
-			for (const [i, e] of exp.entries()) {
-				if (e > 0 && i > maxIndex) {
-					maxIndex = i;
-				}
-			}
-		}
+function sparseOrder(order: MonomialOrder): SparseMonomialOrder {
+	if (order === 'LEX') {
+		return 'lex';
 	}
-	return maxIndex + 1;
+	if (order === 'GRLEX') {
+		return 'grlex';
+	}
+	return 'grevlex';
 }
 
-function polyKey(p: MultiPoly): string {
-	const parts: string[] = [];
-	for (const [k, c] of p.terms.entries()) {
-		if (c !== 0n) {
-			parts.push(`${k}:${c.toString()}`);
-		}
-	}
+function ltOrNull(p: SparsePolynomial, order: MonomialOrder): DenseLT | null {
+	const leading = p.leadingTerm(sparseOrder(order));
+	return leading === null ? null : { exp: leading.exponents, coeff: leading.coefficient };
+}
+
+function polyKey(p: SparsePolynomial): string {
+	const parts = p
+		.terms()
+		.map(term => `${term.exponents.join(',')}:${term.coefficient.toString()}`);
 	parts.sort();
 	return parts.join('|');
 }
 
-function divScalarExact(p: MultiPoly, d: bigint): MultiPoly {
-	if (d === 0n) {
-		throw new Error('divScalarExact: divide by 0');
-	}
-	if (d === 1n) {
-		return p;
-	}
-	const out = new MultiPoly();
-	for (const [k, c] of p.terms.entries()) {
-		if (c % d !== 0n) {
-			throw new Error('divScalarExact: non-exact');
-		}
-		const q = c / d;
-		if (q !== 0n) {
-			out.terms.set(k, q);
-		}
-	}
-	out.trim();
-	return out;
-}
-
 /**
  * Primitive normalization under a given order:
- * - normalize (combine like terms)
  * - divide by coefficient content
- * - ensure leading coefficient (under `order`) is positive
- * - optionally make monic if exact
+ * - ensure leading coefficient under `order` is positive
+ * - make monic when exact integer division permits it
  */
-function primitiveNormalizeOrder(p0: MultiPoly, order: MonomialOrder, nVars: number): MultiPoly {
-	if (polyIsZero(p0)) {
-		return MultiPoly.zero();
+function primitiveNormalizeOrder(p0: SparsePolynomial, order: MonomialOrder): SparsePolynomial {
+	if (p0.isZero()) {
+		return SparsePolynomial.zero(p0.variableCount);
 	}
-	let p = mvNormalize(p0);
+	let p = p0.primitivePart().normalizeLeadingSign(sparseOrder(order));
 
-	const { primitive } = mvDivideByCoeffContent(p);
-	p = mvNormalize(primitive);
-
-	// Fix sign using the requested order
-	const lt = ltOrNull(p, order, nVars);
-	if (lt && lt.coeff < 0n) {
-		p = negPoly(p);
-	}
-
-	// Attempt monic (exact) if possible
-	const lt2 = ltOrNull(p, order, nVars);
-	if (lt2 && lt2.coeff !== 0n && lt2.coeff !== 1n) {
-		const lc = lt2.coeff;
-		let ok = true;
-		for (const c of p.terms.values()) {
-			if (c % lc !== 0n) {
-				ok = false;
+	const lt = ltOrNull(p, order);
+	if (lt && lt.coeff !== 0n && lt.coeff !== 1n) {
+		let exact = true;
+		for (const term of p.terms()) {
+			if (term.coefficient % lt.coeff !== 0n) {
+				exact = false;
 				break;
 			}
 		}
-		if (ok) {
-			p = mvNormalize(divScalarExact(p, lc));
+		if (exact) {
+			p = p.divideByScalarExact(lt.coeff);
 		}
 	}
 
 	return p;
+}
+
+function expLcmDense(a: readonly bigint[], b: readonly bigint[]): bigint[] {
+	if (a.length !== b.length) {
+		throw new RangeError(message('multidegreeMismatch'));
+	}
+	const out = new Array<bigint>(a.length);
+	for (let i = 0; i < a.length; i++) {
+		out[i] = a[i] > b[i] ? a[i] : b[i];
+	}
+	return out;
+}
+
+function monoDividesDense(a: readonly bigint[], b: readonly bigint[]): boolean {
+	if (a.length !== b.length) {
+		return false;
+	}
+	for (let i = 0; i < a.length; i++) {
+		if (a[i] > b[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+function monoSubDense(b: readonly bigint[], a: readonly bigint[]): bigint[] {
+	if (a.length !== b.length) {
+		throw new RangeError(message('multidegreeMismatch'));
+	}
+	const out = new Array<bigint>(a.length);
+	for (let i = 0; i < a.length; i++) {
+		out[i] = b[i] - a[i];
+	}
+	return out;
+}
+
+function monomialTotalDegreeDense(monomial: readonly bigint[]): bigint {
+	let degree = 0n;
+	for (const exponent of monomial) {
+		degree += exponent;
+	}
+	return degree;
 }
 
 // ============================================================================
@@ -199,73 +198,92 @@ function primitiveNormalizeOrder(p0: MultiPoly, order: MonomialOrder, nVars: num
 // ============================================================================
 
 function sPolynomialFF(
-	f0: MultiPoly,
-	g0: MultiPoly,
-	order: MonomialOrder,
-	nVars: number
-): MultiPoly {
-	const f = mvNormalize(f0);
-	const g = mvNormalize(g0);
-	const ltF = ltOrNull(f, order, nVars);
-	const ltG = ltOrNull(g, order, nVars);
-	if (!ltF || !ltG) {
-		return MultiPoly.zero();
-	}
+	f: SparsePolynomial,
+	g: SparsePolynomial,
+	ltF: DenseLT,
+	ltG: DenseLT
+): SparsePolynomial {
+	const lcm = expLcmDense(ltF.exp, ltG.exp);
+	const fMultiplier = monoSubDense(lcm, ltF.exp);
+	const gMultiplier = monoSubDense(lcm, ltG.exp);
 
-	const l = expLcmDense(ltF.exp, ltG.exp);
-	const a = monoSubDense(l, ltF.exp);
-	const b = monoSubDense(l, ltG.exp);
-
-	// fraction-free S: lc(g)*x^a*f - lc(f)*x^b*g
-	const m1 = MultiPoly.monomial(ltG.coeff, a);
-	const m2 = MultiPoly.monomial(ltF.coeff, b);
-	const term1 = mulPoly(f, m1);
-	const term2 = mulPoly(g, m2);
-	return mvNormalize(subPoly(term1, term2));
+	return f.monomialScaleSubtract(
+		ltG.coeff,
+		fMultiplier,
+		g,
+		ltF.coeff,
+		gMultiplier
+	);
 }
 
 // ============================================================================
 // Normal form (fraction-free)
 // ============================================================================
 
-/** Head reduction (fraction-free) using leading terms only. */
-function normalFormFractionFree(
-	f0: MultiPoly,
-	G: readonly MultiPoly[],
+type ReducerView = {
+	poly: SparsePolynomial;
+	lt: DenseLT;
+};
+
+type ReductionSugarState = {
+	value: bigint;
+	reducerSugars: readonly bigint[];
+};
+
+function reducerViews(
+	basis: readonly SparsePolynomial[],
 	order: MonomialOrder,
-	nVars: number
-): MultiPoly {
-	let f = mvNormalize(f0);
-	if (polyIsZero(f)) {
+	normalize: boolean
+): ReducerView[] {
+	const reducers: ReducerView[] = [];
+	for (const source of basis) {
+		const poly = normalize ? primitiveNormalizeOrder(source, order) : source;
+		if (poly.isZero()) {
+			continue;
+		}
+		const lt = ltOrNull(poly, order);
+		if (lt !== null) {
+			reducers.push({ poly, lt });
+		}
+	}
+	return reducers;
+}
+
+/** Head reduction using leading terms only and exact integer arithmetic. */
+function normalFormFractionFree(
+	f0: SparsePolynomial,
+	basis: readonly SparsePolynomial[],
+	order: MonomialOrder,
+	reducers: readonly ReducerView[] = reducerViews(basis, order, false),
+	sugarState?: ReductionSugarState
+): SparsePolynomial {
+	let f = f0;
+	if (f.isZero()) {
 		return f;
 	}
 
 	while (true) {
-		const ltF = ltOrNull(f, order, nVars);
+		const ltF = ltOrNull(f, order);
 		if (!ltF) {
 			break;
 		}
 
 		let reduced = false;
-		for (const g0 of G) {
-			const g = mvNormalize(g0);
-			if (polyIsZero(g)) {
-				continue;
-			}
-			const ltG = ltOrNull(g, order, nVars);
-			if (!ltG) {
-				continue;
-			}
+		for (let reducerIndex = 0; reducerIndex < reducers.length; reducerIndex++) {
+			const { poly: g, lt: ltG } = reducers[reducerIndex];
 			if (!monoDividesDense(ltG.exp, ltF.exp)) {
 				continue;
 			}
 
 			const multExp = monoSubDense(ltF.exp, ltG.exp);
-			// fraction-free cancel the head term:
-			// f := lc(g)*f - lc(f)*x^(multExp)*g
-			const left = scalePoly(f, ltG.coeff);
-			const right = mulPoly(g, MultiPoly.monomial(ltF.coeff, multExp));
-			f = mvNormalize(subPoly(left, right));
+			if (sugarState) {
+				const reductionSugar =
+					sugarState.reducerSugars[reducerIndex] + monomialTotalDegreeDense(multExp);
+				if (reductionSugar > sugarState.value) {
+					sugarState.value = reductionSugar;
+				}
+			}
+			f = f.scaleSubtractMonomial(ltG.coeff, g, ltF.coeff, multExp);
 			reduced = true;
 			break;
 		}
@@ -276,94 +294,78 @@ function normalFormFractionFree(
 	return f;
 }
 
-function collectDenseTermsDesc(
-	p: MultiPoly,
-	order: MonomialOrder,
-	nVars: number
-): Array<{ exp: number[]; coeff: bigint }> {
-	const terms: Array<{ exp: number[]; coeff: bigint }> = [];
-	for (const [key, coeff] of p.terms.entries()) {
-		if (coeff === 0n) {
-			continue;
-		}
-		const expMap = keyToExp(key);
-		const dense = new Array<number>(nVars).fill(0);
-		for (const [i, e] of expMap.entries()) {
-			if (i >= 0 && i < nVars) {
-				dense[i] = e;
-			}
-		}
-		terms.push({ exp: dense, coeff });
-	}
-	terms.sort((a, b) => -compareMonomialDense(a.exp, b.exp, order));
-	return terms;
-}
-
 /**
- * Fraction-free reduction allowing reduction of ANY term (tail reduction),
- * without requiring coefficient division.
+ * Fraction-free reduction allowing reduction of any term.
  *
- * For a term t in f and a reducer g whose LM divides t, we cancel t via:
+ * For a term t in f and a reducer g whose leading monomial divides t:
  *   f := lc(g) * f - coeff(t) * x^(tExp - LM(g)) * g
- * and then normalize/primitive-reduce to control coefficient growth.
  */
 function normalFormFractionFreeAllTerms(
-	f0: MultiPoly,
-	G: readonly MultiPoly[],
+	f0: SparsePolynomial,
+	basis: readonly SparsePolynomial[],
 	order: MonomialOrder,
-	nVars: number
-): MultiPoly {
-	let f = primitiveNormalizeOrder(mvNormalize(f0), order, nVars);
-	if (polyIsZero(f) || G.length === 0) {
+	normalizedBasis: readonly ReducerView[] = reducerViews(basis, order, true),
+	sugarState?: ReductionSugarState
+): SparsePolynomial {
+	let f = primitiveNormalizeOrder(f0, order);
+	if (f.isZero() || normalizedBasis.length === 0) {
 		return f;
 	}
 
-	// Pre-normalize all reducers and cache their leading terms once.
-	// The reducers don't change during the loop, so this avoids O(|G| * iterations)
-	// redundant normalizations.
-	const normalizedG: Array<{ poly: MultiPoly; lt: DenseLT }> = [];
-	for (const g0 of G) {
-		const g = primitiveNormalizeOrder(mvNormalize(g0), order, nVars);
-		if (polyIsZero(g)) {
-			continue;
-		}
-		const lt = ltOrNull(g, order, nVars);
-		if (!lt || lt.coeff === 0n) {
-			continue;
-		}
-		normalizedG.push({ poly: g, lt });
-	}
-
-	if (normalizedG.length === 0) {
-		return f;
-	}
-
+	const monomialOrder = sparseOrder(order);
 	while (true) {
-		let changed = false;
-		const fTerms = collectDenseTermsDesc(f, order, nVars);
-		if (fTerms.length === 0) {
-			break;
-		}
+		let selected: SparsePolynomialTerm | null = null;
+		let selectedReducer: ReducerView | null = null;
+		let selectedReducerIndex = -1;
 
-		outer: for (const t of fTerms) {
-			for (const { poly: g, lt: ltG } of normalizedG) {
-				if (!monoDividesDense(ltG.exp, t.exp)) {
-					continue;
+		for (const term of f.terms()) {
+			let reducer: ReducerView | null = null;
+			let reducerIndex = -1;
+			for (let i = 0; i < normalizedBasis.length; i++) {
+				const candidate = normalizedBasis[i];
+				if (monoDividesDense(candidate.lt.exp, term.exponents)) {
+					reducer = candidate;
+					reducerIndex = i;
+					break;
 				}
-
-				const multExp = monoSubDense(t.exp, ltG.exp);
-				const left = scalePoly(f, ltG.coeff);
-				const right = mulPoly(g, MultiPoly.monomial(t.coeff, multExp));
-				f = primitiveNormalizeOrder(mvNormalize(subPoly(left, right)), order, nVars);
-
-				changed = true;
-				break outer;
+			}
+			if (
+				reducer !== null &&
+				(selected === null ||
+					SparsePolynomial.compareMonomials(
+						term.exponents,
+						selected.exponents,
+						monomialOrder
+					) > 0)
+			) {
+				selected = term;
+				selectedReducer = reducer;
+				selectedReducerIndex = reducerIndex;
 			}
 		}
 
-		if (!changed) {
+		if (selected === null || selectedReducer === null) {
 			break;
 		}
+
+		const multExp = monoSubDense(selected.exponents, selectedReducer.lt.exp);
+		if (sugarState) {
+			const reductionSugar =
+				sugarState.reducerSugars[selectedReducerIndex] +
+				monomialTotalDegreeDense(multExp);
+			if (reductionSugar > sugarState.value) {
+				sugarState.value = reductionSugar;
+			}
+		}
+		f = primitiveNormalizeOrder(
+			f.scaleSubtractMonomial(
+				selectedReducer.lt.coeff,
+				selectedReducer.poly,
+				selected.coefficient,
+				multExp
+			),
+			order
+		);
 	}
 
 	return f;
@@ -373,117 +375,110 @@ function normalFormFractionFreeAllTerms(
 // Canonicalization
 // ============================================================================
 
-/** For each variable index 0..nVars-1, returns true if that variable appears in p. */
-function variablePresence(p: MultiPoly, nVars: number): boolean[] {
-	const a = new Array<boolean>(nVars).fill(false);
-	for (const k of p.terms.keys()) {
-		const exp = keyToExp(k);
-		for (const [i, e] of exp.entries()) {
-			if (e > 0) {
-				a[i] = true;
-			}
-		}
+function variablePresence(p: SparsePolynomial): boolean[] {
+	const presence = new Array<boolean>(p.variableCount).fill(false);
+	for (const variableIndex of p.variables()) {
+		presence[variableIndex] = true;
 	}
-	return a;
+	return presence;
 }
 
 function canonicalizeBasis(
-	G0: readonly MultiPoly[],
-	order: MonomialOrder,
-	nVars: number
-): MultiPoly[] {
-	const kept: MultiPoly[] = [];
-	const input = G0.filter(p => !polyIsZero(p)).map(p => mvNormalize(p));
+	inputBasis: readonly SparsePolynomial[],
+	order: MonomialOrder
+): SparsePolynomial[] {
+	const kept: SparsePolynomial[] = [];
+	const keptHeadReducers: ReducerView[] = [];
+	const keptNormalizedReducers: ReducerView[] = [];
+	const input = inputBasis.filter(p => !p.isZero());
 
 	// 1) Reduce each element against what we've already kept, then normalize.
 	for (const p of input) {
-		const r0 = normalFormFractionFree(p, kept, order, nVars);
-		const r1 = normalFormFractionFreeAllTerms(r0, kept, order, nVars);
-		const rn = primitiveNormalizeOrder(r1, order, nVars);
-		if (!polyIsZero(rn)) {
-			kept.push(rn);
+		const headReduced = normalFormFractionFree(
+			p,
+			kept,
+			order,
+			keptHeadReducers
+		);
+		const normalized = normalFormFractionFreeAllTerms(
+			headReduced,
+			kept,
+			order,
+			keptNormalizedReducers
+		);
+		if (!normalized.isZero()) {
+			kept.push(normalized);
+			keptHeadReducers.push(reducerViews([normalized], order, false)[0]);
+			keptNormalizedReducers.push(reducerViews([normalized], order, true)[0]);
 		}
 	}
 
 	// 2) Interreduce: each polynomial reduced by all others.
-	const out: MultiPoly[] = [];
+	const out: SparsePolynomial[] = [];
 	for (let i = 0; i < kept.length; i++) {
 		const others = kept.filter((_, j) => j !== i);
-		const ri0 = normalFormFractionFree(kept[i], others, order, nVars);
-		const ri1 = normalFormFractionFreeAllTerms(ri0, others, order, nVars);
-		const rn = primitiveNormalizeOrder(ri1, order, nVars);
-		if (!polyIsZero(rn)) {
-			out.push(rn);
+		const otherHeadReducers = keptHeadReducers.filter((_, j) => j !== i);
+		const otherNormalizedReducers = keptNormalizedReducers.filter((_, j) => j !== i);
+		const headReduced = normalFormFractionFree(
+			kept[i],
+			others,
+			order,
+			otherHeadReducers
+		);
+		const normalized = normalFormFractionFreeAllTerms(
+			headReduced,
+			others,
+			order,
+			otherNormalizedReducers
+		);
+		if (!normalized.isZero()) {
+			out.push(normalized);
 		}
 	}
 
-	// 3) Dedupe by leading monomial.
-	const betterSameLM = (p: MultiPoly, q: MultiPoly): MultiPoly => {
-		const pp = variablePresence(p, nVars);
-		const qp = variablePresence(q, nVars);
-
-		let cp = 0;
-		let cq = 0;
-		for (let i = 0; i < nVars; i++) {
-			if (pp[i]) {
-				cp++;
-			}
-			if (qp[i]) {
-				cq++;
-			}
-		}
-		if (cp !== cq) {
-			return cp < cq ? p : q;
-		}
-
-		if (p.terms.size !== q.terms.size) {
-			return p.terms.size < q.terms.size ? p : q;
-		}
-
-		const ltp = ltOrNull(p, order, nVars);
-		const ltq = ltOrNull(q, order, nVars);
-		if (ltp && ltq) {
-			const ap = bigintAbs(ltp.coeff);
-			const aq = bigintAbs(ltq.coeff);
-			if (ap !== aq) {
-				return ap < aq ? p : q;
-			}
-		}
-		return p;
-	};
-
-	const byPoly = new Map<string, MultiPoly>();
+	// 3) Remove exact duplicates produced by independent interreduction.
+	const byPoly = new Map<string, SparsePolynomial>();
 	for (const p of out) {
-		const key = polyKey(p);
-		const prev = byPoly.get(key);
-		if (!prev) {
-			byPoly.set(key, p);
-			continue;
-		}
-		byPoly.set(key, betterSameLM(prev, p));
+		byPoly.set(polyKey(p), p);
 	}
-	const arr = Array.from(byPoly.values());
-	arr.sort((p, q) => {
-		const pp = variablePresence(p, nVars);
-		const qp = variablePresence(q, nVars);
-		for (let i = 0; i < nVars; i++) {
-			const ap = pp[i] ? 1 : 0;
-			const aq = qp[i] ? 1 : 0;
-			if (ap !== aq) {
-				return ap - aq;
+
+	const result = Array.from(byPoly.values());
+	const monomialOrder = sparseOrder(order);
+	const sortInfo = new Map<
+		SparsePolynomial,
+		{ presence: boolean[]; lt: DenseLT | null }
+	>();
+	for (const p of result) {
+		sortInfo.set(p, {
+			presence: variablePresence(p),
+			lt: ltOrNull(p, order),
+		});
+	}
+
+	result.sort((p, q) => {
+		const pInfo = sortInfo.get(p)!;
+		const qInfo = sortInfo.get(q)!;
+		for (let i = 0; i < p.variableCount; i++) {
+			const pv = pInfo.presence[i] ? 1 : 0;
+			const qv = qInfo.presence[i] ? 1 : 0;
+			if (pv !== qv) {
+				return pv - qv;
 			}
 		}
-		const ltp = ltOrNull(p, order, nVars);
-		const ltq = ltOrNull(q, order, nVars);
-		if (ltp && ltq) {
-			const c = compareMonomialDense(ltp.exp, ltq.exp, order);
-			if (c !== 0) {
-				return c;
+
+		if (pInfo.lt && qInfo.lt) {
+			const comparison = SparsePolynomial.compareMonomials(
+				pInfo.lt.exp,
+				qInfo.lt.exp,
+				monomialOrder
+			);
+			if (comparison !== 0) {
+				return comparison;
 			}
 		}
-		return p.terms.size - q.terms.size;
+		return p.termCount - q.termCount;
 	});
-	return arr;
+	return result;
 }
 
 // ============================================================================
@@ -491,52 +486,45 @@ function canonicalizeBasis(
 // ============================================================================
 
 /**
- * Sugar degree of a polynomial: the total degree of its leading monomial.
- * This is the initial sugar value assigned when a polynomial enters the basis.
- */
-function sugarDegree(p: MultiPoly, order: MonomialOrder, nVars: number): number {
-	const lt = ltOrNull(p, order, nVars);
-	if (!lt) {
-		return 0;
-	}
-	return monomialTotalDegreeDense(lt.exp);
-}
-
-/**
  * Sugar degree of an S-polynomial S(f,g).
  *
  * sugar(S(f,g)) = max(sugar(f) + deg(lcm/LM(f)), sugar(g) + deg(lcm/LM(g)))
- *
- * where deg() is total degree difference between the lcm and respective LMs.
  */
-function sPairSugar(sugarF: number, sugarG: number, ltF: number[], ltG: number[]): number {
-	const lcm = expLcmDense(ltF, ltG);
-	const lcmDeg = monomialTotalDegreeDense(lcm);
-	const degF = monomialTotalDegreeDense(ltF);
-	const degG = monomialTotalDegreeDense(ltG);
-	return Math.max(sugarF + (lcmDeg - degF), sugarG + (lcmDeg - degG));
+function sPairSugar(
+	sugarF: bigint,
+	sugarG: bigint,
+	ltFDegree: bigint,
+	ltGDegree: bigint,
+	lcmDegree: bigint
+): bigint {
+	const candidateF = sugarF + lcmDegree - ltFDegree;
+	const candidateG = sugarG + lcmDegree - ltGDegree;
+	return candidateF > candidateG ? candidateF : candidateG;
 }
 
 type CriticalPair = {
 	i: number;
 	j: number;
-	sugar: number;
+	sugar: bigint;
 	/** Total degree of lcm(LM(G[i]), LM(G[j])). Used for tie-breaking. */
-	lcmDeg: number;
+	lcmDeg: bigint;
 };
 
 /**
- * Insert a pair into a sugar-sorted queue.
- * Primary sort: ascending sugar. Secondary: ascending lcmDeg.
- * Uses binary insertion to keep the queue sorted.
+ * Inserts a pair in reverse processing order so the next pair can be removed with pop().
+ * Lower sugar and lower lcmDeg are processed first. Exact ties retain the previous
+ * last-in-first-out behavior.
  */
 function insertPairSorted(queue: CriticalPair[], pair: CriticalPair): void {
 	let lo = 0;
 	let hi = queue.length;
 	while (lo < hi) {
 		const mid = (lo + hi) >>> 1;
-		const m = queue[mid];
-		if (m.sugar < pair.sugar || (m.sugar === pair.sugar && m.lcmDeg < pair.lcmDeg)) {
+		const current = queue[mid];
+		if (
+			current.sugar > pair.sugar ||
+			(current.sugar === pair.sugar && current.lcmDeg >= pair.lcmDeg)
+		) {
 			lo = mid + 1;
 		} else {
 			hi = mid;
@@ -549,15 +537,13 @@ function insertPairSorted(queue: CriticalPair[], pair: CriticalPair): void {
 // Core Buchberger algorithm
 // ============================================================================
 
-function groebnerBasis(polys: readonly MultiPoly[], order?: MonomialOrder): MultiPoly[];
-function groebnerBasis(polys: readonly MultiPoly[], opts?: GroebnerBasisOptions): MultiPoly[];
-function groebnerBasis(
-	polys: readonly MultiPoly[],
+function groebnerBasisSparse(
+	polys: readonly SparsePolynomial[],
 	orderOrOpts: MonomialOrder | GroebnerBasisOptions = 'LEX'
-): MultiPoly[] {
+): SparsePolynomial[] {
 	const opts: GroebnerBasisOptions =
 		typeof orderOrOpts === 'string' ? { order: orderOrOpts } : (orderOrOpts ?? {});
-	const order: MonomialOrder = opts.order ?? 'LEX';
+	const order = opts.order ?? 'LEX';
 	const reduced = opts.reduced ?? true;
 	const maxPairsPopped = opts.maxPairsPopped;
 	const maxBasisSize = opts.maxBasisSize;
@@ -571,42 +557,35 @@ function groebnerBasis(
 		basisAppends: 0,
 	};
 
-	const F = polys.filter(p => !polyIsZero(p)).map(p => mvNormalize(p));
-	if (F.length === 0) {
+	const basisInput = polys.filter(p => !p.isZero());
+	if (basisInput.length === 0) {
 		return [];
 	}
 
-	const nVars = numVarsFromPolys(...F);
-
-	const G: MultiPoly[] = F.slice();
-
-	// Sugar degrees tracked per basis element
-	const sugarArr: number[] = G.map(p => sugarDegree(p, order, nVars));
-
-	// Leading-monomial cache: index → dense exponent vector.
-	// Basis elements are append-only and immutable once added, so cache entries never stale.
-	const lmCache: Array<number[] | null> = G.map(p => {
-		const lt = ltOrNull(p, order, nVars);
-		return lt ? lt.exp : null;
-	});
-
-	// Buchberger criteria bookkeeping.
-	const zeroPairs = new Set<string>();
-	const pairKey = (i: number, j: number): string => (i < j ? `${i},${j}` : `${j},${i}`);
-
-	const lmExpCached = (idx: number): number[] | null => {
-		if (idx < lmCache.length) {
-			return lmCache[idx];
+	const variableCount = basisInput[0].variableCount;
+	for (const polynomial of basisInput) {
+		if (polynomial.variableCount !== variableCount) {
+			throw new RangeError(message('multidegreeMismatch'));
 		}
-		const lt = ltOrNull(G[idx], order, nVars);
-		const exp = lt ? lt.exp : null;
-		lmCache[idx] = exp;
-		return exp;
+	}
+
+	const basis = basisInput.slice();
+	const headReducers = reducerViews(basis, order, false);
+	const normalizedReducers = reducerViews(basis, order, true);
+	const lmDegreeCache = headReducers.map(reducer =>
+		monomialTotalDegreeDense(reducer.lt.exp)
+	);
+	const sugarArr = basis.map(polynomial => polynomial.totalDegree() ?? 0n);
+
+	const zeroPairNeighbors: Array<Set<number>> = basis.map(() => new Set<number>());
+	const markZeroPair = (i: number, j: number): void => {
+		zeroPairNeighbors[i].add(j);
+		zeroPairNeighbors[j].add(i);
 	};
 
-	const areCoprimeLM = (a: number[], b: number[]): boolean => {
-		for (let i = 0; i < nVars; i++) {
-			if (a[i] > 0 && b[i] > 0) {
+	const areCoprimeLM = (a: readonly bigint[], b: readonly bigint[]): boolean => {
+		for (let i = 0; i < variableCount; i++) {
+			if (a[i] > 0n && b[i] > 0n) {
 				return false;
 			}
 		}
@@ -614,188 +593,220 @@ function groebnerBasis(
 	};
 
 	const chainCriterionApplies = (i: number, j: number): boolean => {
-		const li = lmExpCached(i);
-		const lj = lmExpCached(j);
-		if (!li || !lj) {
-			return false;
-		}
+		const li = headReducers[i].lt.exp;
+		const lj = headReducers[j].lt.exp;
 		const lcm = expLcmDense(li, lj);
-		for (let k = 0; k < G.length; k++) {
-			if (k === i || k === j) {
-				continue;
-			}
-			const lk = lmExpCached(k);
-			if (!lk) {
-				continue;
-			}
-			if (!monoDividesDense(lk, lcm)) {
-				continue;
-			}
-			if (zeroPairs.has(pairKey(i, k)) && zeroPairs.has(pairKey(k, j))) {
+		const iNeighbors = zeroPairNeighbors[i];
+		const jNeighbors = zeroPairNeighbors[j];
+		const candidates = iNeighbors.size <= jNeighbors.size ? iNeighbors : jNeighbors;
+		const otherNeighbors = candidates === iNeighbors ? jNeighbors : iNeighbors;
+
+		for (const k of candidates) {
+			if (
+				k !== i &&
+				k !== j &&
+				otherNeighbors.has(k) &&
+				monoDividesDense(headReducers[k].lt.exp, lcm)
+			) {
 				return true;
 			}
 		}
 		return false;
 	};
 
-	// Build initial pair queue
+	const appendBasis = (h: SparsePolynomial): number => {
+		const index = basis.length;
+		basis.push(h);
+
+		const headReducer = reducerViews([h], order, false)[0];
+		const normalizedReducer = reducerViews([h], order, true)[0];
+		headReducers.push(headReducer);
+		normalizedReducers.push(normalizedReducer);
+		lmDegreeCache.push(monomialTotalDegreeDense(headReducer.lt.exp));
+		zeroPairNeighbors.push(new Set<number>());
+		stats.basisAppends++;
+		if (maxBasisSize !== undefined && basis.length > maxBasisSize) {
+			throw new GroebnerBudgetExceeded(
+				message('groebnerBasisSizeBudgetExceeded', { max: String(maxBasisSize) }),
+				stats
+			);
+		}
+		return index;
+	};
+
+	const reducePair = (
+		i: number,
+		j: number,
+		initialSugar?: bigint
+	): { polynomial: SparsePolynomial; sugar?: bigint } => {
+		const sPolynomial = sPolynomialFF(
+			basis[i],
+			basis[j],
+			headReducers[i].lt,
+			headReducers[j].lt
+		);
+		const sugarState =
+			initialSugar === undefined
+				? undefined
+				: { value: initialSugar, reducerSugars: sugarArr };
+		const headReduced = normalFormFractionFree(
+			sPolynomial,
+			basis,
+			order,
+			headReducers,
+			sugarState
+		);
+		const polynomial = normalFormFractionFreeAllTerms(
+			headReduced,
+			basis,
+			order,
+			normalizedReducers,
+			sugarState
+		);
+		return { polynomial, sugar: sugarState?.value };
+	};
+
+	// Build initial pair queue.
 	if (strategy === 'sugar') {
 		const pairQueue: CriticalPair[] = [];
 
-		const makePair = (i: number, j: number): CriticalPair | null => {
-			const li = lmExpCached(i);
-			const lj = lmExpCached(j);
-			if (!li || !lj) {
-				return null;
-			}
+		const makePair = (i: number, j: number): CriticalPair => {
+			const li = headReducers[i].lt.exp;
+			const lj = headReducers[j].lt.exp;
 			const lcm = expLcmDense(li, lj);
+			const lcmDegree = monomialTotalDegreeDense(lcm);
 			return {
 				i,
 				j,
-				sugar: sPairSugar(sugarArr[i], sugarArr[j], li, lj),
-				lcmDeg: monomialTotalDegreeDense(lcm),
+				sugar: sPairSugar(
+					sugarArr[i],
+					sugarArr[j],
+					lmDegreeCache[i],
+					lmDegreeCache[j],
+					lcmDegree
+				),
+				lcmDeg: lcmDegree,
 			};
 		};
 
-		for (let i = 0; i < G.length; i++) {
-			for (let j = i + 1; j < G.length; j++) {
-				const cp = makePair(i, j);
-				if (cp) {
-					insertPairSorted(pairQueue, cp);
-				}
+		for (let i = 0; i < basis.length; i++) {
+			for (let j = i + 1; j < basis.length; j++) {
+				insertPairSorted(pairQueue, makePair(i, j));
 			}
 		}
 
 		while (pairQueue.length > 0) {
-			const { i, j, sugar: pairSugar } = pairQueue[0];
-			pairQueue.shift();
+			const { i, j, sugar: pairSugar } = pairQueue.pop()!;
 			stats.pairsPopped++;
-
 			if (maxPairsPopped !== undefined && stats.pairsPopped > maxPairsPopped) {
 				throw new GroebnerBudgetExceeded(
-					`Groebner budget exceeded: pairsPopped > ${maxPairsPopped}`,
+					message('groebnerPairsBudgetExceeded', { max: String(maxPairsPopped) }),
 					stats
 				);
 			}
 
-			// Buchberger criteria
-			const lmi = lmExpCached(i);
-			const lmj = lmExpCached(j);
-			if (lmi && lmj && areCoprimeLM(lmi, lmj)) {
+			const lmi = headReducers[i].lt.exp;
+			const lmj = headReducers[j].lt.exp;
+			if (areCoprimeLM(lmi, lmj)) {
 				stats.pairsSkippedProduct++;
-				zeroPairs.add(pairKey(i, j));
+				markZeroPair(i, j);
 				continue;
 			}
 			if (chainCriterionApplies(i, j)) {
 				stats.pairsSkippedChain++;
-				zeroPairs.add(pairKey(i, j));
+				markZeroPair(i, j);
 				continue;
 			}
 
-			const S = sPolynomialFF(G[i], G[j], order, nVars);
-			const h0 = normalFormFractionFree(S, G, order, nVars);
-			const h1 = normalFormFractionFreeAllTerms(h0, G, order, nVars);
-			const h = primitiveNormalizeOrder(h1, order, nVars);
-
-			if (polyIsZero(h)) {
+			const reduction = reducePair(i, j, pairSugar);
+			const h = reduction.polynomial;
+			if (h.isZero()) {
 				stats.pairsReducedToZero++;
-				zeroPairs.add(pairKey(i, j));
-			} else if (h.isConstant() && h.constantTerm() !== 0n) {
-				return [MultiPoly.constant(1n)];
-			} else {
-				const k = G.length;
-				G.push(h);
+				markZeroPair(i, j);
+				continue;
+			}
+			if (h.isConstant() && h.constantTerm() !== 0n) {
+				return [SparsePolynomial.constant(variableCount, 1n)];
+			}
 
-				// Cache the LM of the new element
-				const ltH = ltOrNull(h, order, nVars);
-				lmCache.push(ltH ? ltH.exp : null);
-
-				// Sugar of the new element: max of the pair sugar and the actual degree
-				const hDeg = sugarDegree(h, order, nVars);
-				sugarArr.push(Math.max(pairSugar, hDeg));
-
-				stats.basisAppends++;
-				if (maxBasisSize !== undefined && G.length > maxBasisSize) {
-					throw new GroebnerBudgetExceeded(
-						`Groebner budget exceeded: basis size > ${maxBasisSize}`,
-						stats
-					);
-				}
-
-				for (let t = 0; t < k; t++) {
-					const cp = makePair(t, k);
-					if (cp) {
-						insertPairSorted(pairQueue, cp);
-					}
-				}
+			const k = appendBasis(h);
+			const hTotalDegree = h.totalDegree() ?? 0n;
+			const reducedSugar = reduction.sugar ?? pairSugar;
+			sugarArr.push(reducedSugar > hTotalDegree ? reducedSugar : hTotalDegree);
+			for (let t = 0; t < k; t++) {
+				insertPairSorted(pairQueue, makePair(t, k));
 			}
 		}
 	} else {
-		// FIFO strategy (original behavior)
+		// FIFO strategy.
 		const pairs: Array<[number, number]> = [];
-		for (let i = 0; i < G.length; i++) {
-			for (let j = i + 1; j < G.length; j++) {
+		for (let i = 0; i < basis.length; i++) {
+			for (let j = i + 1; j < basis.length; j++) {
 				pairs.push([i, j]);
 			}
 		}
 
-		while (pairs.length > 0) {
-			const [i, j] = pairs[0];
-			pairs.shift();
+		let pairIndex = 0;
+		while (pairIndex < pairs.length) {
+			const [i, j] = pairs[pairIndex++];
 			stats.pairsPopped++;
-
 			if (maxPairsPopped !== undefined && stats.pairsPopped > maxPairsPopped) {
 				throw new GroebnerBudgetExceeded(
-					`Groebner budget exceeded: pairsPopped > ${maxPairsPopped}`,
+					message('groebnerPairsBudgetExceeded', { max: String(maxPairsPopped) }),
 					stats
 				);
 			}
 
-			const lmi = lmExpCached(i);
-			const lmj = lmExpCached(j);
-			if (lmi && lmj && areCoprimeLM(lmi, lmj)) {
+			const lmi = headReducers[i].lt.exp;
+			const lmj = headReducers[j].lt.exp;
+			if (areCoprimeLM(lmi, lmj)) {
 				stats.pairsSkippedProduct++;
-				zeroPairs.add(pairKey(i, j));
+				markZeroPair(i, j);
 				continue;
 			}
 			if (chainCriterionApplies(i, j)) {
 				stats.pairsSkippedChain++;
-				zeroPairs.add(pairKey(i, j));
+				markZeroPair(i, j);
 				continue;
 			}
 
-			const S = sPolynomialFF(G[i], G[j], order, nVars);
-			const h0 = normalFormFractionFree(S, G, order, nVars);
-			const h1 = normalFormFractionFreeAllTerms(h0, G, order, nVars);
-			const h = primitiveNormalizeOrder(h1, order, nVars);
-			if (polyIsZero(h)) {
+			const h = reducePair(i, j).polynomial;
+			if (h.isZero()) {
 				stats.pairsReducedToZero++;
-				zeroPairs.add(pairKey(i, j));
-			} else if (h.isConstant() && h.constantTerm() !== 0n) {
-				return [MultiPoly.constant(1n)];
-			} else {
-				const k = G.length;
-				G.push(h);
+				markZeroPair(i, j);
+				continue;
+			}
+			if (h.isConstant() && h.constantTerm() !== 0n) {
+				return [SparsePolynomial.constant(variableCount, 1n)];
+			}
 
-				// Cache the LM of the new element
-				const ltH = ltOrNull(h, order, nVars);
-				lmCache.push(ltH ? ltH.exp : null);
-
-				stats.basisAppends++;
-				if (maxBasisSize !== undefined && G.length > maxBasisSize) {
-					throw new GroebnerBudgetExceeded(
-						`Groebner budget exceeded: basis size > ${maxBasisSize}`,
-						stats
-					);
-				}
-				for (let t = 0; t < k; t++) {
-					pairs.push([t, k]);
-				}
+			const k = appendBasis(h);
+			for (let t = 0; t < k; t++) {
+				pairs.push([t, k]);
 			}
 		}
 	}
 
-	return reduced ? canonicalizeBasis(G, order, nVars) : G;
+	return reduced ? canonicalizeBasis(basis, order) : basis;
+}
+
+function reduceSparseByBasis(
+	f: SparsePolynomial,
+	basis: readonly SparsePolynomial[],
+	order: MonomialOrder
+): SparsePolynomial {
+	if (f.isZero() || basis.length === 0) {
+		return f;
+	}
+	const headReducers = reducerViews(basis, order, false);
+	const normalizedReducers = reducerViews(basis, order, true);
+	const headReduced = normalFormFractionFree(f, basis, order, headReducers);
+	return normalFormFractionFreeAllTerms(
+		headReduced,
+		basis,
+		order,
+		normalizedReducers
+	);
 }
 
 // ============================================================================
@@ -803,82 +814,70 @@ function groebnerBasis(
 // ============================================================================
 
 /**
- * Computes a Groebner basis for an exact integer-coefficient ideal.
+ * Computes a Groebner basis for exact sparse integer polynomials.
  *
- * @remarks
- * Variable indices in every {@link MultiPoly} must agree with `vars`. The Buchberger
- * engine uses fraction-free reduction. With `reduced: true`, it interreduces, removes
- * coefficient content, normalizes leading signs, and makes a polynomial monic only
- * when exact integer division permits it. The returned basis is sorted deterministically,
- * and the routine works from normalized copies rather than editing the supplied generators.
+ * The input polynomials must belong to the same ring. With `reduced: true`, the
+ * basis is interreduced, coefficient content is removed, leading signs are normalized,
+ * and exact monic normalization is applied when possible. Results are sorted
+ * deterministically and the supplied polynomials are not modified.
  *
- * @param polys - Ideal generators over integer coefficients.
- * @param vars - Variable names aligned with exponent indices.
+ * @param polys - Ideal generators in one sparse polynomial ring.
  * @param order - Monomial order; defaults to `LEX`.
  * @param reduced - Return the normalized/interreduced basis; defaults to `true`.
- * @returns New basis polynomials in deterministic presentation order.
+ * @returns New sparse basis polynomials in deterministic presentation order.
  */
 export function Groebner(
-	polys: MultiPoly[],
-	vars: string[],
+	polys: readonly SparsePolynomial[],
 	order: MonomialOrder = 'LEX',
 	reduced = true
-): MultiPoly[] {
+): SparsePolynomial[] {
 	if (polys.length === 0) {
 		return [];
 	}
 
-	const nVars = vars.length;
-	const G = groebnerBasis(polys, { order, reduced });
-
-	// Present basis deterministically in a SymPy-like order:
-	// 1) Prefer polynomials that involve earlier variables (presence vector, lex-desc)
-	// 2) Then by leading monomial under the chosen order (ascending)
-	// 3) Then by term count (ascending)
-	const cache = new Map<MultiPoly, { pv: boolean[]; lt: DenseLT | null }>();
-	const getInfo = (p: MultiPoly) => {
+	const basis = groebnerBasisSparse(polys, { order, reduced });
+	const variableCount = basis[0]?.variableCount ?? polys[0].variableCount;
+	const cache = new Map<SparsePolynomial, { pv: boolean[]; lt: DenseLT | null }>();
+	const getInfo = (p: SparsePolynomial) => {
 		let info = cache.get(p);
 		if (!info) {
-			info = { pv: variablePresence(p, nVars), lt: ltOrNull(p, order, nVars) };
+			info = { pv: variablePresence(p), lt: ltOrNull(p, order) };
 			cache.set(p, info);
 		}
 		return info;
 	};
 
-	const cmp = (p: MultiPoly, q: MultiPoly): number => {
-		const ip = getInfo(p);
-		const iq = getInfo(q);
+	return [...basis].sort((p, q) => {
+		const pInfo = getInfo(p);
+		const qInfo = getInfo(q);
 
-		for (let i = 0; i < nVars; i++) {
-			const ap = ip.pv[i] ? 1 : 0;
-			const aq = iq.pv[i] ? 1 : 0;
-			if (ap !== aq) {
-				return ap > aq ? -1 : 1;
+		for (let i = 0; i < variableCount; i++) {
+			const pv = pInfo.pv[i] ? 1 : 0;
+			const qv = qInfo.pv[i] ? 1 : 0;
+			if (pv !== qv) {
+				return pv > qv ? -1 : 1;
 			}
 		}
 
-		if (ip.lt && iq.lt) {
-			const c = compareMonomialDense(ip.lt.exp, iq.lt.exp, order);
-			if (c !== 0) {
-				return c;
+		if (pInfo.lt && qInfo.lt) {
+			const comparison = SparsePolynomial.compareMonomials(
+				pInfo.lt.exp,
+				qInfo.lt.exp,
+				sparseOrder(order)
+			);
+			if (comparison !== 0) {
+				return comparison;
 			}
 		}
 
-		const tp = p.terms.size;
-		const tq = q.terms.size;
-		if (tp !== tq) {
-			return tp < tq ? -1 : 1;
-		}
-		return 0;
-	};
-
-	return [...G].sort(cmp);
+		return p.termCount - q.termCount;
+	});
 }
 
 /**
  * Computes a Groebner basis with ordering, strategy, and budget control.
  *
- * @param polys - Exact integer-coefficient generators with consistent variable indices.
+ * @param polys - Exact sparse integer-coefficient generators in one ring.
  * @param opts - Ordering, normalization, pair-selection, and deterministic budget options.
  * @returns New basis polynomials. Work statistics are exposed only when a budget is
  * exceeded; successful calls return the basis itself.
@@ -886,10 +885,10 @@ export function Groebner(
  * basis-size limit is exceeded.
  */
 export function groebnerBasisWithOptions(
-	polys: readonly MultiPoly[],
+	polys: readonly SparsePolynomial[],
 	opts?: GroebnerBasisOptions
-): MultiPoly[] {
-	return groebnerBasis(polys, opts);
+): SparsePolynomial[] {
+	return groebnerBasisSparse(polys, opts);
 }
 
 // ============================================================================
@@ -908,16 +907,16 @@ export function groebnerBasisWithOptions(
  * @throws {@link GroebnerBudgetExceeded} Thrown when a configured budget is exceeded.
  */
 export function eliminate(
-	polys: MultiPoly[],
-	vars: string[],
-	keepVars: string[],
+	polys: readonly SparsePolynomial[],
+	vars: readonly string[],
+	keepVars: readonly string[],
 	opts?: Omit<GroebnerBasisOptions, 'order'>
-): MultiPoly[] {
+): SparsePolynomial[] {
 	if (polys.length === 0) {
 		return [];
 	}
 
-	// Determine which variable indices to eliminate
+	// Determine which variable indices to eliminate.
 	const keepSet = new Set(keepVars);
 	const eliminateIndices = new Set<number>();
 	for (let i = 0; i < vars.length; i++) {
@@ -926,25 +925,26 @@ export function eliminate(
 		}
 	}
 
-	// Compute LEX basis (elimination order: variables to eliminate are first = most significant)
-	const G = groebnerBasis(polys, { ...opts, order: 'LEX', reduced: true });
-
-	// Extract polynomials that don't involve any eliminated variable
-	const nVars = vars.length;
-	const result: MultiPoly[] = [];
-	for (const g of G) {
-		const pv = variablePresence(g, nVars);
-		let ok = true;
-		for (const ei of eliminateIndices) {
-			if (pv[ei]) {
-				ok = false;
-				break;
+	for (const polynomial of polys) {
+		for (const variableIndex of polynomial.variables()) {
+			if (variableIndex >= vars.length) {
+				throw new RangeError(message('multidegreeMismatch'));
 			}
 		}
-		if (ok) {
-			result.push(g);
-		}
 	}
+
+	// Compute a LEX basis with variables to eliminate first in the supplied order.
+	const basis = groebnerBasisSparse(polys, { ...opts, order: 'LEX', reduced: true });
+
+	const result = basis.filter(poly => {
+		const presence = variablePresence(poly);
+		for (const variableIndex of eliminateIndices) {
+			if (presence[variableIndex]) {
+				return false;
+			}
+		}
+		return true;
+	});
 
 	return result;
 }
@@ -964,20 +964,20 @@ export function eliminate(
  * @throws {@link GroebnerBudgetExceeded} Thrown when basis computation exceeds a budget.
  */
 export function idealMembership(
-	f: MultiPoly,
-	polys: MultiPoly[],
+	f: SparsePolynomial,
+	polys: readonly SparsePolynomial[],
 	order: MonomialOrder = 'LEX',
 	opts?: Omit<GroebnerBasisOptions, 'order' | 'reduced'>
 ): boolean {
-	if (polyIsZero(f)) {
+	if (f.isZero()) {
 		return true;
 	}
 	if (polys.length === 0) {
 		return false;
 	}
 
-	const G = groebnerBasis(polys, { ...opts, order, reduced: true });
-	return polyIsZero(reduceByBasis(f, G, order));
+	const basis = groebnerBasisSparse(polys, { ...opts, order, reduced: true });
+	return reduceSparseByBasis(f, basis, order).isZero();
 }
 
 /**
@@ -985,8 +985,7 @@ export function idealMembership(
  *
  * @remarks
  * This does not compute or verify a Groebner basis. The result is a canonical ideal
- * normal form only when `basis` is already a basis for the selected order. Reduction
- * works from normalized polynomial copies, leaving the supplied objects alone.
+ * normal form only when `basis` is already a basis for the selected order.
  *
  * @param f - Polynomial to reduce.
  * @param basis - Reducers, normally a Groebner basis.
@@ -994,18 +993,11 @@ export function idealMembership(
  * @returns The primitive-normalized remainder.
  */
 export function reduceByBasis(
-	f: MultiPoly,
-	basis: readonly MultiPoly[],
+	f: SparsePolynomial,
+	basis: readonly SparsePolynomial[],
 	order: MonomialOrder = 'LEX'
-): MultiPoly {
-	if (polyIsZero(f) || basis.length === 0) {
-		return mvNormalize(f);
-	}
-
-	const nVars = numVarsFromPolys(f, ...basis);
-	const h0 = normalFormFractionFree(f, basis, order, nVars);
-	const h1 = normalFormFractionFreeAllTerms(h0, basis, order, nVars);
-	return primitiveNormalizeOrder(h1, order, nVars);
+): SparsePolynomial {
+	return f.isZero() || basis.length === 0 ? f : reduceSparseByBasis(f, basis, order);
 }
 
 // ============================================================================
@@ -1037,27 +1029,33 @@ export type RationalSolution = Map<string, { n: bigint; d: bigint }>;
  * @throws {@link GroebnerBudgetExceeded} Thrown when basis computation exceeds a budget.
  */
 export function solve(
-	polys: MultiPoly[],
-	vars: string[],
+	polys: readonly SparsePolynomial[],
+	vars: readonly string[],
 	opts?: Omit<GroebnerBasisOptions, 'order' | 'reduced'>
 ): RationalSolution[] {
 	if (polys.length === 0 || vars.length === 0) {
 		return [new Map()];
 	}
 
-	const G = groebnerBasis(polys, { ...opts, order: 'LEX', reduced: true });
+	for (const polynomial of polys) {
+		for (const variableIndex of polynomial.variables()) {
+			if (variableIndex >= vars.length) {
+				throw new RangeError(message('multidegreeMismatch'));
+			}
+		}
+	}
+	const basis = groebnerBasisSparse(polys, { ...opts, order: 'LEX', reduced: true });
 
 	// Trivial: if the basis is {1}, the system is inconsistent.
-	if (G.length === 1 && G[0].isConstant() && G[0].constantTerm() !== 0n) {
+	if (basis.length === 1 && basis[0].isConstant() && basis[0].constantTerm() !== 0n) {
 		return [];
 	}
-	if (G.length === 0) {
+	if (basis.length === 0) {
 		// Ideal is {0}, meaning every point is a solution — infinite solutions.
 		return [];
 	}
 
-	const nVars = vars.length;
-	return backSubstitute(G, vars, nVars);
+	return backSubstitute(basis, vars);
 }
 
 /**
@@ -1071,60 +1069,53 @@ export function solve(
  * one new value — not redo all prior substitutions.
  */
 function backSubstitute(
-	G: readonly MultiPoly[],
-	vars: string[],
-	nVars: number
+	basis: readonly SparsePolynomial[],
+	vars: readonly string[]
 ): RationalSolution[] {
 	type PartialSolution = {
 		assignment: Map<number, { n: bigint; d: bigint }>;
 		/** Basis polynomials with all already-solved variables substituted out. */
-		basis: MultiPoly[];
+		basis: readonly SparsePolynomial[];
 	};
 
-	// Start with a single empty partial assignment, basis = original
 	let partials: PartialSolution[] = [
 		{
 			assignment: new Map(),
-			basis: G.map(g => mvNormalize(g)),
+			basis: [...basis],
 		},
 	];
 
-	// Solve from last variable to first
-	for (let v = nVars - 1; v >= 0; v--) {
+	for (let variableIndex = vars.length - 1; variableIndex >= 0; variableIndex--) {
 		const nextPartials: PartialSolution[] = [];
 
-		for (const { assignment, basis } of partials) {
-			// Find polynomials that are now univariate in variable v
-			const univariates = basis.filter(p => {
-				if (polyIsZero(p)) {
+		for (const { assignment, basis: partialBasis } of partials) {
+			const univariates = partialBasis.filter(poly => {
+				if (poly.isZero()) {
 					return false;
 				}
-				for (const key of p.terms.keys()) {
-					const exp = keyToExp(key);
-					for (const [i, e] of exp.entries()) {
-						if (e > 0 && i !== v) {
-							return false;
-						}
-					}
+				const variables = poly.variables();
+				if (variables.some(index => index !== variableIndex)) {
+					return false;
 				}
-				return p.degree(v) > 0;
+				const degree = poly.degree(variableIndex);
+				return degree !== null && degree > 0n;
 			});
 
 			if (univariates.length === 0) {
 				// No constraint on this variable — push forward as-is.
-				nextPartials.push({ assignment: new Map(assignment), basis });
+				nextPartials.push({
+					assignment: new Map(assignment),
+					basis: partialBasis,
+				});
 				continue;
 			}
 
-			// Extract rational roots of the first univariate polynomial.
-			const poly = univariates[0];
-			const roots = rationalRootsUnivariate(poly, v);
+			const roots = rationalRootsUnivariate(univariates[0], variableIndex);
 
-			// Filter roots by consistency with other univariates
 			for (const root of roots) {
 				let consistent = true;
-				for (let k = 1; k < univariates.length; k++) {
-					if (!evaluatesToZero(univariates[k], v, root)) {
+				for (let polynomialIndex = 1; polynomialIndex < univariates.length; polynomialIndex++) {
+					if (!evaluatesToZero(univariates[polynomialIndex], variableIndex, root)) {
 						consistent = false;
 						break;
 					}
@@ -1133,34 +1124,30 @@ function backSubstitute(
 					continue;
 				}
 
-				// Incrementally substitute only variable v into the basis
-				const newBasis = basis.map(p => {
-					const deg = p.degree(v);
-					if (deg <= 0) {
-						return p;
+				const nextBasis = partialBasis.map(poly => {
+					const degree = poly.degree(variableIndex);
+					if (degree === null || degree === 0n) {
+						return poly;
 					}
-					let q = p;
-					if (root.d !== 1n) {
-						q = scaleByDenomPow(q, v, root.d);
-					}
-					return mvNormalize(substituteVarIndex(q, v, root.n));
+					const scaled =
+						root.d === 1n ? poly : scaleByDenomPow(poly, variableIndex, root.d);
+					return scaled.evaluateVariable(variableIndex, root.n);
 				});
 
-				const ext = new Map(assignment);
-				ext.set(v, root);
-				nextPartials.push({ assignment: ext, basis: newBasis });
+				const extended = new Map(assignment);
+				extended.set(variableIndex, root);
+				nextPartials.push({ assignment: extended, basis: nextBasis });
 			}
 		}
 
 		partials = nextPartials;
 	}
 
-	// Convert variable indices back to names
 	return partials.map(({ assignment }) => {
 		const named: RationalSolution = new Map();
-		for (const [vi, val] of assignment) {
-			if (vi < vars.length) {
-				named.set(vars[vi], val);
+		for (const [variableIndex, value] of assignment) {
+			if (variableIndex < vars.length) {
+				named.set(vars[variableIndex], value);
 			}
 		}
 		return named;
@@ -1168,118 +1155,103 @@ function backSubstitute(
 }
 
 /**
- * Scale polynomial so that substituting x_v = n (integer) correctly accounts
- * for a rational value n/d. For each term with x_v^k, multiply coefficient by d^(maxDeg - k).
- * This gives: p(n/d) * d^maxDeg = result evaluated at x_v = n.
+ * Scales a polynomial before integer substitution of a rational value n/d.
+ *
+ * For each term containing x_v^k, the coefficient is multiplied by
+ * d^(maxDegree-k), so evaluating x_v at n gives p(n/d) * d^maxDegree.
  */
-function scaleByDenomPow(p: MultiPoly, varIndex: number, d: bigint): MultiPoly {
-	const maxDeg = p.degree(varIndex);
-	if (maxDeg <= 0 || d === 1n) {
-		return p;
+function scaleByDenomPow(
+	poly: SparsePolynomial,
+	variableIndex: number,
+	denominator: bigint
+): SparsePolynomial {
+	const maxDegree = poly.degree(variableIndex);
+	if (maxDegree === null || maxDegree === 0n || denominator === 1n) {
+		return poly;
 	}
 
-	// Precompute powers of d up to maxDeg
-	const dPowers = new Array<bigint>(maxDeg + 1);
-	dPowers[0] = 1n;
-	for (let i = 1; i <= maxDeg; i++) {
-		dPowers[i] = dPowers[i - 1] * d;
-	}
-
-	const out = new MultiPoly();
-	for (const [key, coeff] of p.terms) {
-		const exp = keyToExp(key);
-		const k = exp.get(varIndex) ?? 0;
-		const newCoeff = coeff * dPowers[maxDeg - k];
-		if (newCoeff !== 0n) {
-			out.terms.set(key, newCoeff);
-		}
-	}
-	out.trim();
-	return out;
+	return new SparsePolynomial(
+		poly.variableCount,
+		poly.terms().map(term => ({
+			coefficient:
+				term.coefficient *
+				denominator ** (maxDegree - term.exponents[variableIndex]),
+			exponents: term.exponents,
+		}))
+	);
 }
 
 /**
- * Find all rational roots p/q of a univariate polynomial in variable `varIndex`.
- * Uses the Rational Root Theorem: p divides the constant term, q divides the leading coefficient.
+ * Finds all rational roots p/q of a univariate polynomial.
+ *
+ * Uses the Rational Root Theorem: p divides the constant term and q divides the
+ * leading coefficient. Polynomial degree and term exponents remain bigint values.
  */
 function rationalRootsUnivariate(
-	poly: MultiPoly,
-	varIndex: number
+	poly: SparsePolynomial,
+	variableIndex: number
 ): Array<{ n: bigint; d: bigint }> {
-	const deg = poly.degree(varIndex);
-	if (deg <= 0) {
+	const degree = poly.degree(variableIndex);
+	if (degree === null || degree === 0n) {
 		return [];
 	}
 
-	// Extract coefficients as bigint array (index = power of varIndex)
-	const coeffs = new Array<bigint>(deg + 1).fill(0n);
-	for (const [key, coeff] of poly.terms) {
-		const exp = keyToExp(key);
-		const d = exp.get(varIndex) ?? 0;
-		if (d <= deg) {
-			coeffs[d] += coeff;
-		}
-	}
+	const leadingCoefficient = poly.coefficientIn(variableIndex, degree).constantTerm();
+	const constantTerm = poly.constantTerm();
 
-	// Trim leading zeros
-	let actualDeg = deg;
-	while (actualDeg > 0 && coeffs[actualDeg] === 0n) {
-		actualDeg--;
-	}
-	if (actualDeg === 0) {
-		return [];
-	}
-
-	const lc = coeffs[actualDeg];
-	const ct = coeffs[0]; // constant term
-
-	if (ct === 0n) {
-		// x = 0 is a root; factor it out and recurse
+	if (constantTerm === 0n) {
 		const roots: Array<{ n: bigint; d: bigint }> = [{ n: 0n, d: 1n }];
-		// Shift down: divide by x
-		const shiftedPoly = new MultiPoly();
-		for (let i = 1; i <= actualDeg; i++) {
-			if (coeffs[i] !== 0n) {
-				const exp: Exponents = new Map();
-				if (i > 1) {
-					exp.set(varIndex, i - 1);
-				}
-				shiftedPoly.terms.set(expToKey(exp), coeffs[i]);
+		let commonPower = degree;
+		for (const term of poly.terms()) {
+			if (term.exponents[variableIndex] < commonPower) {
+				commonPower = term.exponents[variableIndex];
 			}
 		}
-		const moreRoots = rationalRootsUnivariate(shiftedPoly, varIndex);
-		for (const r of moreRoots) {
-			if (r.n !== 0n) {
-				roots.push(r);
+
+		const shifted = new SparsePolynomial(
+			poly.variableCount,
+			poly.terms().map(term => {
+				const exponents = [...term.exponents];
+				exponents[variableIndex] -= commonPower;
+				return { coefficient: term.coefficient, exponents };
+			})
+		);
+		for (const root of rationalRootsUnivariate(shifted, variableIndex)) {
+			if (root.n !== 0n) {
+				roots.push(root);
 			}
 		}
 		return roots;
 	}
 
-	// Divisors of |ct| and |lc|
-	const pDivisors = positiveDivisors(bigintAbs(ct));
-	const qDivisors = positiveDivisors(bigintAbs(lc));
-
+	const numeratorDivisors = positiveDivisors(bigintAbs(constantTerm));
+	const denominatorDivisors = positiveDivisors(bigintAbs(leadingCoefficient));
 	const roots: Array<{ n: bigint; d: bigint }> = [];
 	const seen = new Set<string>();
 
-	for (const p of pDivisors) {
-		for (const q of qDivisors) {
-			// Try ±p/q
+	for (const numeratorFactor of numeratorDivisors) {
+		for (const denominatorFactor of denominatorDivisors) {
 			for (const sign of [1n, -1n]) {
-				const num = sign * p;
-				// Reduce to lowest terms
-				const g = bigintGCD(bigintAbs(num), q);
-				const rn = num / g;
-				const rd = q / g;
-				const key = `${rn}/${rd}`;
+				const numerator = sign * numeratorFactor;
+				const divisor = bigintGCD(bigintAbs(numerator), denominatorFactor);
+				const reducedNumerator = numerator / divisor;
+				const reducedDenominator = denominatorFactor / divisor;
+				const key = `${reducedNumerator}/${reducedDenominator}`;
 				if (seen.has(key)) {
 					continue;
 				}
 				seen.add(key);
 
-				if (evaluatesCoeffsToZero(coeffs, actualDeg, rn, rd)) {
-					roots.push({ n: rn, d: rd });
+				if (
+					evaluatesAtRationalToZero(
+						poly,
+						variableIndex,
+						degree,
+						reducedNumerator,
+						reducedDenominator
+					)
+				) {
+					roots.push({ n: reducedNumerator, d: reducedDenominator });
 				}
 			}
 		}
@@ -1288,44 +1260,41 @@ function rationalRootsUnivariate(
 	return roots;
 }
 
-/** Evaluate polynomial coefficients at n/d: check if sum(c_i * n^i * d^(deg-i)) == 0 */
-function evaluatesCoeffsToZero(coeffs: bigint[], deg: number, n: bigint, d: bigint): boolean {
+/**
+ * Evaluates a univariate polynomial at n/d after clearing d^degree.
+ */
+function evaluatesAtRationalToZero(
+	poly: SparsePolynomial,
+	variableIndex: number,
+	degree: bigint,
+	numerator: bigint,
+	denominator: bigint
+): boolean {
 	let result = 0n;
-	let nPow = 1n;
-	let dPow = 1n;
-
-	// Precompute d^deg
-	for (let i = 0; i < deg; i++) {
-		dPow *= d;
-	}
-
-	for (let i = 0; i <= deg; i++) {
-		result += coeffs[i] * nPow * dPow;
-		nPow *= n;
-		if (i < deg && d !== 0n) {
-			dPow /= d;
-		}
+	for (const term of poly.terms()) {
+		const exponent = term.exponents[variableIndex];
+		result +=
+			term.coefficient *
+			numerator ** exponent *
+			denominator ** (degree - exponent);
 	}
 	return result === 0n;
 }
 
-/** Check if substituting varIndex = n/d into poly gives zero. */
+/** Checks whether substituting one rational value makes a univariate polynomial zero. */
 function evaluatesToZero(
-	poly: MultiPoly,
-	varIndex: number,
-	val: { n: bigint; d: bigint }
+	poly: SparsePolynomial,
+	variableIndex: number,
+	value: { n: bigint; d: bigint }
 ): boolean {
-	const deg = poly.degree(varIndex);
-	if (deg <= 0) {
-		return polyIsZero(poly) || poly.constantTerm() === 0n;
+	const degree = poly.degree(variableIndex);
+	if (degree === null) {
+		return true;
 	}
-
-	let p = poly;
-	if (val.d !== 1n) {
-		p = scaleByDenomPow(p, varIndex, val.d);
+	if (degree === 0n) {
+		return poly.constantTerm() === 0n;
 	}
-	const result = substituteVarIndex(p, varIndex, val.n);
-	return polyIsZero(mvNormalize(result));
+	return evaluatesAtRationalToZero(poly, variableIndex, degree, value.n, value.d);
 }
 
 /** Positive divisors of a positive bigint. */
@@ -1336,129 +1305,16 @@ function positiveDivisors(n: bigint): bigint[] {
 	if (n < 0n) {
 		n = -n;
 	}
-	const divs: bigint[] = [];
-	let i = 1n;
-	while (i * i <= n) {
-		if (n % i === 0n) {
-			divs.push(i);
-			if (i !== n / i) {
-				divs.push(n / i);
+	const divisors: bigint[] = [];
+	let candidate = 1n;
+	while (candidate * candidate <= n) {
+		if (n % candidate === 0n) {
+			divisors.push(candidate);
+			if (candidate !== n / candidate) {
+				divisors.push(n / candidate);
 			}
 		}
-		i++;
+		candidate++;
 	}
-	return divs;
-}
-
-// ============================================================================
-// Monomial order comparisons and utilities
-// ============================================================================
-
-/**
- * Leading term under a specified monomial order using dense exponent vectors.
- * Returns null for the zero polynomial.
- */
-function mvLeadTermDense(
-	p: MultiPoly,
-	order: MonomialOrder,
-	nVars: number
-): { exp: number[]; coeff: bigint } | null {
-	if (p.terms.size === 0) {
-		return null;
-	}
-	let bestExp: number[] | null = null;
-	let bestCoeff = 0n;
-	for (const [key, coeff] of p.terms.entries()) {
-		if (coeff === 0n) {
-			continue;
-		}
-		const expMap = keyToExp(key);
-		const dense = new Array<number>(nVars).fill(0);
-		for (const [i, e] of expMap.entries()) {
-			if (i >= 0 && i < nVars) {
-				dense[i] = e;
-			}
-		}
-		if (!bestExp || compareMonomialDense(dense, bestExp, order) > 0) {
-			bestExp = dense;
-			bestCoeff = coeff;
-		}
-	}
-	return bestExp ? { exp: bestExp, coeff: bestCoeff } : null;
-}
-
-/** Componentwise lcm (max). */
-function expLcmDense(a: readonly number[], b: readonly number[]): number[] {
-	const n = Math.max(a.length, b.length);
-	const out = new Array<number>(n).fill(0);
-	for (let i = 0; i < n; i++) {
-		out[i] = Math.max(a[i] ?? 0, b[i] ?? 0);
-	}
-	return out;
-}
-
-/**
- * Compare dense exponent vectors under a named monomial order.
- *
- * Returns:
- *  - 1 if a > b
- *  - -1 if a < b
- *  - 0 if equal
- *
- * Convention: variable priority is index order: x0 > x1 > x2 > ...
- */
-function compareMonomialDense(
-	a: readonly number[],
-	b: readonly number[],
-	order: MonomialOrder
-): number {
-	const n = Math.max(a.length, b.length);
-
-	if (order === 'LEX') {
-		for (let i = 0; i < n; i++) {
-			const ai = a[i] ?? 0;
-			const bi = b[i] ?? 0;
-			if (ai !== bi) {
-				return ai > bi ? 1 : -1;
-			}
-		}
-		return 0;
-	}
-
-	const da = monomialTotalDegreeDense(a);
-	const db = monomialTotalDegreeDense(b);
-	if (da !== db) {
-		return da > db ? 1 : -1;
-	}
-
-	if (order === 'GRLEX') {
-		for (let i = 0; i < n; i++) {
-			const ai = a[i] ?? 0;
-			const bi = b[i] ?? 0;
-			if (ai !== bi) {
-				return ai > bi ? 1 : -1;
-			}
-		}
-		return 0;
-	}
-
-	// GREVLEX: same total degree; compare from last variable down.
-	// At the last index where they differ, the monomial with the *smaller*
-	// exponent is considered larger.
-	for (let i = n - 1; i >= 0; i--) {
-		const ai = a[i] ?? 0;
-		const bi = b[i] ?? 0;
-		if (ai !== bi) {
-			return ai < bi ? 1 : -1;
-		}
-	}
-	return 0;
-}
-
-function monomialTotalDegreeDense(m: readonly number[]): number {
-	let s = 0;
-	for (let i = 0; i < m.length; i++) {
-		s += m[i] ?? 0;
-	}
-	return s;
+	return divisors;
 }

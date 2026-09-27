@@ -23,6 +23,23 @@ describe('SolutionSet', () => {
 		);
 	});
 
+	it('should admit prevalidated numerical batches without duplicating members', () => {
+		const set = new SolutionSet([Expression.create('3')]);
+		set.exclude(new SolutionSet([Expression.create('2')]));
+
+		set.addValidatedNumericalSolutions([
+			Expression.create('1.25'),
+			Expression.create('1.25'),
+			Expression.create('1.25+2.5*i'),
+			Expression.create('1.25+2.5*i'),
+			Expression.create('2'),
+			Expression.create('3'),
+		]);
+
+		expect(set.text()).toEqual('{3, 1.25, 1.25+2.5*i}');
+		expect(set.count()).toBe(3);
+	});
+
 	it('should reserve symbols used to describe non-finite solver results', () => {
 		expect(RESTRICTED).toContain(INDEX_VARIABLE);
 		expect(RESTRICTED).toContain(ALL_SYMBOL);
@@ -179,6 +196,54 @@ describe('SolutionSet', () => {
 		expect(left.partial).toBe(true);
 		expect(left.solutionsType).toBe('mixed');
 		expect(left.unsolved?.eq(Expression.create('x^7+x+1'))).toBe(true);
+	});
+
+
+	it('append should transfer an already unique source into an empty set independently', () => {
+		const source = new SolutionSet([
+			Expression.create('cbrt(2)+cbrt(3)'),
+			Expression.create('cbrt(5)+cbrt(7)'),
+			Expression.create('1.25+2.5*i'),
+		]);
+		source.solutionsType = 'mixed';
+
+		const target = new SolutionSet();
+		target.append(source);
+
+		expect(target.text()).toEqual(source.text());
+		expect(target.solutionsType).toBe('mixed');
+
+		target.add(Expression.create('9'));
+		expect(source.count()).toBe(3);
+		expect(target.count()).toBe(4);
+	});
+
+
+	it('appendValidatedNumerical should merge prevalidated numeric results without changing metadata handling', () => {
+		const left = new SolutionSet([Expression.create('1')]);
+		left.solutionsType = 'symbolic';
+
+		const right = new SolutionSet();
+		right.addValidatedNumericalSolutions([
+			Expression.create('2.5'),
+			Expression.create('2.5'),
+			Expression.create('3.5+4.5*i'),
+		]);
+		right.solutionsType = 'numeric';
+		right.partial = true;
+		right.addRawRoot({
+			root: new Decimal('2.5'),
+			iterations: 2,
+			converged: true,
+			error: new Decimal('1e-20'),
+		});
+
+		left.appendValidatedNumerical(right);
+
+		expect(left.text()).toEqual('{1, 2.5, 3.5+4.5*i}');
+		expect(left.solutionsType).toBe('mixed');
+		expect(left.partial).toBe(true);
+		expect(left.getRawRoots()).toHaveLength(1);
 	});
 
 	it('addSolutions should preserve only verified source provenance', () => {

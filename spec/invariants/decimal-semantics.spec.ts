@@ -49,10 +49,16 @@ describe('Decimal semantics', () => {
 
 		// Regression: https://github.com/jiggzson/nerdamer/issues/682
 		it('preserves decimal intent for polynomial roots', () => {
-			const text = nerdamer
-				.solve('z^4+1.4*z^3+0.71*z^2+0.154*z+0.012', 'z')
-				.text();
-			expect(text).toEqual('{-0.3, -0.2, -0.4, -0.5}');
+			const roots = nerdamer.solve(
+				'z^4+1.4*z^3+0.71*z^2+0.154*z+0.012',
+				'z'
+			);
+			expect(roots.elements.map(root => root.text()).sort()).toEqual([
+				'-0.2',
+				'-0.3',
+				'-0.4',
+				'-0.5',
+			]);
 		});
 
 		it('preserves decimal intent through limits', () => {

@@ -56,7 +56,12 @@ export class Complex {
 	 * @returns A new Decimal containing the nonnegative magnitude.
 	 */
 	abs(): Decimal {
-		return this.re.mul(this.re).plus(this.im.mul(this.im)).sqrt();
+		return this.absSquared().sqrt();
+	}
+
+	/** Returns the squared modulus `re^2 + im^2` without computing a square root. */
+	absSquared(): Decimal {
+		return this.re.mul(this.re).plus(this.im.mul(this.im));
 	}
 
 	/**
@@ -126,6 +131,23 @@ export class Complex {
 	 */
 	neg(): Complex {
 		return new Complex(this.re.neg(), this.im.neg());
+	}
+
+	/**
+	 * Returns the multiplicative inverse of this complex value.
+	 *
+	 * @returns A new complex value equal to `1 / this`.
+	 * @throws {@link core!DivisionByZeroError}
+	 * Thrown when both components are exactly zero at the current Decimal value.
+	 */
+	reciprocal(): Complex {
+		const denom = this.re.mul(this.re).plus(this.im.mul(this.im));
+
+		if (denom.isZero()) {
+			throw new DivisionByZeroError(message('divisionByZero'));
+		}
+
+		return new Complex(this.re.div(denom), this.im.neg().div(denom));
 	}
 
 	/**

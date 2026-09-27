@@ -1,3 +1,9 @@
+import '../../src/api/languages/spa';
+import '../../src/api/languages/fra';
+import '../../src/api/languages/deu';
+import '../../src/api/languages/por';
+import '../../src/api/languages/ita';
+import '../../src/api/languages/nld';
 import { ErrorMessages, message } from '../../src/core/errors';
 import { Settings } from '../../src/core/Settings';
 import nerdamer from '../../src/index';

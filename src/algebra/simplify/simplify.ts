@@ -125,8 +125,19 @@ function factorResult(x: Expression): Expression {
 		return x;
 	}
 
-	const num = product(...polyFactorExpressions(x.getNumerator()));
-	const den = product(...polyFactorExpressions(x.getDenominator()));
+	function rebuildFactorResult(original: Expression, factors: Expression[]): Expression {
+		let retval = product(...factors);
+		if (original.hasDecimal() && factors.length === 1 && factors[0].eq(original)) {
+			retval = original;
+		}
+		return retval;
+	}
+
+	const numerator = x.getNumerator();
+	const denominator = x.getDenominator();
+	const num = rebuildFactorResult(numerator, polyFactorExpressions(numerator));
+	const den = rebuildFactorResult(denominator, polyFactorExpressions(denominator));
+
 	return num.div(den);
 }
 /**

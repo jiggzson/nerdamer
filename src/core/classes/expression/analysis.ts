@@ -64,7 +64,12 @@ export function separateVar(x: Expression, variables: (string | Expression)[]) {
  * @param wrt
  */
 
-export function coeffs(x: Expression, variables: string[], coeffsObj?: CoeffObject) {
+export function coeffs(
+	x: Expression,
+	variables: string[],
+	coeffsObj?: CoeffObject,
+	expandExpression = true
+) {
 	const cObj = coeffsObj || new CoeffObject(variables);
 
 	// Complex sums are canonically stored as re + i*im. If the requested variables
@@ -72,8 +77,13 @@ export function coeffs(x: Expression, variables: string[], coeffsObj?: CoeffObje
 	// buried inside the coefficient. Split the two components and collect them
 	// independently, then restore i on the imaginary coefficients.
 	if (x.isComplex() && !variables.includes(Expression.imaginary)) {
-		const realCoeffs = coeffs(x.realPart(), variables);
-		const imaginaryCoeffs = coeffs(x.imagPart(), variables);
+		const realCoeffs = coeffs(x.realPart(), variables, undefined, expandExpression);
+		const imaginaryCoeffs = coeffs(
+			x.imagPart(),
+			variables,
+			undefined,
+			expandExpression
+		);
 
 		realCoeffs.each((coeff, power) => cObj.add(power, coeff));
 		imaginaryCoeffs.each((coeff, power) =>
@@ -107,7 +117,12 @@ export function coeffs(x: Expression, variables: string[], coeffsObj?: CoeffObje
 		}
 
 		if (hasCoefficientFactor) {
-			const productCoeffs = coeffs(product, variables);
+			const productCoeffs = coeffs(
+				product,
+				variables,
+				undefined,
+				expandExpression
+			);
 
 			productCoeffs.each((value, power) => {
 				cObj.add(power, coefficient.times(value));
@@ -118,12 +133,12 @@ export function coeffs(x: Expression, variables: string[], coeffsObj?: CoeffObje
 
 		x = product;
 	}
-	// Expand the expression
-	const f = expand(x);
+	// Expand only when the caller has not already supplied expanded structure.
+	const f = expandExpression ? expand(x) : x;
 	if (f.isSum()) {
 		// Loop through the expression and get the coefficient for each
 		f.each(e => {
-			coeffs(e, variables, cObj);
+			coeffs(e, variables, cObj, false);
 		});
 	} else {
 		// const [coeff, v] = x.separateVar(...variables);

@@ -1,0 +1,2 @@
+import nerdamer from '../src';
+

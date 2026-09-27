@@ -4,7 +4,7 @@ import { brackets, ASSERTIVE_FUNCTIONS } from '../../common/common';
 import { getOperators } from '../../common/functions/functions';
 import { isEnumerable } from '../../common/functions/structuredEntityUtils';
 import { mathFunctionRegistry } from '../../dispatch';
-import { UnexpectedTokenError, ParserError, message } from '../../errors';
+import { UnexpectedTokenError, ParserError, NullError, message } from '../../errors';
 import { scientificToDecimal } from '../../functions/string';
 import { RESTRICTED, scopedBlock, Settings } from '../../Settings';
 import { Collection } from '../collection/Collection';
@@ -33,6 +33,7 @@ import {
 import { _, callFunction, route } from './operations/functions';
 import { preprocess } from './preprocess';
 import { refreshOperatorSymbols, Token } from './Token';
+import { NullSignal } from './controlFlowSignals';
 import { IndexedReference } from './wrappers/IndexedReference';
 import { KeyValuePair } from './wrappers/KeyValuePair';
 
@@ -230,7 +231,7 @@ class ExpressionParser {
 	aliasOperator(symbol: string, alias: string) {
 		const source = this.operators[symbol];
 		if (!source) {
-			throw new ParserError(`Unknown operator ${symbol}`);
+			throw new ParserError(message('unknownOperator', { operator: symbol }));
 		}
 
 		this.operators[alias] = {
@@ -364,6 +365,22 @@ class ExpressionParser {
 	}
 
 	/**
+	 * Reports whether a name is reserved by Nerdamer's parser or solver conventions.
+	 *
+	 * @remarks
+	 * The result reflects the current process-wide parser state. In particular, changing
+	 * the imaginary-unit symbol through {@link setI} removes the previous symbol from the
+	 * restricted-name list and reserves the replacement. Solver-specific names such as
+	 * `_n` and `all` are also reserved.
+	 *
+	 * @param name - Variable or symbol name to test.
+	 * @returns Whether Nerdamer currently reserves the name.
+	 */
+	isReserved(name: string): boolean {
+		return RESTRICTED.includes(name);
+	}
+
+	/**
 	 * Parses supported expression input into a Nerdamer parser entity.
 	 *
 	 * @remarks
@@ -425,7 +442,13 @@ class ExpressionParser {
 		const source = preprocess(String(str), mathFunctionRegistry);
 		const rpn: Scope = this.toRPN(this.tokenize(source));
 		// Read it into an expression.
-		const retval = this.parseRPN(rpn, values);
+		let retval: ParserEntity;
+		try {
+			retval = this.parseRPN(rpn, values);
+		} catch (error) {
+			if (NullSignal.isNullSignal(error)) throw new NullError(message('nullValue'));
+			throw error;
+		}
 
 		return retval;
 	}
@@ -603,20 +626,16 @@ class ExpressionParser {
 								!symbolicTarget ||
 								!(Vector.isVector(resolvedTarget) || Matrix.isMatrix(resolvedTarget))
 							) {
-								throw new ParserError(
-									'Symbolic indexed access requires a named Vector or Matrix target.'
-								);
+								throw new ParserError(message('symbolicAccessNamedTargetRequired'));
 							}
 							if (Vector.isVector(resolvedTarget) && symbolicIndices.length !== 1) {
-								throw new ParserError('Symbolic Vector access requires exactly one index.');
+								throw new ParserError(message('symbolicVectorIndexCount'));
 							}
 							if (Matrix.isMatrix(resolvedTarget) && symbolicIndices.length !== 2) {
 								if (symbolicIndices.length === 1) {
-									throw new ParserError(
-										'Symbolic Matrix row access is not scalar and cannot be deferred as an Expression.'
-									);
+									throw new ParserError(message('symbolicMatrixRowNonScalar'));
 								}
-								throw new ParserError('Symbolic Matrix cell access requires exactly two indices.');
+								throw new ParserError(message('symbolicMatrixCellIndexCount'));
 							}
 
 							addToOutput(
@@ -643,9 +662,7 @@ class ExpressionParser {
 						) {
 							const symbolicIndices = indices as Expression[];
 							if (symbolicIndices.length > 2) {
-								throw new ParserError(
-									'Symbolic indexed access supports at most two unresolved indices.'
-								);
+								throw new ParserError(message('symbolicAccessMaxIndices'));
 							}
 							const carrier =
 								symbolicIndices.length === 2 ? new Matrix([]) : new Vector();
@@ -716,7 +733,9 @@ class ExpressionParser {
 							Expression.isExpression(a) &&
 							a.isPlainVariable()
 						) {
-							throw new ParserError(`Unsupported function ${possibleFunction.value}`);
+							throw new ParserError(
+							message('unsupportedFunction', { function: possibleFunction.value })
+						);
 						}
 
 						// Handle indexed assignment before ordinary left-hand resolution so the
@@ -725,14 +744,25 @@ class ExpressionParser {
 							operator.action === 'assign' &&
 							IndexedReference.isIndexedReference(a)
 						) {
-							b = resolveStackValue(b);
-							if (typeof a.indices === 'string') {
-								(a.target as Dictionary).__set__(a.indices, b);
-							} else {
-								(a.target as StructuredEntityType).__set__(a.indices, b);
+							let assignValue = true;
+							try {
+								b = typeof b === 'function' ? b() : resolveStackValue(b);
+							} catch (error) {
+								if (NullSignal.isNullSignal(error)) {
+									assignValue = false;
+								} else {
+									throw error;
+								}
 							}
-							if (a.targetName) {
-								this.KNOWN_VALUES[a.targetName] = a.target;
+							if (assignValue) {
+								if (typeof a.indices === 'string') {
+									(a.target as Dictionary).__set__(a.indices, b as ParserEntity);
+								} else {
+									(a.target as StructuredEntityType).__set__(a.indices, b as ParserEntity);
+								}
+								if (a.targetName) {
+									this.KNOWN_VALUES[a.targetName] = a.target;
+								}
 							}
 							result = a.target;
 						} else if (operator.deferRHSResolution) {
@@ -813,7 +843,7 @@ class ExpressionParser {
 							!Expression.isExpression(preservedArgs[0]) ||
 							!preservedArgs[0].isPlainVariable()
 						) {
-							throw new ParserError('Malformed internal symbolic accessor.');
+							throw new ParserError(message('parserMalformedSymbolicAccessor'));
 						}
 
 						const symbolicTarget = preservedArgs[0];
@@ -826,10 +856,10 @@ class ExpressionParser {
 							const preservedIndex = preservedArgs[j];
 							const resolvedIndex = resolvedArgs[j];
 							if (!Expression.isExpression(preservedIndex)) {
-								throw new ParserError('Malformed internal symbolic accessor index.');
+								throw new ParserError(message('parserMalformedSymbolicAccessorIndex'));
 							}
 							if (!Expression.isExpression(resolvedIndex)) {
-								throw new ParserError('Symbolic accessor indices must evaluate to scalar expressions.');
+								throw new ParserError(message('symbolicAccessIndexScalar'));
 							}
 
 							symbolicIndices.push(resolvedIndex);
@@ -842,21 +872,17 @@ class ExpressionParser {
 						}
 
 						if (symbolicIndices.length > 2) {
-							throw new ParserError(
-								'Symbolic indexed access supports at most two unresolved indices.'
-							);
+							throw new ParserError(message('symbolicAccessMaxIndices'));
 						}
 
 						if (Vector.isVector(resolvedTarget) && symbolicIndices.length !== 1) {
-							throw new ParserError('Symbolic Vector access requires exactly one index.');
+							throw new ParserError(message('symbolicVectorIndexCount'));
 						}
 						if (Matrix.isMatrix(resolvedTarget) && symbolicIndices.length !== 2) {
 							if (symbolicIndices.length === 1) {
-								throw new ParserError(
-									'Symbolic Matrix row access is not scalar and cannot be deferred as an Expression.'
-								);
+								throw new ParserError(message('symbolicMatrixRowNonScalar'));
 							}
-							throw new ParserError('Symbolic Matrix cell access requires exactly two indices.');
+							throw new ParserError(message('symbolicMatrixCellIndexCount'));
 						}
 
 						let result: ParserEntity;
@@ -872,9 +898,7 @@ class ExpressionParser {
 							) {
 								carrier = symbolicIndices.length === 2 ? new Matrix([]) : new Vector();
 							} else {
-								throw new ParserError(
-									'Symbolic indexed access target must resolve to a Vector or Matrix.'
-								);
+								throw new ParserError(message('symbolicAccessTargetType'));
 							}
 
 							result = carrier.withSymbolicAccessor(symbolicTarget, symbolicIndices);
@@ -1398,7 +1422,7 @@ class ExpressionParser {
 		if (action) {
 			_[operator.action] = action;
 		} else if (!_[operator.action]) {
-			throw new ParserError(`Unknown operator action ${operator.action}`);
+			throw new ParserError(message('unknownOperatorAction', { action: operator.action }));
 		}
 
 		this.operators[operator.operator] = operator;
@@ -1522,6 +1546,14 @@ class ExpressionParser {
 			// Get the character type for comparison. Search for changes in the character type to determine
 			// the end of a token.
 			const charType = Token.getCharType(ch, col, tokenBuffer);
+			if (charType === Token.CHARACTER && ch !== terminator) {
+				throw new UnexpectedTokenError(
+					message('unsupportedCharacter', {
+						character: ch,
+						position: String(col),
+					})
+				);
+			}
 
 			// Brackets point to a new scope. Once one is encountered, update the target and point to the new scope
 			// Subsequent tokens are now pushed to that scope
@@ -1529,7 +1561,7 @@ class ExpressionParser {
 				// Get the bracket.
 				const bracketCharacter = tokenBuffer.last();
 				if (bracketCharacter === undefined) {
-					throw new ParserError('Bracket token is missing its character.');
+					throw new ParserError(message('parserBracketTokenMissingCharacter'));
 				}
 				const bracket = brackets[bracketCharacter];
 
@@ -1572,7 +1604,7 @@ class ExpressionParser {
 							}
 						} else {
 							throw new UnexpectedTokenError(
-								`Expected operator or function name but "${lastToken.value}" found!`
+								message('expectedOperatorOrFunction', { value: lastToken.value })
 							);
 						}
 					}
@@ -1627,7 +1659,10 @@ class ExpressionParser {
 					// If there's not scope or the types don't match then we have a mismatched bracket
 					if (scope === undefined || !bracketsMatch) {
 						throw new UnexpectedTokenError(
-							`Missing opening bracket for "${tokenBuffer.last()}":${col}`
+							message('missingOpeningBracket', {
+								bracket: String(tokenBuffer.last()),
+								position: String(col),
+							})
 						);
 					}
 				}
@@ -1714,7 +1749,9 @@ class ExpressionParser {
 							}
 						} else {
 							throw new UnexpectedTokenError(
-								`Expected operator or function name but "${(lastToken as Token).value}" found!`
+								message('expectedOperatorOrFunction', {
+									value: (lastToken as Token).value,
+								})
 							);
 						}
 					}
@@ -1750,7 +1787,10 @@ class ExpressionParser {
 		const lastItem = tokens[tokens.length - 1];
 		if (Scope.isScope(lastItem) && lastItem.isOpen) {
 			throw new UnexpectedTokenError(
-				`Missing closing bracket for "${str.charAt(lastItem.column - 1)}":${lastItem.column}`
+				message('missingClosingBracket', {
+					bracket: str.charAt(lastItem.column - 1),
+					position: String(lastItem.column),
+				})
 			);
 		}
 
@@ -1908,7 +1948,7 @@ class ExpressionParser {
 							// If the encountered operator is not a prefix then complain
 							if (!this.operators[prefixOperator.value].isPrefix) {
 								throw new ParserError(
-									`Prefix operator expected but ${prefixOperator.value} encountered.`
+									message('prefixOperatorExpected', { operator: prefixOperator.value })
 								);
 							}
 

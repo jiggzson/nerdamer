@@ -1,3 +1,4 @@
+import { message } from '../../errors';
 import { decimalSplit } from '../string';
 import { arrayUnique } from '../utils';
 
@@ -126,6 +127,33 @@ export function isEven(n: bigint) {
 }
 
 /**
+ * Returns the floor of the exact square root of a non-negative bigint.
+ */
+export function integerSquareRoot(value: bigint): bigint {
+	if (value < 0n) {
+		throw new RangeError(message('integerSqrtNonnegative'));
+	}
+	if (value < 2n) {
+		return value;
+	}
+
+	let root = 1n << ((BigInt(value.toString(2).length) + 1n) >> 1n);
+	while (true) {
+		const next = (root + value / root) >> 1n;
+		if (next >= root) {
+			return root;
+		}
+		root = next;
+	}
+}
+
+/** Returns the least bigint whose square is at least value. */
+export function ceilIntegerSquareRoot(value: bigint): bigint {
+	const root = integerSquareRoot(value);
+	return root * root === value ? root : root + 1n;
+}
+
+/**
  * Computes the nth Fibonacci number exactly using fast doubling.
  *
  * Negative indices use the negafibonacci identity F(-n) = (-1)^(n+1)F(n).
@@ -184,7 +212,7 @@ export const factorial = (function () {
 			n = Number(n);
 		}
 		if (n < 0) {
-			throw new RangeError('Factorial is undefined for negative integers.');
+			throw new RangeError(message('factorialNegativeUndefined'));
 		}
 		// If there's a cached version return that instead
 		if (typeof factorialCache[n] != 'undefined') {
@@ -224,6 +252,34 @@ export function mod(a: bigint, b: bigint) {
 	}
 
 	return retval;
+}
+
+/**
+ * Raises a bigint base to a non-negative bigint exponent modulo a positive modulus.
+ *
+ * Binary exponentiation keeps every intermediate value in bigint modular arithmetic.
+ */
+export function powMod(base: bigint, exponent: bigint, modulus: bigint): bigint {
+	if (modulus <= 0n) {
+		throw new RangeError(message('modularExponentiationPositiveModulus'));
+	}
+	if (exponent < 0n) {
+		throw new RangeError(message('modularExponentiationNonnegativeExponent'));
+	}
+
+	let result = 1n % modulus;
+	let factor = mod(base, modulus);
+	let power = exponent;
+
+	while (power > 0n) {
+		if (power % 2n === 1n) {
+			result = (result * factor) % modulus;
+		}
+		factor = (factor * factor) % modulus;
+		power /= 2n;
+	}
+
+	return result;
 }
 
 /**
@@ -289,7 +345,7 @@ export function max(...args: bigint[]) {
 		// Math.max() for Number returns -Infinity for empty lists,
 		// but BigInt can't represent Infinity, so throwing an error or
 		// handling as per application logic is necessary.
-		throw new Error('maxBigInt() requires at least one argument');
+		throw new Error(message('maxBigIntRequiresArgument'));
 	}
 	let max = args[0];
 	for (let i = 1; i < args.length; i++) {
@@ -309,7 +365,7 @@ export function min(...args: bigint[]) {
 	if (args.length === 0) {
 		// Math.min() returns Infinity for no arguments, but BigInt cannot represent Infinity.
 		// It's often better to throw an error or handle the empty case explicitly.
-		throw new Error('Min of empty list is not defined for BigInt.');
+		throw new Error(message('minBigIntEmpty'));
 	}
 	let min = args[0];
 	for (let i = 1; i < args.length; i++) {
@@ -367,7 +423,7 @@ export function recoverCoeffsZ(num: bigint, primes: { [variable: string]: bigint
  */
 export function binom(n: bigint, k: bigint): bigint {
 	if (n < 0n) {
-		throw new RangeError('binomBigInt: n must be non-negative');
+		throw new RangeError(message('binomBigIntNonnegativeN'));
 	}
 	if (k < 0n || k > n) {
 		return 0n;

@@ -12,6 +12,10 @@ import { one, zero } from '../expression/shortcuts';
 import { POLYNOMIAL } from '../parser/constants';
 import { Rational } from '../rational/Rational';
 
+import {
+	expressionToIntegerSparsePolynomial,
+	sparsePolynomialToExpression,
+} from './SparsePolynomialAdapter';
 import { Term } from './Term';
 import { divide } from './utils';
 
@@ -99,7 +103,7 @@ export class Polynomial {
 	 */
 	constructor(p: ExpressionInput | Polynomial, vars?: string[], ordering?: Ordering) {
 		if (Polynomial.isPolynomial(p)) {
-			this.expression = new Expression(p.expression);
+			this.expression = p.expression.copy();
 			this.variables = [...p.variables];
 			this.ordering = p.ordering;
 			this.isMultivariate = p.isMultivariate;
@@ -123,8 +127,10 @@ export class Polynomial {
 
 			// Expand the expression but only if needed. This will be needed if the value has a bracket
 			// or if the expression has a power greater than one.
+			let expandedForCoefficients = false;
 			if (x.value.includes('(') || (x.isSum() && x.getPower().gt('1'))) {
 				x = expand(x);
+				expandedForCoefficients = true;
 			}
 
 			this.expression = x;
@@ -149,9 +155,11 @@ export class Polynomial {
 			// Calculate the coefficients. Coeffs will come back as a collection of objects so for instance
 			// a*x*y + b*x^2*y will come back as [a, '1,1'] & [b, '2,1']. It's preferred to have it in object form
 			// TODO: this should probably be done with `coeffs`.
-			x.coeffs(...this.variables).each((coeff, powers) => {
-				this.terms.push(new Term(coeff, powers, this.variables));
-			});
+			coeffs(x, this.variables, undefined, !expandedForCoefficients).each(
+				(coeff, powers) => {
+					this.terms.push(new Term(coeff, powers, this.variables));
+				}
+			);
 
 			// Set a blank array if none was provided or calculated
 			this.variables = this.variables || [];
@@ -202,7 +210,7 @@ export class Polynomial {
 						powers[variable] = i;
 					}
 
-					retval.terms.push(new Term(new Expression(coefficient), powers, vars));
+					retval.terms.push(new Term(coefficient.copy(), powers, vars));
 				}
 			}
 
@@ -1130,12 +1138,41 @@ export class Polynomial {
 	/**
 	 * Raises the polynomial to a power.
 	 *
+	 * Exact non-negative integer powers use sparse polynomial arithmetic when the
+	 * coefficient domain permits it. Other exponents retain symbolic expression behavior.
+	 *
 	 * @param p - Exponent accepted by symbolic expression powers.
 	 * @returns A new polynomial parsed from the powered expression.
 	 * @throws {@link core!PolynomialError} Thrown when the powered result is not polynomial-like.
 	 */
 	public pow(p: ExpressionInput) {
-		return new Polynomial(this.getExpression().pow(p), undefined, this.ordering);
+		const exponent = Expression.create(p);
+		const source = this.getExpression();
+		let sparseResult: Polynomial | undefined;
+
+		if (
+			exponent.isNUM() &&
+			exponent.isInteger() &&
+			exponent.sign() >= 0 &&
+			!source.hasDecimal()
+		) {
+			try {
+				const power = exponent.getMultiplier().numerator;
+				const variables = [...this.variables];
+				const converted = expressionToIntegerSparsePolynomial(source, variables);
+				const denominator = converted.denominator ** power;
+				let expression = sparsePolynomialToExpression(
+					converted.polynomial.pow(power),
+					variables
+				);
+				if (denominator !== 1n) {
+					expression = expression.div(Expression.Number(denominator));
+				}
+				sparseResult = new Polynomial(expression, undefined, this.ordering);
+			} catch {}
+		}
+
+		return sparseResult ?? new Polynomial(source.pow(exponent), undefined, this.ordering);
 	}
 
 	/**
@@ -1214,7 +1251,8 @@ export class Polynomial {
 	 *
 	 * @param x - Multiplier.
 	 * @returns A new polynomial. Term multiplication copies this polynomial before
-	 * updating its terms; polynomial multiplication rebuilds from symbolic expressions.
+	 * updating its terms. Polynomial multiplication uses exact sparse arithmetic when
+	 * both operands have numeric coefficients and otherwise preserves symbolic multiplication.
 	 */
 	public times(x: Term | Polynomial): Polynomial {
 		let retval;
@@ -1233,11 +1271,34 @@ export class Polynomial {
 			}
 			retval.updateExpression();
 		} else {
-			retval = new Polynomial(
-				this.getExpression().times(x.getExpression()),
-				undefined,
-				this.ordering
-			);
+			const leftExpression = this.getExpression();
+			const rightExpression = x.getExpression();
+			let sparseResult: Polynomial | undefined;
+
+			if (!leftExpression.hasDecimal() && !rightExpression.hasDecimal()) {
+				try {
+					const variables = [...new Set([...this.variables, ...x.variables])].sort();
+					const left = expressionToIntegerSparsePolynomial(leftExpression, variables);
+					const right = expressionToIntegerSparsePolynomial(rightExpression, variables);
+					const denominator = left.denominator * right.denominator;
+					let expression = sparsePolynomialToExpression(
+						left.polynomial.multiply(right.polynomial),
+						variables
+					);
+					if (denominator !== 1n) {
+						expression = expression.div(Expression.Number(denominator));
+					}
+					sparseResult = new Polynomial(expression, undefined, this.ordering);
+				} catch {}
+			}
+
+			retval =
+				sparseResult ??
+				new Polynomial(
+					leftExpression.times(rightExpression),
+					undefined,
+					this.ordering
+				);
 		}
 
 		return retval;

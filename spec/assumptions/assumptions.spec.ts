@@ -1,3 +1,4 @@
+import '../helpers/registerNerdamerFunctions';
 import Decimal from 'decimal.js';
 
 import {

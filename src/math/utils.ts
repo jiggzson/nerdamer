@@ -1,15 +1,66 @@
 import { Collection } from '../core/classes/collection/Collection';
 import { Dictionary } from '../core/classes/dictionary/Dictionary';
 import { Expression } from '../core/classes/expression/Expression';
-import { one } from '../core/classes/expression/shortcuts';
+import { one, zero } from '../core/classes/expression/shortcuts';
 export { product, stripPower, sum } from '../core/classes/expression/utils';
 import { Matrix } from '../core/classes/matrix/Matrix';
 import { COUNT, ISPRIME, SIZE } from '../core/classes/parser/constants';
 import { ValuesSet } from '../core/classes/valuesSet/ValuesSet';
 import { Vector } from '../core/classes/vector/Vector';
+import { message, UnexpectedInputError } from '../core/errors';
 import { isPrimeBig } from '../core/functions/bigint/primeFactor';
 
 import type { ExpressionInput, ParserEntity } from '../core/types';
+
+/**
+ * Returns the continued-fraction decomposition as a Collection containing
+ * sign, whole part, and a Vector of partial quotients.
+ */
+export function continuedFraction(
+	x: ExpressionInput,
+	depth: ExpressionInput = 10
+): Collection {
+	const input = Expression.create(x);
+	const limitExpression = Expression.create(depth);
+
+	if (
+		!limitExpression.isNUM() ||
+		!limitExpression.isInteger() ||
+		limitExpression.lt(zero()) ||
+		limitExpression.getMultiplier().numerator > BigInt(Number.MAX_SAFE_INTEGER)
+	) {
+		throw new UnexpectedInputError(
+			message('wrongInput', {
+				expected: 'a non-negative integer',
+				received: limitExpression.text(),
+			})
+		);
+	}
+
+	const limit = Number(limitExpression.getMultiplier().numerator);
+	const evaluated = input.isConstant() ? input.evaluate() : input;
+	if (!evaluated.isNUM()) {
+		return new Collection([one(), input, new Vector()]);
+	}
+
+	const rational = evaluated.getMultiplier();
+	const sign = Expression.Number(rational.sign());
+	const numerator = rational.numerator < 0n ? -rational.numerator : rational.numerator;
+	let denominator = rational.denominator;
+	const whole = numerator / denominator;
+	let remainder = numerator % denominator;
+	const fractions: Expression[] = [];
+
+	for (let i = 0; i < limit && remainder !== 0n; i++) {
+		const quotient = denominator / remainder;
+		fractions.push(Expression.Number(quotient));
+		const nextRemainder = denominator % remainder;
+		denominator = remainder;
+		remainder = nextRemainder;
+	}
+
+	return new Collection([sign, Expression.Number(whole), new Vector(fractions)]);
+}
 
 /**
  * Contains useful functions which are not likely to be exported to the user through `build`

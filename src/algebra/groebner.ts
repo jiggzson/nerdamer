@@ -1,10 +1,11 @@
-import { normalizeMultiplierDenominators } from '../core/classes/expression/analysis';
 import { collectVariablesSet } from '../core/classes/expression/collect';
 import { Expression } from '../core/classes/expression/Expression';
-import { Polynomial } from '../core/classes/polynomial/Polynomial';
+import {
+	expressionToIntegerSparsePolynomial,
+	sparsePolynomialToExpression,
+} from '../core/classes/polynomial/SparsePolynomialAdapter';
 import { Vector } from '../core/classes/vector/Vector';
 
-import { polynomialToMultiPoly, multiPolyToExpression } from './adapters';
 import { Groebner } from './algorithms/groebnerBase';
 
 import type { ExpressionInput } from '../core/types';
@@ -15,8 +16,8 @@ import type { ExpressionInput } from '../core/types';
  * @remarks
  * All generators are converted using one variable order so exponent indices remain
  * consistent. Rational coefficient denominators are cleared per generator before the
- * exact integer-coefficient `MultiPoly` engine runs; multiplying a generator by a
- * nonzero scalar preserves the generated ideal. When `vars` is omitted, variables are
+ * exact integer-coefficient sparse engine runs; multiplying a generator by a nonzero
+ * scalar preserves the generated ideal. When `vars` is omitted, variables are
  * collected across every generator.
  *
  * This convenience wrapper uses lexicographic order and a reduced, deterministically
@@ -34,12 +35,12 @@ export function groebner(expressionArray: ExpressionInput[] | Vector, vars?: str
 	vars ??= collectVariablesSet(expressions);
 
 	// Convert each polynomial using the unified variable list so indices are consistent.
-	// Since the Groebner core operates on MultiPoly over Z, clear denominators per generator
-	// before converting so rational-coefficient inputs are lifted into equivalent integer ones.
-	const polys = expressions.map(e => {
-		const cleared = normalizeMultiplierDenominators(e);
-		return polynomialToMultiPoly(new Polynomial(cleared, vars), vars).poly;
-	});
+	// Rational denominators are cleared exactly while converting into the sparse ring.
+	const polys = expressions.map(
+		e => expressionToIntegerSparsePolynomial(e, vars).polynomial
+	);
 
-	return new Vector(Groebner(polys, vars).map(gb => multiPolyToExpression(gb, vars)));
+	return new Vector(
+		Groebner(polys).map(polynomial => sparsePolynomialToExpression(polynomial, vars))
+	);
 }

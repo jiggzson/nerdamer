@@ -1,7 +1,12 @@
 import Decimal from 'decimal.js';
 
 import { isNerdamerNativeType } from '../../common/common';
-import { message, DivisionByZeroError, ZeroToZeroPowerError } from '../../errors';
+import {
+	message,
+	DivisionByZeroError,
+	UnexpectedInputError,
+	ZeroToZeroPowerError,
+} from '../../errors';
 import { convert, simplifyRatio, sign, abs, isEven } from '../../functions/bigint/bigint';
 import { GCD, mod } from '../../functions/bigint/bigint';
 import { scientificToDecimal } from '../../functions/string';
@@ -9,6 +14,31 @@ import { Expression } from '../expression/Expression';
 import { RATIONAL, DOT, PARSER_CONSTANTS } from '../parser/constants';
 
 import type { OptionsObject } from '../parser/types';
+
+/** Maximum scientific significant-digit count accepted by decimal.js. */
+export const MAX_SCIENTIFIC_SIGNIFICANT_DIGITS = 1_000_000_000;
+
+export function validateScientificSignificantDigits(
+	value: unknown,
+	received: string = String(value)
+): number {
+	if (
+		typeof value !== 'number' ||
+		!Number.isInteger(value) ||
+		value < 1 ||
+		value > MAX_SCIENTIFIC_SIGNIFICANT_DIGITS
+	) {
+		throw new UnexpectedInputError(
+			message('wrongInput', {
+				expected: `an integer from 1 to ${MAX_SCIENTIFIC_SIGNIFICANT_DIGITS}`,
+				received,
+			})
+		);
+	}
+
+	return value;
+}
+
 
 /**
  * Represents an exact rational value as a `bigint` numerator and denominator.
@@ -241,20 +271,6 @@ export class Rational {
 	}
 
 	/**
-	 * Copies a rational's representation and presentation metadata.
-	 *
-	 * @param x - Rational to copy.
-	 * @returns A distinct `Rational` with the same numerator, denominator, `value`, and
-	 * decimal-presentation flag.
-	 */
-	static makeCopy(x: Rational) {
-		const copy = new Rational(x.numerator, x.denominator);
-		copy.value = x.value;
-		copy.asDecimal = x.asDecimal;
-		return copy;
-	}
-
-	/**
 	 * Updates shared numeric settings used by rational decimal conversion.
 	 *
 	 * @remarks
@@ -298,7 +314,7 @@ export class Rational {
 
 		// If they want a guaranteed copy then just return a copy
 		if (ensureCopy) {
-			return Rational.makeCopy(x);
+			return x.copy();
 		}
 
 		// Otherwise just return the original rational
@@ -323,7 +339,10 @@ export class Rational {
 	 * @returns A new object with the same numeric representation and presentation metadata.
 	 */
 	copy() {
-		return Rational.makeCopy(this);
+		const copy = new Rational(this.numerator, this.denominator);
+		copy.value = this.value;
+		copy.asDecimal = this.asDecimal;
+		return copy;
 	}
 
 	/**
@@ -743,22 +762,71 @@ export class Rational {
 	 * Formats this rational as fraction, integer, or decimal text.
 	 *
 	 * @remarks
-	 * Decimal formatting is selected when {@link Rational.asDecimal} is set or when
+	 * Scientific formatting is selected when `options.scientific` supplies an integer significant-digit
+	 * count from 1 through 1e9. The requested count is preserved in the coefficient, including
+	 * trailing zeroes. Otherwise decimal formatting is selected when {@link Rational.asDecimal} is set or when
 	 * `options.decimal` is truthy. Non-integer decimal output uses `decimal.js`; an optional
 	 * `options.precision` temporarily controls its significant-digit precision for this conversion.
 	 * Integer decimal output includes a `.0` suffix. Without decimal formatting, non-integer
 	 * fractions are emitted from the stored numerator and denominator, and integers as plain text.
 	 *
-	 * @param options - Formatting options. `decimal` forces decimal output and `precision` controls
-	 * decimal conversion precision when applicable.
+	 * @param options - Formatting options. `scientific` selects significant-digit scientific output;
+	 * `decimal` forces decimal output and `precision` controls decimal conversion precision when applicable.
 	 * @returns The formatted numeric text.
 	 */
 	text(options?: OptionsObject): string {
 		let value: string;
+		let scientificValue: string | undefined;
 		const thisIsInteger = this.isInteger();
+		const integerDigits = thisIsInteger
+			? (this.numerator < 0n ? -this.numerator : this.numerator).toString().length
+			: 0;
+		const exactScientific = options?.exactScientific === true;
+		const scientificDigits =
+			options && 'scientific' in options && options.scientific !== undefined
+				? validateScientificSignificantDigits(options.scientific)
+				: undefined;
 
+		if (scientificDigits !== undefined) {
+			if (this.isZero()) {
+				scientificValue = '0';
+			} else {
+				const previousPrecision = Decimal.precision;
+				const precision = Math.max(previousPrecision, scientificDigits);
+				try {
+					if (precision !== previousPrecision) {
+						Decimal.set({ precision });
+					}
+					const scientific = this.toDecimal().toExponential(scientificDigits - 1);
+					const [coefficient, exponent] = scientific.split('e');
+					const normalizedExponent = BigInt(exponent);
+					const candidate =
+						normalizedExponent === 0n
+							? coefficient
+							: `${coefficient}e${normalizedExponent}`;
+
+					if (
+						!exactScientific ||
+						(thisIsInteger &&
+							integerDigits > scientificDigits &&
+							normalizedExponent !== 0n &&
+							Rational.create(candidate).eq(this))
+					) {
+						scientificValue = candidate;
+					}
+				} finally {
+					if (Decimal.precision !== previousPrecision) {
+						Decimal.set({ precision: previousPrecision });
+					}
+				}
+			}
+		}
+
+		if (scientificValue !== undefined) {
+			value = scientificValue;
+		}
 		// Mark it as a decimal if it is such
-		if (this.asDecimal || options?.decimal) {
+		else if (this.asDecimal || options?.decimal) {
 			if (thisIsInteger) {
 				value = `${this.numerator}.0`;
 			} else {

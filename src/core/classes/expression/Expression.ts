@@ -38,12 +38,12 @@ import { Rational } from '../rational/Rational';
 import { coeffs } from './analysis';
 import { isPolynomialLike, getVariable } from './analysis';
 import { getDenominator, getNumerator } from './analysis';
-import { toText } from './format';
+import { toDefaultText, toText } from './format';
 import { one, zero } from './shortcuts';
 import { hasFunction, hasVariable } from './traversal';
 import { functions, variables } from './traversal';
 import { forEveryElement } from './traversal';
-import { copyOver } from './utils';
+import { cloneExpressionTree, copyOver } from './utils';
 
 import type { Base } from '../../common/common';
 import type { ParserEntity, ExpressionInput, NerdamerInput } from '../../types';
@@ -71,9 +71,20 @@ const { NUM, VAR, EXP, FUN, GRP, PRD, SUM, INF } = EXPRESSION_TYPES;
  * initialize and return internal objects. Use {@link Expression.copy} when an
  * independently mutable expression tree is required.
  *
- * {@link Expression.create} is the preferred construction API. In particular,
- * `Expression.create(existingExpression)` preserves object identity unless its
- * `copy` argument is set to `true`.
+ * {@link Expression.create} is the preferred construction API for ordinary
+ * expression construction and coercion. It centralizes supported input handling and
+ * normalization. When the input is already an `Expression`, it preserves object
+ * identity unless its `copy` argument is set to `true`.
+ *
+ * When the source is already known to be an `Expression` and an independent tree is
+ * required, use {@link Expression.copy}. When a caller accepts broader input but must
+ * guarantee a clone for an existing expression, use
+ * `Expression.create(input, undefined, true)`.
+ *
+ * Direct `new Expression(...)` construction is reserved for representation-level
+ * internals that require constructor semantics, such as the `plainConstruct` path and
+ * the implementation of {@link Expression.copy}. Ordinary callers should not use the
+ * constructor for coercion or cloning.
  *
  * The internal expression groups are organizational categories used by Nerdamer's
  * canonicalization logic. They should not be confused with general mathematical
@@ -212,6 +223,14 @@ export class Expression implements Base<Expression> {
 	elements?: Record<string, Expression> = undefined;
 
 	/**
+	 * Cached ordinary lookup key for SUM and PRD nodes.
+	 *
+	 * Copies intentionally start without this cache. Aggregate reconstruction clears it
+	 * through updateValue() before the node is used again.
+	 */
+	private _keyValueCache?: string;
+
+	/**
 	 * Let's the parser know not to treat it as a set of values
 	 */
 	isEnumerable: boolean = false;
@@ -240,6 +259,9 @@ export class Expression implements Base<Expression> {
 	 */
 	precision?: number;
 
+	/** Significant digits requested by the legacy scientific-formatting helper. */
+	scientific?: number;
+
 	/**
 	 * The default type is a number for the expression since the default value
 	 * for an expression is "1". The assert flag is used because TypeScript
@@ -264,20 +286,12 @@ export class Expression implements Base<Expression> {
 	 * {@link Expression.create}, and JavaScript constructor return semantics therefore
 	 * allow that factory-created expression to become the result of `new Expression(...)`.
 	 *
-	 * For ordinary user input, prefer {@link Expression.create}; it makes parsing and
-	 * identity behavior explicit.
+	 * Ordinary code should use {@link Expression.create} for construction/coercion and
+	 * {@link Expression.copy} when an independent tree is required. Direct constructor
+	 * calls are reserved for low-level representation code.
 	 *
 	 * @param x - The expression or Nerdamer input used to construct the value.
 	 * @param plainConstruct - Store a string as a raw internal value instead of parsing it.
-	 *
-	 * @example
-	 * ```ts
-	 * const expression = Expression.create('x + 1');
-	 * const copy = new Expression(expression);
-	 *
-	 * copy === expression; // false
-	 * copy.text();         // "1+x"
-	 * ```
 	 */
 	constructor(x: NerdamerInput, plainConstruct?: boolean) {
 		// Allow for hooking of the input. The user can override the hook to modify
@@ -855,7 +869,7 @@ export class Expression implements Base<Expression> {
 	 * ```
 	 */
 	copy() {
-		return new Expression(this);
+		return cloneExpressionTree(this);
 	}
 
 	/**
@@ -899,6 +913,7 @@ export class Expression implements Base<Expression> {
 					elements[x] = term.distributeMultiplier();
 				}
 			}
+			retval.updateValue();
 		}
 
 		return retval;
@@ -1033,7 +1048,8 @@ export class Expression implements Base<Expression> {
 	 * Re-evaluates this expression numerically, optionally substituting variable values.
 	 *
 	 * @remarks
-	 * Evaluation serializes the current expression and sends it through
+	 * Evaluation uses the ordinary serialization path. When scientific display metadata is
+	 * present, a copy without that metadata is serialized so formatting cannot change the value sent through
 	 * {@link Parser.evaluate}. That parser path enables Nerdamer's evaluation mode, so
 	 * numeric constants and supported numeric functions are evaluated according to the
 	 * parser's current precision and settings. The original expression is not modified.
@@ -1048,17 +1064,36 @@ export class Expression implements Base<Expression> {
 	 * ```
 	 */
 	evaluate(values?: ParserValuesObject): Expression {
-		const source = this.hasFunction(SYMBOLIC_ACCESSOR, true)
-			? toText(
-					this,
-					{ internalAccessor: true },
-					undefined,
-					Expression.POW_OPR,
-					Expression.sortFunction
-				)
-			: this.text();
+		let source: string;
+		if (this.scientific !== undefined) {
+			const sourceExpression = this.copy();
+			delete sourceExpression.scientific;
+			source = sourceExpression.hasFunction(SYMBOLIC_ACCESSOR, true)
+				? toText(
+						sourceExpression,
+						{ internalAccessor: true },
+						undefined,
+						Expression.POW_OPR,
+						Expression.sortFunction
+					)
+				: sourceExpression.text();
+		} else {
+			source = this.hasFunction(SYMBOLIC_ACCESSOR, true)
+				? toText(
+						this,
+						{ internalAccessor: true },
+						undefined,
+						Expression.POW_OPR,
+						Expression.sortFunction
+					)
+				: this.text();
+		}
 		const evaluated = Parser.evaluate(source, values);
 		const retval = Expression.fromSymbolicAccess(evaluated) ?? Expression.create(evaluated);
+
+		if (this.scientific !== undefined) {
+			retval.scientific = this.scientific;
+		}
 
 		return retval;
 	}
@@ -1504,7 +1539,7 @@ export class Expression implements Base<Expression> {
 		if (this.isComplex()) {
 			retval = one().div(this);
 		} else {
-			retval = new Expression(this);
+			retval = this.copy();
 			retval.power = retval.getPower().neg();
 			retval.multiplier = retval.getMultiplier().invert();
 		}
@@ -1993,6 +2028,13 @@ export class Expression implements Base<Expression> {
 	 * Thrown when no key-generation rule exists for the node's internal type.
 	 */
 	keyValue(asSubExpression: boolean = false, isGroup: boolean = false): string {
+		const cacheable =
+			!asSubExpression && !isGroup && (this.type === SUM || this.type === PRD);
+
+		if (cacheable && this._keyValueCache !== undefined) {
+			return this._keyValueCache;
+		}
+
 		let retval: string = '';
 
 		// For GRP the key is always the power
@@ -2029,7 +2071,11 @@ export class Expression implements Base<Expression> {
 		}
 
 		if (!retval) {
-			throw new Error(`The function 'keyValue' not yet implemented for type ${this.type}`);
+			throw new Error(message('expressionKeyValueUnsupported', { type: String(this.type) }));
+		}
+
+		if (cacheable) {
+			this._keyValueCache = retval;
 		}
 
 		return retval;
@@ -2378,7 +2424,7 @@ export class Expression implements Base<Expression> {
 	 * @remarks
 	 * Exact rational text is the default. Use `sort: true` to render terms in Nerdamer's
 	 * conventional display order without changing the stored expression. Decimal output,
-	 * precision, and power wrapping can also be selected per call. The `asId` mode is used
+	 * precision, scientific notation, and power wrapping can also be selected per call. The `asId` mode is used
 	 * by internal identity/canonicalization logic and should not be
 	 * treated as a stable interchange format.
 	 *
@@ -2392,9 +2438,19 @@ export class Expression implements Base<Expression> {
 	 * Expression.create('x^2 + 2*x + 1').text({ sort: true }); // "x^2+2*x+1"
 	 * Expression.create('1/3').text();                         // "1/3"
 	 * Expression.create('1/3').text({ decimal: true });        // decimal representation
+ * Expression.create('12345').text({ scientific: 3 });        // "1.23e4"
 	 * ```
 	 */
 	text(options?: TextOptions, asId?: boolean) {
+		if (
+			options === undefined &&
+			asId === undefined &&
+			this.precision === undefined &&
+			this.scientific === undefined
+		) {
+			return toDefaultText(this, Expression.POW_OPR, Expression.sortFunction);
+		}
+
 		return toText(
 			this,
 			options,
@@ -2538,15 +2594,24 @@ export class Expression implements Base<Expression> {
 	 * nodes rebuild it from their current elements. Other node types are left unchanged.
 	 * This method mutates the receiver and returns the same object for chaining.
 	 *
+	 * @param aggregateElements - Exact aggregate elements already available to a caller
+	 * rebuilding a SUM/PRD node. When supplied, the generated value is also the ordinary
+	 * lookup key and can seed the key cache without a second formatting pass.
 	 * @returns This expression after updating its stored value where applicable.
 	 */
-	updateValue() {
+	updateValue(aggregateElements?: Expression[]) {
+		this._keyValueCache = undefined;
+
 		if (this.isFunction()) {
 			this.value = `${this.name}(${this.getArguments()
 				.map(x => x.text())
 				.join(', ')})`;
 		} else if (this.isProduct() || this.isSum()) {
-			this.value = Expression.getValue(this.elementsArray(), 'text', this.type);
+			const elements = aggregateElements ?? this.elementsArray();
+			this.value = Expression.getValue(elements, 'text', this.type);
+			if (aggregateElements && (this.type === SUM || this.type === PRD)) {
+				this._keyValueCache = this.value;
+			}
 		}
 
 		return this;

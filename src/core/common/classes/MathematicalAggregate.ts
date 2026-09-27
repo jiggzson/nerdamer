@@ -1,3 +1,5 @@
+import { message } from '../../errors';
+
 import { StructuredEntity } from './StructuredEntity';
 
 import type { ParserEntity } from '../../types';
@@ -23,7 +25,11 @@ export abstract class MathematicalAggregate<
 		const index = indices[0];
 		if (index < 0 || index >= this.elements.length) {
 			throw new RangeError(
-				`Index ${index} out of bounds for ${this.dataType} of length ${this.elements.length}`
+				message('indexOutOfBounds', {
+					index: String(index),
+					type: String(this.dataType),
+					length: String(this.elements.length),
+				})
 			);
 		}
 		return this.elements[index];
@@ -38,7 +44,11 @@ export abstract class MathematicalAggregate<
 		const index = indices[0];
 		if (index < 0 || index >= this.elements.length) {
 			throw new RangeError(
-				`Index ${index} out of bounds for ${this.dataType} of length ${this.elements.length}`
+				message('indexOutOfBounds', {
+					index: String(index),
+					type: String(this.dataType),
+					length: String(this.elements.length),
+				})
 			);
 		}
 		this.elements[index] = value;

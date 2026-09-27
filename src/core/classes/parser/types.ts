@@ -102,6 +102,11 @@ export type TextOptions = {
 	decimal?: boolean;
 	/** Significant-digit precision used when decimal output is requested. */
 	precision?: number;
+	/**
+	 * Render numeric values in scientific notation with exactly this many significant digits (1–1e9).
+	 * Numeric powers use scientific notation only when the formatted exponent remains exact.
+	 */
+	scientific?: number;
 	/** Sort sum and product elements with {@link Expression.sortFunction} before rendering. */
 	sort?: boolean;
 	/** Parenthesize powers for output that will be embedded in JavaScript-style expressions. */

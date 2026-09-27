@@ -3,6 +3,7 @@ import { Expression } from '../core/classes/expression/Expression';
 import { zero } from '../core/classes/expression/shortcuts';
 import { Matrix } from '../core/classes/matrix/Matrix';
 import { Vector } from '../core/classes/vector/Vector';
+import { message } from '../core/errors';
 /**
  * Discriminated result of exact symbolic linear-system reduction.
  *
@@ -25,6 +26,8 @@ export type LinearSystemResult =
 	| {
 			type: 'inconsistent';
 	  };
+
+export class NonlinearSystemError extends Error {}
 
 /**
  * Solves a system of linear equations by symbolic reduced row-echelon form.
@@ -254,9 +257,11 @@ function extractCoefficients(
 				}
 			} else {
 				// Nonlinear term
-				throw new Error(
-					`Nonlinear term detected in equation ${i + 1}: degree ${totalDegree} term found. ` +
-						`solveLinearSystem only handles linear systems.`
+				throw new NonlinearSystemError(
+					message('solveLinearNonlinearDegree', {
+						equation: String(i + 1),
+						degree: String(totalDegree),
+					})
 				);
 			}
 		});
@@ -266,10 +271,11 @@ function extractCoefficients(
 		for (const c of allCoeffs) {
 			for (const v of vars) {
 				if (c.hasVariable(v)) {
-					throw new Error(
-						`Nonlinear term detected in equation ${i + 1}: ` +
-							`variable "${v}" appears in a non-polynomial position. ` +
-							`solveLinearSystem only handles linear systems.`
+					throw new NonlinearSystemError(
+						message('solveLinearNonPolynomialVariable', {
+							equation: String(i + 1),
+							variable: v,
+						})
 					);
 				}
 			}

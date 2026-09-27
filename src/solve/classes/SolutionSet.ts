@@ -6,6 +6,7 @@ import { ValuesSet } from '../../core/classes/valuesSet/ValuesSet';
 import { isNerdamerNativeType } from '../../core/common/common';
 import { DivisionByZeroError, message, UnexpectedDataType } from '../../core/errors';
 
+import type { ParserValuesObject } from '../../core/classes/parser/types';
 import type { ParserEntity } from '../../core/types';
 import type { Root } from './FunctionSolver';
 
@@ -95,8 +96,9 @@ export class SolutionSet extends ValuesSet {
 			// Preserve parameterized candidates that cannot yet be verified, but
 			// require every closed residual, including complex values, to be zero.
 			if ((isClosed && evaluated.isNearlyZero()) || !isClosed) {
+				const excluded = this.excluded.has(solution);
 				this.add(solution);
-				retval = this.has(solution);
+				retval = !excluded;
 			}
 		} catch (e) {
 			if (e instanceof DivisionByZeroError) {
@@ -121,7 +123,11 @@ export class SolutionSet extends ValuesSet {
 			const index = indices[0];
 			if (index < 0 || index >= this.count()) {
 				throw new RangeError(
-					`Index ${index} out of bounds for ${this.dataType} of length ${this.count()}`
+					message('indexOutOfBounds', {
+						index: String(index),
+						type: String(this.dataType),
+						length: String(this.count()),
+					})
 				);
 			}
 			const current = this.at(index);
@@ -231,6 +237,59 @@ export class SolutionSet extends ValuesSet {
 	}
 
 	/**
+	 * Adds a batch of numerical solutions that has already been validated against its source
+	 * polynomial. Incoming values are deduplicated by their exact numeric components before
+	 * storage so a numerical root batch does not require pairwise symbolic equality checks.
+	 *
+	 * @internal
+	 */
+	public addValidatedNumericalSolutions(values: Iterable<Expression>): SolutionSet {
+		const candidates = [...values];
+		const existing = this.elements;
+		const keys = new Set<string>();
+
+		for (const value of candidates) {
+			if (!Expression.isExpression(value)) {
+				const entity = value as unknown as ParserEntity;
+				throw new UnexpectedDataType(
+					message('expressionExpected', { type: entity.dataType })
+				);
+			}
+
+			const real = value.isComplex() ? value.realPart() : value;
+			const imaginary = value.isComplex() ? value.imagPart() : Expression.Number(0);
+			if (!real.isNUM() || !imaginary.isNUM()) {
+				throw new UnexpectedDataType(message('expressionExpected', { type: value.dataType }));
+			}
+
+			const realMultiplier = real.getMultiplier();
+			const imaginaryMultiplier = imaginary.getMultiplier();
+			const key =
+				`${realMultiplier.numerator}/${realMultiplier.denominator}|` +
+				`${imaginaryMultiplier.numerator}/${imaginaryMultiplier.denominator}`;
+
+			if (keys.has(key) || this.excluded.has(value)) {
+				continue;
+			}
+
+			let present = false;
+			for (const stored of existing) {
+				if (stored.eq(value) && value.eq(stored)) {
+					present = true;
+					break;
+				}
+			}
+
+			if (!present) {
+				this.addKnownUnique(value);
+				keys.add(key);
+			}
+		}
+
+		return this;
+	}
+
+	/**
 	 * Appends another solution result while preserving set and solver metadata.
 	 *
 	 * @remarks
@@ -242,8 +301,40 @@ export class SolutionSet extends ValuesSet {
 	 * current data model can represent only one such expression.
 	 */
 	public append(s: SolutionSet): SolutionSet {
+		const transferUnique = this.count() === 0 && this.excluded.count() === 0;
 		this.exclude(s.getExcluded());
-		this.addMany(s.elements);
+		if (transferUnique) {
+			for (const solution of s.elements) {
+				this.addKnownUnique(solution);
+			}
+		} else {
+			this.addMany(s.elements);
+		}
+		for (const root of s.getRawRoots()) {
+			this.addRawRoot(root);
+		}
+
+		this.partial = this.partial || s.partial;
+		this.mergeSolutionsType(s.solutionsType);
+		if (!this.unsolved && s.unsolved) {
+			this.unsolved = s.unsolved.copy();
+		}
+
+		return this;
+	}
+
+	/**
+	 * Appends numerical solutions that were already validated by a numerical solver.
+	 *
+	 * This follows the same metadata and exclusion handling as {@link append}, but avoids
+	 * repeating symbolic membership checks for a batch that has already been numerically
+	 * validated and deduplicated.
+	 *
+	 * @internal
+	 */
+	public appendValidatedNumerical(s: SolutionSet): SolutionSet {
+		this.exclude(s.getExcluded());
+		this.addValidatedNumericalSolutions(s.elements);
 		for (const root of s.getRawRoots()) {
 			this.addRawRoot(root);
 		}
@@ -335,8 +426,8 @@ export class SolutionSet extends ValuesSet {
 		return super.elements as Expression[];
 	}
 
-	override evaluate(): SolutionSet {
-		return this.copy().each(e => e.evaluate());
+	override evaluate(values?: ParserValuesObject): SolutionSet {
+		return this.copy().each(e => e.evaluate(values));
 	}
 
 	/**

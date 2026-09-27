@@ -4,13 +4,24 @@
  * @module parser
  */
 import { Parser as InternalParser } from '../core/classes/parser/Parser';
+import { loadParserFunctions } from '../core/parserFunctions';
+
+loadParserFunctions();
 
 import type {
 	ParserConstants,
 	ParserValuesObject,
 } from '../core/classes/parser/types';
-import type { SettingsType } from '../core/Settings';
+import type { SettingsType as InternalSettingsType } from '../core/Settings';
 import type { ExpressionInput, ParserEntity } from '../core/types';
+
+/**
+ * Parser settings supported by the public parser facade.
+ *
+ * `DEFER_SIMPLIFICATION` remains an internal compatibility setting and is not part of
+ * the supported 2.0 parser API.
+ */
+export type SettingsType = Omit<InternalSettingsType, 'DEFER_SIMPLIFICATION'>;
 
 type BooleanSettingName = {
 	[K in keyof SettingsType]: SettingsType[K] extends boolean ? K : never;
@@ -37,6 +48,8 @@ export interface ParserAPI {
 	get<K extends keyof SettingsType>(setting: K): SettingsType[K];
 	/** Returns the symbol currently used for the imaginary unit. */
 	getI(): string;
+	/** Returns whether Nerdamer currently reserves a variable or symbol name. */
+	isReserved(name: string): boolean;
 	/** Returns the active Decimal precision. */
 	getPrecision(): number;
 	/**
@@ -115,4 +128,4 @@ export type {
 	OperatorDefinition,
 } from '../core/common/common';
 export type { Language } from '../core/errors';
-export type { SettingsType } from '../core/Settings';
+

@@ -1,5 +1,5 @@
 /** Public symbolic algebra and polynomial APIs. */
-export { factor, polyFactors } from '../algebra/factor/factor';
+export { factor, pfactor, pfactord, polyFactors } from '../algebra/factor/factor';
 export { gcd, lcm } from '../algebra/gcd/gcd';
 export { groebner } from '../algebra/groebner';
 export { partfrac } from '../algebra/partfrac';
@@ -7,7 +7,7 @@ export { simplify } from '../algebra/simplify/simplify';
 export { sqcomp as completeSquare } from '../algebra/utils';
 export type { CompleteSquareResult } from '../algebra/utils';
 export { CoeffObject } from '../core/classes/expression/CoeffObject';
-export { content, deg } from '../core/classes/polynomial/functions';
+export { coeffs, content, deg } from '../core/classes/polynomial/functions';
 export { Polynomial } from '../core/classes/polynomial/Polynomial';
 export type {
 	EvalInputType,

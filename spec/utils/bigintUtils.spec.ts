@@ -1,5 +1,18 @@
-import { GCD, sign, simplifyRatio, factorial, invMod } from '../../src/core/functions/bigint/bigint';
-import { isPrimeBig, primeFactorsBig } from '../../src/core/functions/bigint/primeFactor';
+import {
+	GCD,
+	sign,
+	simplifyRatio,
+	factorial,
+	ceilIntegerSquareRoot,
+	integerSquareRoot,
+	invMod,
+	powMod,
+} from '../../src/core/functions/bigint/bigint';
+import {
+	isPrimeBig,
+	nextPrimeBig,
+	primeFactorsBig,
+} from '../../src/core/functions/bigint/primeFactor';
 
 describe('BigInt GCD', () => {
 	it('should calculate the gcd correctly', () => {
@@ -44,6 +57,42 @@ describe('BigInt modular inverse', () => {
 	it('returns -1 when no modular inverse exists', () => {
 		expect(invMod(2n, 4n)).toBe(-1n);
 		expect(invMod(0n, 7n)).toBe(-1n);
+	});
+});
+
+describe('BigInt modular exponentiation', () => {
+	it('computes large powers without leaving bigint modular arithmetic', () => {
+		expect(powMod(2n, 9007199254740993n, 5n)).toBe(2n);
+		expect(powMod(-3n, 5n, 7n)).toBe(2n);
+		expect(powMod(123n, 0n, 17n)).toBe(1n);
+	});
+
+	it('rejects unsupported exponent and modulus values', () => {
+		expect(() => powMod(2n, -1n, 7n)).toThrow(RangeError);
+		expect(() => powMod(2n, 3n, 0n)).toThrow(RangeError);
+	});
+});
+
+describe('BigInt exact square root', () => {
+	it('computes floor and ceiling square roots without number conversion', () => {
+		const root = 12345678901234567890n;
+		const square = root * root;
+		expect(integerSquareRoot(square)).toBe(root);
+		expect(integerSquareRoot(square + 123n)).toBe(root);
+		expect(ceilIntegerSquareRoot(square + 123n)).toBe(root + 1n);
+	});
+
+	it('rejects negative inputs', () => {
+		expect(() => integerSquareRoot(-1n)).toThrow(RangeError);
+	});
+});
+
+describe('BigInt next prime', () => {
+	it('returns the input when prime and otherwise advances to the next prime', () => {
+		expect(nextPrimeBig(2n)).toBe(2n);
+		expect(nextPrimeBig(3n)).toBe(3n);
+		expect(nextPrimeBig(4n)).toBe(5n);
+		expect(nextPrimeBig(1_000_000n)).toBe(1_000_003n);
 	});
 });
 

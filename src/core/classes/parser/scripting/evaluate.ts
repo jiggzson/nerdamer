@@ -17,6 +17,19 @@ const EVALUATE_FUNCTION = 'evaluate';
 
 /**
  * Evaluates a deferred parser value and returns the resolved input if evaluation cannot complete.
+ *
+ * @remarks
+ * A Dictionary supplied as the second argument provides substitutions for this evaluation only.
+ * Those names are passed through the same call-scoped parser-value mechanism used by
+ * `Parser.parse(..., values)`; they are not written to the parser's known-value table.
+ *
+ * This distinction matters for reserved names. The solver index `_n` cannot be assigned
+ * globally with `_n: value`, but it can be supplied locally when evaluating a parametric
+ * `SolutionSet`. For example, `evaluate(solve(sin(x),x),{_n=>0})` returns `{0}`.
+ *
+ * When a solver result is stored first in Nerdamer Scripting, use `:` for assignment:
+ * `sol: solve(sin(x),x); evaluate(sol,{_n=>0})`. The `=` operator denotes an equation;
+ * it does not store a parser value in a variable.
  */
 export function evaluate(
 	value: DeferredFunctionArgument,
@@ -75,7 +88,12 @@ export function evaluate(
 	try {
 		if (
 			values &&
-			(Expression.isExpression(input) || Vector.isVector(input) || Matrix.isMatrix(input))
+			(
+				Expression.isExpression(input) ||
+				Vector.isVector(input) ||
+				Matrix.isMatrix(input) ||
+				ValuesSet.isValuesSet(input)
+			)
 		) {
 			retval = input.evaluate(values);
 		} else {

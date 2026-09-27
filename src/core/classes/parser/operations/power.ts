@@ -63,9 +63,9 @@ export function power(a: Expression, b: Expression): Expression {
 	}
 
 	if (Settings.DEFER_SIMPLIFICATION) {
-		retval = new Expression(a);
+		retval = a.copy();
 		// Convert it to an EXP
-		retval = Expression.toEXP(retval, new Expression(b));
+		retval = Expression.toEXP(retval, b.copy());
 		retval.deferred = true;
 	} else {
 		// Simplify powers of i immediately
@@ -74,7 +74,7 @@ export function power(a: Expression, b: Expression): Expression {
 		}
 		// Handle e^(i*pi)
 		else if (a.isE() && b.isComplex()) {
-			const p = new Expression(b);
+			const p = b.copy();
 			const m = p.getMultiplier();
 			delete p.multiplier;
 			if (equal(p, `${Expression.imaginary}*${PI[0]}`)) {
@@ -185,7 +185,7 @@ export function power(a: Expression, b: Expression): Expression {
 			else if (b.isZero() && !(a.isInf() || a.isNUM())) {
 				retval = one();
 			} else if (b.isOne()) {
-				retval = new Expression(a);
+				retval = a.copy();
 			} else if (a.isInf() || bIsInf) {
 				const aIsInf = a.isInf();
 				const bIsInf = b.isInf();
@@ -281,7 +281,7 @@ export function power(a: Expression, b: Expression): Expression {
 					if (p.isOne()) {
 						retval = a.getBase().times(a.getMultiplier());
 					} else {
-						retval = new Expression(a);
+						retval = a.copy();
 						retval.power = p;
 					}
 				} else {
@@ -315,7 +315,7 @@ export function power(a: Expression, b: Expression): Expression {
 						// powers. Positive magnitude has already been extracted for symbolic
 						// bases, while numeric bases keep their exact magnitude in c.
 						if (root !== 1n && !a.isNUM() && a.getMultiplier().isNegative()) {
-							retval = Expression.toEXP(new Expression(a), b);
+							retval = Expression.toEXP(a.copy(), b);
 							retval = retval.times(c);
 							retval = rationalizeRadical(retval);
 						} else if (root !== 1n && root !== 2n && a.isNUM() && a.sign() === -1) {
@@ -590,7 +590,7 @@ export function sqrtToPow(x: Expression) {
 	let retval: Expression;
 
 	if (x.isFunction(SQRT)) {
-		retval = new Expression(x.getArguments()[0]);
+		retval = x.getArguments()[0].copy();
 		// The the power. Pass in true to get it as a Expression
 		const pow = x.getPower();
 		// set the power
@@ -598,7 +598,7 @@ export function sqrtToPow(x: Expression) {
 		// Put back the multiplier
 		retval.multiplier = x.getMultiplier().copy();
 	} else {
-		retval = new Expression(x);
+		retval = x.copy();
 	}
 
 	return retval;
@@ -623,7 +623,7 @@ export function powToSqrt(x: Expression) {
 		// Put back the multiplier
 		retval.multiplier = x.getMultiplier().copy();
 	} else {
-		retval = new Expression(x);
+		retval = x.copy();
 	}
 
 	return retval;

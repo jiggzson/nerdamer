@@ -41,7 +41,7 @@ export class CoeffObject {
 		const retval: Term[] = [];
 
 		for (const powers in this.coeffs) {
-			retval.push(new Term(new Expression(this.coeffs[powers]), powers, this.variables));
+			retval.push(new Term(this.coeffs[powers].copy(), powers, this.variables));
 		}
 
 		return retval;

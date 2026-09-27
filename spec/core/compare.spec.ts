@@ -44,6 +44,15 @@ describe('compare: equal', () => {
 	it('should detect equality for trig functions', () => {
 		expect(equal('cos((1/2)*2^(1/2))', 'cos(2^(-1/2))')).toBe(true);
 	});
+
+	it('compares numeric complex values by their components', () => {
+		expect(equal('1.25+2.5*i', '1.25+2.5*i')).toBe(true);
+		expect(equal('1.25+2.5*i', '1.25+2.5001*i')).toBe(false);
+		expect(equal('-0.75+0.125*i', '-3/4+1/8*i')).toBe(true);
+
+		// Symbolic complex components continue through the general equality path.
+		expect(equal('sqrt(2)+i', '2^(1/2)+i')).toBe(true);
+	});
 });
 
 describe('compare: gt/gte/lt/lte (basic numeric)', () => {

@@ -1,3 +1,4 @@
+import '../helpers/registerNerdamerFunctions';
 import { Equation } from '../../src/core/classes/equation/Equation';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { Parser } from '../../src/core/classes/parser/Parser';

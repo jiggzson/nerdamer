@@ -137,14 +137,20 @@ export class Matrix extends StructuredEntity<Matrix, Vector> {
 		const row = indices[0];
 		if (row < 0 || row >= this.elements.length) {
 			throw new MathError(
-				`Row index ${row} out of bounds for Matrix with ${this.elements.length} rows`
+				message('matrixRowIndexOutOfBounds', {
+					index: String(row),
+					length: String(this.elements.length),
+				})
 			);
 		}
 		if (indices.length > 1) {
 			const col = indices[1];
 			if (col < 0 || col >= this.elements[row].length) {
 				throw new MathError(
-					`Column index ${col} out of bounds for Matrix with ${this.elements[row].length} columns`
+					message('matrixColumnIndexOutOfBounds', {
+						index: String(col),
+						length: String(this.elements[row].length),
+					})
 				);
 			}
 			return this.elements[row][col];
@@ -164,19 +170,25 @@ export class Matrix extends StructuredEntity<Matrix, Vector> {
 	 */
 	__set__(indices: number[] | string, value: ParserEntity): void {
 		if (typeof indices === 'string') {
-			throw new MathError('Matrix does not support string key access');
+			throw new MathError(message('matrixStringKeyUnsupported'));
 		}
 		const row = indices[0];
 		const col = indices.length > 1 ? indices[1] : undefined;
 		if (row < 0 || row >= this.elements.length) {
 			throw new MathError(
-				`Row index ${row} out of bounds for Matrix with ${this.elements.length} rows`
+				message('matrixRowIndexOutOfBounds', {
+					index: String(row),
+					length: String(this.elements.length),
+				})
 			);
 		}
 		if (col !== undefined) {
 			if (col < 0 || col >= this.elements[row].length) {
 				throw new MathError(
-					`Column index ${col} out of bounds for Matrix with ${this.elements[row].length} columns`
+					message('matrixColumnIndexOutOfBounds', {
+						index: String(col),
+						length: String(this.elements[row].length),
+					})
 				);
 			}
 			this.elements[row][col] = Expression.create(value);
@@ -1006,14 +1018,14 @@ export class Matrix extends StructuredEntity<Matrix, Vector> {
 	 */
 	trace(): Expression {
 		if (!this.isSquare()) {
-			throw new MathError('Unable to calculate trace for the matrix');
+			throw new MathError(message('matrixTraceUnavailable'));
 		}
 		let tr = zero();
 		const n = this.elements.length;
 		for (let i = 0; i < n; i++) {
 			const e = this.elements[i][i];
 			if (!Expression.isExpression(e)) {
-				throw new MathError('Unable to calculate trace for the matrix');
+				throw new MathError(message('matrixTraceUnavailable'));
 			}
 			tr = tr.plus(e);
 		}

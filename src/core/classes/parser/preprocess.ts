@@ -1,4 +1,4 @@
-import { ParserError } from '../../errors';
+import { message, ParserError } from '../../errors';
 
 type FunctionMetadata = {
 	bracketlessStatement?: boolean;
@@ -16,12 +16,14 @@ type BracketlessFunction = {
 };
 
 type StatementScope = {
+	argumentStart: number;
 	closingBracket: string;
 	functionName?: string;
+	statementBlockOpened?: boolean;
 };
 
 const BLOCK_FUNCTION = 'block';
-const COMMENT_DELIMITER = '##';
+const LET_FUNCTION = 'let';
 
 function isIdentifierStart(character: string): boolean {
 	return /[a-z_]/i.test(character);
@@ -54,35 +56,26 @@ function getNextSignificantCharacter(input: string, at: number): string | undefi
 	return input[index];
 }
 
-/**
- * Removes paired-hash comments before any other parser-input normalization occurs.
- *
- * A comment begins at `##` and ends at the next `##`. Comment contents are replaced
- * with whitespace so adjacent tokens do not accidentally merge. A lone `#` is left
- * untouched and retains its ordinary parser meaning.
- */
 function normalizeComments(input: string): string {
 	let retval = '';
 	let index = 0;
 
 	while (index < input.length) {
-		const opening = input.indexOf(COMMENT_DELIMITER, index);
+		const opening = input.indexOf('#', index);
 		if (opening === -1) {
 			retval += input.slice(index);
 			break;
 		}
 
 		retval += input.slice(index, opening);
-		const closing = input.indexOf(
-			COMMENT_DELIMITER,
-			opening + COMMENT_DELIMITER.length
-		);
+		const delimiter = input.startsWith('##', opening) ? '##' : '#';
+		const closing = input.indexOf(delimiter, opening + delimiter.length);
 		if (closing === -1) {
-			throw new ParserError(`Missing closing comment delimiter "${COMMENT_DELIMITER}".`);
+			throw new ParserError(message('missingCommentDelimiter', { delimiter }));
 		}
 
 		retval += ' ';
-		index = closing + COMMENT_DELIMITER.length;
+		index = closing + delimiter.length;
 	}
 
 	return retval;
@@ -92,10 +85,9 @@ function normalizeComments(input: string): string {
  * Normalizes semicolon statement syntax onto the parser's existing block sequencing.
  *
  * Root-level statement sequences become an implicit block. Inside an explicit block,
- * semicolons separate block arguments just like the commas that already drive BLOCK's
- * deferred evaluation. A trailing semicolon before a closing bracket or comma is simply
- * discarded. Semicolons in other nested expression contexts are left untouched so the
- * ordinary parser can reject syntax whose sequencing semantics have not been defined.
+ * semicolons separate block arguments just like commas. A statement sequence in LET's body is
+ * wrapped in an implicit block so the sequence remains one LET body argument rather than being
+ * mistaken for additional bindings. A trailing semicolon is discarded.
  */
 function normalizeStatementSeparators(input: string): string {
 	const scopes: StatementScope[] = [];
@@ -107,20 +99,33 @@ function normalizeStatementSeparators(input: string): string {
 
 		if (character === '(' || character === '[' || character === '{') {
 			const closingBracket = character === '(' ? ')' : character === '[' ? ']' : '}';
+			retval += character;
 			scopes.push({
+				argumentStart: retval.length,
 				closingBracket,
 				functionName: character === '(' ? getPreviousIdentifier(input, index) : undefined,
 			});
-			retval += character;
 			continue;
 		}
 
 		if (character === ')' || character === ']' || character === '}') {
 			const currentScope = scopes[scopes.length - 1];
 			if (currentScope?.closingBracket === character) {
+				if (currentScope.statementBlockOpened) {
+					retval += ')';
+				}
 				scopes.pop();
 			}
 			retval += character;
+			continue;
+		}
+
+		if (character === ',') {
+			retval += character;
+			const currentScope = scopes[scopes.length - 1];
+			if (currentScope && !currentScope.statementBlockOpened) {
+				currentScope.argumentStart = retval.length;
+			}
 			continue;
 		}
 
@@ -141,6 +146,15 @@ function normalizeStatementSeparators(input: string): string {
 				continue;
 			} else if (currentScope?.functionName === BLOCK_FUNCTION) {
 				retval += ',';
+			} else if (currentScope?.functionName === LET_FUNCTION) {
+				if (!currentScope.statementBlockOpened) {
+					retval =
+						retval.slice(0, currentScope.argumentStart) +
+						`${BLOCK_FUNCTION}(` +
+						retval.slice(currentScope.argumentStart);
+					currentScope.statementBlockOpened = true;
+				}
+				retval += ',';
 			} else {
 				retval += character;
 			}
@@ -157,11 +171,6 @@ function normalizeStatementSeparators(input: string): string {
 	return retval;
 }
 
-/**
- * Finds the right-most registered function that is separated from its argument by whitespace.
- * Processing from the inside out lets nested input such as `sin sin x` normalize without
- * introducing a separate parser mode.
- */
 function findBracketlessFunction(
 	input: string,
 	functions: FunctionRegistry
@@ -194,13 +203,9 @@ function findBracketlessFunction(
 		if (index < input.length) {
 			const firstArgumentCharacter = input[index];
 			const nextCharacter = input[index + 1] ?? '';
-			// Whitespace around an ordinary binary operator must not turn a registered
-			// function name used as a variable into a bracketless call. A sign glued to
-			// its operand remains valid prefix syntax, as in `sin -x`.
 			const startsWithOperatorBoundary =
 				/[*/=<>:&|]/.test(firstArgumentCharacter) ||
-				((firstArgumentCharacter === '+' || firstArgumentCharacter === '-') &&
-					/\s/.test(nextCharacter));
+				((firstArgumentCharacter === '+' || firstArgumentCharacter === '-') && /\s/.test(nextCharacter));
 
 			if (!startsWithOperatorBoundary) {
 				retval = {
@@ -225,11 +230,6 @@ function isClosingBracket(character: string): boolean {
 	return character === ')' || character === ']' || character === '}';
 }
 
-/**
- * Finds the end of one bracketless function application. Function application binds more
- * tightly than ordinary binary arithmetic but less tightly than powers and postfix operators.
- * Multi-argument functions keep comma-separated arguments in the same application.
- */
 function findArgumentEnd(
 	input: string,
 	start: number,
@@ -250,42 +250,30 @@ function findArgumentEnd(
 			continue;
 		}
 		if (isClosingBracket(character)) {
-			if (depth === 0) {
-				break;
-			}
+			if (depth === 0) break;
 			depth--;
 			previousSignificant = character;
 			continue;
 		}
 
 		if (depth > 0) {
-			if (!/\s/.test(character)) {
-				previousSignificant = character;
-			}
+			if (!/\s/.test(character)) previousSignificant = character;
 			continue;
 		}
 
 		if (consumeStatement) {
-			if (character === ',') {
-				break;
-			}
-			if (!/\s/.test(character)) {
-				previousSignificant = character;
-			}
+			if (character === ',') break;
+			if (!/\s/.test(character)) previousSignificant = character;
 			continue;
 		}
 
 		if (/\s/.test(character)) {
-			if (multipleArguments && previousSignificant === ',') {
-				continue;
-			}
+			if (multipleArguments && previousSignificant === ',') continue;
 			break;
 		}
 
 		if (character === ',') {
-			if (!multipleArguments) {
-				break;
-			}
+			if (!multipleArguments) break;
 			previousSignificant = character;
 			continue;
 		}
@@ -294,9 +282,7 @@ function findArgumentEnd(
 			(character === '+' || character === '-') &&
 			(index === start || previousSignificant === ',' || previousSignificant === '^');
 		const isBinaryBoundary = /[+\-*/=<>:&|]/.test(character) && !isPrefixSign;
-		if (isBinaryBoundary) {
-			break;
-		}
+		if (isBinaryBoundary) break;
 
 		previousSignificant = character;
 	}
@@ -304,13 +290,6 @@ function findArgumentEnd(
 	return index;
 }
 
-/**
- * Converts accepted parser shorthand to the ordinary notation consumed by the tokenizer.
- * Paired-hash comments are removed before root-level semicolon sequences are mapped to the
- * existing block construct and legacy bracketless function calls are normalized. Existing
- * parenthesized calls are untouched; only a registered function followed by whitespace is
- * considered a bracketless call.
- */
 export function preprocess(input: string, functions: FunctionRegistry): string {
 	let retval = normalizeComments(input);
 	retval = normalizeStatementSeparators(retval);

@@ -4,11 +4,32 @@ import { dataTypes } from '../core/classes/parser/constants';
 import { Parser } from '../core/classes/parser/Parser';
 import { message, UnexpectedInputError } from '../core/errors';
 
-import type { ExpressionInput } from '../core/types';
+import type { ExpressionInput, NerdamerInput } from '../core/types';
 
 export interface SolverInputs {
 	x: string;
 	expression: Expression;
+}
+
+export function normalizeSolverExpression(input: NerdamerInput): Expression {
+	if (Equation.isEquation(input)) {
+		return input.toLHS().LHS;
+	}
+	if (Expression.isExpression(input)) {
+		return input;
+	}
+
+	const parsed = Parser.parse(String(input));
+	if (Equation.isEquation(parsed)) {
+		return parsed.toLHS().LHS;
+	}
+	if (Expression.isExpression(parsed)) {
+		return parsed;
+	}
+
+	throw new UnexpectedInputError(
+		message('expressionExpected', { type: dataTypes[parsed.dataType] })
+	);
 }
 
 export function extractVariable(variable: ExpressionInput) {
@@ -25,26 +46,7 @@ export function prepareSolverInputs(
 	input: ExpressionInput | Equation | string,
 	variable?: ExpressionInput
 ): SolverInputs {
-	let expression: Expression;
-	if (Equation.isEquation(input)) {
-		expression = input.toLHS().LHS;
-	} else if (!Expression.isExpression(input)) {
-		// Cast them all to string
-		const parsed = Parser.parse(String(input));
-		// Was it an equation string?
-		if (Equation.isEquation(parsed)) {
-			expression = parsed.toLHS().LHS;
-		} else if (!Expression.isExpression(parsed)) {
-			// Complain for any other types
-			throw new UnexpectedInputError(
-				message('expressionExpected', { type: dataTypes[parsed.dataType] })
-			);
-		} else {
-			expression = parsed;
-		}
-	} else {
-		expression = input;
-	}
+	const expression = normalizeSolverExpression(input);
 
 	const vars = expression.variables();
 	let x: string;

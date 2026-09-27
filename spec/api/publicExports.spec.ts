@@ -35,7 +35,7 @@ import {
 import {
 	Complex,
 	FunctionSolver,
-	MultiPoly,
+	SparsePolynomial,
 	groebnerBasisWithOptions,
 } from '../../src/api/advanced';
 
@@ -113,7 +113,7 @@ describe('public package surface', () => {
 
 		expect(Complex).toBeDefined();
 		expect(FunctionSolver).toBeDefined();
-		expect(MultiPoly).toBeDefined();
+		expect(SparsePolynomial).toBeDefined();
 		expect(groebnerBasisWithOptions).toBeDefined();
 	});
 });

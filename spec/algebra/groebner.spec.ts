@@ -7,8 +7,9 @@ import {
 	solve,
 	GroebnerBudgetExceeded,
 } from '../../src/algebra/algorithms/groebnerBase';
-import { MultiPoly } from '../../src/algebra/algorithms/multiPoly/MultiPoly';
-import { mulPoly, addPoly, subPoly, scalePoly } from '../../src/algebra/algorithms/poly';
+import { Expression } from '../../src/core/classes/expression/Expression';
+import { SparsePolynomial } from '../../src/core/classes/polynomial/SparsePolynomial';
+import { sparsePolynomialToExpression } from '../../src/core/classes/polynomial/SparsePolynomialAdapter';
 import { groebner } from '../../src/algebra/groebner';
 import { Vector } from '../../src/core/classes/vector/Vector';
 
@@ -18,14 +19,40 @@ import type { MonomialOrder, RationalSolution } from '../../src/algebra/algorith
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Shorthand: variable x_i */
-function x(i: number): MultiPoly {
-	return MultiPoly.variable(i);
+const TEST_VARIABLE_COUNT = 3;
+
+/** Shorthand: variable x_i in the shared test ring. */
+function x(i: number): SparsePolynomial {
+	return SparsePolynomial.variable(TEST_VARIABLE_COUNT, i);
 }
 
-/** Shorthand: constant */
-function c(n: bigint): MultiPoly {
-	return MultiPoly.constant(n);
+/** Shorthand: constant in the shared test ring. */
+function c(n: bigint): SparsePolynomial {
+	return SparsePolynomial.constant(TEST_VARIABLE_COUNT, n);
+}
+
+function addPoly(a: SparsePolynomial, b: SparsePolynomial): SparsePolynomial {
+	return a.add(b);
+}
+
+function subPoly(a: SparsePolynomial, b: SparsePolynomial): SparsePolynomial {
+	return a.subtract(b);
+}
+
+function mulPoly(a: SparsePolynomial, b: SparsePolynomial): SparsePolynomial {
+	return a.multiply(b);
+}
+
+function scalePoly(a: SparsePolynomial, coefficient: bigint): SparsePolynomial {
+	return a.scale(coefficient);
+}
+
+function polyText(poly: SparsePolynomial, names: readonly string[]): string {
+	const variables = new Array<string>(poly.variableCount);
+	for (let i = 0; i < poly.variableCount; i++) {
+		variables[i] = names[i] ?? `x${i}`;
+	}
+	return sparsePolynomialToExpression(poly, variables).text();
 }
 
 /** Convert solution map to a sorted string for deterministic comparison */
@@ -36,8 +63,81 @@ function solToStr(sol: RationalSolution): string {
 }
 
 /** Check that a polynomial set contains a constant (ideal = whole ring) */
-function basisIsUnit(basis: MultiPoly[]): boolean {
+function basisIsUnit(basis: readonly SparsePolynomial[]): boolean {
 	return basis.length === 1 && basis[0].isConstant() && basis[0].constantTerm() !== 0n;
+}
+
+function sparseOrder(order: MonomialOrder): 'lex' | 'grlex' | 'grevlex' {
+	return order.toLowerCase() as 'lex' | 'grlex' | 'grevlex';
+}
+
+function monomialDivides(a: readonly bigint[], b: readonly bigint[]): boolean {
+	if (a.length !== b.length) {
+		return false;
+	}
+	for (let i = 0; i < a.length; i++) {
+		if (a[i] > b[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+function sPolynomial(
+	f: SparsePolynomial,
+	g: SparsePolynomial,
+	order: MonomialOrder
+): SparsePolynomial {
+	const ltF = f.leadingTerm(sparseOrder(order));
+	const ltG = g.leadingTerm(sparseOrder(order));
+	if (ltF === null || ltG === null) {
+		return SparsePolynomial.zero(f.variableCount);
+	}
+
+	const lcm = ltF.exponents.map((exponent, i) =>
+		exponent > ltG.exponents[i] ? exponent : ltG.exponents[i]
+	);
+	const fMultiplier = lcm.map((exponent, i) => exponent - ltF.exponents[i]);
+	const gMultiplier = lcm.map((exponent, i) => exponent - ltG.exponents[i]);
+
+	return f
+		.multiply(SparsePolynomial.monomial(f.variableCount, ltG.coefficient, fMultiplier))
+		.subtract(
+			g.multiply(SparsePolynomial.monomial(g.variableCount, ltF.coefficient, gMultiplier))
+		);
+}
+
+function expectGroebnerBasis(
+	basis: readonly SparsePolynomial[],
+	order: MonomialOrder
+): void {
+	for (let i = 0; i < basis.length; i++) {
+		for (let j = i + 1; j < basis.length; j++) {
+			expect(reduceByBasis(sPolynomial(basis[i], basis[j], order), basis, order).isZero()).toBe(
+				true
+			);
+		}
+	}
+}
+
+function expectReducedBasis(
+	basis: readonly SparsePolynomial[],
+	order: MonomialOrder
+): void {
+	for (let i = 0; i < basis.length; i++) {
+		for (let j = 0; j < basis.length; j++) {
+			if (i === j) {
+				continue;
+			}
+			const lt = basis[j].leadingTerm(sparseOrder(order));
+			if (lt === null) {
+				continue;
+			}
+			for (const term of basis[i].terms()) {
+				expect(monomialDivides(lt.exponents, term.exponents)).toBe(false);
+			}
+		}
+	}
 }
 
 // ============================================================================
@@ -109,6 +209,31 @@ describe('Basis Groebner LEX', () => {
 		expect(groebner(['-y^2+x*z', '-z^2+x*y', 'x^2-y*z', 'y^3-z^3']).text()).toEqual(
 			new Vector(['-y^2+x*z', '-z^2+x*y', 'x^2-y*z', 'y^3-z^3']).text()
 		);
+	});
+
+	it('clears rational coefficient denominators at the sparse boundary', () => {
+		expect(groebner(['x/2-y/2', 'y/3-1/3']).text()).toEqual(
+			groebner(['x-y', 'y-1']).text()
+		);
+	});
+
+	// Regression: Nerdamer 2.0 issue #11
+	it('converges on the reported three-variable lex system', () => {
+		const actual = groebner([
+			'x*y^3-x^2-z+6',
+			'x^3*y^2-y',
+		]).elements.map(expression => Expression.create(expression));
+		const expected = [
+			'x^2+x*y*z^2-12*x*y*z+36*x*y+y^10*z-6*y^10-y^6-3*y^4*z^2+36*y^4*z-108*y^4-y^2*z^4+24*y^2*z^3-216*y^2*z^2+864*y^2*z-1296*y^2+z-6',
+			'x*y^3+x*y*z^2-12*x*y*z+36*x*y+y^10*z-6*y^10-y^6-3*y^4*z^2+36*y^4*z-108*y^4-y^2*z^4+24*y^2*z^3-216*y^2*z^2+864*y^2*z-1296*y^2',
+			'x*y*z^5-30*x*y*z^4+360*x*y*z^3-2160*x*y*z^2+6480*x*y*z-7775*x*y+y^10*z^4-24*y^10*z^3+216*y^10*z^2-864*y^10*z+1296*y^10+y^8*z-6*y^8-y^6*z^3+18*y^6*z^2-108*y^6*z+216*y^6-3*y^4*z^5+90*y^4*z^4-1080*y^4*z^3+6480*y^4*z^2-19440*y^4*z+23327*y^4-y^2*z^7+42*y^2*z^6-756*y^2*z^5+7560*y^2*z^4-45360*y^2*z^3+163294*y^2*z^2-326568*y^2*z+279864*y^2',
+			'y^11-3*y^5*z+18*y^5-y^3*z^3+18*y^3*z^2-108*y^3*z+216*y^3-y',
+		].map(expression => Expression.create(expression));
+
+		expect(actual).toHaveLength(expected.length);
+		for (const expectedPolynomial of expected) {
+			expect(actual.some(polynomial => polynomial.eq(expectedPolynomial))).toBe(true);
+		}
 	});
 });
 
@@ -313,39 +438,47 @@ describe('Basis Groebner LEX from original inputs', () => {
 
 describe('Groebner edge cases', () => {
 	it('empty input returns empty basis', () => {
-		expect(Groebner([], ['x', 'y'])).toEqual([]);
+		expect(Groebner([])).toEqual([]);
 	});
 
 	it('single zero polynomial returns empty basis', () => {
-		expect(Groebner([MultiPoly.zero()], ['x'])).toEqual([]);
+		expect(Groebner([SparsePolynomial.zero(TEST_VARIABLE_COUNT)])).toEqual([]);
 	});
 
 	it('single nonzero constant yields [1]', () => {
-		const basis = Groebner([c(7n)], ['x']);
+		const basis = Groebner([c(7n)]);
 		expect(basisIsUnit(basis)).toBe(true);
 	});
 
 	it('single linear polynomial is its own basis', () => {
 		// x + 1  (var index 0)
 		const p = addPoly(x(0), c(1n));
-		const basis = Groebner([p], ['x']);
+		const basis = Groebner([p]);
 		expect(basis.length).toBe(1);
-		// Should be monic: x + 1 (spacing depends on MultiPoly.text() convention)
-		const txt = basis[0].text(['x']);
+		// Should be monic: x + 1 (spacing depends on SparsePolynomial expression formatting convention)
+		const txt = polyText(basis[0], ['x']);
 		expect(txt === 'x+1' || txt === 'x + 1' || txt === '1 + x' || txt === '1+x').toBe(true);
 	});
 
 	it('two identical generators reduce to one', () => {
 		const p = addPoly(x(0), c(1n));
-		const basis = Groebner([p, p.clone()], ['x']);
+		const basis = Groebner([p, p]);
 		expect(basis.length).toBe(1);
+	});
+
+	it('preserves exponents above the JavaScript safe-integer range at the sparse boundary', () => {
+		const exponent = 9007199254740993n;
+		const p = SparsePolynomial.monomial(TEST_VARIABLE_COUNT, 1n, [exponent, 0n, 0n]);
+		const basis = groebnerBasisWithOptions([p], { order: 'LEX' });
+		expect(basis).toHaveLength(1);
+		expect(basis[0].coefficient([exponent, 0n, 0n])).toBe(1n);
 	});
 
 	it('inconsistent system yields [1]', () => {
 		// x = 1 and x = 2 => 1 ∈ ideal
 		const p1 = subPoly(x(0), c(1n)); // x - 1
 		const p2 = subPoly(x(0), c(2n)); // x - 2
-		const basis = Groebner([p1, p2], ['x']);
+		const basis = Groebner([p1, p2]);
 		expect(basisIsUnit(basis)).toBe(true);
 	});
 
@@ -354,12 +487,27 @@ describe('Groebner edge cases', () => {
 		const x0 = x(0);
 		const f = mulPoly(subPoly(x0, c(1n)), subPoly(x0, c(2n))); // x^2 - 3x + 2
 		const g = mulPoly(subPoly(x0, c(2n)), subPoly(x0, c(3n))); // x^2 - 5x + 6
-		const basis = Groebner([f, g], ['x']);
+		const basis = Groebner([f, g]);
 		expect(basis.length).toBe(1);
 		// Should be x - 2 (up to sign/content/spacing)
-		const txt = basis[0].text(['x']);
-		// MultiPoly.text() uses ' - ' and ' + ' for non-leading terms
+		const txt = polyText(basis[0], ['x']);
+		// SparsePolynomial expression formatting uses ' - ' and ' + ' for non-leading terms
 		expect(txt === 'x - 2' || txt === '-2 + x' || txt === 'x-2' || txt === '-2+x').toBe(true);
+	});
+
+	it('returns a basis reduced against its other elements', () => {
+		const x0 = x(0);
+		const y0 = x(1);
+		const f = addPoly(mulPoly(x0, x0), scalePoly(y0, -1n)); // x^2 - y
+		const g = addPoly(mulPoly(x0, y0), c(-1n)); // x*y - 1
+		const redundant = mulPoly(x0, f);
+		const basis = Groebner([f, g, redundant], 'LEX');
+
+		for (let i = 0; i < basis.length; i++) {
+			const others = basis.filter((_, j) => j !== i);
+			const reduced = reduceByBasis(basis[i], others, 'LEX');
+			expect(polyText(reduced, ['x', 'y'])).toBe(polyText(basis[i], ['x', 'y']));
+		}
 	});
 });
 
@@ -369,7 +517,7 @@ describe('Groebner edge cases', () => {
 
 describe('Monomial order variations', () => {
 	// Build x^2 + y^2 - 1, x*y - 1 in vars [x=0, y=1]
-	function circleAndHyperbola(): MultiPoly[] {
+	function circleAndHyperbola(): SparsePolynomial[] {
 		const x0 = x(0),
 			y0 = x(1);
 		const f = addPoly(addPoly(mulPoly(x0, x0), mulPoly(y0, y0)), c(-1n)); // x^2 + y^2 - 1
@@ -378,18 +526,18 @@ describe('Monomial order variations', () => {
 	}
 
 	it('LEX order produces triangular system', () => {
-		const basis = Groebner(circleAndHyperbola(), ['x', 'y'], 'LEX');
+		const basis = Groebner(circleAndHyperbola(), 'LEX');
 		// In LEX with x > y, the basis should contain a polynomial in y alone.
 		const vars = ['x', 'y'];
-		const yOnly = basis.filter((p: MultiPoly) => {
-			const txt = p.text(vars);
+		const yOnly = basis.filter((p: SparsePolynomial) => {
+			const txt = polyText(p, vars);
 			return !txt.includes('x');
 		});
 		expect(yOnly.length).toBeGreaterThanOrEqual(1);
 	});
 
 	it('GRLEX order is valid Groebner basis', () => {
-		const basis = Groebner(circleAndHyperbola(), ['x', 'y'], 'GRLEX');
+		const basis = Groebner(circleAndHyperbola(), 'GRLEX');
 		expect(basis.length).toBeGreaterThan(0);
 		// Every S-polynomial should reduce to zero (verified implicitly by the algorithm).
 		// Here we just check it's non-trivial and non-unit.
@@ -397,7 +545,7 @@ describe('Monomial order variations', () => {
 	});
 
 	it('GREVLEX order is valid Groebner basis', () => {
-		const basis = Groebner(circleAndHyperbola(), ['x', 'y'], 'GREVLEX');
+		const basis = Groebner(circleAndHyperbola(), 'GREVLEX');
 		expect(basis.length).toBeGreaterThan(0);
 		expect(basisIsUnit(basis)).toBe(false);
 	});
@@ -422,7 +570,7 @@ describe('Monomial order variations', () => {
 describe('idealMembership', () => {
 	it('zero polynomial is always a member', () => {
 		const polys = [addPoly(x(0), c(1n))]; // {x + 1}
-		expect(idealMembership(MultiPoly.zero(), polys)).toBe(true);
+		expect(idealMembership(SparsePolynomial.zero(TEST_VARIABLE_COUNT), polys)).toBe(true);
 	});
 
 	it('generator is a member of its own ideal', () => {
@@ -467,20 +615,20 @@ describe('idealMembership', () => {
 describe('reduceByBasis', () => {
 	it('reduces zero to zero', () => {
 		const basis = [addPoly(x(0), c(1n))];
-		const r = reduceByBasis(MultiPoly.zero(), basis);
+		const r = reduceByBasis(SparsePolynomial.zero(TEST_VARIABLE_COUNT), basis);
 		expect(r.isZero()).toBe(true);
 	});
 
 	it('reduces generator to zero', () => {
 		const f = addPoly(x(0), c(1n));
-		const basis = Groebner([f], ['x']);
+		const basis = Groebner([f]);
 		const r = reduceByBasis(f, basis);
 		expect(r.isZero()).toBe(true);
 	});
 
 	it('reduces non-member to nonzero remainder', () => {
 		// Basis: {x + 1}. Reduce y => y (irreducible).
-		const basis = Groebner([addPoly(x(0), c(1n))], ['x', 'y']);
+		const basis = Groebner([addPoly(x(0), c(1n))]);
 		const r = reduceByBasis(x(1), basis);
 		expect(r.isZero()).toBe(false);
 	});
@@ -488,7 +636,7 @@ describe('reduceByBasis', () => {
 	it('reduces against empty basis to itself', () => {
 		const f = addPoly(x(0), c(5n));
 		const r = reduceByBasis(f, []);
-		expect(r.text(['x'])).toBe(f.text(['x']));
+		expect(polyText(r, ['x'])).toBe(polyText(f, ['x']));
 	});
 });
 
@@ -589,6 +737,17 @@ describe('solve', () => {
 		const sols = solve([f], ['x']);
 		expect(sols.length).toBe(1);
 		expect(sols[0].get('x')).toEqual({ n: 1n, d: 2n });
+	});
+
+	it('solves a sparse high-degree polynomial with a repeated zero root', () => {
+		// x^257 - x^256 = x^256*(x - 1)
+		const f = addPoly(
+			SparsePolynomial.monomial(TEST_VARIABLE_COUNT, 1n, [257n, 0n, 0n]),
+			SparsePolynomial.monomial(TEST_VARIABLE_COUNT, -1n, [256n, 0n, 0n])
+		);
+		const sols = solve([f], ['x']);
+		const vals = sols.map((s: RationalSolution) => s.get('x')!.n).sort();
+		expect(vals).toEqual([0n, 1n]);
 	});
 
 	it('empty input returns a single empty solution', () => {
@@ -761,6 +920,74 @@ describe('Reduced vs unreduced basis', () => {
 });
 
 // ============================================================================
+// Gröbner correctness criteria
+// ============================================================================
+
+describe('Groebner correctness criteria', () => {
+	const cases: Array<{
+		description: string;
+		order: MonomialOrder;
+		polys: () => SparsePolynomial[];
+	}> = [
+		{
+			description: 'two conics / LEX',
+			order: 'LEX',
+			polys: () => {
+				const x0 = x(0);
+				const x1 = x(1);
+				return [
+					addPoly(mulPoly(x0, x0), scalePoly(x1, -1n)),
+					addPoly(addPoly(mulPoly(x1, x1), x1), c(-1n)),
+				];
+			},
+		},
+		{
+			description: 'cyclic-3 / GRLEX',
+			order: 'GRLEX',
+			polys: () => {
+				const x0 = x(0);
+				const x1 = x(1);
+				const x2 = x(2);
+				return [
+					addPoly(addPoly(x0, x1), x2),
+					addPoly(addPoly(mulPoly(x0, x1), mulPoly(x0, x2)), mulPoly(x1, x2)),
+					addPoly(mulPoly(mulPoly(x0, x1), x2), c(-1n)),
+				];
+			},
+		},
+		{
+			description: 'toric binomial / GREVLEX',
+			order: 'GREVLEX',
+			polys: () => {
+				const x0 = x(0);
+				const x1 = x(1);
+				const x2 = x(2);
+				return [
+					addPoly(mulPoly(x0, x0), scalePoly(mulPoly(x1, x2), -1n)),
+					addPoly(mulPoly(x1, x1), scalePoly(mulPoly(x0, x2), -1n)),
+					addPoly(mulPoly(x2, x2), scalePoly(mulPoly(x0, x1), -1n)),
+				];
+			},
+		},
+	];
+
+	it.each(cases)('$description satisfies Buchberger and reduced-basis criteria', testCase => {
+		const generators = testCase.polys();
+		const basis = groebnerBasisWithOptions(generators, {
+			order: testCase.order,
+			reduced: true,
+			strategy: 'sugar',
+		});
+
+		for (const generator of generators) {
+			expect(reduceByBasis(generator, basis, testCase.order).isZero()).toBe(true);
+		}
+		expectGroebnerBasis(basis, testCase.order);
+		expectReducedBasis(basis, testCase.order);
+	});
+});
+
+// ============================================================================
 // Larger / classic benchmarks
 // ============================================================================
 
@@ -786,7 +1013,7 @@ describe('Classic benchmarks', () => {
 			scalePoly(x1, -1n)
 		);
 
-		const basis = Groebner([f1, f2, f3], ['x0', 'x1', 'x2'], 'GRLEX');
+		const basis = Groebner([f1, f2, f3], 'GRLEX');
 		expect(basis.length).toBeGreaterThan(0);
 		expect(basisIsUnit(basis)).toBe(false);
 
@@ -796,7 +1023,7 @@ describe('Classic benchmarks', () => {
 		}
 	});
 
-	it('Cyclic-3 via MultiPoly API', () => {
+	it('Cyclic-3 via SparsePolynomial API', () => {
 		const x0 = x(0),
 			x1 = x(1),
 			x2 = x(2);
@@ -808,7 +1035,7 @@ describe('Classic benchmarks', () => {
 		// xyz - 1
 		const f3 = addPoly(mulPoly(mulPoly(x0, x1), x2), c(-1n));
 
-		const basis = Groebner([f1, f2, f3], ['x', 'y', 'z'], 'GRLEX');
+		const basis = Groebner([f1, f2, f3], 'GRLEX');
 		expect(basis.length).toBeGreaterThan(0);
 
 		// Generators should reduce to zero

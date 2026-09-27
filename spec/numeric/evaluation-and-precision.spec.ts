@@ -32,6 +32,31 @@ describe('Parser precision', () => {
 	});
 });
 
+describe('Big-number exactness', () => {
+	// Regression: Nerdamer 2.0 issue #9
+	it('keeps large finite decimals exact through multiplication', () => {
+		const input =
+			'4854818448948949498494984948949449898454525.4854818448948949498494984948949449898454525';
+		const expected =
+			'38838547591591595987959879591595599187636203.88385475915915959879598795915955991876362';
+		const result = Parser.parse(`${input}*8`);
+
+		expect(result.eq(Expression.create(expected))).toBe(true);
+
+		const highPrecisionText = result.text({ decimal: true, precision: 100 });
+		expect(Expression.create(highPrecisionText).eq(Expression.create(expected))).toBe(true);
+	});
+
+	it('uses configured decimal precision only for presentation', () => {
+		const input =
+			'4854818448948949498494984948949449898454525.4854818448948949498494984948949449898454525';
+		const result = Parser.parse(`${input}*8`);
+
+		expect(result.text({ decimal: true })).toBe('3.8838547591591595988e+43');
+		expect(result.eq(Expression.create(result.text({ decimal: true })))).toBe(false);
+	});
+});
+
 describe('Numeric parsing', () => {
 	// Regression: https://github.com/jiggzson/nerdamer/issues/375
 	it('parses exact integers beyond the JavaScript numeric range', () => {

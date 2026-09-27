@@ -1,5 +1,7 @@
 import Decimal from 'decimal.js';
 
+import { message } from '../../core/errors';
+
 export type DecimalFn = (x: Decimal) => Decimal;
 
 export interface DefIntOptions {
@@ -123,12 +125,12 @@ function withFiniteBounds(
 
 	const evalF = (x: Decimal): Decimal => {
 		if (evals++ > opts.maxEvals) {
-			throw new Error(`defint: maxEvals exceeded (${opts.maxEvals}).`);
+			throw new Error(message('defintMaxEvals', { max: String(opts.maxEvals) }));
 		}
 		const y = f(x);
 		if (opts.singular === 'strict') {
 			if (!isFiniteDecimal(y)) {
-				throw new Error(`defint: non-finite f(x) at x=${x.toString()}`);
+				throw new Error(message('defintNonFiniteValue', { x: x.toString() }));
 			}
 		}
 		return y;
@@ -206,7 +208,7 @@ function withFiniteBounds(
 			) {
 				if (fr.depth >= opts.maxDepth || fr.singularTries >= MAX_SINGULAR_REFINEMENT_ATTEMPTS) {
 					throw new Error(
-						`defint: singular/non-finite encountered near [${a0.toString()}, ${b0.toString()}]`
+						message('defintSingularity', { a: a0.toString(), b: b0.toString() })
 					);
 				}
 				// Push children without using Simpson error test; just refine around the issue.
@@ -363,7 +365,7 @@ export function definiteIntegrate(
 	const isInfB = !B.isFinite() && !B.isNaN();
 
 	if ((isInfA || isInfB) && !allowInfinite) {
-		throw new Error(`defint: infinite bounds require allowInfinite:true`);
+		throw new Error(message('defintInfiniteBoundsDecimal'));
 	}
 
 	const coreOpts = { tolAbs, tolRel, maxDepth, maxEvals, singular } as const;
@@ -416,7 +418,7 @@ export function definiteIntegrate(
 			return withFiniteBounds(g, eps, ONE.sub(eps), coreOpts);
 		}
 
-		throw new Error(`defint: unsupported infinite bound configuration`);
+		throw new Error(message('defintUnsupportedInfiniteBounds'));
 	}
 
 	// Finite-bounds path, with optional segmentation by breakpoints

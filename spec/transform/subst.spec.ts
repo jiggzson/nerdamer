@@ -1,5 +1,6 @@
 'use strict';
 
+import '../helpers/registerNerdamerFunctions';
 import { polynomialize } from '../../src/algebra/polynomialize';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { one } from '../../src/core/classes/expression/shortcuts';

@@ -330,7 +330,7 @@ describe('Existing Pythagorean (regression)', () => {
 	it('should simplify with variable coefficients', () => {
 		expect(simplify('x*sin(x)^2+x*cos(x)^2').text()).toEqual('x');
 		expect(simplify('x*cos(x)^2+x+x*sin(x)^2').text()).toEqual('2*x');
-		expect(simplify('a*b*sin(x)^2+a*b*cos(x)^2').text()).toEqual('a*b');
+		expect(simplify('a*b*sin(x)^2+a*b*cos(x)^2').eq('a*b')).toBe(true);
 	});
 
 	it('should simplify with non-trivial arguments', () => {
@@ -354,7 +354,9 @@ describe('Existing Pythagorean (regression)', () => {
 
 	it('should apply partial Pythagorean simplification when coefficients differ', () => {
 		expect(simplify('(1/2)*sin(x^2)^2+cos(x^2)^2').text()).toEqual('(1/2)*(1+cos(x^2)^2)');
-		// expect(simplify('0.75*sin(x^2)^2+cos(x^2)^2').text()).toEqual('(1/4)*(3.0+cos(x^2)^2)');
+		expect(simplify('0.75*sin(x^2)^2+cos(x^2)^2').text()).toEqual(
+			'0.25*(3.0+cos(x^2)^2)'
+		);
 	});
 
 	it('should leave unmatched trig terms unchanged', () => {

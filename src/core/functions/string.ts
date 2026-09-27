@@ -1,3 +1,5 @@
+import { message } from '../errors';
+
 /**
  * Removes the minus sign from the beginning of the string
  *
@@ -65,7 +67,7 @@ export function scientificToDecimal(str: string): string {
 export function decimalSplit(str: string) {
 	const parts = str.split('.');
 	if (parts.length > 2) {
-		throw new SyntaxError(`Invalid decimal value: ${str}`);
+		throw new SyntaxError(message('invalidDecimalValue', { value: str }));
 	}
 	if (parts.length === 1) {
 		parts.push('');

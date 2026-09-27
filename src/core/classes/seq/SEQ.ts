@@ -1,3 +1,5 @@
+import { message } from '../../errors';
+
 /* SEQ.ts – corrected & optimized */
 
 type Big = bigint;
@@ -52,7 +54,7 @@ export class Sequence {
 		this.maxPower = opts?.maxPower ?? DEFAULT_MAX_POWER;
 
 		if (!Number.isInteger(this.startsAt)) {
-			throw new Error('startsAt must be an integer');
+			throw new Error(message('seqStartsAtInteger'));
 		}
 	}
 
@@ -87,11 +89,11 @@ export class Sequence {
 		}
 
 		if (degree < 0 || degree > this.maxPower) {
-			throw new Error('Sequence is not a polynomial or exceeds maxPower');
+			throw new Error(message('seqPolynomialOrMaxPower'));
 		}
 
 		if (this.seq.length <= degree) {
-			throw new Error('Insufficient data points for detected degree');
+			throw new Error(message('seqInsufficientData'));
 		}
 
 		const s = BigInt(this.startsAt);

@@ -1,3 +1,4 @@
+import '../helpers/registerNerdamerFunctions';
 import { assume, clearAssumptions } from '../../src/core/classes/assumption/assume';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { DIRAC, HEAVISIDE, MAX, MIN } from '../../src/core/classes/parser/constants';

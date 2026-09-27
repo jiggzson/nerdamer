@@ -53,11 +53,11 @@ export function realPart(a: Expression) {
 	// other functions without complex inputs, and keep explicitly complex
 	// function components symbolic rather than treating them as zero.
 	else if (x.isComplexComponentFunction()) {
-		retval = new Expression(x);
+		retval = x.copy();
 	} else if (x.isFunction()) {
 		retval = x.isComplex()
 			? Expression.toFunction(REALPART, [x])
-			: new Expression(x);
+			: x.copy();
 	}
 	// Decompose products through their complex factors while preserving real
 	// factors as an outer scale.
@@ -112,13 +112,13 @@ export function realPart(a: Expression) {
 		(x.isVAR() && !x.isI()) ||
 		(x.isProduct() && !x.isComplex())
 	) {
-		retval = new Expression(a);
+		retval = a.copy();
 	}
 	// Deal with x+1, y+y^2, ...
 	else if (x.isSum()) {
 		// Check if the sum has a power attached - if so, treat as single term
 		if (!x.getPower().isOne()) {
-			retval = new Expression(a);
+			retval = a.copy();
 		} else {
 			retval = zero();
 			const elements = x.getElements();
@@ -309,7 +309,7 @@ export function polarForm(x: Expression) {
 	let retval: Expression;
 	if (x.isNUM() || (x.isI() && x.isLinear())) {
 		// The polarform of a number is just the number
-		retval = new Expression(x);
+		retval = x.copy();
 	} else {
 		// Get r and theta. Theta will come back as (atan(x) or a*pi/n)
 		const [r, theta] = toPolarFormArray(expand(x));
@@ -410,7 +410,7 @@ export function arg(x: ExpressionInput) {
  * Distributes over sums, products, integer powers, and powers whose
  * constant base is known not to lie on the principal logarithm's branch cut.
  *
- * @param expr - The expression to conjugate
+ * @param x - The expression to conjugate
  * @returns The complex conjugate of the expression
  *
  * @example
@@ -473,7 +473,7 @@ export function conjugate(x: ExpressionInput): Expression {
  *
  * Useful for branch cut decisions in sqrt, log, and power simplification.
  *
- * @param expr - The expression to evaluate the complex sign of
+ * @param x - The expression to evaluate the complex sign of
  * @returns 1, -1, 0, or an unevaluated csgn expression
  *
  * @example

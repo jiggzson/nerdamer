@@ -3,8 +3,9 @@ import { factorCommonPower } from '../algebra/simplify/factorCommon';
 import { toCommonDenominator } from '../algebra/simplify/ratsimp';
 import { Expression } from '../core/classes/expression/Expression';
 import { all, half, one, two, zero } from '../core/classes/expression/shortcuts';
+import { assertPlainVariableAndGetString } from '../core/classes/expression/utils';
 import { PI_NAME } from '../core/classes/parser/constants';
-import { Polynomial } from '../core/classes/polynomial/Polynomial';
+import { Vector } from '../core/classes/vector/Vector';
 import { cos, sin } from '../math/trig';
 
 import { FunctionSolver, type FunctionSolverOptions } from './classes/FunctionSolver';
@@ -16,8 +17,38 @@ import { prepareSolverInputs } from './utils';
 import type { Equation } from '../core/classes/equation/Equation';
 import type { ExpressionInput } from '../core/types';
 
-function calculateSolutions(factors: Expression[], variable: string) {
-	const solutionSet = new SolutionSet();
+/**
+ * Accumulates roots from distinct exact polynomial factors.
+ *
+ * Each factor result has already enforced uniqueness within that factor. Exact univariate
+ * factorization proves separate factors coprime, so their accepted roots can be copied
+ * without repeating general symbolic equality checks across factors.
+ */
+class FactorRootAccumulator extends SolutionSet {
+	appendFactorSolutions(solutions: SolutionSet): void {
+		for (const solution of solutions.elements) {
+			this.addKnownUnique(solution);
+		}
+
+		if (this.solutionsType === undefined) {
+			this.solutionsType = solutions.solutionsType;
+		} else if (
+			solutions.solutionsType !== undefined &&
+			this.solutionsType !== solutions.solutionsType
+		) {
+			this.solutionsType = 'mixed';
+		}
+	}
+}
+
+function calculateSolutions(
+	factors: Expression[],
+	variable: string,
+	disjointPolynomialFactors = false
+) {
+	const solutionSet = disjointPolynomialFactors
+		? new FactorRootAccumulator()
+		: new SolutionSet();
 	// We loop through each element (factor) and try to solve it. If we were successful,
 	// then we return 0. If we fail then we return  the value
 	const firstPass = factors
@@ -41,9 +72,18 @@ function calculateSolutions(factors: Expression[], variable: string) {
 				}
 
 				if (!solutions.unsolved) {
-					const symbolicSolutions = new SolutionSet(solutions.solutions);
-					symbolicSolutions.solutionsType = 'symbolic';
-					solutionSet.addSolutions(symbolicSolutions, fn, variable);
+					if (disjointPolynomialFactors) {
+						const factorSolutions = new SolutionSet();
+						factorSolutions.addSolutions(solutions.solutions, fn, variable);
+						if (factorSolutions.count() > 0) {
+							factorSolutions.solutionsType = 'symbolic';
+							(solutionSet as FactorRootAccumulator).appendFactorSolutions(factorSolutions);
+						}
+					} else {
+						const symbolicSolutions = new SolutionSet(solutions.solutions);
+						symbolicSolutions.solutionsType = 'symbolic';
+						solutionSet.addSolutions(symbolicSolutions, fn, variable);
+					}
 					retval = zero();
 				}
 			}
@@ -59,13 +99,21 @@ function calculateSolutions(factors: Expression[], variable: string) {
 			// we need to check as not to waste time.
 			const vars = fn.variables();
 			if (vars.length === 1 && vars[0] === variable && fn.isPolynomialLike()) {
-				const solutions = new PolynomialSolver(new Polynomial(fn), variable).roots();
+				const solutions = new PolynomialSolver(fn, variable).validatedRoots();
 				if (solutions.length > 0) {
-					const numericSolutions = new SolutionSet(
-						solutions.map(solution => solution.evaluate())
-					);
-					numericSolutions.solutionsType = 'numeric';
-					solutionSet.append(numericSolutions);
+					if (disjointPolynomialFactors) {
+						const factorSolutions = new SolutionSet();
+						factorSolutions.addValidatedNumericalSolutions(solutions);
+						factorSolutions.solutionsType = 'numeric';
+						(solutionSet as FactorRootAccumulator).appendFactorSolutions(factorSolutions);
+					} else {
+						solutionSet.addValidatedNumericalSolutions(solutions);
+						solutionSet.solutionsType =
+							solutionSet.solutionsType === undefined ||
+							solutionSet.solutionsType === 'numeric'
+								? 'numeric'
+								: 'mixed';
+					}
 				}
 				retval = zero();
 			}
@@ -81,14 +129,55 @@ function calculateSolutions(factors: Expression[], variable: string) {
 		if (vars.length === 1 && vars[0] === variable) {
 			const solutions = new FunctionSolver(fn, variable, options).roots();
 			if (solutions.length > 0) {
-				const numericSolutions = new SolutionSet(solutions);
-				numericSolutions.solutionsType = 'numeric';
-				solutionSet.append(numericSolutions);
+				for (const solution of solutions) {
+					solutionSet.add(solution);
+				}
+				solutionSet.solutionsType =
+					solutionSet.solutionsType === undefined ||
+					solutionSet.solutionsType === 'numeric'
+						? 'numeric'
+						: 'mixed';
 			}
 		}
 	}
 
 	return solutionSet;
+}
+
+/**
+ * Returns polynomial roots as a Vector.
+ *
+ * Unlike solve(), which returns a SolutionSet with solver metadata, this function preserves
+ * the roots API's Vector return type. Numeric constants retain the historical square-root
+ * interpretation. Univariate polynomials delegate to PolynomialSolver and therefore return
+ * numerical roots.
+ */
+export function roots(input: ExpressionInput, variable?: ExpressionInput): Vector {
+	const expression = Expression.create(input);
+	const variables = expression.variables();
+
+	if (variables.length === 0 && expression.isConstant()) {
+		const evaluated = expression.evaluate();
+		if (evaluated.isNUM()) {
+			const magnitude = evaluated.abs();
+			const root = magnitude.pow(half());
+			const positive = evaluated.sign() < 0
+				? root.times(Expression.Img())
+				: root;
+			return new Vector([positive, positive.neg()]);
+		}
+	}
+
+	const variableName =
+		variable === undefined
+			? variables[0]
+			: assertPlainVariableAndGetString(Expression.create(variable));
+
+	if (variableName === undefined) {
+		return new Vector([expression]);
+	}
+
+	return new Vector(new PolynomialSolver(expression, variableName).validatedRoots());
 }
 
 /**
@@ -176,6 +265,11 @@ export function solve(
 			const directCoeffs = expression.isPolynomialLike()
 				? expression.coeffs(x).toArray()
 				: undefined;
+			const isNumericUnivariatePolynomial =
+				directCoeffs !== undefined &&
+				vars.length === 1 &&
+				vars[0] === x &&
+				directCoeffs.every(coefficient => coefficient.isNUM());
 			let directPowerBinomialSolutions: Expression[] | undefined;
 
 			if (directCoeffs) {
@@ -250,7 +344,17 @@ export function solve(
 			} else if (commonFactors) {
 				solutions.addSolution(zero(), expression, x);
 				solutions.solutionsType = 'symbolic';
-				solutions.addSolutions(calculateSolutions(commonFactors, x), expression, x);
+				const commonSolutions = calculateSolutions(commonFactors, x);
+				if (
+					isNumericUnivariatePolynomial &&
+					commonSolutions.solutionsType === 'numeric'
+				) {
+					solutions.appendValidatedNumerical(commonSolutions);
+				} else if (isNumericUnivariatePolynomial) {
+					solutions.append(commonSolutions);
+				} else {
+					solutions.addSolutions(commonSolutions, expression, x);
+				}
 			} else if (direct && !direct.unsolved) {
 				const symbolicSolutions = new SolutionSet(direct.solutions);
 				symbolicSolutions.solutionsType = 'symbolic';
@@ -268,12 +372,33 @@ export function solve(
 			} else {
 				// Get the factors object
 				const factorObj = factorExpressionParts(expression);
+				// Exact univariate factorization returns distinct irreducible factors with
+				// repeated factors represented by powers. Their solution sets can therefore
+				// be combined without proving cross-factor equality again.
+				const disjointPolynomialFactors = isNumericUnivariatePolynomial;
 				// Get the extraneous roots
-				const extraneous = calculateSolutions(factorObj.denominator, x);
+				const extraneous = calculateSolutions(
+					factorObj.denominator,
+					x,
+					disjointPolynomialFactors
+				);
 				solutions.exclude(extraneous);
 				// Get the solutions in the numerator
-				const numSolutions = calculateSolutions(factorObj.numerator, x);
-				solutions.addSolutions(numSolutions, expression, x);
+				const numSolutions = calculateSolutions(
+					factorObj.numerator,
+					x,
+					disjointPolynomialFactors
+				);
+				if (
+					isNumericUnivariatePolynomial &&
+					numSolutions.solutionsType === 'numeric'
+				) {
+					solutions.appendValidatedNumerical(numSolutions);
+				} else if (isNumericUnivariatePolynomial) {
+					solutions.append(numSolutions);
+				} else {
+					solutions.addSolutions(numSolutions, expression, x);
+				}
 			}
 		}
 	} catch (_e) {}

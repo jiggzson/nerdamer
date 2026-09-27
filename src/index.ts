@@ -1,6 +1,6 @@
 import packageInfo from '../package.json';
 
-import { factor, polyFactors } from './algebra/factor/factor';
+import { factor, pfactor, pfactord, polyFactors } from './algebra/factor/factor';
 import { gcd, lcm } from './algebra/gcd/gcd';
 import { groebner } from './algebra/groebner';
 import { partfrac } from './algebra/partfrac';
@@ -19,13 +19,14 @@ import { Dictionary } from './core/classes/dictionary/Dictionary';
 import { Equation } from './core/classes/equation/Equation';
 import { Expression } from './core/classes/expression/Expression';
 import { symbols } from './core/classes/expression/shortcuts';
-import { determinant, nullspace } from './core/classes/matrix/functions';
+import { determinant, invert, nullspace } from './core/classes/matrix/functions';
 import { Matrix } from './core/classes/matrix/Matrix';
 import { imatrix } from './core/classes/matrix/utils';
 import { dataTypes, PARSER_CONSTANTS } from './core/classes/parser/constants';
 import { Parser } from './core/classes/parser/Parser';
 import { assign, unassign } from './core/classes/parser/scripting/scope';
 import {
+	coeffs,
 	content,
 	deg,
 	div as polynomialDiv,
@@ -38,6 +39,7 @@ import { cross, dot } from './core/classes/vector/functions';
 import { Vector } from './core/classes/vector/Vector';
 import { Converter } from './core/converters/Converter';
 import { mathFunctionRegistry } from './core/dispatch';
+import { registerNerdamerFunctions } from './core/fullFunctions';
 import * as errors from './core/errors';
 import { build } from './core/functions/build';
 import {
@@ -52,7 +54,8 @@ import {
 import { expand } from './core/functions/expand/expand';
 import { setFunction as registerFunction } from './core/functions/setFunction';
 import { subst, uSub, uUnSub } from './core/functions/subst';
-import { hypot } from './math/geometry';
+import { defint } from './math/defint/defint';
+import { hypot, line } from './math/geometry';
 import {
 	abs,
 	cbrt,
@@ -60,7 +63,6 @@ import {
 	Chi,
 	Ci,
 	contains,
-	defint,
 	dirac,
 	doubleFactorial,
 	Ei,
@@ -71,10 +73,19 @@ import {
 	fibonacci,
 	floor,
 	gamma,
+	gammaIncomplete,
+	gammaIncompleteLower,
 	heaviside,
+	step,
+	rect,
+	tri,
+	radians,
+	degrees,
 	Li,
 	log,
+	log10,
 	matrix,
+	parens,
 	max,
 	min,
 	mod,
@@ -89,6 +100,7 @@ import {
 	sinc,
 	sqrt,
 	sum,
+	scientific,
 } from './math/math';
 import {
 	cos,
@@ -118,9 +130,9 @@ import {
 	acoth,
 } from './math/trig';
 import { trunc } from './math/trunc';
-import { isprime } from './math/utils';
+import { continuedFraction, isprime } from './math/utils';
 import { SolutionSet } from './solve/classes/SolutionSet';
-import { solve } from './solve/solve';
+import { roots, solve } from './solve/solve';
 import { solveSystem } from './solve/solveSystem';
 
 import type {
@@ -138,6 +150,8 @@ export type {
 	USubstitutionResult,
 } from './core/functions/subst';
 export type { TextOptions };
+
+registerNerdamerFunctions();
 
 // -----------------------------------------------------------------------------
 // Full-package instance API
@@ -659,6 +673,11 @@ nerdamer.getOperator = function (symbol: string) {
 	return Parser.getOperator(symbol);
 };
 
+/** Returns whether Nerdamer currently reserves a variable or symbol name. */
+nerdamer.isReserved = function (name: string) {
+	return Parser.isReserved(name);
+};
+
 /** Registers or updates a parser operator and returns the root API for chaining. */
 nerdamer.setOperator = function (
 	operator: Parameters<typeof Parser.setOperator>[0],
@@ -859,6 +878,9 @@ nerdamer.acoth = acoth;
 
 // Elementary and numeric functions
 nerdamer.log = log;
+nerdamer.log10 = log10;
+nerdamer.radians = radians;
+nerdamer.degrees = degrees;
 nerdamer.exp = exp;
 nerdamer.sqrt = sqrt;
 nerdamer.cbrt = cbrt;
@@ -895,9 +917,14 @@ nerdamer.csgn = csgn;
 
 // Special functions
 nerdamer.gamma = gamma;
+nerdamer.gamma_incomplete = gammaIncomplete;
+nerdamer.gamma_incomplete_lower = gammaIncompleteLower;
 nerdamer.erf = erf;
 nerdamer.erfc = erfc;
 nerdamer.heaviside = heaviside;
+nerdamer.step = step;
+nerdamer.rect = rect;
+nerdamer.tri = tri;
 nerdamer.delta = dirac;
 nerdamer.Ci = Ci;
 nerdamer.Chi = Chi;
@@ -908,6 +935,9 @@ nerdamer.Ei = Ei;
 nerdamer.sinc = sinc;
 
 // Symbolic utilities
+nerdamer.parens = parens;
+nerdamer.continued_fraction = continuedFraction;
+nerdamer.scientific = scientific;
 nerdamer.contains = contains;
 nerdamer.subst = subst;
 nerdamer.uSub = uSub;
@@ -916,6 +946,8 @@ nerdamer.uUnSub = uUnSub;
 // Algebra
 nerdamer.expand = expand;
 nerdamer.factor = factor;
+nerdamer.pfactor = pfactor;
+nerdamer.pfactord = pfactord;
 nerdamer.polyFactors = polyFactors;
 nerdamer.completeSquare = sqcomp;
 nerdamer.gcd = gcd;
@@ -928,6 +960,7 @@ nerdamer.groebner = groebner;
 
 // Solvers
 nerdamer.solve = solve;
+nerdamer.roots = roots;
 nerdamer.solveSystem = solveSystem;
 nerdamer.solveeqs = solveSystem;
 
@@ -948,15 +981,18 @@ nerdamer.C = C;
 nerdamer.matrix = matrix;
 nerdamer.imatrix = imatrix;
 nerdamer.determinant = determinant;
+nerdamer.invert = invert;
 nerdamer.nullspace = nullspace;
 
 // Vector operations
 nerdamer.dot = dot;
 nerdamer.cross = cross;
+nerdamer.line = line;
 
 // Polynomial operations
 nerdamer.deg = deg;
 nerdamer.content = content;
+nerdamer.coeffs = coeffs;
 
 // Assumptions
 /**

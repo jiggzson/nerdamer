@@ -1,13 +1,19 @@
+import { Dictionary } from '../../core/classes/dictionary/Dictionary';
 import { normalizeMultiplierDenominators } from '../../core/classes/expression/analysis';
 import { Expression } from '../../core/classes/expression/Expression';
+import { zero } from '../../core/classes/expression/shortcuts';
 import { FACTOR } from '../../core/classes/parser/constants';
 import { merge } from '../../core/classes/parser/operations/multiply';
-import { Polynomial } from '../../core/classes/polynomial/Polynomial';
+import {
+	expressionToSparsePolynomial,
+	sparsePolynomialToExpression,
+} from '../../core/classes/polynomial/SparsePolynomialAdapter';
 import { Vector } from '../../core/classes/vector/Vector';
-import { primeFactorCounts } from '../../core/functions/bigint/primeFactor';
+import { message, UnexpectedInputError } from '../../core/errors';
+import { primeFactorCounts, primeFactorsBig } from '../../core/functions/bigint/primeFactor';
 import { uSubConstants, uUnSub } from '../../core/functions/subst';
-import { factorsToExpressions, polynomialToMultiPoly } from '../adapters';
-import { factorPoly } from '../algorithms/factor';
+import { factorUnivariateInteger } from '../polynomial/SparsePolynomialFactor';
+import { factorMultivariateInteger } from '../polynomial/SparsePolynomialMultivariateFactor';
 import { polynomialize } from '../polynomialize';
 
 import type { ExpressionInput } from '../../core/types';
@@ -48,6 +54,16 @@ export function factor(x: ExpressionInput) {
 		// A variable is already fully factored.
 		else if (x.isVAR()) {
 			retval = x;
+		} else if (x.isFunction()) {
+			const multiplier = x.getMultiplier();
+			const power = x.getPower();
+			retval = Expression.toFunction(
+				x.name,
+				x.getArguments().map(argument => factor(argument))
+			);
+			retval = retval.pow(power).times(multiplier);
+		} else if (x.isPolynomialLike()) {
+			retval = polyFactors(x).prod();
 		} else {
 			const factored = factors(x);
 			retval = factored.numerator.prod().div(factored.denominator.prod());
@@ -55,6 +71,67 @@ export function factor(x: ExpressionInput) {
 	} catch {
 		retval = Expression.toFunction(FACTOR, [x]);
 	}
+	return retval;
+}
+
+/**
+ * Returns the prime factors of a positive integer in ascending order.
+ *
+ * Repeated factors are retained, so `pfactor(100)` returns `[2, 2, 5, 5]`.
+ * The value 1 has no prime factors and returns an empty Vector.
+ */
+export function pfactor(x: ExpressionInput): Vector {
+	const input = Expression.create(x);
+	if (!input.isNUM() || !input.isInteger() || input.lte(zero())) {
+		throw new UnexpectedInputError(
+			message('wrongInput', {
+				expected: 'a positive integer',
+				received: input.text(),
+			})
+		);
+	}
+
+	const value = input.getMultiplier().numerator;
+	if (value === 1n) {
+		return new Vector();
+	}
+
+	const factors = primeFactorsBig(value).factors.map(factor => Expression.Number(factor));
+	return new Vector(factors);
+}
+
+/**
+ * Returns the prime-factor multiplicities of a positive integer.
+ *
+ * Dictionary keys are prime numbers in ascending order and values are their occurrence
+ * counts. For example, `pfactord(100)` returns `{2 => 2, 5 => 2}`.
+ */
+export function pfactord(x: ExpressionInput): Dictionary {
+	const input = Expression.create(x);
+	if (!input.isNUM() || !input.isInteger() || input.lte(zero())) {
+		throw new UnexpectedInputError(
+			message('wrongInput', {
+				expected: 'a positive integer',
+				received: input.text(),
+			})
+		);
+	}
+
+	const value = input.getMultiplier().numerator;
+	if (value === 1n) {
+		return new Dictionary();
+	}
+
+	const counts = primeFactorCounts(value);
+	const retval = new Dictionary();
+	for (const prime of Object.keys(counts).sort((a, b) => {
+		const left = BigInt(a);
+		const right = BigInt(b);
+		return left < right ? -1 : left > right ? 1 : 0;
+	})) {
+		retval.set(prime, Expression.Number(counts[prime]));
+	}
+
 	return retval;
 }
 
@@ -70,17 +147,42 @@ export function polyFactorExpressions(x: ExpressionInput): Expression[] {
 		const expr = normalizeMultiplierDenominators(Expression.create(x));
 		const num = expr.getNumerator();
 		const den = expr.getDenominator();
-		// MultiPoly strictly works in Z. Irrational coefficients
-		// must first be promoted to variables.
+		// Irrational coefficients must first be promoted to variables.
 		const [subbed, map] = uSubConstants(num);
-		const p = new Polynomial(subbed);
-		const variables = p.variables;
-		const { poly } = polynomialToMultiPoly(p);
-		// Factor it
-		const factors = factorPoly(poly, variables);
+		const converted = expressionToSparsePolynomial(subbed);
+		const variables = converted.variables;
+		const sparse = converted.polynomial;
 
-		// Remove the u-substitution
-		retval = factorsToExpressions(factors, variables).map(f => uUnSub(f, map).div(den));
+		if (variables.length === 0) {
+			retval = [Expression.Number(sparse.constantTerm())];
+		} else {
+			const variableIndices = variables.map((_variable, index) => index);
+			const factorization =
+				variables.length === 1
+					? factorUnivariateInteger(sparse, 0)
+					: factorMultivariateInteger(sparse, variableIndices);
+			retval = [];
+
+			if (factorization.content !== 1n) {
+				retval.push(Expression.Number(factorization.content));
+			}
+			for (const entry of factorization.factors) {
+				let factor = sparsePolynomialToExpression(entry.factor, variables);
+				if (entry.multiplicity > 1n) {
+					factor = factor.pow(Expression.Number(entry.multiplicity));
+				}
+				retval.push(factor);
+			}
+			if (retval.length === 0) {
+				throw new Error(message('factorizationNoFactors'));
+			}
+		}
+
+		// Remove the u-substitution and restore the cleared denominator once.
+		retval = retval.map(factor => uUnSub(factor, map));
+		if (!den.isOne()) {
+			retval[0] = retval[0].div(den);
+		}
 	} catch {
 		retval = [Expression.create(x)];
 	}
