@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>Documentation — Nerdamer</title>
-  <meta name="description" content="Learn Nerdamer Notation, Nerdamer Scripting, and the JavaScript / TypeScript API.">
+  <meta name="description" content="Choose the Nerdamer documentation for notation, scripting, or the JavaScript / TypeScript API.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -62,21 +62,51 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><div class="eyebrow">Start here</div>
-<h1>Nerdamer documentation</h1>
+<article class="docs-content"><div class="eyebrow">Documentation</div>
+<h1>How are you using Nerdamer?</h1>
 <p>
-	The library offers three main ways of interacting with symbolic mathematics. The documentation is organized around
-	those interfaces so you can go directly to the form you are using.
+	Nerdamer has three distinct interfaces. Choose the one you are working with to get the syntax, reference,
+	examples, and guidance for that interface without mixing it with the others.
 </p>
-<div class="docs-callout">
-	<strong>Nerdamer Notation and Nerdamer Scripting are mathematical input, not JavaScript.</strong> Strings passed to
-	<code>nerdamer(...)</code> are parsed as Nerdamer syntax rather than executed as JavaScript. <code>buildFunction()</code>
-	is different: it compiles an expression to a numerical JavaScript function and may be restricted by Content Security
-	Policy.
+
+<div class="docs-cards docs-entry-cards">
+	<a class="card docs-card" href="/docs/functions/">
+		<span class="arrow">→</span>
+		<h2>Nerdamer Notation</h2>
+		<p>For mathematical expressions and functions written inside <code>nerdamer('...')</code>.</p>
+		<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">factor</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">4</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token function">solveeqs</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token operator">+</span><span class="token variable">y</span><span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token operator">-</span><span class="token variable">y</span><span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token variable">x</span><span class="token punctuation">,</span><span class="token variable">y</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token function">diff</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token punctuation">)</span></code></pre>
+		<p><strong>Use this for:</strong> expression syntax, algebra, calculus, solving, vectors, matrices, and the notation function reference.</p>
+	</a>
+
+	<a class="card docs-card" href="/docs/language/">
+		<span class="arrow">→</span>
+		<h2>Nerdamer Scripting</h2>
+		<p>For programs written in Nerdamer's scripting language.</p>
+		<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token control">block</span><span class="token punctuation">(</span>
+  <span class="token variable">x</span><span class="token operator">:</span> <span class="token number">4</span><span class="token punctuation">,</span>
+  <span class="token control">if</span><span class="token punctuation">(</span><span class="token variable">x</span> <span class="token operator">&gt;</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span></code></pre>
+		<p><strong>Use this for:</strong> assignments, control flow, loops, blocks, local scope, and user-defined functions.</p>
+	</a>
+
+	<a class="card docs-card" href="/docs/api/">
+		<span class="arrow">→</span>
+		<h2>JavaScript / TypeScript API</h2>
+		<p>For calling Nerdamer from application code and importing its public classes, functions, and types.</p>
+		<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Matrix</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">result</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;x^2+1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+		<p><strong>Use this for:</strong> the callable <code>nerdamer</code> API, package exports, classes, functions, types, and integration examples.</p>
+	</a>
 </div>
+
 <div class="docs-callout">
-	<strong>New to Nerdamer?</strong> Start with <a href="/docs/getting-started/">Getting started</a>. If you are unsure
-	which interface fits your project, see <a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a>.
+	<strong>Not sure which one you need?</strong> If you are typing mathematics such as <code>factor(x^2-1)</code>, use
+	Nerdamer Notation. If you are writing control flow such as <code>if(...)</code> or <code>block(...)</code>, use Nerdamer
+	Scripting. If you are writing JavaScript or TypeScript that imports or calls Nerdamer, use the JavaScript / TypeScript API.
 </div>
 <div class="docs-callout">
 	<strong>Localized errors.</strong> The library includes built-in error messages for each supported language.
@@ -85,118 +115,38 @@
 	and an example.
 </div>
 
-<h2>Nerdamer Notation</h2>
-<p>
-	Use the mathematical notation accepted by <code>nerdamer('...')</code>. This includes expressions, equations,
-	vectors, matrices, and functions such as <code>factor</code>, <code>diff</code>, and <code>solve</code>.
-</p>
-<pre class="codeblock language-javascript"><code class="language-javascript">
-<span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
-
-<span class="token keyword">const</span> <span class="token variable">result</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;factor(x^4-1)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">result</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-<p>
-	Start with <a href="/docs/parser/">Expression syntax</a> or browse the
-	<a href="/docs/functions/">Nerdamer Notation function reference</a>.
-</p>
-
-<h2>Nerdamer Scripting</h2>
-<p>
-	Use Nerdamer Scripting when the text passed to <code>nerdamer(...)</code> needs assignments, user-defined functions,
-	conditions, loops, blocks, or local scope.
-</p>
-<pre class="codeblock language-javascript"><code class="language-javascript">
-<span class="token keyword">const</span> <span class="token variable">result</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">`
-  block(
-    x: 4,
-    if(x &gt; 3, x^2, x)
-  )
-`</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">result</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 16</span></code></pre>
-<p>
-	See <a href="/docs/language/">Nerdamer Scripting</a>, browse the
-	<a href="/docs/language/examples/">Scripting examples</a>, or go directly to
-	<a href="/docs/language/user-defined-functions/">User-defined functions</a> to compare scripting with
-	<code>nerdamer.setFunction(...)</code>.
-</p>
-
-<h2>JavaScript / TypeScript API</h2>
-<p>
-	Use the JavaScript / TypeScript API when your application needs to work directly with Nerdamer expressions,
-	functions, matrices, vectors, or other mathematical values. The default <code>nerdamer</code> import is callable and
-	also exposes functions such as <code>nerdamer.pretty(...)</code>, <code>nerdamer.setFunction(...)</code>,
-	<code>nerdamer.factor(...)</code>, and <code>nerdamer.solve(...)</code>. Public package paths are also available for
-	direct imports of functions, classes, and types.
-</p>
-<pre class="codeblock language-javascript"><code class="language-javascript">
-<span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
-<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Matrix</span><span class="token punctuation">,</span> <span class="token variable">determinant</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span>
-
-<span class="token keyword">const</span> <span class="token variable">formatted</span> <span class="token operator">=</span> <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">pretty</span><span class="token punctuation">(</span><span class="token string">&#39;x^2+1&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;TeX&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">const</span> <span class="token class-name">M</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">Matrix</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token string">&#39;x&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;y&#39;</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">const</span> <span class="token variable">d</span> <span class="token operator">=</span> <span class="token function">determinant</span><span class="token punctuation">(</span><span class="token class-name">M</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-<p>
-	See the <a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a>, the full
-	<a href="/docs/api/">JavaScript / TypeScript API</a>, <a href="/docs/public-helpers/">text output and public helpers</a>, or <a href="/docs/examples/">larger API examples</a> that
-	combine several operations.
-</p>
-
-<h2>Where to go next</h2>
+<h2>Getting started and project guides</h2>
 <div class="docs-cards">
-	<a class="card docs-card" href="/docs/getting-started/"
-		><span class="arrow">→</span>
+	<a class="card docs-card" href="/docs/getting-started/">
+		<span class="arrow">→</span>
 		<h3>Getting started</h3>
-		<p>Install the library and run your first expressions.</p></a
-	>
-	<a class="card docs-card" href="/docs/parser/"
-		><span class="arrow">→</span>
-		<h3>Nerdamer Notation</h3>
-		<p>Learn expression syntax, then browse the notation function reference.</p></a
-	>
-	<a class="card docs-card" href="/docs/language/"
-		><span class="arrow">→</span>
-		<h3>Nerdamer Scripting</h3>
-		<p>Use variables, functions, conditions, loops, blocks, and local scope.</p></a
-	>
-	<a class="card docs-card" href="/docs/api/nerdamer/"
-		><span class="arrow">→</span>
+		<p>Install Nerdamer and run your first expression.</p>
+	</a>
+	<a class="card docs-card" href="/docs/api/nerdamer/">
+		<span class="arrow">→</span>
 		<h3><code>nerdamer</code> API</h3>
-		<p>Reference for the callable default import and the functions and properties attached to it.</p></a
-	>
-	<a class="card docs-card" href="/docs/api/"
-		><span class="arrow">→</span>
-		<h3>JavaScript / TypeScript API</h3>
-		<p>Reference for the <code>nerdamer</code> API, package imports, classes, functions, and types.</p></a
-	>
-	<a class="card docs-card" href="/docs/public-helpers/"
-		><span class="arrow">→</span>
-		<h3>Text output &amp; public helpers</h3>
-		<p>Format expression output and use algebra, substitution, complex-number, and linear-algebra helpers from JavaScript or TypeScript.</p></a
-	>
-	<a class="card docs-card" href="/docs/examples/"
-		><span class="arrow">→</span>
+		<p>Reference for the callable default import and the functions and properties attached to it.</p>
+	</a>
+	<a class="card docs-card" href="/docs/examples/">
+		<span class="arrow">→</span>
 		<h3>API examples</h3>
-		<p>
-			Solve a nonlinear system with a symbolic Jacobian and derive coupled-oscillator normal modes with exact
-			matrix algebra.
-		</p></a
-	>
-	<a class="card docs-card" href="/docs/migration/"
-		><span class="arrow">→</span>
+		<p>See larger JavaScript and TypeScript examples that combine Nerdamer operations.</p>
+	</a>
+	<a class="card docs-card" href="/docs/migration/">
+		<span class="arrow">→</span>
 		<h3>Migrating from Nerdamer 1.xx</h3>
-		<p>Update existing 1.xx applications for version 2.xx.</p></a
-	>
-	<a class="card docs-card" href="/docs/references/"
-		><span class="arrow">→</span>
+		<p>Update an existing application for Nerdamer 2.xx.</p>
+	</a>
+	<a class="card docs-card" href="/docs/references/">
+		<span class="arrow">→</span>
 		<h3>References &amp; citations</h3>
-		<p>Academic literature, external algorithm references, and sources used by the documentation examples.</p></a
-	>
-	<a class="card docs-card" href="/playground/"
-		><span class="arrow">→</span>
+		<p>Academic literature and external algorithm references used by Nerdamer and its documentation.</p>
+	</a>
+	<a class="card docs-card" href="/playground/">
+		<span class="arrow">→</span>
 		<h3>Playground</h3>
-		<p>Try the library in the browser without installing anything.</p></a
-	>
+		<p>Try Nerdamer in the browser without installing anything.</p>
+	</a>
 </div></article></div>
 </main>
 <footer class="site-footer">

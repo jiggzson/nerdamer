@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>numeric — Nerdamer Notation</title>
+  <title>numeric — Nerdamer Documentation</title>
   <meta name="description" content="Evaluates a numeric value to a finite number of significant decimal digits.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="../../../styles/back-to-top.css">
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
-  
+  <link rel="stylesheet" href="../../../styles/api.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -62,29 +62,29 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/numeric/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/numeric/">Open the unified page →</a></p></div>
-<div hidden aria-hidden="true"><div class="eyebrow">Nerdamer Notation · Math</div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/functions/">Function reference</a></div>
+<div class="eyebrow">Function reference · Math</div>
 <h1><code>numeric</code></h1>
 <p>Evaluates a numeric value to a finite number of significant decimal digits.</p>
-<h2>Syntax</h2>
-<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">numeric</span><span class="token punctuation">(</span><span class="token variable">value</span><span class="token punctuation">[</span><span class="token punctuation">,</span> <span class="token variable">precision</span><span class="token punctuation">]</span><span class="token punctuation">)</span></code></pre>
-<div class="docs-callout"><strong>Nerdamer Notation:</strong> this function is parsed inside input such as <code>nerdamer('...')</code>.</div>
-
-<h2>Parameters</h2><ul><li><code>value</code> — Value to evaluate numerically.</li>
+<div class="api-description"><p>numeric(value[,precision]) is the explicit finite-precision evaluation boundary. It evaluates fully numeric input and returns decimal-origin values at the requested significant-digit precision.</p><p>Symbolic results remain symbolic rather than having individual symbolic coefficients approximated. The full JavaScript / TypeScript package also exposes nerdamer.numeric(...).</p></div>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Evaluate a rational value to five significant digits.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">numeric</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">/</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">)</span>
+<span class="token comment">// → 0.33333</span></code></pre></div>
+<div class="api-example-block"><p>Apply finite-precision evaluation to a structured value.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">numeric</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token operator">/</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token operator">/</span><span class="token number">3</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">)</span>
+<span class="token comment">// → [0.33333, 0.66667]</span></code></pre></div></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a></p></section>
+<section class="api-detail" id="notation">
+<h2>Nerdamer Notation</h2>
+<p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
+<pre class="api-signature"><code>numeric(value[, precision])</code></pre>
+<h3>Parameters</h3><ul><li><code>value</code> — Value to evaluate numerically.</li>
 <li><code>precision</code> — Optional positive number of significant digits. Defaults to the active Nerdamer precision.</li></ul>
-<h2>Examples</h2><pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
 
-<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;numeric(1/3,5)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token comment">// → 0.33333</span></code></pre>
-<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
-
-<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;numeric([1/3,2/3],5)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token comment">// → [0.33333, 0.66667]</span></code></pre>
+</section>
 
 
 
-<p><a href="/docs/functions/">← Back to Nerdamer Notation functions</a></p></div></article></div>
+
+<p><a href="/docs/functions/">← Back to Function reference</a></p></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

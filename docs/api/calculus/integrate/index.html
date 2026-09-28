@@ -62,8 +62,8 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/integrate/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/integrate/">Open the unified page →</a></p></div>
+<article class="docs-content"><script>window.location.replace("/docs/functions/integrate/");</script>
+<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/integrate/">Open the documentation →</a></p></div>
 <div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/calculus/">nerdamer/calculus</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1>integrate</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/calculus/integrate/integrate.ts#L65" target="_blank" rel="noreferrer">src/calculus/integrate/integrate.ts:65</a></div><pre class="api-signature"><code>integrate(expr: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, dx: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, depth: number): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Finds a symbolic indefinite integral with respect to a plain variable.
 
 Constants and linear sums are separated first. The remaining integrand is
@@ -73,13 +73,16 @@ derivative-pattern substitution, rational decomposition, and the
 Weierstrass tangent half-angle substitution.</p><div class="api-note"><strong>remarks</strong><p>This function returns an antiderivative only; it does not append a constant
 of integration and it does not accept definite-integration bounds. An
 unsupported integral, or a strategy that reaches the recursion guard, is
-represented as an unevaluated</p><pre class="api-example"><code>`integrate(expr, dx)`</code></pre><p>Expression rather than an
+represented as an unevaluated <code>integrate(expr, dx)</code> Expression rather than an
 exception.
 
 Branch-sensitive transformations are limited to patterns recognized by the
 implementation. The result should not be read as a global statement about
-every real or complex branch outside those supported patterns.</p><pre class="api-example"><code>`depth`</code></pre><p>is the internal strategy-recursion counter and should normally be
-omitted by direct callers.</p></div><div class="api-note"><strong>throws</strong><p>UnexpectedInputError If</p><pre class="api-example"><code>`dx`</code></pre><p>is not a plain variable.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>expr</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Integrand to normalize and integrate.</td></tr><tr><td><code>dx</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Plain integration variable.</td></tr><tr><td><code>depth</code></td><td><code>number</code></td><td>Internal recursion depth. Defaults to zero.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — A symbolic antiderivative without an integration constant, or an unevaluated `integrate(...)` Expression.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>integrate(&#39;2*x*cos(x^2)&#39;, &#39;x&#39;).text();</code></pre></section></div></article></div>
+every real or complex branch outside those supported patterns.
+
+<code>depth</code> is the internal strategy-recursion counter and should normally be
+omitted by direct callers.</p></div><div class="api-note"><strong>throws</strong><p>UnexpectedInputError If <code>dx</code> is not a plain variable.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>expr</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Integrand to normalize and integrate.</td></tr><tr><td><code>dx</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Plain integration variable.</td></tr><tr><td><code>depth</code></td><td><code>number</code></td><td>Internal recursion depth. Defaults to zero.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — A symbolic antiderivative without an integration constant, or an
+unevaluated <code>integrate(...)</code> Expression.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>integrate(&#39;2*x*cos(x^2)&#39;, &#39;x&#39;).text();</code></pre></section></div></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

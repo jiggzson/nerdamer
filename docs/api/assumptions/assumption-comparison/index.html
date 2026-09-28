@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>AssumptionComparison — Nerdamer assumptions API</title>
-  <meta name="description" content="Result of a comparison involving an interval-constrained value. `true` means the relation holds for every value allowed by the assumption. `false` means the opposite relation holds for every allowed value. `undefined` means both outcomes remain possible, so the relation cannot be proved from the available interval information.">
+  <meta name="description" content="Result of a comparison involving an interval-constrained value. true means the relation holds for every value allowed by the assumption. false means the opposite relation holds for every allowed value. undefined means both outcomes remain possible, so the relation cannot be proved from the available interval information.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -62,7 +62,11 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/assumptions/">nerdamer/assumptions</a></div><div class="api-member-title"><div><span class="api-kind">API</span><h1>AssumptionComparison</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/core/classes/assumption/Assumption.ts#L31" target="_blank" rel="noreferrer">src/core/classes/assumption/Assumption.ts:31</a></div><pre class="api-signature"><code>AssumptionComparison: true | false | undefined</code></pre><div class="api-description"><p>Result of a comparison involving an interval-constrained value.</p><pre class="api-example"><code>`true`</code></pre><p>means the relation holds for every value allowed by the assumption.</p><pre class="api-example"><code>`false`</code></pre><p>means the opposite relation holds for every allowed value.</p><pre class="api-example"><code>`undefined`</code></pre><p>means both outcomes remain possible, so the relation cannot be proved from the
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/assumptions/">nerdamer/assumptions</a></div><div class="api-member-title"><div><span class="api-kind">API</span><h1>AssumptionComparison</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/core/classes/assumption/Assumption.ts#L31" target="_blank" rel="noreferrer">src/core/classes/assumption/Assumption.ts:31</a></div><pre class="api-signature"><code>AssumptionComparison: true | false | undefined</code></pre><div class="api-description"><p>Result of a comparison involving an interval-constrained value.
+
+<code>true</code> means the relation holds for every value allowed by the assumption.
+<code>false</code> means the opposite relation holds for every allowed value. <code>undefined</code>
+means both outcomes remain possible, so the relation cannot be proved from the
 available interval information.</p></div></article></div>
 </main>
 <footer class="site-footer">

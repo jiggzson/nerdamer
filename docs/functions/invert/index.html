@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>invert — Nerdamer Notation</title>
+  <title>invert — Nerdamer Documentation</title>
   <meta name="description" content="Returns the inverse of a square matrix.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="../../../styles/back-to-top.css">
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
-  
+  <link rel="stylesheet" href="../../../styles/api.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -62,24 +62,31 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/invert/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/invert/">Open the unified page →</a></p></div>
-<div hidden aria-hidden="true"><div class="eyebrow">Nerdamer Notation · Linear algebra</div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/functions/">Function reference</a></div>
+<div class="eyebrow">Function reference · Linear algebra</div>
 <h1><code>invert</code></h1>
 <p>Returns the inverse of a square matrix.</p>
-<h2>Syntax</h2>
-<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">invert</span><span class="token punctuation">(</span><span class="token variable">arg1</span><span class="token punctuation">)</span></code></pre>
-<div class="docs-callout"><strong>Nerdamer Notation:</strong> this function is parsed inside input such as <code>nerdamer('...')</code>.</div>
+<div class="api-description"><p>invert(matrix) computes the matrix inverse without modifying the supplied Matrix.</p></div>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Invert a 2 by 2 matrix.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">invert</span><span class="token punctuation">(</span><span class="token function">matrix</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre></div></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#direct-api">Direct API</a></p></section>
+<section class="api-detail" id="notation">
+<h2>Nerdamer Notation</h2>
+<p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
+<pre class="api-signature"><code>invert(arg1)</code></pre>
 
 
+</section>
+
+<section class="api-detail" id="direct-api">
+<h2>Direct JavaScript / TypeScript API</h2>
+<p>Import the operation directly from its package entry point.</p>
+<pre class="codeblock language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">invert</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span></code></pre>
+
+<p><a href="/docs/api/structures/">Browse <code>nerdamer/structures</code> →</a></p>
+</section>
 
 
-
-<h2>JavaScript / TypeScript counterpart</h2>
-<p>The operation is also available through Nerdamer's JavaScript / TypeScript API.</p>
-<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">invert</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span></code></pre>
-<p><a href="/docs/api/structures/invert/">View <code>invert</code> in the JavaScript / TypeScript API reference →</a></p>
-<p><a href="/docs/functions/">← Back to Nerdamer Notation functions</a></p></div></article></div>
+<p><a href="/docs/functions/">← Back to Function reference</a></p></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

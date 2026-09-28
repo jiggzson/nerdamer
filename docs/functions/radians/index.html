@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>radians — Nerdamer Notation</title>
+  <title>radians — Nerdamer Documentation</title>
   <meta name="description" content="Converts an angle in degrees to radians exactly.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="../../../styles/back-to-top.css">
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
-  
+  <link rel="stylesheet" href="../../../styles/api.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -62,21 +62,30 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/radians/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/radians/">Open the unified page →</a></p></div>
-<div hidden aria-hidden="true"><div class="eyebrow">Nerdamer Notation · Math</div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/functions/">Function reference</a></div>
+<div class="eyebrow">Function reference · Math</div>
 <h1><code>radians</code></h1>
 <p>Converts an angle in degrees to radians exactly.</p>
-<h2>Syntax</h2>
-<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">radians</span><span class="token punctuation">(</span><span class="token variable">arg1</span><span class="token punctuation">)</span></code></pre>
-<div class="docs-callout"><strong>Nerdamer Notation:</strong> this function is parsed inside input such as <code>nerdamer('...')</code>.</div>
+<div class="api-description"><p>radians(x) multiplies the input by pi/180. Symbolic inputs remain exact rather than being converted to a decimal approximation.</p></div>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Convert a half-turn to pi radians.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">radians</span><span class="token punctuation">(</span><span class="token number">180</span><span class="token punctuation">)</span>
+<span class="token comment">// → pi</span></code></pre></div>
+<div class="api-example-block"><p>Convert 45 degrees to an exact fraction of pi.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">radians</span><span class="token punctuation">(</span><span class="token number">45</span><span class="token punctuation">)</span>
+<span class="token comment">// → (1/4)*pi</span></code></pre></div>
+<div class="api-example-block"><p>Keep a symbolic degree measure exact.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">radians</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span>
+<span class="token comment">// → (1/180)*x*pi</span></code></pre></div></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a></p></section>
+<section class="api-detail" id="notation">
+<h2>Nerdamer Notation</h2>
+<p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
+<pre class="api-signature"><code>radians(arg1)</code></pre>
+
+
+</section>
 
 
 
 
-
-
-<p><a href="/docs/functions/">← Back to Nerdamer Notation functions</a></p></div></article></div>
+<p><a href="/docs/functions/">← Back to Function reference</a></p></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

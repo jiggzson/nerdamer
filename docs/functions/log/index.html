@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>log — Nerdamer Notation</title>
+  <title>log — Nerdamer Documentation</title>
   <meta name="description" content="Computes the natural logarithm or a logarithm with an explicit base.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="../../../styles/back-to-top.css">
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
-  
+  <link rel="stylesheet" href="../../../styles/api.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -62,21 +62,37 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/log/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/log/">Open the unified page →</a></p></div>
-<div hidden aria-hidden="true"><div class="eyebrow">Nerdamer Notation · Math</div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/functions/">Function reference</a></div>
+<div class="eyebrow">Function reference · Math</div>
 <h1><code>log</code></h1>
 <p>Computes the natural logarithm or a logarithm with an explicit base.</p>
-<h2>Syntax</h2>
-<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">arg1</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token variable">arg2</span><span class="token punctuation">]</span><span class="token punctuation">)</span></code></pre>
-<div class="docs-callout"><strong>Nerdamer Notation:</strong> this function is parsed inside input such as <code>nerdamer('...')</code>.</div>
+<div class="api-description"><p>With one argument, log uses base e. An optional second argument selects a base. Exact integer-base powers and common symbolic forms are simplified when safe.</p><p>Complex inputs use the principal logarithm, and real-domain logarithm rewrites are only applied when their sign requirements are established.</p></div>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Evaluate the natural logarithm of e.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">log</span><span class="token punctuation">(</span><span class="token constant">e</span><span class="token punctuation">)</span>
+<span class="token comment">// → 1</span></code></pre></div>
+<div class="api-example-block"><p>Evaluate an exact logarithm with base 2.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">log</span><span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">)</span>
+<span class="token comment">// → 3</span></code></pre></div>
+<div class="api-example-block"><p>Keep a symbolic logarithm.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span></code></pre></div></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
+<section class="api-detail" id="notation">
+<h2>Nerdamer Notation</h2>
+<p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
+<pre class="api-signature"><code>log(arg1, [arg2])</code></pre>
+
+
+</section>
+<section class="api-detail" id="nerdamer-api">
+<h2><code>nerdamer.log</code></h2>
+<p>Call the operation through the default <code>nerdamer</code> import.</p>
+<pre class="api-signature"><code>nerdamer.log(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, base?: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, expandPrimes: boolean): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>The expression to take the logarithm of.</td></tr><tr><td><code>base</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Optional logarithm base. Defaults to <code>e</code> (natural log).</td></tr><tr><td><code>expandPrimes</code></td><td><code>boolean</code></td><td>When <code>true</code>, decomposes integer arguments into prime factors
+  (e.g. <code>log(8)</code> becomes <code>3·log(2)</code>). Defaults to <code>false</code>.</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The logarithm of <code>x</code>.</p></section>
+<p><a href="/docs/api/nerdamer/">Browse the <code>nerdamer</code> API →</a></p>
+</section>
 
 
 
-
-
-
-<p><a href="/docs/functions/">← Back to Nerdamer Notation functions</a></p></div></article></div>
+<p><a href="/docs/functions/">← Back to Function reference</a></p></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

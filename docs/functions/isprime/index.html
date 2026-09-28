@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>isprime — Nerdamer Notation</title>
+  <title>isprime — Nerdamer Documentation</title>
   <meta name="description" content="Tests whether an exact integer is prime.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="../../../styles/back-to-top.css">
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
-  
+  <link rel="stylesheet" href="../../../styles/api.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -62,24 +62,36 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/is-prime/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/is-prime/">Open the unified page →</a></p></div>
-<div hidden aria-hidden="true"><div class="eyebrow">Nerdamer Notation · Special functions</div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/functions/">Function reference</a></div>
+<div class="eyebrow">Function reference · Special functions</div>
 <h1><code>isprime</code></h1>
 <p>Tests whether an exact integer is prime.</p>
-<h2>Syntax</h2>
-<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">isprime</span><span class="token punctuation">(</span><span class="token variable">arg1</span><span class="token punctuation">)</span></code></pre>
-<div class="docs-callout"><strong>Nerdamer Notation:</strong> this function is parsed inside input such as <code>nerdamer('...')</code>.</div>
+<div class="api-description"><p>Use isprime(...) in Nerdamer Notation and isPrime(...) from the JavaScript / TypeScript API.</p><p>Exact integer inputs return 1 for prime and 0 for non-prime values. Inputs that cannot be classified as exact integers remain symbolic.</p></div>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Recognize a prime integer.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">isprime</span><span class="token punctuation">(</span><span class="token number">29</span><span class="token punctuation">)</span>
+<span class="token comment">// → 1</span></code></pre></div>
+<div class="api-example-block"><p>Reject a composite integer.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">isprime</span><span class="token punctuation">(</span><span class="token number">21</span><span class="token punctuation">)</span>
+<span class="token comment">// → 0</span></code></pre></div>
+<div class="api-example-block"><p>Treat 1 as non-prime.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">isprime</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token comment">// → 0</span></code></pre></div></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#direct-api">Direct API</a></p></section>
+<section class="api-detail" id="notation">
+<h2>Nerdamer Notation</h2>
+<p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
+<pre class="api-signature"><code>isprime(arg1)</code></pre>
 
 
+</section>
 
+<section class="api-detail" id="direct-api">
+<h2>Direct JavaScript / TypeScript API</h2>
+<p>Import the operation directly from its package entry point.</p>
+<pre class="codeblock language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">isPrime</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/algebra&#39;</span><span class="token punctuation">;</span></code></pre>
 
+<p><a href="/docs/api/algebra/">Browse <code>nerdamer/algebra</code> →</a></p>
+</section>
 
-<h2>JavaScript / TypeScript counterpart</h2>
-<p>The operation is also available through Nerdamer's JavaScript / TypeScript API.</p>
-<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">isPrime</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/algebra&#39;</span><span class="token punctuation">;</span></code></pre>
-<p><a href="/docs/api/algebra/is-prime/">View <code>isPrime</code> in the JavaScript / TypeScript API reference →</a></p>
-<p><a href="/docs/functions/">← Back to Nerdamer Notation functions</a></p></div></article></div>
+<section class="api-detail"><h2>Related API names</h2><p><code>isPrime</code></p></section>
+<p><a href="/docs/functions/">← Back to Function reference</a></p></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

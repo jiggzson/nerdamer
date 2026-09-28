@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>scientific — Nerdamer Notation</title>
+  <title>scientific — Nerdamer Documentation</title>
   <meta name="description" content="Formats numeric values in scientific notation while preserving the expression&#39;s mathematical value.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="../../../styles/back-to-top.css">
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
-  
+  <link rel="stylesheet" href="../../../styles/api.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -62,25 +62,33 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/scientific/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/scientific/">Open the unified page →</a></p></div>
-<div hidden aria-hidden="true"><div class="eyebrow">Nerdamer Notation · Math</div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/functions/">Function reference</a></div>
+<div class="eyebrow">Function reference · Math</div>
 <h1><code>scientific</code></h1>
 <p>Formats numeric values in scientific notation while preserving the expression&#39;s mathematical value.</p>
-<h2>Syntax</h2>
-<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">scientific</span><span class="token punctuation">(</span><span class="token variable">value</span><span class="token punctuation">[</span><span class="token punctuation">,</span> <span class="token variable">significantDigits</span><span class="token punctuation">]</span><span class="token punctuation">)</span></code></pre>
-<div class="docs-callout"><strong>Nerdamer Notation:</strong> this function is parsed inside input such as <code>nerdamer('...')</code>.</div>
-
-<h2>Parameters</h2><ul><li><code>value</code> — Expression whose numeric values should use scientific notation.</li>
+<div class="api-description"><p>scientific(value[, significantDigits]) records a scientific-notation presentation with an optional significant-digit count. The value remains exact for subsequent symbolic work.</p><p>The significant-digit count must be an integer from 1 through 1e9 and defaults to 10.</p></div>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Round a positive integer to three significant digits in scientific notation.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">scientific</span><span class="token punctuation">(</span><span class="token number">12345</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span>
+<span class="token comment">// → 1.23e4</span></code></pre></div>
+<div class="api-example-block"><p>Preserve trailing zeros required by the requested precision.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">scientific</span><span class="token punctuation">(</span><span class="token number">1200</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">)</span>
+<span class="token comment">// → 1.200e3</span></code></pre></div>
+<div class="api-example-block"><p>Format an exact rational value with four significant digits.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">scientific</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">/</span><span class="token number">8</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">)</span>
+<span class="token comment">// → 1.250e-1</span></code></pre></div>
+<div class="api-example-block"><p>Format and round a negative value.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">scientific</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">987654</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">)</span>
+<span class="token comment">// → -9.877e5</span></code></pre></div></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a></p></section>
+<section class="api-detail" id="notation">
+<h2>Nerdamer Notation</h2>
+<p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
+<pre class="api-signature"><code>scientific(value[, significantDigits])</code></pre>
+<h3>Parameters</h3><ul><li><code>value</code> — Expression whose numeric values should use scientific notation.</li>
 <li><code>significantDigits</code> — Optional integer from 1 through 1e9. The coefficient retains exactly this many significant digits. Defaults to 10.</li></ul>
-<h2>Examples</h2><pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
 
-<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;scientific(1200,4)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token comment">// → 1.200e3</span></code></pre>
+</section>
 
 
 
-<p><a href="/docs/functions/">← Back to Nerdamer Notation functions</a></p></div></article></div>
+
+<p><a href="/docs/functions/">← Back to Function reference</a></p></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

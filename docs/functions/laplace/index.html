@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>laplace — Nerdamer Notation</title>
+  <title>laplace — Nerdamer Documentation</title>
   <meta name="description" content="Computes the symbolic Laplace transform of an expression.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="../../../styles/back-to-top.css">
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
-  
+  <link rel="stylesheet" href="../../../styles/api.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -62,24 +62,47 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/laplace/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/laplace/">Open the unified page →</a></p></div>
-<div hidden aria-hidden="true"><div class="eyebrow">Nerdamer Notation · Calculus</div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/functions/">Function reference</a></div>
+<div class="eyebrow">Function reference · Calculus</div>
 <h1><code>laplace</code></h1>
 <p>Computes the symbolic Laplace transform of an expression.</p>
-<h2>Syntax</h2>
-<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">laplace</span><span class="token punctuation">(</span><span class="token variable">arg1</span><span class="token punctuation">,</span> <span class="token variable">arg2</span><span class="token punctuation">,</span> <span class="token variable">arg3</span><span class="token punctuation">)</span></code></pre>
-<div class="docs-callout"><strong>Nerdamer Notation:</strong> this function is parsed inside input such as <code>nerdamer('...')</code>.</div>
+<div class="api-description"><p>The transform maps an expression from a source variable to a transform variable. Supported forms include powers, exponentials, trigonometric and hyperbolic functions, linear combinations, and common shift and scaling patterns.</p><p>If no supported transform rule applies, Nerdamer leaves the Laplace transform unevaluated.</p></div>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Transform a polynomial power.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">laplace</span><span class="token punctuation">(</span><span class="token variable">t</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token variable">t</span><span class="token punctuation">,</span><span class="token variable">s</span><span class="token punctuation">)</span>
+<span class="token comment">// → 2*s^-3</span></code></pre></div>
+<div class="api-example-block"><p>Apply the exponential shift rule exactly.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">laplace</span><span class="token punctuation">(</span><span class="token constant">e</span><span class="token operator">^</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token variable">t</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">t</span><span class="token punctuation">,</span><span class="token variable">s</span><span class="token punctuation">)</span>
+<span class="token comment">// → (1+s)^-1</span></code></pre></div>
+<div class="api-example-block"><p>Transform a trigonometric function symbolically.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">laplace</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">t</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">t</span><span class="token punctuation">,</span><span class="token variable">s</span><span class="token punctuation">)</span>
+<span class="token comment">// → (1+s^2)^-1</span></code></pre></div></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
+<section class="api-detail" id="notation">
+<h2>Nerdamer Notation</h2>
+<p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
+<pre class="api-signature"><code>laplace(arg1, arg2, arg3)</code></pre>
 
 
+</section>
+<section class="api-detail" id="nerdamer-api">
+<h2><code>nerdamer.laplace</code></h2>
+<p>Call the operation through the default <code>nerdamer</code> import.</p>
+<pre class="api-signature"><code>nerdamer.laplace(expr: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, t: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, s: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>expr</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Time-domain expression.</td></tr><tr><td><code>t</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Plain time-domain variable.</td></tr><tr><td><code>s</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Plain transform-domain variable.</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The symbolic transform, or an unevaluated <code>laplace(expr, t, s)</code>
+Expression when no table rule resolves the input.</p></section>
+<p><a href="/docs/api/nerdamer/">Browse the <code>nerdamer</code> API →</a></p>
+</section>
+<section class="api-detail" id="direct-api">
+<h2>Direct JavaScript / TypeScript API</h2>
+<p>Import the operation directly from its package entry point.</p>
+<pre class="codeblock language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">laplace</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/calculus&#39;</span><span class="token punctuation">;</span></code></pre>
+<pre class="api-signature"><code>laplace(expr: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, t: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, s: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>expr</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Time-domain expression.</td></tr><tr><td><code>t</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Plain time-domain variable.</td></tr><tr><td><code>s</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Plain transform-domain variable.</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The symbolic transform, or an unevaluated <code>laplace(expr, t, s)</code>
+Expression when no table rule resolves the input.</p></section>
+<p><a href="/docs/api/calculus/">Browse <code>nerdamer/calculus</code> →</a></p>
+</section>
 
 
-
-<h2>JavaScript / TypeScript counterpart</h2>
-<p>The operation is also available through Nerdamer's JavaScript / TypeScript API.</p>
-<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">laplace</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/calculus&#39;</span><span class="token punctuation">;</span></code></pre>
-<p><a href="/docs/api/calculus/laplace/">View <code>laplace</code> in the JavaScript / TypeScript API reference →</a></p>
-<p><a href="/docs/functions/">← Back to Nerdamer Notation functions</a></p></div></article></div>
+<p><a href="/docs/functions/">← Back to Function reference</a></p></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

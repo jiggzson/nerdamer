@@ -62,8 +62,8 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/simplify/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/simplify/">Open the unified page →</a></p></div>
+<article class="docs-content"><script>window.location.replace("/docs/functions/simplify/");</script>
+<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/simplify/">Open the documentation →</a></p></div>
 <div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/algebra/">nerdamer/algebra</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1>simplify</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/algebra/simplify/simplify.ts#L36" target="_blank" rel="noreferrer">src/algebra/simplify/simplify.ts:36</a></div><pre class="api-signature"><code>simplify(x: string | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, modifiers: { … }): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Applies Nerdamer&#39;s finite symbolic simplification strategy to an expression.</p><div class="api-note"><strong>remarks</strong><p>Simplification first normalizes rational structure, recursively simplifies function
 arguments, and then selects targeted transformations for factorial ratios, complex
 forms, irrational denominators, sums, or linear products. The final numerator and
@@ -72,9 +72,9 @@ proof of globally minimal form, and branch-sensitive identities are limited to t
 safeguards implemented by the selected rewrite routines.
 
 Intermediate expressions may be reused while the pipeline runs, but callers should
-treat the return value as the simplified result rather than expecting</p><pre class="api-example"><code>`x`</code></pre><p>to be updated
+treat the return value as the simplified result rather than expecting <code>x</code> to be updated
 in place. Decimal-origin formatting is propagated to the result&#39;s outer multiplier.
-The</p><pre class="api-example"><code>`modifiers`</code></pre><p>object is internal recursion state; its</p><pre class="api-example"><code>`image`</code></pre><p>value prevents another
+The <code>modifiers</code> object is internal recursion state; its <code>image</code> value prevents another
 simplification round when the canonical text has stopped changing.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code>string | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>Expression or parser text to simplify.</td></tr><tr><td><code>modifiers</code></td><td><code>{ … }</code></td><td>Internal recursion markers used to detect an unchanged image.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The simplified expression, which may retain forms unsupported by the finite strategy set.</p></section></div></article></div>
 </main>
 <footer class="site-footer">

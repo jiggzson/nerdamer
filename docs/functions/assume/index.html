@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>assume — Nerdamer Notation</title>
+  <title>assume — Nerdamer Documentation</title>
   <meta name="description" content="Adds a real numeric interval assumption for a symbol so assumption-aware operations can use the known range.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="../../../styles/back-to-top.css">
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
-  
+  <link rel="stylesheet" href="../../../styles/api.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -62,24 +62,48 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/assume/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/assume/">Open the unified page →</a></p></div>
-<div hidden aria-hidden="true"><div class="eyebrow">Nerdamer Notation · Assumptions and sets</div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/functions/">Function reference</a></div>
+<div class="eyebrow">Function reference · Assumptions and sets</div>
 <h1><code>assume</code></h1>
 <p>Adds a real numeric interval assumption for a symbol so assumption-aware operations can use the known range.</p>
-<h2>Syntax</h2>
-<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">assume</span><span class="token punctuation">(</span><span class="token variable">arg1</span><span class="token punctuation">)</span></code></pre>
-<div class="docs-callout"><strong>Nerdamer Notation:</strong> this function is parsed inside input such as <code>nerdamer('...')</code>.</div>
+<div class="api-description"><p>Assumptions narrow a plain variable to a non-empty interval of real numeric values. Repeated constraints for the same variable are intersected, and contradictory constraints are rejected without replacing the previous assumption.</p><p>Assumptions are used conservatively. They can influence comparisons and transformations that depend on sign or ordering, but they are not a general logical theorem system.</p></div>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Use disjoint symbolic ranges to prove which variable is larger.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">assume</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&gt;</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">assume</span><span class="token punctuation">(</span><span class="token variable">y</span><span class="token operator">&lt;</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">max</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">,</span><span class="token variable">y</span><span class="token punctuation">)</span>
+<span class="token comment">// → x</span></code></pre></div>
+<div class="api-example-block"><p>Use a lower bound to remove an otherwise necessary absolute value.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">assume</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&gt;=</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">sqrt</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">)</span>
+<span class="token comment">// → -3+x</span></code></pre></div>
+<div class="api-example-block"><p>Use positivity information in a sign-sensitive logarithm simplification.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">assume</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&gt;</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">assume</span><span class="token punctuation">(</span><span class="token variable">y</span><span class="token operator">&gt;</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">simplify</span><span class="token punctuation">(</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">y</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token comment">// → log(x*y)</span></code></pre></div></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
+<section class="api-detail" id="notation">
+<h2>Nerdamer Notation</h2>
+<p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
+<pre class="api-signature"><code>assume(arg1)</code></pre>
 
 
+</section>
+<section class="api-detail" id="nerdamer-api">
+<h2><code>nerdamer.assume</code></h2>
+<p>Call the operation through the default <code>nerdamer</code> import.</p>
+<pre class="api-signature"><code>nerdamer.assume(expr: string): <a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a></code></pre>
+<pre class="api-signature"><code>nerdamer.assume(symbol: string, exprOrAssumption: string | <a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a>): <a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>expr</code></td><td><code>string</code></td><td>Complete constraint in the supported assumption grammar.</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a></code> — The registered interval after intersection with any existing constraint.</p></section>
+<p><a href="/docs/api/nerdamer/">Browse the <code>nerdamer</code> API →</a></p>
+</section>
+<section class="api-detail" id="direct-api">
+<h2>Direct JavaScript / TypeScript API</h2>
+<p>Import the operation directly from its package entry point.</p>
+<pre class="codeblock language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">assume</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/assumptions&#39;</span><span class="token punctuation">;</span></code></pre>
+<pre class="api-signature"><code>assume(expr: string): <a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a></code></pre>
+<pre class="api-signature"><code>assume(symbol: string, exprOrAssumption: string | <a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a>): <a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>expr</code></td><td><code>string</code></td><td>Complete constraint in the supported assumption grammar.</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a></code> — The registered interval after intersection with any existing constraint.</p></section>
+<p><a href="/docs/api/assumptions/">Browse <code>nerdamer/assumptions</code> →</a></p>
+</section>
+<section class="api-detail"><h2>Notes</h2><ul><li>The direct string API accepts a variable, a comparison operator, and a numeric bound. Parser notation can evaluate arithmetic such as 1/3 before storing the bound.</li>
+<li>Assumption state is process-wide until it is cleared or forgotten.</li></ul></section>
 
-
-
-<h2>JavaScript / TypeScript counterpart</h2>
-<p>The operation is also available through Nerdamer's JavaScript / TypeScript API.</p>
-<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">assume</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/assumptions&#39;</span><span class="token punctuation">;</span></code></pre>
-<p><a href="/docs/api/assumptions/assume/">View <code>assume</code> in the JavaScript / TypeScript API reference →</a></p>
-<p><a href="/docs/functions/">← Back to Nerdamer Notation functions</a></p></div></article></div>
+<p><a href="/docs/functions/">← Back to Function reference</a></p></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

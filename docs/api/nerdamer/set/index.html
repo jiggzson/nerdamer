@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>nerdamer.set — Nerdamer API</title>
-  <meta name="description" content="Changes one or more shared parser settings. The legacy `PRECISION` setting is routed through Parser.setPrecision so Decimal-backed calculations and the finite-precision `pi` and `e` constants remain synchronized.">
+  <meta name="description" content="Changes one or more shared parser settings. The legacy PRECISION setting is routed through Parser.setPrecision so Decimal-backed calculations and the finite-precision pi and e constants remain synchronized.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -64,8 +64,8 @@
 </aside>
 <article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.set</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L536" target="_blank" rel="noreferrer">src/index.ts:536</a></div><pre class="api-signature"><code>nerdamer.set(setting: string | <a class="api-type-link" href="/docs/api/core/options-object/">OptionsObject</a>, value?: string | number | bigint | boolean): typeof <a class="api-type-link" href="/docs/api/nerdamer/">nerdamer</a></code></pre><div class="api-description"><p>Changes one or more shared parser settings.
 
-The legacy</p><pre class="api-example"><code>`PRECISION`</code></pre><p>setting is routed through Parser.setPrecision so Decimal-backed
-calculations and the finite-precision</p><pre class="api-example"><code>`pi`</code></pre><p>and</p><pre class="api-example"><code>`e`</code></pre><p>constants remain synchronized.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>setting</code></td><td><code>string | <a class="api-type-link" href="/docs/api/core/options-object/">OptionsObject</a></code></td><td>Setting name or settings object accepted by Parser.set.</td></tr><tr><td><code>value</code></td><td><code>string | number | bigint | boolean</code></td><td>Value used when `setting` is a single name.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>typeof <a class="api-type-link" href="/docs/api/nerdamer/">nerdamer</a></code> — The root `nerdamer` function for chaining.</p></section></article></div>
+The legacy <code>PRECISION</code> setting is routed through Parser.setPrecision so Decimal-backed
+calculations and the finite-precision <code>pi</code> and <code>e</code> constants remain synchronized.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>setting</code></td><td><code>string | <a class="api-type-link" href="/docs/api/core/options-object/">OptionsObject</a></code></td><td>Setting name or settings object accepted by Parser.set.</td></tr><tr><td><code>value</code></td><td><code>string | number | bigint | boolean</code></td><td>Value used when <code>setting</code> is a single name.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>typeof <a class="api-type-link" href="/docs/api/nerdamer/">nerdamer</a></code> — The root <code>nerdamer</code> function for chaining.</p></section></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

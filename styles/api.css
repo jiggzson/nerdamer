@@ -66,8 +66,7 @@
 }
 
 .api-build-note {
-  margin-top: 14px;
-  font-size: .82rem;
+  display: none;
 }
 
 .api-section-heading {

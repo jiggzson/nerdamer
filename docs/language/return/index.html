@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>return — Nerdamer Scripting</title>
+  <title>return — Nerdamer Documentation</title>
   <meta name="description" content="Returns a value from the current symbolic function or outer scripting block.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="../../../styles/back-to-top.css">
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
-  
+  <link rel="stylesheet" href="../../../styles/api.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -62,21 +62,26 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/return/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/return/">Open the unified page →</a></p></div>
-<div hidden aria-hidden="true"><div class="eyebrow">Nerdamer Scripting</div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/language/">Nerdamer Scripting</a></div>
+<div class="eyebrow">Scripting reference · Nerdamer Language</div>
 <h1><code>return</code></h1>
 <p>Returns a value from the current symbolic function or outer scripting block.</p>
-<h2>Syntax</h2>
-<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token control">return</span><span class="token punctuation">(</span><span class="token variable">arg1</span><span class="token punctuation">)</span></code></pre>
-<div class="docs-callout"><strong>Nerdamer Scripting:</strong> this form is evaluated inside input passed to <code>nerdamer(...)</code>. It is not a JavaScript statement.</div>
+<div class="api-description"><p>Inside a parser-defined symbolic function, return stops evaluation of the current function body and supplies its value. The outermost scripting block can also consume an escaping return.</p></div>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Scripting.</p><div class="api-example-block"><p>Stop evaluation and return 7.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token control">block</span><span class="token punctuation">(</span><span class="token control">return</span><span class="token punctuation">(</span><span class="token number">7</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token number">9</span><span class="token punctuation">)</span>
+<span class="token comment">// → 7</span></code></pre></div></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#scripting">Nerdamer Scripting</a></p></section>
+<section class="api-detail" id="scripting">
+<h2>Nerdamer Scripting</h2>
+<p>Use this form in Nerdamer Scripting input passed to <code>nerdamer(...)</code>.</p>
+<pre class="api-signature"><code>return(arg1)</code></pre>
+
+
+</section>
 
 
 
 
-
-
-<p><a href="/docs/language/">← Back to Nerdamer Scripting</a></p></div></article></div>
+<p><a href="/docs/language/">← Back to Nerdamer Scripting</a></p></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

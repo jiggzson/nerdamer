@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>nerdamer.gamma — Nerdamer API</title>
-  <meta name="description" content="Computes the gamma function Γ(x). - For positive integers: `Γ(n) = (n − 1)!` - For half-integers (e.g. `1/2`, `3/2`, `-3/2`): returns a closed-form expression involving `sqrt(π)`. - For other numeric values: uses a high-precision decimal approximation. - For symbolic inputs: returns an unevaluated `gamma(x)` node.">
+  <meta name="description" content="Computes the gamma function Γ(x). - For positive integers: Γ(n) = (n − 1)! - For half-integers (e.g. 1/2, 3/2, -3/2): returns a closed-form expression involving sqrt(π). - For other numeric values: uses a high-precision decimal approximation. - For symbolic inputs: returns an unevaluated gamma(x) node.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -62,14 +62,15 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/gamma/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/gamma/">Open the unified page →</a></p></div>
+<article class="docs-content"><script>window.location.replace("/docs/functions/gamma/");</script>
+<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/gamma/">Open the documentation →</a></p></div>
 <div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.gamma</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L804" target="_blank" rel="noreferrer">src/index.ts:804</a></div><pre class="api-signature"><code>nerdamer.gamma(x: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the gamma function Γ(x).
 
-- For positive integers:</p><pre class="api-example"><code>`Γ(n) = (n − 1)!`</code></pre><p>- For half-integers (e.g.</p><pre class="api-example"><code>`1/2`</code></pre><p>,</p><pre class="api-example"><code>`3/2`</code></pre><p>,</p><pre class="api-example"><code>`-3/2`</code></pre><p>): returns a closed-form
-  expression involving</p><pre class="api-example"><code>`sqrt(π)`</code></pre><p>.
+- For positive integers: <code>Γ(n) = (n − 1)!</code>
+- For half-integers (e.g. <code>1/2</code>, <code>3/2</code>, <code>-3/2</code>): returns a closed-form
+  expression involving <code>sqrt(π)</code>.
 - For other numeric values: uses a high-precision decimal approximation.
-- For symbolic inputs: returns an unevaluated</p><pre class="api-example"><code>`gamma(x)`</code></pre><p>node.</p><div class="api-note"><strong>throws</strong><p>UndefinedError If</p><pre class="api-example"><code>`x`</code></pre><p>is</p><pre class="api-example"><code>`-∞`</code></pre><p>.</p></div><div class="api-note"><strong>see</strong><p>https://en.wikipedia.org/wiki/Gamma_function</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>The input expression.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The gamma function value Γ(x).</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>gamma(Expression.create(5)).text()       // &quot;24&quot;
+- For symbolic inputs: returns an unevaluated <code>gamma(x)</code> node.</p><div class="api-note"><strong>throws</strong><p>UndefinedError If <code>x</code> is <code>-∞</code>.</p></div><div class="api-note"><strong>see</strong><p>https://en.wikipedia.org/wiki/Gamma_function</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>The input expression.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The gamma function value Γ(x).</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>gamma(Expression.create(5)).text()       // &quot;24&quot;
 gamma(Expression.create(&#39;1/2&#39;)).text()   // &quot;sqrt(pi)&quot;
 gamma(Expression.create(&#39;x&#39;)).text()     // &quot;gamma(x)&quot;</code></pre></section></div></article></div>
 </main>

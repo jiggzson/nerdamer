@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>nerdamer.sin — Nerdamer API</title>
-  <meta name="description" content="Computes the sine of an expression. Returns exact symbolic values for well-known multiples of π (π/6, π/4, π/3, π/2, π, etc.). Sine is an odd function: `sin(-x)` automatically simplifies to `-sin(x)`. Inverse trig compositions are resolved: - `sin(asin(x))` returns `x` - `sin(acos(x))` returns `sqrt(1 − x²)` - `sin(atan(x))` returns `x/sqrt(1 + x²)`">
+  <meta name="description" content="Computes the sine of an expression. Returns exact symbolic values for well-known multiples of π (π/6, π/4, π/3, π/2, π, etc.). Sine is an odd function: sin(-x) automatically simplifies to -sin(x). Inverse trig compositions are resolved: - sin(asin(x)) returns x - sin(acos(x)) returns sqrt(1 − x²) - sin(atan(x)) returns x/sqrt(1 + x²)">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -62,14 +62,16 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/sin/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/sin/">Open the unified page →</a></p></div>
+<article class="docs-content"><script>window.location.replace("/docs/functions/sin/");</script>
+<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/sin/">Open the documentation →</a></p></div>
 <div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.sin</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L741" target="_blank" rel="noreferrer">src/index.ts:741</a></div><pre class="api-signature"><code>nerdamer.sin(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the sine of an expression. Returns exact symbolic values for
 well-known multiples of π (π/6, π/4, π/3, π/2, π, etc.).
 
-Sine is an odd function:</p><pre class="api-example"><code>`sin(-x)`</code></pre><p>automatically simplifies to</p><pre class="api-example"><code>`-sin(x)`</code></pre><p>.
+Sine is an odd function: <code>sin(-x)</code> automatically simplifies to <code>-sin(x)</code>.
 Inverse trig compositions are resolved:
--</p><pre class="api-example"><code>`sin(asin(x))`</code></pre><p>returns</p><pre class="api-example"><code>`x`</code></pre><p>-</p><pre class="api-example"><code>`sin(acos(x))`</code></pre><p>returns</p><pre class="api-example"><code>`sqrt(1 − x²)`</code></pre><p>-</p><pre class="api-example"><code>`sin(atan(x))`</code></pre><p>returns</p><pre class="api-example"><code>`x/sqrt(1 + x²)`</code></pre><div class="api-note"><strong>throws</strong><p>UndefinedError If</p><pre class="api-example"><code>`x`</code></pre><p>is</p><pre class="api-example"><code>`±∞`</code></pre><p>.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>The angle in radians.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The sine of `x`.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>sin(0).text()             // &quot;0&quot;
+- <code>sin(asin(x))</code> returns <code>x</code>
+- <code>sin(acos(x))</code> returns <code>sqrt(1 − x²)</code>
+- <code>sin(atan(x))</code> returns <code>x/sqrt(1 + x²)</code></p><div class="api-note"><strong>throws</strong><p>UndefinedError If <code>x</code> is <code>±∞</code>.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>The angle in radians.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The sine of <code>x</code>.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>sin(0).text()             // &quot;0&quot;
 sin(&#39;pi&#39;).text()          // &quot;0&quot;
 sin(&#39;pi/2&#39;).text()        // &quot;1&quot;
 sin(&#39;pi/6&#39;).text()        // &quot;1/2&quot;

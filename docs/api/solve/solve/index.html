@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>solve — Nerdamer solve API</title>
-  <meta name="description" content="Solves an equation or finds the zeros of an expression in one variable. The solver normalizes the input to `expression = 0`, tries direct symbolic transformations, factors numerator and denominator, and then applies symbolic, polynomial-numeric, and bounded function-numeric strategies to the factors. Zeros of denominator factors are excluded from the result.">
+  <meta name="description" content="Solves an equation or finds the zeros of an expression in one variable. The solver normalizes the input to expression = 0, tries direct symbolic transformations, factors numerator and denominator, and then applies symbolic, polynomial-numeric, and bounded function-numeric strategies to the factors. Zeros of denominator factors are excluded from the result.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -62,11 +62,11 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/solve/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/solve/">Open the unified page →</a></p></div>
+<article class="docs-content"><script>window.location.replace("/docs/functions/solve/");</script>
+<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/solve/">Open the documentation →</a></p></div>
 <div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/solve/">nerdamer/solve</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1>solve</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/solve/solve.ts#L123" target="_blank" rel="noreferrer">src/solve/solve.ts:123</a></div><pre class="api-signature"><code>solve(input: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a> | <a class="api-type-link" href="/docs/api/core/equation/">Equation</a>, variable?: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, _options?: <a class="api-type-link" href="/docs/api/solve/function-solver-options/">FunctionSolverOptions</a>): <a class="api-type-link" href="/docs/api/solve/solution-set/">SolutionSet</a></code></pre><div class="api-description"><p>Solves an equation or finds the zeros of an expression in one variable.
 
-The solver normalizes the input to</p><pre class="api-example"><code>`expression = 0`</code></pre><p>, tries direct symbolic
+The solver normalizes the input to <code>expression = 0</code>, tries direct symbolic
 transformations, factors numerator and denominator, and then applies
 symbolic, polynomial-numeric, and bounded function-numeric strategies to the
 factors. Zeros of denominator factors are excluded from the result.</p><div class="api-note"><strong>remarks</strong><p>Numerical fallback is heuristic and bounded, so an empty result does not in
@@ -74,8 +74,10 @@ general prove that no solution exists. Strategy and input errors are absorbed
 by this convenience entry point and produce the solutions collected before
 the failure. Decimal input marks returned solutions for decimal formatting.
 
-The</p><pre class="api-example"><code>`options`</code></pre><p>parameter is currently reserved and is not forwarded to the
-numerical strategies.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>input</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a> | <a class="api-type-link" href="/docs/api/core/equation/">Equation</a></code></td><td>Expression or equation to solve.</td></tr><tr><td><code>variable</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Variable to solve for. When omitted, input preparation infers it where possible.</td></tr><tr><td><code>_options</code></td><td><code><a class="api-type-link" href="/docs/api/solve/function-solver-options/">FunctionSolverOptions</a></code></td><td>Reserved numerical-solver options.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/solve/solution-set/">SolutionSet</a></code> — A SolutionSet. The special `all` expression represents an identity that is true for every value of the variable.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>const roots = solve(&#39;x^2-1&#39;, &#39;x&#39;);</code></pre></section></div></article></div>
+The <code>options</code> parameter is currently reserved and is not forwarded to the
+numerical strategies.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>input</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a> | <a class="api-type-link" href="/docs/api/core/equation/">Equation</a></code></td><td>Expression or equation to solve.</td></tr><tr><td><code>variable</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Variable to solve for. When omitted, input preparation
+infers it where possible.</td></tr><tr><td><code>_options</code></td><td><code><a class="api-type-link" href="/docs/api/solve/function-solver-options/">FunctionSolverOptions</a></code></td><td>Reserved numerical-solver options.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/solve/solution-set/">SolutionSet</a></code> — A SolutionSet. The special <code>all</code> expression represents an
+identity that is true for every value of the variable.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>const roots = solve(&#39;x^2-1&#39;, &#39;x&#39;);</code></pre></section></div></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

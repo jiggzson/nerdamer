@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>nerdamer.dfactorial — Nerdamer API</title>
-  <meta name="description" content="Computes the double factorial of an expression. For a non-negative integer n, the double factorial is the product of all positive integers up to n that share its parity: - Even: `n!! = 2 · 4 · 6 · … · n` - Odd: `n!! = 1 · 3 · 5 · … · n` For non-integer arguments when `Settings.EVALUATE` is `true`, a generalised formula using the gamma function is applied.">
+  <meta name="description" content="Computes the double factorial of an expression. For a non-negative integer n, the double factorial is the product of all positive integers up to n that share its parity: - Even: n!! = 2 · 4 · 6 · … · n - Odd: n!! = 1 · 3 · 5 · … · n For non-integer arguments when Settings.EVALUATE is true, a generalised formula using the gamma function is applied.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -66,8 +66,11 @@
 
 For a non-negative integer n, the double factorial is the product of all positive
 integers up to n that share its parity:
-- Even:</p><pre class="api-example"><code>`n!! = 2 · 4 · 6 · … · n`</code></pre><p>- Odd:</p><pre class="api-example"><code>`n!! = 1 · 3 · 5 · … · n`</code></pre><p>For non-integer arguments when</p><pre class="api-example"><code>`Settings.EVALUATE`</code></pre><p>is</p><pre class="api-example"><code>`true`</code></pre><p>, a generalised
-formula using the gamma function is applied.</p><div class="api-note"><strong>throws</strong><p>UndefinedError If</p><pre class="api-example"><code>`x`</code></pre><p>is</p><pre class="api-example"><code>`-∞`</code></pre><p>.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>The expression to compute the double factorial of.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The double factorial of `x`.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>doubleFactorial(Expression.create(6)).text()   // &quot;48&quot;
+- Even: <code>n!! = 2 · 4 · 6 · … · n</code>
+- Odd:  <code>n!! = 1 · 3 · 5 · … · n</code>
+
+For non-integer arguments when <code>Settings.EVALUATE</code> is <code>true</code>, a generalised
+formula using the gamma function is applied.</p><div class="api-note"><strong>throws</strong><p>UndefinedError If <code>x</code> is <code>-∞</code>.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>The expression to compute the double factorial of.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The double factorial of <code>x</code>.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>doubleFactorial(Expression.create(6)).text()   // &quot;48&quot;
 doubleFactorial(Expression.create(7)).text()   // &quot;105&quot;</code></pre></section></article></div>
 </main>
 <footer class="site-footer">

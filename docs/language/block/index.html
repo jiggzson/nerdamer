@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>block — Nerdamer Scripting</title>
+  <title>block — Nerdamer Documentation</title>
   <meta name="description" content="Evaluates a sequence of Nerdamer Scripting expressions in order.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="../../../styles/back-to-top.css">
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
-  
+  <link rel="stylesheet" href="../../../styles/api.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -62,24 +62,28 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/block/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/block/">Open the unified page →</a></p></div>
-<div hidden aria-hidden="true"><div class="eyebrow">Nerdamer Scripting</div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/language/">Nerdamer Scripting</a></div>
+<div class="eyebrow">Scripting reference · Nerdamer Language</div>
 <h1><code>block</code></h1>
 <p>Evaluates a sequence of Nerdamer Scripting expressions in order.</p>
-<h2>Syntax</h2>
-<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token control">block</span><span class="token punctuation">(</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">)</span></code></pre>
-<div class="docs-callout"><strong>Nerdamer Scripting:</strong> this form is evaluated inside input passed to <code>nerdamer(...)</code>. It is not a JavaScript statement.</div>
+<div class="api-description"><p>block evaluates its deferred arguments from left to right and returns the final completed result. return, break, and continue are allowed to propagate to the enclosing function or loop boundary.</p><p>At the outer parser boundary, an escaping return supplies the block result.</p></div>
+<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Scripting.</p><div class="api-example-block"><p>Run assignments in sequence and return the last value.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token control">block</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">:</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token variable">y</span><span class="token operator">:</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token operator">+</span><span class="token variable">y</span><span class="token punctuation">)</span>
+<span class="token comment">// → 5</span></code></pre></div>
+<div class="api-example-block"><p>Stop at a return value.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token control">block</span><span class="token punctuation">(</span><span class="token control">return</span><span class="token punctuation">(</span><span class="token number">7</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token number">9</span><span class="token punctuation">)</span>
+<span class="token comment">// → 7</span></code></pre></div></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#scripting">Nerdamer Scripting</a></p></section>
+<section class="api-detail" id="scripting">
+<h2>Nerdamer Scripting</h2>
+<p>Use this form in Nerdamer Scripting input passed to <code>nerdamer(...)</code>.</p>
+<pre class="api-signature"><code>block(...)</code></pre>
+<h3>Parameters</h3><ul><li><code>expression</code> — One or more deferred expressions evaluated in sequence.</li></ul>
 
-<h2>Parameters</h2><ul><li><code>expression</code> — One or more deferred expressions evaluated in sequence.</li></ul>
-<h2>Examples</h2><pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
-
-<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;block(return(7),9)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token comment">// → 7</span></code></pre>
+</section>
 
 
 
-<p><a href="/docs/language/">← Back to Nerdamer Scripting</a></p></div></article></div>
+
+<p><a href="/docs/language/">← Back to Nerdamer Scripting</a></p></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

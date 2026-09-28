@@ -65,7 +65,47 @@
 <article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/advanced/">nerdamer/advanced</a></div><div class="api-member-title"><div><span class="api-kind">Class</span><h1>GroebnerBudgetExceeded</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/algebra/algorithms/groebnerBase.ts#L81" target="_blank" rel="noreferrer">src/algebra/algorithms/groebnerBase.ts:81</a></div><div class="api-description"><p>Thrown when a Groebner pair-count or basis-size budget is exhausted.
 
 GroebnerBudgetExceeded.stats is the live counter snapshot from the aborted
-computation. The error keeps that object by reference and does not freeze it.</p></div><section class="api-detail api-hierarchy"><h2>Extends</h2><p><code><a class="api-type-link" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error" target="_blank" rel="noreferrer">Error</a></code></p></section><section class="api-detail"><h2>Members</h2><div class="api-children"><article class="api-child" id="constructor"><div class="api-child-head"><code>GroebnerBudgetExceeded(message: string, stats: <a class="api-type-link" href="/docs/api/advanced/groebner-stats/">GroebnerStats</a>): <a class="api-type-link" href="/docs/api/advanced/groebner-budget-exceeded/">GroebnerBudgetExceeded</a></code><span>Constructor</span></div><div class="api-description"><p>No description is available yet.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>message</code></td><td><code>string</code></td><td>Human-readable budget condition.</td></tr><tr><td><code>stats</code></td><td><code><a class="api-type-link" href="/docs/api/advanced/groebner-stats/">GroebnerStats</a></code></td><td>Counter snapshot retained on the error.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/groebner-budget-exceeded/">GroebnerBudgetExceeded</a></code></p></section></article><article class="api-child" id="stats"><div class="api-child-head"><code>stats: <a class="api-type-link" href="/docs/api/advanced/groebner-stats/">GroebnerStats</a></code><span>Property</span></div><div class="api-description"><p>Work counters at the point the budget was exceeded.</p></div></article></div></section></article></div>
+computation. The error keeps that object by reference and does not freeze it.</p></div><section class="api-detail"><h2>Members</h2><div class="api-children"><article class="api-child" id="capture-stack-trace"><div class="api-child-head"><code>captureStackTrace(targetObject: object, constructorOpt?: Function): void</code><span>Method</span></div><div class="api-description"><p>Creates a <code>.stack</code> property on <code>targetObject</code>, which when accessed returns
+a string representing the location in the code at which
+<code>Error.captureStackTrace()</code> was called.</p><pre class="api-example"><code>const myObject = {};
+Error.captureStackTrace(myObject);
+myObject.stack;  // Similar to `new Error().stack`</code></pre><p>The first line of the trace will be prefixed with
+<code>${myObject.name}: ${myObject.message}</code>.
+
+The optional <code>constructorOpt</code> argument accepts a function. If given, all frames
+above <code>constructorOpt</code>, including <code>constructorOpt</code>, will be omitted from the
+generated stack trace.
+
+The <code>constructorOpt</code> argument is useful for hiding implementation
+details of error generation from the user. For instance:</p><pre class="api-example"><code>function a() {
+  b();
+}
+
+function b() {
+  c();
+}
+
+function c() {
+  // Create an error without stack trace to avoid calculating the stack trace twice.
+  const { stackTraceLimit } = Error;
+  Error.stackTraceLimit = 0;
+  const error = new Error();
+  Error.stackTraceLimit = stackTraceLimit;
+
+  // Capture the stack trace above function b
+  Error.captureStackTrace(error, b); // Neither function c, nor b is included in the stack trace
+  throw error;
+}
+
+a();</code></pre></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>targetObject</code></td><td><code>object</code></td><td>—</td></tr><tr><td><code>constructorOpt</code></td><td><code>Function</code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>void</code></p></section></article><article class="api-child" id="cause"><div class="api-child-head"><code>cause: unknown</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="constructor"><div class="api-child-head"><code>GroebnerBudgetExceeded(message: string, stats: <a class="api-type-link" href="/docs/api/advanced/groebner-stats/">GroebnerStats</a>): <a class="api-type-link" href="/docs/api/advanced/groebner-budget-exceeded/">GroebnerBudgetExceeded</a></code><span>Constructor</span></div><div class="api-description"><p>No description is available yet.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>message</code></td><td><code>string</code></td><td>Human-readable budget condition.</td></tr><tr><td><code>stats</code></td><td><code><a class="api-type-link" href="/docs/api/advanced/groebner-stats/">GroebnerStats</a></code></td><td>Counter snapshot retained on the error.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/advanced/groebner-budget-exceeded/">GroebnerBudgetExceeded</a></code></p></section></article><article class="api-child" id="message"><div class="api-child-head"><code>message: string</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="name"><div class="api-child-head"><code>name: string</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="prepare-stack-trace"><div class="api-child-head"><code>prepareStackTrace(err: Error, stackTraces: CallSite[]): any</code><span>Method</span></div><div class="api-description"><div class="api-note"><strong>see</strong><p>https://v8.dev/docs/stack-trace-api#customizing-stack-traces</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>err</code></td><td><code>Error</code></td><td>—</td></tr><tr><td><code>stackTraces</code></td><td><code>CallSite[]</code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>any</code></p></section></article><article class="api-child" id="stack"><div class="api-child-head"><code>stack: string</code><span>Property</span></div><div class="api-description"><p>No description is available yet.</p></div></article><article class="api-child" id="stack-trace-limit"><div class="api-child-head"><code>stackTraceLimit: number</code><span>Property</span></div><div class="api-description"><p>The <code>Error.stackTraceLimit</code> property specifies the number of stack frames
+collected by a stack trace (whether generated by <code>new Error().stack</code> or
+<code>Error.captureStackTrace(obj)</code>).
+
+The default value is <code>10</code> but may be set to any valid JavaScript number. Changes
+will affect any stack trace captured _after_ the value has been changed.
+
+If set to a non-number value, or set to a negative number, stack traces will
+not capture any frames.</p></div></article><article class="api-child" id="stats"><div class="api-child-head"><code>stats: <a class="api-type-link" href="/docs/api/advanced/groebner-stats/">GroebnerStats</a></code><span>Property</span></div><div class="api-description"><p>Work counters at the point the budget was exceeded.</p></div></article></div></section></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">

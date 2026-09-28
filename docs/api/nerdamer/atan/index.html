@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>nerdamer.atan — Nerdamer API</title>
-  <meta name="description" content="Computes the arctangent (inverse tangent) of an expression. Returns exact symbolic values involving π for well-known inputs: `0 → 0`, `1/√3 → π/6`, `1 → π/4`, `√3 → π/3`. Uses the identity `atan(-x) = -atan(x)` for negative arguments. At infinity: `atan(+∞) = π/2`, `atan(−∞) = −π/2`.">
+  <meta name="description" content="Computes the arctangent (inverse tangent) of an expression. Returns exact symbolic values involving π for well-known inputs: 0 → 0, 1/√3 → π/6, 1 → π/4, √3 → π/3. Uses the identity atan(-x) = -atan(x) for negative arguments. At infinity: atan(+∞) = π/2, atan(−∞) = −π/2.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -62,14 +62,15 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><script>window.location.replace("/docs/reference/atan/");</script>
-<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is now part of the unified function reference. <a href="/docs/reference/atan/">Open the unified page →</a></p></div>
+<article class="docs-content"><script>window.location.replace("/docs/functions/atan/");</script>
+<div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/atan/">Open the documentation →</a></p></div>
 <div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.atan</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L745" target="_blank" rel="noreferrer">src/index.ts:745</a></div><pre class="api-signature"><code>nerdamer.atan(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the arctangent (inverse tangent) of an expression.
 
-Returns exact symbolic values involving π for well-known inputs:</p><pre class="api-example"><code>`0 → 0`</code></pre><p>,</p><pre class="api-example"><code>`1/√3 → π/6`</code></pre><p>,</p><pre class="api-example"><code>`1 → π/4`</code></pre><p>,</p><pre class="api-example"><code>`√3 → π/3`</code></pre><p>.
-Uses the identity</p><pre class="api-example"><code>`atan(-x) = -atan(x)`</code></pre><p>for negative arguments.
+Returns exact symbolic values involving π for well-known inputs:
+<code>0 → 0</code>, <code>1/√3 → π/6</code>, <code>1 → π/4</code>, <code>√3 → π/3</code>.
+Uses the identity <code>atan(-x) = -atan(x)</code> for negative arguments.
 
-At infinity:</p><pre class="api-example"><code>`atan(+∞) = π/2`</code></pre><p>,</p><pre class="api-example"><code>`atan(−∞) = −π/2`</code></pre><p>.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>The input expression.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The arctangent of `x` in radians.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>atan(0).text()              // &quot;0&quot;
+At infinity: <code>atan(+∞) = π/2</code>, <code>atan(−∞) = −π/2</code>.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>The input expression.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The arctangent of <code>x</code> in radians.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>atan(0).text()              // &quot;0&quot;
 atan(1).text()              // &quot;1/4*pi&quot;
 atan(&#39;sqrt(3)&#39;).text()      // &quot;1/3*pi&quot;
 
