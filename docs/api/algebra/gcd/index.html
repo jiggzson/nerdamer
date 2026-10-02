@@ -64,11 +64,12 @@
 </aside>
 <article class="docs-content"><script>window.location.replace("/docs/functions/gcd/");</script>
 <div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/gcd/">Open the documentation →</a></p></div>
-<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/algebra/">nerdamer/algebra</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1>gcd</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/algebra/gcd/gcd.ts#L29" target="_blank" rel="noreferrer">src/algebra/gcd/gcd.ts:29</a></div><pre class="api-signature"><code>gcd(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, y: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes a symbolic greatest common divisor over rational polynomial structure.</p><div class="api-note"><strong>remarks</strong><p>Numerators and denominators are polynomialized, function-valued or irrational
-constants may be temporarily substituted, and the multivariate Zippel GCD is
-verified by exact polynomial division. Factoring supplies a deliberately expensive
-final fallback. When conversion or the supported polynomial algorithms fail, the
-result remains symbolic as <code>gcd(x, y)</code>.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>First expression-compatible operand.</td></tr><tr><td><code>y</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Second expression-compatible operand.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The exact symbolic GCD or an unevaluated <code>gcd</code> expression.</p></section></div></article></div>
+<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/algebra/">nerdamer/algebra</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1>gcd</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/algebra/gcd/gcd.ts#L31" target="_blank" rel="noreferrer">src/algebra/gcd/gcd.ts:31</a></div><pre class="api-signature"><code>gcd(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, y: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes a symbolic greatest common divisor over rational polynomial structure.</p><div class="api-note"><strong>remarks</strong><p>Numerators and denominators are polynomialized before exact sparse integer GCD
+reconstruction. Rational polynomial coefficients are cleared to integers and
+their shared clearing denominator is restored afterward. Function-valued,
+exponential, and irrational constants use the existing polynomialization
+substitutions and are restored after the numerator and denominator GCDs are
+combined. Unsupported inputs remain symbolic as <code>gcd(x, y)</code>.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>First expression-compatible operand.</td></tr><tr><td><code>y</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Second expression-compatible operand.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The exact symbolic GCD or an unevaluated <code>gcd</code> expression.</p></section></div></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -86,6 +87,7 @@ result remains symbolic as <code>gcd(x, y)</code>.</p></div></div><section class
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

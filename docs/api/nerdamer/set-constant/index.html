@@ -62,7 +62,7 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.setConstant</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L494" target="_blank" rel="noreferrer">src/index.ts:494</a></div><pre class="api-signature"><code>nerdamer.setConstant(name: string, value: string | number): typeof <a class="api-type-link" href="/docs/api/nerdamer/">nerdamer</a></code></pre><div class="api-description"><p>Registers or removes a parser constant using the legacy public entry point.
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.setConstant</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L592" target="_blank" rel="noreferrer">src/index.ts:592</a></div><pre class="api-signature"><code>nerdamer.setConstant(name: string, value: string | number): typeof <a class="api-type-link" href="/docs/api/nerdamer/">nerdamer</a></code></pre><div class="api-description"><p>Registers or removes a parser constant using the legacy public entry point.
 
 Numeric values are converted to exact rational text before registration so
 they do not introduce decimal-formatting intent. The string <code>&#39;delete&#39;</code>
@@ -84,6 +84,7 @@ removes the constant. Registration changes shared parser state.</p></div><sectio
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

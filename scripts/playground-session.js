@@ -18,6 +18,15 @@
   `;
   signature.insertAdjacentElement('afterend', sessionBar);
 
+  const assumptionsBar = document.createElement('div');
+  assumptionsBar.className = 'playground-assumptions-bar';
+  assumptionsBar.hidden = true;
+  assumptionsBar.innerHTML = `
+    <div class="playground-session-label">Assumptions</div>
+    <div class="playground-session-vars playground-assumptions" aria-live="polite"></div>
+  `;
+  sessionBar.insertAdjacentElement('afterend', assumptionsBar);
+
   const evaluator = document.createElement('section');
   evaluator.className = 'result-evaluator';
   evaluator.hidden = true;
@@ -36,6 +45,7 @@
 
   const sessionVars = sessionBar.querySelector('.playground-session-vars');
   const clearSession = sessionBar.querySelector('.playground-session-clear');
+  const assumptions = assumptionsBar.querySelector('.playground-assumptions');
   const evaluatorForm = evaluator.querySelector('.result-evaluator-form');
   const evaluatorFields = evaluator.querySelector('.result-evaluator-fields');
   const evaluatorOutput = evaluator.querySelector('.result-evaluator-output');
@@ -53,6 +63,16 @@
       return values;
     } catch {
       return {};
+    }
+  };
+
+  const activeAssumptions = () => {
+    if (!usingV2() || typeof runtime.getAssumptions !== 'function') return [];
+    try {
+      const values = runtime.getAssumptions();
+      return values instanceof Map ? [...values.entries()] : [];
+    } catch {
+      return [];
     }
   };
 
@@ -104,6 +124,24 @@
     }
   };
 
+  const refreshAssumptions = () => {
+    const entries = activeAssumptions();
+    assumptionsBar.hidden = !usingV2() || entries.length === 0;
+    assumptions.replaceChildren();
+
+    for (const [name, assumption] of entries) {
+      const chip = document.createElement('span');
+      chip.className = 'playground-session-chip';
+
+      const text = document.createElement('span');
+      text.className = 'playground-session-value';
+      text.innerHTML = `<code>${name}</code><span>∈</span><code>${assumption}</code>`;
+
+      chip.append(text);
+      assumptions.append(chip);
+    }
+  };
+
   const refreshEvaluator = () => {
     const value = usingV2() ? parseDisplayedResult() : null;
     const variables = resultVariables(value);
@@ -136,6 +174,7 @@
 
   const refresh = () => {
     refreshSession();
+    refreshAssumptions();
     refreshEvaluator();
   };
 

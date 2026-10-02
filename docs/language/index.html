@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>Nerdamer Scripting — Documentation</title>
-  <meta name="description" content="Use variables, user-defined functions, conditions, loops, local scope, and control flow inside Nerdamer input.">
+  <meta name="description" content="Beta Nerdamer Scripting documentation for variables, user-defined functions, conditions, loops, local scope, and control flow.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -63,7 +63,10 @@
   </nav>
 </aside>
 <article class="docs-content"><div class="eyebrow">Nerdamer Scripting</div>
-<h1>Nerdamer Scripting</h1>
+<h1>Nerdamer Scripting <span class="status-badge">Beta</span></h1>
+<div class="docs-callout">
+	<strong>Beta:</strong> Nerdamer Scripting is supported in Nerdamer 2.0. Some syntax and API details may still change before Nerdamer 2.0 final.
+</div>
 <p>
 	Nerdamer Scripting is the compact programming layer available inside text passed to <code>nerdamer(...)</code>. Use
 	it when a single mathematical expression is not enough and you need assignments, user-defined functions, conditions,
@@ -79,10 +82,10 @@
 <pre class="codeblock language-javascript"><code class="language-javascript">
 <span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
 
-<span class="token comment">// Nerdamer Notation: one mathematical expression</span>
+<span class="token comment">// Nerdamer Notation: one mathematical expression</span>
 <span class="token keyword">const</span> <span class="token variable">expression</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;factor(x^2-1)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 
-<span class="token comment">// Nerdamer Scripting: define and use a function</span>
+<span class="token comment">// Nerdamer Scripting: define and use a function</span>
 <span class="token keyword">const</span> <span class="token variable">script</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">`
 square(x):=x^2;
 square(6)
@@ -117,7 +120,7 @@ square(6)
 <a class="reference-item docs-card" href="/docs/language/each/" data-reference-item data-search="each nerdamer language each(container, value, body) evaluates a body once for each value in a parser container."><code>each(container, value, body)</code><p>Evaluates a body once for each value in a parser container.</p></a>
 <a class="reference-item docs-card" href="/docs/language/evaluate/" data-reference-item data-search="evaluate nerdamer language evaluate(value[, substitutions]) | evaluate(value, variables, point) evaluates a parser value immediately, optionally with substitutions."><code>evaluate(value[, substitutions]) | evaluate(value, variables, point)</code><p>Evaluates a parser value immediately, optionally with substitutions.</p></a>
 <a class="reference-item docs-card" href="/docs/language/for/" data-reference-item data-search="for nerdamer language for(arg1, arg2, arg3, arg4) runs a four-part nerdamer scripting loop."><code>for(arg1, arg2, arg3, arg4)</code><p>Runs a four-part Nerdamer Scripting loop.</p></a>
-<a class="reference-item docs-card" href="/docs/language/if/" data-reference-item data-search="if nerdamer language if(condition, whentrue[, whenfalse]) evaluates one branch based on a nerdamer scripting condition."><code>if(condition, whenTrue[, whenFalse])</code><p>Evaluates one branch based on a Nerdamer Scripting condition.</p></a>
+<a class="reference-item docs-card" href="/docs/language/if/" data-reference-item data-search="if nerdamer language if(condition, whentrue, whenfalse) evaluates one branch based on a nerdamer scripting condition."><code>if(condition, whenTrue, whenFalse)</code><p>Evaluates one branch based on a Nerdamer Scripting condition.</p></a>
 <a class="reference-item docs-card" href="/docs/language/iferror/" data-reference-item data-search="iferror nerdamer language iferror(arg1, arg2) evaluates a fallback expression only when the first expression throws an ordinary error."><code>iferror(arg1, arg2)</code><p>Evaluates a fallback expression only when the first expression throws an ordinary error.</p></a>
 <a class="reference-item docs-card" href="/docs/language/iserror/" data-reference-item data-search="iserror nerdamer language iserror(arg1) returns 1 when evaluating an expression throws an ordinary error and 0 otherwise."><code>iserror(arg1)</code><p>Returns 1 when evaluating an expression throws an ordinary error and 0 otherwise.</p></a>
 <a class="reference-item docs-card" href="/docs/language/let/" data-reference-item data-search="let nerdamer language let(arg1, arg2, arg3, ...) creates temporary nerdamer scripting bindings for a body expression."><code>let(arg1, arg2, arg3, ...)</code><p>Creates temporary Nerdamer Scripting bindings for a body expression.</p></a>
@@ -188,6 +191,7 @@ square(6)
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../scripts/site.js"></script>
 <script src="../../scripts/reference.js"></script>
+<script src="../../scripts/code-copy.js"></script>
 <script src="../../scripts/playground-tree.js"></script>
 </body>
 </html>

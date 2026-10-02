@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>nerdamer.assume — Nerdamer API</title>
-  <meta name="description" content="Registers a process-wide numeric interval assumption.">
+  <meta name="description" content="Registers a numeric interval assumption in Nerdamer&#39;s global assumption state.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -64,10 +64,26 @@
 </aside>
 <article class="docs-content"><script>window.location.replace("/docs/functions/assume/");</script>
 <div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/assume/">Open the documentation →</a></p></div>
-<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.assume</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L872" target="_blank" rel="noreferrer">src/index.ts:872</a></div><pre class="api-signature"><code>nerdamer.assume(expr: string): <a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a></code></pre><pre class="api-signature"><code>nerdamer.assume(symbol: string, exprOrAssumption: string | <a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a>): <a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a></code></pre><div class="api-description"><p>Registers a process-wide numeric interval assumption.</p><div class="api-note"><strong>remarks</strong><p>Repeated constraints for a variable are intersected. Assumptions are consulted by
-symbolic comparisons and by algorithms that depend on those comparisons. The root
-compatibility API intentionally uses global state in 2.0; callers that need to clear
-or inspect it directly can use the documented assumption-domain functions.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>expr</code></td><td><code>string</code></td><td>Complete constraint in the supported assumption grammar.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a></code> — The registered interval after intersection with any existing constraint.</p></section></div></article></div>
+<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.assume</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L1109" target="_blank" rel="noreferrer">src/index.ts:1109</a></div><pre class="api-signature"><code>nerdamer.assume(expr: string): <a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a></code></pre><pre class="api-signature"><code>nerdamer.assume(symbol: string, exprOrAssumption: string | <a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a>): <a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a></code></pre><div class="api-description"><p>Registers a numeric interval assumption in Nerdamer&#39;s global assumption state.</p><div class="api-note"><strong>remarks</strong><p>A one-argument call parses a complete constraint such as <code>x &gt;= 0</code>. The two-argument
+form associates a plain variable with either another complete constraint for that
+same variable or an existing Assumption instance. Built-in constants and the
+configured imaginary-unit symbol cannot receive real interval assumptions.
+
+Repeated assumptions for the same variable are intersected. If the intersection is
+empty, the new constraint is rejected and the previously registered assumption is
+left unchanged.
+
+Assumption state is process-wide. It is consulted by expression comparisons and by
+algorithms that rely on those comparisons, including positivity-sensitive
+simplifications. Call clearAssumptions when that state should no longer
+affect later work. Scoped assumption contexts are not simulated in 2.0 because a
+correct scoped design must be threaded through the parser and algorithms rather
+than wrapping only this registry.</p></div><div class="api-note"><strong>throws</strong><p>Error
+Thrown when the constraint is malformed or its bound is not numeric.</p></div><div class="api-note"><strong>throws</strong><p>UnexpectedInputError
+Thrown when a new constraint contradicts the existing assumption.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>expr</code></td><td><code>string</code></td><td>Complete constraint in the supported assumption grammar.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/assumptions/assumption/">Assumption</a></code> — The registered interval after intersection with any existing constraint.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>assume(&#39;x &gt;= 0&#39;);
+assume(&#39;x &lt; 10&#39;);
+getAssumptionFor(&#39;x&#39;)?.toString(); // &quot;[0, 10)&quot;
+clearAssumptions();</code></pre></section></div></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -85,6 +101,7 @@ or inspect it directly can use the documented assumption-domain functions.</p></
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

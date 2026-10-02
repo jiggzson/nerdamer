@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>nerdamer.delta — Nerdamer API</title>
-  <meta name="description" content="Computes the Dirac delta function (distribution). For non-zero numeric inputs, returns 0. At x = 0 the symbolic form dirac(0) is returned (the Dirac delta is only meaningful under an integral or Laplace transform). For symbolic inputs, returns an unevaluated dirac(x) node.">
+  <meta name="description" content="Evaluates the Dirac delta function when the input is known to be nonzero.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -64,14 +64,7 @@
 </aside>
 <article class="docs-content"><script>window.location.replace("/docs/functions/delta/");</script>
 <div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/delta/">Open the documentation →</a></p></div>
-<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.delta</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L808" target="_blank" rel="noreferrer">src/index.ts:808</a></div><pre class="api-signature"><code>nerdamer.delta(x: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the Dirac delta function (distribution).
-
-For non-zero numeric inputs, returns <code>0</code>. At <code>x = 0</code> the symbolic form
-<code>dirac(0)</code> is returned (the Dirac delta is only meaningful under an
-integral or Laplace transform). For symbolic inputs, returns an
-unevaluated <code>dirac(x)</code> node.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>The input expression.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The Dirac delta value or symbolic node.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>dirac(Expression.create(5)).text()    // &quot;0&quot;
-dirac(Expression.create(0)).text()    // &quot;dirac(0)&quot;
-dirac(Expression.create(&#39;t&#39;)).text()  // &quot;dirac(t)&quot;</code></pre></section></div></article></div>
+<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.delta</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L1009" target="_blank" rel="noreferrer">src/index.ts:1009</a></div><pre class="api-signature"><code>nerdamer.delta(x: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Evaluates the Dirac delta function when the input is known to be nonzero.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>nerdamer.delta(5).text(); // &quot;0&quot;</code></pre></section></div></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -89,6 +82,7 @@ dirac(Expression.create(&#39;t&#39;)).text()  // &quot;dirac(t)&quot;</code></pr
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

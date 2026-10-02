@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>nerdamer.buildFunction — Nerdamer API</title>
-  <meta name="description" content="Compiles an expression into a native JavaScript-number function.">
+  <meta name="description" content="Compiles an expression into a native JavaScript-number function for repeated evaluation.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -62,15 +62,17 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.buildFunction</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L707" target="_blank" rel="noreferrer">src/index.ts:707</a></div><pre class="api-signature"><code>nerdamer.buildFunction(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, argsArray?: string[]): (...args: number[]): number</code></pre><div class="api-description"><p>Compiles an expression into a native JavaScript-number function.</p><div class="api-note"><strong>remarks</strong><p>This intentionally uses dynamic JavaScript function construction and may be
-unavailable under a strict Content Security Policy. It favors native-number
-throughput over Nerdamer&#39;s exact or arbitrary-precision arithmetic. Scalar function
-calls are linked to explicit numerical implementations; symbolic-only or structured
-operations that survive to this stage are rejected rather than compiled incorrectly.
-When <code>argsArray</code> is omitted, variable names are sorted alphabetically.</p></div><div class="api-note"><strong>throws</strong><p>UnsupportedOperationError If a surviving function has no faithful
-JavaScript-number implementation.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>The expression being converted to a function.</td></tr><tr><td><code>argsArray</code></td><td><code>string[]</code></td><td>Variable names in the positional order expected by the compiled function.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>(...args: number[]): number</code> — The compiled JavaScript-number function.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>nerdamer.buildFunction(&#39;x-y&#39;)(9, 7);				// 2
-nerdamer.buildFunction(&#39;x-y&#39;, [&#39;y&#39;, &#39;x&#39;])(9, 7);	// -2
-nerdamer.buildFunction(&#39;erf(x)+2&#39;)(9)				// 3</code></pre></section></article></div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.buildFunction</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L815" target="_blank" rel="noreferrer">src/index.ts:815</a></div><pre class="api-signature"><code>nerdamer.buildFunction(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, argsArray?: string[]): (...args: number[]): number</code></pre><div class="api-description"><p>Compiles an expression into a native JavaScript-number function for repeated evaluation.</p><div class="api-note"><strong>remarks</strong><p>Function calls are linked to Nerdamer&#39;s numerical implementations, including any dependencies
+they require. The compiler supports scalar JavaScript-number arithmetic rather than Nerdamer&#39;s
+full symbolic or structured value model. Symbolic-only operations such as indexed sums,
+products, solvers, and matrix operations are rejected if they remain in the expression.
+
+<code>buildFunction</code> uses <code>new Function</code>, so it may be unavailable under a Content Security Policy
+that forbids dynamic JavaScript evaluation. When <code>argsArray</code> is omitted, free variables are
+sorted alphabetically.</p></div><div class="api-note"><strong>throws</strong><p>core!UnsupportedOperationError If the expression contains the imaginary unit or a
+function for which no matching JavaScript-number implementation is registered.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>The expression to compile.</td></tr><tr><td><code>argsArray</code></td><td><code>string[]</code></td><td>Variable names in the positional order expected by the compiled function.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>(...args: number[]): number</code> — The compiled JavaScript-number function.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>buildFunction(&#39;x-y&#39;)(9, 7);                // 2
+buildFunction(&#39;x-y&#39;, [&#39;y&#39;, &#39;x&#39;])(9, 7);    // -2
+buildFunction(&#39;erf(x)+2&#39;)(9);              // 3</code></pre></section></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -88,6 +90,7 @@ nerdamer.buildFunction(&#39;erf(x)+2&#39;)(9)				// 3</code></pre></section></ar
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

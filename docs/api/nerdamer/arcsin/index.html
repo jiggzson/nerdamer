@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>nerdamer.arcsin — Nerdamer API</title>
-  <meta name="description" content="Computes the arcsine (inverse sine) of an expression. Returns exact symbolic values involving π for well-known inputs: 0 → 0, 1/2 → π/6, 1/√2 → π/4, √3/2 → π/3, 1 → π/2. Uses the identity asin(-x) = -asin(x) for negative arguments. For numeric inputs outside [-1, 1], returns a complex result.">
+  <meta name="description" content="Alias for nerdamer.asin.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -62,19 +62,7 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.arcsin</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L747" target="_blank" rel="noreferrer">src/index.ts:747</a></div><pre class="api-signature"><code>nerdamer.arcsin(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the arcsine (inverse sine) of an expression.
-
-Returns exact symbolic values involving π for well-known inputs:
-<code>0 → 0</code>, <code>1/2 → π/6</code>, <code>1/√2 → π/4</code>, <code>√3/2 → π/3</code>, <code>1 → π/2</code>.
-Uses the identity <code>asin(-x) = -asin(x)</code> for negative arguments.
-
-For numeric inputs outside <code>[-1, 1]</code>, returns a complex result.</p><div class="api-note"><strong>throws</strong><p>UndefinedError If <code>x</code> is <code>±∞</code>.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>The input expression (domain <code>[-1, 1]</code> for real results).</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The arcsine of <code>x</code> in radians.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>asin(0).text()                    // &quot;0&quot;
-asin(1).text()                    // &quot;1/2*pi&quot;
-asin(&#39;1/2&#39;).text()                // &quot;1/6*pi&quot;
-asin(&#39;sqrt(2)^(-1)&#39;).text()       // &quot;1/4*pi&quot;
-
-// Symbolic
-asin(&#39;x&#39;).text()                  // &quot;asin(x)&quot;</code></pre></section></article></div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.arcsin</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L873" target="_blank" rel="noreferrer">src/index.ts:873</a></div><pre class="api-signature"><code>nerdamer.arcsin(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Alias for <code>nerdamer.asin</code>.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>nerdamer.arcsin(&#39;1/2&#39;).text(); // &quot;1/6*pi&quot;</code></pre></section></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -92,6 +80,7 @@ asin(&#39;x&#39;).text()                  // &quot;asin(x)&quot;</code></pre></s
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

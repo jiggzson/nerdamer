@@ -1,4 +1,5 @@
-.playground-session-bar {
+.playground-session-bar,
+.playground-assumptions-bar {
   display: flex;
   min-height: 48px;
   align-items: center;
@@ -9,6 +10,7 @@
 }
 
 .playground-session-bar[hidden],
+.playground-assumptions-bar[hidden],
 .result-evaluator[hidden],
 .result-evaluator-output[hidden] {
   display: none;
@@ -47,6 +49,10 @@
   padding: 5px 4px 5px 9px;
   color: rgb(var(--muted));
   font-size: .75rem;
+}
+
+.playground-assumptions .playground-session-value {
+  padding-right: 9px;
 }
 
 .playground-session-value code {
@@ -166,6 +172,7 @@
 
 @media (max-width: 720px) {
   .playground-session-bar,
+  .playground-assumptions-bar,
   .result-evaluator-head,
   .result-evaluator-form {
     align-items: stretch;

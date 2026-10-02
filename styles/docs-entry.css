@@ -1,0 +1,52 @@
+.docs-entry-cards .docs-card {
+  display: grid;
+  grid-template-rows: auto minmax(3.2rem, auto) minmax(5.4rem, auto) minmax(9rem, auto) 1fr;
+  align-items: start;
+}
+
+.docs-entry-cards .docs-card .arrow {
+  align-self: start;
+}
+
+.docs-entry-cards .docs-card h2,
+.docs-entry-cards .docs-card p,
+.docs-entry-cards .docs-card .codeblock {
+  margin-top: 0;
+}
+
+.docs-entry-cards .docs-card h2 {
+  align-self: end;
+}
+
+.docs-entry-cards .docs-card .codeblock {
+  width: 100%;
+  align-self: stretch;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: .5rem;
+  padding: .32rem .65rem;
+  border-radius: 6px;
+  background: #d97706;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .18);
+  font-size: .64rem;
+  font-weight: 800;
+  letter-spacing: .075em;
+  line-height: 1;
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .docs-entry-cards .docs-card {
+    grid-template-rows: none;
+  }
+
+  .docs-entry-cards .docs-card h2 {
+    align-self: auto;
+  }
+}

@@ -32,6 +32,7 @@
   CodeMirror.defineMode('nerdamer', () => ({
     token(stream) {
       if (stream.eatSpace()) return null;
+      if (stream.match(/^#.*#$/)) return 'comment';
       if (stream.match(/^\/\/.*$/)) return 'comment';
 
       const quote = stream.peek();
@@ -105,6 +106,60 @@
     instance.replaceSelection(' '.repeat(configuredIndentSize()), 'end', '+input');
   };
 
+  const selectedLineRange = instance => {
+    const from = instance.getCursor('from');
+    const to = instance.getCursor('to');
+    const endLine = to.ch === 0 && to.line > from.line ? to.line - 1 : to.line;
+    return { from, to, startLine: from.line, endLine };
+  };
+
+  const commentBounds = line => {
+    const text = line.text;
+    const first = text.search(/\S/);
+    if (first === -1 || text[first] !== '#') return null;
+
+    let last = text.length - 1;
+    while (last >= 0 && /\s/.test(text[last])) last--;
+    if (last <= first || text[last] !== '#') return null;
+
+    return { first, last };
+  };
+
+  const toggleNerdamerComment = instance => {
+    const range = selectedLineRange(instance);
+    const lines = [];
+
+    for (let lineNumber = range.startLine; lineNumber <= range.endLine; lineNumber++) {
+      lines.push({
+        number: lineNumber,
+        text: instance.getLine(lineNumber),
+      });
+    }
+
+    const nonBlank = lines.filter(line => line.text.trim().length > 0);
+    if (nonBlank.length === 0) return;
+
+    const uncomment = nonBlank.every(line => commentBounds(line) !== null);
+
+    instance.operation(() => {
+      for (const line of lines) {
+        if (line.text.trim().length === 0) continue;
+
+        if (uncomment) {
+          const bounds = commentBounds(line);
+          instance.replaceRange('', { line: line.number, ch: bounds.last }, { line: line.number, ch: bounds.last + 1 }, '+input');
+          instance.replaceRange('', { line: line.number, ch: bounds.first }, { line: line.number, ch: bounds.first + 1 }, '+input');
+        } else {
+          const first = line.text.search(/\S/);
+          let last = line.text.length;
+          while (last > first && /\s/.test(line.text[last - 1])) last--;
+          instance.replaceRange('#', { line: line.number, ch: last }, null, '+input');
+          instance.replaceRange('#', { line: line.number, ch: first }, null, '+input');
+        }
+      }
+    });
+  };
+
   editor = CodeMirror.fromTextArea(source, {
     mode: 'nerdamer',
     lineWrapping: true,
@@ -118,6 +173,8 @@
       Tab: instance => indentSelection(instance),
       'Shift-Tab': 'indentLess',
       Enter: 'newlineAndIndent',
+      'Ctrl-/': instance => toggleNerdamerComment(instance),
+      'Cmd-/': instance => toggleNerdamerComment(instance),
     },
   });
 

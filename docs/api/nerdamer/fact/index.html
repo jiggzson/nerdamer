@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>nerdamer.fact — Nerdamer API</title>
-  <meta name="description" content="Computes the factorial of an expression. For non-negative integers, returns the exact integer factorial. For half-integer arguments (e.g. 1/2, 3/2, -1/2), returns a closed-form expression involving sqrt(π). When Settings.EVALUATE is true and the input is not an integer, falls back to the gamma function via Γ(x + 1).">
+  <meta name="description" content="Alias for nerdamer.factorial.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -64,15 +64,7 @@
 </aside>
 <article class="docs-content"><script>window.location.replace("/docs/functions/fact/");</script>
 <div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/fact/">Open the documentation →</a></p></div>
-<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.fact</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L788" target="_blank" rel="noreferrer">src/index.ts:788</a></div><pre class="api-signature"><code>nerdamer.fact(x: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the factorial of an expression.
-
-For non-negative integers, returns the exact integer factorial.
-For half-integer arguments (e.g. <code>1/2</code>, <code>3/2</code>, <code>-1/2</code>), returns a closed-form
-expression involving <code>sqrt(π)</code>.
-When <code>Settings.EVALUATE</code> is <code>true</code> and the input is not an integer, falls back
-to the gamma function via Γ(x + 1).</p><div class="api-note"><strong>throws</strong><p>UndefinedError If <code>x</code> is <code>-∞</code>.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>The expression to compute the factorial of.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The factorial of <code>x</code>.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>factorial(Expression.create(5)).text()       // &quot;120&quot;
-factorial(Expression.create(0)).text()       // &quot;1&quot;
-factorial(Expression.create(&#39;1/2&#39;)).text()   // &quot;1/2*sqrt(pi)&quot;</code></pre></section></div></article></div>
+<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.fact</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L945" target="_blank" rel="noreferrer">src/index.ts:945</a></div><pre class="api-signature"><code>nerdamer.fact(x: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Alias for <code>nerdamer.factorial</code>.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>nerdamer.fact(5).text(); // &quot;120&quot;</code></pre></section></div></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -90,6 +82,7 @@ factorial(Expression.create(&#39;1/2&#39;)).text()   // &quot;1/2*sqrt(pi)&quot;
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

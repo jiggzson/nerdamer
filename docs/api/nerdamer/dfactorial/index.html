@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>nerdamer.dfactorial — Nerdamer API</title>
-  <meta name="description" content="Computes the double factorial of an expression. For a non-negative integer n, the double factorial is the product of all positive integers up to n that share its parity: - Even: n!! = 2 · 4 · 6 · … · n - Odd: n!! = 1 · 3 · 5 · … · n For non-integer arguments when Settings.EVALUATE is true, a generalised formula using the gamma function is applied.">
+  <meta name="description" content="Computes the double factorial of an expression.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -62,16 +62,7 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.dfactorial</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L791" target="_blank" rel="noreferrer">src/index.ts:791</a></div><pre class="api-signature"><code>nerdamer.dfactorial(x: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the double factorial of an expression.
-
-For a non-negative integer n, the double factorial is the product of all positive
-integers up to n that share its parity:
-- Even: <code>n!! = 2 · 4 · 6 · … · n</code>
-- Odd:  <code>n!! = 1 · 3 · 5 · … · n</code>
-
-For non-integer arguments when <code>Settings.EVALUATE</code> is <code>true</code>, a generalised
-formula using the gamma function is applied.</p><div class="api-note"><strong>throws</strong><p>UndefinedError If <code>x</code> is <code>-∞</code>.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>The expression to compute the double factorial of.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The double factorial of <code>x</code>.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>doubleFactorial(Expression.create(6)).text()   // &quot;48&quot;
-doubleFactorial(Expression.create(7)).text()   // &quot;105&quot;</code></pre></section></article></div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.dfactorial</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L966" target="_blank" rel="noreferrer">src/index.ts:966</a></div><pre class="api-signature"><code>nerdamer.dfactorial(x: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the double factorial of an expression.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>nerdamer.dfactorial(7).text(); // &quot;105&quot;</code></pre></section></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -89,6 +80,7 @@ doubleFactorial(Expression.create(7)).text()   // &quot;105&quot;</code></pre></
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

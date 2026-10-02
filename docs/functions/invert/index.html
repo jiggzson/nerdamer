@@ -68,7 +68,7 @@
 <p>Returns the inverse of a square matrix.</p>
 <div class="api-description"><p>invert(matrix) computes the matrix inverse without modifying the supplied Matrix.</p></div>
 <section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Invert a 2 by 2 matrix.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">invert</span><span class="token punctuation">(</span><span class="token function">matrix</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre></div></section>
-<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#direct-api">Direct API</a></p></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>
 <p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
@@ -76,12 +76,21 @@
 
 
 </section>
-
+<section class="api-detail" id="nerdamer-api">
+<h2><code>nerdamer.invert</code></h2>
+<p>Call the operation through the default <code>nerdamer</code> import.</p>
+<pre class="api-signature"><code>nerdamer.invert(M: <a class="api-type-link" href="/docs/api/structures/matrix/">Matrix</a>): <a class="api-type-link" href="/docs/api/structures/matrix/">Matrix</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>M</code></td><td><code><a class="api-type-link" href="/docs/api/structures/matrix/">Matrix</a></code></td><td>—</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/structures/matrix/">Matrix</a></code></p></section>
+<p><a href="/docs/api/nerdamer/">Browse the <code>nerdamer</code> API →</a></p>
+</section>
 <section class="api-detail" id="direct-api">
 <h2>Direct JavaScript / TypeScript API</h2>
 <p>Import the operation directly from its package entry point.</p>
 <pre class="codeblock language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">invert</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span></code></pre>
-
+<pre class="api-signature"><code>invert(M: <a class="api-type-link" href="/docs/api/structures/matrix/">Matrix</a>): <a class="api-type-link" href="/docs/api/structures/matrix/">Matrix</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>M</code></td><td><code><a class="api-type-link" href="/docs/api/structures/matrix/">Matrix</a></code></td><td>—</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/structures/matrix/">Matrix</a></code></p></section>
 <p><a href="/docs/api/structures/">Browse <code>nerdamer/structures</code> →</a></p>
 </section>
 
@@ -104,6 +113,7 @@
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../scripts/site.js"></script>
 
+<script src="../../../scripts/code-copy.js"></script>
 <script src="../../../scripts/playground-tree.js"></script>
 </body>
 </html>

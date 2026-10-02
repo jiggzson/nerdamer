@@ -64,7 +64,7 @@
 </aside>
 <article class="docs-content"><script>window.location.replace("/docs/functions/product/");</script>
 <div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/product/">Open the documentation →</a></p></div>
-<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/calculus/">nerdamer/calculus</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1>product</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/math/math.ts#L1656" target="_blank" rel="noreferrer">src/math/math.ts:1656</a></div><pre class="api-signature"><code>product(expr: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, index: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, lower: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, upper: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes a finite product: <code>product(expr, k, a, b) = Π_{k=a}^{b} expr</code>.
+<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/calculus/">nerdamer/calculus</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1>product</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/math/math.ts#L2020" target="_blank" rel="noreferrer">src/math/math.ts:2020</a></div><pre class="api-signature"><code>product(expr: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, index: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, lower: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, upper: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes a finite product: <code>product(expr, k, a, b) = Π_{k=a}^{b} expr</code>.
 
 - If bounds are integers and the number of terms ≤ <code>Settings.MAX_PRODUCT_AND_SUMMATION_ITERATION</code>,
   evaluates by multiplying each term.
@@ -89,6 +89,7 @@ product(&#39;k&#39;, &#39;k&#39;, 1, 5).text() // &quot;120&quot;</code></pre></
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

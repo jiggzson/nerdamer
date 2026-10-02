@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>nerdamer.mod — Nerdamer API</title>
-  <meta name="description" content="Computes the modulo (remainder) of x divided by y.">
+  <meta name="description" content="Computes the modulo (remainder) of x divided by y. Exact Gaussian integers use the same quotient rule as Wolfram Language: divide, round the real and imaginary quotient components independently to the nearest integers with midpoint ties going to even, then subtract y * quotient from x. Complex values outside the Gaussian integers remain symbolic.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -64,8 +64,17 @@
 </aside>
 <article class="docs-content"><script>window.location.replace("/docs/functions/mod/");</script>
 <div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/mod/">Open the documentation →</a></p></div>
-<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.mod</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L793" target="_blank" rel="noreferrer">src/index.ts:793</a></div><pre class="api-signature"><code>nerdamer.mod(x: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, y: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the modulo (remainder) of <code>x</code> divided by <code>y</code>.</p><div class="api-note"><strong>throws</strong><p>UndefinedError If either <code>x</code> or <code>y</code> is <code>±∞</code>.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>The dividend.</td></tr><tr><td><code>y</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>The divisor.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The remainder of <code>x / y</code>.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>mod(Expression.create(10), Expression.create(3)).text()   // &quot;1&quot;
-mod(Expression.create(7), Expression.create(2)).text()    // &quot;1&quot;</code></pre></section></div></article></div>
+<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.mod</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L977" target="_blank" rel="noreferrer">src/index.ts:977</a></div><pre class="api-signature"><code>nerdamer.mod(x: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, y: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the modulo (remainder) of <code>x</code> divided by <code>y</code>.
+
+Exact Gaussian integers use the same quotient rule as Wolfram Language:
+divide, round the real and imaginary quotient components independently to
+the nearest integers with midpoint ties going to even, then subtract
+<code>y * quotient</code> from <code>x</code>.
+
+Complex values outside the Gaussian integers remain symbolic.</p><div class="api-note"><strong>see</strong><p>- https://reference.wolfram.com/language/ref/Mod.html
+ - https://reference.wolfram.com/language/ref/Quotient.html
+ - https://reference.wolfram.com/language/ref/Round.html</p></div><div class="api-note"><strong>throws</strong><p>core!UndefinedError If either <code>x</code> or <code>y</code> is <code>±∞</code>.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>The dividend.</td></tr><tr><td><code>y</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>The divisor.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The remainder of <code>x / y</code>.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>mod(Expression.create(10), Expression.create(3)).text()          // &quot;1&quot;
+mod(Expression.create(&#39;5+3*i&#39;), Expression.create(&#39;2+i&#39;)).text() // &quot;-1&quot;</code></pre></section></div></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -83,6 +92,7 @@ mod(Expression.create(7), Expression.create(2)).text()    // &quot;1&quot;</code
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

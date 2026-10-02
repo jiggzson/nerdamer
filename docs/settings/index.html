@@ -68,15 +68,8 @@
 
 <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
 
-<span class="token keyword">const</span> <span class="token variable">previous</span> <span class="token operator">=</span> <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token string">&#39;USE_SINGLE_LETTER_VARIABLES&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-<span class="token keyword">try</span> <span class="token punctuation">{</span>
-  <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span><span class="token string">&#39;USE_SINGLE_LETTER_VARIABLES&#39;</span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-  <span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;2ab&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 2*a*b</span>
-<span class="token punctuation">}</span>
-<span class="token keyword">finally</span> <span class="token punctuation">{</span>
-  <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span><span class="token string">&#39;USE_SINGLE_LETTER_VARIABLES&#39;</span><span class="token punctuation">,</span> <span class="token variable">previous</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span></code></pre>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span><span class="token string">&#39;USE_SINGLE_LETTER_VARIABLES&#39;</span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;2ab&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 2*a*b</span></code></pre>
 
 <p>Several settings can also be changed together:</p>
 <pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
@@ -84,7 +77,7 @@
   <span class="token variable">INDEX_BASE</span><span class="token operator">:</span> <span class="token number">1</span>
 <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
 
-<div class="docs-callout"><strong>Shared state:</strong> these settings are not local to a single expression. Changing one affects later calls that use the same runtime.</div>
+<div class="docs-callout"><strong>Shared state:</strong> these settings are not local to a single expression. Changing one affects later calls that use the same runtime. If a setting is changed only temporarily, save its previous value and restore it when the operation is finished.</div>
 
 <h2>Notation and indexing</h2>
 <p>These settings directly change how Nerdamer Notation is interpreted. The <a href="/docs/parser/">Expression syntax</a> page shows them in context.</p>
@@ -115,7 +108,7 @@
 <div class="docs-callout"><strong>Per-call term ordering:</strong> prefer <code>expression.text({ sort: true })</code> when only one rendered result needs conventional term ordering. That option does not change <code>SORT_TERMS</code> globally. See <a href="/docs/public-helpers/#text-output-and-term-ordering">Text output and public helpers</a>.</div>
 
 <h2 id="localized-error-messages">Localized error messages</h2>
-<p>The library can select the language used by its built-in error message catalog through the <code>LANGUAGE</code> setting. English is the default.</p>
+<p>The <code>LANGUAGE</code> setting selects among the error-message catalogs included in the current Nerdamer build. English is the default.</p>
 
 <h3>Supported language catalog</h3>
 <div class="api-table-wrap">
@@ -133,7 +126,9 @@
 </table>
 </div>
 
-<p>Set the catalog before running the operation whose errors should use that language:</p>
+<div class="docs-callout"><strong>Catalogs must be included at build time:</strong> the default browser bundle contains only <code>eng</code>. Setting <code>LANGUAGE</code> does not load another catalog at runtime. A targeted build such as <code>--env language=spa,fra</code> contains English, Spanish, and French; it starts with Spanish selected and allows runtime switching among those included catalogs. To switch freely among every supported language, build with <code>--env language=all</code>. See <a href="/docs/internals/development/#language-targeted-browser-builds">Language-targeted browser builds</a>.</div>
+
+<p>When the requested catalog is included in the build, set it before running the operation whose errors should use that language:</p>
 <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
 
 <span class="token keyword">const</span> <span class="token variable">previousLanguage</span> <span class="token operator">=</span> <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token string">&#39;LANGUAGE&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -155,10 +150,10 @@
   <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span><span class="token string">&#39;LANGUAGE&#39;</span><span class="token punctuation">,</span> <span class="token variable">previousLanguage</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">}</span></code></pre>
 
-<div class="docs-callout"><strong>Error text only:</strong> changing <code>LANGUAGE</code> selects the error-message catalog. It does not translate Nerdamer Notation, function names, or the JavaScript / TypeScript API.</div>
+<div class="docs-callout"><strong>Error text only:</strong> changing <code>LANGUAGE</code> selects an error-message catalog that is already present in the build. It does not load a catalog, translate Nerdamer Notation, translate function names, or translate the JavaScript / TypeScript API.</div>
 
 <p>The language setting is shared just like the other runtime settings. If an application changes it temporarily, restore the previous value when that operation is finished.</p>
-<p>Typed parser consumers can also import the supported language type. The <code>Language</code> type is derived from the available catalog keys, so it stays aligned with the supported codes:</p>
+<p>Typed parser consumers can also import the supported language type. The <code>Language</code> type describes the supported catalog codes; the selected catalog must still be included in the build:</p>
 <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">type</span> <span class="token punctuation">{</span> <span class="token class-name">Language</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/parser&#39;</span><span class="token punctuation">;</span>
 
 <span class="token keyword">const</span> <span class="token variable">language</span><span class="token operator">:</span> <span class="token class-name">Language</span> <span class="token operator">=</span> <span class="token string">&#39;fra&#39;</span><span class="token punctuation">;</span>
@@ -172,7 +167,7 @@
     <tr><td><code>MAX_PRODUCT_AND_SUMMATION_ITERATION</code></td><td><code>10000</code></td><td>Limits direct finite iteration performed by <code>sum</code> and <code>product</code>. Larger ranges can remain symbolic instead of being expanded term by term.</td></tr>
     <tr><td><code>MAX_LOOP_ITERATIONS</code></td><td><code>10000</code></td><td>Limits completed iterations in Nerdamer Scripting control-flow loops.</td></tr>
     <tr><td><code>MAX_FRAC_INT</code></td><td><code>BigInt(1e60)</code></td><td>Caps integer sizes used by exact root extraction paths so very large numerator or denominator values do not trigger impractical work.</td></tr>
-    <tr><td><code>LANGUAGE</code></td><td><code>'eng'</code></td><td>Selects one of the supported error-message catalogs listed above.</td></tr>
+    <tr><td><code>LANGUAGE</code></td><td><code>'eng'</code></td><td>Selects an error-message catalog that is included in the current build.</td></tr>
     <tr><td><code>PRECISION</code></td><td>current numeric precision</td><td>Controls the shared arbitrary-precision decimal setting and keeps finite-precision values of <code>pi</code> and <code>e</code> synchronized. <code>PRECISION</code> is handled specially by the root <code>nerdamer.set/get</code> API.</td></tr>
   </tbody>
 </table>
@@ -180,6 +175,7 @@
 
 <h2>Direct parser access</h2>
 <p>If you import the parser API directly, the same shared settings can be read and changed with <code>Parser.get(...)</code> and <code>Parser.set(...)</code>. Precision uses the parser's dedicated precision methods.</p>
+<div class="docs-callout"><strong>Language catalogs:</strong> <code>Parser.set('LANGUAGE', ...)</code> has the same build-time requirement as <code>nerdamer.set('LANGUAGE', ...)</code>. The default browser build contains only <code>eng</code>; selecting another language requires a bundle built with that catalog, a comma-separated subset containing it, or <code>language=all</code>.</div>
 <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Parser</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/parser&#39;</span><span class="token punctuation">;</span>
 
 <span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span><span class="token string">&#39;INDEX_BASE&#39;</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -223,6 +219,7 @@
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../scripts/site.js"></script>
 
+<script src="../../scripts/code-copy.js"></script>
 <script src="../../scripts/playground-tree.js"></script>
 </body>
 </html>

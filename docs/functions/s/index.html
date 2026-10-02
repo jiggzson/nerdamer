@@ -71,7 +71,7 @@
 <span class="token comment">// → 0</span></code></pre></div>
 <div class="api-example-block"><p>Keep a symbolic argument symbolic.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">S</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span>
 <span class="token comment">// → S(x)</span></code></pre></div></section>
-<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#direct-api">Direct API</a></p></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>
 <p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
@@ -79,12 +79,21 @@
 <h3>Parameters</h3><ul><li><code>x</code> — Upper integration limit.</li></ul>
 
 </section>
-
+<section class="api-detail" id="nerdamer-api">
+<h2><code>nerdamer.S</code></h2>
+<p>Call the operation through the default <code>nerdamer</code> import.</p>
+<pre class="api-signature"><code>nerdamer.S(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>—</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></p></section>
+<p><a href="/docs/api/nerdamer/">Browse the <code>nerdamer</code> API →</a></p>
+</section>
 <section class="api-detail" id="direct-api">
 <h2>Direct JavaScript / TypeScript API</h2>
 <p>Import the operation directly from its package entry point.</p>
 <pre class="codeblock language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">S</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/calculus&#39;</span><span class="token punctuation">;</span></code></pre>
-
+<pre class="api-signature"><code>S(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>—</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></p></section>
 <p><a href="/docs/api/calculus/">Browse <code>nerdamer/calculus</code> →</a></p>
 </section>
 
@@ -107,6 +116,7 @@
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../scripts/site.js"></script>
 
+<script src="../../../scripts/code-copy.js"></script>
 <script src="../../../scripts/playground-tree.js"></script>
 </body>
 </html>

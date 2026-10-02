@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>Parser — Nerdamer parser API</title>
-  <meta name="description" content="Shared process-wide parser exposed through the supported high-level interface.">
+  <meta name="description" content="Shared parser exposed through the supported high-level interface. The implementation accepts a broader compatibility settings bag; this facade exposes only the named settings defined by SettingsType.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -62,7 +62,10 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/parser/">nerdamer/parser</a></div><div class="api-member-title"><div><span class="api-kind">Variable</span><h1>Parser</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/api/parser.ts#L35" target="_blank" rel="noreferrer">src/api/parser.ts:35</a></div><pre class="api-signature"><code>Parser: <a class="api-type-link" href="/docs/api/parser/parser-api/">ParserAPI</a></code></pre><div class="api-description"><p>Shared process-wide parser exposed through the supported high-level interface.</p></div></article></div>
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/parser/">nerdamer/parser</a></div><div class="api-member-title"><div><span class="api-kind">Variable</span><h1>Parser</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/api/parser.ts#L111" target="_blank" rel="noreferrer">src/api/parser.ts:111</a></div><pre class="api-signature"><code>Parser: <a class="api-type-link" href="/docs/api/parser/parser-api/">ParserAPI</a></code></pre><div class="api-description"><p>Shared parser exposed through the supported high-level interface.
+
+The implementation accepts a broader compatibility settings bag; this facade exposes
+only the named settings defined by SettingsType.</p></div></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -80,6 +83,7 @@
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

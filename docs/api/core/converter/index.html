@@ -62,7 +62,7 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/core/">nerdamer/core</a></div><div class="api-member-title"><div><span class="api-kind">Class</span><h1>Converter</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/core/converters/Converter.ts#L62" target="_blank" rel="noreferrer">src/core/converters/Converter.ts:62</a></div><div class="api-description"><p>Formats Nerdamer values as TeX or normalized text and imports supported TeX input.</p><div class="api-note"><strong>remarks</strong><p>A converter retains its output mode between calls. The default mode is <code>&quot;TeX&quot;</code>;
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/core/">nerdamer/core</a></div><div class="api-member-title"><div><span class="api-kind">Class</span><h1>Converter</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/core/converters/Converter.ts#L63" target="_blank" rel="noreferrer">src/core/converters/Converter.ts:63</a></div><div class="api-description"><p>Formats Nerdamer values as TeX or normalized text and imports supported TeX input.</p><div class="api-note"><strong>remarks</strong><p>A converter retains its output mode between calls. The default mode is <code>&quot;TeX&quot;</code>;
 construct a separate <code>&quot;text&quot;</code> converter when both representations are needed.
 Formatting a string parses it with the process-wide parser, so registered functions,
 constants, settings, and known values can affect the result.
@@ -107,6 +107,7 @@ changing the mode does not alter parser settings or previously returned strings.
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

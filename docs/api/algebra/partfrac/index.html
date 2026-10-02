@@ -66,9 +66,9 @@
 <div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/partfrac/">Open the documentation →</a></p></div>
 <div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/algebra/">nerdamer/algebra</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1>partfrac</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/algebra/partfrac.ts#L27" target="_blank" rel="noreferrer">src/algebra/partfrac.ts:27</a></div><pre class="api-signature"><code>partfrac(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, variable?: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Decomposes a rational expression P(x)/Q(x) into partial fractions.</p><div class="api-note"><strong>remarks</strong><p>The routine extracts <code>P(x)/Q(x)</code>, performs polynomial long division for an improper
 fraction, factors <code>Q</code> over the supported exact polynomial domain, and solves the
-undetermined coefficients by exact evaluation and row reduction. Repeated linear
-factors and irreducible quadratic factors are supported. An irreducible factor of
-higher degree, a singular coefficient system, a denominator independent of the
+undetermined coefficients by exact evaluation and row reduction. Each denominator
+factor of degree d receives a numerator polynomial of degree less than d, including
+repeated factors. A singular coefficient system, a denominator independent of the
 selected variable, or a factorization that does not expose a useful decomposition
 leaves the original expression unchanged.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Rational expression to decompose.</td></tr><tr><td><code>variable</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Main variable; defaults to the first variable reported by the expression.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — A new decomposition when one is found, otherwise the original parsed expression.</p></section></div></article></div>
 </main>
@@ -88,6 +88,7 @@ leaves the original expression unchanged.</p></div></div><section class="api-det
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

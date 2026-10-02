@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>nerdamer.fib — Nerdamer API</title>
-  <meta name="description" content="Computes the Fibonacci number for an integer index. Integer inputs are evaluated exactly, including negative indices through the negafibonacci identity. Symbolic and non-integer inputs remain unevaluated.">
+  <meta name="description" content="Computes the Fibonacci number for an integer index.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -64,12 +64,7 @@
 </aside>
 <article class="docs-content"><script>window.location.replace("/docs/functions/fib/");</script>
 <div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/fib/">Open the documentation →</a></p></div>
-<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.fib</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L792" target="_blank" rel="noreferrer">src/index.ts:792</a></div><pre class="api-signature"><code>nerdamer.fib(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the Fibonacci number for an integer index.
-
-Integer inputs are evaluated exactly, including negative indices through the
-negafibonacci identity. Symbolic and non-integer inputs remain unevaluated.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Fibonacci index.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The exact Fibonacci number for an integer input, or symbolic <code>fib(x)</code>.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>fibonacci(10).text()   // &quot;55&quot;
-fibonacci(-4).text()   // &quot;-3&quot;
-fibonacci(&#39;x&#39;).text()  // &quot;fib(x)&quot;</code></pre></section></div></article></div>
+<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.fib</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L976" target="_blank" rel="noreferrer">src/index.ts:976</a></div><pre class="api-signature"><code>nerdamer.fib(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the Fibonacci number for an integer index.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>—</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>nerdamer.fib(10).text(); // &quot;55&quot;</code></pre></section></div></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -87,6 +82,7 @@ fibonacci(&#39;x&#39;).text()  // &quot;fib(x)&quot;</code></pre></section></div
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

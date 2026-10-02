@@ -69,7 +69,7 @@
 <div class="api-description"><p>nullspace(...) returns a Vector whose entries are basis vectors for the matrix nullspace.</p><p>The operation is available in Nerdamer Notation, on the root nerdamer API, and as a direct import from nerdamer/structures.</p></div>
 <section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Find a basis for a rank-deficient matrix.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">nullspace</span><span class="token punctuation">(</span><span class="token function">matrix</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
 <span class="token comment">// → [[-2, 1, 0], [-3, 0, 1]]</span></code></pre></div></section>
-<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#direct-api">Direct API</a></p></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>
 <p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
@@ -78,12 +78,21 @@
 <li><code>prime</code> — Optional modulus for finite-field arithmetic.</li></ul>
 
 </section>
-
+<section class="api-detail" id="nerdamer-api">
+<h2><code>nerdamer.nullspace</code></h2>
+<p>Call the operation through the default <code>nerdamer</code> import.</p>
+<pre class="api-signature"><code>nerdamer.nullspace(M: <a class="api-type-link" href="/docs/api/structures/matrix/">Matrix</a>, prime?: string | number | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>M</code></td><td><code><a class="api-type-link" href="/docs/api/structures/matrix/">Matrix</a></code></td><td>—</td></tr><tr><td><code>prime</code></td><td><code>string | number | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>—</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></p></section>
+<p><a href="/docs/api/nerdamer/">Browse the <code>nerdamer</code> API →</a></p>
+</section>
 <section class="api-detail" id="direct-api">
 <h2>Direct JavaScript / TypeScript API</h2>
 <p>Import the operation directly from its package entry point.</p>
 <pre class="codeblock language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">nullspace</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span></code></pre>
-
+<pre class="api-signature"><code>nullspace(M: <a class="api-type-link" href="/docs/api/structures/matrix/">Matrix</a>, prime?: string | number | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>M</code></td><td><code><a class="api-type-link" href="/docs/api/structures/matrix/">Matrix</a></code></td><td>—</td></tr><tr><td><code>prime</code></td><td><code>string | number | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>—</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></p></section>
 <p><a href="/docs/api/structures/">Browse <code>nerdamer/structures</code> →</a></p>
 </section>
 <section class="api-detail"><h2>Notes</h2><ul><li>An optional second argument selects finite-field arithmetic with the supplied prime modulus.</li></ul></section>
@@ -106,6 +115,7 @@
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../scripts/site.js"></script>
 
+<script src="../../../scripts/code-copy.js"></script>
 <script src="../../../scripts/playground-tree.js"></script>
 </body>
 </html>

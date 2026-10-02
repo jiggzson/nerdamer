@@ -38,6 +38,24 @@
   white-space: nowrap;
 }
 
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: .6rem;
+  padding: .36rem .72rem;
+  border-radius: 6px;
+  background: #d97706;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .18);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .075em;
+  line-height: 1;
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 .reference-item {
   grid-template-columns: minmax(235px, .42fr) minmax(0, 1fr);
   gap: 18px;

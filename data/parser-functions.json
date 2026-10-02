@@ -823,7 +823,7 @@
       "category": "Nerdamer Language",
       "usage": "scripting",
       "minArgs": 3,
-      "maxArgs": 3,
+      "maxArgs": 4,
       "equationArgs": [],
       "distElWise": false,
       "deferArguments": true,
@@ -1153,7 +1153,7 @@
       "distElWise": false,
       "deferArguments": true,
       "registrationLevel": "system",
-      "syntax": "if(condition, whenTrue[, whenFalse])",
+      "syntax": "if(condition, whenTrue, whenFalse)",
       "summary": "Evaluates one of two parser expressions based on a condition.",
       "parameters": [
         {
@@ -1166,7 +1166,7 @@
         },
         {
           "name": "whenFalse",
-          "description": "Optional expression evaluated when the condition is false."
+          "description": "Expression evaluated when the condition is false."
         }
       ],
       "examples": [

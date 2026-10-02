@@ -64,13 +64,13 @@
 </aside>
 <article class="docs-content"><script>window.location.replace("/docs/functions/gamma/");</script>
 <div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/gamma/">Open the documentation →</a></p></div>
-<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.gamma</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L804" target="_blank" rel="noreferrer">src/index.ts:804</a></div><pre class="api-signature"><code>nerdamer.gamma(x: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the gamma function Γ(x).
+<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/nerdamer/">nerdamer API</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1><code>nerdamer.gamma</code></h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/index.ts#L991" target="_blank" rel="noreferrer">src/index.ts:991</a></div><pre class="api-signature"><code>nerdamer.gamma(x: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Computes the gamma function Γ(x).
 
 - For positive integers: <code>Γ(n) = (n − 1)!</code>
 - For half-integers (e.g. <code>1/2</code>, <code>3/2</code>, <code>-3/2</code>): returns a closed-form
   expression involving <code>sqrt(π)</code>.
 - For other numeric values: uses a high-precision decimal approximation.
-- For symbolic inputs: returns an unevaluated <code>gamma(x)</code> node.</p><div class="api-note"><strong>throws</strong><p>UndefinedError If <code>x</code> is <code>-∞</code>.</p></div><div class="api-note"><strong>see</strong><p>https://en.wikipedia.org/wiki/Gamma_function</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>The input expression.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The gamma function value Γ(x).</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>gamma(Expression.create(5)).text()       // &quot;24&quot;
+- For symbolic inputs: returns an unevaluated <code>gamma(x)</code> node.</p><div class="api-note"><strong>throws</strong><p>core!UndefinedError If <code>x</code> is <code>-∞</code>.</p></div><div class="api-note"><strong>see</strong><p>https://en.wikipedia.org/wiki/Gamma_function</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>The input expression.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The gamma function value Γ(x).</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>gamma(Expression.create(5)).text()       // &quot;24&quot;
 gamma(Expression.create(&#39;1/2&#39;)).text()   // &quot;sqrt(pi)&quot;
 gamma(Expression.create(&#39;x&#39;)).text()     // &quot;gamma(x)&quot;</code></pre></section></div></article></div>
 </main>
@@ -90,6 +90,7 @@ gamma(Expression.create(&#39;x&#39;)).text()     // &quot;gamma(x)&quot;</code><
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

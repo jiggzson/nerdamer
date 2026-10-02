@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>content — Nerdamer algebra API</title>
-  <meta name="description" content="Returns the exact rational content of polynomial expression input.">
+  <meta name="description" content="Returns the exact numeric content of polynomial expression input.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -64,10 +64,10 @@
 </aside>
 <article class="docs-content"><script>window.location.replace("/docs/functions/content/");</script>
 <div class="docs-callout"><strong>Documentation moved.</strong><p>This entry is documented with its primary interface. <a href="/docs/functions/content/">Open the documentation →</a></p></div>
-<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/algebra/">nerdamer/algebra</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1>content</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/core/classes/polynomial/functions.ts#L59" target="_blank" rel="noreferrer">src/core/classes/polynomial/functions.ts:59</a></div><pre class="api-signature"><code>content(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a> | <a class="api-type-link" href="/docs/api/algebra/polynomial/">Polynomial</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Returns the exact rational content of polynomial expression input.</p><div class="api-note"><strong>remarks</strong><p>The content is the greatest common divisor of the polynomial&#39;s numeric coefficients.
-If expression conversion fails, the operation remains symbolic as <code>content(input)</code>.
-A <code>Polynomial</code> instance is not consumed directly by this helper; it currently falls
-through to the same symbolic <code>content(...)</code> form.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a> | <a class="api-type-link" href="/docs/api/algebra/polynomial/">Polynomial</a></code></td><td>Expression-like input or polynomial to inspect.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — A numeric expression for converted input, otherwise an unevaluated symbolic
+<div hidden aria-hidden="true"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/algebra/">nerdamer/algebra</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1>content</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/core/classes/polynomial/functions.ts#L93" target="_blank" rel="noreferrer">src/core/classes/polynomial/functions.ts:93</a></div><pre class="api-signature"><code>content(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a> | <a class="api-type-link" href="/docs/api/algebra/polynomial/">Polynomial</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre><div class="api-description"><p>Returns the exact numeric content of polynomial expression input.</p><div class="api-note"><strong>remarks</strong><p>Content means the greatest common divisor of the polynomial&#39;s numeric coefficients.
+For example, the content of <code>6*x^2+15*x*y-3*y</code> is <code>3</code>. This function does not choose
+a main variable or compute a polynomial-valued GCD of symbolic coefficient expressions.
+If expression conversion fails, the operation remains symbolic as <code>content(input)</code>.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a> | <a class="api-type-link" href="/docs/api/algebra/polynomial/">Polynomial</a></code></td><td>Expression-like input or polynomial to inspect.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — A numeric expression for converted input, otherwise an unevaluated symbolic
 <code>content</code> call.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>content(&#39;6*x^2+15*x-3&#39;).text(); // &quot;3&quot;</code></pre></section></div></article></div>
 </main>
 <footer class="site-footer">
@@ -86,6 +86,7 @@ through to the same symbolic <code>content(...)</code> form.</p></div></div><sec
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

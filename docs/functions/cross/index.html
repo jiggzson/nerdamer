@@ -82,9 +82,11 @@
 <section class="api-detail" id="nerdamer-api">
 <h2><code>nerdamer.cross</code></h2>
 <p>Call the operation through the default <code>nerdamer</code> import.</p>
+<pre class="api-signature"><code>nerdamer.cross(a: <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a>, b: <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a>): <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></pre>
+<pre class="api-signature"><code>nerdamer.cross(a: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, b: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
 <pre class="api-signature"><code>nerdamer.cross(a: <a class="api-type-link" href="/docs/api/core/parser-entity/">ParserEntity</a>, b: <a class="api-type-link" href="/docs/api/core/parser-entity/">ParserEntity</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a> | <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></pre>
-<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>a</code></td><td><code><a class="api-type-link" href="/docs/api/core/parser-entity/">ParserEntity</a></code></td><td>First Vector, or a symbolic Expression operand.</td></tr><tr><td><code>b</code></td><td><code><a class="api-type-link" href="/docs/api/core/parser-entity/">ParserEntity</a></code></td><td>Second Vector, or a symbolic Expression operand.</td></tr></tbody></table></div></section>
-<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a> | <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code> — The Vector cross product, or an unevaluated <code>cross(a, b)</code> Expression
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>a</code></td><td><code><a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></td><td>First Vector, or a symbolic Expression operand.</td></tr><tr><td><code>b</code></td><td><code><a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></td><td>Second Vector, or a symbolic Expression operand.</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code> — The Vector cross product, or an unevaluated <code>cross(a, b)</code> Expression
 when both operands are Expressions.</p></section>
 <p><a href="/docs/api/nerdamer/">Browse the <code>nerdamer</code> API →</a></p>
 </section>
@@ -92,9 +94,11 @@ when both operands are Expressions.</p></section>
 <h2>Direct JavaScript / TypeScript API</h2>
 <p>Import the operation directly from its package entry point.</p>
 <pre class="codeblock language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">cross</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span></code></pre>
+<pre class="api-signature"><code>cross(a: <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a>, b: <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a>): <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></pre>
+<pre class="api-signature"><code>cross(a: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, b: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
 <pre class="api-signature"><code>cross(a: <a class="api-type-link" href="/docs/api/core/parser-entity/">ParserEntity</a>, b: <a class="api-type-link" href="/docs/api/core/parser-entity/">ParserEntity</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a> | <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></pre>
-<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>a</code></td><td><code><a class="api-type-link" href="/docs/api/core/parser-entity/">ParserEntity</a></code></td><td>First Vector, or a symbolic Expression operand.</td></tr><tr><td><code>b</code></td><td><code><a class="api-type-link" href="/docs/api/core/parser-entity/">ParserEntity</a></code></td><td>Second Vector, or a symbolic Expression operand.</td></tr></tbody></table></div></section>
-<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a> | <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code> — The Vector cross product, or an unevaluated <code>cross(a, b)</code> Expression
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>a</code></td><td><code><a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></td><td>First Vector, or a symbolic Expression operand.</td></tr><tr><td><code>b</code></td><td><code><a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></td><td>Second Vector, or a symbolic Expression operand.</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code> — The Vector cross product, or an unevaluated <code>cross(a, b)</code> Expression
 when both operands are Expressions.</p></section>
 <p><a href="/docs/api/structures/">Browse <code>nerdamer/structures</code> →</a></p>
 </section>
@@ -118,6 +122,7 @@ when both operands are Expressions.</p></section>
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../scripts/site.js"></script>
 
+<script src="../../../scripts/code-copy.js"></script>
 <script src="../../../scripts/playground-tree.js"></script>
 </body>
 </html>

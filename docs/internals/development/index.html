@@ -93,9 +93,11 @@
         <tr><td>npm test</td><td>Behavior and regression coverage</td><td>Runs the Jest suite.</td></tr>
         <tr><td>npm run build:modules</td><td>Refresh package API modules</td><td>Builds the generated JavaScript and declarations used by public package subpath imports.</td></tr>
         <tr><td>npm run build:bundle</td><td>Build the complete browser bundle</td><td>Produces <code>dist/bundle.js</code> from the full package entry point.</td></tr>
+        <tr><td>npm run build:bundle:all-languages</td><td>Build the browser bundle with every language</td><td>Produces <code>dist/bundle.js</code> with all translated error-message catalogs included.</td></tr>
         <tr><td>npm run build:parser</td><td>Build the parser-only browser target</td><td>Produces <code>dist/parser.js</code> from <code>src/api/parser.ts</code> and runs its smoke check.</td></tr>
         <tr><td>npm run build:full</td><td>Build the complete package</td><td>Runs the module build, complete browser bundle, and full-bundle smoke check.</td></tr>
         <tr><td>npm run build</td><td>Release-facing complete build</td><td>Runs <code>build:full</code>. The parser-only target remains a separate <code>build:parser</code> step.</td></tr>
+        <tr><td>npm run build:all-languages</td><td>Build the complete package with every browser language</td><td>Builds the package modules, the full browser bundle with every language catalog, and runs the full-bundle smoke check.</td></tr>
         <tr><td>npm run dev</td><td>Scratch-driven development</td><td>Runs <code>tools/dev.ts</code> through the development watcher.</td></tr>
         <tr><td>npm run lint</td><td>Static code checks</td><td>Runs ESLint over the TypeScript source.</td></tr>
       </tbody>
@@ -107,6 +109,27 @@
   <pre class="codeblock language-shell"><code class="language-shell"><span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">build</span>          <span class="token comment"># complete package: modules + dist/bundle.js</span>
 <span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">build</span><span class="token operator">:</span><span class="token variable">parser</span>   <span class="token comment"># parser-only browser target: dist/parser.js</span></code></pre>
   <p>This separation keeps <code>nerdamer/parser</code> and the parser browser target useful without recreating the old dependency from the parser back into the complete package. Domain dispatch modules register their own functions when the complete package is assembled.</p>
+
+  <h2 id="language-targeted-browser-builds">Language-targeted browser builds</h2>
+  <p>Browser bundles include English by default. The full and parser-only targets can include one or more translated error-message catalogs without carrying every translation. Supported language codes are <code>spa</code>, <code>fra</code>, <code>deu</code>, <code>por</code>, <code>ita</code>, and <code>nld</code>.</p>
+  <pre class="codeblock language-shell"><code class="language-shell"><span class="token comment"># Full browser bundle with Spanish</span>
+<span class="token function">npx</span> <span class="token variable">webpack</span> <span class="token operator">--</span><span class="token variable">mode</span><span class="token operator">=</span><span class="token variable">production</span> <span class="token operator">--</span><span class="token variable">env</span> <span class="token variable">target</span><span class="token operator">=</span><span class="token variable">full</span> <span class="token operator">--</span><span class="token variable">env</span> <span class="token variable">language</span><span class="token operator">=</span><span class="token variable">spa</span>
+
+<span class="token comment"># Full browser bundle with Spanish and French</span>
+<span class="token function">npx</span> <span class="token variable">webpack</span> <span class="token operator">--</span><span class="token variable">mode</span><span class="token operator">=</span><span class="token variable">production</span> <span class="token operator">--</span><span class="token variable">env</span> <span class="token variable">target</span><span class="token operator">=</span><span class="token variable">full</span> <span class="token operator">--</span><span class="token variable">env</span> <span class="token variable">language</span><span class="token operator">=</span><span class="token variable">spa</span><span class="token punctuation">,</span><span class="token variable">fra</span>
+
+<span class="token comment"># Parser-only browser bundle with Spanish and French</span>
+<span class="token function">npx</span> <span class="token variable">webpack</span> <span class="token operator">--</span><span class="token variable">mode</span><span class="token operator">=</span><span class="token variable">production</span> <span class="token operator">--</span><span class="token variable">env</span> <span class="token variable">target</span><span class="token operator">=</span><span class="token variable">parser</span> <span class="token operator">--</span><span class="token variable">env</span> <span class="token variable">language</span><span class="token operator">=</span><span class="token variable">spa</span><span class="token punctuation">,</span><span class="token variable">fra</span></code></pre>
+  <p>English is always included. For a targeted list, the first requested non-English language is selected initially and the other included catalogs are available for runtime switching. For example, <code>language=spa,fra</code> includes English, Spanish, and French, starts in Spanish, and allows the runtime <code>LANGUAGE</code> setting to switch to French or back to English.</p>
+  <p>When the complete package needs every translated catalog, use the named all-languages build:</p>
+  <pre class="codeblock language-shell"><code class="language-shell"><span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">build</span><span class="token operator">:</span><span class="token variable">all</span><span class="token operator">-</span><span class="token variable">languages</span></code></pre>
+  <p>This builds the package modules, produces the full <code>dist/bundle.js</code> with every language catalog, and runs the full-bundle smoke test. If only the all-languages browser bundle needs to be rebuilt, use:</p>
+  <pre class="codeblock language-shell"><code class="language-shell"><span class="token function">npm</span> <span class="token variable">run</span> <span class="token variable">build</span><span class="token operator">:</span><span class="token variable">bundle</span><span class="token operator">:</span><span class="token variable">all</span><span class="token operator">-</span><span class="token variable">languages</span></code></pre>
+  <p>The parser-only target can still be built with every catalog through its webpack target:</p>
+  <pre class="codeblock language-shell"><code class="language-shell"><span class="token function">npx</span> <span class="token variable">webpack</span> <span class="token operator">--</span><span class="token variable">mode</span><span class="token operator">=</span><span class="token variable">production</span> <span class="token operator">--</span><span class="token variable">env</span> <span class="token variable">target</span><span class="token operator">=</span><span class="token variable">parser</span> <span class="token operator">--</span><span class="token variable">env</span> <span class="token variable">language</span><span class="token operator">=</span><span class="token variable">all</span></code></pre>
+  <p><code>all</code> cannot be combined with individual language codes. Unknown language codes fail the build. Repeated codes in a targeted list are ignored.</p>
+  <p>The normal <code>npm run build:bundle</code> and <code>npm run build:parser</code> commands omit the language option, so they produce English-only browser builds. Language targeting affects browser bundle composition; it does not replace the package module build.</p>
+  <div class="internals-callout"><strong>Runtime language selection does not load catalogs.</strong> <code>nerdamer.set('LANGUAGE', ...)</code> and <code>Parser.set('LANGUAGE', ...)</code> can select only catalogs that were included when the browser bundle was built. Use a comma-separated subset such as <code>language=spa,fra</code> when only those languages are needed, or <code>npm run build:all-languages</code> when the application must switch among every supported catalog.</div>
 
   <h2>Use the development scratch file</h2>
   <p><code>tools/dev.ts</code> is available for experiments, debugging, and quick local checks.</p>
@@ -163,6 +186,7 @@
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../scripts/site.js"></script>
 
+<script src="../../../scripts/code-copy.js"></script>
 <script src="../../../scripts/playground-tree.js"></script>
 </body>
 </html>

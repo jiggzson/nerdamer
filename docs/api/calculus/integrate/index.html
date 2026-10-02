@@ -81,7 +81,7 @@ implementation. The result should not be read as a global statement about
 every real or complex branch outside those supported patterns.
 
 <code>depth</code> is the internal strategy-recursion counter and should normally be
-omitted by direct callers.</p></div><div class="api-note"><strong>throws</strong><p>UnexpectedInputError If <code>dx</code> is not a plain variable.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>expr</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Integrand to normalize and integrate.</td></tr><tr><td><code>dx</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Plain integration variable.</td></tr><tr><td><code>depth</code></td><td><code>number</code></td><td>Internal recursion depth. Defaults to zero.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — A symbolic antiderivative without an integration constant, or an
+omitted by direct callers.</p></div><div class="api-note"><strong>throws</strong><p>core!UnexpectedInputError If <code>dx</code> is not a plain variable.</p></div></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>expr</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Integrand to normalize and integrate.</td></tr><tr><td><code>dx</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Plain integration variable.</td></tr><tr><td><code>depth</code></td><td><code>number</code></td><td>Internal recursion depth. Defaults to zero.</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — A symbolic antiderivative without an integration constant, or an
 unevaluated <code>integrate(...)</code> Expression.</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>integrate(&#39;2*x*cos(x^2)&#39;, &#39;x&#39;).text();</code></pre></section></div></article></div>
 </main>
 <footer class="site-footer">
@@ -100,6 +100,7 @@ unevaluated <code>integrate(...)</code> Expression.</p></section><section class=
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="../styles/back-to-top.css">
   <link rel="stylesheet" href="../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../styles/playground-tree.css">
-  
+  <link rel="stylesheet" href="../styles/docs-entry.css">
   <link rel="stylesheet" href="../styles/background.css">
 </head>
 <body>
@@ -82,8 +82,8 @@
 
 	<a class="card docs-card" href="/docs/language/">
 		<span class="arrow">→</span>
-		<h2>Nerdamer Scripting</h2>
-		<p>For programs written in Nerdamer's scripting language.</p>
+		<h2>Nerdamer Scripting <span class="status-badge">Beta</span></h2>
+		<p>For programs written in Nerdamer's scripting language. Scripting is supported, but some syntax and API details may still change before Nerdamer 2.0 final.</p>
 		<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token control">block</span><span class="token punctuation">(</span>
   <span class="token variable">x</span><span class="token operator">:</span> <span class="token number">4</span><span class="token punctuation">,</span>
   <span class="token control">if</span><span class="token punctuation">(</span><span class="token variable">x</span> <span class="token operator">&gt;</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token punctuation">)</span>
@@ -105,8 +105,8 @@
 
 <div class="docs-callout">
 	<strong>Not sure which one you need?</strong> If you are typing mathematics such as <code>factor(x^2-1)</code>, use
-	Nerdamer Notation. If you are writing control flow such as <code>if(...)</code> or <code>block(...)</code>, use Nerdamer
-	Scripting. If you are writing JavaScript or TypeScript that imports or calls Nerdamer, use the JavaScript / TypeScript API.
+	Nerdamer Notation. If you are writing control flow such as <code>if(...)</code> or <code>block(...)</code>, use the Nerdamer
+	Scripting language. If you are writing JavaScript or TypeScript that imports or calls Nerdamer, use the JavaScript / TypeScript API.
 </div>
 <div class="docs-callout">
 	<strong>Localized errors.</strong> The library includes built-in error messages for each supported language.
@@ -165,6 +165,7 @@
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../scripts/site.js"></script>
 
+<script src="../scripts/code-copy.js"></script>
 <script src="../scripts/playground-tree.js"></script>
 </body>
 </html>

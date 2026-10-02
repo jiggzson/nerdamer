@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>symbols — Nerdamer core API</title>
-  <meta name="description" content="TypeDoc entry point for Nerdamer&#39;s supported 2.0 package surface. This file mirrors the intentional package subpaths without becoming a runtime package entry point itself.">
+  <meta name="description" content="A convenience function for creating simple symbols reducing the reliance on strings">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -62,10 +62,10 @@
     <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
   </nav>
 </aside>
-<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/core/">nerdamer/core</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1>symbols</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/core/classes/expression/shortcuts.ts#L114" target="_blank" rel="noreferrer">src/core/classes/expression/shortcuts.ts:114</a></div><pre class="api-signature"><code>symbols(...args: string[]): Record&lt;string, <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>&gt;</code></pre><div class="api-description"><p>TypeDoc entry point for Nerdamer&#39;s supported 2.0 package surface.
+<article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/api/">API</a><span>/</span><a href="/docs/api/core/">nerdamer/core</a></div><div class="api-member-title"><div><span class="api-kind">Function</span><h1>symbols</h1></div><a class="api-source" href="https://github.com/jiggzson/nerdamer/blob/HEAD/src/core/classes/expression/shortcuts.ts#L114" target="_blank" rel="noreferrer">src/core/classes/expression/shortcuts.ts:114</a></div><pre class="api-signature"><code>symbols(...args: string[]): Record&lt;string, <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>&gt;</code></pre><div class="api-description"><p>A convenience function for creating simple symbols reducing the reliance on strings</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>args</code></td><td><code>string[]</code></td><td>A series of string variables</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>Record&lt;string, <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>&gt;</code> — An object of created symbols</p></section><section class="api-detail"><h2>Examples</h2><pre class="api-example"><code>const { x, y } = symbols(&#39;x&#39;, &#39;y&#39;);
+cos(x.sq()).times(y);
 
-This file mirrors the intentional package subpaths without becoming a runtime
-package entry point itself.</p></div><section class="api-detail"><h2>Parameters</h2><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>args</code></td><td><code>string[]</code></td><td>A series of string variables</td></tr></tbody></table></div></section><section class="api-detail"><h2>Returns</h2><p><code>Record&lt;string, <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>&gt;</code> — An object of created symbols</p></section></article></div>
+// Also available as nerdamer.symbols</code></pre></section></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -83,6 +83,7 @@ package entry point itself.</p></div><section class="api-detail"><h2>Parameters<
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../../scripts/site.js"></script>
 
+<script src="../../../../scripts/code-copy.js"></script>
 <script src="../../../../scripts/playground-tree.js"></script>
 </body>
 </html>

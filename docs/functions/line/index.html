@@ -68,7 +68,7 @@
 <p>Returns the equation expression for the line through two two-dimensional points.</p>
 <div class="api-description"><p>line(p1,p2[, dimension]) accepts two two-element vectors. The optional dimension selects the independent variable and defaults to x.</p></div>
 <section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Construct the line through the origin and (1,1).</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">line</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span></code></pre></div></section>
-<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a></p></section>
+<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
 <section class="api-detail" id="notation">
 <h2>Nerdamer Notation</h2>
 <p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
@@ -76,7 +76,14 @@
 
 
 </section>
-
+<section class="api-detail" id="nerdamer-api">
+<h2><code>nerdamer.line</code></h2>
+<p>Call the operation through the default <code>nerdamer</code> import.</p>
+<pre class="api-signature"><code>nerdamer.line(p1: <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a>, p2: <a class="api-type-link" href="/docs/api/structures/vector/">Vector</a>, dimension: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
+<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>p1</code></td><td><code><a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></td><td>—</td></tr><tr><td><code>p2</code></td><td><code><a class="api-type-link" href="/docs/api/structures/vector/">Vector</a></code></td><td>—</td></tr><tr><td><code>dimension</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>—</td></tr></tbody></table></div></section>
+<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></p></section>
+<p><a href="/docs/api/nerdamer/">Browse the <code>nerdamer</code> API →</a></p>
+</section>
 
 
 
@@ -98,6 +105,7 @@
 <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
 <script src="../../../scripts/site.js"></script>
 
+<script src="../../../scripts/code-copy.js"></script>
 <script src="../../../scripts/playground-tree.js"></script>
 </body>
 </html>

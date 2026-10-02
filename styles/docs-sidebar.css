@@ -65,6 +65,12 @@ html.dark .docs-sidebar::-webkit-scrollbar-thumb:hover {
   cursor: pointer;
 }
 
+.docs-nav-label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
 .docs-nav-toggle:hover {
   color: rgb(var(--accent));
 }
