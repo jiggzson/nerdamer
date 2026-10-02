@@ -1,4 +1,5 @@
 const TerserPlugin = require('terser-webpack-plugin');
+const webpack = require('webpack');
 const path = require('path');
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -25,6 +26,28 @@ const BUILD_TARGETS = {
 
 module.exports = env => {
 	const targetName = env?.target ?? 'full';
+	const language = env?.language ?? 'eng';
+	const supportedLanguages = ['eng', 'spa', 'fra', 'deu', 'por', 'ita', 'nld'];
+	// PowerShell can pass an unquoted comma-separated native argument as a space-separated value.
+	// Accept both forms while keeping the documented syntax `--env language=spa,fra`.
+	const requestedLanguages = [
+		...new Set(language.split(/[\s,]+/).map(value => value.trim()).filter(Boolean)),
+	];
+
+	if (requestedLanguages.length === 0) {
+		throw new Error('Build language cannot be empty.');
+	}
+	if (requestedLanguages.includes('all') && requestedLanguages.length !== 1) {
+		throw new Error("Build language 'all' cannot be combined with individual languages.");
+	}
+	const unknownLanguages = requestedLanguages.filter(
+		value => value !== 'all' && !supportedLanguages.includes(value)
+	);
+	if (unknownLanguages.length) {
+		throw new Error(
+			`Unknown build language '${unknownLanguages[0]}'. Expected one or more of: ${supportedLanguages.join(', ')}, or all`
+		);
+	}
 	const target = BUILD_TARGETS[targetName];
 
 	if (!target) {
@@ -33,8 +56,24 @@ module.exports = env => {
 		);
 	}
 
+	const languageEntries = {
+		spa: './src/api/languages/spa.ts',
+		fra: './src/api/languages/fra.ts',
+		deu: './src/api/languages/deu.ts',
+		por: './src/api/languages/por.ts',
+		ita: './src/api/languages/ita.ts',
+		nld: './src/api/languages/nld.ts',
+	};
+	const selectedLanguages = requestedLanguages.includes('all')
+		? Object.keys(languageEntries)
+		: requestedLanguages.filter(value => value !== 'eng');
+	const selectedLanguageEntries = selectedLanguages.map(value => languageEntries[value]);
+	const activeLanguage = requestedLanguages.includes('all')
+		? 'eng'
+		: selectedLanguages[0] ?? 'eng';
+
 	const config = {
-		entry: target.entry,
+		entry: [...selectedLanguageEntries, target.entry],
 		output: {
 			path: path.resolve(__dirname, 'dist'),
 			filename: target.filename,
@@ -53,6 +92,8 @@ module.exports = env => {
 						compilerOptions: {
 							declaration: false,
 							declarationMap: false,
+							module: 'ESNext',
+							moduleResolution: 'Bundler',
 						},
 					},
 				},
@@ -68,6 +109,11 @@ module.exports = env => {
 			},
 			extensions: ['.tsx', '.ts', '.jsx', '.js', '...'],
 		},
+		plugins: [
+			new webpack.DefinePlugin({
+				NERDAMER_BUILD_LANGUAGE: JSON.stringify(activeLanguage),
+			}),
+		],
 		optimization: {
 			minimize: true,
 			minimizer: [

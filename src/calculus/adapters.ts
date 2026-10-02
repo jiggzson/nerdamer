@@ -1,5 +1,6 @@
 import { Equation } from '../core/classes/equation/Equation';
 import { assertPlainVariableAndGetString } from '../core/classes/expression/utils';
+
 import { diff } from './derivative/diff';
 import { integrate } from './integrate/integrate';
 import { limit } from './limit/limit';

@@ -425,7 +425,7 @@ export function simplifyLogs(x: Expression): Expression {
 	// c*log(a)=log(a^c) are only branch-safe when the log arguments are
 	// provably positive real values. Preserve unknown-sign terms unchanged.
 	const transformableLogTerms = logTerms.filter(
-		t => !t.arg.isComplex() && t.arg.gt(0)
+		t => !t.arg.isComplex() && t.arg.gt(zero())
 	);
 
 	if (transformableLogTerms.length === 0) {

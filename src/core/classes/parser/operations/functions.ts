@@ -1,5 +1,4 @@
 import { factorial, doubleFactorial } from '../../../../math/math';
-import { isEnumerable } from '../../../common/functions/structuredEntityUtils';
 import { mathFunctionRegistry } from '../../../dispatch';
 import {
 	DimensionError,
@@ -30,16 +29,11 @@ import { wrappedFunction } from '../scripting/functions';
 import { assign } from '../scripting/scope';
 
 import { add, addPrefix } from './add';
-import { comma } from './comma';
 import { divide } from './divide';
 import { multiply } from './multiply';
 import { power } from './power';
 import { subtract, subtractPrefix } from './subtract';
 
-import type {
-	BinaryArithmeticOperation,
-	ComparisonOperation,
-} from '../../../common/common';
 import type { RegisteredMathFunction } from '../../../dispatch';
 import type { ExpressionInput } from '../../../types';
 import type { ParserEntity } from '../../../types';
@@ -48,7 +42,6 @@ import type {
 	PreFixFunction,
 	PostFixFunction,
 	EquationConstructorCall,
-	CommaOperation,
 	DeferredFunctionArgument,
 	DeferredOperation,
 } from '../types';
@@ -138,13 +131,9 @@ export function callFunction(
 			entityArgs.push(arg);
 		}
 
-		// A structured entity carrying symbolic bracket access represents one unresolved
-		// scalar value. Normalize it before equation checks, distribution, or invocation.
-		const normalizedArgs = entityArgs.map(arg => Expression.fromSymbolicAccess(arg) ?? arg);
-
 		if (attributes.level === 'system') {
-			for (let i = 0; i < normalizedArgs.length; i++) {
-				if (Equation.isEquation(normalizedArgs[i]) && !equationArgs?.includes(i)) {
+			for (let i = 0; i < entityArgs.length; i++) {
+				if (Equation.isEquation(entityArgs[i]) && !equationArgs?.includes(i)) {
 					throw new UnexpectedDataType(
 						message('expressionExpected', { type: 'Equation' })
 					);
@@ -153,7 +142,7 @@ export function callFunction(
 		}
 
 		const elementWiseArgs: (Vector | Matrix)[] = distElWise
-			? normalizedArgs.filter(
+			? entityArgs.filter(
 				(arg): arg is Vector | Matrix => Vector.isVector(arg) || Matrix.isMatrix(arg)
 			)
 			: [];
@@ -178,7 +167,7 @@ export function callFunction(
 
 			result = distribute(
 				(_element, i, j) => {
-					const scalarArgs = normalizedArgs.map(arg => {
+					const scalarArgs = entityArgs.map(arg => {
 						let scalarArg = arg;
 						if (Vector.isVector(arg)) {
 							scalarArg = arg.__get__([i]);
@@ -194,15 +183,15 @@ export function callFunction(
 		}
 		// Call and return
 		else if (!fn || Settings.DEFER_SIMPLIFICATION) {
-			result = Expression.toFunction(functionName, normalizedArgs);
+			result = Expression.toFunction(functionName, entityArgs);
 		} else {
-			result = invokeMathFunction(fn, normalizedArgs);
+			result = invokeMathFunction(fn, entityArgs);
 		}
 
 		// Ensure that this function always returns even if it's a symbolic function. This will
 		// occur if the function didn't return a value.
 		if (!result) {
-			result = Expression.toFunction(functionName, normalizedArgs as Expression[]);
+			result = Expression.toFunction(functionName, entityArgs as Expression[]);
 		}
 	}
 
@@ -222,8 +211,7 @@ export const _: {
 	| DeferredOperation
 	| PreFixFunction
 	| PostFixFunction
-	| EquationConstructorCall
-	| CommaOperation;
+	| EquationConstructorCall;
 } = {
 	plus: add as Operation,
 	minus: subtract as Operation,
@@ -238,7 +226,6 @@ export const _: {
 	assertGTE: assertGTE as Operation,
 	assertLT: assertLT as Operation,
 	assertLTE: assertLTE as Operation,
-	comma: comma,
 	assign: assign as Operation,
 	functionAssign: functionAssign as DeferredOperation,
 	setEqual: setEqual,
@@ -403,7 +390,7 @@ function percentage(a: ParserEntity) {
 	if (!Expression.isExpression(a)) {
 		throw new UnsupportedOperationError(message('unsupportedOperation'));
 	}
-	const retval = a.div(100);
+	const retval = a.div(Expression.create(100));
 	return retval;
 }
 
@@ -427,54 +414,15 @@ function lte(a: ParserEntity, b: ParserEntity) {
 	return Expression.create(Number(a.lte(b)));
 }
 
-type RoutedOperation = BinaryArithmeticOperation | ComparisonOperation;
 type DynamicOperation = (operand: ParserEntity) => ParserEntity | boolean;
 type DynamicOperationTarget = Partial<Record<string, DynamicOperation>>;
-
-interface RoutedTarget {
-	div(x: ParserEntity): ParserEntity;
-	eq(x: ParserEntity): boolean;
-	gt(x: ParserEntity): boolean;
-	gte(x: ParserEntity): boolean;
-	lt(x: ParserEntity): boolean;
-	lte(x: ParserEntity): boolean;
-	minus(x: ParserEntity): ParserEntity;
-	plus(x: ParserEntity): ParserEntity;
-	pow(x: ParserEntity): ParserEntity;
-	times(x: ParserEntity): ParserEntity;
-}
-
-function isRoutedOperation(operation: string): operation is RoutedOperation {
-	return (
-		operation === 'pow' ||
-		operation === 'times' ||
-		operation === 'div' ||
-		operation === 'minus' ||
-		operation === 'plus' ||
-		operation === 'eq' ||
-		operation === 'lt' ||
-		operation === 'lte' ||
-		operation === 'gt' ||
-		operation === 'gte'
-	);
-}
-
-function routeOperation(
-	target: RoutedTarget,
-	operand: ParserEntity,
-	operation: RoutedOperation
-): ParserEntity {
-	const retval = target[operation](operand);
-	return typeof retval === 'boolean' ? Expression.create(Number(retval)) : retval;
-}
 
 function dispatchDynamicOperation(
 	a: ParserEntity,
 	b: ParserEntity,
 	operation: string
 ): ParserEntity {
-	// Preserve the parser's historically loose dispatch for operator actions outside
-	// RoutedOperation. Tightening these actions may change existing runtime behavior.
+	// Preserve the parser's historically loose method dispatch for operator actions.
 	const useA = a.isEnumerable || Equation.isEquation(a);
 	const target = useA ? a : b;
 	const operand = useA ? b : a;
@@ -495,38 +443,17 @@ export function route(
 	a: ParserEntity,
 	b: ParserEntity,
 	operation: string
-): ParserEntity | ReturnType<typeof comma> {
-	let retval: ParserEntity | ReturnType<typeof comma>;
+): ParserEntity {
+	let retval: ParserEntity;
 
 	if (operation === 'assign') {
 		retval = assign(a as unknown as ExpressionInput, b);
-	} else if (operation === 'comma') {
-		retval = comma(a, b);
 	} else if (operation === 'in') {
 		// Membership is the infix form of contains(container, value), so reverse the operands.
 		retval = callFunction('contains', [b, a]);
-	} else if (isRoutedOperation(operation)) {
-		if (Equation.isEquation(a) || Equation.isEquation(b)) {
-			if (Equation.isEquation(a) && Equation.isEquation(b)) {
-				if (['eq', 'lt', 'lte', 'gt', 'gte'].includes(operation)) {
-					retval = dispatchDynamicOperation(a, b, operation);
-				} else {
-					throw new UnsupportedOperationError(message('unsupportedOperation'));
-				}
-			} else if (Equation.isEquation(a)) {
-				if (['plus', 'minus', 'times', 'div'].includes(operation)) {
-					retval = dispatchDynamicOperation(a, b, operation);
-				} else {
-					throw new UnsupportedOperationError(message('unsupportedOperation'));
-				}
-			} else if (operation === 'plus' || operation === 'times') {
-				retval = dispatchDynamicOperation(a, b, operation);
-			} else {
-				throw new UnsupportedOperationError(message('unsupportedOperation'));
-			}
-		} else if (isEnumerable(a)) {
-			retval = routeOperation(a, b, operation);
-		} else if (
+	} else if (a.isEnumerable) {
+		retval = dispatchDynamicOperation(a, b, operation);
+	} else if (
 			(Vector.isVector(b) || Matrix.isMatrix(b)) &&
 			(operation === 'minus' || operation === 'div' || operation === 'pow')
 		) {
@@ -553,19 +480,10 @@ export function route(
 						elementResult = power(a, element);
 					}
 				} else {
-					const nestedResult = route(a, element, operation);
-					if (Array.isArray(nestedResult)) {
-						throw new UnsupportedOperationError(message('unsupportedOperation'));
-					}
-					elementResult = nestedResult;
+					elementResult = route(a, element, operation);
 				}
 				return elementResult;
-			}, b);
-		} else if (isEnumerable(b)) {
-			retval = routeOperation(b, a, operation);
-		} else {
-			retval = dispatchDynamicOperation(a, b, operation);
-		}
+		}, b);
 	} else {
 		retval = dispatchDynamicOperation(a, b, operation);
 	}

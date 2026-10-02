@@ -1,11 +1,11 @@
 import { message, UnexpectedInputError } from '../../errors';
 import { getAssumptionFor } from '../assumption/assume';
-import { Rational } from '../rational/Rational';
 
 import { Expression } from './Expression';
 import { one, zero } from './shortcuts';
 
 import type { OptionsObject } from '../parser/types';
+import type { Rational } from '../rational/Rational';
 
 export type conditionType = (x: Expression, values: string[]) => boolean;
 export type actionType = (x: Expression, values: string[]) => void;

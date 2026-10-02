@@ -1,12 +1,12 @@
+import { FRESNEL_C, FRESNEL_S } from '../core/classes/parser/constants';
 import { mathFunctionRegistry, systemFunction } from '../core/dispatch';
-import { product, sum } from '../math/math';
 import { defint } from '../math/defint/defint';
+import { product, sum } from '../math/math';
+
 import { differentiate, directionalLimit, integrateEquation } from './adapters';
 import { C, S } from './fresnel';
 import { ilaplace } from './laplace/ilaplace';
 import { laplace } from './laplace/laplace';
-
-import { FRESNEL_C, FRESNEL_S } from '../core/classes/parser/constants';
 
 export function loadCalculusFunctions() {
 	Object.assign(mathFunctionRegistry, {

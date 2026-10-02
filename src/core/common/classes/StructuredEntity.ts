@@ -1,4 +1,3 @@
-import type { Expression } from '../../classes/expression/Expression';
 import type { ParserEntity } from '../../types';
 import type { NerdamerInput } from '../../types';
 import type { BinaryArithmeticOperation } from '../common';
@@ -9,29 +8,11 @@ type SetOfValuesLike = {
 	elements: ParserEntity[] | ParserEntity[][];
 };
 
-/**
- * Internal element-wise dispatch signatures. These describe the calling convention
- * used by StructuredEntity without widening concrete classes' public operand types.
- * Equation is the only ParserEntity without pow(), so power remains optional here.
- */
-interface PlusDispatchTarget {
+interface BinaryDispatchTarget {
 	plus(x: NerdamerInput): ParserEntity;
-}
-
-interface MinusDispatchTarget {
 	minus(x: NerdamerInput): ParserEntity;
-}
-
-interface TimesDispatchTarget {
 	times(x: NerdamerInput): ParserEntity;
-}
-
-interface DivDispatchTarget {
 	div(x: NerdamerInput): ParserEntity;
-}
-
-interface PowDispatchTarget {
-	dataType: string;
 	pow?(x: NerdamerInput): ParserEntity;
 }
 
@@ -89,29 +70,9 @@ function applyBinaryOp(
 	lhs: ParserEntity,
 	rhs: NerdamerInput
 ): ParserEntity {
-	switch (op) {
-		case 'plus': {
-			const target: PlusDispatchTarget = lhs;
-			return target.plus(rhs);
-		}
-		case 'minus': {
-			const target: MinusDispatchTarget = lhs;
-			return target.minus(rhs);
-		}
-		case 'times': {
-			const target: TimesDispatchTarget = lhs;
-			return target.times(rhs);
-		}
-		case 'div': {
-			const target: DivDispatchTarget = lhs;
-			return target.div(rhs);
-		}
-		case 'pow': {
-			const target: PowDispatchTarget = lhs;
-			// Preserve the historical dynamic failure if an Equation reaches element-wise power.
-			return target.pow!(rhs);
-		}
-	}
+	const target: BinaryDispatchTarget = lhs;
+	const operation = target[op];
+	return operation!.call(target, rhs);
 }
 
 /**
@@ -130,36 +91,6 @@ export abstract class StructuredEntity<
 	abstract elements: ParserEntity[] | ParserEntity[][];
 	abstract isEnumerable: boolean;
 	abstract precision?: number;
-
-	/**
-	 * Public index expressions retained when bracket access cannot yet be resolved.
-	 * This state belongs to a copied structured entity, never the stored source value.
-	 */
-	symbolicAccessor?: Expression[];
-
-	/** Original symbolic target used to render and later re-evaluate bracket access. */
-	symbolicTarget?: Expression;
-
-	/** Copies symbolic access metadata alongside a concrete structured copy. */
-	protected copySymbolicAccessTo(copy: T): T {
-		if (this.symbolicTarget) {
-			copy.symbolicTarget = this.symbolicTarget.copy();
-		}
-		if (this.symbolicAccessor) {
-			copy.symbolicAccessor = this.symbolicAccessor.map(index => index.copy());
-		}
-		return copy;
-	}
-
-	/** Renders symbolic access without exposing the carrier's concrete contents. */
-	protected formatSymbolicAccess(baseText: string): string {
-		let retval = baseText;
-		if (this.symbolicAccessor && this.symbolicAccessor.length > 0) {
-			const target = this.symbolicTarget ? this.symbolicTarget.text() : baseText;
-			retval = `${target}[${this.symbolicAccessor.map(index => index.text()).join(', ')}]`;
-		}
-		return retval;
-	}
 
 	private binaryOp(op: BinaryArithmeticOperation, x: NerdamerInput): T {
 		const rhsAgg = isEnumerableLike(x) && x.dataType === this.dataType ? x : undefined;
@@ -230,19 +161,4 @@ export abstract class StructuredEntity<
 		return this.text();
 	}
 
-	/**
-	 * Returns a copied structured entity carrying an unresolved bracket access.
-	 * Existing accessor state is retained so chained symbolic access can be extended.
-	 */
-	withSymbolicAccessor(target: Expression, indices: Expression[]): T {
-		const retval = this.copy();
-		if (!retval.symbolicTarget) {
-			retval.symbolicTarget = target.copy();
-		}
-		retval.symbolicAccessor = [
-			...(retval.symbolicAccessor ?? []),
-			...indices.map(index => index.copy()),
-		];
-		return retval;
-	}
 }

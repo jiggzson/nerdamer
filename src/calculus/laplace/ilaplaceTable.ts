@@ -1,3 +1,4 @@
+import { two } from '../../core/classes/expression/shortcuts';
 import { LookupTable, type TableEntries } from '../../core/classes/lookupTable/LookupTable';
 import { Pattern } from '../../core/converters/Pattern';
 
@@ -30,11 +31,11 @@ const ilaplaceTable: TableEntries = {
 			return p.fromPattern('(a1*t^(n2-1)*e^((-a3/a2)*t))/(a2^n2*gamma(n2))');
 		}
 
-		if (n1.eq(2) && n2.isOne()) {
+		if (n1.eq(two()) && n2.isOne()) {
 			return p.fromPattern('(a1*sin((a3^(1/2)*t)/(a2^(1/2))))/(a2^(1/2)*a3^(1/2))');
 		}
 
-		if (n1.eq(2) && n2.eq(2)) {
+		if (n1.eq(two()) && n2.eq(two())) {
 			return p
 				.fromPattern('(a1*sin((a3^(1/2)*t)/(a2^(1/2))))/(2*a2^(1/2)*a3^(3/2))')
 				.minus(p.fromPattern('(a1*t*cos((a3^(1/2)*t)/(a2^(1/2))))/(2*a2*a3)'));
@@ -51,7 +52,7 @@ const ilaplaceTable: TableEntries = {
 	'(a1*x1^n1)/((a2*x1^n2+a3)^n3)': p => {
 		const { n1, n2, n3 } = p.references;
 
-		if (!n2.eq(2)) {
+		if (!n2.eq(two())) {
 			return undefined;
 		}
 
@@ -60,12 +61,12 @@ const ilaplaceTable: TableEntries = {
 				return p.fromPattern('(a1*cos((a3^(1/2)*t)/(a2^(1/2))))/a2');
 			}
 
-			if (n3.eq(2)) {
+			if (n3.eq(two())) {
 				return p.fromPattern('(a1*t*sin((a3^(1/2)*t)/(a2^(1/2))))/(2*a2^(3/2)*a3^(1/2))');
 			}
 		}
 
-		if (n1.eq(2) && n3.eq(2)) {
+		if (n1.eq(two()) && n3.eq(two())) {
 			return p
 				.fromPattern('(a1*sin((a3^(1/2)*t)/(a2^(1/2))))/(2*a2^(1/2)*a3^(1/2))')
 				.plus(p.fromPattern('(a1*t*cos((a3^(1/2)*t)/(a2^(1/2))))/(2*a2)'));
@@ -78,7 +79,7 @@ const ilaplaceTable: TableEntries = {
 	'a1/((a2*(a3*x1^n1+a4)^n2+a5)^n3)': p => {
 		const { n1, n2, n3, a5 } = p.references;
 
-		if (!n1.isOne() || !n2.eq(2)) {
+		if (!n1.isOne() || !n2.eq(two())) {
 			return undefined;
 		}
 
@@ -90,7 +91,7 @@ const ilaplaceTable: TableEntries = {
 				);
 			}
 
-			if (n3.eq(2)) {
+			if (n3.eq(two())) {
 				return p.fromPattern(
 					'(a1*e^((-a4/a3)*t)*((((-a5)^(1/2))*t*cosh((((-a5)^(1/2))*t)/(a2^(1/2)*a3)))/(a2^(1/2)*a3)-sinh((((-a5)^(1/2))*t)/(a2^(1/2)*a3))))/(2*a2^(1/2)*a3*((-a5)^(3/2)))'
 				);
@@ -106,7 +107,7 @@ const ilaplaceTable: TableEntries = {
 			);
 		}
 
-		if (n3.eq(2)) {
+		if (n3.eq(two())) {
 			return p.fromPattern(
 				'(a1*e^((-a4/a3)*t)*(sin((a5^(1/2)*t)/(a2^(1/2)*a3))-(a5^(1/2)*t*cos((a5^(1/2)*t)/(a2^(1/2)*a3)))/(a2^(1/2)*a3)))/(2*a2^(1/2)*a3*a5^(3/2))'
 			);
@@ -125,7 +126,7 @@ const ilaplaceTable: TableEntries = {
 	'(a1*((a6*x1^n4+a7)^n5))/((a2*(a3*x1^n1+a4)^n2+a5)^n3)': p => {
 		const { n1, n2, n3, n4, n5, a3, a4, a5, a6, a7 } = p.references;
 
-		if (!n1.isOne() || !n2.eq(2) || !n4.isOne() || !n5.isOne()) {
+		if (!n1.isOne() || !n2.eq(two()) || !n4.isOne() || !n5.isOne()) {
 			return undefined;
 		}
 
@@ -142,7 +143,7 @@ const ilaplaceTable: TableEntries = {
 				);
 			}
 
-			if (n3.eq(2)) {
+			if (n3.eq(two())) {
 				return p.fromPattern(
 					'(a1*a6*t*e^((-a4/a3)*t)*sinh((((-a5)^(1/2))*t)/(a2^(1/2)*a3)))/(2*a2^(3/2)*a3^3*((-a5)^(1/2)))'
 				);
@@ -158,7 +159,7 @@ const ilaplaceTable: TableEntries = {
 			);
 		}
 
-		if (n3.eq(2)) {
+		if (n3.eq(two())) {
 			return p.fromPattern(
 				'(a1*a6*t*e^((-a4/a3)*t)*sin((a5^(1/2)*t)/(a2^(1/2)*a3)))/(2*a2^(3/2)*a3^3*a5^(1/2))'
 			);
@@ -170,7 +171,7 @@ const ilaplaceTable: TableEntries = {
 	'(a1*(a6*x1^n4+a7)^n5)/((a2*(a3*x1^n1+a4)^n2+a5)^n3)': p => {
 		const { n1, n2, n3, n4, n5, a3, a4, a5, a6, a7 } = p.references;
 
-		if (!n1.isOne() || !n2.eq(2) || !n3.eq(2) || !n4.isOne() || !n5.eq(2)) {
+		if (!n1.isOne() || !n2.eq(two()) || !n3.eq(two()) || !n4.isOne() || !n5.eq(two())) {
 			return undefined;
 		}
 
@@ -195,7 +196,7 @@ const ilaplaceTable: TableEntries = {
 	'a1/(a2*(a3*x1^n1+a4)^n2-a5)': p => {
 		const { n1, n2 } = p.references;
 
-		if (!n1.isOne() || !n2.eq(2)) {
+		if (!n1.isOne() || !n2.eq(two())) {
 			return undefined;
 		}
 
@@ -208,7 +209,7 @@ const ilaplaceTable: TableEntries = {
 	'(a1*(a6*x1^n3+a7)^n4)/(a2*(a3*x1^n1+a4)^n2-a5)': p => {
 		const { n1, n2, n3, n4 } = p.references;
 
-		if (!n1.isOne() || !n2.eq(2) || !n3.isOne() || !n4.isOne()) {
+		if (!n1.isOne() || !n2.eq(two()) || !n3.isOne() || !n4.isOne()) {
 			return undefined;
 		}
 
@@ -219,7 +220,7 @@ const ilaplaceTable: TableEntries = {
 	'a1/((a2*(a3*x1^n1+a4)^n2-a5)^n3)': p => {
 		const { n1, n2, n3 } = p.references;
 
-		if (!n1.isOne() || !n2.eq(2) || !n3.eq(2)) {
+		if (!n1.isOne() || !n2.eq(two()) || !n3.eq(two())) {
 			return undefined;
 		}
 
@@ -232,7 +233,7 @@ const ilaplaceTable: TableEntries = {
 	'(a1*(a6*x1^n3+a7)^n4)/((a2*(a3*x1^n1+a4)^n2-a5)^n5)': p => {
 		const { n1, n2, n3, n4, n5 } = p.references;
 
-		if (!n1.isOne() || !n2.eq(2) || !n3.isOne() || !n4.isOne() || !n5.eq(2)) {
+		if (!n1.isOne() || !n2.eq(two()) || !n3.isOne() || !n4.isOne() || !n5.eq(two())) {
 			return undefined;
 		}
 
@@ -244,7 +245,7 @@ const ilaplaceTable: TableEntries = {
 	'(a1*((a2*(a3*x1^n1+a4)^n2+a5)^n3))/((a6*(a7*x1^n4+a8)^n5+a9)^n6)': p => {
 		const { n1, n2, n3, n4, n5, n6, _a2, a3, a4, _a6, a7, a8, _a9 } = p.references;
 
-		if (!n1.isOne() || !n2.eq(2) || !n3.isOne() || !n4.isOne() || !n5.eq(2) || !n6.eq(2)) {
+		if (!n1.isOne() || !n2.eq(two()) || !n3.isOne() || !n4.isOne() || !n5.eq(two()) || !n6.eq(two())) {
 			return undefined;
 		}
 

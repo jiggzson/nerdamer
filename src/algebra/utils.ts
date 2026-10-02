@@ -1,10 +1,10 @@
 import { Expression } from '../core/classes/expression/Expression';
-import { zero } from '../core/classes/expression/shortcuts';
+import { four, two, zero } from '../core/classes/expression/shortcuts';
 import { message, UnexpectedInputError } from '../core/errors';
 
 import type { ExpressionInput } from '../core/types';
 
-/** Components of a quadratic rewritten by {@link sqcomp}. */
+/** Components of a quadratic rewritten in completed-square form. */
 export interface CompleteSquareResult {
 	/** Original quadratic coefficient. */
 	a: Expression;
@@ -60,13 +60,13 @@ export function sqcomp(
 	const k0 = c.hasPower(0) ? c.getPower(0) : zero();
 
 	// h = b / (2a)
-	const h = b.div(a.times(2));
+	const h = b.div(a.times(two()));
 	// k = c - b² / (4a)
-	const k = k0.minus(b.pow(2).div(a.times(4)));
+	const k = k0.minus(b.pow(two()).div(a.times(four())));
 
 	// Build a*(variable + h)^2 + k
 	const x = Expression.create(variable);
-	const expression = a.times(x.plus(h).pow(2)).plus(k);
+	const expression = a.times(x.plus(h).pow(two())).plus(k);
 
 	return { a, h, k, variable, expression };
 }

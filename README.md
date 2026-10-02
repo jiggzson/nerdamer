@@ -4,15 +4,15 @@ Nerdamer is a symbolic mathematics library and computer algebra system for JavaS
 
 Nerdamer 2.0 is a TypeScript rewrite of Nerdamer. The familiar string-based API remains available, while the package also exposes typed modules for direct use of the symbolic engine, algebra, calculus, solving, structures, assumptions, parser APIs, and advanced algorithms.
 
-This branch prepares `2.0.0-rc.2`.
+This branch prepares `2.0.0`.
 
 ## Install
 
 ```bash
-npm install nerdamer@next
+npm install nerdamer
 ```
 
-The release candidate is published under npm's `next` tag until the final 2.0 release.
+Nerdamer 2.0 is published under npm's `latest` tag.
 
 ## Quick start
 
@@ -307,7 +307,13 @@ Build the parser-only browser bundle:
 npm run build:parser
 ```
 
-The webpack build also accepts a language selection (`eng`, `spa`, `fra`, `deu`, `por`, `ita`, `nld`, or `all`) for browser bundles. English is the default.
+Browser bundles include English by default. Additional error-message catalogs can be selected with a comma-separated language list:
+
+```bash
+npx webpack --mode=production --env target=full --env language=spa,fra
+```
+
+The supported codes are `eng`, `spa`, `fra`, `deu`, `por`, `ita`, and `nld`. English is always available. The first selected non-English language becomes active when the bundle loads; the remaining selected catalogs are available for runtime switching. Duplicate codes are ignored. Use `--env language=all` to include every translated catalog. `all` cannot be combined with individual language codes.
 
 Before publishing, the package runs type checking, tests, coverage, both browser builds, parser documentation generation, TypeDoc validation, and packed-package validation through `prepublishOnly`.
 
@@ -318,7 +324,7 @@ Nerdamer 2.0 keeps much of the familiar expression-oriented API, but it is a new
 - the old `Algebra`, `Calculus`, `Solve`, and `Extra` side-effect imports are replaced by the complete package and supported module entry points;
 - the third and fourth arguments to `nerdamer(...)` are gone;
 - global parsed-expression history is gone;
-- parser results can be structured Nerdamer entities instead of always being wrapped as an `Expression`;
+- parser results can be structured Nerdamer entities instead of always being wrapped in a compatibility `Expression`;
 - system-solving results use `Vector`/`Dictionary` structures;
 - lower-level 1.x extension hooks such as `getCore()` and `register()` are not restored;
 - several compatibility functions were restored explicitly rather than by exposing every parser function on the root object;

@@ -1,10 +1,11 @@
+import { loadMathFunctions } from '../math/dispatch';
+
 import { loadAssumptionFunctions } from './classes/assumption/dispatch';
 import { loadMatrixFunctions } from './classes/matrix/dispatch';
-import { loadPolynomialFunctions } from './classes/polynomial/dispatch';
 import { loadScriptingFunctions } from './classes/parser/scripting/dispatch';
+import { loadPolynomialFunctions } from './classes/polynomial/dispatch';
 import { loadVectorFunctions } from './classes/vector/dispatch';
 import { loadComplexFunctions } from './functions/complex.dispatch';
-import { loadMathFunctions } from '../math/dispatch';
 
 /**
  * Registers the function surface supplied by the parser package.

@@ -1,4 +1,5 @@
 import { assertPlainVariableAndGetString } from '../core/classes/expression/utils';
+
 import { sqcomp } from './utils';
 
 import type { Expression } from '../core/classes/expression/Expression';

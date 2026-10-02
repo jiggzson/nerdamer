@@ -12,12 +12,6 @@ import type Decimal from 'decimal.js';
 export type Operation = (a: ParserEntity, b?: ParserEntity) => ParserEntity;
 
 /**
- * The comma operation returns both operands so the parser can place them back
- * on the output stack as separate values.
- */
-export type CommaOperation = (a: ParserStackValue, b: ParserStackValue) => ParserStackValue[];
-
-/**
  * The type used to defined a prefix for the parser
  */
 export type PreFixFunction = (a: ParserEntity) => ParserEntity;

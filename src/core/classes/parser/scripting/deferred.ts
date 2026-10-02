@@ -1,3 +1,4 @@
+import { message, UnexpectedDataType } from '../../../errors';
 import { Collection } from '../../collection/Collection';
 import { Dictionary } from '../../dictionary/Dictionary';
 import { Expression } from '../../expression/Expression';
@@ -5,8 +6,8 @@ import { one, zero } from '../../expression/shortcuts';
 import { Matrix } from '../../matrix/Matrix';
 import { ValuesSet } from '../../valuesSet/ValuesSet';
 import { Vector } from '../../vector/Vector';
-import { message, UnexpectedDataType } from '../../../errors';
 import { dataTypes } from '../constants';
+
 import {
 	FOR,
 	isInsideSymbolicFunction,
@@ -15,8 +16,8 @@ import {
 } from './controlFlow';
 import { LET } from './scope';
 
-import type { DeferredFunctionArgument } from '../types';
 import type { ParserEntity } from '../../../types';
+import type { DeferredFunctionArgument } from '../types';
 
 /** Iterates parser containers while keeping iteration variables local to each body call. */
 export function each(

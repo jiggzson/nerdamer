@@ -424,7 +424,7 @@ function solveLinearSystem(A: Expression[][], b: Expression[]): Expression[] | u
 		if (pivot === -1) {
 			continue;
 		}
-		if (!aug.elements[i][pivot].eq('1')) {
+		if (!aug.elements[i][pivot].eq(one())) {
 			return undefined;
 		}
 		if (pivotCols.has(pivot)) {

@@ -1,5 +1,5 @@
 import { Expression } from '../../core/classes/expression/Expression';
-import { five, four, six, three, two, zero } from '../../core/classes/expression/shortcuts';
+import { five, four, half, six, three, two, zero } from '../../core/classes/expression/shortcuts';
 import { LookupTable, type TableEntries } from '../../core/classes/lookupTable/LookupTable';
 import { Si, Ci, Ei } from '../../math/math';
 
@@ -439,7 +439,7 @@ const hyperbolicTrigTable: TableEntries = {
 		if (p.get('n1').isOne()) {
 			if (p.get('n2').isOne()) {
 				return p.fromPattern('(a1*atan(sinh(a2*x1)))/a2');
-			} else if (p.get('n2').eq(2)) {
+			} else if (p.get('n2').eq(two())) {
 				return p.fromPattern('(a1*tanh(a2*x1))/a2');
 			}
 		}
@@ -449,7 +449,7 @@ const hyperbolicTrigTable: TableEntries = {
 		if (p.get('n1').isOne()) {
 			if (p.get('n2').isOne()) {
 				return p.fromPattern('(a1*log(tanh((a2*x1)/2)))/a2');
-			} else if (p.get('n2').eq(2)) {
+			} else if (p.get('n2').eq(two())) {
 				return p.fromPattern('-(a1*coth(a2*x1))/a2');
 			}
 		}
@@ -496,7 +496,7 @@ const hyperbolicTrigTable: TableEntries = {
 		if (p.get('n1').isOne() && p.get('n2').isOne()) {
 			if (p.get('n3').isOne()) {
 				return p.fromPattern('(a1*atan(sinh(a2*(a3*x1+a4))))/(a2*a3)');
-			} else if (p.get('n3').eq(2)) {
+			} else if (p.get('n3').eq(two())) {
 				return p.fromPattern('(a1*tanh(a2*(a3*x1+a4)))/(a2*a3)');
 			}
 		}
@@ -507,7 +507,7 @@ const hyperbolicTrigTable: TableEntries = {
 		if (p.get('n1').isOne() && p.get('n2').isOne()) {
 			if (p.get('n3').isOne()) {
 				return p.fromPattern('(a1*log(tanh((a2*(a3*x1+a4))/2)))/(a2*a3)');
-			} else if (p.get('n3').eq(2)) {
+			} else if (p.get('n3').eq(two())) {
 				return p.fromPattern('-(a1*coth(a2*(a3*x1+a4)))/(a2*a3)');
 			}
 		}
@@ -587,7 +587,7 @@ const hyperbolicTrigTable: TableEntries = {
 				return p.fromPattern('-(a1*sech(a2*x1)^n2)/(a2*n2)');
 			}
 
-			if (n2.eq(2)) {
+			if (n2.eq(two())) {
 				return p.fromPattern('(a1*tanh(a2*x1)^(n4+1))/(a2*(n4+1))');
 			}
 
@@ -617,7 +617,7 @@ const hyperbolicTrigTable: TableEntries = {
 				return p.fromPattern('-(a1*csch(a2*x1)^n4)/(a2*n4)');
 			}
 
-			if (n4.eq(2)) {
+			if (n4.eq(two())) {
 				return p.fromPattern('-(a1*coth(a2*x1)^(n2+1))/(a2*(n2+1))');
 			}
 
@@ -932,7 +932,7 @@ const specialFunctionTable: TableEntries = {
 const knownIntegralsTable: TableEntries = {
 	// sqrt(a-b*x^2)
 	'a1*(-a2*x1^n1+a3)^n2': p => {
-		if (p.get('n1').eq(2) && p.get('n2').isHalf()) {
+		if (p.get('n1').eq(two()) && p.get('n2').isHalf()) {
 			return p.fromPattern(
 				'(a1*x1*(-a2*x1^2+a3)^(1/2))/2+(a1*a3*asin((a2^(1/2)*x1)/(a3^(1/2))))/(2*a2^(1/2))'
 			);
@@ -941,46 +941,46 @@ const knownIntegralsTable: TableEntries = {
 
 	// diff(atanh(x)) and diff(asin(x))
 	'a1/((-a2*x1^n1+a3)^n2)': p => {
-		if (p.get('n1').eq(2) && p.get('n2').isOne()) {
+		if (p.get('n1').eq(two()) && p.get('n2').isOne()) {
 			return p.fromPattern('(a1/(a2^(1/2)*a3^(1/2)))*atanh((a2^(1/2)*x1)/(a3^(1/2)))');
-		} else if (p.get('n1').eq(2) && p.get('n2').isHalf()) {
+		} else if (p.get('n1').eq(two()) && p.get('n2').isHalf()) {
 			return p.fromPattern('(a1/a2^(1/2))*asin((a2^(1/2)*x1)/(a3^(1/2)))');
 		}
 	},
 
 	// diff(acos(x))
 	'-a1/((-a2*x1^n1+a3)^n2)': p => {
-		if (p.get('n1').eq(2) && p.get('n2').isHalf()) {
+		if (p.get('n1').eq(two()) && p.get('n2').isHalf()) {
 			return p.fromPattern('(a1/a2^(1/2))*acos((a2^(1/2)*x1)/(a3^(1/2)))');
 		}
 	},
 
 	// diff(atan(x)) and diff(asinh(x))
 	'a1/((a2*x1^n1+a3)^n2)': p => {
-		if (p.get('n1').eq(2) && p.get('n2').isOne()) {
+		if (p.get('n1').eq(two()) && p.get('n2').isOne()) {
 			return p.fromPattern('(a1/(a2^(1/2)*a3^(1/2)))*atan((a2^(1/2)*x1)/(a3^(1/2)))');
-		} else if (p.get('n1').eq(2) && p.get('n2').isHalf()) {
+		} else if (p.get('n1').eq(two()) && p.get('n2').isHalf()) {
 			return p.fromPattern('(a1/a2^(1/2))*asinh((a2^(1/2)*x1)/(a3^(1/2)))');
 		}
 	},
 
 	// diff(acot(x))
 	'-a1/((a2*x1^n1+a3)^n2)': p => {
-		if (p.get('n1').eq(2) && p.get('n2').isOne()) {
+		if (p.get('n1').eq(two()) && p.get('n2').isOne()) {
 			return p.fromPattern('(a1/(a2^(1/2)*a3^(1/2)))*acot((a2^(1/2)*x1)/(a3^(1/2)))');
 		}
 	},
 
 	// diff(asec(x))
 	'a1/(x1^n1*(-a2/x1^n2+a3)^n3)': p => {
-		if (p.get('n1').isOne() && p.get('n2').eq(2) && p.get('n3').isHalf()) {
+		if (p.get('n1').isOne() && p.get('n2').eq(two()) && p.get('n3').isHalf()) {
 			return p.fromPattern('(a1/a3^(1/2))*asec((a3^(1/2)*x1)/(a2^(1/2)))');
 		}
 	},
 
 	// diff(acsc(x))
 	'-a1/(x1^n1*(-a2/x1^n2+a3)^n3)': p => {
-		if (p.get('n1').isOne() && p.get('n2').eq(2) && p.get('n3').isHalf()) {
+		if (p.get('n1').isOne() && p.get('n2').eq(two()) && p.get('n3').isHalf()) {
 			return p.fromPattern('(a1/a3^(1/2))*acsc((a3^(1/2)*x1)/(a2^(1/2)))');
 		}
 	},
@@ -989,7 +989,7 @@ const knownIntegralsTable: TableEntries = {
 	// -1/(x*sqrt(1+1/x^2)) -> -acsch(x^-1)
 	// after constant stripping: 1/(x*sqrt(1+1/x^2))
 	'a1/(x1^n1*(a2/x1^n2+a3)^n3)': p => {
-		if (p.get('n1').isOne() && p.get('n2').eq(2) && p.get('n3').eq(1 / 2)) {
+		if (p.get('n1').isOne() && p.get('n2').eq(two()) && p.get('n3').eq(half())) {
 			return p.fromPattern('a1*acsch((sqrt(a2/a3))/x1)/sqrt(a2*a3)');
 		}
 	},

@@ -419,8 +419,8 @@ export function tan(x: ExpressionInput): Expression {
 		} else if (Settings.EVALUATE && x.isNUM()) {
 			retval = Expression.Number(x.getMultiplier().toDecimal().tan());
 		} else if (Settings.EVALUATE && x.isComplex()) {
-			const dblRe = x.realPart().times(2);
-			const dblIm = x.imagPart().times(2);
+			const dblRe = x.realPart().times(two());
+			const dblIm = x.imagPart().times(two());
 			const d = cos(dblRe).plus(cosh(dblIm));
 			retval = sin(dblRe).div(d).plus(sinh(dblIm).div(d).i());
 		} else {
@@ -631,7 +631,7 @@ export function acos(x: ExpressionInput): Expression {
 
 	if (Settings.EVALUATE && x.isNUM()) {
 		// Becomes complex between [-1, 1]
-		if (x.lt(-1) || x.gt(1)) {
+		if (x.lt(minusOne()) || x.gt(one())) {
 			const sgn = x.sign();
 			const halfPi = Expression.Pi().div(two());
 			let asinX = asin(x.abs());
@@ -1294,7 +1294,7 @@ export function acosh(x: ExpressionInput) {
 		// acosh(0) = i*pi/2
 		retval = Expression.Pi().div(two()).times(Expression.Img());
 	} else if (Settings.EVALUATE) {
-		if (x.isComplex() || x.lt('1')) {
+		if (x.isComplex() || x.lt(one())) {
 			const a = sqrt(x.plus(one()));
 			const b = sqrt(x.minus(one()));
 			const c = x.plus(a.times(b));

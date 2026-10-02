@@ -309,6 +309,19 @@ describe('Public compatibility entry points', () => {
 		expect(nerdamer('legacy_api_test_constant').text()).toEqual('legacy_api_test_constant');
 	});
 
+	it('exposes active assumptions through the root API without exposing the registry', () => {
+		nerdamer.assume('x>0');
+		nerdamer.assume('y=9');
+
+		const assumptions = nerdamer.getAssumptions();
+
+		expect(assumptions.get('x')?.toString()).toBe('(0, Infinity)');
+		expect(assumptions.get('y')?.toString()).toBe('[9, 9]');
+
+		assumptions.delete('x');
+		expect(nerdamer.getAssumptions().has('x')).toBe(true);
+	});
+
 	it('keeps compatibility settings and known-value entry points available', () => {
 		const first = 'legacy_api_test_var';
 		const second = 'legacy_api_test_var_2';

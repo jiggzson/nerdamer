@@ -2,7 +2,7 @@ import { partfrac } from '../../algebra/partfrac';
 import { sqcomp } from '../../algebra/utils';
 import { Expression } from '../../core/classes/expression/Expression';
 import { constantsFreeProduct } from '../../core/classes/expression/products';
-import { zero } from '../../core/classes/expression/shortcuts';
+import { two, zero } from '../../core/classes/expression/shortcuts';
 import { assertPlainVariableAndGetString } from '../../core/classes/expression/utils';
 import { HEAVISIDE, ILAPLACE } from '../../core/classes/parser/constants';
 import { Pattern } from '../../core/converters/Pattern';
@@ -122,7 +122,7 @@ export function ilaplace(
 					den.isSum() &&
 					den
 						.elementsArray()
-						.some(term => term.getPower().eq(2) && term.getBase().isSum());
+						.some(term => term.getPower().eq(two()) && term.getBase().isSum());
 				if (!h.isZero() && !hasShiftedSquare) {
 					const constant = numCoeffs.hasPower(0) ? numCoeffs.getPower(0) : zero();
 					const linear = numCoeffs.hasPower(1) ? numCoeffs.getPower(1) : zero();

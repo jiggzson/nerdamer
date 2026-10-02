@@ -165,6 +165,15 @@ export function forgetAssumptionFor(x: Expression | string): void {
  * @param x - Plain variable expression or variable name.
  * @returns The registered interval, or `undefined` when no assumption is available.
  */
+/**
+ * Returns a snapshot of all currently registered assumptions.
+ *
+ * Changing the returned Map does not change Nerdamer's active assumptions.
+ */
+export function getAssumptions(): Map<string, Assumption> {
+	return new Map(ASSUMPTIONS);
+}
+
 export function getAssumptionFor(x: Expression | string): Assumption | undefined {
 	let symbol: string | undefined;
 

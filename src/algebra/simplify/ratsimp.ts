@@ -1,5 +1,5 @@
 import { Expression } from '../../core/classes/expression/Expression';
-import { one } from '../../core/classes/expression/shortcuts';
+import { one, zero } from '../../core/classes/expression/shortcuts';
 import { Polynomial } from '../../core/classes/polynomial/Polynomial';
 import { divide } from '../../core/classes/polynomial/utils';
 import { toCommonDenominator } from '../../core/functions/rationalNormalization';
@@ -77,7 +77,7 @@ export function simplifyRadicals(x: Expression) {
 				// Principal radicals can be combined when both radicands are known nonnegative.
 				// Reciprocals still require a strictly signed base because a zero denominator
 				// cannot be admitted by the sign proof for a negative power.
-				if (!u.isComplex() && !v.isComplex() && u.gte(0) && v.gte(0)) {
+				if (!u.isComplex() && !v.isComplex() && u.gte(zero()) && v.gte(zero())) {
 					const multiplier = a.getMultiplier().times(b.getMultiplier());
 
 					if (u.isNUM() && v.isNUM()) {

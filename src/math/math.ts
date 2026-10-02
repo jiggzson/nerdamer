@@ -4,7 +4,6 @@ import { getAssumptionFor, hasAssumptions } from '../core/classes/assumption/ass
 import { Expression } from '../core/classes/expression/Expression';
 import { four, half, one, third, two, zero } from '../core/classes/expression/shortcuts';
 import {
-	assertPlainVariableAndGetString,
 	getNumericOrAssumedValue,
 } from '../core/classes/expression/utils';
 import { Matrix } from '../core/classes/matrix/Matrix';
@@ -27,7 +26,6 @@ import {
 	CHI,
 	CI,
 	CONTAINS,
-	DEFINT,
 	EI,
 	ERF,
 	FLOOR,
@@ -174,12 +172,12 @@ export function nthroot(x: ExpressionInput, n: ExpressionInput): Expression {
 
 /** Converts degrees to radians exactly. */
 export function radians(x: ExpressionInput): Expression {
-	return Expression.create(x).times(Expression.Pi()).div(180);
+	return Expression.create(x).times(Expression.Pi()).div(Expression.create(180));
 }
 
 /** Converts radians to degrees exactly. */
 export function degrees(x: ExpressionInput): Expression {
-	return Expression.create(x).times(180).div(Expression.Pi());
+	return Expression.create(x).times(Expression.create(180)).div(Expression.Pi());
 }
 
 /** Returns the base-10 logarithm using the ordinary logarithm implementation. */
@@ -410,7 +408,7 @@ export function doubleFactorial(x: Expression) {
 			for (let i = 1; i <= n; i++) {
 				let q = two().times(i);
 				if (!even) {
-					q = q.minus(1);
+					q = q.minus(one());
 				}
 				r = r.times(q);
 			}
@@ -426,7 +424,7 @@ export function doubleFactorial(x: Expression) {
 					.div(four())
 			);
 			const b = pi.pow(cos(pi.times(x)).minus(one()).div(four()));
-			const c = gamma(x.div(two()).plus(1));
+			const c = gamma(x.div(two()).plus(one()));
 			retval = a.times(b).times(c);
 		}
 	} else {
@@ -473,11 +471,11 @@ export function heaviside(x: Expression): Expression {
 			// x === 0: half-maximum convention
 			retval = half();
 		}
-	} else if (useAssumptions && x.gt(0)) {
+	} else if (useAssumptions && x.gt(zero())) {
 		retval = one();
-	} else if (useAssumptions && x.lt(0)) {
+	} else if (useAssumptions && x.lt(zero())) {
 		retval = zero();
-	} else if (useAssumptions && x.gte(0) && x.lte(0)) {
+	} else if (useAssumptions && x.gte(zero()) && x.lte(zero())) {
 		retval = half();
 	} else {
 		retval = Expression.toFunction(HEAVISIDE, [Expression.create(x)]);
@@ -578,7 +576,7 @@ export function dirac(x: Expression): Expression {
 		} else {
 			retval = zero();
 		}
-	} else if (useAssumptions && (x.gt(0) || x.lt(0))) {
+	} else if (useAssumptions && (x.gt(zero()) || x.lt(zero()))) {
 		retval = zero();
 	} else {
 		retval = Expression.toFunction(DIRAC, [Expression.create(x)]);
@@ -736,11 +734,11 @@ export function sign(x: ExpressionInput) {
 		retval = Expression.create((x.isNUM() ? x : x.evaluate()).getMultiplier().sign());
 	} else if (!hasAssumptions()) {
 		retval = Expression.toFunction(SGN, [x]);
-	} else if (x.gt(0)) {
+	} else if (x.gt(zero())) {
 		retval = one();
-	} else if (x.lt(0)) {
+	} else if (x.lt(zero())) {
 		retval = one().neg();
-	} else if (x.eq(0)) {
+	} else if (x.eq(zero())) {
 		retval = zero();
 	} else {
 		retval = Expression.toFunction(SGN, [x]);
@@ -852,10 +850,10 @@ export function abs(x: ExpressionInput) {
 		wrap = false;
 	} else if (x.isComplex()) {
 		retval = hypot(x.realPart(), x.imagPart());
-	} else if (useAssumptions && x.gte(0)) {
+	} else if (useAssumptions && x.gte(zero())) {
 		retval = x;
 		wrap = false;
-	} else if (useAssumptions && x.lte(0)) {
+	} else if (useAssumptions && x.lte(zero())) {
 		retval = x.neg();
 		wrap = false;
 	}
@@ -949,7 +947,7 @@ export function modInv(a: Expression, p: Expression) {
 		[r, rp] = [rp, r.minus(q.times(rp))];
 	}
 
-	if (r.gt(1)) {
+	if (r.gt(one())) {
 		throw new MathError(message('noInverse'));
 	}
 
@@ -1533,8 +1531,8 @@ export function log(x: ExpressionInput, base?: ExpressionInput, expandPrimes = f
 		baseExpr &&
 		x.isInteger() &&
 		baseExpr.isInteger() &&
-		x.gt(0) &&
-		baseExpr.gt(1)
+		x.gt(zero()) &&
+		baseExpr.gt(one())
 	) {
 		const target = x.getMultiplier().numerator;
 		const radix = baseExpr.getMultiplier().numerator;
@@ -1569,7 +1567,7 @@ export function log(x: ExpressionInput, base?: ExpressionInput, expandPrimes = f
 		} else {
 			retval = Expression.toFunction(Expression.LOG, [Expression.create(x)]);
 		}
-	} else if (!x.isComplex() && x.lt(0)) {
+	} else if (!x.isComplex() && x.lt(zero())) {
 		retval = Expression.Pi().times(Expression.Img()).plus(log(x.abs()));
 	}
 	// Handle complex numbers regardless of EVALUATE setting
@@ -1642,7 +1640,7 @@ export function log(x: ExpressionInput, base?: ExpressionInput, expandPrimes = f
 					let elementIsPositive = false;
 
 					if (element.isNUM()) {
-						elementIsPositive = element.gt(0);
+						elementIsPositive = element.gt(zero());
 					} else {
 						const elementPower = element.getPower();
 						const elementBase = element.isEXP()
@@ -1652,7 +1650,7 @@ export function log(x: ExpressionInput, base?: ExpressionInput, expandPrimes = f
 						elementIsPositive =
 							!elementPower.isComplex() &&
 							!elementBase.isComplex() &&
-							elementBase.gt(0);
+							elementBase.gt(zero());
 					}
 
 					if (!elementIsPositive) {
@@ -1675,11 +1673,11 @@ export function log(x: ExpressionInput, base?: ExpressionInput, expandPrimes = f
 
 				if (pow.isOne()) {
 					logExpr = Expression.toFunction(Expression.LOG, [mFree]);
-					mFreeIsPositive = !mFree.isComplex() && mFree.gt(0);
+					mFreeIsPositive = !mFree.isComplex() && mFree.gt(zero());
 				}
 				// log(a^p) → p*log(a) is branch-safe for a positive real base
 				// and a real exponent. Unknown-sign bases remain attached.
-				else if (!pow.isComplex() && !baseExpr.isComplex() && baseExpr.gt(0)) {
+				else if (!pow.isComplex() && !baseExpr.isComplex() && baseExpr.gt(zero())) {
 					logExpr = log(baseExpr).times(pow);
 					mFreeIsPositive = true;
 				}

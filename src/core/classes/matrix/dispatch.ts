@@ -1,10 +1,11 @@
-import { mathFunctionRegistry, systemFunction } from '../../dispatch';
-import { determinant, invert, nullspace } from './functions';
-import { Matrix } from './Matrix';
-import { imatrix } from './utils';
 import { matrix } from '../../../math/math';
+import { mathFunctionRegistry, systemFunction } from '../../dispatch';
+
+import { determinant, invert, nullspace } from './functions';
+import { imatrix } from './utils';
 
 import type { Expression } from '../expression/Expression';
+import type { Matrix } from './Matrix';
 
 export function loadMatrixFunctions() {
 	Object.assign(mathFunctionRegistry, {

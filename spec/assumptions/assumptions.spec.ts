@@ -6,6 +6,7 @@ import {
 	clearAssumptions,
 	forgetAssumptionFor,
 	getAssumptionFor,
+	getAssumptions,
 } from '../../src/core/classes/assumption/assume';
 import { Assumption } from '../../src/core/classes/assumption/Assumption';
 import { Expression } from '../../src/core/classes/expression/Expression';
@@ -230,6 +231,37 @@ describe('Global assumptions', () => {
 		expect(() => assume(ALL_SYMBOL, interval)).toThrow();
 		expect(getAssumptionFor(INDEX_VARIABLE)).toBeUndefined();
 		expect(getAssumptionFor(ALL_SYMBOL)).toBeUndefined();
+	});
+
+	it('enumerates the active assumption registry without exposing it for mutation', () => {
+		assume('x=9');
+		assume('y>0');
+		assume('z>=0');
+		assume('z<10');
+
+		const assumptions = getAssumptions();
+
+		expect([...assumptions.keys()]).toEqual(['x', 'y', 'z']);
+		expect(assumptions.get('x')?.toString()).toBe('[9, 9]');
+		expect(assumptions.get('y')?.toString()).toBe('(0, Infinity)');
+		expect(assumptions.get('z')?.toString()).toBe('[0, 10)');
+
+		assumptions.delete('x');
+		assumptions.set('y', Assumption.exactly(4));
+
+		expect(getAssumptionFor('x')?.toString()).toBe('[9, 9]');
+		expect(getAssumptionFor('y')?.toString()).toBe('(0, Infinity)');
+	});
+
+	it('updates enumeration after forgetting or clearing assumptions', () => {
+		assume('x=9');
+		assume('y>0');
+
+		forgetAssumptionFor('x');
+		expect([...getAssumptions().keys()]).toEqual(['y']);
+
+		clearAssumptions();
+		expect(getAssumptions().size).toBe(0);
 	});
 
 	it('looks up and forgets assumptions through plain-variable Expression objects', () => {

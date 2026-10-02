@@ -1,4 +1,5 @@
 import { mathFunctionRegistry, systemFunction } from '../../dispatch';
+
 import { assuming, forget } from './assume';
 
 export function loadAssumptionFunctions() {

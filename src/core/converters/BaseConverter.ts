@@ -1,4 +1,5 @@
 import { Expression } from '../classes/expression/Expression';
+import { zero } from '../classes/expression/shortcuts';
 import {
 	COLLECTION,
 	dataTypes,
@@ -341,7 +342,7 @@ export class BaseConverter {
 		const isComplexPower = pExpr.isComplex();
 		const power = isComplexPower ? pExpr : pExpr.signFree();
 		const isInverted =
-			!isComplexPower && (pExpr.lt(0) || pExpr.sign() === -1);
+			!isComplexPower && (pExpr.lt(zero()) || pExpr.sign() === -1);
 		const isNegative = input.getMultiplier().isNegative();
 		const m = input.getMultiplier().abs();
 

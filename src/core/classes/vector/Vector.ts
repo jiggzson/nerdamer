@@ -140,7 +140,7 @@ export class Vector extends MathematicalAggregate<Vector> {
 			copy.elements[i] = e.copy();
 			return e;
 		});
-		return this.copySymbolicAccessTo(copy);
+		return copy;
 	}
 
 	/**
@@ -249,22 +249,11 @@ export class Vector extends MathematicalAggregate<Vector> {
 		}
 		return true;
 	}
-	/** Evaluates a copied Vector, resolving symbolic bracket access when values are supplied. */
-	evaluate(): Vector;
-	evaluate(values: ParserValuesObject): ParserEntity;
-	evaluate(values?: ParserValuesObject): ParserEntity {
-		let retval: ParserEntity;
-		const symbolicAccess = Expression.fromSymbolicAccess(this);
-
-		if (symbolicAccess && values) {
-			retval = symbolicAccess.evaluate(values);
-		} else {
-			const copy = this.copy();
-			copy.each(e => (Expression.isExpression(e) ? e.evaluate(values) : e.evaluate()));
-			retval = copy;
-		}
-
-		return retval;
+	/** Evaluates and returns a copied Vector. */
+	evaluate(values?: ParserValuesObject): Vector {
+		const copy = this.copy();
+		copy.each(e => (Expression.isExpression(e) ? e.evaluate(values) : e.evaluate()));
+		return copy;
 	}
 
 	/** Expands a copied Vector, leaving this one unchanged. */
@@ -497,8 +486,7 @@ export class Vector extends MathematicalAggregate<Vector> {
 	}
 
 	text(): string {
-		const text = `[${this.elements.map(e => e.text()).join(', ')}]`;
-		return this.formatSymbolicAccess(text);
+		return `[${this.elements.map(e => e.text()).join(', ')}]`;
 	}
 
 	/**

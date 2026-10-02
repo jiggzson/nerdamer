@@ -1,4 +1,5 @@
 import { mathFunctionRegistry, systemFunction } from '../../dispatch';
+
 import { cross, dot } from './functions';
 
 export function loadVectorFunctions() {

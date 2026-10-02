@@ -8,7 +8,7 @@ import { imagPart, realPart, simplifyImaginary } from '../../../functions/comple
 import { toPolarFormArray } from '../../../functions/complex';
 import { Settings } from '../../../Settings';
 import { Expression } from '../../expression/Expression';
-import { minusOne, one, two } from '../../expression/shortcuts';
+import { minusOne, one, two, zero } from '../../expression/shortcuts';
 import { stripPower } from '../../expression/utils';
 import {
 	ABS,
@@ -253,7 +253,7 @@ export function power(a: Expression, b: Expression): Expression {
 				let changed = false;
 
 				for (const element of a.elementsArray()) {
-					if (!element.isComplex() && element.gt(0)) {
+					if (!element.isComplex() && element.gt(zero())) {
 						extracted = extracted.times(power(element, b));
 						changed = true;
 					} else {
@@ -555,7 +555,7 @@ export function setPower(a: Expression, b: Expression) {
 			p.isNUM() &&
 			a.isEXP() &&
 			!a.getBase().isComplex() &&
-			a.getBase().gt(0) &&
+			a.getBase().gt(zero()) &&
 			imagPart(a.getPower()).isZero()
 		) {
 			retval = power(a.getBase(), p).times(a.getMultiplier());

@@ -1,3 +1,4 @@
+import { one } from '../../core/classes/expression/shortcuts';
 import { LookupTable, type TableEntries } from '../../core/classes/lookupTable/LookupTable';
 import { diff } from '../derivative/diff';
 
@@ -12,7 +13,7 @@ const laplaceTable: TableEntries = {
 		const { n1 } = p.references;
 
 		// Reject Gamma poles: n1 = -1, -2, -3, ...
-		if (n1.isNegative() && n1.plus(1).isInteger()) {
+		if (n1.isNegative() && n1.plus(one()).isInteger()) {
 			return undefined;
 		}
 
@@ -54,7 +55,7 @@ const laplaceTable: TableEntries = {
 		}
 
 		// Reject the pole at Gamma(0), Gamma(-1), ...
-		if (n2.isNegative() && n2.plus(1).isInteger()) {
+		if (n2.isNegative() && n2.plus(one()).isInteger()) {
 			return undefined;
 		}
 

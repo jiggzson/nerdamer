@@ -701,37 +701,6 @@ export class SparsePolynomial {
 	}
 
 	/**
-	 * Multiplies by another polynomial in the same ring.
-	 *
-	 * Monomial exponents are added as bigints. The constructor combines products
-	 * that land on the same monomial and removes coefficients that cancel to zero.
-	 */
-	multiply(other: SparsePolynomial): SparsePolynomial {
-		if (this.variableCount !== other.variableCount) {
-			throw new RangeError(message('sparseMultiplicationRingMismatch'));
-		}
-		if (this.isZero() || other.isZero()) {
-			return SparsePolynomial.zero(this.variableCount);
-		}
-
-		const terms: SparsePolynomialTerm[] = [];
-		for (const left of this.termsByKey.values()) {
-			for (const right of other.termsByKey.values()) {
-				const exponents = new Array<bigint>(this.variableCount);
-				for (let variableIndex = 0; variableIndex < this.variableCount; variableIndex++) {
-					exponents[variableIndex] =
-						left.exponents[variableIndex] + right.exponents[variableIndex];
-				}
-				terms.push({
-					coefficient: left.coefficient * right.coefficient,
-					exponents,
-				});
-			}
-		}
-		return new SparsePolynomial(this.variableCount, terms);
-	}
-
-	/**
 	 * Computes the difference of two monomial-scaled polynomials in one sparse
 	 * traversal. This avoids constructing the monomial factors and multiplication
 	 * results used by fraction-free S-polynomials.
@@ -785,63 +754,34 @@ export class SparsePolynomial {
 	}
 
 	/**
-	 * Computes a scaled subtraction where the right polynomial is also multiplied
-	 * by one monomial. This avoids constructing the two scaled intermediate
-	 * polynomials used by fraction-free reduction.
+	 * Multiplies by another polynomial in the same ring.
+	 *
+	 * Monomial exponents are added as bigints. The constructor combines products
+	 * that land on the same monomial and removes coefficients that cancel to zero.
 	 */
-	scaleSubtractMonomial(
-		leftScalar: bigint,
-		other: SparsePolynomial,
-		rightScalar: bigint,
-		monomialExponents: readonly bigint[]
-	): SparsePolynomial {
+	multiply(other: SparsePolynomial): SparsePolynomial {
 		if (this.variableCount !== other.variableCount) {
-			throw new RangeError(message('sparseSubtractionRingMismatch'));
+			throw new RangeError(message('sparseMultiplicationRingMismatch'));
 		}
-		SparsePolynomial.assertExponents(this.variableCount, monomialExponents);
+		if (this.isZero() || other.isZero()) {
+			return SparsePolynomial.zero(this.variableCount);
+		}
 
-		const result = SparsePolynomial.zero(this.variableCount);
-		if (leftScalar !== 0n) {
-			for (const [key, term] of this.termsByKey) {
-				const coefficient = term.coefficient * leftScalar;
-				if (coefficient !== 0n) {
-					result.termsByKey.set(
-						key,
-						Object.freeze({ coefficient, exponents: term.exponents })
-					);
+		const terms: SparsePolynomialTerm[] = [];
+		for (const left of this.termsByKey.values()) {
+			for (const right of other.termsByKey.values()) {
+				const exponents = new Array<bigint>(this.variableCount);
+				for (let variableIndex = 0; variableIndex < this.variableCount; variableIndex++) {
+					exponents[variableIndex] =
+						left.exponents[variableIndex] + right.exponents[variableIndex];
 				}
+				terms.push({
+					coefficient: left.coefficient * right.coefficient,
+					exponents,
+				});
 			}
 		}
-
-		if (rightScalar === 0n) {
-			return result;
-		}
-
-		for (const term of other.termsByKey.values()) {
-			const exponents = new Array<bigint>(this.variableCount);
-			for (let variableIndex = 0; variableIndex < this.variableCount; variableIndex++) {
-				exponents[variableIndex] =
-					term.exponents[variableIndex] + monomialExponents[variableIndex];
-			}
-			const frozenExponents = Object.freeze(exponents);
-			const key = SparsePolynomial.keyOf(frozenExponents);
-			const existing = result.termsByKey.get(key);
-			const coefficient =
-				(existing?.coefficient ?? 0n) - term.coefficient * rightScalar;
-
-			if (coefficient === 0n) {
-				result.termsByKey.delete(key);
-			} else {
-				result.termsByKey.set(
-					key,
-					Object.freeze({
-						coefficient,
-						exponents: existing?.exponents ?? frozenExponents,
-					})
-				);
-			}
-		}
-		return result;
+		return new SparsePolynomial(this.variableCount, terms);
 	}
 
 	/**
@@ -914,6 +854,66 @@ export class SparsePolynomial {
 					exponents: term.exponents,
 				})
 			);
+		}
+		return result;
+	}
+
+	/**
+	 * Computes a scaled subtraction where the right polynomial is also multiplied
+	 * by one monomial. This avoids constructing the two scaled intermediate
+	 * polynomials used by fraction-free reduction.
+	 */
+	scaleSubtractMonomial(
+		leftScalar: bigint,
+		other: SparsePolynomial,
+		rightScalar: bigint,
+		monomialExponents: readonly bigint[]
+	): SparsePolynomial {
+		if (this.variableCount !== other.variableCount) {
+			throw new RangeError(message('sparseSubtractionRingMismatch'));
+		}
+		SparsePolynomial.assertExponents(this.variableCount, monomialExponents);
+
+		const result = SparsePolynomial.zero(this.variableCount);
+		if (leftScalar !== 0n) {
+			for (const [key, term] of this.termsByKey) {
+				const coefficient = term.coefficient * leftScalar;
+				if (coefficient !== 0n) {
+					result.termsByKey.set(
+						key,
+						Object.freeze({ coefficient, exponents: term.exponents })
+					);
+				}
+			}
+		}
+
+		if (rightScalar === 0n) {
+			return result;
+		}
+
+		for (const term of other.termsByKey.values()) {
+			const exponents = new Array<bigint>(this.variableCount);
+			for (let variableIndex = 0; variableIndex < this.variableCount; variableIndex++) {
+				exponents[variableIndex] =
+					term.exponents[variableIndex] + monomialExponents[variableIndex];
+			}
+			const frozenExponents = Object.freeze(exponents);
+			const key = SparsePolynomial.keyOf(frozenExponents);
+			const existing = result.termsByKey.get(key);
+			const coefficient =
+				(existing?.coefficient ?? 0n) - term.coefficient * rightScalar;
+
+			if (coefficient === 0n) {
+				result.termsByKey.delete(key);
+			} else {
+				result.termsByKey.set(
+					key,
+					Object.freeze({
+						coefficient,
+						exponents: existing?.exponents ?? frozenExponents,
+					})
+				);
+			}
 		}
 		return result;
 	}

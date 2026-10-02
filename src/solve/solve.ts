@@ -2,7 +2,7 @@ import { factorExpressionParts } from '../algebra/factor/factor';
 import { factorCommonPower } from '../algebra/simplify/factorCommon';
 import { toCommonDenominator } from '../algebra/simplify/ratsimp';
 import { Expression } from '../core/classes/expression/Expression';
-import { all, half, one, two, zero } from '../core/classes/expression/shortcuts';
+import { all, four, half, one, two, zero } from '../core/classes/expression/shortcuts';
 import { assertPlainVariableAndGetString } from '../core/classes/expression/utils';
 import { PI_NAME } from '../core/classes/parser/constants';
 import { Vector } from '../core/classes/vector/Vector';
@@ -65,7 +65,7 @@ function calculateSolutions(
 				// First Symbolically
 				let solutions = new SymbolicSolver(fn, variable).solve();
 
-				if (solutions.unsolved && fn.isPolynomialLike() && fn.getPower().gt(4)) {
+				if (solutions.unsolved && fn.isPolynomialLike() && fn.getPower().gt(four())) {
 					const linearPoly = fn.toLinearAndUnitMultiplier();
 					// See if you can solve the linear polynomial
 					solutions = new SymbolicSolver(linearPoly, variable).solve();

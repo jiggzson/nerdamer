@@ -350,7 +350,7 @@ function tryIntegrateSqrtQuadratic(expr: Expression, dx: string): Expression | u
 	}
 
 	if (a.lt(zero()) && k.gt(zero())) {
-		const sqrtNegA = a.times('-1').pow(half());
+		const sqrtNegA = a.times(minusOne()).pow(half());
 		const sqrtK = k.pow(half());
 		const arg = sqrtNegA.times(u).div(sqrtK);
 		return leadingTerm.plus(
@@ -491,11 +491,11 @@ function tryIntegrateLinearOverQuadratic(expr: Expression, dx: string): Expressi
 	}
 
 	const twoAxPlusB = two().times(a).times(x).plus(b);
-	const delta = four().times(a).times(c).minus(b.pow('2'));
+	const delta = four().times(a).times(c).minus(b.pow(two()));
 
 	let reciprocalIntegral: Expression;
 	if (delta.isZero()) {
-		reciprocalIntegral = two().times('-1').div(twoAxPlusB);
+		reciprocalIntegral = two().times(minusOne()).div(twoAxPlusB);
 	} else if (delta.gt(zero())) {
 		const sqrtDelta = delta.pow(half());
 		const arg = twoAxPlusB.div(sqrtDelta);
@@ -503,7 +503,7 @@ function tryIntegrateLinearOverQuadratic(expr: Expression, dx: string): Expressi
 			.div(sqrtDelta)
 			.times(Expression.toFunction(ATAN, [arg]));
 	} else if (delta.lt(zero())) {
-		const sqrtNegDelta = delta.times('-1').pow(half());
+		const sqrtNegDelta = delta.times(minusOne()).pow(half());
 		const ratio = twoAxPlusB.minus(sqrtNegDelta).div(twoAxPlusB.plus(sqrtNegDelta));
 		reciprocalIntegral = log(ratio).div(sqrtNegDelta);
 	} else {

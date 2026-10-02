@@ -8,6 +8,7 @@ interface PackageManifest {
 	version: string;
 	main?: string;
 	types?: string;
+	publishConfig?: { tag?: string };
 	repository?: { type?: string; url?: string } | string;
 	bugs?: { url?: string } | string;
 	homepage?: string;
@@ -38,7 +39,8 @@ function validateManifest(): void {
 	const bugs = typeof manifest.bugs === 'string' ? manifest.bugs : manifest.bugs?.url;
 
 	if (manifest.name !== 'nerdamer') throw new Error('Unexpected package name.');
-	if (manifest.version !== '2.0.0-rc.2') throw new Error('RC2 package version is not set.');
+	if (manifest.version !== '2.0.0') throw new Error('2.0.0 package version is not set.');
+	if (manifest.publishConfig?.tag !== 'latest') throw new Error('2.0.0 npm dist-tag is not set to latest.');
 	if (repository !== EXPECTED_REPOSITORY) throw new Error('Unexpected repository URL.');
 	if (bugs !== EXPECTED_BUGS) throw new Error('Unexpected bugs URL.');
 	if (manifest.homepage !== EXPECTED_HOMEPAGE) throw new Error('Unexpected homepage URL.');
@@ -68,11 +70,17 @@ if (!parser.Parser || !algebra.factor || !calculus.diff || !solve.solve || !stru
 function main(): void {
 	validateManifest();
 
-	for (const path of ['dist/bundle.js', 'dist/parser.js', 'output/api/core.js', 'index.d.ts', 'docs-data/parser-functions.json']) {
+	for (const path of [
+		'dist/bundle.js',
+		'output/api/core.js',
+		'index.d.ts',
+		'docs-data/parser-functions.json',
+		'docs-data/typedoc.json',
+	]) {
 		if (!existsSync(join(ROOT, path))) throw new Error(`Required package artifact is missing: ${path}`);
 	}
 
-	const temp = mkdtempSync(join(tmpdir(), 'nerdamer-rc2-'));
+	const temp = mkdtempSync(join(tmpdir(), 'nerdamer-2.0.0-'));
 	try {
 		const packed = npm(['pack', '--pack-destination', temp], ROOT)
 			.split(/\r?\n/)

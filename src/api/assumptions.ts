@@ -3,6 +3,7 @@ export {
 	clearAssumptions,
 	forgetAssumptionFor,
 	getAssumptionFor,
+	getAssumptions,
 } from '../core/classes/assumption/assume';
 /** Public process-wide assumption APIs. */
 export { Assumption } from '../core/classes/assumption/Assumption';

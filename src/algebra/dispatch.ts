@@ -1,5 +1,6 @@
-import { mathFunctionRegistry, systemFunction } from '../core/dispatch';
 import { PFACTOR, PFACTORD } from '../core/classes/parser/constants';
+import { mathFunctionRegistry, systemFunction } from '../core/dispatch';
+
 import { completeSquare } from './adapters';
 import { polyFactors, factor, pfactor, pfactord } from './factor/factor';
 import { gcd, lcm } from './gcd/gcd';

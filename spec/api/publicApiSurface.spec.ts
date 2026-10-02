@@ -87,6 +87,7 @@ const ROOT_API_PROPERTIES = [
 	'gamma_incomplete_lower',
 	'gcd',
 	'get',
+	'getAssumptions',
 	'getConstant',
 	'getOperator',
 	'getVars',
@@ -310,6 +311,7 @@ describe('public API surface', () => {
 			'clearAssumptions',
 			'forgetAssumptionFor',
 			'getAssumptionFor',
+			'getAssumptions',
 		]);
 	});
 

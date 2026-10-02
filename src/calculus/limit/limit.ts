@@ -1131,7 +1131,7 @@ function tryComposition(
 
 					if (!gPrime.isZero()) {
 						// L'Hôpital on f/(1/g): result = -f'·g²/g'
-						let lhopitalExpr = simplify(fPrime.times(g.pow(2)).div(gPrime).neg());
+						let lhopitalExpr = simplify(fPrime.times(g.pow(two())).div(gPrime).neg());
 
 						// Multiply back any remaining factors
 						for (let i = 0; i < factors.length; i++) {

@@ -1,6 +1,7 @@
 import { Expression } from '../../core/classes/expression/Expression';
 import { assertPlainVariableAndGetString } from '../../core/classes/expression/utils';
 import { DEFINT } from '../../core/classes/parser/constants';
+
 import { definiteIntegrateNative } from './defintNative';
 
 import type { ExpressionInput } from '../../core/types';

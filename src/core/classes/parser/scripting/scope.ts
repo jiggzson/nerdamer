@@ -7,6 +7,7 @@ import { ASSIGN } from '../constants';
 import { NullSignal } from '../controlFlowSignals';
 import { Parser } from '../Parser';
 import { Token } from '../Token';
+
 import { ReturnSignal, shouldConsumeLocalReturn } from './controlFlow';
 
 import type { ExpressionInput, ParserEntity } from '../../../types';
@@ -17,13 +18,13 @@ export function assign(a: ExpressionInput, b: ParserEntity | string | DeferredFu
 	if (Expression.isExpression(a) && !a.isPlainVariable()) {
 		throw new UnexpectedInputError(message('plainVariableExpected', { input: String(a) }));
 	}
-	if (RESTRICTED.includes(a.value)) throw new AssignmentError(message('restrictedVariableName', { name: a.value }));
+	if (RESTRICTED.includes(a.value)) {throw new AssignmentError(message('restrictedVariableName', { name: a.value }));}
 
 	let value: ParserEntity;
 	try {
-		if (typeof b === 'function') value = b();
-		else if (typeof b === 'string') value = Parser.parse(b);
-		else value = b;
+		if (typeof b === 'function') {value = b();}
+		else if (typeof b === 'string') {value = Parser.parse(b);}
+		else {value = b;}
 	} catch (error) {
 		if (NullSignal.isNullSignal(error)) {
 			// A no-result RHS is assignment's one special case. It is equivalent to x:x:
@@ -53,16 +54,16 @@ export function normalizeLetArguments(argumentScopes: Scope[]): Scope[] {
 		if (assignmentIndex > 0 && assignmentIndex < argumentScope.length - 1) {
 			const nameScope = new Scope(argumentScope.type, argumentScope.column);
 			const valueScope = new Scope(argumentScope.type, argumentScope.column);
-			for (let j = 0; j < assignmentIndex; j++) nameScope.push(argumentScope[j]);
-			for (let j = assignmentIndex + 1; j < argumentScope.length; j++) valueScope.push(argumentScope[j]);
+			for (let j = 0; j < assignmentIndex; j++) {nameScope.push(argumentScope[j]);}
+			for (let j = assignmentIndex + 1; j < argumentScope.length; j++) {valueScope.push(argumentScope[j]);}
 			normalizedScopes.push(nameScope, valueScope);
-		} else normalizedScopes.push(argumentScope);
+		} else {normalizedScopes.push(argumentScope);}
 	}
 	return normalizedScopes;
 }
 
 export function LET(...args: DeferredFunctionArgument[]): ParserEntity {
-	if (args.length < 3 || args.length % 2 === 0) throw new ParserError(message('letRequiresBindingsAndBody'));
+	if (args.length < 3 || args.length % 2 === 0) {throw new ParserError(message('letRequiresBindingsAndBody'));}
 	const previousValues = new Map<string, ParserEntity>();
 	const previouslyUndefined = new Set<string>();
 	const localNames: string[] = [];
@@ -76,20 +77,20 @@ export function LET(...args: DeferredFunctionArgument[]): ParserEntity {
 			const name = assertPlainVariableAndGetString(nameExpression);
 			const value = args[i + 1]({ excludeValues: localNames });
 			if (!previousValues.has(name) && !previouslyUndefined.has(name)) {
-				if (Object.prototype.hasOwnProperty.call(Parser.KNOWN_VALUES, name)) previousValues.set(name, Parser.KNOWN_VALUES[name]);
-				else previouslyUndefined.add(name);
+				if (Object.prototype.hasOwnProperty.call(Parser.KNOWN_VALUES, name)) {previousValues.set(name, Parser.KNOWN_VALUES[name]);}
+				else {previouslyUndefined.add(name);}
 			}
 			assign(nameExpression, value);
-			if (!localNames.includes(name)) localNames.push(name);
+			if (!localNames.includes(name)) {localNames.push(name);}
 		}
 		try { retval = args[args.length - 1]({ excludeValues: localNames }); }
 		catch (error) {
-			if (shouldConsumeLocalReturn() && ReturnSignal.isReturnSignal(error)) retval = error.value;
-			else throw error;
+			if (shouldConsumeLocalReturn() && ReturnSignal.isReturnSignal(error)) {retval = error.value;}
+			else {throw error;}
 		}
 	} finally {
-		for (const [name, value] of previousValues) Parser.KNOWN_VALUES[name] = value;
-		for (const name of previouslyUndefined) delete Parser.KNOWN_VALUES[name];
+		for (const [name, value] of previousValues) {Parser.KNOWN_VALUES[name] = value;}
+		for (const name of previouslyUndefined) {delete Parser.KNOWN_VALUES[name];}
 	}
 	return retval;
 }
@@ -99,11 +100,11 @@ export function unassign(x: Expression | string | DeferredFunctionArgument): Exp
 	let name: string;
 	if (typeof x === 'function') {
 		const parsed = x({ inheritValues: false, substitute: false });
-		if (!Expression.isExpression(parsed)) throw new UnexpectedInputError(message('plainVariableExpected', { input: parsed.text() }));
+		if (!Expression.isExpression(parsed)) {throw new UnexpectedInputError(message('plainVariableExpected', { input: parsed.text() }));}
 		variable = parsed;
-	} else variable = x;
-	if (Expression.isExpression(variable)) name = assertPlainVariableAndGetString(variable);
-	else name = variable;
+	} else {variable = x;}
+	if (Expression.isExpression(variable)) {name = assertPlainVariableAndGetString(variable);}
+	else {name = variable;}
 	delete Parser.KNOWN_VALUES[name];
 	return Expression.create(variable);
 }

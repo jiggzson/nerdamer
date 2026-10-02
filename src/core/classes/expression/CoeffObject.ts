@@ -3,8 +3,9 @@ import { Polynomial } from '../polynomial/Polynomial';
 import { Term } from '../polynomial/Term';
 import { Vector } from '../vector/Vector';
 
-import { Expression } from './Expression';
 import { zero } from './shortcuts';
+
+import type { Expression } from './Expression';
 
 /**
  * Stores coefficients indexed by the power or multidegree collected from an expression.

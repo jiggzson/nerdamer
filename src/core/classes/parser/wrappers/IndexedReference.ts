@@ -62,6 +62,13 @@ export class IndexedReference {
 		}
 		return this._resolved;
 	}
+	set(value: ParserEntity) {
+		if (typeof this.indices === 'string') {
+			(this.target as Dictionary).__set__(this.indices, value);
+		} else {
+			(this.target as StructuredEntityType).__set__(this.indices, value);
+		}
+	}
 	text() {
 		return this.resolve().text();
 	}

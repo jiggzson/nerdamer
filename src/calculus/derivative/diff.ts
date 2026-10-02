@@ -141,7 +141,7 @@ export function diff(
 
 		// Pull the derivate of the outside. At this point we've already performed all the required checks.
 		const m = x.getMultiplier().times(x.getPower());
-		const p = x.getPower().minus('1');
+		const p = x.getPower().minus(one());
 		const f = Expression.create(x.value);
 		const fp = p.isZero() ? m : f.pow(p).times(m);
 		// Pull the derivative of the inside

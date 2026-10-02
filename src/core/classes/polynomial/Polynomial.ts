@@ -128,7 +128,7 @@ export class Polynomial {
 			// Expand the expression but only if needed. This will be needed if the value has a bracket
 			// or if the expression has a power greater than one.
 			let expandedForCoefficients = false;
-			if (x.value.includes('(') || (x.isSum() && x.getPower().gt('1'))) {
+			if (x.value.includes('(') || (x.isSum() && x.getPower().gt(one()))) {
 				x = expand(x);
 				expandedForCoefficients = true;
 			}

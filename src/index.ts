@@ -5,14 +5,15 @@ import { gcd, lcm } from './algebra/gcd/gcd';
 import { groebner } from './algebra/groebner';
 import { partfrac } from './algebra/partfrac';
 import { simplify } from './algebra/simplify/simplify';
-import { sqcomp } from './algebra/utils';
+import { completeSquare } from './api/algebra';
+import { buildFunction } from './api/core';
 import { diff } from './calculus/derivative/diff';
 import { C, S } from './calculus/fresnel';
 import { integrate } from './calculus/integrate/integrate';
 import { ilaplace } from './calculus/laplace/ilaplace';
 import { laplace } from './calculus/laplace/laplace';
 import { limit } from './calculus/limit/limit';
-import { assume } from './core/classes/assumption/assume';
+import { assume, getAssumptions } from './core/classes/assumption/assume';
 import { Assumption } from './core/classes/assumption/Assumption';
 import { Collection } from './core/classes/collection/Collection';
 import { Dictionary } from './core/classes/dictionary/Dictionary';
@@ -39,9 +40,8 @@ import { cross, dot } from './core/classes/vector/functions';
 import { Vector } from './core/classes/vector/Vector';
 import { Converter } from './core/converters/Converter';
 import { mathFunctionRegistry } from './core/dispatch';
-import { registerNerdamerFunctions } from './core/fullFunctions';
 import * as errors from './core/errors';
-import { build } from './core/functions/build';
+import { registerNerdamerFunctions } from './core/fullFunctions';
 import {
 	arg,
 	conjugate,
@@ -812,7 +812,7 @@ nerdamer.errors = errors;
  * nerdamer('cos(x)').buildFunction(['x'])(0);			// 1
  * ```
  */
-nerdamer.buildFunction = build;
+nerdamer.buildFunction = buildFunction;
 
 /**
  * Compatibility registry of selected Nerdamer constructors and the shared Parser instance.
@@ -851,9 +851,36 @@ nerdamer.tan = tan;
 nerdamer.acos = acos;
 nerdamer.asin = asin;
 nerdamer.atan = atan;
-nerdamer.arccos = acos;
-nerdamer.arcsin = asin;
-nerdamer.arctan = atan;
+const arccos: (x: ExpressionInput) => Expression = acos;
+/**
+ * Alias for `nerdamer.acos`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.arccos('1/2').text(); // "1/3*pi"
+ * ```
+ */
+nerdamer.arccos = arccos;
+const arcsin: (x: ExpressionInput) => Expression = asin;
+/**
+ * Alias for `nerdamer.asin`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.arcsin('1/2').text(); // "1/6*pi"
+ * ```
+ */
+nerdamer.arcsin = arcsin;
+const arctan: (x: ExpressionInput) => Expression = atan;
+/**
+ * Alias for `nerdamer.atan`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.arctan(1).text(); // "1/4*pi"
+ * ```
+ */
+nerdamer.arctan = arctan;
 nerdamer.atan2 = atan2;
 nerdamer.sec = sec;
 nerdamer.csc = csc;
@@ -892,16 +919,61 @@ nerdamer.min = min;
 nerdamer.max = max;
 nerdamer.round = round;
 nerdamer.floor = floor;
-nerdamer.ceil = ceiling;
+const ceil: (x: ExpressionInput) => Expression = ceiling;
+/**
+ * Rounds a value up to the nearest integer.
+ *
+ * @example
+ * ```ts
+ * nerdamer.ceil('3.2').text(); // "4"
+ * ```
+ */
+nerdamer.ceil = ceil;
 nerdamer.trunc = trunc;
 nerdamer.hypot = hypot;
 
 // Discrete and number-theoretic functions
-nerdamer.fact = factorial;
+const fact: (x: Expression) => Expression = factorial;
+/**
+ * Alias for `nerdamer.factorial`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.fact(5).text(); // "120"
+ * ```
+ */
+nerdamer.fact = fact;
 nerdamer.factorial = factorial;
-nerdamer.dfact = doubleFactorial;
-nerdamer.dfactorial = doubleFactorial;
-nerdamer.fib = fibonacci;
+const dfact: (x: Expression) => Expression = doubleFactorial;
+/**
+ * Computes the double factorial of an expression.
+ *
+ * @example
+ * ```ts
+ * nerdamer.dfact(6).text(); // "48"
+ * ```
+ */
+nerdamer.dfact = dfact;
+const dfactorial: (x: Expression) => Expression = doubleFactorial;
+/**
+ * Computes the double factorial of an expression.
+ *
+ * @example
+ * ```ts
+ * nerdamer.dfactorial(7).text(); // "105"
+ * ```
+ */
+nerdamer.dfactorial = dfactorial;
+const fib: (x: ExpressionInput) => Expression = fibonacci;
+/**
+ * Computes the Fibonacci number for an integer index.
+ *
+ * @example
+ * ```ts
+ * nerdamer.fib(10).text(); // "55"
+ * ```
+ */
+nerdamer.fib = fib;
 nerdamer.mod = mod;
 nerdamer.modInv = modInv;
 nerdamer.isPrime = isprime;
@@ -925,7 +997,16 @@ nerdamer.heaviside = heaviside;
 nerdamer.step = step;
 nerdamer.rect = rect;
 nerdamer.tri = tri;
-nerdamer.delta = dirac;
+const delta: (x: Expression) => Expression = dirac;
+/**
+ * Evaluates the Dirac delta function when the input is known to be nonzero.
+ *
+ * @example
+ * ```ts
+ * nerdamer.delta(5).text(); // "0"
+ * ```
+ */
+nerdamer.delta = delta;
 nerdamer.Ci = Ci;
 nerdamer.Chi = Chi;
 nerdamer.Si = Si;
@@ -949,7 +1030,15 @@ nerdamer.factor = factor;
 nerdamer.pfactor = pfactor;
 nerdamer.pfactord = pfactord;
 nerdamer.polyFactors = polyFactors;
-nerdamer.completeSquare = sqcomp;
+/**
+ * Completes the square for a quadratic expression.
+ *
+ * @example
+ * ```ts
+ * nerdamer.completeSquare('x^2+6*x+1').expression.text({ sort: true }); // "(3+x)^2-8"
+ * ```
+ */
+nerdamer.completeSquare = completeSquare;
 nerdamer.gcd = gcd;
 nerdamer.lcm = lcm;
 nerdamer.partfrac = partfrac;
@@ -969,7 +1058,20 @@ nerdamer.diff = diff;
 nerdamer.integrate = integrate;
 nerdamer.laplace = laplace;
 nerdamer.ilaplace = ilaplace;
-nerdamer.ilt = ilaplace;
+const ilt: (
+	expr: ExpressionInput,
+	s: ExpressionInput,
+	t: ExpressionInput
+) => Expression = ilaplace;
+/**
+ * Alias for `nerdamer.ilaplace`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.ilt('1/(s^2+1)', 's', 't').text();
+ * ```
+ */
+nerdamer.ilt = ilt;
 nerdamer.sum = sum;
 nerdamer.product = product;
 nerdamer.limit = limit;
@@ -1005,6 +1107,13 @@ nerdamer.coeffs = coeffs;
  * directly can use the documented assumption-domain functions.
  */
 nerdamer.assume = assume;
+
+/**
+ * Returns a snapshot of all process-wide assumptions currently registered by symbol.
+ *
+ * Changing the returned Map does not change Nerdamer's active assumptions.
+ */
+nerdamer.getAssumptions = getAssumptions;
 
 // -----------------------------------------------------------------------------
 // Complete the full-package instance API

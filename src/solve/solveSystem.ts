@@ -2,7 +2,6 @@ import { Groebner } from '../algebra/algorithms/groebnerBase';
 import { toCommonDenominator } from '../algebra/simplify/ratsimp';
 import { Dictionary } from '../core/classes/dictionary/Dictionary';
 import { collectVariablesSet } from '../core/classes/expression/collect';
-import { Expression } from '../core/classes/expression/Expression';
 import { zero } from '../core/classes/expression/shortcuts';
 import {
 	expressionToIntegerSparsePolynomial,
@@ -17,6 +16,7 @@ import { solve as solveUnivariate } from './solve';
 import { normalizeSolverExpression } from './utils';
 
 import type { Equation } from '../core/classes/equation/Equation';
+import type { Expression } from '../core/classes/expression/Expression';
 import type { ExpressionInput } from '../core/types';
 
 function normalizeEquations(

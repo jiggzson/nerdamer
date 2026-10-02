@@ -30,15 +30,15 @@ import {
 	SYMBOLIC_ACCESSOR,
 	ALIASES,
 } from './constants';
+import { NullSignal } from './controlFlowSignals';
 import { _, callFunction, route } from './operations/functions';
 import { preprocess } from './preprocess';
 import { refreshOperatorSymbols, Token } from './Token';
-import { NullSignal } from './controlFlowSignals';
 import { IndexedReference } from './wrappers/IndexedReference';
 import { KeyValuePair } from './wrappers/KeyValuePair';
 
 import type { Bracket, Operator, OperatorDefinition } from '../../common/common';
-import type { ParserEntity, ExpressionInput, StructuredEntityType } from '../../types';
+import type { ParserEntity, ExpressionInput } from '../../types';
 import type { TokenBuffer } from './Token';
 import type {
 	Operation,
@@ -47,7 +47,6 @@ import type {
 	OptionsObject,
 	ParserValuesObject,
 	ParserConstants,
-	CommaOperation,
 	ParserStackValue,
 	DeferredArgumentOptions,
 	DeferredFunctionArgument,
@@ -135,6 +134,61 @@ class ExpressionParser {
 
 
 	/**
+	 * Resolves a Dictionary index through the active parser scope.
+	 *
+	 * A plain variable index is resolved directly instead of reparsing its square
+	 * scope. This matters for deferred scripting bodies, where LET installs the
+	 * current binding in KNOWN_VALUES while excluding that name from inherited
+	 * call-scoped substitutions.
+	 *
+	 * An unresolved symbolic index remains its own textual key, so d[x] still
+	 * addresses the literal key "x". Computed indices continue through the normal
+	 * parser path.
+	 */
+	private extractDictionaryKey(
+		scope: Scope,
+		values?: ParserValuesObject,
+		assertive?: boolean
+	): string {
+		if (
+			scope.length === 1 &&
+			Token.isToken(scope[0]) &&
+			scope[0].type === Token.VARIABLE
+		) {
+			const token = scope[0];
+			const scopedValue = values?.[token.value];
+
+			if (scopedValue !== undefined) {
+				if (
+					Expression.isExpression(scopedValue) ||
+					Equation.isEquation(scopedValue) ||
+					isEnumerable(scopedValue)
+				) {
+					return scopedValue.text();
+				}
+				return Expression.create(scopedValue, undefined, true).text();
+			}
+
+			if (Settings.SUBSTITUTE && token.value in this.KNOWN_VALUES) {
+				return this.KNOWN_VALUES[token.value].text();
+			}
+
+			return token.value;
+		}
+
+		const parsed = this.parseRPN(scope, values, assertive);
+		let key: ParserEntity = parsed;
+
+		if (Vector.isVector(parsed) && parsed.elements.length === 1) {
+			key = parsed.elements[0];
+		} else if (Collection.isCollection(parsed) && parsed.getElements().length === 1) {
+			key = parsed.getElements()[0];
+		}
+
+		return key.text();
+	}
+
+	/**
 	 * Converts an index scope to the zero-based indices used internally.
 	 *
 	 * Literal numeric indices are converted directly without parsing or evaluation.
@@ -205,26 +259,45 @@ class ExpressionParser {
 	}
 
 	/**
-	 * Extracts string keys from an index scope for Dictionary access.
-	 * For d[x], the scope contains a single variable token "x" → returns ["x"].
-	 * For d[myKey], returns ["myKey"].
+	 * Resolves or preserves symbolic bracket access after the target and indices have
+	 * been parsed. Vector and Matrix arity is checked here so direct bracket parsing
+	 * and reevaluation of a preserved accessor follow the same rules.
 	 */
-	private extractStringKeys(scope: Scope): string[] {
-		const keys: string[] = [];
-		for (let k = 0; k < scope.length; k++) {
-			const item = scope[k];
-			if (Scope.isScope(item)) {
-				// Nested scope — not expected for dictionary keys
-				continue;
-			}
-			if (item.type === Token.OPERATOR) {
-				// Skip comma separators
-				continue;
-			}
-			// Use the token value as the string key
-			keys.push(item.value);
+	private resolveSymbolicAccess(
+		symbolicTarget: Expression,
+		resolvedTarget: ParserEntity,
+		indices: Expression[]
+	): ParserEntity {
+		if (indices.length > 2) {
+			throw new ParserError(message('symbolicAccessMaxIndices'));
 		}
-		return keys;
+		if (Vector.isVector(resolvedTarget) && indices.length !== 1) {
+			throw new ParserError(message('symbolicVectorIndexCount'));
+		}
+		if (Matrix.isMatrix(resolvedTarget) && indices.length !== 2) {
+			if (indices.length === 1) {
+				throw new ParserError(message('symbolicMatrixRowNonScalar'));
+			}
+			throw new ParserError(message('symbolicMatrixCellIndexCount'));
+		}
+
+		if (Vector.isVector(resolvedTarget) || Matrix.isMatrix(resolvedTarget)) {
+			const numericIndices: number[] = [];
+			for (const index of indices) {
+				const numericIndex = Number(index.text());
+				if (!Number.isFinite(numericIndex)) {
+					return Expression.toAccessor(symbolicTarget, indices);
+				}
+				numericIndices.push(numericIndex - Settings.INDEX_BASE);
+			}
+			return resolvedTarget.__get__(numericIndices);
+		}
+
+		if (Expression.isExpression(resolvedTarget) && resolvedTarget.isPlainVariable()) {
+			return Expression.toAccessor(symbolicTarget, indices);
+		}
+
+		throw new ParserError(message('symbolicAccessTargetType'));
 	}
 
 	/** Creates another spelling for an existing operator without changing its action. */
@@ -446,7 +519,7 @@ class ExpressionParser {
 		try {
 			retval = this.parseRPN(rpn, values);
 		} catch (error) {
-			if (NullSignal.isNullSignal(error)) throw new NullError(message('nullValue'));
+			if (NullSignal.isNullSignal(error)) { throw new NullError(message('nullValue')); }
 			throw error;
 		}
 
@@ -482,16 +555,11 @@ class ExpressionParser {
 		const output: ParserStackValue[] = [];
 
 		const operators = this.operators;
-		// TODO: this needs to be applied at the operation level. It's somewhat clunky to apply this here.
-		// const precision = this.getPrecision();
 
 		function addToOutput(expression: ParserStackValue) {
 			if (expression === undefined) {
 				throw new ParserError(message('malformedExpression'));
 			}
-			// Keep track of the precision used to make this calculation
-			// TODO: this needs to be applied at the operation level. It's somewhat clunky to apply this here.
-			// expression.precision = expression.precision || precision;
 			output.push(expression);
 		}
 
@@ -513,6 +581,28 @@ class ExpressionParser {
 			return resolved;
 		}
 
+		const parseScope = (
+			scope: Scope,
+			scopeValues?: ParserValuesObject,
+			scopeAssertive?: boolean,
+			substitute?: boolean
+		): ParserEntity => {
+			const parse = () => this.parseRPN(scope, scopeValues, scopeAssertive);
+			return typeof substitute === 'boolean'
+				? scopedBlock('SUBSTITUTE', substitute, parse)
+				: parse();
+		};
+
+		const parseArguments = (
+			scope: Scope,
+			argumentValues?: ParserValuesObject,
+			functionAssertive?: boolean,
+			substitute?: boolean
+		): ParserEntity[] => {
+			const parsed = parseScope(scope, argumentValues, functionAssertive, substitute);
+			return Collection.isCollection(parsed) ? parsed.getElements() : [parsed];
+		};
+
 		const createDeferredArgument = (
 			getArgumentRPN: () => Scope,
 			inheritedValues?: ParserValuesObject,
@@ -532,524 +622,370 @@ class ExpressionParser {
 					}
 				}
 
-				let retval: ParserEntity;
-				if (typeof options?.substitute === 'boolean') {
-					retval = scopedBlock('SUBSTITUTE', options.substitute, () => {
-						return this.parseRPN(rpn, argumentValues, functionAssertive);
-					});
-				} else {
-					retval = this.parseRPN(rpn, argumentValues, functionAssertive);
-				}
-				return retval;
+				return parseScope(
+					rpn,
+					argumentValues,
+					functionAssertive,
+					options?.substitute
+				);
 			};
 		};
 
-		// Begin parsing of tokens
+		const handleFunction = (token: Token, argsScope: Scope): ParserStackValue => {
+			if (token.value === SYMBOLIC_ACCESSOR) {
+				const preservedArgs = parseArguments(argsScope, undefined, assertive, false);
+				const resolvedArgs = parseArguments(argsScope, values, assertive);
+
+				if (
+					preservedArgs.length < 2 ||
+					preservedArgs.length !== resolvedArgs.length ||
+					!Expression.isExpression(preservedArgs[0]) ||
+					!preservedArgs[0].isPlainVariable()
+				) {
+					throw new ParserError(message('parserMalformedSymbolicAccessor'));
+				}
+
+				const symbolicTarget = preservedArgs[0];
+				const resolvedTarget = resolvedArgs[0];
+				const symbolicIndices: Expression[] = [];
+
+				for (let j = 1; j < preservedArgs.length; j++) {
+					if (!Expression.isExpression(preservedArgs[j])) {
+						throw new ParserError(message('parserMalformedSymbolicAccessorIndex'));
+					}
+					const resolvedIndex = resolvedArgs[j];
+					if (!Expression.isExpression(resolvedIndex)) {
+						throw new ParserError(message('symbolicAccessIndexScalar'));
+					}
+					symbolicIndices.push(resolvedIndex);
+				}
+
+				return this.resolveSymbolicAccess(symbolicTarget, resolvedTarget, symbolicIndices);
+			}
+
+			if (mathFunctionRegistry[token.value]?.deferArguments) {
+				const argumentScopes: Scope[] = [];
+
+				if (argsScope.length > 0) {
+					let argumentScope = new Scope(argsScope.type, argsScope.column);
+					for (const argumentToken of argsScope) {
+						if (
+							Token.isToken(argumentToken) &&
+							argumentToken.type === Token.OPERATOR &&
+							argumentToken.value === COMMA
+						) {
+							argumentScopes.push(argumentScope);
+							argumentScope = new Scope(argsScope.type, argsScope.column);
+						} else {
+							argumentScope.push(argumentToken);
+						}
+					}
+					argumentScopes.push(argumentScope);
+				}
+
+				const normalizeArguments =
+					mathFunctionRegistry[token.value].normalizeDeferredArguments;
+				const normalizedScopes = normalizeArguments
+					? normalizeArguments(argumentScopes)
+					: argumentScopes;
+				const functionAssertive = ASSERTIVE_FUNCTIONS.includes(token.value);
+				const args = normalizedScopes.map(argumentScope =>
+					createDeferredArgument(
+						() => this.toRPN(argumentScope),
+						values,
+						functionAssertive
+					)
+				);
+
+				return callFunction(token.value, args);
+			}
+
+			if (argsScope.deferLHSResolution) {
+				const args =
+					argsScope.length > 0
+						? [...parseArguments(argsScope, undefined, assertive, false)]
+						: [];
+				args.push(Expression.Variable(token.value));
+				return new Collection(args);
+			}
+
+			return callFunction(
+				token.value,
+				parseArguments(
+					argsScope,
+					values,
+					ASSERTIVE_FUNCTIONS.includes(token.value)
+				)
+			);
+		};
+
+		const handleOperator = (token: Token, index: number): ParserStackValue | undefined => {
+			const operator = token.resolvedOperator ?? this.operators[token.value];
+			let b = output.pop()!;
+
+			if (operator.action === 'comma') {
+				addToOutput(b);
+				return undefined;
+			}
+
+			if (operator.isPostfix) {
+				b = resolveStackValue(b);
+				const fn = _[operator.action] as PostFixFunction;
+				return fn(b);
+			}
+
+			let a = output.pop()!;
+			const previousRPN = rpn[index - 1];
+			const possibleFunction = rpn[index - 2];
+
+			if (
+				token.position === -1 &&
+				operator.action === 'times' &&
+				Scope.isScope(previousRPN) &&
+				Collection.isCollection(b) &&
+				Token.isToken(possibleFunction) &&
+				possibleFunction.type === Token.VARIABLE &&
+				Expression.isExpression(a) &&
+				a.isPlainVariable()
+			) {
+				throw new ParserError(
+					message('unsupportedFunction', { function: possibleFunction.value })
+				);
+			}
+
+			if (operator.action === 'assign' && IndexedReference.isIndexedReference(a)) {
+				let assignValue = true;
+				try {
+					b = typeof b === 'function' ? b() : resolveStackValue(b);
+				} catch (error) {
+					if (NullSignal.isNullSignal(error)) {
+						assignValue = false;
+					} else {
+						throw error;
+					}
+				}
+				if (assignValue) {
+					a.set(b as ParserEntity);
+					if (a.targetName) {
+						this.KNOWN_VALUES[a.targetName] = a.target;
+					}
+				}
+				return a.target;
+			}
+
+			if (operator.deferRHSResolution) {
+				a = resolveStackValue(a);
+				if (typeof b !== 'function') {
+					throw new ParserError(message('malformedExpression'));
+				}
+				const fn = _[operator.action] as DeferredOperation;
+				return fn(a, b);
+			}
+
+			a = resolveStackValue(a);
+			b = resolveStackValue(b);
+
+			if (operator.action === 'mapTo') {
+				return new KeyValuePair(a.text(), b);
+			}
+
+			const action =
+				assertive && operator.assertiveAction
+					? operator.assertiveAction
+					: operator.action;
+			const fn = _[action] as Operation;
+
+			if (
+				a.isEnumerable ||
+				b.isEnumerable ||
+				Equation.isEquation(a) ||
+				Equation.isEquation(b)
+			) {
+				return route(a, b, operator.action);
+			}
+			return fn(a, b);
+		};
+
+		const handleScope = (token: Scope, index: number): void => {
+			const lastOutput = output[output.length - 1];
+
+			if (token.deferRHSResolution) {
+				addToOutput(createDeferredArgument(() => token, values, assertive));
+				return;
+			}
+
+			if (token.type === 'square' && token.implicitMultiply && lastOutput) {
+				if (
+					isEnumerable(lastOutput) ||
+					IndexedReference.isIndexedReference(lastOutput)
+				) {
+					const resolvedTarget =
+						IndexedReference.isIndexedReference(lastOutput)
+							? lastOutput.resolve()
+							: lastOutput;
+					const previousRPN = rpn[index - 1];
+					let targetName: string | undefined;
+
+					if (
+						Token.isToken(previousRPN) &&
+						previousRPN.type === Token.VARIABLE &&
+						!(values && previousRPN.value in values) &&
+						previousRPN.value in this.KNOWN_VALUES
+					) {
+						targetName = previousRPN.value;
+					}
+
+					const indices = Dictionary.isDictionary(resolvedTarget)
+						? this.extractDictionaryKey(token, values, assertive)
+						: this.extractIndices(token, values, assertive);
+
+					output.pop();
+					if (
+						Array.isArray(indices) &&
+						indices.length > 0 &&
+						Expression.isExpression(indices[0])
+					) {
+						const symbolicIndices = indices as Expression[];
+						if (
+							!Token.isToken(previousRPN) ||
+							previousRPN.type !== Token.VARIABLE ||
+							!(Vector.isVector(resolvedTarget) || Matrix.isMatrix(resolvedTarget))
+						) {
+							throw new ParserError(message('symbolicAccessNamedTargetRequired'));
+						}
+						addToOutput(
+							this.resolveSymbolicAccess(
+								Expression.Variable(previousRPN.value),
+								resolvedTarget,
+								symbolicIndices
+							)
+						);
+					} else {
+						addToOutput(
+							new IndexedReference(
+								resolvedTarget,
+								indices as number[] | string,
+								targetName
+							)
+						);
+					}
+					return;
+				}
+
+				if (Expression.isExpression(lastOutput) && lastOutput.isPlainVariable()) {
+					const indices = this.extractIndices(token, values, assertive);
+					if (
+						indices.length > 0 &&
+						Expression.isExpression(indices[0])
+					) {
+						output.pop();
+						addToOutput(
+							this.resolveSymbolicAccess(
+								lastOutput,
+								lastOutput,
+								indices as Expression[]
+							)
+						);
+						return;
+					}
+				}
+
+				const parsed = parseScope(token, values, assertive);
+				if (Settings.ALLOW_IMPLICIT_MULTIPLICATION) {
+					const mulFn = _['multiply'] as Operation;
+					addToOutput(mulFn(resolveStackValue(output.pop()!), parsed));
+				} else {
+					addToOutput(parsed);
+				}
+				return;
+			}
+
+			addToOutput(
+				token.deferLHSResolution
+					? parseScope(token, undefined, assertive, false)
+					: parseScope(token, values, assertive)
+			);
+		};
+
+		const resolveToken = (token: Token): ParserEntity => {
+			const constant = this.CONSTANTS[token.value];
+
+			// User-defined constants take precedence over scoped values.
+			if (typeof constant === 'string') {
+				return this.parse(constant);
+			}
+
+			if (values && token.value in values && !token.is(Token.NUMBER)) {
+				const scopedValue = values[token.value];
+				if (
+					Expression.isExpression(scopedValue) ||
+					Equation.isEquation(scopedValue) ||
+					isEnumerable(scopedValue)
+				) {
+					return scopedValue.copy();
+				}
+				return Expression.create(scopedValue, undefined, true);
+			}
+
+			if (token.value in this.KNOWN_VALUES && Settings.SUBSTITUTE) {
+				return this.KNOWN_VALUES[token.value].copy();
+			}
+
+			// Built-in constants are factories so they evaluate at the active precision.
+			if (Settings.EVALUATE && typeof constant === 'function') {
+				return this.parse(constant(), values);
+			}
+
+			if (token.type === Token.FUNCTION) {
+				return Expression.Function(token.value);
+			}
+
+			if (token.type === Token.VARIABLE) {
+				return INFINITY.includes(token.value)
+					? Expression.Inf()
+					: Expression.Variable(token.value);
+			}
+
+			return Expression.Number(token.value);
+		};
+
+		const handlePrefix = (token: Token): ParserEntity => {
+			const value = resolveStackValue(output.pop()!);
+			const prefixAction = `${operators[token.value].action}Prefix`;
+			const fn = _[prefixAction] as PreFixFunction;
+			return fn(value);
+		};
+
 		for (let i = 0; i < rpn.length; i++) {
-			// Grab the token or Scope
-			const token: Token | Scope = rpn[i];
+			const token = rpn[i];
 
 			if (Scope.isScope(token)) {
-				const lastOutput = output[output.length - 1];
+				handleScope(token, i);
+				continue;
+			}
 
-				if (token.deferRHSResolution) {
-					addToOutput(createDeferredArgument(() => token, values, assertive));
-				} else if (token.deferLHSResolution) {
-					// Left-hand targets are parsed without substitution so assignment can update a
-					// variable that already has a known value.
-					const parsed = scopedBlock('SUBSTITUTE', false, () => {
-						return this.parseRPN(token, undefined, assertive);
-					});
-					addToOutput(parsed);
+			if (token.type === Token.OPERATOR) {
+				const result = handleOperator(token, i);
+				if (result !== undefined) {
+					addToOutput(result);
 				}
-				// A square scope is a candidate for indexing or implicit multiplication ONLY
-				// when the tokenizer flagged it with implicitMultiply (meaning '[' directly
-				// followed a non-operator/non-function token). Without that flag, the scope
-				// is a standalone vector literal (e.g. in matrix([1,0],[2,3]) where commas
-				// separate the square scopes).
-				else if (token.type === 'square' && token.implicitMultiply && lastOutput) {
-					if (
-						isEnumerable(lastOutput) ||
-						IndexedReference.isIndexedReference(lastOutput)
-					) {
-						// Indexing: target[indices]
-						const resolvedTarget =
-							IndexedReference.isIndexedReference(lastOutput)
-								? lastOutput.resolve()
-								: lastOutput;
-						const previousRPN = rpn[i - 1];
-						let targetName: string | undefined;
-
-						if (
-							Token.isToken(previousRPN) &&
-							previousRPN.type === Token.VARIABLE &&
-							!(values && previousRPN.value in values) &&
-							previousRPN.value in this.KNOWN_VALUES
-						) {
-							targetName = previousRPN.value;
-						}
-
-						let indices: number[] | Expression[] | string;
-
-						if (Dictionary.isDictionary(resolvedTarget)) {
-							// Dictionary indexing: extract string keys from the index scope.
-							// d[x] → key "x"
-							const keys = this.extractStringKeys(token);
-							indices = keys[0];
-						} else {
-							// Numeric indexing for Vector, Matrix, etc.
-							indices = this.extractIndices(token, values, assertive);
-						}
-
-						output.pop();
-						if (
-							Array.isArray(indices) &&
-							indices.length > 0 &&
-							Expression.isExpression(indices[0])
-						) {
-							const symbolicIndices = indices as Expression[];
-							let symbolicTarget: Expression | undefined;
-
-							if (
-								(Vector.isVector(resolvedTarget) || Matrix.isMatrix(resolvedTarget)) &&
-								resolvedTarget.symbolicTarget
-							) {
-								symbolicTarget = resolvedTarget.symbolicTarget;
-							} else if (
-								Token.isToken(previousRPN) &&
-								previousRPN.type === Token.VARIABLE
-							) {
-								symbolicTarget = Expression.Variable(previousRPN.value);
-							}
-
-							if (
-								!symbolicTarget ||
-								!(Vector.isVector(resolvedTarget) || Matrix.isMatrix(resolvedTarget))
-							) {
-								throw new ParserError(message('symbolicAccessNamedTargetRequired'));
-							}
-							if (Vector.isVector(resolvedTarget) && symbolicIndices.length !== 1) {
-								throw new ParserError(message('symbolicVectorIndexCount'));
-							}
-							if (Matrix.isMatrix(resolvedTarget) && symbolicIndices.length !== 2) {
-								if (symbolicIndices.length === 1) {
-									throw new ParserError(message('symbolicMatrixRowNonScalar'));
-								}
-								throw new ParserError(message('symbolicMatrixCellIndexCount'));
-							}
-
-							addToOutput(
-								resolvedTarget.withSymbolicAccessor(symbolicTarget, symbolicIndices)
-							);
-						} else {
-							addToOutput(
-								new IndexedReference(
-									resolvedTarget,
-									indices as number[] | string,
-									targetName
-								)
-							);
-						}
-					} else if (Expression.isExpression(lastOutput) && lastOutput.isPlainVariable()) {
-						// An unresolved variable followed by symbolic indices cannot yet be
-						// classified from runtime type information. Preserve the access in a
-						// structured carrier; concrete bracket adjacency keeps its legacy
-						// implicit-multiplication behavior.
-						const indices = this.extractIndices(token, values, assertive);
-						if (
-							indices.length > 0 &&
-							Expression.isExpression(indices[0])
-						) {
-							const symbolicIndices = indices as Expression[];
-							if (symbolicIndices.length > 2) {
-								throw new ParserError(message('symbolicAccessMaxIndices'));
-							}
-							const carrier =
-								symbolicIndices.length === 2 ? new Matrix([]) : new Vector();
-
-							output.pop();
-							addToOutput(carrier.withSymbolicAccessor(lastOutput, symbolicIndices));
-						} else if (Settings.ALLOW_IMPLICIT_MULTIPLICATION) {
-							const indexExpr = this.parseRPN(token, values, assertive);
-							const mulFn = _['multiply'] as Operation;
-							const a = resolveStackValue(output.pop()!);
-							addToOutput(mulFn(a, indexExpr));
-						} else {
-							const parsed = this.parseRPN(token, values, assertive);
-							addToOutput(parsed);
-						}
-					} else if (token.implicitMultiply && Settings.ALLOW_IMPLICIT_MULTIPLICATION) {
-						// Implicit multiplication: x[1,2] where x is not a structured entity.
-						const indexExpr = this.parseRPN(token, values, assertive);
-						const mulFn = _['multiply'] as Operation;
-						const a = resolveStackValue(output.pop()!);
-						addToOutput(mulFn(a, indexExpr));
-					} else {
-						const parsed = this.parseRPN(token, values, assertive);
-						addToOutput(parsed);
-					}
-				} else {
-					// Non-square scope or inside parentheses or nothing on output — parse normally
-					const parsed = this.parseRPN(token, values, assertive);
-					addToOutput(parsed);
-				}
+			} else if (token.type === Token.FUNCTION) {
+				addToOutput(handleFunction(token, rpn[++i] as Scope));
+			} else if (token.type === Token.PREFIX) {
+				addToOutput(handlePrefix(token));
 			} else {
-				if (token.type === Token.OPERATOR) {
-					// Grab the operator. The action will be defined by the operation property
-					const operator = token.resolvedOperator ?? this.operators[token.value];
-
-					// Get the last element on output
-					let b = output.pop()!;
-
-					let result: ParserStackValue | ParserStackValue[];
-
-					// Comma is the only operation that passes parser stack markers through unchanged.
-					// This allows KeyValuePair markers to survive until the enclosing curly scope is
-					// converted to a Dictionary.
-					if (operator.action === 'comma') {
-						const a = output.pop()!;
-						const fn = _[operator.action] as CommaOperation;
-						result = fn(a, b);
-					}
-					// If it's a postfix operator then the operation occurs only on the previous element
-					else if (operator.isPostfix) {
-						b = resolveStackValue(b);
-						b = Expression.fromSymbolicAccess(b) ?? b;
-						const fn = _[operator.action] as PostFixFunction;
-						result = fn(b);
-					} else {
-						let a = output.pop()!;
-
-						const previousRPN = rpn[i - 1];
-						const possibleFunction = rpn[i - 2];
-
-						if (
-							token.position === -1 &&
-							operator.action === 'times' &&
-							Scope.isScope(previousRPN) &&
-							Collection.isCollection(b) &&
-							Token.isToken(possibleFunction) &&
-							possibleFunction.type === Token.VARIABLE &&
-							Expression.isExpression(a) &&
-							a.isPlainVariable()
-						) {
-							throw new ParserError(
-							message('unsupportedFunction', { function: possibleFunction.value })
-						);
-						}
-
-						// Handle indexed assignment before ordinary left-hand resolution so the
-						// reference itself remains available to the setter.
-						if (
-							operator.action === 'assign' &&
-							IndexedReference.isIndexedReference(a)
-						) {
-							let assignValue = true;
-							try {
-								b = typeof b === 'function' ? b() : resolveStackValue(b);
-							} catch (error) {
-								if (NullSignal.isNullSignal(error)) {
-									assignValue = false;
-								} else {
-									throw error;
-								}
-							}
-							if (assignValue) {
-								if (typeof a.indices === 'string') {
-									(a.target as Dictionary).__set__(a.indices, b as ParserEntity);
-								} else {
-									(a.target as StructuredEntityType).__set__(a.indices, b as ParserEntity);
-								}
-								if (a.targetName) {
-									this.KNOWN_VALUES[a.targetName] = a.target;
-								}
-							}
-							result = a.target;
-						} else if (operator.deferRHSResolution) {
-							a = resolveStackValue(a);
-							if (typeof b !== 'function') {
-								throw new ParserError(message('malformedExpression'));
-							}
-							const fn = _[operator.action] as DeferredOperation;
-							result = fn(a, b);
-						} else if (operator.deferLHSResolution) {
-							a = resolveStackValue(a);
-							b = resolveStackValue(b);
-							const fn = _[operator.action] as Operation;
-							result = fn(a, b);
-						} else if (operator.action === 'mapTo') {
-							// '=>' operator: create a key-value pair for Dictionary construction
-							// 'a' is the key (should be a variable name), 'b' is the value
-							a = resolveStackValue(a);
-							b = resolveStackValue(b);
-							const key = Expression.isExpression(a) ? a.text() : String(a.text());
-							result = new KeyValuePair(key, b);
-						} else {
-							// Resolve concrete indexed references and normalize symbolic structured
-							// access before ordinary scalar/aggregate operator routing.
-							a = resolveStackValue(a);
-							b = resolveStackValue(b);
-							a = Expression.fromSymbolicAccess(a) ?? a;
-							b = Expression.fromSymbolicAccess(b) ?? b;
-
-							const action =
-								assertive && operator.assertiveAction
-									? operator.assertiveAction
-									: operator.action;
-							const fn = _[action] as Operation;
-
-							if (
-								a.isEnumerable ||
-								b.isEnumerable ||
-								Equation.isEquation(a) ||
-								Equation.isEquation(b)
-							) {
-								// Delegate this to the router who can handle more
-								result = route(a, b, operator.action);
-							} else {
-								result = fn(a, b);
-							}
-						}
-					}
-
-					if (Array.isArray(result)) {
-						addToOutput(result[0]);
-						addToOutput(result[1]);
-					} else {
-						addToOutput(result);
-					}
-				} else if (token.type === Token.FUNCTION) {
-					// Get the next token and move along
-					const argsScope = rpn[++i] as Scope;
-
-					if (token.value === SYMBOLIC_ACCESSOR) {
-						// Preserve the original target and index expressions while resolving the
-						// same RPN scope under the active values. This avoids serializing either
-						// side back through tokenize/toRPN just to apply substitutions.
-						const preserved = scopedBlock('SUBSTITUTE', false, () => {
-							return this.parseRPN(argsScope, undefined, assertive);
-						});
-						const preservedArgs = Collection.isCollection(preserved)
-							? preserved.getElements()
-							: [preserved];
-						const resolved = this.parseRPN(argsScope, values, assertive);
-						const resolvedArgs = Collection.isCollection(resolved)
-							? resolved.getElements()
-							: [resolved];
-
-						if (
-							preservedArgs.length < 2 ||
-							preservedArgs.length !== resolvedArgs.length ||
-							!Expression.isExpression(preservedArgs[0]) ||
-							!preservedArgs[0].isPlainVariable()
-						) {
-							throw new ParserError(message('parserMalformedSymbolicAccessor'));
-						}
-
-						const symbolicTarget = preservedArgs[0];
-						const resolvedTarget = resolvedArgs[0];
-						const symbolicIndices: Expression[] = [];
-						const numericIndices: number[] = [];
-						let allResolved = true;
-
-						for (let j = 1; j < preservedArgs.length; j++) {
-							const preservedIndex = preservedArgs[j];
-							const resolvedIndex = resolvedArgs[j];
-							if (!Expression.isExpression(preservedIndex)) {
-								throw new ParserError(message('parserMalformedSymbolicAccessorIndex'));
-							}
-							if (!Expression.isExpression(resolvedIndex)) {
-								throw new ParserError(message('symbolicAccessIndexScalar'));
-							}
-
-							symbolicIndices.push(resolvedIndex);
-							const numericIndex = Number(resolvedIndex.text());
-							if (Number.isFinite(numericIndex)) {
-								numericIndices.push(numericIndex - Settings.INDEX_BASE);
-							} else {
-								allResolved = false;
-							}
-						}
-
-						if (symbolicIndices.length > 2) {
-							throw new ParserError(message('symbolicAccessMaxIndices'));
-						}
-
-						if (Vector.isVector(resolvedTarget) && symbolicIndices.length !== 1) {
-							throw new ParserError(message('symbolicVectorIndexCount'));
-						}
-						if (Matrix.isMatrix(resolvedTarget) && symbolicIndices.length !== 2) {
-							if (symbolicIndices.length === 1) {
-								throw new ParserError(message('symbolicMatrixRowNonScalar'));
-							}
-							throw new ParserError(message('symbolicMatrixCellIndexCount'));
-						}
-
-						let result: ParserEntity;
-						if ((Vector.isVector(resolvedTarget) || Matrix.isMatrix(resolvedTarget)) && allResolved) {
-							result = resolvedTarget.__get__(numericIndices);
-						} else {
-							let carrier: Vector | Matrix;
-							if (Vector.isVector(resolvedTarget) || Matrix.isMatrix(resolvedTarget)) {
-								carrier = resolvedTarget;
-							} else if (
-								Expression.isExpression(resolvedTarget) &&
-								resolvedTarget.isPlainVariable()
-							) {
-								carrier = symbolicIndices.length === 2 ? new Matrix([]) : new Vector();
-							} else {
-								throw new ParserError(message('symbolicAccessTargetType'));
-							}
-
-							result = carrier.withSymbolicAccessor(symbolicTarget, symbolicIndices);
-						}
-
-						addToOutput(result);
-					} else if (mathFunctionRegistry[token.value]?.deferArguments) {
-						// Deferred functions receive callable arguments and decide when, whether, and how
-						// often each argument is evaluated.
-						const argumentScopes: Scope[] = [];
-
-						if (argsScope.length > 0) {
-							let argumentScope = new Scope(argsScope.type, argsScope.column);
-
-							for (const argumentToken of argsScope) {
-								if (
-									Token.isToken(argumentToken) &&
-									argumentToken.type === Token.OPERATOR &&
-									argumentToken.value === COMMA
-								) {
-									argumentScopes.push(argumentScope);
-									argumentScope = new Scope(argsScope.type, argsScope.column);
-								} else {
-									argumentScope.push(argumentToken);
-								}
-							}
-							argumentScopes.push(argumentScope);
-						}
-
-						const normalizeArguments =
-							mathFunctionRegistry[token.value].normalizeDeferredArguments;
-						const normalizedScopes = normalizeArguments
-							? normalizeArguments(argumentScopes)
-							: argumentScopes;
-
-						const functionAssertive = ASSERTIVE_FUNCTIONS.includes(token.value);
-						const args = normalizedScopes.map(argumentScope => {
-							return createDeferredArgument(
-								() => this.toRPN(argumentScope),
-								values,
-								functionAssertive
-							);
-						});
-						const result = callFunction(token.value, args);
-
-						addToOutput(result);
-					} else if (argsScope.deferLHSResolution) {
-						let args: ParserEntity[] = [];
-
-						if (argsScope.length > 0) {
-							const parsed = scopedBlock('SUBSTITUTE', false, () => {
-								return this.parseRPN(argsScope, undefined, assertive);
-							});
-							args = Collection.isCollection(parsed) ? [...parsed.getElements()] : [parsed];
-						}
-
-						// Preserve the scoped values followed by their left-hand target. The operator
-						// action is responsible for interpreting that structure.
-						args.push(Expression.Variable(token.value));
-						addToOutput(new Collection(args));
-					} else {
-						// Parse it as an argument. If the value is of the token is an assertive function then parseRPN needs to
-						// know so it can modify it's behavior accordingly. This would be in the case of functions like assume where
-						// the operators assert a value rather than compare it.
-						const parsed = this.parseRPN(
-							argsScope,
-							values,
-							ASSERTIVE_FUNCTIONS.includes(token.value)
-						);
-
-						const args = Collection.isCollection(parsed) ? parsed.getElements() : [parsed];
-
-						const result = callFunction(token.value, args);
-
-						addToOutput(result);
-					}
-				} else if (token.type === Token.PREFIX) {
-					const resolved = resolveStackValue(output.pop()!);
-					const e = Expression.fromSymbolicAccess(resolved) ?? resolved;
-					const prefixAction = `${operators[token.value].action}Prefix`;
-					const fn = _[prefixAction] as PreFixFunction;
-					// TODO: Rethink. What happens when a prefix is applied to a vector
-					addToOutput(fn(e));
-				} else {
-					let expression;
-					const constant = this.CONSTANTS[token.value];
-
-					// User-defined constants are stored as strings and substitute during ordinary parsing.
-					// They take precedence over scoped values, matching the public setConstant method.
-					if (typeof constant === 'string') {
-						expression = this.parse(constant);
-					}
-					// Substitute values from the values object. A number is not considered a proper LH value.
-					else if (values && token.value in values && !token.is(Token.NUMBER)) {
-						// expression = this.parse(String(values[token.value]), values);
-						const scopedValue = values[token.value];
-						if (
-							Expression.isExpression(scopedValue) ||
-							Equation.isEquation(scopedValue) ||
-							isEnumerable(scopedValue)
-						) {
-							expression = scopedValue.copy();
-						} else {
-							expression = Expression.create(scopedValue, undefined, true);
-						}
-					} else if (token.value in this.KNOWN_VALUES && Settings.SUBSTITUTE) {
-						expression = this.KNOWN_VALUES[token.value].copy();
-					}
-					// Built-in constants are factories so they evaluate at the active precision.
-					else if (Settings.EVALUATE && typeof constant === 'function') {
-						expression = this.parse(constant(), values);
-					} else {
-						// At this point the expression type is variable or a number
-						switch (token.type) {
-							case Token.FUNCTION:
-								expression = Expression.Function(token.value);
-								break;
-							case Token.VARIABLE:
-								if (INFINITY.includes(token.value)) {
-									expression = Expression.Inf();
-								} else {
-									expression = Expression.Variable(token.value);
-								}
-
-								break;
-							default:
-								expression = Expression.Number(token.value);
-								break;
-						}
-					}
-
-					// Add it to output
-					addToOutput(expression);
-				}
+				addToOutput(resolveToken(token));
 			}
 		}
 
 		let retval: ParserEntity;
-		// Since as function args can have multiple arguments in the output
-		// the entire array gets returned. We do the same with
 		if (rpn.type === 'square') {
 			retval = new Vector(resolveStackValues(output));
 		} else if (rpn.type === 'curly') {
-			// If the output contains KeyValuePairs (from '=>' operators), build a Dictionary.
-			// Otherwise build a ValuesSet as before.
 			if (output.length > 0 && KeyValuePair.isKeyValuePair(output[0])) {
 				const dict = new Dictionary();
-				for (const item of output) {
-					if (KeyValuePair.isKeyValuePair(item)) {
-						dict.set(item.key, item.value);
-					}
+				for (const item of output as KeyValuePair[]) {
+					dict.set(item.key, item.value);
 				}
 				retval = dict;
 			} else {
@@ -1060,7 +996,6 @@ class ExpressionParser {
 		} else {
 			retval = resolveStackValue(output[0]);
 		}
-
 
 		return retval;
 	}

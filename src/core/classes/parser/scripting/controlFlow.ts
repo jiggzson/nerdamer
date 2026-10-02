@@ -69,10 +69,10 @@ export function functionBoundary(evaluate: () => ParserEntity): ParserEntity {
 	try {
 		retval = evaluate();
 	} catch (error) {
-		if (ReturnSignal.isReturnSignal(error)) retval = error.value;
-		else if (BreakSignal.isBreakSignal(error)) throw new ParserError(message('breakOutsideLoop'));
-		else if (ContinueSignal.isContinueSignal(error)) throw new ParserError(message('continueOutsideLoop'));
-		else throw error;
+		if (ReturnSignal.isReturnSignal(error)) {retval = error.value;}
+		else if (BreakSignal.isBreakSignal(error)) {throw new ParserError(message('breakOutsideLoop'));}
+		else if (ContinueSignal.isContinueSignal(error)) {throw new ParserError(message('continueOutsideLoop'));}
+		else {throw error;}
 	} finally {
 		symbolicFunctionDepth--;
 	}
@@ -84,12 +84,12 @@ export function RETURN(x: ParserEntity): never {
 }
 
 export function BREAK(): never {
-	if (loopBodyDepth === 0) throw new ParserError(message('breakOutsideLoop'));
+	if (loopBodyDepth === 0) {throw new ParserError(message('breakOutsideLoop'));}
 	throw BREAK_SIGNAL_INSTANCE;
 }
 
 export function CONTINUE(): never {
-	if (loopBodyDepth === 0) throw new ParserError(message('continueOutsideLoop'));
+	if (loopBodyDepth === 0) {throw new ParserError(message('continueOutsideLoop'));}
 	throw CONTINUE_SIGNAL_INSTANCE;
 }
 
@@ -121,7 +121,7 @@ export function NOT(value: ParserEntity): Expression {
 
 export function XOR(...args: ParserEntity[]): Expression {
 	let odd = false;
-	for (const arg of args) if (isTruthy(arg)) odd = !odd;
+	for (const arg of args) {if (isTruthy(arg)) {odd = !odd;}}
 	return odd ? one() : zero();
 }
 
@@ -130,7 +130,7 @@ export function IFERROR(expression: DeferredFunctionArgument, fallback: Deferred
 	try {
 		retval = expression();
 	} catch (error) {
-		if (error instanceof ControlFlowSignal) throw error;
+		if (error instanceof ControlFlowSignal) {throw error;}
 		retval = fallback();
 	}
 	return retval;
@@ -141,7 +141,7 @@ export function ISERROR(expression: DeferredFunctionArgument): Expression {
 	try {
 		expression();
 	} catch (error) {
-		if (error instanceof ControlFlowSignal) throw error;
+		if (error instanceof ControlFlowSignal) {throw error;}
 		retval = one();
 	}
 	return retval;
@@ -154,10 +154,10 @@ function controlFlowReturnBoundary(evaluate: () => ParserEntity): ParserEntity {
 	} catch (error) {
 		if (
 			parserReturnBoundaryDepth > 0 &&
-			symbolicFunctionDepth === 0 &&
+			shouldConsumeLocalReturn() &&
 			ReturnSignal.isReturnSignal(error)
-		) retval = error.value;
-		else throw error;
+		) {retval = error.value;}
+		else {throw error;}
 	}
 	return retval;
 }
@@ -170,9 +170,9 @@ export function IF(
 	return controlFlowReturnBoundary(() => {
 		const evaluatedCondition = condition();
 		let retval: ParserEntity;
-		if (isTruthy(evaluatedCondition)) retval = branch1();
-		else if (branch2) retval = branch2();
-		else return throwNullSignal();
+		if (isTruthy(evaluatedCondition)) {retval = branch1();}
+		else if (branch2) {retval = branch2();}
+		else {return throwNullSignal();}
 		return retval;
 	});
 }
@@ -187,7 +187,7 @@ export function WHILE(
 		let iterations = 0;
 		while (continueLoop) {
 			const evaluatedCondition = condition();
-			if (!isTruthy(evaluatedCondition)) continueLoop = false;
+			if (!isTruthy(evaluatedCondition)) {continueLoop = false;}
 			else {
 				if (iterations >= Settings.MAX_LOOP_ITERATIONS) {
 					throw new ParserError(
@@ -200,8 +200,8 @@ export function WHILE(
 				} catch (error) {
 					if (NullSignal.isNullSignal(error)) {
 						// A loop body may legitimately complete without producing a value.
-					} else if (BreakSignal.isBreakSignal(error)) continueLoop = false;
-					else if (!ContinueSignal.isContinueSignal(error)) throw error;
+					} else if (BreakSignal.isBreakSignal(error)) {continueLoop = false;}
+					else if (!ContinueSignal.isContinueSignal(error)) {throw error;}
 				} finally {
 					loopBodyDepth--;
 				}
@@ -231,7 +231,7 @@ export function FOR(
 				if (
 					ContinueSignal.isContinueSignal(error) ||
 					NullSignal.isNullSignal(error)
-				) update();
+				) {update();}
 				throw error;
 			}
 			update();
@@ -241,16 +241,16 @@ export function FOR(
 }
 
 export function BLOCK(...args: DeferredFunctionArgument[]) {
-	if (args.length === 0) return throwNullSignal();
+	if (args.length === 0) {return throwNullSignal();}
 	let retval: ParserEntity | undefined;
 	for (const arg of args) {
 		try {
 			retval = arg();
 		} catch (error) {
-			if (!NullSignal.isNullSignal(error)) throw error;
+			if (!NullSignal.isNullSignal(error)) {throw error;}
 		}
 	}
-	if (retval === undefined) return throwNullSignal();
+	if (retval === undefined) {return throwNullSignal();}
 	return retval;
 }
 
@@ -261,8 +261,8 @@ export function parserReturnBoundary(evaluate: () => ParserEntity): ParserEntity
 	try {
 		retval = evaluate();
 	} catch (error) {
-		if (consumesReturn && ReturnSignal.isReturnSignal(error)) retval = error.value;
-		else throw error;
+		if (consumesReturn && ReturnSignal.isReturnSignal(error)) {retval = error.value;}
+		else {throw error;}
 	} finally {
 		parserReturnBoundaryDepth--;
 	}

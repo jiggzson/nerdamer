@@ -10,6 +10,7 @@ import {
 import {
 	Polynomial,
 	Term,
+	completeSquare,
 	factor,
 	gcd,
 	lcm,
@@ -51,8 +52,8 @@ const EXPECTED_PACKAGE_EXPORTS = [
 	'./advanced',
 	'./debug',
 	'./docs-data/parser-functions.json',
+	'./docs-data/typedoc.json',
 	'./dist/bundle.js',
-	'./dist/parser.js',
 	'./package.json',
 ] as const;
 
@@ -74,6 +75,7 @@ describe('public package surface', () => {
 		expect(Expression.create('x+1')).toBeInstanceOf(Expression);
 		expect(Equation).toBe(nerdamer.classes.Equation);
 		expect(Rational.create('3/4')).toBeInstanceOf(Rational);
+		expect(buildFunction).toBe(nerdamer.buildFunction);
 		expect(buildFunction('x+1')(2)).toBe(3);
 		expect(new AssignmentError()).toBeInstanceOf(Error);
 	});
@@ -81,6 +83,7 @@ describe('public package surface', () => {
 	it('exports the algebra and calculus domain entry points', () => {
 		expect(Polynomial).toBe(nerdamer.classes.Polynomial);
 		expect(Term).toBeDefined();
+		expect(completeSquare).toBe(nerdamer.completeSquare);
 		expect(factor).toBe(nerdamer.factor);
 		expect(simplify).toBe(nerdamer.simplify);
 		expect(gcd).toBeDefined();

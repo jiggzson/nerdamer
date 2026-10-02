@@ -2,7 +2,7 @@ cff-version: 1.2.0
 title: "Nerdamer"
 message: "If you use this software, please cite it as below."
 type: software
-version: "2.0.0-rc.1"
+version: "2.0.0"
 url: "https://nerdamer.com"
 repository-code: "https://github.com/jiggzson/nerdamer"
 license: "Apache-2.0"

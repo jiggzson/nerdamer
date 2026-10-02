@@ -402,11 +402,11 @@ const AUTHORED_DOCUMENTATION: Record<string, AuthoredParserFunctionDocumentation
 	},
 	if: {
 		summary: 'Evaluates one of two parser expressions based on a condition.',
-		syntax: 'if(condition, whenTrue[, whenFalse])',
+		syntax: 'if(condition, whenTrue, whenFalse)',
 		parameters: [
 			{ name: 'condition', description: 'Condition evaluated by the Nerdamer Language runtime.' },
 			{ name: 'whenTrue', description: 'Expression evaluated when the condition is true.' },
-			{ name: 'whenFalse', description: 'Optional expression evaluated when the condition is false.' },
+			{ name: 'whenFalse', description: 'Expression evaluated when the condition is false.' },
 		],
 		examples: [
 			{ input: "nerdamer('if(1,5,6)').text()", output: '5' },

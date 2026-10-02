@@ -1,4 +1,5 @@
 import { Expression } from '../expression/Expression';
+
 import { Polynomial } from './Polynomial';
 import {
 	expressionToIntegerSparsePolynomial,

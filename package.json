@@ -1,8 +1,8 @@
 {
 	"name": "nerdamer",
-	"version": "2.0.0-rc.2",
+	"version": "2.0.0",
 	"publishConfig": {
-		"tag": "next"
+		"tag": "latest"
 	},
 	"description": "A symbolic math library and computer algebra system for JavaScript and TypeScript.",
 	"directory": {
@@ -29,13 +29,16 @@
 		"build:types": "npm run clean:modules && tsc -p tsconfig.build.json",
 		"build:modules": "npm run build:types",
 		"build:bundle": "npm run clean:dist && webpack --mode=production --env target=full",
+		"build:bundle:all-languages": "npm run clean:dist && webpack --mode=production --env target=full --env language=all",
 		"build:parser": "webpack --mode=production --env target=parser && node tools/smoke-build.cjs parser",
 		"build:full": "npm run build:modules && npm run build:bundle && node tools/smoke-build.cjs full",
+		"build:all-languages": "npm run build:modules && npm run build:bundle:all-languages && node tools/smoke-build.cjs full",
 		"build": "npm run build:full",
 		"docs:parser": "ts-node tools/generate-parser-docs.ts",
-		"docs:check": "typedoc --options typedoc.json --emit none",
+		"docs:update": "node tools/update-docs.mjs",
+		"docs:check": "node tools/check-public-export-docs.mjs",
 		"validate:package": "ts-node tools/validate-package.ts",
-		"prepublishOnly": "npm run typecheck && npm run test && npm run test:coverage && npm run build && npm run build:parser && npm run docs:parser && npm run docs:check && npm run validate:package",
+		"prepublishOnly": "npm run typecheck && npm run test && npm run test:coverage && npm run build && npm run docs:update && npm run docs:check && npm run validate:package",
 		"clean:modules": "node -e \"require('node:fs').rmSync('output', { recursive: true, force: true })\"",
 		"clean:dist": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\""
 	},
@@ -160,8 +163,8 @@
 			"default": "./output/api/debug.js"
 		},
 		"./docs-data/parser-functions.json": "./docs-data/parser-functions.json",
+		"./docs-data/typedoc.json": "./docs-data/typedoc.json",
 		"./dist/bundle.js": "./dist/bundle.js",
-		"./dist/parser.js": "./dist/parser.js",
 		"./package.json": "./package.json"
 	},
 	"typesVersions": {

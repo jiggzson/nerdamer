@@ -39,7 +39,7 @@ import { coeffs } from './analysis';
 import { isPolynomialLike, getVariable } from './analysis';
 import { getDenominator, getNumerator } from './analysis';
 import { toDefaultText, toText } from './format';
-import { one, zero } from './shortcuts';
+import { one, two, zero } from './shortcuts';
 import { hasFunction, hasVariable } from './traversal';
 import { functions, variables } from './traversal';
 import { forEveryElement } from './traversal';
@@ -192,6 +192,14 @@ export class Expression implements Base<Expression> {
 	static TYPES = EXPRESSION_TYPES;
 
 	/**
+	 * Cached ordinary lookup key for SUM and PRD nodes.
+	 *
+	 * Copies intentionally start without this cache. Aggregate reconstruction clears it
+	 * through updateValue() before the node is used again.
+	 */
+	private _keyValueCache?: string;
+
+	/**
 	 * Arguments stored by a function node.
 	 *
 	 * Prefer {@link Expression.getArguments} when consuming this representation.
@@ -204,9 +212,9 @@ export class Expression implements Base<Expression> {
 	 * Non-`EXP` nodes derive their base through {@link Expression.getBase} instead.
 	 */
 	base?: Expression;
-
 	/** Parser entity discriminator for expression values. */
 	dataType: string = EXPRESSION;
+
 	/**
 	 * Signals that the Expression was parsed with the deferred flag true
 	 */
@@ -221,14 +229,6 @@ export class Expression implements Base<Expression> {
 	 * responsible for preserving a valid expression representation and regenerating derived values.
 	 */
 	elements?: Record<string, Expression> = undefined;
-
-	/**
-	 * Cached ordinary lookup key for SUM and PRD nodes.
-	 *
-	 * Copies intentionally start without this cache. Aggregate reconstruction clears it
-	 * through updateValue() before the node is used again.
-	 */
-	private _keyValueCache?: string;
 
 	/**
 	 * Let's the parser know not to treat it as a set of values
@@ -403,37 +403,6 @@ export class Expression implements Base<Expression> {
 			x.denominator === 1n ? x.numerator.toString() : `${x.numerator}/${x.denominator}`;
 		const retval = Expression.Number(value);
 		retval.getMultiplier().asDecimal = x.asDecimal;
-		return retval;
-	}
-
-	/**
-	 * Converts a structured entity carrying symbolic bracket access into the scalar
-	 * Expression form used by ordinary algebra and function nodes.
-	 *
-	 * Structured entities without symbolic access are left unchanged by returning
-	 * `undefined`; callers can then apply their normal conversion rules.
-	 */
-	static fromSymbolicAccess(x: NerdamerInput): Expression | undefined {
-		let retval: Expression | undefined;
-
-		if (typeof x === 'object' && x !== null) {
-			const structured = x as {
-				symbolicTarget?: Expression;
-				symbolicAccessor?: Expression[];
-			};
-			const target = structured.symbolicTarget;
-			const indices = structured.symbolicAccessor;
-
-			if (
-				Expression.isExpression(target) &&
-				indices &&
-				indices.length > 0 &&
-				indices.every(index => Expression.isExpression(index))
-			) {
-				retval = Expression.toAccessor(target, indices);
-			}
-		}
-
 		return retval;
 	}
 
@@ -735,7 +704,7 @@ export class Expression implements Base<Expression> {
 			.filter((x): x is NerdamerInput => {
 				return x !== undefined;
 			})
-			.map(x => Expression.fromSymbolicAccess(x) ?? Expression.create(x));
+			.map(x => Expression.create(x));
 		// Set the name
 		f.name = name;
 		// TODO: This needs to be generated the same way as in text.
@@ -1089,7 +1058,7 @@ export class Expression implements Base<Expression> {
 				: this.text();
 		}
 		const evaluated = Parser.evaluate(source, values);
-		const retval = Expression.fromSymbolicAccess(evaluated) ?? Expression.create(evaluated);
+		const retval = Expression.create(evaluated);
 
 		if (this.scientific !== undefined) {
 			retval.scientific = this.scientific;
@@ -2334,7 +2303,7 @@ export class Expression implements Base<Expression> {
 	}
 
 	/**
-	 * Squares this Expression. Shorthand for `this.pow('2')`.
+	 * Squares this Expression.
 	 *
 	 * @returns A new Expression representing `this²`.
 	 *
@@ -2345,7 +2314,7 @@ export class Expression implements Base<Expression> {
 	 * ```
 	 */
 	sq(): Expression {
-		return this.pow('2');
+		return this.pow(two());
 	}
 
 	/**

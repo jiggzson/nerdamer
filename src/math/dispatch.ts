@@ -1,4 +1,3 @@
-import { mathFunctionRegistry, systemFunction } from '../core/dispatch';
 import {
 	DIRAC,
 	DOUBLE_FACTORIAL,
@@ -7,8 +6,10 @@ import {
 	LI,
 } from '../core/classes/parser/constants';
 import { numeric } from '../core/classes/parser/scripting/evaluate';
+import { mathFunctionRegistry, systemFunction } from '../core/dispatch';
 import { expand } from '../core/functions/expand/expand';
 import { subst } from '../core/functions/subst';
+
 import { hypot, line } from './geometry';
 import {
 	sqrt,

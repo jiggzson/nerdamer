@@ -13,6 +13,7 @@ import {
 	RETURN,
 	ReturnSignal,
 	WHILE,
+	withReturnPropagation,
 } from '../../src/core/classes/parser/scripting/controlFlow';
 import { wrappedFunction } from '../../src/core/classes/parser/scripting/functions';
 import { LET } from '../../src/core/classes/parser/scripting/scope';
@@ -24,12 +25,25 @@ loadParserFunctions();
 
 describe('Parser scripting', () => {
 	it('supports if without a false branch', () => {
-		const trueResult = Parser.parse('if(1,5)');
+		expect(Parser.parse('block(if(1,5),7)').text()).toEqual('7');
+		expect(Parser.parse('block(if(0,5),7)').text()).toEqual('7');
+	});
 
-		expect(trueResult.text()).toEqual('5');
-		expect(() => IF(() => Expression.create(0), () => Expression.create(5))).toThrow(
-			NullSignal
-		);
+	it('propagates return through nested control flow when requested by the caller', () => {
+		const result = withReturnPropagation(() => {
+			try {
+				return IF(
+					() => Expression.create(1),
+					() => RETURN(Expression.create(7)),
+					() => Expression.create(-1)
+				);
+			} catch (error) {
+				if (ReturnSignal.isReturnSignal(error)) {return error.value;}
+				throw error;
+			}
+		});
+
+		expect(result.text()).toEqual('7');
 	});
 
 	it('ignores tabs and line breaks in formatted control flow', () => {
@@ -52,7 +66,8 @@ describe('Parser scripting', () => {
 				`\t\t${y}: ${y} + 1,`,
 				'\t\tif(',
 				`\t\t\t${x} == ${y},`,
-				`\t\t\t${hit}: ${x}`,
+				`\t\t\t${hit}: ${x},`,
+				'\t\t\t0',
 				'\t\t)',
 				'\t),',
 				'',
@@ -202,7 +217,8 @@ describe('Parser scripting', () => {
 				'\tblock(',
 				`\t\tfor(${local}:0, ${local}<10, ${local}:${local}+1,`,
 				'\t\t\tif(x=='+local+',',
-				'\t\t\t\treturn(x)',
+				'\t\t\t\treturn(x),',
+				'\t\t\t\t0',
 				'\t\t\t)',
 				'\t\t),',
 				'\t\treturn(-1)',
@@ -276,7 +292,7 @@ newton_sqrt(value, guess, tolerance, limit):=
                 limit - step,
                 step:step + 1,
                 block(
-                    if(abs(estimate^2 - value) < tolerance, break()),
+                    if(abs(estimate^2 - value) < tolerance, break(), 0),
                     estimate:estimate - (estimate^2 - value)/(2*estimate)
                 )
             ),

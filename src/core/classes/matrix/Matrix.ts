@@ -258,8 +258,7 @@ export class Matrix extends StructuredEntity<Matrix, Vector> {
 
 	/** Copies the matrix and every Expression element. */
 	copy(): Matrix {
-		const copy = this.map(e => e.copy());
-		return this.copySymbolicAccessTo(copy);
+		return this.map(e => e.copy());
 	}
 
 	/**
@@ -360,22 +359,11 @@ export class Matrix extends StructuredEntity<Matrix, Vector> {
 		return true;
 	}
 
-	/** Evaluates a copied matrix, resolving symbolic cell access when values are supplied. */
-	evaluate(): Matrix;
-	evaluate(values: ParserValuesObject): ParserEntity;
-	evaluate(values?: ParserValuesObject): ParserEntity {
-		let retval: ParserEntity;
-		const symbolicAccess = Expression.fromSymbolicAccess(this);
-
-		if (symbolicAccess && values) {
-			retval = symbolicAccess.evaluate(values);
-		} else {
-			const copy = this.copy();
-			copy.each(e => e.evaluate(values));
-			retval = copy;
-		}
-
-		return retval;
+	/** Evaluates and returns a copied matrix. */
+	evaluate(values?: ParserValuesObject): Matrix {
+		const copy = this.copy();
+		copy.each(e => e.evaluate(values));
+		return copy;
 	}
 
 	/** Expands a copied matrix, leaving this one unchanged. */
@@ -513,7 +501,7 @@ export class Matrix extends StructuredEntity<Matrix, Vector> {
 	}
 
 	isSingular(): boolean {
-		return this.isSquare() && this.determinant().eq('0');
+		return this.isSquare() && this.determinant().eq(zero());
 	}
 
 	isSquare(): boolean {
@@ -868,8 +856,7 @@ export class Matrix extends StructuredEntity<Matrix, Vector> {
 			textArray.push(`[${rowTextArray.join(', ')}]`);
 		}
 
-		const text = `matrix(${textArray.join(', ')})`;
-		return this.formatSymbolicAccess(text);
+		return `matrix(${textArray.join(', ')})`;
 	}
 
 	// Override times() for Matrix-specific multiplication logic

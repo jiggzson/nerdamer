@@ -7,4 +7,3 @@
 !/docs/*.md
 test-results.json
 coverage/
-docs-data/parser-functions.json

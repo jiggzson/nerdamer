@@ -83,7 +83,7 @@ describe('Dictionary each', () => {
 
 	it('can recover the free-variable key from an underdetermined solveeqs dictionary', () => {
 		const result = Parser.parse(
-			'each(solveeqs([x+y+z=6,x-y=2])[0],dictionary_each_key,dictionary_each_value,if(dictionary_each_key==dictionary_each_value,return(dictionary_each_key)))'
+			'each(solveeqs([x+y+z=6,x-y=2])[0],dictionary_each_key,dictionary_each_value,if(dictionary_each_key==dictionary_each_value,return(dictionary_each_key),-1))'
 		);
 
 		expect(result.text()).toEqual('z');

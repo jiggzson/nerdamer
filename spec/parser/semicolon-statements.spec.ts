@@ -41,7 +41,8 @@ describe('Semicolon statements', () => {
 					${name}(12),
 					${value}:4,
 					if(${value}>3,
-						return(8);
+						return(8);,
+						0
 					),
 					${name}(${value});
 				)
@@ -91,7 +92,8 @@ describe('Semicolon statements', () => {
 					${name}(12);,
 					${value}:4,
 					if(${value}>30,
-						return(8);
+						return(8);,
+						0
 					),
 					${name}(${value});
 				)

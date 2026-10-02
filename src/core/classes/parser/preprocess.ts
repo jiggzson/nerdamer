@@ -250,30 +250,30 @@ function findArgumentEnd(
 			continue;
 		}
 		if (isClosingBracket(character)) {
-			if (depth === 0) break;
+			if (depth === 0) {break;}
 			depth--;
 			previousSignificant = character;
 			continue;
 		}
 
 		if (depth > 0) {
-			if (!/\s/.test(character)) previousSignificant = character;
+			if (!/\s/.test(character)) {previousSignificant = character;}
 			continue;
 		}
 
 		if (consumeStatement) {
-			if (character === ',') break;
-			if (!/\s/.test(character)) previousSignificant = character;
+			if (character === ',') {break;}
+			if (!/\s/.test(character)) {previousSignificant = character;}
 			continue;
 		}
 
 		if (/\s/.test(character)) {
-			if (multipleArguments && previousSignificant === ',') continue;
+			if (multipleArguments && previousSignificant === ',') {continue;}
 			break;
 		}
 
 		if (character === ',') {
-			if (!multipleArguments) break;
+			if (!multipleArguments) {break;}
 			previousSignificant = character;
 			continue;
 		}
@@ -282,7 +282,7 @@ function findArgumentEnd(
 			(character === '+' || character === '-') &&
 			(index === start || previousSignificant === ',' || previousSignificant === '^');
 		const isBinaryBoundary = /[+\-*/=<>:&|]/.test(character) && !isPrefixSign;
-		if (isBinaryBoundary) break;
+		if (isBinaryBoundary) {break;}
 
 		previousSignificant = character;
 	}

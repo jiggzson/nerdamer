@@ -46,17 +46,14 @@ describe('Symbolic structured access', () => {
 		}
 	});
 
-	it('preserves an unresolved single-index access in a Vector carrier', () => {
+	it('preserves an unresolved single-index access as an Expression', () => {
 		const access = Parser.parse('V[i]');
 
-		expect(Vector.isVector(access)).toBe(true);
-		if (!Vector.isVector(access)) {
-			throw new Error('Expected symbolic Vector access.');
-		}
+		expect(Expression.isExpression(access)).toBe(true);
 		expect(access.text()).toBe('V[i]');
 	});
 
-	it('normalizes symbolic Vector access before scalar functions and operators', () => {
+	it('keeps symbolic Vector access usable by scalar functions and operators', () => {
 		const absolute = Parser.parse('abs(V[i])');
 		const shifted = Parser.parse('V[i]+2');
 
@@ -68,10 +65,7 @@ describe('Symbolic structured access', () => {
 
 	it('resolves a previously parsed symbolic Vector access after the target is defined', () => {
 		const access = Parser.parse('V[i]');
-
-		if (!Vector.isVector(access)) {
-			throw new Error('Expected symbolic Vector access.');
-		}
+		expect(Expression.isExpression(access)).toBe(true);
 
 		try {
 			nerdamer.setVar('V', '[4,1,6,3,1]');
@@ -97,10 +91,7 @@ describe('Symbolic structured access', () => {
 	it('preserves and later resolves two-index symbolic Matrix access', () => {
 		const access = Parser.parse('M[i,j]');
 
-		expect(Matrix.isMatrix(access)).toBe(true);
-		if (!Matrix.isMatrix(access)) {
-			throw new Error('Expected symbolic Matrix access.');
-		}
+		expect(Expression.isExpression(access)).toBe(true);
 		expect(access.text()).toBe('M[i, j]');
 
 		try {
@@ -114,21 +105,14 @@ describe('Symbolic structured access', () => {
 
 	it('preserves bracket intent when an index resolves before its target', () => {
 		const access = Parser.parse('V[i]');
-
-		if (!Vector.isVector(access)) {
-			throw new Error('Expected symbolic Vector access.');
-		}
+		expect(Expression.isExpression(access)).toBe(true);
 
 		const partial = access.evaluate({ i: 2 });
-		if (!Expression.isExpression(partial)) {
-			throw new Error('Expected partially resolved symbolic access to normalize to an Expression.');
-		}
+		expect(Expression.isExpression(partial)).toBe(true);
 		expect(partial.text()).toBe('V[2]');
 
 		const absolute = Parser.parse('abs(V[i])');
-		if (!Expression.isExpression(absolute)) {
-			throw new Error('Expected scalar function access to be an Expression.');
-		}
+		expect(Expression.isExpression(absolute)).toBe(true);
 		expect(absolute.evaluate({ i: 2 }).text()).toBe('abs(V[2])');
 
 		try {
@@ -145,21 +129,15 @@ describe('Symbolic structured access', () => {
 			nerdamer.setVar('M', 'matrix([1,2],[3,4])');
 
 			const computedVector = Parser.parse('V[i+1]');
-			if (!Vector.isVector(computedVector)) {
-				throw new Error('Expected symbolic Vector access.');
-			}
+			expect(Expression.isExpression(computedVector)).toBe(true);
 			expect(computedVector.evaluate({ i: 1 }).text()).toBe('6');
 
 			const shifted = Parser.parse('2+V[i]');
-			if (!Expression.isExpression(shifted)) {
-				throw new Error('Expected composed symbolic access to be an Expression.');
-			}
+			expect(Expression.isExpression(shifted)).toBe(true);
 			expect(shifted.evaluate({ i: 2 }).text()).toBe('8');
 
 			const mixedMatrix = Parser.parse('M[i,1]');
-			if (!Matrix.isMatrix(mixedMatrix)) {
-				throw new Error('Expected symbolic Matrix access.');
-			}
+			expect(Expression.isExpression(mixedMatrix)).toBe(true);
 			expect(mixedMatrix.evaluate({ i: 1 }).text()).toBe('4');
 		} finally {
 			nerdamer.setVar('V', 'delete');
@@ -173,12 +151,8 @@ describe('Symbolic structured access', () => {
 		const vectorAccess = Parser.parse('V[i+1]');
 		const matrixAccess = Parser.parse('M[i,j]');
 
-		if (!Vector.isVector(vectorAccess)) {
-			throw new Error('Expected symbolic Vector access.');
-		}
-		if (!Matrix.isMatrix(matrixAccess)) {
-			throw new Error('Expected symbolic Matrix access.');
-		}
+		expect(Expression.isExpression(vectorAccess)).toBe(true);
+		expect(Expression.isExpression(matrixAccess)).toBe(true);
 
 		expect(vectorAccess.evaluate({ V: vector, i: 1 }).text()).toBe('6');
 		expect(matrixAccess.evaluate({ M: matrix, i: 1, j: 0 }).text()).toBe('3');
