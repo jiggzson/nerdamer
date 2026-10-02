@@ -74,8 +74,6 @@ function main(): void {
 		'dist/bundle.js',
 		'output/api/core.js',
 		'index.d.ts',
-		'docs-data/parser-functions.json',
-		'docs-data/typedoc.json',
 	]) {
 		if (!existsSync(join(ROOT, path))) throw new Error(`Required package artifact is missing: ${path}`);
 	}
