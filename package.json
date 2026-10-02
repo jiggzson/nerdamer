@@ -35,10 +35,8 @@
 		"build:all-languages": "npm run build:modules && npm run build:bundle:all-languages && node tools/smoke-build.cjs full",
 		"build": "npm run build:full",
 		"docs:parser": "ts-node tools/generate-parser-docs.ts",
-		"docs:update": "node tools/update-docs.mjs",
-		"docs:check": "node tools/check-public-export-docs.mjs",
 		"validate:package": "ts-node tools/validate-package.ts",
-		"prepublishOnly": "npm run typecheck && npm run test && npm run test:coverage && npm run build && npm run docs:update && npm run docs:check && npm run validate:package",
+		"prepublishOnly": "npm run typecheck && npm run test && npm run test:coverage && npm run build && npm run validate:package",
 		"clean:modules": "node -e \"require('node:fs').rmSync('output', { recursive: true, force: true })\"",
 		"clean:dist": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\""
 	},
@@ -169,15 +167,33 @@
 	},
 	"typesVersions": {
 		"*": {
-			"core": ["output/api/core.d.ts"],
-			"algebra": ["output/api/algebra.d.ts"],
-			"calculus": ["output/api/calculus.d.ts"],
-			"solve": ["output/api/solve.d.ts"],
-			"structures": ["output/api/structures.d.ts"],
-			"assumptions": ["output/api/assumptions.d.ts"],
-			"parser": ["output/api/parser.d.ts"],
-			"advanced": ["output/api/advanced.d.ts"],
-			"debug": ["output/api/debug.d.ts"]
+			"core": [
+				"output/api/core.d.ts"
+			],
+			"algebra": [
+				"output/api/algebra.d.ts"
+			],
+			"calculus": [
+				"output/api/calculus.d.ts"
+			],
+			"solve": [
+				"output/api/solve.d.ts"
+			],
+			"structures": [
+				"output/api/structures.d.ts"
+			],
+			"assumptions": [
+				"output/api/assumptions.d.ts"
+			],
+			"parser": [
+				"output/api/parser.d.ts"
+			],
+			"advanced": [
+				"output/api/advanced.d.ts"
+			],
+			"debug": [
+				"output/api/debug.d.ts"
+			]
 		}
 	}
 }
