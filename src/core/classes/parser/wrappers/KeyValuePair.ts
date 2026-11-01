@@ -1,5 +1,5 @@
 import { isNerdamerNativeType } from '../../../common/common';
-import { KEY_VALUE_PAIR } from '../constants';
+import { KEY_VALUE_PAIR } from '../../../constants/entityTypes';
 
 import type { ParserEntity } from '../../../types';
 /**

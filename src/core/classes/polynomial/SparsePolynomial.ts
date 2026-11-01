@@ -190,7 +190,7 @@ export class SparsePolynomial {
 	 */
 	add(other: SparsePolynomial): SparsePolynomial {
 		if (this.variableCount !== other.variableCount) {
-			throw new RangeError(message('sparseAdditionRingMismatch'));
+			throw new RangeError(message('polyRequires', { operation: 'SparsePolynomial.add', requirement: message('polyReqSamePolynomialRing') }));
 		}
 
 		const result = SparsePolynomial.zero(this.variableCount);
@@ -235,7 +235,7 @@ export class SparsePolynomial {
 		this.degree(variableIndex);
 		if (exponent < 0n) {
 			throw new RangeError(
-				message('sparseCoefficientExponentNonNegative')
+				message('sparseCoefficientExponentNonNegative', { polynomial: 'SparsePolynomial' })
 			);
 		}
 
@@ -339,7 +339,7 @@ export class SparsePolynomial {
 	 */
 	divideByMonomial(divisor: SparsePolynomialTerm): SparsePolynomial | null {
 		if (divisor.coefficient === 0n) {
-			throw new RangeError(message('sparseZeroMonomialDivision'));
+			throw new RangeError(message('zeroDivisorForOperation', { operation: 'SparsePolynomial.divideByMonomial' }));
 		}
 		SparsePolynomial.assertExponents(this.variableCount, divisor.exponents);
 
@@ -373,7 +373,7 @@ export class SparsePolynomial {
 	 */
 	divideByScalarExact(divisor: bigint): SparsePolynomial {
 		if (divisor === 0n) {
-			throw new RangeError(message('sparseZeroScalarDivision'));
+			throw new RangeError(message('zeroDivisorForOperation', { operation: 'SparsePolynomial.divideByScalarExact' }));
 		}
 
 		const result = SparsePolynomial.zero(this.variableCount);
@@ -406,12 +406,12 @@ export class SparsePolynomial {
 		order: MonomialOrder = 'lex'
 	): SparsePolynomial | null {
 		if (this.variableCount !== divisor.variableCount) {
-			throw new RangeError(message('sparseDivisionRingMismatch'));
+			throw new RangeError(message('polyRequires', { operation: 'SparsePolynomial.divideExact', requirement: message('polyReqSamePolynomialRing') }));
 		}
 
 		const divisorLeading = divisor.leadingTerm(order);
 		if (divisorLeading === null) {
-			throw new RangeError(message('sparseZeroPolynomialDivision'));
+			throw new RangeError(message('zeroDivisorForOperation', { operation: 'SparsePolynomial.divideExact' }));
 		}
 
 		let quotient = SparsePolynomial.zero(this.variableCount);
@@ -713,7 +713,7 @@ export class SparsePolynomial {
 		rightMonomialExponents: readonly bigint[]
 	): SparsePolynomial {
 		if (this.variableCount !== other.variableCount) {
-			throw new RangeError(message('sparseSubtractionRingMismatch'));
+			throw new RangeError(message('polyRequires', { operation: 'SparsePolynomial.subtract', requirement: message('polyReqSamePolynomialRing') }));
 		}
 		SparsePolynomial.assertExponents(this.variableCount, leftMonomialExponents);
 		SparsePolynomial.assertExponents(this.variableCount, rightMonomialExponents);
@@ -761,7 +761,7 @@ export class SparsePolynomial {
 	 */
 	multiply(other: SparsePolynomial): SparsePolynomial {
 		if (this.variableCount !== other.variableCount) {
-			throw new RangeError(message('sparseMultiplicationRingMismatch'));
+			throw new RangeError(message('polyRequires', { operation: 'SparsePolynomial.multiply', requirement: message('polyReqSamePolynomialRing') }));
 		}
 		if (this.isZero() || other.isZero()) {
 			return SparsePolynomial.zero(this.variableCount);
@@ -802,7 +802,7 @@ export class SparsePolynomial {
 	/** Raises the polynomial to a non-negative exact integer power. */
 	pow(exponent: bigint): SparsePolynomial {
 		if (exponent < 0n) {
-			throw new RangeError(message('sparseExponentNonNegative'));
+			throw new RangeError(message('sparseExponentNonNegative', { polynomial: 'SparsePolynomial' }));
 		}
 		let result = SparsePolynomial.constant(this.variableCount, 1n);
 		let power = exponent;
@@ -870,7 +870,7 @@ export class SparsePolynomial {
 		monomialExponents: readonly bigint[]
 	): SparsePolynomial {
 		if (this.variableCount !== other.variableCount) {
-			throw new RangeError(message('sparseSubtractionRingMismatch'));
+			throw new RangeError(message('polyRequires', { operation: 'SparsePolynomial.subtract', requirement: message('polyReqSamePolynomialRing') }));
 		}
 		SparsePolynomial.assertExponents(this.variableCount, monomialExponents);
 
@@ -923,7 +923,7 @@ export class SparsePolynomial {
 	 */
 	subtract(other: SparsePolynomial): SparsePolynomial {
 		if (this.variableCount !== other.variableCount) {
-			throw new RangeError(message('sparseSubtractionRingMismatch'));
+			throw new RangeError(message('polyRequires', { operation: 'SparsePolynomial.subtract', requirement: message('polyReqSamePolynomialRing') }));
 		}
 
 		const result = SparsePolynomial.zero(this.variableCount);

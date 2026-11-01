@@ -1,7 +1,7 @@
-import { FRESNEL_C, FRESNEL_S } from '../core/classes/parser/constants';
+import { FRESNEL_C, FRESNEL_S } from '../core/constants/functionNames';
 import { mathFunctionRegistry, systemFunction } from '../core/dispatch';
 import { defint } from '../math/defint/defint';
-import { product, sum } from '../math/math';
+import { product, sum } from '../math/series';
 
 import { differentiate, directionalLimit, integrateEquation } from './adapters';
 import { C, S } from './fresnel';

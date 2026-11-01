@@ -1,7 +1,7 @@
 'use strict';
 
 describe('function registry', () => {
-	it('loads domain implementations through module dispatch files', () => {
+	it('starts with math functions and loads optional domains through dispatch files', () => {
 		jest.isolateModules(() => {
 			const { mathFunctionRegistry } = jest.requireActual<
 				typeof import('../../src/core/dispatch')
@@ -21,9 +21,6 @@ describe('function registry', () => {
 			const { loadComplexFunctions } = jest.requireActual<
 				typeof import('../../src/core/functions/complex.dispatch')
 			>('../../src/core/functions/complex.dispatch');
-			const { loadMathFunctions } = jest.requireActual<
-				typeof import('../../src/math/dispatch')
-			>('../../src/math/dispatch');
 			const { loadAlgebraFunctions } = jest.requireActual<
 				typeof import('../../src/algebra/dispatch')
 			>('../../src/algebra/dispatch');
@@ -41,7 +38,16 @@ describe('function registry', () => {
 			expect(mathFunctionRegistry.imatrix).toBeUndefined();
 			expect(mathFunctionRegistry.coeffs).toBeUndefined();
 			expect(mathFunctionRegistry.conjugate).toBeUndefined();
-			expect(mathFunctionRegistry.sin).toBeUndefined();
+			// Mathematical functions are available before optional domain loaders run.
+			for (const name of ['sin', 'cos', 'sqrt', 'log', 'exp', 'abs', 'factorial', 'mod', 'fib']) {
+				expect(typeof mathFunctionRegistry[name].fn).toBe('function');
+			}
+			expect(mathFunctionRegistry.numeric.deferArguments).toBe(true);
+			expect(
+				Object.entries(mathFunctionRegistry)
+					.filter(([, entry]) => typeof entry.fn !== 'function')
+					.map(([name]) => name)
+			).toEqual([]);
 			expect(mathFunctionRegistry.diff).toBeUndefined();
 			expect(mathFunctionRegistry.solve).toBeUndefined();
 
@@ -50,7 +56,6 @@ describe('function registry', () => {
 			loadVectorFunctions();
 			loadPolynomialFunctions();
 			loadComplexFunctions();
-			loadMathFunctions();
 			loadAlgebraFunctions();
 			loadCalculusFunctions();
 			loadSolveFunctions();
@@ -74,11 +79,11 @@ describe('function registry', () => {
 			const { mathFunctionRegistry } = jest.requireActual<
 				typeof import('../../src/core/dispatch')
 			>('../../src/core/dispatch');
-			const { loadParserFunctions } = jest.requireActual<
+			const { registerParserFunctions } = jest.requireActual<
 				typeof import('../../src/core/parserFunctions')
 			>('../../src/core/parserFunctions');
 
-			loadParserFunctions();
+			registerParserFunctions();
 
 			expect(mathFunctionRegistry.sin.fn).toBeDefined();
 			expect(mathFunctionRegistry.assume.fn).toBeDefined();
@@ -100,8 +105,8 @@ describe('function registry', () => {
 				typeof import('../../src/core/dispatch')
 			>('../../src/core/dispatch');
 			const { registerNerdamerFunctions } = jest.requireActual<
-				typeof import('../../src/core/fullFunctions')
-			>('../../src/core/fullFunctions');
+				typeof import('../../src/core/nerdamerFunctions')
+			>('../../src/core/nerdamerFunctions');
 
 			registerNerdamerFunctions();
 

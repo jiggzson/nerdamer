@@ -1,7 +1,7 @@
 import { StructuredEntity } from '../../common/classes/StructuredEntity';
 import { isNerdamerNativeType } from '../../common/common';
+import { COLLECTION } from '../../constants/entityTypes';
 import { message } from '../../errors';
-import { COLLECTION } from '../parser/constants';
 
 import type { ParserEntity } from '../../types';
 

@@ -1,8 +1,9 @@
 import { Expression } from '../core/classes/expression/Expression';
 import { half, two } from '../core/classes/expression/shortcuts';
-import { COS, SIN, VECTOR } from '../core/classes/parser/constants';
 import { add } from '../core/classes/parser/operations/add';
 import { power } from '../core/classes/parser/operations/power';
+import { VECTOR } from '../core/constants/entityTypes';
+import { COS, SIN } from '../core/constants/functionNames';
 import { DimensionError, message, UnexpectedInputError } from '../core/errors';
 
 import type { Vector } from '../core/classes/vector/Vector';

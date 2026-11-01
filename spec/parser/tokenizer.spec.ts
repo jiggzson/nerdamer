@@ -1,10 +1,14 @@
 import '../helpers/registerNerdamerFunctions';
 import { Parser } from '../../src/core/classes/parser/Parser';
-import { Token } from '../../src/core/classes/parser/Token';
-import { ALLOWED_CHARACTERS } from '../../src/core/classes/parser/Token';
+import { Scope } from '../../src/core/common/classes/Scope';
+import { operators } from '../../src/core/common/common';
+import { mathFunctionRegistry } from '../../src/core/dispatch';
+import {
+	ALLOWED_CHARACTERS,
+	refreshOperatorSymbols,
+	Token,
+} from '../../src/core/classes/parser/Token';
 import { remove } from '../../src/utils/array';
-
-import type { Scope } from '../../src/core/common/classes/Scope';
 
 const implicitOperators = (x: Scope | Token) => {
 	return !(x instanceof Token) || x.position !== -1;
@@ -68,6 +72,15 @@ describe('Tokenizer and RPN conversion', () => {
 		);
 	});
 
+	it('rejects unsupported repeating-decimal notation instead of truncating it (legacy #341)', () => {
+		for (const source of ['1.1...', '1.12341234...', '1.2.3']) {
+			expect(() => Parser.tokenize(source)).toThrow('Malformed numeric literal');
+		}
+		expect(() => Parser.tokenize('1.1…')).toThrow('Unsupported character');
+		expect(Parser.parse('1.25').text()).toBe('1.25');
+		expect(Parser.parse('.2').text()).toBe('0.2');
+	});
+
 	it('should recognize custom characters', () => {
 		ALLOWED_CHARACTERS.push('☺');
 		expect(Parser.tokenize('1+☺-x')[2].type).toEqual(Token.VARIABLE);
@@ -91,6 +104,7 @@ describe('Tokenizer and RPN conversion', () => {
 	it('should recognize operators and compound operators', () => {
 		expect((Parser.tokenize('(x-1)^2-y')[1] as Token).value).toEqual('^');
 		expect((Parser.tokenize('-2==5x')[2] as Token).value).toEqual('==');
+		expect((Parser.tokenize('2!=3')[1] as Token).value).toEqual('!=');
 		expect((Parser.tokenize('-2!!*5x')[2] as Token).value).toEqual('!!');
 		expect((Parser.tokenize('-2!!**5x')[3] as Token).value).toEqual('**');
 		expect((Parser.tokenize('cos(x-1)<=3x')[2] as Token).value).toEqual('<=');
@@ -99,10 +113,18 @@ describe('Tokenizer and RPN conversion', () => {
 		// Make sure they are correctly parsed as tokens
 		expect(Parser.tokenize('(x-1)^2-y')[1].type).toEqual(Token.OPERATOR);
 		expect(Parser.tokenize('-2==5x')[2].type).toEqual(Token.OPERATOR);
+		expect(Parser.tokenize('2!=3')[1].type).toEqual(Token.OPERATOR);
 		expect(Parser.tokenize('-2!!*5x')[2].type).toEqual(Token.OPERATOR);
 		expect(Parser.tokenize('-2!!**5x')[3].type).toEqual(Token.OPERATOR);
 		expect(Parser.tokenize('cos(x-1)<=3x')[2].type).toEqual(Token.OPERATOR);
 		expect(Parser.tokenize('x in [a, x, y]')[1].type).toEqual(Token.OPERATOR);
+	});
+
+	it('should evaluate not-equal comparisons', () => {
+		expect(Parser.parse('2!=3').text()).toEqual('1');
+		expect(Parser.parse('2!=2').text()).toEqual('0');
+		expect(Parser.parse('i!=i').text()).toEqual('0');
+		expect(Parser.parse('i!=-i').text()).toEqual('1');
 	});
 
 	it('should correctly generate the RPN', () => {
@@ -115,6 +137,57 @@ describe('Tokenizer and RPN conversion', () => {
 				Parser.toRPN(Parser.tokenize('f(9)*6').filter(implicitOperators) as Scope)
 			)
 		).toEqual('f ( 9 ) 6 *');
+	});
+	it('uses operators registered through another parser instance', () => {
+		const registeringParser = Parser.create();
+		const consumingParser = Parser.create();
+
+		try {
+			registeringParser.setOperator({
+				precedence: 3,
+				operator: '&',
+				action: 'plus',
+				isPrefix: false,
+				isPostfix: false,
+				leftAssoc: true,
+			});
+
+			const tokens = consumingParser.tokenize('1&2');
+
+			expect(tokens.text()).toEqual('1 & 2');
+			expect(consumingParser.toRPN(tokens).text()).toEqual('1 2 &');
+		} finally {
+			delete operators['&'];
+			refreshOperatorSymbols();
+		}
+	});
+	it('preserves deferred assignment scopes during RPN conversion', () => {
+		const assignment = Parser.toRPN(Parser.tokenize('deferredSyntaxTarget:1+2'));
+		const declaration = Parser.toRPN(
+			Parser.tokenize('deferredSyntaxFunction(x):=x+1')
+		);
+
+		expect(assignment.text()).toEqual('deferredSyntaxTarget 1 2 + :');
+		expect(Scope.isScope(assignment[0]) && assignment[0].deferLHSResolution).toBe(true);
+		expect(Scope.isScope(assignment[1]) && assignment[1].deferRHSResolution).toBe(true);
+		expect(declaration.text()).toEqual('deferredSyntaxFunction ( x ) x 1 + :=');
+		expect(Scope.isScope(declaration[1]) && declaration[1].deferLHSResolution).toBe(true);
+		expect(Scope.isScope(declaration[2]) && declaration[2].deferRHSResolution).toBe(true);
+	});
+	it('recognizes a function registered after its source was tokenized', () => {
+		const name = 'lateSyntaxFunction';
+		delete mathFunctionRegistry[name];
+
+		try {
+			const tokens = Parser.tokenize(`${name}(2)`);
+			expect(tokens.text()).toEqual(`${name} * ( 2 )`);
+
+			Parser.parse(`${name}(x):=x+1`);
+
+			expect(Parser.parseRPN(Parser.toRPN(tokens)).text()).toEqual('3');
+		} finally {
+			delete mathFunctionRegistry[name];
+		}
 	});
 	it('should respect equal precedence operators when generating RPN', () => {
 		expect(tokensToString(Parser.toRPN(Parser.tokenize('2-(5*3)+1')))).toEqual(
@@ -133,10 +206,10 @@ describe('Tokenizer and RPN conversion', () => {
 			)
 		).toEqual('3 f ( 1 5 + 2 , 3 , ) 2 ^ *');
 	});
-	it('should respect the dot operator precedence', () => {
-		expect(tokensToString(Parser.toRPN(Parser.tokenize('5*x.x^2+8')))).toEqual(
-			'5 x x . 2 ^ * 8 +'
-		);
+	it('treats periods as decimal points rather than parser operators', () => {
+		expect(Parser.getOperator('.')).toBeUndefined();
+		expect(tokensToString(Parser.tokenize('.2+x'))).toEqual('.2 + x');
+		expect(Parser.parse('.2+x').text()).toEqual('0.2+x');
 	});
 
 	it('should correctly mark prefix operators', () => {

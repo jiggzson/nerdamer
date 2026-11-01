@@ -64,7 +64,7 @@ function isFiniteDecimal(x: Decimal): boolean {
 	// decimal.js: finite numbers are !isNaN and !isInfinite
 	return !x.isNaN() && x.isFinite();
 }
-function defaultTolFromPrecision(): Decimal {
+function toleranceForPrecision(): Decimal {
 	// A decent default: about 5 digits of slack vs working precision
 	// e.g. precision 50 -> tol ~ 1e-45
 	const p = Decimal.precision ?? DEFAULT_DECIMAL_PRECISION;
@@ -152,8 +152,8 @@ function withFiniteBounds(
 		if (!isFiniteDecimal(fa) || !isFiniteDecimal(fm) || !isFiniteDecimal(fb)) {
 			// Try to integrate by splitting once; if still bad, throw.
 			const mid = m0;
-			const left = tryAutoSplitFinite(f, a, mid, opts);
-			const right = tryAutoSplitFinite(f, mid, b, opts);
+			const left = integrateFiniteSegments(f, a, mid, opts);
+			const right = integrateFiniteSegments(f, mid, b, opts);
 			return left.add(right).mul(sign);
 		}
 	}
@@ -301,7 +301,7 @@ function withFiniteBounds(
 	return acc.mul(sign);
 }
 
-function tryAutoSplitFinite(
+function integrateFiniteSegments(
 	f: DecimalFn,
 	a: Decimal,
 	b: Decimal,
@@ -345,7 +345,7 @@ export function definiteIntegrate(
 	}
 
 	// tolerances
-	const baseTol = defaultTolFromPrecision();
+	const baseTol = toleranceForPrecision();
 	const tolAbs = D(options.tolAbs ?? baseTol);
 	const tolRel = D(options.tolRel ?? baseTol);
 
@@ -365,7 +365,7 @@ export function definiteIntegrate(
 	const isInfB = !B.isFinite() && !B.isNaN();
 
 	if ((isInfA || isInfB) && !allowInfinite) {
-		throw new Error(message('defintInfiniteBoundsDecimal'));
+		throw new Error(message('defintInfiniteBounds'));
 	}
 
 	const coreOpts = { tolAbs, tolRel, maxDepth, maxEvals, singular } as const;

@@ -4,9 +4,9 @@ import { Expression } from '../core/classes/expression/Expression';
 import { one, zero } from '../core/classes/expression/shortcuts';
 export { product, stripPower, sum } from '../core/classes/expression/utils';
 import { Matrix } from '../core/classes/matrix/Matrix';
-import { COUNT, ISPRIME, SIZE } from '../core/classes/parser/constants';
 import { ValuesSet } from '../core/classes/valuesSet/ValuesSet';
 import { Vector } from '../core/classes/vector/Vector';
+import { COUNT, ISPRIME, SIZE } from '../core/constants/functionNames';
 import { message, UnexpectedInputError } from '../core/errors';
 import { isPrimeBig } from '../core/functions/bigint/primeFactor';
 

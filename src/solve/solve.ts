@@ -1,17 +1,23 @@
+import Decimal from 'decimal.js';
+
 import { factorExpressionParts } from '../algebra/factor/factor';
 import { factorCommonPower } from '../algebra/simplify/factorCommon';
 import { toCommonDenominator } from '../algebra/simplify/ratsimp';
 import { Expression } from '../core/classes/expression/Expression';
 import { all, four, half, one, two, zero } from '../core/classes/expression/shortcuts';
-import { assertPlainVariableAndGetString } from '../core/classes/expression/utils';
-import { PI_NAME } from '../core/classes/parser/constants';
+import { requireVariableName } from '../core/classes/expression/utils';
+import { Rational } from '../core/classes/rational/Rational';
 import { Vector } from '../core/classes/vector/Vector';
+import { COS, LOG, SIN } from '../core/constants/functionNames';
+import { PI_NAME } from '../core/constants/symbolNames';
+import { message, NotImplementedError, PolynomialError, UnsupportedOperationError } from '../core/errors';
+import { warn } from '../core/warnings';
 import { cos, sin } from '../math/trig';
 
 import { FunctionSolver, type FunctionSolverOptions } from './classes/FunctionSolver';
 import { PolynomialSolver } from './classes/PolynomialSolver';
 import { SolutionSet } from './classes/SolutionSet';
-import { SymbolicSolver } from './classes/SymbolicSolver';
+import { SymbolicSolver, type SolveRecursionContext } from './classes/SymbolicSolver';
 import { prepareSolverInputs } from './utils';
 
 import type { Equation } from '../core/classes/equation/Equation';
@@ -41,10 +47,156 @@ class FactorRootAccumulator extends SolutionSet {
 	}
 }
 
+/**
+ * Tries the numerical fallback on a certified enclosure for a narrow bounded-trig form.
+ *
+ * The recognized expression is `a*x+b+sum(c*sin(k*x+d), c*cos(k*x+d))` with exact
+ * numeric coefficients and nonzero `a` and `k`. Rejection returns `undefined`, so the
+ * caller retains the ordinary fixed-interval fallback.
+ */
+function solveWithInferredBounds(expression: Expression, variable: string) {
+	let affine = zero();
+	let amplitudeBound = Rational.create(0n);
+	let derivativeBound = Rational.create(0n);
+	let trigTerms = 0;
+
+	try {
+		const terms = expression.isSum() ? expression.elementsArray() : [expression];
+		for (const term of terms) {
+			if (term.isFunction([SIN, COS])) {
+				if (!term.getPower().isOne()) {
+					return undefined;
+				}
+
+				const argument = term.getArguments()[0];
+				const argumentVariables = argument.variables();
+				if (
+					argumentVariables.length !== 1 ||
+					argumentVariables[0] !== variable ||
+					!argument.isPolynomialLike([variable])
+				) {
+					return undefined;
+				}
+
+				const coefficients = argument.coeffs(variable);
+				const constantCoefficient = coefficients.getPower(0) ?? zero();
+				const linearCoefficient = coefficients.getPower(1);
+				if (
+					coefficients.max() !== 1 ||
+					!constantCoefficient.isNUM() ||
+					!linearCoefficient?.isNUM() ||
+					linearCoefficient.isZero()
+				) {
+					return undefined;
+				}
+
+				const amplitude = term.getMultiplier().abs();
+				const frequency = linearCoefficient.getMultiplier().abs();
+				amplitudeBound = amplitudeBound.plus(amplitude);
+				derivativeBound = derivativeBound.plus(amplitude.times(frequency));
+				trigTerms++;
+			} else {
+				affine = affine.plus(term);
+			}
+		}
+
+		if (trigTerms === 0 || !affine.isPolynomialLike([variable])) {
+			return undefined;
+		}
+
+		const coefficients = affine.coeffs(variable);
+		const constantCoefficient = coefficients.getPower(0) ?? zero();
+		const linearCoefficient = coefficients.getPower(1);
+		if (
+			coefficients.max() !== 1 ||
+			!constantCoefficient.isNUM() ||
+			!linearCoefficient?.isNUM() ||
+			linearCoefficient.isZero()
+		) {
+			return undefined;
+		}
+
+		const slope = linearCoefficient.getMultiplier();
+		const offset = constantCoefficient.getMultiplier();
+		const firstEndpoint = offset.neg().minus(amplitudeBound).div(slope);
+		const secondEndpoint = offset.neg().plus(amplitudeBound).div(slope);
+		const exactLower = firstEndpoint.lte(secondEndpoint) ? firstEndpoint : secondEndpoint;
+		const exactUpper = firstEndpoint.gte(secondEndpoint) ? firstEndpoint : secondEndpoint;
+
+		const outwardDecimal = (value: Rational, rounding: Decimal.Rounding) => {
+			const DirectedDecimal = Decimal.clone({
+				precision: Decimal.precision,
+				rounding,
+			});
+			const directed = new DirectedDecimal(String(value.numerator))
+				.div(String(value.denominator));
+			if (!directed.isFinite()) {
+				return undefined;
+			}
+
+			const decimal = new Decimal(directed.toString());
+			const rounded = Rational.create(decimal.toString());
+			const encloses = rounding === Decimal.ROUND_FLOOR
+				? rounded.lte(value)
+				: rounded.gte(value);
+			return encloses ? decimal : undefined;
+		};
+		const lowerBound = outwardDecimal(exactLower, Decimal.ROUND_FLOOR);
+		const upperBound = outwardDecimal(exactUpper, Decimal.ROUND_CEIL);
+		if (!lowerBound || !upperBound) {
+			return undefined;
+		}
+
+		const solver = new FunctionSolver(expression, variable, {
+			lowerBound,
+			upperBound,
+			method: 'Brent',
+		});
+		const step = new Decimal(solver.stepSize);
+		const center = lowerBound.plus(upperBound).div(2);
+		// Preserve the default scan lattice so inferred bounds do not lose tangential roots.
+		const alignedCenter = center.toNearest(step, Decimal.ROUND_HALF_UP);
+		const endpointAdjustment = alignedCenter.minus(center).times(2);
+		if (endpointAdjustment.isNegative()) {
+			solver.lowerBound = lowerBound.plus(endpointAdjustment);
+		} else {
+			solver.upperBound = upperBound.plus(endpointAdjustment);
+		}
+
+		if (slope.abs().gt(derivativeBound)) {
+			const result = solver.Brent(solver.lowerBound, solver.upperBound);
+			if (
+				result.converged &&
+				result.root.isFinite() &&
+				solver.evaluate(result.root).abs().lessThan(solver.tolerance)
+			) {
+				return [Expression.create(result.root)];
+			}
+			return undefined;
+		}
+
+		const inferredCells = solver.upperBound.minus(solver.lowerBound)
+			.div(solver.stepSize)
+			.ceil();
+		const defaultSolver = new FunctionSolver(expression, variable, { method: 'Brent' });
+		const defaultCells = defaultSolver.upperBound.minus(defaultSolver.lowerBound)
+			.div(defaultSolver.stepSize)
+			.ceil();
+		if (inferredCells.lte(defaultCells)) {
+			return solver.roots();
+		}
+	} catch {
+		// Unsupported structure or numerical endpoint conversion retains the default fallback.
+	}
+
+	return undefined;
+}
+
 function calculateSolutions(
 	factors: Expression[],
 	variable: string,
-	disjointPolynomialFactors = false
+	disjointPolynomialFactors = false,
+	recursion?: SolveRecursionContext
 ) {
 	const solutionSet = disjointPolynomialFactors
 		? new FactorRootAccumulator()
@@ -63,21 +215,30 @@ function calculateSolutions(
 			// Don't even try to solve the function if it does not have x
 			else if (fn.hasVariable(variable)) {
 				// First Symbolically
-				let solutions = new SymbolicSolver(fn, variable).solve();
+				let solutions = new SymbolicSolver(fn, variable, recursion).solve();
 
 				if (solutions.unsolved && fn.isPolynomialLike() && fn.getPower().gt(four())) {
 					const linearPoly = fn.toLinearAndUnitMultiplier();
 					// See if you can solve the linear polynomial
-					solutions = new SymbolicSolver(linearPoly, variable).solve();
+					solutions = new SymbolicSolver(linearPoly, variable, recursion).solve();
 				}
 
 				if (!solutions.unsolved) {
 					if (disjointPolynomialFactors) {
-						const factorSolutions = new SolutionSet();
-						factorSolutions.addSolutions(solutions.solutions, fn, variable);
-						if (factorSolutions.count() > 0) {
-							factorSolutions.solutionsType = 'symbolic';
-							(solutionSet as FactorRootAccumulator).appendFactorSolutions(factorSolutions);
+						// Exact irreducible factors are square-free. Verify each symbolic root
+						// independently to avoid costly equality expansion between distinct radicals.
+						const seen = new Set<string>();
+						for (const candidate of solutions.solutions) {
+							const key = candidate.text();
+							if (!seen.has(key)) {
+								const factorSolutions = new SolutionSet();
+								factorSolutions.addSolution(candidate, fn, variable);
+								if (factorSolutions.count() > 0) {
+									factorSolutions.solutionsType = 'symbolic';
+									(solutionSet as FactorRootAccumulator).appendFactorSolutions(factorSolutions);
+								}
+								seen.add(key);
+							}
 						}
 					} else {
 						const symbolicSolutions = new SolutionSet(solutions.solutions);
@@ -127,7 +288,8 @@ function calculateSolutions(
 		const vars = fn.variables();
 		const options: FunctionSolverOptions = { method: 'Brent' };
 		if (vars.length === 1 && vars[0] === variable) {
-			const solutions = new FunctionSolver(fn, variable, options).roots();
+			const solutions = solveWithInferredBounds(fn, variable) ??
+				new FunctionSolver(fn, variable, options).roots();
 			if (solutions.length > 0) {
 				for (const solution of solutions) {
 					solutionSet.add(solution);
@@ -171,7 +333,7 @@ export function roots(input: ExpressionInput, variable?: ExpressionInput): Vecto
 	const variableName =
 		variable === undefined
 			? variables[0]
-			: assertPlainVariableAndGetString(Expression.create(variable));
+			: requireVariableName(Expression.create(variable));
 
 	if (variableName === undefined) {
 		return new Vector([expression]);
@@ -190,9 +352,11 @@ export function roots(input: ExpressionInput, variable?: ExpressionInput): Vecto
  *
  * @remarks
  * Numerical fallback is heuristic and searches a finite range, so an empty result does
- * not in general prove that no solution exists. Strategy and input errors are absorbed
- * by this convenience entry point and produce the solutions collected before
- * the failure. Decimal input marks returned solutions for decimal formatting.
+ * not in general prove that no solution exists. A narrow affine-plus-bounded-trig form
+ * may supply a certified finite enclosure, but its non-monotone scan remains heuristic.
+ * Strategy and input errors are absorbed by this convenience entry point and produce the
+ * solutions collected before the failure. Decimal input marks returned solutions for
+ * decimal formatting.
  *
  * The `options` parameter is currently reserved and is not forwarded to the
  * numerical strategies.
@@ -212,16 +376,20 @@ export function roots(input: ExpressionInput, variable?: ExpressionInput): Vecto
 export function solve(
 	input: ExpressionInput | Equation,
 	variable?: ExpressionInput,
-	_options?: FunctionSolverOptions
+	_options?: FunctionSolverOptions,
+	recursion?: SolveRecursionContext
 ) {
 	// The solution set that's being returned
 	const solutions = new SolutionSet();
+	const solveRecursion = recursion ?? { depth: 0 };
 	let asDecimal = false;
+	let preparedExpression: Expression | undefined;
 
 	// Try to solve the equation.
 	try {
 		// Prepare the inputs
 		const { expression, x } = prepareSolverInputs(input, variable);
+		preparedExpression = expression;
 		asDecimal = expression.hasDecimal();
 		// Get the variables
 		const vars = expression.variables();
@@ -231,9 +399,12 @@ export function solve(
 			solutions.addSolution(all(), expression, x);
 			solutions.solutionsType = 'symbolic';
 		}
-		// For monomials a*x^n the value is zero for all values of x
-		else if (expression.isVAR() || (!vars.includes(x) && !expression.isNUM())) {
-			// There's not need to check if the variable matches x as this one done in prepareSolverInputs
+		// A nonzero expression independent of x has no roots in x.
+		else if (!vars.includes(x)) {
+			solutions.solutionsType = 'symbolic';
+		}
+		// A lone variable is zero only at zero.
+		else if (expression.isVAR()) {
 			solutions.addSolution(zero(), expression, x);
 			solutions.solutionsType = 'symbolic';
 		} else {
@@ -312,8 +483,17 @@ export function solve(
 			const commonFactors = commonFactored?.isProduct()
 				? commonFactored.elementsArray()
 				: undefined;
-			const direct = containsRadicalTerm
-				? new SymbolicSolver(expression, x).solve()
+			// Try the direct inversion path for variable-dependent logarithms, too.
+			// A constant change-of-base factor may hide the log inside a product.
+			let containsLogarithm = false;
+			expression.forEveryElement(element => {
+				if (element.isFunction(LOG) && element.hasVariable(x)) {
+					containsLogarithm = true;
+				}
+				return element;
+			});
+			const direct = containsRadicalTerm || containsLogarithm
+				? new SymbolicSolver(expression, x, solveRecursion).solve()
 				: undefined;
 			let rationalNumerator: Expression | undefined;
 			let rationalDenominator: Expression | undefined;
@@ -344,7 +524,7 @@ export function solve(
 			} else if (commonFactors) {
 				solutions.addSolution(zero(), expression, x);
 				solutions.solutionsType = 'symbolic';
-				const commonSolutions = calculateSolutions(commonFactors, x);
+				const commonSolutions = calculateSolutions(commonFactors, x, false, solveRecursion);
 				if (
 					isNumericUnivariatePolynomial &&
 					commonSolutions.solutionsType === 'numeric'
@@ -362,10 +542,10 @@ export function solve(
 			} else if (rationalNumerator && rationalDenominator) {
 				// A rational expression is zero exactly where its polynomial numerator is zero,
 				// except at denominator singularities. Avoid polynomializing the nested quotient again.
-				const extraneous = calculateSolutions([rationalDenominator], x);
+				const extraneous = calculateSolutions([rationalDenominator], x, false, solveRecursion);
 				solutions.exclude(extraneous);
 				solutions.addSolutions(
-					calculateSolutions([rationalNumerator], x),
+					calculateSolutions([rationalNumerator], x, false, solveRecursion),
 					expression,
 					x
 				);
@@ -380,14 +560,16 @@ export function solve(
 				const extraneous = calculateSolutions(
 					factorObj.denominator,
 					x,
-					disjointPolynomialFactors
+					disjointPolynomialFactors,
+					solveRecursion
 				);
 				solutions.exclude(extraneous);
 				// Get the solutions in the numerator
 				const numSolutions = calculateSolutions(
 					factorObj.numerator,
 					x,
-					disjointPolynomialFactors
+					disjointPolynomialFactors,
+					solveRecursion
 				);
 				if (
 					isNumericUnivariatePolynomial &&
@@ -401,7 +583,22 @@ export function solve(
 				}
 			}
 		}
-	} catch (_e) {}
+	} catch (error) {
+		const unsupported = error instanceof UnsupportedOperationError ||
+			error instanceof PolynomialError || error instanceof NotImplementedError;
+		if (!preparedExpression || !unsupported) {
+			throw error;
+		}
+		solutions.unsolved = preparedExpression;
+		solutions.partial = solutions.count() > 0;
+	}
+
+	// A numeric scan cannot prove completeness after the symbolic recursion budget is exhausted.
+	if (solveRecursion.exhausted && preparedExpression &&
+		!preparedExpression.isPolynomialLike() && solutions.solutionsType !== 'symbolic') {
+		solutions.unsolved ??= preparedExpression;
+		solutions.partial = solutions.count() > 0;
+	}
 
 	if (asDecimal) {
 		solutions.each(solution => {
@@ -410,5 +607,8 @@ export function solve(
 		});
 	}
 
+	if (!recursion && solutions.unsolved) {
+		warn('solve.partialResult', message('solvePartialResultWarning'));
+	}
 	return solutions;
 }

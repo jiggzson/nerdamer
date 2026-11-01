@@ -1,29 +1,33 @@
 import Decimal from 'decimal.js';
 
-import { abs, mod } from '../../../math/math';
+import { abs, mod } from '../../../math/index';
 import { isNerdamerNativeType } from '../../common/common';
+import {
+	EXPRESSION_TYPES,
+	EXPRESSION,
+	EQUATION,
+	dataTypes,
+} from '../../constants/entityTypes';
+import {
+	IMAGPART,
+	LOG as LOG_FUNCTION,
+	REALPART,
+} from '../../constants/functionNames';
+import { SYMBOLIC_ACCESSOR } from '../../constants/parserSyntax';
+import { PARSER_CONSTANTS } from '../../constants/parserValues';
+import {
+	DEFAULT_IMAGINARY,
+	E,
+	INFINITY,
+	INTEGER_PARAM,
+	PI,
+} from '../../constants/symbolNames';
 import { message, UnexpectedDataType } from '../../errors';
 import { build } from '../../functions/build';
 import { imagPart, realPart } from '../../functions/complex';
 import { expand } from '../../functions/expand/expand';
 import { subst } from '../../functions/subst';
 import { Settings } from '../../Settings';
-import {
-	EXPRESSION_TYPES,
-	EXPRESSION,
-	EQUATION,
-	INFINITY,
-	E,
-	PI,
-	DEFAULT_IMAGINARY,
-	IMAGPART,
-	INDEX_VARIABLE,
-	LOG as LOG_FUNCTION,
-	REALPART,
-	PARSER_CONSTANTS,
-	SYMBOLIC_ACCESSOR,
-	dataTypes,
-} from '../parser/constants';
 import { add } from '../parser/operations/add';
 import { gt, gte, equal, lt, lte } from '../parser/operations/compare';
 import { divide } from '../parser/operations/divide';
@@ -540,12 +544,12 @@ export class Expression implements Base<Expression> {
 	}
 
 	/**
-	 * Creates the internal summation/product index placeholder variable `_n`.
+	 * Creates the reserved integer-parameter variable `_n` for indexed solution families.
 	 *
 	 * @returns An Expression representing the variable `_n`.
 	 */
 	public static N() {
-		return Expression.Variable(INDEX_VARIABLE);
+		return Expression.Variable(INTEGER_PARAM);
 	}
 
 	/**
@@ -1033,6 +1037,14 @@ export class Expression implements Base<Expression> {
 	 * ```
 	 */
 	evaluate(values?: ParserValuesObject): Expression {
+		const p = this.getPower();
+		if (p.isInteger() && !p.isOne() && this.isComplex()) {
+			const base = this.getBase();
+			if (realPart(base).isNUM() && imagPart(base).isNUM()) {
+				return expand(this).evaluate(values);
+			}
+		}
+
 		let source: string;
 		if (this.scientific !== undefined) {
 			const sourceExpression = this.copy();
@@ -1307,7 +1319,7 @@ export class Expression implements Base<Expression> {
 			}
 		}
 
-		return this.power;
+		return Object.isFrozen(this) ? this.power.copy() : this.power;
 	}
 
 	/**
@@ -1671,15 +1683,15 @@ export class Expression implements Base<Expression> {
 	 * Expression.create('sin(x)').isFunction('cos') // false
 	 * ```
 	 */
-	isFunction(names: string | string[]): boolean;
-	isFunction(names?: string | string[]): boolean {
-		let retval: boolean;
-		if (names === undefined) {
-			retval = this.type === FUN;
-		} else if (typeof names === 'string') {
-			retval = names === this.name;
-		} else {
-			retval = names.includes(String(this.name));
+	isFunction(names: string | readonly string[]): boolean;
+	isFunction(names?: string | readonly string[]): boolean {
+		let retval = this.type === FUN;
+		if (retval && names !== undefined) {
+			if (typeof names === 'string') {
+				retval = names === this.name;
+			} else {
+				retval = names.includes(String(this.name));
+			}
 		}
 
 		return retval;
@@ -1907,10 +1919,11 @@ export class Expression implements Base<Expression> {
 	 * and fractional powers are rejected. This is a structural eligibility check used by
 	 * polynomial-oriented algorithms; it does not construct a {@link algebra!Polynomial}.
 	 *
-	 * @returns `true` when the expression satisfies the current polynomial-like restrictions.
+	 * @param variables - Optional polynomial variables; other independent expressions are coefficients.
+ * @returns `true` when the expression satisfies the current polynomial-like restrictions.
 	 */
-	isPolynomialLike() {
-		return isPolynomialLike(this);
+	isPolynomialLike(variables?: string[]) {
+		return isPolynomialLike(this, variables);
 	}
 
 	/**

@@ -1,8 +1,8 @@
+import { dataTypes } from '../../../constants/entityTypes';
 import { message, ParserError, UnexpectedDataType } from '../../../errors';
 import { Settings } from '../../../Settings';
 import { Expression } from '../../expression/Expression';
 import { one, zero } from '../../expression/shortcuts';
-import { dataTypes } from '../constants';
 import {
 	BreakSignal,
 	ContinueSignal,
@@ -70,8 +70,8 @@ export function functionBoundary(evaluate: () => ParserEntity): ParserEntity {
 		retval = evaluate();
 	} catch (error) {
 		if (ReturnSignal.isReturnSignal(error)) {retval = error.value;}
-		else if (BreakSignal.isBreakSignal(error)) {throw new ParserError(message('breakOutsideLoop'));}
-		else if (ContinueSignal.isContinueSignal(error)) {throw new ParserError(message('continueOutsideLoop'));}
+		else if (BreakSignal.isBreakSignal(error)) {throw new ParserError(message('controlFlowOutsideLoop', { keyword: 'break' }));}
+		else if (ContinueSignal.isContinueSignal(error)) {throw new ParserError(message('controlFlowOutsideLoop', { keyword: 'continue' }));}
 		else {throw error;}
 	} finally {
 		symbolicFunctionDepth--;
@@ -84,12 +84,12 @@ export function RETURN(x: ParserEntity): never {
 }
 
 export function BREAK(): never {
-	if (loopBodyDepth === 0) {throw new ParserError(message('breakOutsideLoop'));}
+	if (loopBodyDepth === 0) {throw new ParserError(message('controlFlowOutsideLoop', { keyword: 'break' }));}
 	throw BREAK_SIGNAL_INSTANCE;
 }
 
 export function CONTINUE(): never {
-	if (loopBodyDepth === 0) {throw new ParserError(message('continueOutsideLoop'));}
+	if (loopBodyDepth === 0) {throw new ParserError(message('controlFlowOutsideLoop', { keyword: 'continue' }));}
 	throw CONTINUE_SIGNAL_INSTANCE;
 }
 
@@ -147,7 +147,7 @@ export function ISERROR(expression: DeferredFunctionArgument): Expression {
 	return retval;
 }
 
-function controlFlowReturnBoundary(evaluate: () => ParserEntity): ParserEntity {
+function withReturnBoundary(evaluate: () => ParserEntity): ParserEntity {
 	let retval: ParserEntity;
 	try {
 		retval = evaluate();
@@ -167,7 +167,7 @@ export function IF(
 	branch1: DeferredFunctionArgument,
 	branch2?: DeferredFunctionArgument
 ): ParserEntity {
-	return controlFlowReturnBoundary(() => {
+	return withReturnBoundary(() => {
 		const evaluatedCondition = condition();
 		let retval: ParserEntity;
 		if (isTruthy(evaluatedCondition)) {retval = branch1();}
@@ -181,7 +181,7 @@ export function WHILE(
 	condition: DeferredFunctionArgument,
 	body: DeferredFunctionArgument
 ): ParserEntity {
-	return controlFlowReturnBoundary(() => {
+	return withReturnBoundary(() => {
 		let retval: ParserEntity | undefined;
 		let continueLoop = true;
 		let iterations = 0;
@@ -221,7 +221,7 @@ export function FOR(
 	update: DeferredFunctionArgument,
 	body: DeferredFunctionArgument
 ): ParserEntity {
-	return controlFlowReturnBoundary(() => {
+	return withReturnBoundary(() => {
 		initializer();
 		return WHILE(condition, () => {
 			let bodyResult: ParserEntity;

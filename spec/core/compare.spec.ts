@@ -85,6 +85,27 @@ describe('compare: gt/gte/lt/lte (basic numeric)', () => {
 	});
 });
 
+describe('compare: exact rational ordering', () => {
+	it('distinguishes rational decimal values beyond ordinary floating-point precision', () => {
+		const lower = '0.95424250943000000000000000000001';
+		const upper = '0.95424250943000000000000000000002';
+
+		expect(gt(upper, lower)).toBe(true);
+		expect(lt(lower, upper)).toBe(true);
+		expect(gt(lower, upper)).toBe(false);
+		expect(gte(upper, lower)).toBe(true);
+		expect(lte(lower, upper)).toBe(true);
+		expect(equal(lower, upper)).toBe(false);
+	});
+
+	it('compares exact fractions without decimal evaluation', () => {
+		expect(gt('7/11', '5/8')).toBe(true);
+		expect(lt('-7/11', '-5/8')).toBe(true);
+		expect(gte('2/4', '0.5')).toBe(true);
+		expect(lte('0.5', '2/4')).toBe(true);
+	});
+});
+
 describe('compare: gt/gte/lt/lte (symbolic guardrails)', () => {
 	it('should be reflexive for equality cases', () => {
 		expect(gt('x', 'x')).toBe(false);
@@ -117,6 +138,57 @@ describe('compare: gt/gte/lt/lte (symbolic guardrails)', () => {
 		// Depends on x
 		expect(gt('x^2', 'x')).toBe(false);
 		expect(lt('x^2', 'x')).toBe(false);
+	});
+});
+
+describe('compare: exact rational powers', () => {
+	it('compares rational exponents without decimal approximation', () => {
+		expect(gt('2^(2/3)', '3^(2/3)')).toBe(false);
+		expect(lt('2^(2/3)', '3^(2/3)')).toBe(true);
+		expect(gt('4^(2/3)', '4^(1/7)')).toBe(true);
+		expect(lt('4^(1/7)', '4^(2/3)')).toBe(true);
+	});
+
+	it('compares products of rational powers exactly', () => {
+		expect(gt('2^(1/3)*3^(1/3)', '5^(1/3)')).toBe(true);
+		expect(lt('2^(1/3)*3^(1/3)', '7^(1/3)')).toBe(true);
+		expect(gt('2^(1/3)*3^(1/5)', '2^(1/5)*3^(1/3)')).toBe(false);
+		expect(lt('2^(1/3)*3^(1/5)', '2^(1/5)*3^(1/3)')).toBe(true);
+	});
+
+	it('reuses common exponent denominators across multiple factors', () => {
+		expect(gt('2^(1/3)*3^(1/3)*5^(1/3)*7^(1/3)', '200^(1/3)')).toBe(true);
+		expect(lt('2^(1/3)*3^(1/3)*5^(1/3)*7^(1/3)', '220^(1/3)')).toBe(true);
+		expect(gt('2^(1/3)*3^(1/3)*5^(1/3)*7^(1/3)', '210^(1/3)')).toBe(false);
+	});
+
+	it('handles the exact exponent limit and equivalent products', () => {
+		expect(lt('2^(1/64)', '3^(1/64)')).toBe(true);
+		expect(gt('2^(-1/64)', '3^(-1/64)')).toBe(true);
+		expect(gt('2^(1/3)*3^(1/3)', '6^(1/3)')).toBe(false);
+		expect(lt('2^(1/3)*3^(1/3)', '6^(1/3)')).toBe(false);
+		expect(gte('2^(1/3)*3^(1/3)', '6^(1/3)')).toBe(true);
+		expect(lte('2^(1/3)*3^(1/3)', '6^(1/3)')).toBe(true);
+	});
+
+	it('does not use rounded comparisons after the exact exponent limit', () => {
+		// Both comparisons exceed the supported common exponent of 64.
+		expect(gt('2^(1/65)', '3^(1/65)')).toBe(false);
+		expect(lt('2^(1/65)', '3^(1/65)')).toBe(false);
+		expect(gt('2^(1/3)', '3^(1/67)')).toBe(false);
+		expect(lt('2^(1/3)', '3^(1/67)')).toBe(false);
+	});
+
+	it('handles reciprocal and negative rational exponents', () => {
+		expect(gt('2^(-1/3)', '3^(-1/3)')).toBe(true);
+		expect(lt('(1/4)^(1/3)', '(1/2)^(1/3)')).toBe(true);
+		expect(gt('2^(1/3)*3^(-1/3)', '(1/2)^(1/3)')).toBe(true);
+		expect(lt('2^(-1/3)*3^(-1/3)', '1')).toBe(true);
+	});
+
+	it('compares rational powers with positive rational coefficients', () => {
+		expect(gt('3*2^(1/3)', '2*2^(1/3)')).toBe(true);
+		expect(lt('2*2^(1/3)', '3*2^(1/3)')).toBe(true);
 	});
 });
 
@@ -158,7 +230,7 @@ describe('compare: sign-of-difference guardrails', () => {
 		expect(lte('x-x', '0')).toBe(true);
 	});
 
-	it('should satisfy basic comparator invariants for constants', () => {
+	it('keeps comparison directions and equality consistent for constants', () => {
 		const pairs: Array<[string, string]> = [
 			['5', '4'],
 			['-5', '-4'],

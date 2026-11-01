@@ -1,4 +1,5 @@
 import { simplify } from '../../src/algebra/simplify/simplify';
+import { assume, clearAssumptions } from '../../src/core/classes/assumption/assume';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { Parser } from '../../src/core/classes/parser/Parser';
 import nerdamer from '../../src/index';
@@ -6,6 +7,74 @@ import nerdamer from '../../src/index';
 const text = (expr: string | number) => Expression.create(expr).text();
 
 describe('Simplify', () => {
+	// Regression: https://github.com/jiggzson/nerdamer/issues/669
+	it('preserves principal complex values of Cardano radicals during simplification', () => {
+		const input =
+			'((-1/2)*x^3+sqrt((1/27)*x^3+(1/4)*x^6))^(1/3)' +
+			'+((-1/2)*x^3-sqrt((1/27)*x^3+(1/4)*x^6))^(1/3)';
+		const original = Expression.create(input);
+		const simplified = original.simplify();
+		const publicSimplified = nerdamer.simplify(input);
+		expect(Expression.isExpression(publicSimplified)).toBe(true);
+		if (!Expression.isExpression(publicSimplified)) {
+			throw new Error('Expected simplify to return an Expression.');
+		}
+
+		for (const value of ['1', '2']) {
+			const evaluate = (expression: Expression) =>
+				expression.sub('x', value).evaluate().text({ decimal: true });
+			const expected = evaluate(original);
+			expect(evaluate(simplified)).toEqual(expected);
+			expect(evaluate(publicSimplified)).toEqual(expected);
+		}
+
+		// Ordinary fractional powers use the principal complex branch, not real cbrt.
+		const atOne = original.sub('x', '1').evaluate().text({ decimal: true });
+		expect(atOne).toContain('i');
+		expect(atOne).not.toEqual('-1/27');
+	});
+
+	// Regression: https://github.com/jiggzson/nerdamer/issues/651
+	it('agrees across simplification APIs without approximating radicals', () => {
+		const cases = [
+			['sqrt(2)', '2^(1/2)'],
+			['sqrt(a)/a', 'a^(-1/2)'],
+			['sqrt(2*a)/a', '2^(1/2)*a^(-1/2)'],
+		];
+		for (const [input, expected] of cases) {
+			expect(nerdamer(input).simplify().text()).toEqual(expected);
+			expect(nerdamer.simplify(input).text()).toEqual(expected);
+		}
+	});
+
+	it.each([
+		'sin((x+1)*(x+2))',
+		'cos(sin((x+1)/(x-1)))',
+		'sin(cos((x+1)/(x-1)))',
+		'2*sin((x+1)*(x+2))',
+		'sin((x+1)*(x+2))^2',
+		'factorial(x+2)',
+	])('keeps nested function simplification repeatable for %s', input => {
+		const result = simplify(input);
+		expect(simplify(result).eq(result)).toBe(true);
+	});
+
+	it('cancels consecutive polynomial factors without changing the value', () => {
+		// Regression for legacy issue #255 case 7: a common factor appears
+		// separately as x, y, and z in the denominator.
+		const input = '(1/(5*z)-2/(3*x)-1/(4*y))*(60*x*y*z)';
+		const expected = '12*x*y-15*x*z-40*y*z';
+		const reduced = simplify(input);
+		for (const values of [{ x: 2, y: 3, z: 5 }, { x: 1, y: 4, z: 2 }]) {
+			const actual = Number(reduced.evaluate(values).text({ decimal: true }));
+			const original = Number(Expression.create(input).evaluate(values).text({ decimal: true }));
+			const target = Number(Expression.create(expected).evaluate(values).text({ decimal: true }));
+			expect(actual).toBeCloseTo(original, 12);
+			expect(actual).toBeCloseTo(target, 12);
+		}
+		expect(reduced.text()).toEqual(simplify(expected).text());
+	});
+
 	// TODO: These can be handled with simplify
 	it('should simplify square roots', () => {
 		expect(Parser.parse('2*sqrt(4*x)').text()).toEqual('4*x^(1/2)');
@@ -48,6 +117,95 @@ describe('Simplify', () => {
 		);
 		expect(simplify('sqrt(2/x)').text()).toEqual('2^(1/2)*(x^-1)^(1/2)');
 	});
+
+	// Regression: https://github.com/jiggzson/nerdamer/issues/210
+	it.each([
+		['1/(sqrt(2)-1)', 'sqrt(2)+1'],
+		['3/(sqrt(5)+sqrt(8))', '2*sqrt(2)-sqrt(5)'],
+		['sqrt(2)/(sqrt(6)-sqrt(2))', '(sqrt(3)+1)/2'],
+		['(sqrt(7)-3)/(sqrt(7)+3)', '3*sqrt(7)-8'],
+		['(3*sqrt(3)+sqrt(7))/(2*sqrt(3)-sqrt(7))', '5+sqrt(21)'],
+	])('rationalizes %s', (input, expected) => {
+		const actual = simplify(input);
+		const wanted = Expression.create(expected);
+		if (!actual.eq(wanted)) {
+			throw new Error(`${input}: got ${actual.text()}, expected ${wanted.text()}`);
+		}
+	});
+
+	// Regression: https://github.com/jiggzson/nerdamer/issues/210
+	it.each([
+		['floor(floor(x))', 'floor(x)'],
+		['floor(ceil(x))', 'ceil(x)'],
+		['ceil(floor(x))', 'floor(x)'],
+		['trunc(round(ceil(floor(x))))', 'floor(x)'],
+		['round(floor(x))', 'floor(x)'],
+		['ceil(trunc(x))', 'trunc(x)'],
+		['floor(round(x,2))', 'floor(round(x,2))'],
+	])('simplifies nested integer functions: %s', (input, expected) => {
+		expect(simplify(input).text()).toEqual(Expression.create(expected).text());
+	});
+
+	// Regression: https://github.com/jiggzson/nerdamer/issues/210
+	it.each([
+		['6^(2*pi)-36^pi', '0'],
+		['36^pi-6^(2*pi)', '0'],
+		['2^(3*x)-8^x', '0'],
+		['9^(2*x)-3^(4*x)', '0'],
+		['6^(2*x)-36^y', '6^(2*x)-36^y'],
+		['6^(2*pi)-35^pi', '6^(2*pi)-35^pi'],
+	])('compares equivalent positive integer power bases: %s', (input, expected) => {
+		expect(simplify(input).text()).toEqual(Expression.create(expected).text());
+	});
+
+	// These functions return different principal angles even for the same input.
+	// Check each range, periodic angles, and expressions we cannot reduce.
+	it.each([
+		['asin(sin(3))', 'pi-3'],
+		['asin(sin(-3))', '3-pi'],
+		['asin(sin(4))', 'pi-4'],
+		['asin(sin(-4))', '4-pi'],
+		['asin(sin(1))', '1'],
+		['asin(sin(-1))', '-1'],
+		['asin(sin(7))', '7-2*pi'],
+		['asin(sin(-7))', '2*pi-7'],
+		['acos(cos(3))', '3'],
+		['acos(cos(-3))', '3'],
+		['acos(cos(4))', '2*pi-4'],
+		['acos(cos(-4))', '2*pi-4'],
+		['acos(cos(7))', '7-2*pi'],
+		['atan(tan(3))', '3-pi'],
+		['atan(tan(-3))', 'pi-3'],
+		['atan(tan(4))', '4-pi'],
+		['atan(tan(-4))', 'pi-4'],
+		['atan(tan(7))', '7-2*pi'],
+		['acsc(csc(3))', 'pi-3'],
+		['acsc(csc(-3))', '3-pi'],
+		['acsc(csc(7))', '7-2*pi'],
+		['asec(sec(3))', '3'],
+		['asec(sec(-3))', '3'],
+		['asec(sec(4))', '2*pi-4'],
+		['acot(cot(3))', '3'],
+		['acot(cot(-3))', 'pi-3'],
+		['acot(cot(4))', '4-pi'],
+		['acot(cot(-4))', '2*pi-4'],
+		['asin(sin(x))', 'asin(sin(x))'],
+		['acos(cos(x))', 'acos(cos(x))'],
+		['atan(tan(x))', 'atan(tan(x))'],
+		['acsc(csc(x))', 'acsc(csc(x))'],
+		['asec(sec(x))', 'asec(sec(x))'],
+		['acot(cot(x))', 'acot(cot(x))'],
+		['asin(cos(3))', 'asin(cos(3))'],
+		['acos(sin(3))', 'acos(sin(3))'],
+		['atan(sin(3))', 'atan(sin(3))'],
+	])('reduces inverse trig compositions in their principal ranges: %s', (input, expected) => {
+		const actual = simplify(input);
+		const wanted = Expression.create(expected);
+		if (!actual.eq(wanted)) {
+			throw new Error(`${input}: got ${actual.text()}, expected ${wanted.text()}`);
+		}
+	});
+
 
 	it('should simplify factors', () => {
 		expect(simplify('a*(x+1)/(x^2+2*x+1)').text()).toEqual(text('a/(1+x)'));
@@ -122,6 +280,13 @@ describe('Simplify', () => {
 		expect(simplify('(a-b)^2-(b-a)^2').text()).toEqual('0');
 		expect(simplify('a+(a-b)^2-(b-a)^2').text()).toEqual('a');
 		expect(simplify('(x-3)^2 - (3-x)^2').text()).toEqual('0');
+	});
+
+	// Factoring out cos(x) reveals the Pythagorean identity in the remaining sum.
+	it('simplifies trig identities revealed by factoring', () => {
+		const input = '(-1/3)*cos(x)*sin(x)^2+(-2/3)*cos(x)-(-cos(x)+(1/3)*cos(x)^3)';
+		expect(simplify(input).text()).toBe('0');
+		expect(simplify('a*cos(x)*(1-sin(x)^2-cos(x)^2)').text()).toBe('0');
 	});
 
 	it('should simplify trig identities', () => {
@@ -246,6 +411,24 @@ describe('Simplification regressions', () => {
 		expect(nerdamer('sqrt(2)^3').text()).toEqual('2*2^(1/2)');
 	});
 
+	// Regression: https://github.com/jiggzson/nerdamer/issues/668
+	it('extracts a positive square shared by nested radical terms', () => {
+		const cases = [
+			['sqrt(4+4*sqrt(2))', '2*sqrt(1+sqrt(2))'],
+			['sqrt(9+9*x)', '3*sqrt(1+x)'],
+			['sqrt(-4-4*x)', '2*sqrt(-1-x)'],
+		];
+		for (const [input, expected] of cases) {
+			expect(Expression.create(input).simplify().text()).toEqual(Expression.create(expected).text());
+		}
+	});
+
+	it('keeps non-square common factors inside the square root', () => {
+		const input = Expression.create('sqrt(2+2*x)');
+		const output = input.simplify();
+		expect(output.text()).toEqual(input.text());
+	});
+
 	// Regression: https://github.com/jiggzson/nerdamer/issues/360
 	it('preserves all factors in nested square roots', () => {
 		const cases = [
@@ -316,7 +499,7 @@ describe('Simplification regressions', () => {
 	});
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/331
-	it('simplifies the divide invariant through the 2.0 API', () => {
+	it('cancels a common factor in a quotient', () => {
 		expect(nerdamer('simplify((a*b^(-1)+b^(-1)*c)/(a+c))').text()).toEqual('b^-1');
 	});
 
@@ -386,11 +569,15 @@ describe('Simplification regressions', () => {
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/568
 	it('completes simplification when a secondary variable sorts before x', () => {
-		const source =
-			'w-(( -(-1+x)^(-1)+x*(-1+x)^(-1))^(-1)*(-1+x)^(-1)*w*x-( -(-1+x)^(-1)+x*(-1+x)^(-1))^(-1)*(-1+x)^(-1)*w*x*x^(-1))';
-		const actual = Expression.create(source).simplify();
+		for (const variable of ['w', 'z']) {
+			const source =
+				`${variable}-(( -(-1+x)^(-1)+x*(-1+x)^(-1))^(-1)*(-1+x)^(-1)*${variable}*x-` +
+				`( -(-1+x)^(-1)+x*(-1+x)^(-1))^(-1)*(-1+x)^(-1)*${variable}*x*x^(-1))`;
+			const actual = Expression.create(source).simplify();
 
-		expect(actual.text().length).toBeGreaterThan(0);
+			// For x != 0,1, the inner sum is 1 and the parenthesized difference is variable.
+			expect(actual.simplify().isZero()).toBe(true);
+		}
 	}, 15_000);
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/577
@@ -400,6 +587,38 @@ describe('Simplification regressions', () => {
 
 		expect(actual.minus(source).simplify().isZero()).toBe(true);
 		expect(actual.eq(1)).toBe(false);
+	});
+
+	// Open historical issue #255: recognize a perfect-square numerator after a power substitution.
+	it('simplifies a nested principal radical under a positive assumption', () => {
+		assume('a>0');
+		try {
+			const result = simplify('sqrt((a^2-a^-2)/2+sqrt(1+((a^2-a^-2)/2)^2))');
+			expect(result.eq('a')).toBe(true);
+		} finally {
+			clearAssumptions();
+		}
+	});
+
+	it('retains the correct principal sign under negative assumptions', () => {
+		assume('a<0');
+		try {
+			const inner = simplify('sqrt(1+((a^2-a^-2)/2)^2)');
+			expect(inner.eq('(a^2+a^-2)/2')).toBe(true);
+			const result = simplify('sqrt((a^2-a^-2)/2+sqrt(1+((a^2-a^-2)/2)^2))');
+			expect(result.eq('-a')).toBe(true);
+		} finally {
+			clearAssumptions();
+		}
+	});
+
+	it('does not choose a sign for an unconstrained perfect-square radical', () => {
+		const source = 'sqrt(1+((a^2-a^-2)/2)^2)';
+		const result = simplify(source);
+		expect(simplify('sqrt((x^2-1)^2)').eq('x^2-1')).toBe(false);
+		for (const a of [2, -2]) {
+			expect(Number(result.evaluate({ a }).text({ decimal: true }))).toBeCloseTo((a*a+1/(a*a))/2, 10);
+		}
 	});
 
 	// Regression: https://github.com/together-science/nerdamer-prime/issues/147

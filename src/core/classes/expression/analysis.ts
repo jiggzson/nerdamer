@@ -198,7 +198,10 @@ export function getNumerator(x: Expression) {
  * @returns
  */
 
-export function isPolynomialLike(x: Expression) {
+export function isPolynomialLike(x: Expression, variables?: string[]) {
+	if (variables && variables.every(variable => !x.hasVariable(variable))) {
+		return true;
+	}
 	const power = x.getPower();
 	// Instantly disqualify elements under the denominator, radicals, exponential functions, infinity, ...
 	if (!power.isInteger() || power.sign() === -1 || x.isEXP() || x.isFunction() || x.isInf()) {
@@ -209,10 +212,14 @@ export function isPolynomialLike(x: Expression) {
 	else if (x.isSum() || x.isProduct()) {
 		// Check the elements
 		for (const element of x.elementsArray()) {
-			if (!isPolynomialLike(element)) {
+			if (!isPolynomialLike(element, variables)) {
 				return false;
 			}
 		}
+	}
+	// With selected variables, only a selected variable can be a monomial.
+	if (variables && !x.isSum() && !x.isProduct()) {
+		return x.isVAR() && variables.includes(x.value);
 	}
 	// Return true for all else x, x^2, etc
 	return true;

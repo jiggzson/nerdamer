@@ -1,0 +1,1581 @@
+import Decimal from 'decimal.js';
+
+import { getAssumptionFor, hasAssumptions } from '../core/classes/assumption/assume';
+import { Complex } from '../core/classes/complex/Complex';
+import { Expression } from '../core/classes/expression/Expression';
+import { four, half, one, third, two, zero } from '../core/classes/expression/shortcuts';
+import {
+	resolveNumericValue,
+} from '../core/classes/expression/utils';
+import { Matrix } from '../core/classes/matrix/Matrix';
+import { multiply } from '../core/classes/parser/operations/multiply';
+import { power, sqrtToPow } from '../core/classes/parser/operations/power';
+import { maxCommonVariableOccurrence, polyMod } from '../core/classes/polynomial/utils';
+import {
+	Rational,
+	validateScientificSignificantDigits,
+} from '../core/classes/rational/Rational';
+import {
+	DICTIONARY,
+	SET,
+	SOLUTIONS_SET,
+	VECTOR,
+} from '../core/constants/entityTypes';
+import {
+	SQRT,
+	ABS,
+	MOD,
+	DOUBLE_FACTORIAL,
+	DIRAC,
+	HEAVISIDE,
+	SGN,
+	CBRT,
+	CEIL,
+	CONTAINS,
+	FLOOR,
+	MAX,
+	MIN,
+	ROUND,
+	RECT,
+	STEP,
+	TRI,
+	FACTORIAL,
+	FIB,
+} from '../core/constants/functionNames';
+import { WRAP } from '../core/constants/parserSyntax';
+import { message, MathError, UndefinedError, UnexpectedInputError } from '../core/errors';
+import {
+	abs as bigintAbs,
+	factorial as fact,
+	fibonacci as fib,
+	isEven,
+	sign as bigintSign,
+} from '../core/functions/bigint/bigint';
+import { primeFactorCounts } from '../core/functions/bigint/primeFactor';
+import { csgn } from '../core/functions/complex';
+import { scopedBlock, Settings } from '../core/Settings';
+import { gamma } from '../special/gamma';
+
+import { hypot } from './geometry';
+import { atan2, cos, sin } from './trig';
+import { stripPower } from './utils';
+
+import type { Dictionary } from '../core/classes/dictionary/Dictionary';
+import type { ValuesSet } from '../core/classes/valuesSet/ValuesSet';
+import type { Vector } from '../core/classes/vector/Vector';
+import type { ExpressionInput, NerdamerInput } from '../core/types';
+import type { SolutionSet } from '../solve/classes/SolutionSet';
+
+export { product, sum } from './series';
+
+const POSITIVE_INTEGER_PRECISION = 'a positive integer precision';
+const DEFAULT_SCIENTIFIC_SIGNIFICANT_DIGITS = 10;
+
+/**
+ * Computes the square root of an expression. Equivalent to raising to the power of 1/2.
+ * Nested square roots are automatically simplified (e.g. `sqrt(sqrt(x))` becomes `x^(1/4)`).
+ *
+ * @param x - The expression to take the square root of.
+ * @returns The square root of `x`.
+ * @throws {@link core!UndefinedError} If `x` is `-∞`.
+ *
+ * @example
+ * ```ts
+ * // Numeric
+ * sqrt(4).text()             // "2"
+ * sqrt('1/4').text()         // "1/2"
+ *
+ * // Symbolic
+ * sqrt('x^2').text()         // "x"
+ * sqrt('x').text()           // "sqrt(x)"
+ * sqrt(0).text()             // "0"
+ * ```
+ */
+export function sqrt(x: ExpressionInput): Expression {
+	x = Expression.create(x);
+
+	let retval;
+	if (x.isPosInf() || x.isNegInf()) {
+		if (x.isNegInf()) {
+			throw new UndefinedError(message('undefinedValue'));
+		}
+		retval = Expression.Inf();
+	} else if (x.isOne()) {
+		retval = one();
+	} else if (x.isZero()) {
+		retval = zero();
+	}
+	// e.g. sqrt(sqrt(x))
+	else if (x.isFunction(SQRT)) {
+		// Unwrap the square root
+		retval = multiply(
+			sqrt(Expression.fromRational(x.getMultiplier())),
+			power(sqrtToPow(x.toUnitMultiplier()), half())
+		);
+	} else {
+		retval = power(x, half());
+	}
+
+	return retval;
+}
+
+/**
+ * Returns a copy that renders numeric values in scientific notation.
+ *
+ * The legacy implementation stored a formatting flag that its formatter did not
+ * consume. Nerdamer 2.0 keeps the expression exact and records the requested number
+ * of significant digits for formatting. Precision validation follows decimal.js and accepts
+ * integer values from 1 through 1e9.
+ */
+export function scientific(
+	x: ExpressionInput,
+	significantDigits: ExpressionInput = DEFAULT_SCIENTIFIC_SIGNIFICANT_DIGITS
+): Expression {
+	const digits = Expression.create(significantDigits);
+	const requestedDigits =
+		digits.isNUM() && digits.isInteger()
+			? Number(digits.getMultiplier().numerator)
+			: Number.NaN;
+	const precision = validateScientificSignificantDigits(requestedDigits, digits.text());
+
+	const retval = Expression.create(x, undefined, true);
+	retval.scientific = precision;
+	return retval;
+}
+
+/**
+ * Computes the nth root of an expression as its principal power.
+ *
+ * @param x - The expression whose root is requested.
+ * @param n - The root degree.
+ * @returns `x^(1/n)`.
+ */
+export function nthroot(x: ExpressionInput, n: ExpressionInput): Expression {
+	return power(Expression.create(x), one().div(Expression.create(n)));
+}
+
+/** Converts degrees to radians exactly. */
+export function radians(x: ExpressionInput): Expression {
+	return Expression.create(x).times(Expression.Pi()).div(Expression.create(180));
+}
+
+/** Converts radians to degrees exactly. */
+export function degrees(x: ExpressionInput): Expression {
+	return Expression.create(x).times(Expression.create(180)).div(Expression.Pi());
+}
+
+/** Returns the base-10 logarithm using the ordinary logarithm implementation. */
+export function log10(x: ExpressionInput): Expression {
+	return log(x, 10);
+}
+
+/**
+ * Computes the cube root of an expression.
+ *
+ * For real numeric constants, the *real* cube root is returned (so negative reals stay real).
+ * For complex constants, the principal cube root is used.
+ * Nested cube roots are simplified (e.g. `cbrt(cbrt(x))` becomes `x^(1/9)`).
+ *
+ * Unlike {@link sqrt}, `cbrt` is preserved as a function node rather than rewritten to
+ * `x^(1/3)` to avoid principal-branch issues during symbolic manipulation.
+ *
+ * @param x - The expression to take the cube root of.
+ * @returns The cube root of `x`.
+ *
+ * @example
+ * ```ts
+ * cbrt(8).text()              // "2"
+ * cbrt(-27).text()            // "-3"
+ * cbrt('x').text()            // "cbrt(x)"
+ * ```
+ */
+export function cbrt(x: ExpressionInput): Expression {
+	x = Expression.create(x);
+
+	// Resolve simple values before constant evaluation.
+	if (x.isPosInf() || x.isNegInf()) {
+		return x.isNegInf() ? Expression.NegInf() : Expression.Inf();
+	}
+	if (x.isOne()) {
+		return one();
+	}
+	if (x.isZero()) {
+		return zero();
+	}
+
+	// If requested, evaluate constant arguments first. This avoids leaving things like
+	// cbrt(-1/2 + (sqrt(3)*sqrt(31))/18) unevaluated.
+	//
+	// For real constants, this uses the *real* cube root (so negative reals stay real).
+	// For complex constants, it returns the principal cube root.
+
+	if (Settings.EVALUATE && x.isConstant()) {
+		const xe = x.isNUM() || x.isComplex() ? x : x.evaluate();
+
+		if (xe.isNUM()) {
+			const d = xe.getMultiplier().toDecimal();
+			const oneThird = new Decimal(1).div(3);
+			const r = d.isNeg() ? d.abs().pow(oneThird).neg() : d.pow(oneThird);
+			return Expression.create(r);
+		}
+
+		if (xe.isComplex()) {
+			const re = xe.realPart();
+			const im = xe.imagPart();
+			const a = Number(re.getMultiplier().toDecimal());
+			const b = Number(im.getMultiplier().toDecimal());
+			const mag = Math.hypot(a, b);
+			const ang = Math.atan2(b, a);
+			const mag13 = Math.cbrt(mag);
+			const ang13 = ang / 3;
+			const rr = mag13 * Math.cos(ang13);
+			const ii = mag13 * Math.sin(ang13);
+			return Expression.create(rr).plus(Expression.create(ii).times(Expression.Img()));
+		}
+	}
+
+	// e.g. cbrt(cbrt(x))
+	if (x.isFunction(CBRT)) {
+		return multiply(
+			cbrt(Expression.fromRational(x.getMultiplier())),
+			power(x.toUnitMultiplier(), third())
+		);
+	}
+
+	// Keep cbrt as a function node (rather than x^(1/3)) to avoid principal-branch
+	// issues during symbolic manipulation.
+	return Expression.toFunction(CBRT, [x]);
+}
+
+/**
+ * Wraps an expression in parentheses. Returns a function node whose only purpose
+ * is to visually group `x` with surrounding parentheses in output.
+ *
+ * @param x - The expression to wrap.
+ * @returns A parenthesised form of `x`.
+ *
+ * @example
+ * ```ts
+ * parens(Expression.create('x+1')).text()  // "(x+1)"
+ * ```
+ */
+export function parens(x: ExpressionInput): Expression {
+	return Expression.toFunction(WRAP, [Expression.create(x)]);
+}
+
+/**
+ * Computes the Fibonacci number for an integer index.
+ *
+ * Integer inputs are evaluated exactly, including negative indices through the
+ * negafibonacci identity. Symbolic and non-integer inputs remain unevaluated.
+ *
+ * @param x - Fibonacci index.
+ * @returns The exact Fibonacci number for an integer input, or symbolic `fib(x)`.
+ *
+ * @example
+ * ```ts
+ * fibonacci(10).text()   // "55"
+ * fibonacci(-4).text()   // "-3"
+ * fibonacci('x').text()  // "fib(x)"
+ * ```
+ */
+export function fibonacci(x: ExpressionInput): Expression {
+	x = Expression.create(x);
+
+	let retval: Expression;
+	if (x.isNUM() && x.isInteger()) {
+		retval = Expression.Number(fib(x.getMultiplier().numerator));
+	} else {
+		retval = Expression.toFunction(FIB, [Expression.create(x)]);
+	}
+
+	return retval;
+}
+
+/**
+ * Computes the factorial of an expression.
+ *
+ * For non-negative integers, returns the exact integer factorial.
+ * For half-integer arguments (e.g. `1/2`, `3/2`, `-1/2`), returns a closed-form
+ * expression involving `sqrt(π)`.
+ * When `Settings.EVALUATE` is `true` and the input is not an integer, falls back
+ * to the {@link gamma} function via Γ(x + 1).
+ *
+ * @param x - The expression to compute the factorial of.
+ * @returns The factorial of `x`.
+ * @throws {@link core!UndefinedError} If `x` is `-∞`.
+ *
+ * @example
+ * ```ts
+ * factorial(Expression.create(5)).text()       // "120"
+ * factorial(Expression.create(0)).text()       // "1"
+ * factorial(Expression.create('1/2')).text()   // "1/2*sqrt(pi)"
+ * ```
+ */
+export function factorial(x: Expression): Expression {
+	let retval: Expression;
+	if (x.isPosInf() || x.isNegInf()) {
+		if (x.isNegInf()) {
+			throw new UndefinedError(message('undefinedValue'));
+		}
+		return Expression.Inf();
+	}
+	if (x.isInteger()) {
+		retval = Expression.Number(fact(x.getMultiplier().numerator));
+	} else if (Settings.EVALUATE) {
+		retval = gamma(x.plus(one()));
+	} else {
+		// Check if we can simplify half integer factorials
+		let m = x.getMultiplier();
+		if (x.isNUM() && m.denominator === 2n) {
+			const sign = m.sign();
+			m = m.abs();
+			const n = Expression.create(m.numerator - 1n).div(two());
+			const sqrtPi = sqrt(Expression.Pi());
+			if (sign === -1) {
+				retval = four()
+					.neg()
+					.pow(n)
+					.times(factorial(n))
+					.div(factorial(n.times(two())))
+					.times(sqrtPi);
+			} else {
+				retval = factorial(n.times(two()).plus(one()))
+					.div(four().pow(n).times(factorial(n)).times(two()))
+					.times(sqrtPi);
+			}
+		} else {
+			retval = Expression.toFunction(FACTORIAL, [Expression.create(x)]);
+		}
+	}
+
+	return retval;
+}
+
+/**
+ * Computes the double factorial of an expression.
+ *
+ * For a non-negative integer n, the double factorial is the product of all positive
+ * integers up to n that share its parity:
+ * - Even: `n!! = 2 · 4 · 6 · … · n`
+ * - Odd:  `n!! = 1 · 3 · 5 · … · n`
+ *
+ * For non-integer arguments when `Settings.EVALUATE` is `true`, a generalised
+ * formula using the {@link gamma} function is applied.
+ *
+ * @param x - The expression to compute the double factorial of.
+ * @returns The double factorial of `x`.
+ * @throws {@link core!UndefinedError} If `x` is `-∞`.
+ *
+ * @example
+ * ```ts
+ * doubleFactorial(Expression.create(6)).text()   // "48"
+ * doubleFactorial(Expression.create(7)).text()   // "105"
+ * ```
+ */
+export function doubleFactorial(x: Expression) {
+	let retval;
+	if (x.isPosInf() || x.isNegInf()) {
+		if (x.isNegInf()) {
+			throw new UndefinedError(message('undefinedValue'));
+		}
+		return Expression.Inf();
+	}
+	if (Settings.EVALUATE) {
+		if (x.isInteger()) {
+			const even = x.isEven();
+			const xn = Number(x.getMultiplier().toDecimal());
+			// If x = even then n = x/2 else n = (x-1)/2
+			const n = even ? xn / 2 : (xn + 1) / 2;
+			let r = one();
+
+			for (let i = 1; i <= n; i++) {
+				let q = two().times(i);
+				if (!even) {
+					q = q.minus(one());
+				}
+				r = r.times(q);
+			}
+
+			retval = r;
+		} else {
+			const pi = Expression.Pi(true);
+			const a = two().pow(
+				x
+					.times(two())
+					.plus(one())
+					.minus(cos(pi.times(x)))
+					.div(four())
+			);
+			const b = pi.pow(cos(pi.times(x)).minus(one()).div(four()));
+			const c = gamma(x.div(two()).plus(one()));
+			retval = a.times(b).times(c);
+		}
+	} else {
+		retval = Expression.toFunction(DOUBLE_FACTORIAL, [Expression.create(x)]);
+	}
+
+	return retval;
+}
+
+/**
+ * Computes the Heaviside step function (unit step function).
+ *
+ * Uses the half-maximum convention at the origin:
+ * - `heaviside(x) = 0` for `x < 0`
+ * - `heaviside(0) = 1/2`
+ * - `heaviside(x) = 1` for `x > 0`
+ *
+ * For symbolic inputs, returns an unevaluated `heaviside(x)` node.
+ *
+ * @param x - The input expression.
+ * @returns The Heaviside step value.
+ *
+ * @example
+ * ```ts
+ * heaviside(Expression.create(3)).text()    // "1"
+ * heaviside(Expression.create(-2)).text()   // "0"
+ * heaviside(Expression.create(0)).text()    // "1/2"
+ * heaviside(Expression.create('t')).text()  // "heaviside(t)"
+ * ```
+ */
+export function heaviside(x: Expression): Expression {
+	let retval: Expression;
+	const useAssumptions = !x.isConstant() && !x.isComplex() && hasAssumptions();
+
+	if (x.isPosInf() || x.isNegInf()) {
+		retval = x.isNegInf() ? zero() : one();
+	} else if (x.isNUM()) {
+		const s = x.sign();
+		if (s === 1) {
+			retval = one();
+		} else if (s === -1) {
+			retval = zero();
+		} else {
+			// x === 0: half-maximum convention
+			retval = half();
+		}
+	} else if (useAssumptions && x.gt(zero())) {
+		retval = one();
+	} else if (useAssumptions && x.lt(zero())) {
+		retval = zero();
+	} else if (useAssumptions && x.gte(zero()) && x.lte(zero())) {
+		retval = half();
+	} else {
+		retval = Expression.toFunction(HEAVISIDE, [Expression.create(x)]);
+	}
+
+	return retval;
+}
+
+/**
+ * Legacy unit-step function. Unlike {@link heaviside}, the value at zero is 1.
+ */
+export function step(x: ExpressionInput): Expression {
+	x = Expression.create(x);
+	const useAssumptions = !x.isConstant() && !x.isComplex() && hasAssumptions();
+
+	if (x.isPosInf() || x.isNegInf()) {
+		return x.isNegInf() ? zero() : one();
+	}
+	if (x.isNUM()) {
+		return x.sign() < 0 ? zero() : one();
+	}
+	if (useAssumptions && x.lt(zero())) {
+		return zero();
+	}
+	if (useAssumptions && x.gte(zero())) {
+		return one();
+	}
+
+	return Expression.toFunction(STEP, [x]);
+}
+
+/**
+ * Rectangular pulse with unit width centered at zero.
+ *
+ * Returns 1 for |x| < 1/2, 1/2 at |x| = 1/2, and 0 for |x| > 1/2.
+ */
+export function rect(x: ExpressionInput): Expression {
+	const input = Expression.create(x);
+	const magnitude = abs(input);
+
+	if (magnitude.lt(half())) {
+		return one();
+	}
+	if (magnitude.eq(half())) {
+		return half();
+	}
+	if (magnitude.gt(half())) {
+		return zero();
+	}
+
+	return Expression.toFunction(RECT, [input]);
+}
+
+/** Triangular pulse: max(1 - |x|, 0) when the comparison can be resolved. */
+export function tri(x: ExpressionInput): Expression {
+	const input = Expression.create(x);
+	const magnitude = abs(input);
+
+	if (magnitude.lt(one())) {
+		return one().minus(magnitude);
+	}
+	if (magnitude.gte(one())) {
+		return zero();
+	}
+
+	return Expression.toFunction(TRI, [input]);
+}
+
+/**
+ * Computes the Dirac delta function (distribution).
+ *
+ * For non-zero numeric inputs, returns `0`. At `x = 0` the symbolic form
+ * `dirac(0)` is returned (the Dirac delta is only meaningful under an
+ * integral or Laplace transform). For symbolic inputs, returns an
+ * unevaluated `dirac(x)` node.
+ *
+ * @param x - The input expression.
+ * @returns The Dirac delta value or symbolic node.
+ *
+ * @example
+ * ```ts
+ * dirac(Expression.create(5)).text()    // "0"
+ * dirac(Expression.create(0)).text()    // "dirac(0)"
+ * dirac(Expression.create('t')).text()  // "dirac(t)"
+ * ```
+ */
+export function dirac(x: Expression): Expression {
+	let retval: Expression;
+	const useAssumptions = !x.isConstant() && !x.isComplex() && hasAssumptions();
+
+	if (x.isPosInf() || x.isNegInf()) {
+		retval = zero();
+	} else if (x.isNUM()) {
+		if (x.isZero()) {
+			// Dirac delta at zero is technically infinite, but we return
+			// the symbolic form to avoid misleading numeric results.
+			retval = Expression.toFunction(DIRAC, [Expression.create(x)]);
+		} else {
+			retval = zero();
+		}
+	} else if (useAssumptions && (x.gt(zero()) || x.lt(zero()))) {
+		retval = zero();
+	} else {
+		retval = Expression.toFunction(DIRAC, [Expression.create(x)]);
+	}
+
+	return retval;
+}
+
+/**
+ * Evaluates a numeric expression to a finite number of significant decimal digits.
+ *
+ * Exact rational results are converted to decimal-origin values so subsequent numerical
+ * arithmetic does not keep expanding their numerators and denominators. Symbolic results
+ * remain symbolic after evaluation.
+ *
+ * @param x - Expression to evaluate numerically.
+ * @param precision - Significant digits to retain. Defaults to the active Nerdamer precision.
+ * @returns The evaluated numeric value at the requested precision, or the evaluated symbolic result.
+ */
+export function numeric(x: ExpressionInput, precision?: ExpressionInput): Expression {
+	x = Expression.create(x);
+
+	return scopedBlock('DEFER_SIMPLIFICATION', false, () => {
+		let digits = Rational.getPrecision();
+		if (precision !== undefined) {
+			const requested = Expression.create(precision).evaluate();
+
+			if (!requested.isNUM() || !requested.isInteger()) {
+				throw new UnexpectedInputError(
+					message('wrongInput', {
+						expected: POSITIVE_INTEGER_PRECISION,
+						received: requested.text(),
+					})
+				);
+			}
+
+			const multiplier = requested.getMultiplier();
+			if (
+				multiplier.numerator <= 0n ||
+				multiplier.numerator > BigInt(Number.MAX_SAFE_INTEGER)
+			) {
+				throw new UnexpectedInputError(
+					message('wrongInput', {
+						expected: POSITIVE_INTEGER_PRECISION,
+						received: requested.text(),
+					})
+				);
+			}
+
+			digits = Number(multiplier.numerator);
+		}
+
+		const previousPrecision = Rational.getPrecision();
+		let retval: Expression;
+
+		try {
+			if (digits !== previousPrecision) {
+				Rational.set({ precision: digits });
+			}
+
+			const evaluated = x.isNUM() ? x : x.evaluate();
+
+			if (evaluated.variables().length > 0) {
+				retval = evaluated;
+			} else if (evaluated.isNUM()) {
+				const multiplier = evaluated.getMultiplier();
+				const decimal = new Decimal(multiplier.numerator.toString())
+					.div(multiplier.denominator.toString())
+					.toSignificantDigits(digits);
+				retval = Expression.Number(decimal);
+				retval.getMultiplier().asDecimal = true;
+				retval.precision = digits;
+			} else if (evaluated.isComplex()) {
+				const real = numeric(evaluated.realPart(), digits);
+				const imaginary = numeric(evaluated.imagPart(), digits);
+				retval = real.plus(imaginary.times(Expression.Img()));
+				retval.precision = digits;
+			} else {
+				retval = evaluated;
+			}
+		} finally {
+			if (digits !== previousPrecision) {
+				Rational.set({ precision: previousPrecision });
+			}
+		}
+
+		return retval;
+	});
+}
+
+/**
+ * Rounds a number to the nth decimal place. If no precision is provided, rounds to
+ * the nearest integer.
+ *
+ * @param x - The expression to round.
+ * @param n - The number of decimal places to round. Defaults to `0`.
+ * @returns The rounded value of `x`.
+ *
+ * @example
+ * ```ts
+ * round('3.7').text()        // "4"
+ * round('2.555', 2).text()   // "2.56"
+ * round('1/3', 4).text()     // "0.3333"
+ * ```
+ */
+export function round(x: ExpressionInput, n?: ExpressionInput): Expression {
+	x = Expression.create(x);
+
+	if (x.isPosInf() || x.isNegInf()) {
+		return x.isNegInf() ? Expression.NegInf() : Expression.Inf();
+	}
+
+	n = n ? Expression.create(n) : zero();
+
+	let retval;
+
+	if (x.isComplex()) {
+		retval = round(x.realPart(), n).plus(round(x.imagPart(), n).times(Expression.Img()));
+	} else if (x.isNUM() && n.isInteger()) {
+		// Convert n & x to a decimals
+		const d = x.getMultiplier().toDecimal();
+		const s = n.getMultiplier().toDecimal();
+		const t = new Decimal(10).pow(s);
+		retval = Expression.create(Decimal.round(d.times(t)).div(t));
+	} else {
+		retval = Expression.toFunction(ROUND, [x, n]);
+	}
+
+	return retval;
+}
+
+/**
+ * Rounds a number to the requested number of significant figures.
+ *
+ * Unlike `round(x, n)`, which counts decimal places, this operation
+ * counts significant digits from the first nonzero digit. It changes the
+ * numeric value rather than just its display format (unlike `scientific`).
+ * Zero stays zero; complex values are rounded component by component.
+ * Symbolic values remain unevaluated until they become numeric.
+ *
+ * @param x - Number or expression to round.
+ * @param digits - Positive integer number of significant figures.
+ * @returns The rounded value, or a symbolic `significant(x, digits)` call.
+ *
+ * @example
+ * ```ts
+ * significant('1.23423534e-12', 3).text() // '0.00000000000123'
+ * significant('12345', 3).text()         // '12300'
+ * significant('0.009876', 2).text()      // '0.0099'
+ * ```
+ */
+export function significant(x: ExpressionInput, digits: ExpressionInput): Expression {
+	const precisionExpression = Expression.create(digits);
+	const requestedDigits =
+		precisionExpression.isNUM() && precisionExpression.isInteger()
+			? Number(precisionExpression.getMultiplier().numerator)
+			: Number.NaN;
+	const precision = validateScientificSignificantDigits(requestedDigits, precisionExpression.text());
+	const input = Expression.create(x);
+	let retval: Expression;
+
+	if (input.isComplex()) {
+		retval = significant(input.realPart(), precision)
+			.plus(significant(input.imagPart(), precision).times(Expression.Img()));
+	} else if (input.isNUM()) {
+		retval = Expression.create(input.getMultiplier().toDecimal().toSignificantDigits(precision));
+	} else {
+		retval = Expression.toFunction('significant', [input, precisionExpression]);
+	}
+	return retval;
+}
+
+/**
+ * Returns the sign of a number as `1`, `-1`, or `0`.
+ *
+ * For constant expressions that are not plain numerics, the expression is
+ * evaluated first to determine its sign.
+ *
+ * @param x - The expression whose sign to determine.
+ * @returns `1`, `-1`, or `0` as an Expression, or a symbolic `sign(x)` node.
+ *
+ * @example
+ * ```ts
+ * sign(5).text()     // "1"
+ * sign(-3).text()    // "-1"
+ * sign(0).text()     // "0"
+ * sign('x').text()   // "sign(x)"
+ * ```
+ */
+export function sign(x: ExpressionInput) {
+	x = Expression.create(x);
+	let retval;
+	if (x.isComplex()) {
+		retval = csgn(x);
+	} else if (x.isPosInf() || x.isNegInf()) {
+		retval = Expression.create(x.isNegInf() ? -1 : 1);
+	} else if (x.isConstant()) {
+		retval = Expression.create((x.isNUM() ? x : x.evaluate()).getMultiplier().sign());
+	} else if (!hasAssumptions()) {
+		retval = Expression.toFunction(SGN, [x]);
+	} else if (x.gt(zero())) {
+		retval = one();
+	} else if (x.lt(zero())) {
+		retval = one().neg();
+	} else if (x.eq(zero())) {
+		retval = zero();
+	} else {
+		retval = Expression.toFunction(SGN, [x]);
+	}
+	return retval;
+}
+
+/**
+ * Rounds a number down to the nearest integer (floor function).
+ *
+ * @param x - The expression to round down.
+ * @returns The greatest integer less than or equal to `x`.
+ *
+ * @example
+ * ```ts
+ * floor('3.7').text()    // "3"
+ * floor('-2.3').text()   // "-3"
+ * floor(5).text()        // "5"
+ * floor('x').text()      // "floor(x)"
+ * ```
+ */
+export function floor(x: ExpressionInput): Expression {
+	x = Expression.create(x);
+
+	let retval;
+
+	if (x.isPosInf() || x.isNegInf()) {
+		retval = x.isNegInf() ? Expression.NegInf() : Expression.Inf();
+	} else if (x.isComplex()) {
+		retval = floor(x.realPart()).plus(floor(x.imagPart()).times(Expression.Img()));
+	} else if (x.isNUM()) {
+		// Convert n & x to a decimals
+		const d = x.getMultiplier().toDecimal();
+		retval = Expression.create(d.floor());
+	} else {
+		retval = Expression.toFunction(FLOOR, [x]);
+	}
+
+	return retval;
+}
+
+/**
+ * Rounds a number up to the nearest integer (ceiling function).
+ *
+ * @param x - The expression to round up.
+ * @returns The least integer greater than or equal to `x`.
+ *
+ * @example
+ * ```ts
+ * ceiling('3.2').text()    // "4"
+ * ceiling('-2.7').text()   // "-2"
+ * ceiling(5).text()        // "5"
+ * ceiling('x').text()      // "ceil(x)"
+ * ```
+ */
+export function ceiling(x: ExpressionInput): Expression {
+	x = Expression.create(x);
+
+	let retval;
+
+	if (x.isPosInf() || x.isNegInf()) {
+		retval = x.isNegInf() ? Expression.NegInf() : Expression.Inf();
+	} else if (x.isComplex()) {
+		retval = ceiling(x.realPart()).plus(ceiling(x.imagPart()).times(Expression.Img()));
+	} else if (x.isNUM()) {
+		// Convert n & x to a decimals
+		const d = x.getMultiplier().toDecimal();
+		retval = Expression.create(d.ceil());
+	} else {
+		retval = Expression.toFunction(CEIL, [x]);
+	}
+
+	return retval;
+}
+
+/**
+ * Computes the absolute value of an expression.
+ *
+ * Applies symbolic simplifications where possible:
+ * - Even powers are recognised as non-negative (e.g. `abs(x^2)` returns `x^2`).
+ * - Complex inputs use the modulus: `abs(a + bi) = sqrt(a² + b²)`.
+ * - Fully negative sums are negated (e.g. `abs(-x - y)` becomes `x + y`).
+ *
+ * @param x - The expression to take the absolute value of.
+ * @returns The absolute value of `x`.
+ *
+ * @example
+ * ```ts
+ * abs(-5).text()       // "5"
+ * abs('3/4').text()    // "3/4"
+ * abs('x^2').text()    // "x^2"
+ * abs('x').text()      // "abs(x)"
+ * ```
+ */
+export function abs(x: ExpressionInput) {
+	x = Expression.create(x);
+
+	if (x.isPosInf() || x.isNegInf()) {
+		return Expression.Inf();
+	}
+
+	let retval = x;
+
+	let wrap = true;
+	const useAssumptions = !x.isConstant() && hasAssumptions();
+	if (!x.isConstant() && x.getPower().isEven()) {
+		retval = x;
+		// Remove the sign
+		if (retval.sign() === -1) {
+			retval = retval.neg();
+		}
+
+		wrap = false;
+	} else if (x.isComplex()) {
+		retval = hypot(x.realPart(), x.imagPart());
+	} else if (useAssumptions && x.gte(zero())) {
+		retval = x;
+		wrap = false;
+	} else if (useAssumptions && x.lte(zero())) {
+		retval = x.neg();
+		wrap = false;
+	}
+	// Attempt to simplify expression in the for -x-y to |x+y|
+	else if (x.isSum()) {
+		// We'll loop through and sort out the constants and variables
+		// We can use this later to see if it has to be returned as the abs function
+		const constants: Expression[] = [];
+		const variables: Expression[] = [];
+		const elements = x.elementsArray();
+
+		let allNegative = true;
+		// Assume a positive sign. We'll flip this if we negate the expression.
+		// This is strictly for keeping track of what occurred with the sign.
+		// This avoids us having to go through each term again.
+		let sign = 1;
+
+		for (let i = 0; i < elements.length; i++) {
+			const e = elements[i];
+			if (e.isConstant()) {
+				constants.push(e);
+			} else {
+				variables.push(e);
+			}
+			// Check if all are negative. It takes only
+			if (e.sign() !== -1) {
+				allNegative = false;
+			}
+
+			// If all negative
+			if (allNegative || (variables.length === 1 && variables[0].sign() === -1)) {
+				retval = x.neg().expand();
+				sign = -1; // Flip the sign.
+			}
+
+			const next = elements[i + 1];
+			const isGRP = next && variables.length === 1 && next.value === variables[0].value;
+			// Check if it needs to be wrapped. We would prefer to have expressions like |x^2+1| in the form x^2+1
+			if (variables.length === 1 && variables[0].getPower().isEven() && !isGRP) {
+				// Assume that we won't have wrap
+				wrap = false;
+				// Check that the rest of the signs are positive
+				for (let i = 0; i < constants.length; i++) {
+					if (constants[i].sign() * sign === -1) {
+						wrap = true;
+						break;
+					}
+				}
+			}
+		}
+	} else if (x.sign() === -1) {
+		retval = x.neg();
+	}
+
+	// Just wrap it in a function if no simplification occurred
+	if (!retval) {
+		retval = x;
+	}
+
+	// Absolute value is idempotent: | |x| | = |x|.
+	if (retval.isFunction(ABS) && retval.getPower().isOne() && retval.getMultiplier().isOne()) {
+		wrap = false;
+	}
+
+	if (!retval.isConstant() && wrap) {
+		retval = Expression.toFunction(ABS, [retval]);
+	}
+
+	return retval;
+}
+
+/**
+ * Computes the modular multiplicative inverse of `a` modulo `p` using the
+ * extended Euclidean algorithm. That is, finds `t` such that `a * t ≡ 1 (mod p)`.
+ *
+ * @param a - The number whose modular inverse is to be calculated.
+ * @param p - The modulus (typically prime).
+ * @returns The modular inverse of `a` mod `p`.
+ * @throws {@link core!MathError} If the inverse does not exist (i.e. `gcd(a, p) ≠ 1`).
+ *
+ * @example
+ * ```ts
+ * modInv(Expression.create(3), Expression.create(7)).text()    // "5"
+ * modInv(Expression.create(10), Expression.create(17)).text()  // "12"
+ * ```
+ */
+export function modInv(a: Expression, p: Expression) {
+	let t = zero();
+	let tp = one(); // newT
+	let r = p;
+	let rp = mod(a, p); // newR
+
+	while (!rp.isZero()) {
+		const q = floor(r.div(rp));
+		[t, tp] = [tp, t.minus(q.times(tp))];
+		[r, rp] = [rp, r.minus(q.times(rp))];
+	}
+
+	if (r.gt(one())) {
+		throw new MathError(message('noInverse'));
+	}
+
+	return mod(t, p);
+}
+
+/**
+ * Rounds an exact rational quotient to the nearest integer, choosing the even
+ * integer when the value lies exactly halfway between two integers.
+ */
+function roundTiesToEven(numerator: bigint, denominator: bigint): bigint {
+	const quotient = numerator / denominator;
+	const remainder = numerator % denominator;
+	const twiceRemainder = bigintAbs(remainder) * 2n;
+	const direction = BigInt(bigintSign(numerator));
+
+	if (twiceRemainder < denominator) {
+		return quotient;
+	}
+	if (twiceRemainder > denominator) {
+		return quotient + direction;
+	}
+
+	return isEven(quotient) ? quotient : quotient + direction;
+}
+
+/**
+ * Computes the modulo (remainder) of `x` divided by `y`.
+ *
+ * Exact Gaussian integers use the same quotient rule as Wolfram Language:
+ * divide, round the real and imaginary quotient components independently to
+ * the nearest integers with midpoint ties going to even, then subtract
+ * `y * quotient` from `x`.
+ *
+ * Complex values outside the Gaussian integers remain symbolic.
+ *
+ * @see https://reference.wolfram.com/language/ref/Mod.html
+ * @see https://reference.wolfram.com/language/ref/Quotient.html
+ * @see https://reference.wolfram.com/language/ref/Round.html
+ *
+ * @param x - The dividend.
+ * @param y - The divisor.
+ * @returns The remainder of `x / y`.
+ * @throws {@link core!UndefinedError} If either `x` or `y` is `±∞`.
+ *
+ * @example
+ * ```ts
+ * mod(Expression.create(10), Expression.create(3)).text()          // "1"
+ * mod(Expression.create('5+3*i'), Expression.create('2+i')).text() // "-1"
+ * ```
+ */
+export function mod(x: Expression, y: Expression): Expression {
+	let retval: Expression;
+	if (x.isPosInf() || x.isNegInf() || y.isPosInf() || y.isNegInf()) {
+		throw new UndefinedError(message('undefinedValue'));
+	}
+	if (x.isNUM() && y.isNUM()) {
+		retval = Expression.create(x.getMultiplier().mod(y.getMultiplier()));
+	} else if (x.isComplex() || y.isComplex()) {
+		const xReal = x.realPart();
+		const xImag = x.imagPart();
+		const yReal = y.realPart();
+		const yImag = y.imagPart();
+
+		if (
+			xReal.isNUM() &&
+			xReal.isInteger() &&
+			xImag.isNUM() &&
+			xImag.isInteger() &&
+			yReal.isNUM() &&
+			yReal.isInteger() &&
+			yImag.isNUM() &&
+			yImag.isInteger()
+		) {
+			const a = xReal.getMultiplier().numerator;
+			const b = xImag.getMultiplier().numerator;
+			const c = yReal.getMultiplier().numerator;
+			const d = yImag.getMultiplier().numerator;
+			const denominator = c * c + d * d;
+
+			if (denominator === 0n) {
+				retval = Expression.toFunction(MOD, [Expression.create(x), Expression.create(y)]);
+			} else {
+				const quotientReal = roundTiesToEven(a * c + b * d, denominator);
+				const quotientImag = roundTiesToEven(b * c - a * d, denominator);
+				const remainderReal = a - c * quotientReal + d * quotientImag;
+				const remainderImag = b - c * quotientImag - d * quotientReal;
+
+				retval = Expression.Number(remainderReal).plus(Expression.Number(remainderImag).i());
+			}
+		} else {
+			retval = Expression.toFunction(MOD, [Expression.create(x), Expression.create(y)]);
+		}
+	} else if (
+		x.isPolynomialLike() &&
+		y.isPolynomialLike() &&
+		maxCommonVariableOccurrence(x, y)
+	) {
+		retval = polyMod(x, y).getExpression();
+	} else {
+		retval = Expression.toFunction(MOD, [Expression.create(x), Expression.create(y)]);
+	}
+
+	return retval;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Computes the natural (base-e) logarithm, or optionally a logarithm with a specified base.
+ *
+ * When `Settings.EVALUATE` is `false`, real-domain logarithm identities are
+ * applied only when their arguments are provably positive real values. This
+ * keeps product, quotient, and power rewrites from crossing principal complex
+ * branches when a symbolic sign is unknown.
+ *
+ * For known negative real inputs, returns `log(|x|) + iπ`. Complex inputs use the
+ * principal branch: `log(z) = log|z| + i·arg(z)`.
+ *
+ * @param x - The expression to take the logarithm of.
+ * @param base - Optional logarithm base. Defaults to `e` (natural log).
+ * @param expandPrimes - When `true`, decomposes integer arguments into prime factors
+ *   (e.g. `log(8)` becomes `3·log(2)`). Defaults to `false`.
+ * @returns The logarithm of `x`.
+ * @throws {@link core!UndefinedError} If `x` is `-∞`.
+ *
+ * @example
+ * ```ts
+ * log('e').text()           // "1"
+ * log(1).text()             // "0"
+ * log('e^x').text()         // "x"
+ *
+ * // With base
+ * log(8, 2).text()          // "3"
+ * ```
+ */
+export function log(x: ExpressionInput, base?: ExpressionInput, expandPrimes = false): Expression {
+	x = Expression.create(x);
+	const baseExpr = base === undefined ? undefined : Expression.create(base);
+	let exactBaseLog: Expression | undefined;
+	let extractedBasePower: Expression | undefined;
+	let retval;
+
+	// Extract exact base factors without factoring unrelated integers.
+	// For example log(300, 10) = 2 + log(3, 10).
+	if (
+		!Settings.EVALUATE &&
+		!expandPrimes &&
+		baseExpr &&
+		x.isInteger() &&
+		baseExpr.isInteger() &&
+		x.gt(one()) &&
+		baseExpr.gt(one())
+	) {
+		const radix = baseExpr.getMultiplier().numerator;
+		let residual = x.getMultiplier().numerator;
+		let exponent = 0n;
+		while (residual % radix === 0n) {
+			residual /= radix;
+			exponent++;
+		}
+		if (exponent > 0n) {
+			extractedBasePower = Expression.Number(exponent);
+			if (residual !== 1n) {
+				extractedBasePower = extractedBasePower.plus(
+					log(Expression.Number(residual), baseExpr)
+				);
+			}
+		}
+	}
+
+	if (
+		baseExpr &&
+		x.isInteger() &&
+		baseExpr.isInteger() &&
+		x.gt(zero()) &&
+		baseExpr.gt(one())
+	) {
+		const target = x.getMultiplier().numerator;
+		const radix = baseExpr.getMultiplier().numerator;
+		let value = 1n;
+		let exponent = 0n;
+		while (value < target) {
+			value *= radix;
+			exponent++;
+		}
+		if (value === target) {
+			exactBaseLog = Expression.Number(exponent);
+		}
+	}
+
+	if (x.isPosInf() || x.isNegInf()) {
+		if (x.isNegInf()) {
+			throw new UndefinedError(message('undefinedValue'));
+		}
+		retval = Expression.Inf();
+	} else if (x.isOne()) {
+		retval = zero();
+	} else if (exactBaseLog) {
+		retval = exactBaseLog;
+	} else if (extractedBasePower) {
+		retval = extractedBasePower;
+	} else if (x.isE() && x.getMultiplier().isOne()) {
+		const exponent = x.getPower();
+
+		// Principal Log(e^z) only simplifies directly when z has no complex component. A complex
+		// exponent can wrap by a multiple of 2*pi*i when mapped back to the
+		// principal branch, so preserve that form instead of returning z.
+		if (!exponent.isComplex()) {
+			retval = one().times(exponent);
+		} else {
+			retval = Expression.toFunction(Expression.LOG, [Expression.create(x)]);
+		}
+	} else if (!x.isComplex() && x.lt(zero())) {
+		retval = Expression.Pi().times(Expression.Img()).plus(log(x.abs()));
+	}
+	// Keep symbolic complex logarithms exact; numerical arguments use the
+	// same principal logarithm as other Decimal-backed complex calculations.
+	else if (x.isComplex()) {
+		const re = x.realPart();
+		const im = x.imagPart();
+		if (Settings.EVALUATE && re.isNUM() && im.isNUM()) {
+			const value = new Complex(
+				re.getMultiplier().toDecimal(),
+				im.getMultiplier().toDecimal()
+			).log();
+			retval = Expression.Number(value.re).plus(Expression.Number(value.im).i());
+		} else {
+			const mag = sqrt(re.sq().plus(im.sq()));
+			retval = log(mag).plus(atan2(im, re).i());
+		}
+	}
+	// Don't collapse
+	else if (Settings.EVALUATE) {
+		if (x.isNUM()) {
+			// If a numeric base is provided, compute log_b(x) directly.
+			if (baseExpr && baseExpr.isNUM()) {
+				const lnX = x.getMultiplier().toDecimal().ln();
+				const lnB = baseExpr.getMultiplier().toDecimal().ln();
+				retval = Expression.Number(lnX.div(lnB));
+			} else {
+				retval = Expression.Number(x.getMultiplier().toDecimal().ln());
+			}
+		}
+	}
+	// Symbolic cases
+	else {
+		// Rational number: log(a/b) → log(a) - log(b)
+		// Handle NUM first to avoid infinite recursion with multiplier factoring
+		if (x.isNUM()) {
+			const rat = x.getMultiplier();
+			const num = rat.numerator < 0n ? -rat.numerator : rat.numerator;
+			const den = rat.denominator < 0n ? -rat.denominator : rat.denominator;
+
+			if (den !== 1n) {
+				// log(a/b) = log(a) - log(b)
+				retval = log(Expression.Number(num), undefined, expandPrimes).minus(
+					log(Expression.Number(den), undefined, expandPrimes)
+				);
+			} else if (expandPrimes) {
+				// Try to decompose into prime factors: log(8) → 3*log(2)
+				const factors = primeFactorCounts(num);
+				const primes = Object.keys(factors);
+				if (primes.length > 0 && (primes.length > 1 || factors[primes[0]] > 1n)) {
+					retval = zero();
+					for (const prime in factors) {
+						const count = factors[prime];
+						const logPrime = Expression.toFunction(Expression.LOG, [
+							Expression.Number(prime),
+						]);
+						retval = retval.plus(logPrime.times(Expression.Number(count)));
+					}
+				}
+				// else: it's prime, fall through to default
+			}
+		}
+		// Non-NUM symbolic cases: only apply real-domain logarithm identities
+		// when the relevant factors are provably positive and the powers are real.
+		else {
+			const m = x.getMultiplier();
+			const mFree = x.toUnitMultiplier();
+
+			let logExpr: Expression | undefined;
+			let mFreeIsPositive = false;
+
+			// Product: log(a*b*c) → log(a) + log(b) + log(c), but only
+			// when every factor is known to stay on the positive real axis.
+			if (mFree.isProduct() && mFree.isLinear()) {
+				const elements = mFree.elementsArray();
+				let canSplitProduct = true;
+
+				for (const element of elements) {
+					let elementIsPositive = false;
+
+					if (element.isNUM()) {
+						elementIsPositive = element.gt(zero());
+					} else {
+						const elementPower = element.getPower();
+						const elementBase = element.isEXP()
+							? element.getBase()
+							: stripPower(element);
+
+						elementIsPositive =
+							!elementPower.isComplex() &&
+							!elementBase.isComplex() &&
+							elementBase.gt(zero());
+					}
+
+					if (!elementIsPositive) {
+						canSplitProduct = false;
+						break;
+					}
+				}
+
+				if (canSplitProduct) {
+					let sum = zero();
+					for (const element of elements) {
+						sum = sum.plus(log(element, undefined, expandPrimes));
+					}
+					logExpr = sum;
+					mFreeIsPositive = true;
+				}
+			} else {
+				const pow = mFree.getPower();
+				const baseExpr = mFree.isEXP() ? mFree.getBase() : stripPower(mFree);
+
+				if (pow.isOne()) {
+					logExpr = Expression.toFunction(Expression.LOG, [mFree]);
+					mFreeIsPositive = !mFree.isComplex() && mFree.gt(zero());
+				}
+				// log(a^p) → p*log(a) is branch-safe for a positive real base
+				// and a real exponent. Unknown-sign bases remain attached.
+				else if (!pow.isComplex() && !baseExpr.isComplex() && baseExpr.gt(zero())) {
+					logExpr = log(baseExpr, undefined, expandPrimes).times(pow);
+					mFreeIsPositive = true;
+				}
+			}
+
+			// log(m*expr) = log(m) + log(expr) is only valid here when
+			// both pieces are known positive. Otherwise preserve the original log.
+			if (logExpr !== undefined && !m.isOne()) {
+				if (m.sign() > 0 && mFreeIsPositive) {
+					retval = logExpr.plus(log(Expression.fromRational(m), undefined, expandPrimes));
+				}
+			} else {
+				retval = logExpr;
+			}
+		}
+	}
+
+	retval = retval || Expression.toFunction(Expression.LOG, [Expression.create(x)]);
+
+	// Handle base conversion: log_b(x) = log(x) / log(b)
+	if (baseExpr && retval && !exactBaseLog && !extractedBasePower) {
+		retval = retval.div(log(baseExpr));
+	}
+
+	return retval;
+}
+
+function aggregator(
+	args: ExpressionInput[],
+	condition: (a: Expression, b: Expression) => boolean,
+	assumedCondition: (a: Expression, b: Expression) => boolean
+) {
+	let retval: Expression | undefined = undefined;
+	const inputs = args.map(e => Expression.create(e));
+	let canCompare = true;
+	const expressions = inputs.map(e => {
+		const value = resolveNumericValue(e);
+		if (value === undefined) {
+			canCompare = false;
+		}
+		return value;
+	});
+	if (
+		canCompare === true &&
+		expressions.length > 0 &&
+		expressions.every((e): e is Expression => e !== undefined)
+	) {
+		let m = expressions[0];
+		for (let i = 1; i < expressions.length; i++) {
+			const e = expressions[i];
+			if (condition(e, m)) {
+				m = e;
+			}
+		}
+		retval = m;
+	} else {
+		const useAssumptions =
+			hasAssumptions() &&
+			inputs.every(e => !e.isComplex()) &&
+			inputs.some(e => e.variables().some(v => getAssumptionFor(v) !== undefined));
+
+		if (useAssumptions) {
+			for (const candidate of inputs) {
+				if (inputs.every(e => assumedCondition(candidate, e))) {
+					retval = candidate;
+					break;
+				}
+			}
+		}
+
+		// Equal values need no ordering when numeric or assumed comparison is unavailable.
+		if (retval === undefined && inputs.length > 0 && inputs.every(e => e.eq(inputs[0]))) {
+			retval = inputs[0];
+		}
+	}
+	return retval;
+}
+
+/**
+ * Returns the maximum value from a set of expressions.
+ *
+ * If all arguments can be compared numerically (or have assumed numeric values),
+ * returns the largest. Otherwise returns a symbolic `max(...)` node.
+ *
+ * @param args - Two or more expressions to compare.
+ * @returns The maximum value, or a symbolic `max(...)` node.
+ *
+ * @example
+ * ```ts
+ * max(1, 3, 2).text()     // "3"
+ * max(-5, 0).text()       // "0"
+ * max('x', 'y').text()    // "max(x, y)"
+ * ```
+ */
+export function max(...args: ExpressionInput[]) {
+	const maxValue = aggregator(
+		args,
+		(a, b) => a.gt(b),
+		(a, b) => a.gte(b)
+	);
+	return maxValue ?? Expression.toFunction(MAX, args);
+}
+
+/**
+ * Returns the minimum value from a set of expressions.
+ *
+ * If all arguments can be compared numerically (or have assumed numeric values),
+ * returns the smallest. Otherwise returns a symbolic `min(...)` node.
+ *
+ * @param args - Two or more expressions to compare.
+ * @returns The minimum value, or a symbolic `min(...)` node.
+ *
+ * @example
+ * ```ts
+ * min(1, 3, 2).text()     // "1"
+ * min(-5, 0).text()       // "-5"
+ * min('x', 'y').text()    // "min(x, y)"
+ * ```
+ */
+export function min(...args: ExpressionInput[]) {
+	const minValue = aggregator(
+		args,
+		(a, b) => a.lt(b),
+		(a, b) => a.lte(b)
+	);
+	return minValue ?? Expression.toFunction(MIN, args);
+}
+
+/**
+ * Computes the exponential function e^x.
+ *
+ * - `exp(0) = 1`
+ * - `exp(+∞) = +∞`, `exp(−∞) = 0`
+ * - For complex inputs `a + bi` where both parts are numeric, applies Euler's formula:
+ *   `exp(a + bi) = exp(a) · (cos(b) + i·sin(b))`.
+ * - For symbolic inputs, returns `e^(x)`.
+ *
+ * @param x - The exponent expression.
+ * @returns The value of e raised to the power `x`.
+ *
+ * @example
+ * ```ts
+ * exp(0).text()       // "1"
+ * exp(1).text()       // "2.71828182845904..."
+ * exp('x').text()     // "e^(x)"
+ * ```
+ */
+export function exp(x: ExpressionInput): Expression {
+	let retval: Expression | undefined;
+	let z: Expression;
+	let re: Expression;
+	let im: Expression;
+	let c: Expression;
+	let s: Expression;
+	let ea: Expression;
+
+	x = Expression.create(x);
+
+	// Easy simplifications
+	if (x.isPosInf() || x.isNegInf()) {
+		return x.isNegInf() ? zero() : Expression.Inf();
+	} else if (x.isZero()) {
+		retval = one();
+	} else if (Settings.EVALUATE) {
+		// Handle complex
+		if (x.isComplex()) {
+			// Only evaluate if we can guarantee a numeric value in C.
+			// We do this by evaluating x first, then requiring both real and imaginary
+			// parts to be numeric.
+			z = x.evaluate();
+
+			re = z.realPart();
+			im = z.imagPart();
+
+			if (re.isNUM() && im.isNUM()) {
+				// exp(a+bi) = exp(a) * (cos(b) + i*sin(b))
+				ea = Expression.Number(re.getMultiplier().toDecimal().exp());
+				c = cos(im);
+				s = sin(im);
+				retval = ea.times(c.plus(s.i()));
+			}
+		} else if (x.isNUM()) {
+			retval = Expression.Number(x.getMultiplier().toDecimal().exp());
+		}
+	}
+
+	return retval ?? Expression.create(`e^(${x})`);
+}
+
+/**
+ * Constructs a {@link Matrix} from the provided rows.
+ *
+ * Each argument is an array representing one row of the matrix. All rows must
+ * have the same length; elements are converted to {@link Expression} instances.
+ *
+ * @param args - One or more arrays, each representing one row of the matrix.
+ * @returns A new {@link Matrix} instance.
+ * @throws {@link core!MathError} If rows have inconsistent lengths.
+ *
+ * @example
+ * ```ts
+ * // 2×2 identity matrix
+ * matrix([1, 0], [0, 1]).text()   // "matrix([1, 0], [0, 1])"
+ *
+ * // 2×3 matrix
+ * matrix([1, 2, 3], [4, 5, 6]).text()
+ * ```
+ */
+export function matrix(...args: (NerdamerInput[] | Vector)[]): Matrix {
+	return new Matrix(...args);
+}
+
+/**
+ * Tests whether a value is present in a supported finite container.
+ *
+ * @remarks
+ * `Vector` membership uses the vector's element equality, while `ValuesSet` and
+ * `SolutionSet` delegate to their semantic set membership. `Dictionary` membership checks
+ * keys rather than stored values. Unsupported container types remain symbolic.
+ *
+ * @param x - Vector, finite set, solution set, or dictionary to search.
+ * @param value - Value to look up, or dictionary key when `x` is a Dictionary.
+ * @returns `1` when the value is found and `0` otherwise.
+ *
+ * @example
+ * ```ts
+ * const d = Parser.parse('{x=>1, y=>a}') as Dictionary;
+ * contains(d, 'x').text(); // 1
+ *
+ * const v = new Vector(['x', 1, 2]);
+ * contains(v, 10).text(); // 0
+ * ```
+ */
+export function contains(
+	x: Expression | Vector | ValuesSet | SolutionSet | Dictionary,
+	value: ExpressionInput
+): Expression {
+	value = Expression.create(value);
+	let retval: Expression;
+
+	if (x.dataType === VECTOR) {
+		retval = Expression.create(Number((x as Vector).indexOf(value) !== -1));
+	} else if (x.dataType === SET || x.dataType === SOLUTIONS_SET) {
+		retval = Expression.create(Number((x as ValuesSet).has(value)));
+	} else if (x.dataType === DICTIONARY) {
+		retval = Expression.create(Number((x as Dictionary).has(value.text())));
+	} else {
+		retval = Expression.toFunction(CONTAINS, [x as Expression, value]);
+	}
+
+	return retval;
+}

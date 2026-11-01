@@ -2,7 +2,7 @@ import nerdamer from '../../src/index';
 import { Matrix } from '../../src/core/classes/matrix/Matrix';
 import { Parser } from '../../src/core/classes/parser/Parser';
 import { Vector } from '../../src/core/classes/vector/Vector';
-import { DimensionError, UnsupportedOperationError } from '../../src/core/errors';
+import { DimensionError, UnexpectedDataType, UnsupportedOperationError } from '../../src/core/errors';
 
 describe('Element-wise and modular linear algebra', () => {
 	// Regression: https://github.com/jiggzson/nerdamer/issues/197
@@ -25,10 +25,15 @@ describe('Element-wise and modular linear algebra', () => {
 	});
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/666
-	it('broadcasts scalar arithmetic without reversing noncommutative operations', () => {
-		expect(nerdamer('a+[1,2,3]').text()).toEqual('[1+a, 2+a, 3+a]');
-		expect(nerdamer('[1,2,3]-a').text()).toEqual('[1-a, 2-a, 3-a]');
-		expect(nerdamer('a-[1,2,3]').text()).toEqual(new Vector(['a-1', 'a-2', 'a-3']).text());
+	it('rejects scalar addition and subtraction while preserving scalar-left division and powers', () => {
+		for (const source of [
+			'a+[1,2,3]',
+			'[1,2,3]+a',
+			'[1,2,3]-a',
+			'a-[1,2,3]',
+		]) {
+			expect(() => nerdamer(source)).toThrow(UnexpectedDataType);
+		}
 		expect(nerdamer('a/[1,2]').text()).toEqual(new Vector(['a', 'a/2']).text());
 		expect(nerdamer('a^[1,2]').text()).toEqual(new Vector(['a', 'a^2']).text());
 	});

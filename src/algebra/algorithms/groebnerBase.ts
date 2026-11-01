@@ -185,7 +185,7 @@ function monoSubDense(b: readonly bigint[], a: readonly bigint[]): bigint[] {
 	return out;
 }
 
-function monomialTotalDegreeDense(monomial: readonly bigint[]): bigint {
+function denseTotalDegree(monomial: readonly bigint[]): bigint {
 	let degree = 0n;
 	for (const exponent of monomial) {
 		degree += exponent;
@@ -278,7 +278,7 @@ function normalFormFractionFree(
 			const multExp = monoSubDense(ltF.exp, ltG.exp);
 			if (sugarState) {
 				const reductionSugar =
-					sugarState.reducerSugars[reducerIndex] + monomialTotalDegreeDense(multExp);
+					sugarState.reducerSugars[reducerIndex] + denseTotalDegree(multExp);
 				if (reductionSugar > sugarState.value) {
 					sugarState.value = reductionSugar;
 				}
@@ -352,7 +352,7 @@ function normalFormFractionFreeAllTerms(
 		if (sugarState) {
 			const reductionSugar =
 				sugarState.reducerSugars[selectedReducerIndex] +
-				monomialTotalDegreeDense(multExp);
+				denseTotalDegree(multExp);
 			if (reductionSugar > sugarState.value) {
 				sugarState.value = reductionSugar;
 			}
@@ -573,7 +573,7 @@ function groebnerBasisSparse(
 	const headReducers = reducerViews(basis, order, false);
 	const normalizedReducers = reducerViews(basis, order, true);
 	const lmDegreeCache = headReducers.map(reducer =>
-		monomialTotalDegreeDense(reducer.lt.exp)
+		denseTotalDegree(reducer.lt.exp)
 	);
 	const sugarArr = basis.map(polynomial => polynomial.totalDegree() ?? 0n);
 
@@ -622,12 +622,12 @@ function groebnerBasisSparse(
 		const normalizedReducer = reducerViews([h], order, true)[0];
 		headReducers.push(headReducer);
 		normalizedReducers.push(normalizedReducer);
-		lmDegreeCache.push(monomialTotalDegreeDense(headReducer.lt.exp));
+		lmDegreeCache.push(denseTotalDegree(headReducer.lt.exp));
 		zeroPairNeighbors.push(new Set<number>());
 		stats.basisAppends++;
 		if (maxBasisSize !== undefined && basis.length > maxBasisSize) {
 			throw new GroebnerBudgetExceeded(
-				message('groebnerBasisSizeBudgetExceeded', { max: String(maxBasisSize) }),
+				message('groebnerBudgetExceeded', { metric: 'basisSize', max: String(maxBasisSize) }),
 				stats
 			);
 		}
@@ -674,7 +674,7 @@ function groebnerBasisSparse(
 			const li = headReducers[i].lt.exp;
 			const lj = headReducers[j].lt.exp;
 			const lcm = expLcmDense(li, lj);
-			const lcmDegree = monomialTotalDegreeDense(lcm);
+			const lcmDegree = denseTotalDegree(lcm);
 			return {
 				i,
 				j,
@@ -700,7 +700,7 @@ function groebnerBasisSparse(
 			stats.pairsPopped++;
 			if (maxPairsPopped !== undefined && stats.pairsPopped > maxPairsPopped) {
 				throw new GroebnerBudgetExceeded(
-					message('groebnerPairsBudgetExceeded', { max: String(maxPairsPopped) }),
+					message('groebnerBudgetExceeded', { metric: 'pairsPopped', max: String(maxPairsPopped) }),
 					stats
 				);
 			}
@@ -752,7 +752,7 @@ function groebnerBasisSparse(
 			stats.pairsPopped++;
 			if (maxPairsPopped !== undefined && stats.pairsPopped > maxPairsPopped) {
 				throw new GroebnerBudgetExceeded(
-					message('groebnerPairsBudgetExceeded', { max: String(maxPairsPopped) }),
+					message('groebnerBudgetExceeded', { metric: 'pairsPopped', max: String(maxPairsPopped) }),
 					stats
 				);
 			}
@@ -1243,7 +1243,7 @@ function rationalRootsUnivariate(
 				seen.add(key);
 
 				if (
-					evaluatesAtRationalToZero(
+					isRationalRoot(
 						poly,
 						variableIndex,
 						degree,
@@ -1263,7 +1263,7 @@ function rationalRootsUnivariate(
 /**
  * Evaluates a univariate polynomial at n/d after clearing d^degree.
  */
-function evaluatesAtRationalToZero(
+function isRationalRoot(
 	poly: SparsePolynomial,
 	variableIndex: number,
 	degree: bigint,
@@ -1294,7 +1294,7 @@ function evaluatesToZero(
 	if (degree === 0n) {
 		return poly.constantTerm() === 0n;
 	}
-	return evaluatesAtRationalToZero(poly, variableIndex, degree, value.n, value.d);
+	return isRationalRoot(poly, variableIndex, degree, value.n, value.d);
 }
 
 /** Positive divisors of a positive bigint. */

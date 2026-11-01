@@ -1,3 +1,4 @@
+import { polyFactorExpressions } from '../../algebra/factor/factor';
 import { Expression } from '../../core/classes/expression/Expression';
 import {
 	eight,
@@ -11,10 +12,11 @@ import {
 	twoHundredFiftySix,
 	zero,
 } from '../../core/classes/expression/shortcuts';
-import { LOG, ABS } from '../../core/classes/parser/constants';
 import { Polynomial } from '../../core/classes/polynomial/Polynomial';
+import { LOG, ABS } from '../../core/constants/functionNames';
 import { message, UnexpectedInputError } from '../../core/errors';
-import { cbrt, exp, sqrt, log } from '../../math/math';
+import { getU } from '../../core/functions/subst';
+import { cbrt, exp, sqrt, log } from '../../math/index';
 import {
 	SIN,
 	COS,
@@ -64,9 +66,12 @@ import type { ExpressionInput } from '../../core/types';
  * functions. The supplied Expression is retained, while Polynomial input is
  * converted to its Expression representation.
  */
+export type SolveRecursionContext = { depth: number; exhausted?: boolean };
+
 export class SymbolicSolver {
 	private static readonly MAX_FN_SOLVE_STEPS = 64;
 	private input: Expression;
+	private readonly recursion: SolveRecursionContext;
 	private x: string;
 
 	/**
@@ -76,7 +81,8 @@ export class SymbolicSolver {
 	 * @param v - Plain variable to solve for.
 	 * @throws {@link core!UnexpectedInputError} If `v` is not a plain variable.
 	 */
-	constructor(input: Polynomial | string | Expression, v: ExpressionInput) {
+	constructor(input: Polynomial | string | Expression, v: ExpressionInput, recursion?: SolveRecursionContext) {
+		this.recursion = recursion ?? { depth: 0 };
 		v = Expression.create(v);
 		this.x = v.value;
 		if (!v.isPlainVariable()) {
@@ -254,23 +260,51 @@ export class SymbolicSolver {
 			one(), // cubic: 1
 		];
 
-		const cubicRoots = SymbolicSolver.cubic(cubicCoeffs);
-
-		// Choose a root y such that s = sqrt(y) is non-zero (required because q != 0).
 		let y: Expression | undefined = undefined;
-		for (const rt of cubicRoots) {
-			if (!rt.isZero()) {
-				y = rt;
-				break;
+		let cubicRoots: Expression[] | undefined;
+
+		// An exact rational resolvent root avoids constructing an equivalent but much
+		// larger Cardano expression. Verify the linear factor before using its root.
+		if (cubicCoeffs.every(coefficient => coefficient.isNUM())) {
+			const resolventVariable = getU(cubicCoeffs.reduce(
+				(sum, coefficient) => sum.plus(coefficient), zero()
+			));
+			const variable = Expression.Variable(resolventVariable);
+			const resolvent = cubicCoeffs.reduce(
+				(sum, coefficient, power) => sum.plus(coefficient.times(variable.pow(power))),
+				zero()
+			);
+			for (const factor of polyFactorExpressions(resolvent)) {
+				const polynomial = new Polynomial(factor, [resolventVariable]);
+				if (polynomial.deg(resolventVariable) === 1) {
+					const coefficients = polynomial.toArray(false, resolventVariable);
+					const candidate = zero().minus(coefficients[0]).div(coefficients[1]);
+					if (!candidate.isZero() && resolvent.subst(variable, candidate).expand().isZero()) {
+						y = candidate;
+						break;
+					}
+				}
 			}
 		}
-		y = y ?? cubicRoots[0];
+
+		// Choose a Cardano root y such that s = sqrt(y) is non-zero when exact
+		// factorization did not prove a simpler resolvent root.
+		if (!y) {
+			cubicRoots = SymbolicSolver.cubic(cubicCoeffs);
+			for (const rt of cubicRoots) {
+				if (!rt.isZero()) {
+					y = rt;
+					break;
+				}
+			}
+			y = y ?? cubicRoots[0];
+		}
 
 		let s = sqrt(y);
 		// Last-resort: if s still ends up zero (can happen if cubic returned 0 first and "isZero" didn't catch),
 		// try remaining roots.
 		if (s.isZero()) {
-			for (const rt of cubicRoots) {
+			for (const rt of cubicRoots ?? []) {
 				if (!rt.isZero()) {
 					const cand = sqrt(rt);
 					if (!cand.isZero()) {
@@ -310,18 +344,23 @@ export class SymbolicSolver {
 		const input = this.input;
 		const x = this.x;
 
-		const solveForX = (u: Expression, value: Expression): Expression[] => {
+		const solveForX = (u: Expression, value: Expression): Expression[] | undefined => {
 			const vars = u.variables();
 			if (vars.length === 1 && vars[0] === x && u.text() === x && !value.hasVariable(x)) {
 				return [value];
 			}
 			const eq = u.minus(value);
-			const solver = new SymbolicSolver(eq, x);
+			const solver = new SymbolicSolver(eq, x, this.recursion);
 			const result = solver.solve();
 			if (!result.unsolved) {
 				return result.solutions;
 			}
-			return solve(eq, x).elements;
+			// An exhausted nested solver is unresolved, not proof of an empty root set.
+			if (this.recursion.depth >= SymbolicSolver.MAX_FN_SOLVE_STEPS) {
+				return undefined;
+			}
+			const fallback = solve(eq, x, undefined, this.recursion);
+			return fallback.unsolved ? undefined : (fallback.count() > 0 ? fallback.elements : undefined);
 		};
 
 		const n = Expression.N();
@@ -345,7 +384,7 @@ export class SymbolicSolver {
 					const exponent = Expression.fromRational(logTerm.getMultiplier());
 					product = product.times(logTerm.getArguments()[0].pow(exponent));
 				}
-				return solve(product.minus(one()), x).elements;
+				return solve(product.minus(one()), x, undefined, this.recursion).elements;
 			}
 
 			const radicalTerms = elements.filter(
@@ -361,7 +400,7 @@ export class SymbolicSolver {
 				}
 				const base = stripPower(radicalTerm.toUnitMultiplier());
 				const isolated = remainder.neg().div(radicalTerm.getMultiplier());
-				return solve(base.minus(isolated.sq()), x).elements;
+				return solve(base.minus(isolated.sq()), x, undefined, this.recursion).elements;
 			}
 
 			const negativeHalf = half().neg();
@@ -447,7 +486,48 @@ export class SymbolicSolver {
 					sinArg.eq(cosArg) &&
 					!sinCoeff.isZero()
 				) {
-					return solveForX(sinArg, atan(cosCoeff.neg().div(sinCoeff)));
+					return solveForX(sinArg, atan(cosCoeff.neg().div(sinCoeff)).plus(nPi));
+				}
+			}
+
+			// A change-of-base logarithm is a product of log(u) and a constant factor.
+			// Isolate the complete term before applying the existing logarithm inversion.
+			const logarithmicTerms = elements.filter(term => {
+				if (!term.hasVariable(x) || !term.isProduct()) {
+					return false;
+				}
+				const factors = term.elementsArray();
+				return factors.filter(factor => factor.isFunction(LOG) && factor.hasVariable(x)).length === 1 &&
+					factors.every(factor => !factor.hasVariable(x) || (factor.isFunction(LOG) && factor.getPower().isOne()));
+			});
+			if (logarithmicTerms.length === 1 && elements.every(e => !e.hasVariable(x) || e === logarithmicTerms[0])) {
+				const term = logarithmicTerms[0];
+				const logarithm = term.elementsArray().find(factor => factor.isFunction(LOG) && factor.hasVariable(x));
+				if (logarithm) {
+					let remainder = zero();
+					for (const element of elements) {
+						if (element !== term) {
+							remainder = remainder.plus(element);
+						}
+					}
+					const coefficient = term.div(logarithm);
+					if (!coefficient.hasVariable(x) && !coefficient.isZero()) {
+						let value = exp(remainder.neg().div(coefficient));
+						// Invert log(u)/log(b) = c as u = b^c, retaining exact integer powers.
+						const inverseBaseLog = term.elementsArray().find(factor =>
+							factor.isFunction(LOG) &&
+							factor.getPower().eq(one().neg()) &&
+							!factor.hasVariable(x)
+						);
+						if (inverseBaseLog) {
+							const base = inverseBaseLog.getArguments()[0];
+							const scale = coefficient.times(log(base));
+							if (base.gt(zero()) && !base.isOne() && !scale.isZero()) {
+								value = base.pow(remainder.neg().div(scale));
+							}
+						}
+						return solveForX(logarithm.getArguments()[0], value);
+					}
 				}
 			}
 
@@ -476,11 +556,14 @@ export class SymbolicSolver {
 						c = c.pow(p.invert());
 					}
 
-					const values = this.invertFunction(fname, c);
+					const values = this.invertFunction(fname, c, p.isOne());
 					if (values !== undefined) {
 						const results: Expression[] = [];
 						for (const v of values) {
-							results.push(...solveForX(u, v));
+							const roots = solveForX(u, v);
+							if (roots) {
+								results.push(...roots);
+							}
 						}
 						return results.length > 0 ? results : undefined;
 					}
@@ -594,7 +677,42 @@ export class SymbolicSolver {
 		return undefined;
 	}
 
-	private invertFunction(fname: string, c: Expression): Expression[] | undefined {
+	private invertFunction(fname: string, c: Expression, periodic: boolean): Expression[] | undefined {
+		// Isolated first-power trigonometric equations retain their integer periods.
+		// Inversion of higher powers needs separate branch handling.
+		if (periodic && (fname === SIN || fname === COS || fname === TAN || fname === COT)) {
+			const nPi = Expression.N().times(Expression.Pi());
+			const revolution = two().times(nPi);
+			if (fname === SIN) {
+				if (c.isZero()) {
+					return [nPi];
+				}
+				const principal = asin(c);
+				if (c.isOne() || c.eq(one().neg())) {
+					return [principal.plus(revolution)];
+				}
+				return [principal.plus(revolution), Expression.Pi().minus(principal).plus(revolution)];
+			}
+			if (fname === COS) {
+				if (c.isZero()) {
+					return [nPi.plus(Expression.Pi().div(two()))];
+				}
+				const principal = acos(c);
+				if (c.isOne() || c.eq(one().neg())) {
+					return [principal.plus(revolution)];
+				}
+				return [principal.plus(revolution), principal.neg().plus(revolution)];
+			}
+			if (fname === TAN) {
+				return [atan(c).plus(nPi)];
+			}
+			if (fname === COT) {
+				return [c.isZero()
+					? nPi.plus(Expression.Pi().div(two()))
+					: atan(one().div(c)).plus(nPi)];
+			}
+		}
+
 		switch (fname) {
 			case SIN:
 				return [asin(c)];
@@ -652,6 +770,12 @@ export class SymbolicSolver {
 	 */
 	solve() {
 		let solutions: Expression[] | undefined;
+		if (this.recursion.depth >= SymbolicSolver.MAX_FN_SOLVE_STEPS) {
+			this.recursion.exhausted = true;
+			return { solutions: [], unsolved: this.input };
+		}
+		this.recursion.depth++;
+		try {
 		let unsolved: Expression | undefined;
 
 		if (this.input.hasVariable(this.x)) {
@@ -725,5 +849,8 @@ export class SymbolicSolver {
 			solutions,
 			unsolved,
 		};
+		} finally {
+			this.recursion.depth--;
+		}
 	}
 }

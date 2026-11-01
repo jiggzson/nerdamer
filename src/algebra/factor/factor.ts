@@ -2,13 +2,13 @@ import { Dictionary } from '../../core/classes/dictionary/Dictionary';
 import { normalizeMultiplierDenominators } from '../../core/classes/expression/analysis';
 import { Expression } from '../../core/classes/expression/Expression';
 import { zero } from '../../core/classes/expression/shortcuts';
-import { FACTOR } from '../../core/classes/parser/constants';
 import { merge } from '../../core/classes/parser/operations/multiply';
 import {
 	expressionToSparsePolynomial,
 	sparsePolynomialToExpression,
 } from '../../core/classes/polynomial/SparsePolynomialAdapter';
 import { Vector } from '../../core/classes/vector/Vector';
+import { FACTOR } from '../../core/constants/functionNames';
 import { message, UnexpectedInputError } from '../../core/errors';
 import { primeFactorCounts, primeFactorsBig } from '../../core/functions/bigint/primeFactor';
 import { uSubConstants, uUnSub } from '../../core/functions/subst';
@@ -67,6 +67,16 @@ export function factor(x: ExpressionInput) {
 		} else {
 			const factored = factors(x);
 			retval = factored.numerator.prod().div(factored.denominator.prod());
+			// Restoring substituted powers can expose an ordinary polynomial factor.
+			// Finish factoring that polynomial instead of leaving it expanded.
+			if (retval.isProduct() && retval.getPower().isOne()) {
+				let result = Expression.fromRational(retval.getMultiplier());
+				for (const element of retval.elementsArray()) {
+					result = result.times(element.isSum() && element.isPolynomialLike()
+						? polyFactors(element).prod() : element);
+				}
+				retval = result;
+			}
 		}
 	} catch {
 		retval = Expression.toFunction(FACTOR, [x]);

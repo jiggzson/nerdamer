@@ -6,7 +6,33 @@ import { Expression } from '../../src/core/classes/expression/Expression';
 import { Polynomial } from '../../src/core/classes/polynomial/Polynomial';
 import { polynomialToSparsePolynomial } from '../../src/core/classes/polynomial/SparsePolynomialAdapter';
 
+describe('Complex polynomial factorization', () => {
+	it('preserves and recovers existing complex polynomial factors', () => {
+		const source = Expression.create('(x+i)*(x+1)').expand();
+		const actual = factor(source);
+
+		expect(actual.expand().eq(source)).toBe(true);
+		expect(actual.isProduct()).toBe(true);
+		const factors = actual.elementsArray();
+		expect(factors.some(entry => entry.eq('x+i'))).toBe(true);
+		expect(factors.some(entry => entry.eq('x+1'))).toBe(true);
+	});
+
+	it('does not change the factorization domain for a real irreducible polynomial', () => {
+		expect(factor('x^2+1').eq('x^2+1')).toBe(true);
+	});
+});
+
 describe('Factor', () => {
+	// Regression: https://github.com/jiggzson/nerdamer/issues/219
+	it('factors polynomial terms after extracting a symbolic common power', () => {
+		const input = Expression.create('x^a+2*x^(a-1)+x^(a-2)');
+		const actual = factor(input);
+		expect(actual.isProduct()).toBe(true);
+		expect(actual.eq('x^(a-2)*(x+1)^2')).toBe(true);
+		expect(actual.elementsArray().some(term => term.eq('(x+1)^2'))).toBe(true);
+	});
+
 	const toSparse = (expression: Expression, variables: readonly string[]) =>
 		polynomialToSparsePolynomial(
 			new Polynomial(expression, [...variables]),
@@ -37,7 +63,28 @@ describe('Factor', () => {
 		expect(factorMultiplicityShape(actual)).toEqual(
 			factorMultiplicityShape(expectedExpression)
 		);
+		return actual;
 	};
+
+	// Regression: https://github.com/jiggzson/nerdamer/issues/219
+	it.each([
+		['shared binomial', '(c+d)*s+(c+d)*t', '(c+d)*(s+t)'],
+		['difference of binomials', '(s+t)*a-(s+t)*b', '(s+t)*(a-b)'],
+		['mixed coefficients', '3*(a-b)-(a-b)*c', '(a-b)*(3-c)'],
+		['higher degree', '2*a^2*(c-3*d)+7*(c-3*d)', '(c-3*d)*(2*a^2+7)'],
+		['three factors', 'x*y*(s+t)-z*(s+t)', '(s+t)*(x*y-z)'],
+		['opposite signs', 'c*(x-y)+d*(y-x)', '(x-y)*(c-d)'],
+		['symmetric signs', 'k*(a-b)-l*(b-a)', '(a-b)*(k+l)'],
+		['shifted binomial', 'c*(d-4)+7*(4-d)', '(d-4)*(c-7)'],
+		['quadratic grouping', '4*s-t^2+4*t-s*t', '(s+t)*(4-t)'],
+		['four terms', 'a*b*c-b-1+a*c', '(a*c-1)*(b+1)'],
+		['mixed polynomial', '2*x^2-2*x*y+x*z-y*z', '(x-y)*(2*x+z)'],
+		['cubic grouping', '3*x^3-x^2*y-2*y^3+6*x*y^2', '(3*x-y)*(x^2+2*y^2)'],
+		['quartic grouping', '6*x^4-9*x+15-10*x^3', '(3*x-5)*(2*x^3-3)'],
+		['common polynomial', '3*(x^2+y^2)+6*a*(x^2+y^2)', '3*(x^2+y^2)*(1+2*a)'],
+	])('factors legacy #219 grouping example: %s', (_case, input, expected) => {
+		expect(check(input, expected).eq(expected)).toBe(true);
+	});
 
 	const checkText = (input: string, expected: string) => {
 		expect(factor(input).text()).toEqual(expected);

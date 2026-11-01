@@ -1,7 +1,14 @@
 import Decimal from 'decimal.js';
 
 import { Expression } from '../../core/classes/expression/Expression';
+import { Parser } from '../../core/classes/parser/Parser';
+import { SYMBOLIC_ACCESSOR } from '../../core/constants/parserSyntax';
 import { message, UnsupportedOperationError, UnexpectedInputError } from '../../core/errors';
+import { scopedBlock } from '../../core/Settings';
+import { warn } from '../../core/warnings';
+
+import type { ParserValuesObject } from '../../core/classes/parser/types';
+import type { Scope } from '../../core/common/classes/Scope';
 
 const DEFAULT_LOWER_BOUND = -100;
 const DEFAULT_UPPER_BOUND = 100;
@@ -43,13 +50,13 @@ export interface FunctionSolverOptions {
  * Metadata returned by a single numerical root-refinement attempt.
  */
 export interface Root {
-	/** The root found */
+	/** Root coordinate, or a candidate coordinate if refinement fails. */
 	root: Decimal;
 	/** Number of iterations performed */
 	iterations: number;
 	/** Whether the algorithm converged */
 	converged: boolean;
-	/** Final error estimate */
+	/** Final error estimate; endpoint acceptance reports its absolute residual. */
 	error: Decimal;
 	/** The error message if any */
 	errorMsg?: string;
@@ -60,8 +67,9 @@ export interface Root {
  *
  * @remarks
  * {@link roots} scans the configured interval from its center toward both
- * endpoints. It refines sign-changing intervals with Brent's method or
- * Newton-Raphson, verifies residuals, merges nearby results, and returns roots
+ * endpoints, including a shorter final cell on either side. It refines sign-changing
+ * intervals with Brent's method or Newton-Raphson, verifies residuals, merges nearby
+ * results, and returns roots
  * in ascending order. This is a heuristic search: an even-multiplicity root
  * can be missed unless a scan point lands sufficiently close to it, and
  * periodic functions are limited by both the interval and `maxRoots`.
@@ -80,6 +88,8 @@ export interface Root {
  * ```
  */
 export class FunctionSolver {
+	private evaluationRpn?: Scope;
+	private evaluationSource?: string;
 	derivativeStep: Decimal;
 	func: Expression;
 	lowerBound: Decimal;
@@ -121,7 +131,7 @@ export class FunctionSolver {
 		const upper = this.upperBound;
 		const step = new Decimal(this.stepSize);
 		const length = upper.minus(lower);
-		const center = lower.plus(length.dividedBy(2).floor());
+		const center = lower.plus(length.dividedBy(2));
 		let x = center;
 		let u = center;
 		const intervals: Decimal[][] = [];
@@ -137,15 +147,16 @@ export class FunctionSolver {
 			offset.lessThan(maxInterval);
 			offset = offset.plus(step)
 		) {
-			const y = x.minus(step);
-			const v = u.plus(step);
+			// Clip the last cell on each side instead of dropping a shorter remainder.
+			const y = Decimal.max(lower, x.minus(step));
+			const v = Decimal.min(upper, u.plus(step));
 
-			// Add the lower interval if it is still within bounds.
-			if (y.greaterThanOrEqualTo(lower)) {
+			// Add the lower interval while its starting point is above the bound.
+			if (x.greaterThan(lower)) {
 				intervals.push([x, y]);
 			}
-			// Add the upper interval if it is still within bounds.
-			if (v.lessThanOrEqualTo(upper)) {
+			// Add the upper interval while its starting point is below the bound.
+			if (u.lessThan(upper)) {
 				intervals.push([u, v]);
 			}
 
@@ -189,8 +200,8 @@ export class FunctionSolver {
 			return {
 				root: aVal,
 				iterations: 0,
-				converged: false,
-				error: error,
+				converged: true,
+				error: fa.abs(),
 				errorMsg: message('endPointIsRoot'),
 			};
 		}
@@ -199,18 +210,16 @@ export class FunctionSolver {
 				root: bVal,
 				iterations: 0,
 				converged: true,
-				error: error,
+				error: fb.abs(),
 				errorMsg: message('endPointIsRoot'),
 			};
 		}
-		const x = fa.times(fb);
-
 		// Ensure f(a) and f(b) have opposite signs
-		if (x.greaterThan(0)) {
+		if (fa.times(fb).greaterThan(0)) {
 			return {
-				root: x,
+				root: bVal,
 				iterations: 0,
-				converged: true,
+				converged: false,
 				error: error,
 				errorMsg: message('differentSignsAtEndPointsRequired'),
 			};
@@ -306,11 +315,11 @@ export class FunctionSolver {
 		}
 
 		return {
-			root: x,
+			root: bVal,
 			iterations: this.maxIters,
 			converged: false,
 			error: error,
-			errorMsg: message('convergenceFailed', { iter: String(this.maxIters) }),
+			errorMsg: message('convergenceFailed', { iters: String(this.maxIters) }),
 		};
 	}
 
@@ -333,9 +342,31 @@ export class FunctionSolver {
 	 * Expression.
 	 */
 	public evaluate(at: Decimal | number | string) {
-		const value = this.func.evaluate({ [this.variable]: at });
+		// Preserve Expression.evaluate's special serialization and complex-power handling.
+		if (this.func.scientific !== undefined ||
+			this.func.hasFunction(SYMBOLIC_ACCESSOR, true) ||
+			this.func.isComplex()) {
+			const evaluated = this.func.evaluate({ [this.variable]: at });
+			if (!evaluated.isNUM()) {
+				throw new UnexpectedInputError(message('wrongInput', {
+					expected: 'a real numeric value', received: evaluated.text(),
+				}));
+			}
+			return evaluated.getMultiplier().toDecimal();
+		}
+		const source = this.func.text();
+		let rpn = this.evaluationRpn;
+		if (rpn === undefined || source !== this.evaluationSource) {
+			rpn = Parser.toRPN(Parser.tokenize(source));
+			this.evaluationRpn = rpn;
+			this.evaluationSource = source;
+		}
+		const values: ParserValuesObject = {
+			[this.variable]: Expression.Number(new Decimal(at)),
+		};
+		const value = scopedBlock('EVALUATE', true, () => Parser.parseRPN(rpn, values));
 		if (!Expression.isExpression(value)) {
-			throw new UnexpectedInputError(message('unsupportedType'));
+			throw new UnexpectedInputError(message('unsupportedType', { type: value.dataType }));
 		}
 		if (!value.isNUM()) {
 			throw new UnexpectedInputError(
@@ -417,6 +448,7 @@ export class FunctionSolver {
 
 		const roots: Decimal[] = [];
 		let exit = false;
+		let exhaustedRefinements = 0;
 		const evaluationCache = new Map<string, Decimal>();
 
 		const evaluatePoint = (point: Decimal) => {
@@ -430,7 +462,9 @@ export class FunctionSolver {
 		};
 
 		const addRoot = (root: Decimal) => {
-			if (this.evaluate(root).abs().lessThan(tol)) {
+			// Shared subdivision endpoints must not produce duplicate roots or exceed the cap.
+			const duplicate = roots.some(existingRoot => root.minus(existingRoot).abs().lessThan(tol.times(10)));
+			if (!exit && !duplicate && evaluatePoint(root).abs().lessThan(tol)) {
 				roots.push(root);
 			}
 			// Check if the maximum number of roots was reached. If so we're done
@@ -449,19 +483,9 @@ export class FunctionSolver {
 				const x2 = new Decimal(interval[1]);
 				const f1 = evaluatePoint(x1);
 				const f2 = evaluatePoint(x2);
-				// Check if root is at subdivision point
-				if (f1.abs().lessThan(tol)) {
-					// Avoid duplicates
-					if (
-						roots.length === 0 ||
-						x1
-							.minus(roots[roots.length - 1])
-							.abs()
-							.greaterThan(tol.times(10))
-					) {
-						addRoot(x1);
-					}
-				}
+				// Check both subdivision points, including the terminal ends of clipped cells.
+				if (f1.abs().lessThan(tol)) {addRoot(x1);}
+				if (f2.abs().lessThan(tol)) {addRoot(x2);}
 
 				// Check for sign change
 				if (f1.times(f2).lessThan(0)) {
@@ -483,44 +507,27 @@ export class FunctionSolver {
 							}
 						}
 
-						if (calculation.converged) {
-							const root = calculation.root;
-							// Avoid duplicate roots (within tolerance)
-							let isDuplicate = false;
-							for (const existingRoot of roots) {
-								if (root.minus(existingRoot).abs().lessThan(tol.times(10))) {
-									isDuplicate = true;
-									break;
-								}
-							}
-
-							if (!isDuplicate) {
-								addRoot(root);
-							}
+						if (calculation.converged) {addRoot(calculation.root);}
+						else if (calculation.iterations >= this.maxIters &&
+							calculation.errorMsg !== message('differentSignsAtEndPointsRequired')) {
+							exhaustedRefinements++;
 						}
 					} catch {}
 				}
 			} catch {}
 		}
 
-		// Check the final endpoint separately so a root exactly on the upper bound is not missed.
+		// Check the final endpoint separately even if its neighboring cell could not be evaluated.
 		// Like endpoints visited during the scan, it may be outside the function's real domain.
 		try {
 			const lastPoint = bVal;
 			const fLast = evaluatePoint(lastPoint);
-			if (fLast.abs().lessThan(tol)) {
-				if (
-					roots.length === 0 ||
-					lastPoint
-						.minus(roots[roots.length - 1])
-						.abs()
-						.greaterThan(tol.times(10))
-				) {
-					addRoot(lastPoint);
-				}
-			}
+			if (fLast.abs().lessThan(tol)) {addRoot(lastPoint);}
 		} catch {}
 
+		if (exhaustedRefinements > 0) {
+			warn('solve.iterationLimit', message('rootIterationWarning', { count: String(exhaustedRefinements), iterations: String(this.maxIters) }));
+		}
 		return roots.sort((a, b) => a.comparedTo(b)).map(x => Expression.create(x));
 	}
 }

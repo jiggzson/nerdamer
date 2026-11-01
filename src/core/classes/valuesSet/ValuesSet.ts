@@ -1,8 +1,8 @@
 import { MathematicalAggregate } from '../../common/classes/MathematicalAggregate';
 import { isNerdamerNativeType } from '../../common/common';
+import { SET, SOLUTIONS_SET } from '../../constants/entityTypes';
 import { message, UnexpectedDataType, UnsupportedOperationError } from '../../errors';
 import { Expression } from '../expression/Expression';
-import { SET, SOLUTIONS_SET } from '../parser/constants';
 
 import type { NerdamerInput, ParserEntity } from '../../types';
 import type { ParserValuesObject } from '../parser/types';

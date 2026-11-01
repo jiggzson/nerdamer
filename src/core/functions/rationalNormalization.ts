@@ -1,6 +1,9 @@
 import { Expression } from '../classes/expression/Expression';
 import { one, zero } from '../classes/expression/shortcuts';
 
+// Smaller sums do not benefit enough from additional pairwise normalization.
+const BALANCED_SUM_MIN_TERMS = 32;
+
 /**
  * Groups additive terms that already share the same symbolic denominator.
  *
@@ -95,20 +98,60 @@ export function toCommonDenominator(x: Expression) {
 		let numerator = zero();
 		let denominator = one();
 
-		for (const e of terms) {
-			const normalizedTerm = toCommonDenominator(e);
-			const num = normalizedTerm.getNumerator();
-			const den = normalizedTerm.getDenominator();
-
-			// getNumerator() returns the exact rational numerator, so carry the
-			// original term's decimal intent onto that numerator before combining
-			// fractions. This keeps decimal contagion intact through the rewrite.
-			if (e.getMultiplier().asDecimal) {
-				num.getMultiplier().asDecimal = true;
+		if (terms.length >= BALANCED_SUM_MIN_TERMS) {
+			// Combine neighboring fractions before growing the full numerator.
+			let layer = terms;
+			while (layer.length > 1) {
+				const next: Expression[] = [];
+				for (let index = 0; index < layer.length; index += 2) {
+					next.push(index + 1 < layer.length
+						? toCommonDenominator(layer[index].plus(layer[index + 1]))
+						: layer[index]);
+				}
+				layer = next;
 			}
+			const normalized = toCommonDenominator(layer[0]);
+			numerator = normalized.getNumerator();
+			denominator = normalized.getDenominator();
+		} else {
+			for (const e of terms) {
+				const normalizedTerm = toCommonDenominator(e);
+				const num = normalizedTerm.getNumerator();
+				const den = normalizedTerm.getDenominator();
 
-			numerator = numerator.times(den).plus(denominator.times(num));
-			denominator = denominator.times(den);
+				// getNumerator() returns the exact rational numerator, so carry the
+				// original term's decimal intent onto that numerator before combining
+				// fractions. This keeps decimal contagion intact through the rewrite.
+				if (e.getMultiplier().asDecimal) {
+					num.getMultiplier().asDecimal = true;
+				}
+
+				// Reuse an existing symbolic denominator factor before multiplying.
+				// This avoids raising shared factors to unnecessarily high powers.
+				const existingFactors = denominator.isProduct() ? denominator.elementsArray() : [denominator];
+				const incomingFactors = den.isProduct() ? den.elementsArray() : [den];
+				let commonFactor: Expression | undefined;
+				for (const incoming of incomingFactors) {
+					if (commonFactor === undefined && !incoming.isNUM() &&
+						incoming.getPower().isInteger() && incoming.getPower().sign() > 0 &&
+						incoming.getMultiplier().isOne()) {
+						const base = incoming.getBase();
+						const matching = existingFactors.some(existing =>
+							!existing.isNUM() &&
+							existing.getPower().isInteger() && existing.getPower().sign() > 0 &&
+							existing.getMultiplier().isOne() &&
+							existing.getBase().text() === base.text());
+						if (matching) {
+							commonFactor = base;
+						}
+					}
+				}
+				const nextDenominator = commonFactor === undefined ? den : den.div(commonFactor);
+				const existingDenominator = commonFactor === undefined
+					? denominator : denominator.div(commonFactor);
+				numerator = numerator.times(nextDenominator).plus(existingDenominator.times(num));
+				denominator = denominator.times(nextDenominator);
+			}
 		}
 
 		if (x.getPower().sign() === -1) {

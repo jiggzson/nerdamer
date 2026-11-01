@@ -3,8 +3,8 @@ import { sqcomp } from '../../algebra/utils';
 import { Expression } from '../../core/classes/expression/Expression';
 import { constantsFreeProduct } from '../../core/classes/expression/products';
 import { two, zero } from '../../core/classes/expression/shortcuts';
-import { assertPlainVariableAndGetString } from '../../core/classes/expression/utils';
-import { HEAVISIDE, ILAPLACE } from '../../core/classes/parser/constants';
+import { requireVariableName } from '../../core/classes/expression/utils';
+import { HEAVISIDE, ILAPLACE } from '../../core/constants/functionNames';
 import { Pattern } from '../../core/converters/Pattern';
 
 import { tableOfInverseTransforms } from './ilaplaceTable';
@@ -46,8 +46,8 @@ export function ilaplace(
 ): Expression {
 	expr = Expression.create(expr);
 
-	s = assertPlainVariableAndGetString(Expression.create(s));
-	t = assertPlainVariableAndGetString(Expression.create(t));
+	s = requireVariableName(Expression.create(s), true);
+	t = requireVariableName(Expression.create(t), true);
 
 	let retval: Expression | undefined;
 

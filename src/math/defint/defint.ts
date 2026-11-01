@@ -1,8 +1,9 @@
 import { Expression } from '../../core/classes/expression/Expression';
-import { assertPlainVariableAndGetString } from '../../core/classes/expression/utils';
-import { DEFINT } from '../../core/classes/parser/constants';
+import { requireVariableName } from '../../core/classes/expression/utils';
+import { DEFINT } from '../../core/constants/functionNames';
 
 import { definiteIntegrateNative } from './defintNative';
+import { numericalIntegrand } from './numericalIntegrand';
 
 import type { ExpressionInput } from '../../core/types';
 
@@ -37,7 +38,7 @@ export function defint(
 
 	const inputVars = f.variables();
 	// Get the variable
-	const v = assertPlainVariableAndGetString(dx);
+	const v = requireVariableName(dx);
 	// Pull factors that are constant with respect to the integration variable across the bounds.
 	if (!inputVars.includes(v)) {
 		retval = f.times(to.minus(from));
@@ -60,7 +61,19 @@ export function defint(
 		) {
 			const a = Number(numericFrom.getMultiplier().toDecimal());
 			const b = Number(numericTo.getMultiplier().toDecimal());
-			retval = Expression.create(definiteIntegrateNative(f.buildFunction(), a, b));
+
+			if (f.isComplex()) {
+				const real = Expression.create(
+					definiteIntegrateNative(numericalIntegrand(f.realPart(), v), a, b)
+				);
+				const imaginary = Expression.create(
+					definiteIntegrateNative(numericalIntegrand(f.imagPart(), v), a, b)
+				);
+				retval = real.plus(imaginary.times(Expression.Img()));
+			} else {
+				retval = Expression.create(definiteIntegrateNative(numericalIntegrand(f, v), a, b));
+			}
+
 			retval.precision = NATIVE_DEFINITE_INTEGRATION_PRECISION; // Mark it as limited precision
 		} else {
 			retval = Expression.toFunction(DEFINT, [f, dx, from, to]);

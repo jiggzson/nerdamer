@@ -88,6 +88,16 @@ describe('parser function documentation', () => {
 		const artifact = buildParserFunctionDocumentation();
 		const byName = new Map(artifact.functions.map(entry => [entry.name, entry]));
 
+		expect(byName.get('realsolutions')).toMatchObject({
+			category: 'Solving',
+			usage: 'notation',
+			syntax: 'realsolutions(solutionSet, lower, upper) | realsolutions(systems, variable, lower, upper)',
+			minArgs: 3,
+			maxArgs: 4,
+		});
+		expect(byName.get('realsolutions')?.directApi).toBeUndefined();
+		expect(byName.has('solutions')).toBe(false);
+
 		expect(byName.get('factor')?.directApi).toEqual({
 			package: 'nerdamer/algebra',
 			name: 'factor',

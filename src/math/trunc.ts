@@ -1,5 +1,5 @@
 import { Expression } from '../core/classes/expression/Expression';
-import { TRUNC } from '../core/classes/parser/constants';
+import { TRUNC } from '../core/constants/functionNames';
 
 import type { ExpressionInput } from '../core/types';
 
@@ -26,6 +26,8 @@ export function trunc(x: ExpressionInput): Expression {
 
 	if (x.isPosInf() || x.isNegInf()) {
 		retval = x.isNegInf() ? Expression.NegInf() : Expression.Inf();
+	} else if (x.isComplex()) {
+		retval = trunc(x.realPart()).plus(trunc(x.imagPart()).times(Expression.Img()));
 	} else if (x.isNUM()) {
 		const m = x.getMultiplier();
 		retval = Expression.Number(m.numerator / m.denominator);

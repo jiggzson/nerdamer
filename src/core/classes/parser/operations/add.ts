@@ -1,7 +1,7 @@
+import { RANK, EXPRESSION_TYPES } from '../../../constants/entityTypes';
 import { message, UndefinedError } from '../../../errors';
 import { Settings } from '../../../Settings';
 import { Expression } from '../../expression/Expression';
-import { RANK, EXPRESSION_TYPES } from '../constants';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { NUM, VAR, EXP, FUN, GRP, PRD, SUM, INF } = EXPRESSION_TYPES;
@@ -49,7 +49,7 @@ export function add(a: Expression, b: Expression): Expression {
 				const x = a.getMultiplier();
 				const y = b.getMultiplier();
 				if ((x.isNegative() && !y.isNegative()) || (y.isNegative() && !x.isNegative())) {
-					throw new UndefinedError(message('infinityMinusInfinityUndefined'));
+					throw new UndefinedError(message('undefinedExpression', { expression: 'Infinity-Infinity' }));
 				}
 				retval = a.isNegInf() ? Expression.NegInf() : Expression.Inf();
 			} else {
@@ -74,7 +74,7 @@ export function add(a: Expression, b: Expression): Expression {
 			const x = a.getMultiplier();
 			const y = b.getMultiplier();
 			if ((x.isNegative() && !y.isNegative()) || (y.isNegative() && !x.isNegative())) {
-				throw new UndefinedError(message('infinityMinusInfinityUndefined'));
+				throw new UndefinedError(message('undefinedExpression', { expression: 'Infinity-Infinity' }));
 			}
 		}
 		// We can just flip because of commutativity. Add can figure out the rest.

@@ -6,6 +6,7 @@ import { groebner } from './algebra/groebner';
 import { partfrac } from './algebra/partfrac';
 import { simplify } from './algebra/simplify/simplify';
 import { completeSquare } from './api/algebra';
+import * as functionCategories from './api/constants';
 import { buildFunction } from './api/core';
 import { diff } from './calculus/derivative/diff';
 import { C, S } from './calculus/fresnel';
@@ -23,7 +24,6 @@ import { symbols } from './core/classes/expression/shortcuts';
 import { determinant, invert, nullspace } from './core/classes/matrix/functions';
 import { Matrix } from './core/classes/matrix/Matrix';
 import { imatrix } from './core/classes/matrix/utils';
-import { dataTypes, PARSER_CONSTANTS } from './core/classes/parser/constants';
 import { Parser } from './core/classes/parser/Parser';
 import { assign, unassign } from './core/classes/parser/scripting/scope';
 import {
@@ -38,10 +38,11 @@ import { Rational } from './core/classes/rational/Rational';
 import { ValuesSet } from './core/classes/valuesSet/ValuesSet';
 import { cross, dot } from './core/classes/vector/functions';
 import { Vector } from './core/classes/vector/Vector';
+import { dataTypes } from './core/constants/entityTypes';
+import { PARSER_CONSTANTS } from './core/constants/parserValues';
 import { Converter } from './core/converters/Converter';
 import { mathFunctionRegistry } from './core/dispatch';
 import * as errors from './core/errors';
-import { registerNerdamerFunctions } from './core/fullFunctions';
 import {
 	arg,
 	conjugate,
@@ -51,37 +52,31 @@ import {
 	realPart,
 	rectForm,
 } from './core/functions/complex';
+import { connectFunctions } from './core/functions/connectFunctions';
 import { expand } from './core/functions/expand/expand';
 import { setFunction as registerFunction } from './core/functions/setFunction';
 import { subst, uSub, uUnSub } from './core/functions/subst';
+import { registerNerdamerFunctions } from './core/nerdamerFunctions';
+import { clearWarnings, getWarnings, setConsoleWarnings, setWarningHandler, warn } from './core/warnings';
 import { defint } from './math/defint/defint';
 import { hypot, line } from './math/geometry';
 import {
 	abs,
 	cbrt,
 	ceiling,
-	Chi,
-	Ci,
 	contains,
 	dirac,
 	doubleFactorial,
-	Ei,
-	erf,
-	erfc,
 	exp,
 	factorial,
 	fibonacci,
 	floor,
-	gamma,
-	gammaIncomplete,
-	gammaIncompleteLower,
 	heaviside,
 	step,
 	rect,
 	tri,
 	radians,
 	degrees,
-	Li,
 	log,
 	log10,
 	matrix,
@@ -92,16 +87,13 @@ import {
 	modInv,
 	nthroot,
 	numeric,
-	product,
 	round,
-	Shi,
-	Si,
+	significant,
 	sign,
-	sinc,
 	sqrt,
-	sum,
 	scientific,
-} from './math/math';
+} from './math/index';
+import { product, sum } from './math/series';
 import {
 	cos,
 	sin,
@@ -134,6 +126,30 @@ import { continuedFraction, isprime } from './math/utils';
 import { SolutionSet } from './solve/classes/SolutionSet';
 import { roots, solve } from './solve/solve';
 import { solveSystem } from './solve/solveSystem';
+import {
+	Chi,
+	Ci,
+	Ei,
+	erf,
+	erfc,
+	gamma,
+	gammaIncomplete,
+	gammaIncompleteLower,
+	Li,
+	Shi,
+	Si,
+	sinc,
+} from './special';
+import {
+	mean,
+	median,
+	mode,
+	smpstdev,
+	smpvar,
+	stdev,
+	variance,
+	zscore,
+} from './statistics';
 
 import type {
 	OptionsObject,
@@ -141,7 +157,9 @@ import type {
 	ParserValuesObject,
 	TextOptions,
 } from './core/classes/parser/types';
+import type { NumericalFunctionSource } from './core/functions/connectFunctions';
 import type { ExpressionInput, NerdamerInput, ParserEntity } from './core/types';
+import type { WarningHandler } from './core/warnings';
 
 export type TeXOptions = OptionsObject | 'decimal' | 'decimals';
 export type { CompleteSquareResult } from './algebra/utils';
@@ -168,7 +186,7 @@ interface ScalarApi {
 	 * is an Expression.
 	 *
 	 * Structured parser results expose this method so values returned by `nerdamer(...)`
-	 * have one consistent TypeScript surface, but they cannot be compiled as scalar
+	 * have one consistent TypeScript interface, but they cannot be compiled as scalar
 	 * functions and throw {@link core!UnexpectedDataType} when called.
 	 *
 	 * @param argsArray - Optional variable names in positional call order.
@@ -579,6 +597,48 @@ nerdamer.setFunction = function (name: string, args: string[], body: string) {
 };
 
 /**
+ * Removes user-defined parser functions without affecting built-in functions.
+ *
+ * @param names - Optional function names to remove. Omit to clear all user functions.
+ * @returns The root nerdamer function for chaining.
+ */
+nerdamer.clearFunctions = function (names?: string[]) {
+	for (const name of Object.keys(mathFunctionRegistry)) {
+		if (mathFunctionRegistry[name].level === 'user' && (!names || names.includes(name))) {
+			delete mathFunctionRegistry[name];
+		}
+	}
+	return nerdamer;
+};
+
+/**
+ * Imports numerical implementations from another library while preserving Nerdamer's symbolic
+ * representation of the selected functions.
+ *
+ * Imported functions are used by numerical evaluation and by `buildFunction()`. New function
+ * names remain symbolic during ordinary parsing; existing Nerdamer functions retain their
+ * symbolic simplification rules.
+ *
+ * @param names - Function names to import from `source`.
+ * @param source - Object containing numerical functions, such as a mathjs instance.
+ * @returns The root `nerdamer` function for chaining.
+ *
+ * @example
+ * ```ts
+ * nerdamer.connect(['cos'], math);
+ * nerdamer('cos(x)').text();                    // 'cos(x)'
+ * nerdamer('cos(x)').evaluate({ x: 0 }).text(); // '1'
+ * ```
+ */
+nerdamer.connect = function (
+	names: readonly string[],
+	source: NumericalFunctionSource
+) {
+	connectFunctions(names, source);
+	return nerdamer;
+};
+
+/**
  * Registers or removes a parser constant using the legacy public entry point.
  *
  * Numeric values are converted to exact rational text before registration so
@@ -586,10 +646,13 @@ nerdamer.setFunction = function (name: string, args: string[], body: string) {
  * removes the constant. Registration changes shared parser state.
  *
  * @param name - Constant name.
- * @param value - Constant value, or `'delete'` to remove it.
+ * @param value - Constant value, or deprecated `'delete'` to remove it.
  * @returns The root `nerdamer` function for chaining.
  */
 nerdamer.setConstant = function (name: string, value: number | string) {
+	if (value === 'delete') {
+		warn('api.deprecatedDelete', errors.message('deprecatedDeleteWarning', { function: 'setConstant' }));
+	}
 	let constantValue = value === 'delete' ? '' : String(value);
 
 	// Legacy setConstant treats numeric values as exact constants rather than
@@ -620,6 +683,14 @@ nerdamer.getConstant = function (name: string) {
 	const constant = constants[name];
 	return String(typeof constant === 'function' ? constant() : constant);
 };
+
+/**
+ * Readonly categories of built-in function names.
+ *
+ * Shares the exact frozen name lists exported by `nerdamer/constants`.
+ * Unlike `getConstant()`, these groups do not inspect or modify parser values.
+ */
+nerdamer.constants = Object.freeze({ ...functionCategories });
 
 /**
  * Changes one or more shared parser settings.
@@ -698,11 +769,12 @@ nerdamer.aliasOperator = function (symbol: string, alias: string) {
  * by the values object supplied to a parse call.
  *
  * @param name - Known-value name.
- * @param value - Value to assign, or `'delete'` to remove the assignment.
+ * @param value - Value to assign, or deprecated `'delete'` to remove the assignment.
  * @returns Nothing. This operation changes shared parser state.
  */
 nerdamer.setVar = function (name: string, value: number | string | 'delete') {
 	if (value === 'delete') {
+		warn('api.deprecatedDelete', errors.message('deprecatedDeleteWarning', { function: 'setVar' }));
 		unassign(name);
 	} else {
 		assign(name, String(value));
@@ -818,7 +890,7 @@ nerdamer.buildFunction = buildFunction;
  * Compatibility registry of selected Nerdamer constructors and the shared Parser instance.
  *
  * @remarks
- * This registry is retained as a supported compatibility surface for 2.0. Typed code
+ * This registry is retained as a supported compatibility interface for 2.0. Typed code
  * should prefer the documented package subpaths, which provide domain-specific and advanced
  * import paths without relying on registry membership.
  */
@@ -918,6 +990,7 @@ nerdamer.sign = sign;
 nerdamer.min = min;
 nerdamer.max = max;
 nerdamer.round = round;
+nerdamer.significant = significant;
 nerdamer.floor = floor;
 const ceil: (x: ExpressionInput) => Expression = ceiling;
 /**
@@ -1014,6 +1087,16 @@ nerdamer.Shi = Shi;
 nerdamer.Li = Li;
 nerdamer.Ei = Ei;
 nerdamer.sinc = sinc;
+
+// Statistics
+nerdamer.mean = mean;
+nerdamer.median = median;
+nerdamer.mode = mode;
+nerdamer.smpvar = smpvar;
+nerdamer.variance = variance;
+nerdamer.smpstdev = smpstdev;
+nerdamer.stdev = stdev;
+nerdamer.zscore = zscore;
 
 // Symbolic utilities
 nerdamer.parens = parens;
@@ -1145,5 +1228,14 @@ nerdamer.updateAPI = function () {
 };
 
 nerdamer.updateAPI();
+
+/** Read accumulated nonfatal diagnostics. */
+nerdamer.getWarnings = getWarnings;
+/** Clear accumulated nonfatal diagnostics. */
+nerdamer.clearWarnings = clearWarnings;
+/** Route new diagnostics to an application callback. */
+nerdamer.setWarningHandler = (handler?: WarningHandler) => setWarningHandler(handler);
+/** Opt in to writing new diagnostics to the JavaScript console. */
+nerdamer.setConsoleWarnings = setConsoleWarnings;
 
 export default nerdamer;

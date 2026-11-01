@@ -3,13 +3,13 @@ import Decimal from 'decimal.js';
 import { remove } from '../../../utils/array';
 import { arrayToObject } from '../../../utils/object';
 import { isNerdamerNativeType } from '../../common/common';
+import { POLYNOMIAL } from '../../constants/entityTypes';
 import { message, PolynomialError, UnsupportedOperationError } from '../../errors';
 import { expand } from '../../functions/expand/expand';
 import { arrayAddUnique, isSorted } from '../../functions/utils';
 import { coeffs } from '../expression/analysis';
 import { Expression } from '../expression/Expression';
 import { one, zero } from '../expression/shortcuts';
-import { POLYNOMIAL } from '../parser/constants';
 import { Rational } from '../rational/Rational';
 
 import {
@@ -45,8 +45,10 @@ export type EvalInputType = number | bigint | Rational;
  * @remarks
  * Construction accepts polynomial-like expression input, expands bracketed or powered
  * sums when necessary, and collects coefficients using either the supplied variable
- * order or the expression's alphabetically sorted variables. Negative variable powers
- * and other non-polynomial forms are rejected.
+ * order or the expression's alphabetically sorted variables. With explicit variables,
+ * expressions independent of those variables can be symbolic coefficients, including
+ * radicals and functions. Negative powers of polynomial variables and other
+ * non-polynomial dependence on those variables are rejected.
  *
  * The object is mutable: ordering methods sort {@link Polynomial.terms} in place, and
  * `gcdFree(..., true)` edits term coefficients and powers. Arithmetic methods such as
@@ -67,6 +69,7 @@ export type EvalInputType = number | bigint | Rational;
  * @example
  * ```ts
  * const polynomial = new Polynomial('x^2 + 2*x + 1', ['x']);
+ * const symbolic = new Polynomial('x^2 + sqrt(y)*x + 1', ['x']);
  *
  * polynomial.deg();                    // 2
  * polynomial.toArray().map(String);    // ["1", "2", "1"]
@@ -121,9 +124,10 @@ export class Polynomial {
 				throw new UnsupportedOperationError(message('unsupportedType', { type: typeof x }));
 			}
 
-			if (!x.isPolynomialLike()) {
+			if (!x.isPolynomialLike(vars)) {
 				throw new PolynomialError(message('notAPolynomial'));
 			}
+
 
 			// Expand the expression but only if needed. This will be needed if the value has a bracket
 			// or if the expression has a power greater than one.
@@ -1273,11 +1277,11 @@ export class Polynomial {
 		} else {
 			const leftExpression = this.getExpression();
 			const rightExpression = x.getExpression();
+			const variables = [...new Set([...this.variables, ...x.variables])].sort();
 			let sparseResult: Polynomial | undefined;
 
 			if (!leftExpression.hasDecimal() && !rightExpression.hasDecimal()) {
 				try {
-					const variables = [...new Set([...this.variables, ...x.variables])].sort();
 					const left = expressionToIntegerSparsePolynomial(leftExpression, variables);
 					const right = expressionToIntegerSparsePolynomial(rightExpression, variables);
 					const denominator = left.denominator * right.denominator;
@@ -1296,7 +1300,7 @@ export class Polynomial {
 				sparseResult ??
 				new Polynomial(
 					leftExpression.times(rightExpression),
-					undefined,
+					variables,
 					this.ordering
 				);
 		}

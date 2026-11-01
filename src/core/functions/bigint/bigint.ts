@@ -131,7 +131,7 @@ export function isEven(n: bigint) {
  */
 export function integerSquareRoot(value: bigint): bigint {
 	if (value < 0n) {
-		throw new RangeError(message('integerSqrtNonnegative'));
+		throw new RangeError(message('integerSquareRootNonnegative', { operation: 'integerSquareRoot' }));
 	}
 	if (value < 2n) {
 		return value;

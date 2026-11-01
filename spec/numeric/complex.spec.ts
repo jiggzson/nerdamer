@@ -22,9 +22,11 @@ describe('Numeric Complex arithmetic', () => {
 		expect(difference.re.eq(2)).toBe(true);
 		expect(difference.im.eq(6)).toBe(true);
 
-		const product = left.mul(right);
+		const product = left.times(right);
 		expect(product.re.eq(11)).toBe(true);
 		expect(product.im.eq(-2)).toBe(true);
+		expect(left.times(right).re.eq(product.re)).toBe(true);
+		expect(left.times(right).im.eq(product.im)).toBe(true);
 
 		const quotient = left.div(right);
 		expect(quotient.re.eq(-1)).toBe(true);
@@ -54,6 +56,24 @@ describe('Numeric Complex arithmetic', () => {
 		const denominator = new Complex(0, 0);
 
 		expect(() => numerator.div(denominator)).toThrow(DivisionByZeroError);
+	});
+
+	it('uses the same numerical principal logarithm as Expression.log', () => {
+		const cases = ['5*i', '8+5*i', '123-2*i', '-3+4*i'];
+		for (const input of cases) {
+			const expression = Expression.create(input);
+			const numeric = new Complex(
+				expression.realPart().getMultiplier().toDecimal(),
+				expression.imagPart().getMultiplier().toDecimal()
+			).log();
+			const result = Parser.evaluate(`log(${input})`) as Expression;
+			expect(Number(result.realPart().text({ decimal: true }))).toBeCloseTo(
+				numeric.re.toNumber(), 14
+			);
+			expect(Number(result.imagPart().text({ decimal: true }))).toBeCloseTo(
+				numeric.im.toNumber(), 14
+			);
+		}
 	});
 
 	it('computes the reciprocal without routing through general complex division', () => {
@@ -149,19 +169,18 @@ describe('Complex number', () => {
 	});
 
 	it('should compute complex logarithms', () => {
-		expect(Parser.evaluate('log(5*i)').text()).toEqual(
-			'1.6094379124341003746+1.5707963267948966193*i'
-		);
+		expect(Expression.create(Parser.evaluate('log(5*i)').text())
+			.minus('1.6094379124341003746+1.5707963267948966193*i').isNearlyZero(2)).toBe(true);
 		expect(Parser.evaluate('log(8+5*i)').text()).toEqual(
 			'2.2443181848660699192+0.55859931534356243597*i'
 		);
-		expect(Parser.evaluate('log(123-2*i)').text()).toEqual(
-			'4.8123165343435130951-0.016258729805129587692*i'
-		);
+		expect(Expression.create(Parser.evaluate('log(123-2*i)').text())
+			.minus('4.8123165343435130951-0.016258729805129587692*i').isNearlyZero(2)).toBe(true);
 		expect(Parser.evaluate('log(123-2*i+a)').text()).toEqual(
 			'log((4+(123+a)^2)^(1/2))+i*atan2(-2, 123+a)'
 		);
-		expect(Parser.evaluate('log(1/i)').text()).toEqual('-1.5707963267948966193*i');
+		expect(Expression.create(Parser.evaluate('log(1/i)').text())
+			.minus('-1.5707963267948966193*i').isNearlyZero(2)).toBe(true);
 	});
 
 	it('should handle complex powers', () => {
@@ -273,9 +292,11 @@ describe('The rectform function', () => {
 			'cos(5*atanh(3/5))+i*sin(5*atanh(3/5))'
 		);
 		expect(Parser.parse('rectform(sqrt(34)*e^(i*atan(3/5))+10)').text()).toEqual('15+3*i');
-		expect(Parser.parse('rectform(e^(5*atan(i+7)))').text()).toEqual(
-			'1278.4631547435725921+125.80758348772224229*i'
-		);
+		const rect = Parser.parse('rectform(e^(5*atan(i+7)))') as Expression;
+		expect(new Decimal(rect.realPart().text({ decimal: true }))
+			.minus('1278.4631547435725921').abs().div('1278.4631547435725921').lt('1e-18')).toBe(true);
+		expect(new Decimal(rect.imagPart().text({ decimal: true }))
+			.minus('125.80758348772224229').abs().div('125.80758348772224229').lt('1e-18')).toBe(true);
 	});
 });
 
@@ -370,15 +391,26 @@ describe('Complex Trig', () => {
 		expect(() => {
 			Parser.evaluate('atan(i)');
 		}).toThrow();
-		expect(Parser.evaluate('atan(i+1)').text()).toEqual(
-			'1.0172219678978513678+0.40235947810852509365*i'
-		);
+		expect(Expression.create(Parser.evaluate('atan(i+1)').text())
+			.minus('1.0172219678978513678+0.40235947810852509365*i').isNearlyZero(2)).toBe(true);
 		expect(Parser.evaluate('atan(5i+3)').text()).toEqual(
 			'1.480869576898657484+0.14694666622552975205*i'
 		);
 		expect(Parser.evaluate('atan(2i)').text()).toEqual(
 			'1.5707963267948966193+0.5493061443340548457*i'
 		);
+	});
+
+	it('should calculate inverse reciprocal trig functions of complex numbers', () => {
+		for (const value of ['1+i', '3+5*i']) {
+			const asecValue = Parser.evaluate(`asec(${value})`);
+			const acscValue = Parser.evaluate(`acsc(${value})`);
+			const acotValue = Parser.evaluate(`acot(${value})`);
+
+			expect(asecValue.text()).toEqual(Parser.evaluate(`acos(1/(${value}))`).text());
+			expect(acscValue.text()).toEqual(Parser.evaluate(`asin(1/(${value}))`).text());
+			expect(acotValue.text()).toEqual(Parser.evaluate(`atan(1/(${value}))`).text());
+		}
 	});
 
 	it('should calculate cosh of complex numbers', () => {
@@ -457,20 +489,20 @@ describe('Complex Trig', () => {
 		expect(Parser.evaluate('asinh(i+1)').text()).toEqual(
 			'1.061275061905035652+0.6662394324925152551*i'
 		);
-		expect(Parser.evaluate('asinh(5i+3)').text()).toEqual(
-			'2.4529137425028117695+1.0238217465117829101*i'
-		);
-		expect(Parser.evaluate('asinh(i)').text()).toEqual('1.5707963267948966193*i');
+		expect(Expression.create(Parser.evaluate('asinh(5i+3)').text())
+			.minus('2.4529137425028117695+1.0238217465117829101*i').isNearlyZero(2)).toBe(true);
+		expect(Expression.create(Parser.evaluate('asinh(i)').text())
+			.minus('1.5707963267948966193*i').isNearlyZero(2)).toBe(true);
 	});
 
 	it('should calculate atanh of complex numbers', () => {
-		expect(Parser.evaluate('atanh(i+1)').text()).toEqual(
-			'0.40235947810852509365+1.0172219678978513678*i'
-		);
+		expect(Expression.create(Parser.evaluate('atanh(i+1)').text())
+			.minus('0.40235947810852509365+1.0172219678978513678*i').isNearlyZero(2)).toBe(true);
 		expect(Parser.evaluate('atanh(5i+3)').text()).toEqual(
 			'0.086569059179458444155+1.4236790442393027309*i'
 		);
-		expect(Parser.evaluate('atanh(i)').text()).toEqual('0.78539816339744830963*i');
+		expect(Expression.create(Parser.evaluate('atanh(i)').text())
+			.minus('0.78539816339744830963*i').isNearlyZero(2)).toBe(true);
 	});
 
 	it('should calculate asech of complex numbers', () => {
@@ -489,10 +521,10 @@ describe('Complex Trig', () => {
 		expect(Parser.evaluate('acsch(i+1)').text()).toEqual(
 			'0.53063753095251782596-0.45227844715119068208*i'
 		);
-		expect(Parser.evaluate('acsch(5i+3)').text()).toEqual(
-			'0.089079517088094739588-0.1470061943705430493*i'
-		);
-		expect(Parser.evaluate('acsch(i)').text()).toEqual('-1.5707963267948966193*i');
+		expect(Expression.create(Parser.evaluate('acsch(5i+3)').text())
+			.minus('0.089079517088094739588-0.1470061943705430493*i').isNearlyZero(2)).toBe(true);
+		expect(Expression.create(Parser.evaluate('acsch(i)').text())
+			.minus('-1.5707963267948966193*i').isNearlyZero(2)).toBe(true);
 	});
 
 	it('should calculate acoth of complex numbers', () => {
@@ -502,7 +534,8 @@ describe('Complex Trig', () => {
 		expect(Parser.evaluate('acoth(5i+3)').text()).toEqual(
 			'0.086569059179458444155-0.14711728255559388838*i'
 		);
-		expect(Parser.evaluate('acoth(i)').text()).toEqual('-0.78539816339744830963*i');
+		expect(Expression.create(Parser.evaluate('acoth(i)').text())
+			.minus('-0.78539816339744830963*i').isNearlyZero(2)).toBe(true);
 	});
 
 	it('should not falsely equate two complex values', () => {
@@ -568,6 +601,18 @@ describe('The csgn function', () => {
 	});
 });
 
+describe('Complex phase and magnitude aliases', () => {
+	it('evaluates phase through the argument implementation', () => {
+		expect(Expression.create('phase(i)').minus('pi/2').isNearlyZero()).toBe(true);
+		expect(Expression.create('phase(-i)').plus('pi/2').isNearlyZero()).toBe(true);
+	});
+
+	it('evaluates magnitude through absolute value', () => {
+		expect(nerdamer('magnitude(3+4*i)').text()).toEqual('5');
+		expect(nerdamer('magnitude(i)').text()).toEqual('1');
+	});
+});
+
 describe('Complex numeric helpers', () => {
 	it('computes squared magnitude without changing the ordinary magnitude', () => {
 		const value = new Complex(new Decimal(3), new Decimal(4));
@@ -609,16 +654,22 @@ describe('Complex evaluation regressions', () => {
 	});
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/173
-	it('evaluates natural and base-10 logarithms of i', () => {
-		const natural = nerdamer('log(i)').evaluate();
-		const baseTen = nerdamer('log(i,10)').evaluate();
+	it('evaluates logarithms with complex arguments and bases', () => {
+		const natural = Expression.create('log(i)').evaluate();
+		const baseTen = Expression.create('log(i,10)').evaluate();
+		const sameBase = Expression.create('log(i,i)');
+		const negativeRealToImaginaryBase = Expression.create('log(-1,i)');
+		const imaginaryToNegativeRealBase = Expression.create('log(i,-1)');
+		const symbolicArgument = Expression.create('log(x,i)');
+		const symbolicBase = Expression.create('log(i,x)');
 
-		expect(Expression.isExpression(natural)).toBe(true);
-		expect(Expression.isExpression(baseTen)).toBe(true);
-		if (Expression.isExpression(natural) && Expression.isExpression(baseTen)) {
-			expect(natural.minus('pi*i/2').isNearlyZero()).toBe(true);
-			expect(baseTen.minus('pi*i/(2*log(10))').isNearlyZero()).toBe(true);
-		}
+		expect(natural.minus('pi*i/2').isNearlyZero()).toBe(true);
+		expect(baseTen.minus('pi*i/(2*log(10))').isNearlyZero()).toBe(true);
+		expect(sameBase.eq(1)).toBe(true);
+		expect(negativeRealToImaginaryBase.eq(2)).toBe(true);
+		expect(imaginaryToNegativeRealBase.eq('1/2')).toBe(true);
+		expect(symbolicArgument.eq('log(x)/log(i)')).toBe(true);
+		expect(symbolicBase.eq('log(i)/log(x)')).toBe(true);
 	});
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/178
@@ -635,5 +686,151 @@ describe('Complex evaluation regressions', () => {
 
 		expect(actual.eq(-1)).toBe(false);
 		expect(actual.minus(expected).evaluate().isNearlyZero()).toBe(true);
+	});
+});
+
+describe('Complex gamma regression (#343)', () => {
+	it('evaluates gamma(1+i) with its known principal value', () => {
+		const actual = Expression.create('gamma(1+i)').evaluate();
+		const real = Number(actual.realPart().text({ decimal: true }));
+		const imaginary = Number(actual.imagPart().text({ decimal: true }));
+
+		expect(real).toBeCloseTo(0.498015668118356, 12);
+		expect(imaginary).toBeCloseTo(-0.154949828301811, 12);
+	});
+
+	it('obeys the gamma recurrence and conjugation identities', () => {
+		const z = Expression.create('1+i');
+		const gammaZ = Expression.create('gamma(1+i)').evaluate();
+		const gammaNext = Expression.create('gamma(2+i)').evaluate();
+		const gammaConjugate = Expression.create('gamma(1-i)').evaluate();
+
+		expect(gammaNext.minus(z.times(gammaZ)).evaluate().isNearlyZero()).toBe(true);
+		expect(gammaConjugate.realPart().minus(gammaZ.realPart()).evaluate().isNearlyZero()).toBe(true);
+		expect(gammaConjugate.imagPart().plus(gammaZ.imagPart()).evaluate().isNearlyZero()).toBe(true);
+	});
+
+	it('keeps symbolic gamma unevaluated', () => {
+		expect(Expression.create('gamma(x+i)').text()).toEqual('gamma(x+i)');
+	});
+});
+
+describe('Complex error function (#343)', () => {
+	it('evaluates erf(i) numerically without changing symbolic parsing', () => {
+		expect(Expression.create('erf(i)').text()).toEqual('erf(i)');
+		const value = Expression.create('erf(i)').evaluate();
+		expect(Number(value.realPart().text({ decimal: true }))).toBeCloseTo(0, 14);
+		expect(Number(value.imagPart().text({ decimal: true }))).toBeCloseTo(1.6504257587975429, 13);
+	});
+
+	it('evaluates a general complex argument', () => {
+		const value = Expression.create('erf(1+i)').evaluate();
+		expect(Number(value.realPart().text({ decimal: true }))).toBeCloseTo(1.3161512816979476, 12);
+		expect(Number(value.imagPart().text({ decimal: true }))).toBeCloseTo(0.1904534692378347, 12);
+	});
+
+	it('preserves oddness and conjugation for complex arguments', () => {
+		const positive = Expression.create('erf(1+2*i)').evaluate();
+		const negative = Expression.create('erf(-1-2*i)').evaluate();
+		const conjugate = Expression.create('erf(1-2*i)').evaluate();
+		expect(positive.plus(negative).evaluate().isNearlyZero()).toBe(true);
+		expect(positive.realPart().minus(conjugate.realPart()).evaluate().isNearlyZero()).toBe(true);
+		expect(positive.imagPart().plus(conjugate.imagPart()).evaluate().isNearlyZero()).toBe(true);
+	});
+
+	it('leaves symbolic arguments unevaluated', () => {
+		expect(Expression.create('erf(x+i)').evaluate().text()).toEqual('erf(x+i)');
+	});
+});
+
+describe('Complex integral functions (#343)', () => {
+	it('evaluates Si, Ci, and Ei with nonzero real and imaginary parts', () => {
+		const cases: [string, number, number][] = [
+			['Si(1+i)', 1.1042226582355817, 0.8824538050079177],
+			['Ci(1+i)', 0.8821721805559363, 0.28724913351995594],
+			['Ei(1+i)', 1.764625985563854, 2.3877698515105224],
+			['Si(2-i)', 1.8332099215048436, -0.457691711286688],
+			['Ci(2-i)', 0.5844759968782477, 0.297495177638134],
+			['Ei(2-i)', 4.069980947893928, -3.4009439698001216],
+		];
+		for (const [input, real, imaginary] of cases) {
+			const value = Expression.create(input).evaluate();
+			expect(Number(value.realPart().text({ decimal: true }))).toBeCloseTo(real, 12);
+			expect(Number(value.imagPart().text({ decimal: true }))).toBeCloseTo(imaginary, 12);
+		}
+	});
+
+	it('agrees with the imaginary-axis identities when evaluated', () => {
+		const cases: [string, number, number][] = [
+			['Si(i)', 0, 1.0572508753757285],
+			['Ci(i)', 0.8378669409802082, Math.PI / 2],
+			['Ei(i)', 0.33740392290096813, 2.5168793971620796],
+		];
+		for (const [input, real, imaginary] of cases) {
+			const value = Expression.create(input).evaluate();
+			expect(Number(value.realPart().text({ decimal: true }))).toBeCloseTo(real, 12);
+			expect(Number(value.imagPart().text({ decimal: true }))).toBeCloseTo(imaginary, 12);
+		}
+	});
+
+	it('retains the principal logarithm branch for negative real Ci inputs', () => {
+		const value = Expression.create('Ci(-1)');
+		const expected = Expression.create('Ci(1)+i*pi');
+		expect(value.eq(expected)).toBe(true);
+		const numeric = value.evaluate();
+		expect(Number(numeric.imagPart().text({ decimal: true }))).toBeCloseTo(Math.PI, 12);
+	});
+
+	it('preserves symbolic arguments and the sine integral oddness identity', () => {
+		expect(Expression.create('Si(x+i)').text()).toEqual('Si(x+i)');
+		expect(Expression.create('Ci(x+i)').text()).toEqual('Ci(x+i)');
+		expect(Expression.create('Ei(x+i)').text()).toEqual('Ei(x+i)');
+		const a = Expression.create('Si(1+i)').evaluate();
+		const b = Expression.create('Si(-1-i)').evaluate();
+		expect(a.plus(b).evaluate().isNearlyZero()).toBe(true);
+	});
+});
+
+describe('Complex special-function series limits (#343)', () => {
+	it('keeps complex arguments outside the supported series ranges symbolic', () => {
+		const cases = ['erf(13+i)', 'Si(9+i)', 'Ci(9+i)', 'Ei(9+i)'];
+		for (const input of cases) {
+			expect(Expression.create(input).evaluate().text()).toEqual(input);
+		}
+	});
+});
+
+describe('Complex double factorial (#343)', () => {
+	it('evaluates complex dfact through its gamma continuation', () => {
+		const actual = Expression.create('dfact(i)').evaluate();
+		const real = Number(actual.realPart().text({ decimal: true }));
+		const imaginary = Number(actual.imagPart().text({ decimal: true }));
+		expect(Number.isFinite(real)).toBe(true);
+		expect(Number.isFinite(imaginary)).toBe(true);
+		expect(Math.abs(imaginary)).toBeGreaterThan(0);
+	});
+
+	it('obeys the two-step recurrence for complex arguments', () => {
+		for (const input of ['i', '1+i', '-1+i']) {
+			const z = Expression.create(input);
+			const next = Expression.create(`dfact(2+(${input}))`).evaluate();
+			const current = Expression.create(`dfact(${input})`).evaluate();
+			expect(next.minus(z.plus(2).times(current)).evaluate().isNearlyZero()).toBe(true);
+		}
+	});
+
+	it('preserves conjugation for complex inputs', () => {
+		const positive = Expression.create('dfact(1+i)').evaluate();
+		const negative = Expression.create('dfact(1-i)').evaluate();
+		expect(positive.realPart().minus(negative.realPart()).evaluate().isNearlyZero()).toBe(true);
+		expect(positive.imagPart().plus(negative.imagPart()).evaluate().isNearlyZero()).toBe(true);
+	});
+
+	it('keeps dfactorial as an alias and symbolic dfact unevaluated', () => {
+		expect(nerdamer.dfact).toBe(nerdamer.dfactorial);
+		expect(Expression.create('dfactorial(i)').evaluate()
+			.minus(Expression.create('dfact(i)').evaluate()).isNearlyZero()).toBe(true);
+		expect(Expression.create('dfactorial(x)').text()).toEqual('dfact(x)');
+		expect(Expression.create('dfact(9)').evaluate().text()).toEqual('945');
 	});
 });

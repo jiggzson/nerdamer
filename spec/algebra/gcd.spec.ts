@@ -3,6 +3,22 @@ import { gcd } from '../../src/algebra/gcd/gcd';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import nerdamer from '../../src/index';
 
+describe('Complex polynomial GCD', () => {
+	it('preserves a shared complex factor across the substitution map', () => {
+		const left = '(x+i)*(x+1)';
+		const right = '(x+i)*(x-2)';
+		expect(gcd(left, right).eq('x+i')).toBe(true);
+		expect(gcd(right, left).eq('x+i')).toBe(true);
+		expect(Expression.create(nerdamer(`gcd(${left},${right})`)).eq('x+i')).toBe(true);
+	});
+
+	it('finds a shared polynomial factor when the coefficients are complex', () => {
+		const actual = gcd('(1+i)*(x+1)', '(2-i)*(x+1)');
+
+		expect(actual.eq('x+1') || actual.eq('-x-1')).toBe(true);
+	});
+});
+
 describe('GCD', () => {
 	const check = (input: Expression, expected: string) => {
 		expect(input.eq(Expression.create(expected))).toBe(true);
@@ -353,6 +369,14 @@ describe('GCD', () => {
 });
 
 describe('GCD regressions', () => {
+	// Legacy #372: identical algebraic expressions retain their full factor.
+	it('preserves identical factors containing radicals', () => {
+		const input = 'x-sqrt(2)';
+		expect(gcd(input, input).eq(input)).toBe(true);
+		expect(nerdamer('gcd(x-sqrt(2),x-sqrt(2))').eq(Expression.create(input))).toBe(true);
+	});
+
+
 	// Regression: https://github.com/together-science/nerdamer-prime/issues/134
 	it('preserves numeric factors in polynomial GCDs', () => {
 		expect(nerdamer('gcd(6*x^2,4*x)').text()).toEqual('2*x');

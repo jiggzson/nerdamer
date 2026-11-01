@@ -24,10 +24,9 @@ export function isNerdamerNativeType(obj: unknown, dataType: string): boolean {
  * The supported operator actions
  */
 export type BinaryArithmeticOperation = 'pow' | 'times' | 'div' | 'minus' | 'plus';
-export type ComparisonOperation = 'eq' | 'lt' | 'lte' | 'gt' | 'gte';
+export type ComparisonOperation = 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte';
 
 export type OperatorAction =
-	| 'dot'
 	| 'doubleFactorial'
 	| 'factorial'
 	| 'mod'
@@ -90,7 +89,6 @@ export const brackets: { [key: string]: Bracket } = {
 };
 
 export const operators: Record<string, Operator & { action: OperatorAction }> = {
-	'.': { precedence: 9, operator: '.', action: 'dot', isPrefix: false, isPostfix: false, leftAssoc: false, iterates: false },
 	'!!': { precedence: 7, operator: '!!', action: 'doubleFactorial', isPrefix: false, isPostfix: true, leftAssoc: false, iterates: true },
 	'!': { precedence: 7, operator: '!', action: 'factorial', isPrefix: false, isPostfix: true, leftAssoc: false, iterates: true },
 	'^': { precedence: 6, operator: '^', action: 'pow', isPrefix: false, isPostfix: false, leftAssoc: false, iterates: true },
@@ -105,6 +103,7 @@ export const operators: Record<string, Operator & { action: OperatorAction }> = 
 	'-': { precedence: 3, operator: '-', action: 'minus', isPrefix: true, isPostfix: false, leftAssoc: true, iterates: true },
 	'=': { precedence: 2, operator: '=', action: 'setEqual', assertiveAction: 'assertEQ', isPrefix: false, isPostfix: false, leftAssoc: true, iterates: false },
 	'==': { precedence: 1, operator: '==', action: 'eq', assertiveAction: 'assertEQ', isPrefix: false, isPostfix: false, leftAssoc: true, iterates: false },
+	'!=': { precedence: 1, operator: '!=', action: 'neq', isPrefix: false, isPostfix: false, leftAssoc: true, iterates: false },
 	'<': { precedence: 1, operator: '<', action: 'lt', assertiveAction: 'assertLT', isPrefix: false, isPostfix: false, leftAssoc: true, iterates: false },
 	'<=': { precedence: 1, operator: '<=', action: 'lte', assertiveAction: 'assertLTE', isPrefix: false, isPostfix: false, leftAssoc: true, iterates: false },
 	'>': { precedence: 1, operator: '>', action: 'gt', assertiveAction: 'assertGT', isPrefix: false, isPostfix: false, leftAssoc: true, iterates: false },
@@ -136,4 +135,4 @@ export const operators: Record<string, Operator & { action: OperatorAction }> = 
 	in: { precedence: 0, operator: 'in', action: 'in', isPrefix: false, isPostfix: false, leftAssoc: true, iterates: false },
 };
 
-export const ASSERTIVE_FUNCTIONS = ['assume'];
+export { ASSERTIVE_FUNCTIONS } from '../constants/parserSyntax';

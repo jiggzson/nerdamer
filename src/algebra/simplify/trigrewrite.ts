@@ -1,6 +1,6 @@
 import { Expression } from '../../core/classes/expression/Expression';
 import { one, zero } from '../../core/classes/expression/shortcuts';
-import { COS, COT, CSC, SEC, SIN, TAN } from '../../core/classes/parser/constants';
+import { COS, COT, CSC, SEC, SIN, TAN } from '../../core/constants/functionNames';
 import { sin, cos } from '../../math/trig';
 
 /**
@@ -101,9 +101,9 @@ export function rewrite(x: Expression): Expression {
 
 	// For other functions (sin, cos, log, etc.): rewrite the arguments
 	if (x.isFunction()) {
-		// Don't rewrite inside sin/cos arguments — the derived trig functions
-		// inside arguments would be unusual, but handle it for completeness
-		return x;
+		const args = x.getArguments().map(arg => rewrite(arg));
+		const result = Expression.toFunction(x.name, args).pow(x.getPower());
+		return result.times(Expression.fromRational(x.getMultiplier()));
 	}
 
 	return x;

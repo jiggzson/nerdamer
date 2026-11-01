@@ -15,7 +15,7 @@ import { message } from '../../core/errors';
  *
  * Design goals:
  * - BigInt-only arithmetic for coefficient paths.
- * - Small, stable surface area: use `abs`, `gcd`, `pow`.
+ * - Small, stable interface: use `abs`, `gcd`, `pow`.
  */
 
 // ============================================================================
@@ -85,7 +85,7 @@ export function powN(base: bigint, exp: number): bigint {
  */
 export function bigIntSqrt(n: bigint): bigint {
 	if (n < 0n) {
-		throw new Error(message('arithBigIntSqrtNegative'));
+		throw new Error(message('integerSquareRootNonnegative', { operation: 'bigIntSqrt' }));
 	}
 	if (n < 2n) {
 		return n;
@@ -198,7 +198,7 @@ function egcd(a: bigint, b: bigint): { g: bigint; x: bigint; y: bigint } {
 /** Normalize a into the range [0, |p|). Throws if p is zero. */
 export function modNorm(a: bigint, p: bigint): bigint {
 	if (p === 0n) {
-		throw new Error(message('arithModNormNonzeroModulus'));
+		throw new Error(message('arithModNormNonzeroModulus', { operation: 'modNorm' }));
 	}
 	const m = abs(p);
 	const r = a % m;
@@ -208,7 +208,7 @@ export function modNorm(a: bigint, p: bigint): bigint {
 /** Map a to the symmetric residue class (-|p|/2, |p|/2]. */
 export function modSymmetric(a: bigint, p: bigint): bigint {
 	if (p === 0n) {
-		throw new Error(message('arithModSymmetricNonzeroModulus'));
+		throw new Error(message('arithModNormNonzeroModulus', { operation: 'modSymmetric' }));
 	}
 	const m = abs(p);
 	const r = modNorm(a, m);
@@ -220,11 +220,11 @@ export function modSymmetric(a: bigint, p: bigint): bigint {
 export function modInv(a: bigint, p: bigint): bigint {
 	const aa = modNorm(a, p);
 	if (aa === 0n) {
-		throw new Error(message('arithModInvZeroNoninvertible'));
+		throw new Error(message('arithModInvNoninvertible', { value: String(aa) }));
 	}
 	const { g, x } = egcd(aa, p);
 	if (g !== 1n && g !== -1n) {
-		throw new Error(message('arithModInvNoninvertible'));
+		throw new Error(message('arithModInvNoninvertible', { value: String(aa) }));
 	}
 	return modNorm(x, p);
 }

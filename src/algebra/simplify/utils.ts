@@ -1,4 +1,4 @@
-import { FACTORIAL } from '../../core/classes/parser/constants';
+import { FACTORIAL } from '../../core/constants/functionNames';
 
 import type { Expression } from '../../core/classes/expression/Expression';
 

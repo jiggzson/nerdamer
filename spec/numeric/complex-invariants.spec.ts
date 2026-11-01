@@ -1,18 +1,24 @@
 import nerdamer from '../../src/index';
 import { Expression } from '../../src/core/classes/expression/Expression';
 
-describe('Complex-number invariants', () => {
+describe('Complex-number behavior', () => {
 	describe('principal values and integer powers', () => {
 		// Regression: https://github.com/jiggzson/nerdamer/issues/685
 		it('uses the correct sign for exp(-i*pi/2)', () => {
 			expect(nerdamer('exp(-2*i*pi*1/4)').text()).toEqual('-i');
 		});
 
-		// Regression: https://github.com/jiggzson/nerdamer/issues/656
-		it('evaluates i^i to the principal real value exp(-pi/2)', () => {
-			const actual = Number(nerdamer('i^i').evaluate().text({ decimal: true }));
-			const expected = Number(nerdamer('exp(-pi/2)').evaluate().text({ decimal: true }));
-			expect(Math.abs(actual - expected)).toBeLessThan(1e-14);
+		it('simplifies principal powers of the unit imaginary values exactly', () => {
+			const cases = [
+				['i^i', 'e^((-1/2)*pi)'],
+				['(-i)^i', 'e^((1/2)*pi)'],
+				['i^(-i)', 'e^((1/2)*pi)'],
+				['(-i)^(-i)', 'e^((-1/2)*pi)'],
+			];
+
+			for (const [input, expected] of cases) {
+				expect(nerdamer(input).eq(Expression.create(expected))).toBe(true);
+			}
 		});
 
 		// Regression: https://github.com/jiggzson/nerdamer/issues/405
@@ -56,7 +62,7 @@ describe('Complex-number invariants', () => {
 		});
 	});
 
-	describe('complex arithmetic invariants', () => {
+	describe('complex arithmetic and decomposition', () => {
 		it('does not expose the imaginary unit as a free variable', () => {
 			expect(Expression.create('i').variables()).toEqual([]);
 			expect(Expression.create('x+i').variables()).toEqual(['x']);
@@ -84,7 +90,7 @@ describe('Complex-number invariants', () => {
 		});
 
 		it('does not collapse unevaluated complex functions to zero components', () => {
-			const value = Expression.create('sin(i)');
+			const value = Expression.create('erf(i)');
 			const real = value.realPart();
 			const imaginary = value.imagPart();
 
@@ -106,18 +112,18 @@ describe('Complex-number invariants', () => {
 		});
 
 		it('decomposes products containing unevaluated complex factors', () => {
-			const value = Expression.create('i*sin(i)');
-			const expectedReal = Expression.create('-imagpart(sin(i))');
-			const expectedImaginary = Expression.create('realpart(sin(i))');
+			const value = Expression.create('i*erf(i)');
+			const expectedReal = Expression.create('-imagpart(erf(i))');
+			const expectedImaginary = Expression.create('realpart(erf(i))');
 
-			expect(value.realPart().minus(expectedReal).text()).toEqual('0');
-			expect(value.imagPart().minus(expectedImaginary).text()).toEqual('0');
+			expect(value.realPart().minus(expectedReal).expand().text()).toEqual('0');
+			expect(value.imagPart().minus(expectedImaginary).expand().text()).toEqual('0');
 		});
 
 		it('decomposes products containing multiple complex factors', () => {
-			const left = Expression.create('sin(i)');
-			const right = Expression.create('cos(i)');
-			const value = Expression.create('sin(i)*cos(i)');
+			const left = Expression.create('erf(i)');
+			const right = Expression.create('Ei(i)');
+			const value = Expression.create('erf(i)*Ei(i)');
 			const expectedReal = left
 				.realPart()
 				.times(right.realPart())
@@ -127,17 +133,17 @@ describe('Complex-number invariants', () => {
 				.times(right.imagPart())
 				.plus(left.imagPart().times(right.realPart()));
 
-			expect(value.realPart().minus(expectedReal).text()).toEqual('0');
-			expect(value.imagPart().minus(expectedImaginary).text()).toEqual('0');
+			expect(value.realPart().minus(expectedReal).expand().text()).toEqual('0');
+			expect(value.imagPart().minus(expectedImaginary).expand().text()).toEqual('0');
 		});
 
 		it('preserves real scaling around unevaluated complex factors', () => {
-			expect(Expression.create('x*realpart(sin(i))').isComplex()).toBe(false);
-			expect(Expression.create('x*imagpart(sin(i))').isComplex()).toBe(false);
+			expect(Expression.create('x*realpart(erf(i))').isComplex()).toBe(false);
+			expect(Expression.create('x*imagpart(erf(i))').isComplex()).toBe(false);
 
 			const cases = [
-				['x*sin(i)', 'x*realpart(sin(i))', 'x*imagpart(sin(i))'],
-				['(3/2)*x*sin(i)', '(3/2)*x*realpart(sin(i))', '(3/2)*x*imagpart(sin(i))'],
+				['x*erf(i)', 'x*realpart(erf(i))', 'x*imagpart(erf(i))'],
+				['(3/2)*x*erf(i)', '(3/2)*x*realpart(erf(i))', '(3/2)*x*imagpart(erf(i))'],
 			];
 
 			for (const [input, real, imaginary] of cases) {
@@ -155,6 +161,21 @@ describe('Complex-number invariants', () => {
 			expect(nerdamer('arg(-a*i)').text()).toEqual('atan2(-a, 0)');
 			expect(nerdamer('arg(3*i)').text()).toEqual('(1/2)*pi');
 			expect(nerdamer('arg(-3*i)').text()).toEqual('(-1/2)*pi');
+		});
+
+		it('simplifies division by a pure imaginary scalar without decomposing the numerator', () => {
+			const cases = [
+				['1/i', '-i'],
+				['x/i', '-x*i'],
+				['e^(2*x)/i', '-i*e^(2*x)'],
+				['e^(i*x)/i', '-i*e^(i*x)'],
+				['x/(3*i)', '(-1/3)*x*i'],
+				['x/(-3*i)', '(1/3)*x*i'],
+			];
+
+			for (const [input, expected] of cases) {
+				expect(nerdamer(input).text()).toEqual(expected);
+			}
 		});
 
 		it('keeps exact Gaussian rational arithmetic exact', () => {
@@ -192,16 +213,71 @@ describe('Complex-number invariants', () => {
 				expect(actual.realPart().text()).toEqual(real);
 				expect(actual.imagPart().text()).toEqual(imaginary);
 			}
+
+		});
+
+		it('evaluates exact Gaussian integer powers without decimal residue', () => {
+			expect(nerdamer('(1+i)^2').evaluate().text()).toEqual('2*i');
+			expect(nerdamer('(1-i)^2').evaluate().text()).toEqual('-2*i');
+		});
+
+		it('rewrites pure-imaginary trig and hyperbolic arguments exactly', () => {
+			const cases = [
+				['sin(i*x)', 'i*sinh(x)'],
+				['cos(i*x)', 'cosh(x)'],
+				['tan(i*x)', 'i*tanh(x)'],
+				['sinh(i*x)', 'i*sin(x)'],
+				['cosh(i*x)', 'cos(x)'],
+				['tanh(i*x)', 'i*tan(x)'],
+			];
+
+			for (const [input, expected] of cases) {
+				expect(nerdamer(input).eq(Expression.create(expected))).toBe(true);
+			}
+		});
+
+		it('keeps e^(i*x) symbolic during evaluation without decimalizing e', () => {
+			expect(nerdamer('e^(i*x)').evaluate().eq(Expression.create('cos(x)+i*sin(x)'))).toBe(true);
+		});
+
+		it('decomposes Euler exponentials with complex exponents', () => {
+			const pureImaginary = Expression.create('e^(i*x)');
+			const mixed = Expression.create('e^(2+i*x)');
+
+			expect(pureImaginary.realPart().text()).toEqual(Expression.create('cos(x)').text());
+			expect(pureImaginary.imagPart().text()).toEqual(Expression.create('sin(x)').text());
+			expect(mixed.realPart().text()).toEqual(Expression.create('e^2*cos(x)').text());
+			expect(mixed.imagPart().text()).toEqual(Expression.create('e^2*sin(x)').text());
 		});
 
 		// Regression: https://github.com/jiggzson/nerdamer/issues/181
 		it('does not apply real known-value inverse-trig shortcuts to i', () => {
-			expect(nerdamer('asin(i)').text()).not.toEqual('pi/2');
-			expect(nerdamer('acos(i)').text()).not.toEqual('0');
+			expect(nerdamer('aerf(i)').text()).not.toEqual('pi/2');
+			expect(nerdamer('aEi(i)').text()).not.toEqual('0');
 			expect(nerdamer('atan(i)').text()).not.toEqual('pi/4');
 		});
 
 		// Regression: https://github.com/jiggzson/nerdamer/issues/181
+		it('rewrites pure-imaginary sine and hyperbolic sine integrals exactly', () => {
+			expect(nerdamer('Si(i*x)').eq(Expression.create('i*Shi(x)'))).toBe(true);
+			expect(nerdamer('Shi(i*x)').eq(Expression.create('i*Si(x)'))).toBe(true);
+		});
+
+		it('uses principal-branch identities for special integrals on the imaginary axis', () => {
+			const cases = [
+				['Ci(i)', 'Chi(1)+(1/2)*i*pi'],
+				['Ci(-i)', 'Chi(1)-(1/2)*i*pi'],
+				['Chi(i)', 'Ci(1)+(1/2)*i*pi'],
+				['Chi(-i)', 'Ci(1)-(1/2)*i*pi'],
+				['Ei(i)', 'Ci(1)+i*(Si(1)+(1/2)*pi)'],
+				['Ei(-i)', 'Ci(1)-i*(Si(1)+(1/2)*pi)'],
+			];
+
+			for (const [input, expected] of cases) {
+				expect(nerdamer(input).eq(Expression.create(expected))).toBe(true);
+			}
+		});
+
 		it('evaluates tan(i) through the complex identity i*tanh(1)', () => {
 			const actual = Expression.create('tan(i)').evaluate();
 			const expected = Expression.create('i*tanh(1)').evaluate();
@@ -210,7 +286,7 @@ describe('Complex-number invariants', () => {
 	});
 });
 
-describe('Complex invariant regressions', () => {
+describe('Complex-number regressions', () => {
 	// Regression: https://github.com/jiggzson/nerdamer/issues/174
 	it('returns identical complex arguments from min and max', () => {
 		expect(nerdamer('min(i,i)').text()).toEqual('i');

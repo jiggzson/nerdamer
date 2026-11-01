@@ -3,6 +3,7 @@
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { Matrix } from '../../src/core/classes/matrix/Matrix';
 import { Parser as parser } from '../../src/core/classes/parser/Parser';
+import { ValuesSet } from '../../src/core/classes/valuesSet/ValuesSet';
 import { Converter } from '../../src/core/converters/Converter';
 import { SolutionSet } from '../../src/solve/classes/SolutionSet';
 import nerdamer from '../../src/index';
@@ -191,8 +192,13 @@ describe('Plain numbers', () => {
 
 describe('ValuesSet TeX', () => {
 	it('should convert a ValuesSet to TeX', () => {
-		const result = _('[1, 2, 3]');
-		expect(result).toBeDefined();
+		const values = new ValuesSet([
+			Expression.create(1),
+			Expression.create(2),
+			Expression.create(3),
+		]);
+
+		expect(TeXConverter.convert(values)).toEqual('\\left\\{1, \\, 2, \\, 3\\right\\}');
 	});
 });
 
@@ -342,4 +348,26 @@ describe('TeX regressions', () => {
 		const tex = nerdamer.convertToLaTeX(Expression.create('a_ij'));
 		expect(tex).toMatch(/^a_\{\{?ij\}?\}$/);
 	});
+
+	it('formats 1600 finite nested unary functions without TeX stack exhaustion', () => {
+		const depth = 1600;
+		let expression = Expression.Variable('x');
+		for (let level = 0; level < depth; level++) {
+			expression = Expression.toFunction('sin', [expression]);
+		}
+
+		const expected = '\\sin\\left('.repeat(depth) + 'x' + '\\right)'.repeat(depth);
+		expect(TeXConverter.convert(expression)).toBe(expected);
+	});
+
+	it('retains ordinary TeX and text syntax for mixed nested unary functions', () => {
+		const x = Expression.Variable('x');
+		const expression = Expression.toFunction('sin', [
+			Expression.toFunction('cos', [Expression.toFunction('abs', [x])]),
+		]);
+		expect(TeXConverter.convert(expression))
+			.toBe('\\sin\\left(\\cos\\left(\\left|x\\right|\\right)\\right)');
+		expect(textConverter.convert(expression)).toBe('sin(cos(abs(x)))');
+	});
+
 });

@@ -1,3 +1,4 @@
+import { Equation } from '../../classes/equation/Equation';
 import { Expression } from '../../classes/expression/Expression';
 
 import type { SolutionSet } from '../../../solve/classes/SolutionSet';
@@ -35,7 +36,11 @@ export function toParserEntities(elements: NerdamerInput[]): ParserEntity[] {
 
 	for (let i = 0; i < elements.length; i++) {
 		const element = elements[i];
-		retval.push(isEnumerable(element) ? element : Expression.create(element));
+		retval.push(
+			isEnumerable(element) || Equation.isEquation(element)
+				? element
+				: Expression.create(element)
+		);
 	}
 
 	return retval;

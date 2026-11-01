@@ -1,10 +1,11 @@
 import { Expression } from '../../core/classes/expression/Expression';
-import { one, zero } from '../../core/classes/expression/shortcuts';
+import { half, one, zero } from '../../core/classes/expression/shortcuts';
 import { Polynomial } from '../../core/classes/polynomial/Polynomial';
 import { divide } from '../../core/classes/polynomial/utils';
 import { toCommonDenominator } from '../../core/functions/rationalNormalization';
-import { subRadicals, uSubConstants, uUnSub } from '../../core/functions/subst';
+import { subRadicals, uSub, uSubConstants, uUnSub } from '../../core/functions/subst';
 import { polyFactorExpressions } from '../factor/factor';
+import { sqcomp } from '../utils';
 
 export { toCommonDenominator };
 
@@ -16,6 +17,27 @@ export { toCommonDenominator };
 export function rationalize(x: Expression) {
 	const num = x.getNumerator();
 	const den = x.getDenominator();
+
+	// For a two-term radical denominator, multiply by its conjugate.
+	// Only apply this when both squared terms are rational numbers.
+	if (den.isSum()) {
+		const terms = den.elementsArray();
+		if (terms.length === 2) {
+			const [a, b] = terms;
+			const aSquared = a.pow(2);
+			const bSquared = b.pow(2);
+			const difference = aSquared.minus(bSquared);
+			if (aSquared.isNUM() && bSquared.isNUM() && !difference.isZero()) {
+				const expanded = num.times(a.minus(b)).expand();
+				let numerator = zero();
+				for (const term of expanded.isSum() ? expanded.elementsArray() : [expanded]) {
+					numerator = numerator.plus(simplifyRadicals(term));
+				}
+				return numerator.div(difference);
+			}
+		}
+	}
+
 	// Nothing to do if the denominator is one
 	// Nothing to do if the power in the denominator is 1
 	if (den.isOne() || (!den.isProduct() && den.isLinear())) {
@@ -25,6 +47,57 @@ export function rationalize(x: Expression) {
 	const q = den.getPower();
 	const f = den.toLinearAndUnitMultiplier();
 	const retval = num.div(f.times(den.getMultiplier())).times(f.pow(one().minus(q)));
+	return retval;
+}
+
+/**
+ * Recognizes a perfect-square radicand that becomes a quadratic after replacing
+ * an even power of one real variable. The candidate root must have a known sign.
+ */
+export function simplifyPerfectSquareRadical(x: Expression): Expression {
+	let retval = x;
+	if (x.isSum() && x.getPower().eq(half()) && x.getMultiplier().isOne()) {
+		const variables = x.variables();
+		if (variables.length === 1) {
+			const variable = Expression.create(variables[0]);
+			if (variable.gt(zero()) || variable.lt(zero())) {
+				const expanded = x.getBase().expand();
+				const degree = expanded.coeffs(variables[0]).max();
+				// A Laurent quadratic in t = variable^degree has powers -1, 0, 1.
+				// Multiplying by t turns it into an ordinary quadratic.
+				if (degree > 0 && degree % 4 === 0 && expanded.isSum() &&
+					expanded.elementsArray().some(term =>
+						term.isVAR() && term.value === variables[0] &&
+						term.getPower().eq(-degree)) &&
+					expanded.elementsArray().every(term =>
+						term.isNUM() || (term.isVAR() && term.value === variables[0] &&
+							(term.getPower().eq(degree) || term.getPower().eq(-degree))))) {
+					const variablePower = variable.pow(degree);
+					const numerator = expanded.times(variablePower).expand();
+					const coefficients = numerator.coeffs(variables[0]);
+					const [substituted, substitutions] = uSub(variablePower, variablePower);
+					const replacement = Object.keys(substitutions)[0];
+					if (replacement && Object.keys(coefficients.coeffs).every(power =>
+						power === '0' || power === String(degree) || power === String(2 * degree))) {
+						const quadratic = (coefficients.getPower(2 * degree) ?? zero()).times(substituted.pow(2))
+							.plus((coefficients.getPower(degree) ?? zero()).times(substituted))
+							.plus(coefficients.getPower(0) ?? zero());
+						const completed = sqcomp(quadratic, replacement);
+						if (completed.a.isNUM() && completed.a.gt(zero()) &&
+							completed.k.isZero() && completed.h.gte(zero())) {
+							const root = variablePower.plus(completed.h).times(completed.a.pow(half()));
+							// With degree divisible by four, this power is even and nonnegative for real inputs.
+							const rootDenominator = variable.pow(degree / 2);
+							if (root.pow(2).expand().eq(numerator) &&
+								rootDenominator.pow(2).eq(variablePower)) {
+								retval = root.div(rootDenominator);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 	return retval;
 }
 
@@ -119,18 +192,19 @@ export function cancelCommonFactors(x: Expression) {
 	let den = polynomialReady.getDenominator();
 
 	function reduce(a: Expression, b: Expression) {
-		const f = new Polynomial(a);
+		let f = new Polynomial(a);
 		// Factor both
 		for (const e of polyFactorExpressions(b)) {
-			// Don't risk entering Q by dividing by a constant
+			// Constant factors do not contribute to polynomial cancellation.
 			if (e.isNUM()) {
 				continue;
 			}
 			const g = new Polynomial(e);
 			const [q, r] = divide(f, g);
 			if (r.isZero()) {
-				// Update the numerator with the new values
+				// Continue dividing the remaining numerator, not the original one.
 				a = q;
+				f = new Polynomial(q);
 				// Update the denominator
 				const [q2, _r2] = divide(b, g);
 				b = q2;

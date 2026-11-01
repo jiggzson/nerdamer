@@ -4,6 +4,8 @@ import { rewriteRadicals } from '../../core/functions/subst';
 
 import type { ExpressionInput } from '../../core/types';
 
+export const MAX_INTEGRATION_DEPTH = 10;
+
 /**
  * Collects all fractional power denominators of a given variable in an expression.
  * Walks into sums, products, and function arguments.

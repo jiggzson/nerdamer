@@ -486,7 +486,7 @@ function solveMultivariateDiophantine(
 ): readonly ModularSparsePolynomial[] | null {
 	if (tailVariables.length !== evaluationValues.length) {
 		throw new RangeError(
-			message('polyRequires', { operation: 'Multivariate Diophantine solving', requirement: message('polyReqOneEvaluationPerTailVariable') })
+			message('polyRequires', { operation: 'Multivariate Diophantine solving', requirement: message('polyReqOneValuePerTailVariable') })
 		);
 	}
 	if (tailVariables.length === 0) {
@@ -610,7 +610,7 @@ export function henselLiftMultivariateFactors(
 	}
 	if (evaluationValues.length !== variables.length - 1) {
 		throw new RangeError(
-			message('polyRequires', { operation: 'Multivariate Hensel lifting', requirement: message('polyReqOneEvaluationPerTailVariable') })
+			message('polyRequires', { operation: 'Multivariate Hensel lifting', requirement: message('polyReqOneValuePerTailVariable') })
 		);
 	}
 	if (factors.length === 0 || factors.length !== leadingCoefficients.length) {

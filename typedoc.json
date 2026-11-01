@@ -10,17 +10,22 @@
 		"src/api/assumptions.ts",
 		"src/api/parser.ts",
 		"src/api/advanced.ts",
-		"src/api/debug.ts"
+		"src/api/debug.ts",
+		"src/api/special.ts",
+		"src/api/statistics.ts"
 	],
 	"entryPointStrategy": "resolve",
 	"excludeProtected": true,
 	"router": "kind",
+	"sourceLinkTemplate": "https://github.com/jiggzson/nerdamer/blob/{gitRevision}/{path}#L{line}",
+	"gitRevision": "main",
 	"intentionallyNotExported": [
 		"Base",
 		"BooleanSettingName",
-		"ErrorMessages",
 		"ExpressionParser",
+		"MonomialOrder",
 		"OperatorFunction",
+		"SettingsType",
 		"__module"
 	],
 	"externalSymbolLinkMappings": {

@@ -4,9 +4,9 @@
  * @module parser
  */
 import { Parser as InternalParser } from '../core/classes/parser/Parser';
-import { loadParserFunctions } from '../core/parserFunctions';
+import { registerParserFunctions } from '../core/parserFunctions';
 
-loadParserFunctions();
+registerParserFunctions();
 
 import type {
 	ParserConstants,
@@ -28,7 +28,7 @@ type BooleanSettingName = {
 }[keyof SettingsType];
 
 /**
- * Supported high-level parser surface.
+ * Supported high-level parser interface.
  *
  * Tokenization, RPN conversion, and parser-stack machinery remain internal
  * implementation details even though Nerdamer itself uses them across modules.

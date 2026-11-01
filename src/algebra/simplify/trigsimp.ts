@@ -1,6 +1,6 @@
 import { Expression } from '../../core/classes/expression/Expression';
 import { zero, one, two } from '../../core/classes/expression/shortcuts';
-import { COS, COT, CSC, SEC, SIN, TAN } from '../../core/classes/parser/constants';
+import { COS, COT, CSC, SEC, SIN, TAN } from '../../core/constants/functionNames';
 import { sin, cos } from '../../math/trig';
 
 interface TrigTerm {

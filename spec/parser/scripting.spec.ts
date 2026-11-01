@@ -1,7 +1,8 @@
 import { Equation } from '../../src/core/classes/equation/Equation';
 import { Expression } from '../../src/core/classes/expression/Expression';
+import { UnsupportedOperationError } from '../../src/core/errors';
 import { Parser } from '../../src/core/classes/parser/Parser';
-import { loadParserFunctions } from '../../src/core/parserFunctions';
+import { registerParserFunctions } from '../../src/core/parserFunctions';
 import { callFunction } from '../../src/core/classes/parser/operations/functions';
 import {
 	BLOCK,
@@ -21,7 +22,7 @@ import { Vector } from '../../src/core/classes/vector/Vector';
 import { mathFunctionRegistry } from '../../src/core/dispatch';
 import { setFunction } from '../../src/core/functions/setFunction';
 
-loadParserFunctions();
+registerParserFunctions();
 
 describe('Parser scripting', () => {
 	it('supports if without a false branch', () => {
@@ -250,10 +251,10 @@ describe('Parser scripting', () => {
 		expect(Parser.parse('evaluate(x)').text()).toEqual('x');
 	});
 
-	it('returns the input when parser evaluation throws', () => {
+	it('returns the input when parser evaluation is unsupported', () => {
 		const input = Expression.Variable('script_evaluate_failure');
 		jest.spyOn(input, 'evaluate').mockImplementation(() => {
-			throw new Error('evaluation failed');
+			throw new UnsupportedOperationError('evaluation unsupported');
 		});
 
 		const result = callFunction('evaluate', [() => input]);

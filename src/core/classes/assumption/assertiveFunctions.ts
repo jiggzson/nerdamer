@@ -1,8 +1,9 @@
 import { message, UnexpectedInputError } from '../../errors';
 import { Expression } from '../expression/Expression';
 
-import { assume } from './assume';
+import { assume, registerSymbolRelation } from './assume';
 import { Assumption } from './Assumption';
+import { normalizeRelation } from './symbolRelation';
 
 import type { ParserEntity } from '../../types';
 import type { AssumptionValue } from './Assumption';
@@ -10,6 +11,14 @@ import type { AssumptionValue } from './Assumption';
 type AssertionOperator = '=' | '>' | '>=' | '<' | '<=';
 
 function assertRelation(a: ParserEntity, b: ParserEntity, operator: AssertionOperator) {
+	if (Expression.isExpression(a) && Expression.isExpression(b)) {
+		const relation = normalizeRelation(a, b, operator);
+		if (relation) {
+			registerSymbolRelation(relation);
+			return a;
+		}
+	}
+
 	let bound: AssumptionValue;
 
 	// Assertive parser calls receive evaluated operands. Keep exact numeric values typed
@@ -20,6 +29,9 @@ function assertRelation(a: ParserEntity, b: ParserEntity, operator: AssertionOpe
 		bound = Infinity;
 	} else if (Expression.isExpression(b) && b.isNegInf()) {
 		bound = -Infinity;
+	} else if (Expression.isExpression(b)) {
+		// The interval validates that the evaluated expression is an exact real constant.
+		bound = b;
 	} else {
 		throw new UnexpectedInputError(
 			message('wrongInput', {

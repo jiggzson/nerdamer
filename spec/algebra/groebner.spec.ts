@@ -537,17 +537,26 @@ describe('Monomial order variations', () => {
 	});
 
 	it('GRLEX order is valid Groebner basis', () => {
-		const basis = Groebner(circleAndHyperbola(), 'GRLEX');
+		const generators = circleAndHyperbola();
+		const basis = Groebner(generators, 'GRLEX');
 		expect(basis.length).toBeGreaterThan(0);
-		// Every S-polynomial should reduce to zero (verified implicitly by the algorithm).
-		// Here we just check it's non-trivial and non-unit.
 		expect(basisIsUnit(basis)).toBe(false);
+		// Verify generator reduction and Buchberger's criterion, not just basis shape.
+		for (const generator of generators) {
+			expect(reduceByBasis(generator, basis, 'GRLEX').isZero()).toBe(true);
+		}
+		expectGroebnerBasis(basis, 'GRLEX');
 	});
 
 	it('GREVLEX order is valid Groebner basis', () => {
-		const basis = Groebner(circleAndHyperbola(), 'GREVLEX');
+		const generators = circleAndHyperbola();
+		const basis = Groebner(generators, 'GREVLEX');
 		expect(basis.length).toBeGreaterThan(0);
 		expect(basisIsUnit(basis)).toBe(false);
+		for (const generator of generators) {
+			expect(reduceByBasis(generator, basis, 'GREVLEX').isZero()).toBe(true);
+		}
+		expectGroebnerBasis(basis, 'GREVLEX');
 	});
 
 	it('all three orders agree on ideal membership', () => {
@@ -884,7 +893,11 @@ describe('Budget controls', () => {
 			maxPairsPopped: 100,
 			maxBasisSize: 100,
 		});
-		expect(basis.length).toBeGreaterThan(0);
+		expect(basisIsUnit(basis)).toBe(false);
+		for (const generator of [f, g]) {
+			expect(reduceByBasis(generator, basis, 'GRLEX').isZero()).toBe(true);
+		}
+		expectGroebnerBasis(basis, 'GRLEX');
 	});
 });
 

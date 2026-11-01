@@ -23,7 +23,6 @@ export type {
 } from '../core/classes/parser/types';
 export { Rational } from '../core/classes/rational/Rational';
 export { Converter } from '../core/converters/Converter';
-
 export {
 	AssignmentError,
 	DimensionError,
@@ -43,14 +42,18 @@ export {
 	UnsupportedOperationError,
 	ZeroToZeroPowerError,
 } from '../core/errors';
+export { connectFunctions } from '../core/functions/connectFunctions';
+
+export type { NumericalFunctionSource } from '../core/functions/connectFunctions';
 /**
  * Compiles an expression into a native JavaScript-number function for repeated evaluation.
  *
  * @remarks
- * Function calls are linked to Nerdamer's numerical implementations, including any dependencies
- * they require. The compiler supports scalar JavaScript-number arithmetic rather than Nerdamer's
- * full symbolic or structured value model. Symbolic-only operations such as indexed sums,
- * products, solvers, and matrix operations are rejected if they remain in the expression.
+ * Function calls are linked to Nerdamer's numerical implementations, including numerical
+ * functions registered at runtime. The compiler supports scalar JavaScript-number arithmetic
+ * rather than Nerdamer's full symbolic or structured value model. Symbolic-only operations such
+ * as indexed sums, products, solvers, and matrix operations are rejected if they remain in the
+ * expression.
  *
  * `buildFunction` uses `new Function`, so it may be unavailable under a Content Security Policy
  * that forbids dynamic JavaScript evaluation. When `argsArray` is omitted, free variables are

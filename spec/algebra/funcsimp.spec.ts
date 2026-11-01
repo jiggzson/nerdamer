@@ -108,6 +108,21 @@ describe('Logarithm Simplification', () => {
 			expect(result.text()).toEqual(value.text());
 		});
 
+		it('reduces unity produced by combining positive numeric logarithms', () => {
+			expect(simplifyLogs(Expression.create('log(28)-2*log(2)-log(7)')).text()).toEqual('0');
+			expect(simplifyLogs(Expression.create('log(6)-log(2)-log(3)')).text()).toEqual('0');
+		});
+
+		it('cancels an exact numeric logarithm quotient after combining the numerator', () => {
+			const result = simplify('(log(12.5)-log(0.0125))/log(1000)');
+			expect(result.minus(1).isZero()).toBe(true);
+		});
+
+		it('normalizes an exact numeric log argument produced by combining decimal inputs', () => {
+			const result = simplifyLogs(Expression.create('log(12.5)-log(0.0125)'));
+			expect(result.text()).toEqual('log(1000)');
+		});
+
 		it('should combine three positive log arguments', () => {
 			assume('a>0');
 			assume('b>0');
@@ -234,6 +249,11 @@ describe('Simplify Regression', () => {
 
 	it('should still simplify radicals', () => {
 		expect(simplify('3*sqrt(2)*2*sqrt(6)').text()).toEqual('12*3^(1/2)');
+	});
+
+	it('distributes a numeric radical across a sum', () => {
+		expect(simplify('sqrt(24)*(sqrt(12)+sqrt(18))').text())
+			.toEqual(text('12*sqrt(2)+12*sqrt(3)'));
 	});
 
 	it('should still simplify rationals', () => {

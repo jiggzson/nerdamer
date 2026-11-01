@@ -2,6 +2,7 @@
 
 import { expressionToZPoly } from '../../src/core/classes/polynomial/adapters';
 import { Polynomial } from '../../src/core/classes/polynomial/Polynomial';
+import { divide as dividePolynomial } from '../../src/core/classes/polynomial/functions';
 
 import type { Ordering, PolyType } from '../../src/core/classes/polynomial/Polynomial';
 import { Term } from '../../src/core/classes/polynomial/Term';
@@ -581,5 +582,97 @@ describe('Polynomial regressions', () => {
 		expect(coefficients).toHaveLength(2);
 		expect(coefficients[0].eq(5)).toBe(true);
 		expect(coefficients[1].minus('2+i').simplify().isZero()).toBe(true);
+	});
+	it('divides polynomials with complex coefficients', () => {
+		const numerator = Expression.create('(x+i)*(x+1)').expand();
+		const result = dividePolynomial(numerator, 'x+i');
+
+		expect(result.eq('x+1')).toBe(true);
+	});
+
+});
+
+describe('symbolic polynomial coefficient feasibility', () => {
+	it.each([
+		['x^2+sqrt(y)*x+1', true],
+		['x^2+sin(y)*x+1', true],
+		['x^2+(a/b)*x+1', true],
+		['sqrt(y)', true],
+		['sin(y)', true],
+		['x^2+sin(x)', false],
+		['x^2+sqrt(x)', false],
+		['x^(-1)+1', false],
+		['x^y+1', false],
+	])('classifies %s relative to x', (source, expected) => {
+		expect(Expression.create(source).isPolynomialLike(['x'])).toBe(expected);
+	});
+
+	it('keeps the original polynomial-like predicate unchanged', () => {
+		const value = Expression.create('x^2+sqrt(y)*x+1');
+		expect(value.isPolynomialLike()).toBe(false);
+		expect(value.isPolynomialLike(['x'])).toBe(true);
+		expect(value.isPolynomialLike(['x', 'y'])).toBe(false);
+	});
+
+
+	it.each([
+		['x^2+sqrt(y)*x+1', 'sqrt(y)'],
+		['x^2+sin(y)*x+1', 'sin(y)'],
+		['x^2+(a/b)*x+1', 'a/b'],
+		['x^2+sqrt(2)*x+1', '2^(1/2)'],
+	])('accepts independent coefficients in %s', (source, coefficient) => {
+		const polynomial = new Polynomial(source, ['x']);
+		expect(polynomial.deg('x')).toBe(2);
+		expect(polynomial.toArray(false, 'x')[1].eq(Expression.create(coefficient))).toBe(true);
+	});
+
+	it.each([
+		'x^2+sqrt(x)*x+1',
+		'x^2+sin(x)*x+1',
+		'x^2+x^(-1)',
+		'x^y+1',
+	])('rejects nonpolynomial dependence on x in %s', source => {
+		expect(() => new Polynomial(source, ['x'])).toThrow();
+	});
+
+	it('adds and multiplies polynomials with symbolic coefficients', () => {
+		const left = new Polynomial('x+sqrt(y)', ['x']);
+		const right = new Polynomial('x-sqrt(y)', ['x']);
+		const sum = left.plus(right);
+		const product = left.times(right);
+		expect(sum.variables).toEqual(['x']);
+		expect(sum.toArray(false, 'x')[1].eq(2)).toBe(true);
+		expect(product.variables).toEqual(['x']);
+		expect(product.toArray(false, 'x')[2].eq(1)).toBe(true);
+		expect(product.toArray(false, 'x')[0].eq('-y')).toBe(true);
+	});
+
+	it('divides polynomials with symbolic coefficients', () => {
+		const numerator = new Polynomial('(x+sqrt(y))*(x+1)', ['x']);
+		const divisor = new Polynomial('x+sqrt(y)', ['x']);
+		const [quotient, remainder] = divide(numerator, divisor, undefined, ['x']);
+		expect(remainder.isZero()).toBe(true);
+		expect(quotient.eq('x+1')).toBe(true);
+	});
+
+	it('keeps symbolic coefficient selection explicit', () => {
+		expect(() => new Polynomial('x^2+sqrt(y)*x+1')).toThrow();
+	});
+
+	it('stores a symbolic coefficient without changing Polynomial construction', () => {
+		const coefficient = Expression.create('sqrt(y)');
+		const polynomial = Polynomial.fromArray([Expression.Number(1), coefficient, Expression.Number(1)], ['x']);
+		expect(polynomial.toArray(false, 'x').map(value => value.text())).toEqual([
+			'1', coefficient.text(), '1',
+		]);
+		expect(polynomial.deg('x')).toBe(2);
+	});
+
+	it('distinguishes polynomial variables from symbolic coefficients', () => {
+		const polynomial = Polynomial.fromArray([
+			Expression.Number(1), Expression.create('sqrt(y)'), Expression.Number(1),
+		], ['x']);
+		expect(polynomial.variables).toEqual(['x']);
+		expect(polynomial.toArray(false, 'x')[1].hasVariable('y')).toBe(true);
 	});
 });

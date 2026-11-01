@@ -1,9 +1,9 @@
 import { Scope } from '../../../common/classes/Scope';
+import { ASSIGN } from '../../../constants/parserSyntax';
 import { AssignmentError, message, ParserError, UnexpectedInputError } from '../../../errors';
 import { RESTRICTED } from '../../../Settings';
 import { Expression } from '../../expression/Expression';
-import { assertPlainVariableAndGetString } from '../../expression/utils';
-import { ASSIGN } from '../constants';
+import { requireVariableName } from '../../expression/utils';
 import { NullSignal } from '../controlFlowSignals';
 import { Parser } from '../Parser';
 import { Token } from '../Token';
@@ -74,7 +74,7 @@ export function LET(...args: DeferredFunctionArgument[]): ParserEntity {
 			if (!Expression.isExpression(nameExpression)) {
 				throw new UnexpectedInputError(message('plainVariableExpected', { input: nameExpression.text() }));
 			}
-			const name = assertPlainVariableAndGetString(nameExpression);
+			const name = requireVariableName(nameExpression);
 			const value = args[i + 1]({ excludeValues: localNames });
 			if (!previousValues.has(name) && !previouslyUndefined.has(name)) {
 				if (Object.prototype.hasOwnProperty.call(Parser.KNOWN_VALUES, name)) {previousValues.set(name, Parser.KNOWN_VALUES[name]);}
@@ -103,7 +103,7 @@ export function unassign(x: Expression | string | DeferredFunctionArgument): Exp
 		if (!Expression.isExpression(parsed)) {throw new UnexpectedInputError(message('plainVariableExpected', { input: parsed.text() }));}
 		variable = parsed;
 	} else {variable = x;}
-	if (Expression.isExpression(variable)) {name = assertPlainVariableAndGetString(variable);}
+	if (Expression.isExpression(variable)) {name = requireVariableName(variable);}
 	else {name = variable;}
 	delete Parser.KNOWN_VALUES[name];
 	return Expression.create(variable);

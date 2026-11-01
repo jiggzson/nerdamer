@@ -1,6 +1,7 @@
 import nerdamer from '../../src/index';
 import { Equation } from '../../src/core/classes/equation/Equation';
 import { Expression } from '../../src/core/classes/expression/Expression';
+import { UnexpectedDataType, UnsupportedOperationError } from '../../src/core/errors';
 import { Parser } from '../../src/core/classes/parser/Parser';
 import { Vector } from '../../src/core/classes/vector/Vector';
 
@@ -43,6 +44,46 @@ describe('Parser syntax', () => {
 		expect(() => nerdamer('[')).toThrow('Missing closing bracket for "["');
 		expect(() => nerdamer(')')).toThrow('Missing opening bracket for ")"');
 		expect(() => nerdamer(']')).toThrow('Missing opening bracket for "]"');
+	});
+
+	// Regression: https://github.com/jiggzson/nerdamer/issues/200
+	it('handles equation parser entities without expression-only failures', () => {
+		expect(nerdamer('(a=b)+2').text()).toEqual('2+a=2+b');
+		expect(nerdamer('(a=b)-2').text()).toEqual('-2+a=-2+b');
+		expect(nerdamer('(a=b)*2').text()).toEqual('2*a=2*b');
+		expect(nerdamer('(a=b)/2').text()).toEqual('(1/2)*a=(1/2)*b');
+		expect(nerdamer('(a=b)==(a=b)').text()).toEqual('1');
+		expect(() => nerdamer('(a=b)!2')).toThrow(UnsupportedOperationError);
+
+		const adjacentNumber = nerdamer('(a=b).2');
+		expect(Equation.isEquation(adjacentNumber)).toBe(true);
+		if (Equation.isEquation(adjacentNumber)) {
+			expect(adjacentNumber.LHS.eq(Expression.create('a/5'))).toBe(true);
+			expect(adjacentNumber.RHS.eq(Expression.create('b/5'))).toBe(true);
+		}
+
+		expect(nerdamer('(x+1)2').eq(Expression.create('2*(x+1)'))).toBe(true);
+	});
+
+	it('preserves equations inside vectors', () => {
+		const result = nerdamer('[a=b]');
+
+		expect(Vector.isVector(result)).toBe(true);
+		if (Vector.isVector(result)) {
+			const element = result.__get__([0]);
+			expect(Equation.isEquation(element)).toBe(true);
+			expect(result.text()).toEqual('[a=b]');
+		}
+	});
+
+	it('expands both sides of an equation', () => {
+		const result = nerdamer('expand((a+1)^2=b)');
+
+		expect(Equation.isEquation(result)).toBe(true);
+		if (Equation.isEquation(result)) {
+			expect(result.LHS.eq(Expression.create('a^2+2*a+1'))).toBe(true);
+			expect(result.RHS.eq(Expression.create('b'))).toBe(true);
+		}
 	});
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/263
@@ -128,10 +169,11 @@ describe('Call-scoped parser values', () => {
 
 	it('routes operators across structured call-scoped values', () => {
 		const vector = new Vector([1, 2]);
-		const result = Parser.parse('v+1', { v: vector });
+		const result = Parser.parse('v+[3,4]', { v: vector });
 
 		expect(Vector.isVector(result)).toBe(true);
-		expect(result.text()).toEqual('[2, 3]');
+		expect(result.text()).toEqual('[4, 6]');
 		expect(vector.text()).toEqual('[1, 2]');
+		expect(() => Parser.parse('v+1', { v: vector })).toThrow(UnexpectedDataType);
 	});
 });

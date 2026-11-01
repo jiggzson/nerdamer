@@ -4,15 +4,13 @@ Nerdamer is a symbolic mathematics library and computer algebra system for JavaS
 
 Nerdamer 2.0 is a TypeScript rewrite of Nerdamer. The familiar string-based API remains available, while the package also exposes typed modules for direct use of the symbolic engine, algebra, calculus, solving, structures, assumptions, parser APIs, and advanced algorithms.
 
-This branch prepares `2.0.0`.
-
 ## Install
 
 ```bash
-npm install nerdamer
+npm install nerdamer@latest
 ```
 
-Nerdamer 2.0 is published under npm's `latest` tag.
+If your project depends heavily on the older API, [Nerdamer-Prime](https://github.com/together-science/nerdamer-prime), a fork of the original Nerdamer, may be a better choice for now.
 
 ## Quick start
 
@@ -35,6 +33,12 @@ console.log(expression.text({ sort: true }));
 ```
 
 TypeScript projects compiling to CommonJS should enable `esModuleInterop`.
+
+For Node.js, import `nerdamer` to load the complete package. The Nerdamer 1.x
+`nerdamer/all.min` subpath is not a Nerdamer 2.0 entry point. It's not
+needed to access algebra, calculus, or solving, and should not be added to
+TypeScript declarations as an untyped module. CommonJS and TypeScript examples
+above both use the package root, which supplies type declarations.
 
 ## Full package and parser package
 
@@ -65,7 +69,7 @@ This separation is also reflected in the browser builds:
 ```html
 <script src="./node_modules/nerdamer/dist/bundle.js"></script>
 <script>
-    console.log(nerdamer('factor(x^2-1)').text());
+	console.log(nerdamer('factor(x^2-1)').text());
 </script>
 ```
 
@@ -84,25 +88,28 @@ import { solve, PolynomialSolver } from 'nerdamer/solve';
 import { Matrix, Vector, ValuesSet } from 'nerdamer/structures';
 import { assume, clearAssumptions } from 'nerdamer/assumptions';
 import { Parser } from 'nerdamer/parser';
+import { mean, median } from 'nerdamer/statistics';
+import { erf, gamma } from 'nerdamer/special';
+import { TRIG } from 'nerdamer/constants';
 ```
 
-Additional supported entry points are `nerdamer/advanced` and `nerdamer/debug`.
+Additional supported entry points are `nerdamer/advanced`, `nerdamer/debug`, `nerdamer/statistics`, `nerdamer/special`, and `nerdamer/constants`.
 
 ## Parser results
 
 `nerdamer(...)` returns the Nerdamer entity represented by the input. Scalar symbolic input normally returns an `Expression`; equations and structured notation can return `Equation`, `Vector`, `Matrix`, `Collection`, `ValuesSet`, or `Dictionary`.
 
 ```javascript
-const scalar = nerdamer('x^2+1');
+const expression = nerdamer('x^2+1');
 const equation = nerdamer('x^2=1');
 const vector = nerdamer('[x, y, 3]');
 ```
 
-This is intentional. Nerdamer 2.0 does not wrap every parser result in a compatibility `Expression` object.
+Nerdamer 2.0 does not wrap every parser result in a compatibility `Expression` object.
 
 ## Substitution and evaluation
 
-Values supplied to `nerdamer(...)` are substitutions. They do not imply numerical evaluation.
+Values supplied to `nerdamer(...)` are substitutions. They don't imply numerical evaluation.
 
 ```javascript
 const substituted = nerdamer('x^2+cos(x)', { x: 6 });
@@ -157,7 +164,7 @@ nerdamer.gcd('x^2-1', 'x^2-2*x+1').text();
 nerdamer.partfrac('1/(x^2-1)', 'x').text();
 ```
 
-The 2.0 algebra implementation includes the rewritten polynomial GCD/factorization path, partial fractions, polynomial solving support, and direct polynomial APIs.
+The 2.0 algebra implementation includes the rewritten polynomial GCD/factorization path, partial fractions, polynomial solving support, and direct polynomial APIs. More recent work improves symbolic simplification and supports exact GCDs for certain complex-coefficient polynomials.
 
 Prime factorization has two explicit forms:
 
@@ -186,25 +193,40 @@ nerdamer('diff(x^3,x)').text();
 
 ## Solving
 
-Single-variable solving returns a `SolutionSet`:
+Solving a single expression or equation returns a `SolutionSet`:
 
 ```javascript
 const roots = nerdamer.solve('x^2-1', 'x');
 console.log(roots.text());
 ```
 
-System solving returns Nerdamer structures rather than legacy JavaScript arrays:
+Solving a system of equations returns a `Vector` of `Dictionary` objects instead of the native JavaScript `Array` returned in previous versions.
 
 ```javascript
-const solutions = nerdamer.solveSystem(
-    ['x+y=3', 'x-y=1'],
-    ['x', 'y']
-);
+const solutions = nerdamer.solveSystem(['x+y=3', 'x-y=1'], ['x', 'y']);
 
 console.log(solutions.text());
 ```
 
-The legacy `solveeqs` name is retained as the compatibility alias for system solving. `solveEquations` is not part of the 2.0 public API.
+`solveEquations` was the legacy name for system solving. Nerdamer 2.0 uses `solveeqs` for the parser-style name and `solveSystem()` for direct JavaScript and TypeScript use.
+
+Trigonometric solutions can be represented as indexed families, preserving every integer-indexed root instead of restricting results to a fixed interval. System solving can also find exact intersections of such families:
+
+```javascript
+nerdamer.solve('sin(x)', 'x').text();
+// {_n*pi}
+
+// Generate a finite set
+const finite = nerdamer.solve('sin(x)', 'x').generate({ interval: [-10, 10] });
+// {-3*pi, -2*pi, -pi, 0, pi, 2*pi, 3*pi}
+
+nerdamer.solve('x^3-1', 'x').text();
+// {1, (1/2)*(-1+3^(1/2)*i), (1/2)*(-1-3^(1/2)*i)}
+
+nerdamer.solve('x^2+y^2-1', 'x').text()
+// {(1/2)*(4-4*y^2)^(1/2), (-1/2)*(4-4*y^2)^(1/2)}
+```
+
 
 ## Matrices, vectors, sets, and dictionaries
 
@@ -231,7 +253,21 @@ const result = nerdamer(`
 console.log(result.text());
 ```
 
-Control-flow operations that intentionally produce no mathematical value use an internal null signal. That signal is distinct from legitimate values such as an empty vector and is not exposed as a normal parser entity.
+Control-flow operations that produce no mathematical value use an internal null signal. That signal is distinct from legitimate values such as an empty vector and is not exposed as a normal parser entity.
+
+## Function categories
+
+Nerdamer provides named groups for recognizing families of mathematical functions:
+
+```typescript
+import { Expression } from 'nerdamer/core';
+import { TRIG, INVERSE_TRIG } from 'nerdamer/constants';
+
+Expression.create('sin(x)').isFunction(TRIG); // true
+Expression.create('asin(x)').isFunction(INVERSE_TRIG); // true
+```
+
+Other groups cover hyperbolic, statistical, number-theoretic, and special functions.
 
 ## Runtime functions, constants, and settings
 
@@ -252,17 +288,61 @@ Built-in error messages are available in English, Spanish, French, German, Portu
 
 ## Assumptions
 
+Assumptions let Nerdamer reason about expressions when variables have known bounds or relationships. They support sign-sensitive simplification, exact comparisons, and some solving decisions. Multiple bounds for a variable are intersected, and contradictions are rejected.
+
 ```typescript
 import nerdamer from 'nerdamer';
-import { assume, clearAssumptions } from 'nerdamer/assumptions';
+import { assume, clearAssumptions, getAssumptionFor } from 'nerdamer/assumptions';
 
-assume('x > 0');
-console.log(nerdamer('sqrt(x^2)').text());
-// x
+assume('x >= 3');
+assume('x < 10');
+getAssumptionFor('x')?.toString(); // "[3, 10)"
+
+nerdamer('x-3').gte(0); // true
+nerdamer('sqrt((x-3)^2)').eq('x-3'); // true
 clearAssumptions();
 ```
 
-Repeated assumptions for a symbol are intersected. Contradictory assumptions are rejected.
+Relationships between variables can also establish new bounds:
+
+```typescript
+import { Parser } from 'nerdamer/parser';
+
+Parser.parse('assume(x<y+1)');
+Parser.parse('assume(y<=3)');
+nerdamer('x').lt(4); // true
+clearAssumptions();
+```
+
+Assumptions are shared across the Nerdamer instance; clear them when they should no longer influence later calculations.
+
+## Connecting numerical functions
+
+Nerdamer can connect numerical functions supplied by another JavaScript object or mathematics library. Nerdamer keeps ordinary expressions symbolic and uses the connected implementation during numerical evaluation or when compiling a scalar expression.
+
+```javascript
+nerdamer.connect(['squareplusone'], {
+    squareplusone: x => x * x + 1
+});
+
+nerdamer('squareplusone(x)').text();
+// squareplusone(x)
+
+nerdamer('squareplusone(x)').evaluate({ x: 2 }).text();
+// 5
+```
+
+The provider can be a plain object, as above, or an already-loaded library such as Math.js (`mathjs`):
+
+```typescript
+import nerdamer from 'nerdamer';
+import * as math from 'mathjs';
+
+nerdamer.connect(['combinations'], math);
+nerdamer('combinations(5,2)').evaluate().text(); // 10
+```
+
+Math.js is used as an example. The connector also supports numerical functions from other compatible JavaScript libraries.
 
 ## Building JavaScript functions
 
@@ -285,14 +365,21 @@ nerdamer('0.1+0.2').text();
 nerdamer('sqrt(2)').evaluate().text();
 ```
 
+Recent numerical additions include rounding to a specified number of significant figures:
+
+```javascript
+nerdamer('significant(12345,3)').text();
+// 12300
+```
+
 ## Building from source
 
 Install dependencies and run the normal checks:
 
 ```bash
 npm install
-npm run typecheck
 npm test
+npm run typecheck
 ```
 
 Build the complete package:
@@ -328,17 +415,15 @@ Nerdamer 2.0 keeps much of the familiar expression-oriented API, but it is a new
 - system-solving results use `Vector`/`Dictionary` structures;
 - lower-level 1.x extension hooks such as `getCore()` and `register()` are not restored;
 - several compatibility functions were restored explicitly rather than by exposing every parser function on the root object;
-- internal numeric, parser, solver, polynomial, assumptions, set, and scripting implementations have changed substantially.
+- internal numeric, parser, solver, polynomial, assumptions, set, and scripting implementations have changed substantially;
+- Nerdamer 2.0 uses native JavaScript `BigInt` for large-integer arithmetic, so it requires an environment with `BigInt` support; some older browsers and JavaScript runtimes don't support it.
 
-See [BREAKING_CHANGES.md](BREAKING_CHANGES.md) and [Moving from Nerdamer 1.x to 2.0](docs/MIGRATING_FROM_1X.md) before upgrading an existing application.
+See [Breaking changes in Nerdamer 2.0](https://github.com/jiggzson/nerdamer/blob/master/BREAKING_CHANGES.md) for important compatibility differences before upgrading an existing application. Applications that need the older behavior can continue using [Nerdamer-Prime](https://github.com/together-science/nerdamer-prime).
 
 ## Documentation
 
 - Website: https://nerdamer.com/
 - Documentation: https://nerdamer.com/documentation
-- Migration guide: `docs/MIGRATING_FROM_1X.md`
-- 2.0 release notes: `docs/RELEASE_NOTES_2.md`
-- Parser conventions: `docs/PARSER_CONVENTIONS.md`
 - Source repository: https://github.com/jiggzson/nerdamer
 - Issues: https://github.com/jiggzson/nerdamer/issues
 

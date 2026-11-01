@@ -1,4 +1,5 @@
-import { factorial, doubleFactorial } from '../../../../math/math';
+import { factorial, doubleFactorial } from '../../../../math/index';
+import { dataTypes } from '../../../constants/entityTypes';
 import { mathFunctionRegistry } from '../../../dispatch';
 import {
 	DimensionError,
@@ -20,10 +21,9 @@ import {
 import { Collection } from '../../collection/Collection';
 import { Equation } from '../../equation/Equation';
 import { Expression } from '../../expression/Expression';
-import { assertPlainVariableAndGetString } from '../../expression/utils';
+import { requireVariableName } from '../../expression/utils';
 import { Matrix } from '../../matrix/Matrix';
 import { Vector } from '../../vector/Vector';
-import { dataTypes } from '../constants';
 import { parserReturnBoundary } from '../scripting/controlFlow';
 import { wrappedFunction } from '../scripting/functions';
 import { assign } from '../scripting/scope';
@@ -232,16 +232,31 @@ export const _: {
 	lt: lt as Operation,
 	lte: lte as Operation,
 	eq: eq as Operation,
+	neq: neq as Operation,
 	gt: gt as Operation,
 	gte: gte as Operation,
 	minusPrefix: subtractPrefix as PreFixFunction,
 	plusPrefix: addPrefix as PreFixFunction,
-	factorial: factorial as PostFixFunction,
-	doubleFactorial: doubleFactorial as PostFixFunction,
+	factorial: factorialPostfix as PostFixFunction,
+	doubleFactorial: doubleFactorialPostfix as PostFixFunction,
 
 	// dot: dot,
 	// IN: IN,
 };
+
+function factorialPostfix(a: ParserEntity) {
+	if (!Expression.isExpression(a)) {
+		throw new UnsupportedOperationError(message('unsupportedOperation'));
+	}
+	return factorial(a);
+}
+
+function doubleFactorialPostfix(a: ParserEntity) {
+	if (!Expression.isExpression(a)) {
+		throw new UnsupportedOperationError(message('unsupportedOperation'));
+	}
+	return doubleFactorial(a);
+}
 
 /**
  * Applies a scalar function over a copied Vector or Matrix while preserving its shape.
@@ -316,14 +331,14 @@ export function functionAssign(
 		);
 	}
 
-	const name = assertPlainVariableAndGetString(functionExpression);
+	const name = requireVariableName(functionExpression);
 	const args = signature.map(argument => {
 		if (!Expression.isExpression(argument)) {
 			throw new UnexpectedInputError(
 				message('plainVariableExpected', { input: argument.text() })
 			);
 		}
-		return assertPlainVariableAndGetString(argument);
+		return requireVariableName(argument);
 	});
 
 	setFunction({
@@ -348,6 +363,16 @@ export function functionAssign(
  */
 function eq(a: ParserEntity, b: ParserEntity) {
 	return Expression.create(Number(a.eq(b)));
+}
+
+/**
+ * Returns 1 if two values are not equal otherwise 0
+ * @param a
+ * @param b
+ * @returns
+ */
+function neq(a: ParserEntity, b: ParserEntity) {
+	return Expression.create(Number(!a.eq(b)));
 }
 
 /**
@@ -451,6 +476,9 @@ export function route(
 	} else if (operation === 'in') {
 		// Membership is the infix form of contains(container, value), so reverse the operands.
 		retval = callFunction('contains', [b, a]);
+	} else if (Expression.isExpression(a) && Vector.isVector(b) && operation === 'minus') {
+		// Subtraction cannot distribute a scalar across a Vector.
+		throw new UnexpectedDataType(message('vectorExpected', { type: 'Expression' }));
 	} else if (a.isEnumerable) {
 		retval = dispatchDynamicOperation(a, b, operation);
 	} else if (

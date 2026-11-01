@@ -1,16 +1,22 @@
 import { factor } from '../../algebra/factor/factor';
 import { simplify } from '../../algebra/simplify/simplify';
 import { Expression } from '../../core/classes/expression/Expression';
-import { minusOne, one } from '../../core/classes/expression/shortcuts';
-import { INTEGRATE } from '../../core/classes/parser/constants';
+import { one } from '../../core/classes/expression/shortcuts';
+import { Polynomial } from '../../core/classes/polynomial/Polynomial';
+import { INTEGRATE, TRIG, HYPERBOLIC_TRIG } from '../../core/constants/functionNames';
 import { Pattern } from '../../core/converters/Pattern';
 import { getU, subst } from '../../core/functions/subst';
 import { diff } from '../derivative/diff';
 
 import { tableOfIntegrals } from './integrationTable';
-import { hasTranscendental } from './utils';
+import { hasTranscendental, MAX_INTEGRATION_DEPTH } from './utils';
 
 const MAX_POWER_SUBSTITUTION_ATTEMPTS = 8;
+
+function rationalDegree(value: Expression, variable: string): number {
+	return new Polynomial(value.getNumerator(), [variable]).deg() -
+		new Polynomial(value.getDenominator(), [variable]).deg();
+}
 
 /**
  * Tests whether two expressions match the generalized substitution pattern
@@ -45,12 +51,42 @@ function testProductSides(
 	other: Expression,
 	x: string
 ): { fx: Expression; constant: Expression; power: Expression } | undefined {
+	// An exponential with an algebraic exponent retains that exponential when
+	// differentiated, so it cannot form an f^n*f' pair with a standalone trig factor.
+	if (
+		(fx.isEXP() && !hasTranscendental(fx.getPower(), x) && other.isFunction(TRIG)) ||
+		(other.isEXP() && !hasTranscendental(other.getPower(), x) && fx.isFunction(TRIG))
+	) {
+		return undefined;
+	}
+	// Hyperbolic derivative pairs retain their argument. Different arguments
+	// cannot match the supported f^n*f' substitution form.
+	if (fx.isFunction(HYPERBOLIC_TRIG) && other.isFunction(HYPERBOLIC_TRIG) &&
+		!fx.getArguments()[0].eq(other.getArguments()[0])) {
+		return undefined;
+	}
 	// Quick structural bail-out: if `other` is purely algebraic (no transcendentals)
 	// but `fx` contains transcendentals, then other cannot be proportional to f'(x)
 	// since differentiating a transcendental always produces transcendentals.
 	if (!hasTranscendental(other, x) && hasTranscendental(fx, x)) {
 		return undefined;
 	}
+	// For rational f, deg(f') = deg(f)-1 when deg(f) is nonzero.
+	// If other = c*f'*f^m for positive integer m, its degree must match.
+	// Check the original factors first, before forming an expensive residual.
+	try {
+		const baseDegree = rationalDegree(fx, x);
+		if (baseDegree !== 0) {
+			const power = (rationalDegree(other, x) + 1) / baseDegree - 1;
+			// Zero is the basic f*f' case, checked by the residual below.
+			if (!Number.isInteger(power) || power < 0 || power > MAX_POWER_SUBSTITUTION_ATTEMPTS) {
+				return undefined;
+			}
+		}
+	} catch {
+		// Non-rational functions continue through the existing substitution search.
+	}
+
 	// Compute derivative of the candidate substitution function.
 	const df = diff(fx, x);
 	// Do not divide by zero
@@ -81,10 +117,28 @@ function testProductSides(
 	// Detection: divide residual by fx repeatedly. After k divisions, if the
 	// result is independent of x, then m = k and residual = constant·fx^k.
 
+	// A rational power must have a matching numerator-minus-denominator degree.
+	// Reject impossible positive powers before repeated symbolic simplification.
+	// If conversion is unsupported, retain the existing substitution search.
+	let maxAttempts = MAX_POWER_SUBSTITUTION_ATTEMPTS;
+	try {
+		const baseDegree = rationalDegree(fx, x);
+		const residualDegree = rationalDegree(residual, x);
+		if (baseDegree !== 0) {
+			const power = residualDegree / baseDegree;
+			if (!Number.isInteger(power) || power < 1 || power > MAX_POWER_SUBSTITUTION_ATTEMPTS) {
+				return undefined;
+			}
+			maxAttempts = power;
+		}
+	} catch {
+		// Expressions outside the polynomial domain use the existing search.
+	}
+
 	let quotient = residual;
 	let m = 0;
 
-	for (let attempts = 0; attempts < MAX_POWER_SUBSTITUTION_ATTEMPTS; attempts++) {
+	for (let attempts = 0; attempts < maxAttempts; attempts++) {
 		const next = simplify(quotient.div(fx));
 		if (!next.hasVariable(x)) {
 			// residual = next·fx^(m+1), integrand = f·(next·fx^(m+1)·f') = next·fx^(m+2)·f'
@@ -125,11 +179,8 @@ function testProductSides(
  *
  *      ∫ f f' dx = f² / 2
  *
- * To reduce symbolic overhead:
- *
- * - The total product is computed once.
- * - The left candidate product grows incrementally.
- * - The complementary product is obtained via division.
+ * To reduce symbolic overhead, each factor is tested against the
+ * product of the remaining factors without constructing every contiguous range.
  *
  * @param factors multiplicative factors of the integrand
  * @param x integration variable
@@ -140,12 +191,6 @@ export function bySubstitution(
 	x: string
 ): { fx: Expression; constant: Expression; power: Expression } | undefined {
 	const n = factors.length;
-
-	// Compute the total product once.
-	let total = factors[0];
-	for (let i = 1; i < n; i++) {
-		total = total.times(factors[i]);
-	}
 
 	// Iterate over contiguous ranges of factors.
 	for (let start = 0; start < n; start++) {
@@ -220,7 +265,7 @@ export function bySubstitution(
  * @param x integration variable
  * @returns substitution match information or undefined
  */
-export function tryIntegrateBySubstitution(
+export function matchProductSubstitution(
 	fx: Expression,
 	x: string
 ): { fx: Expression; constant: Expression; power: Expression } | undefined {
@@ -229,8 +274,10 @@ export function tryIntegrateBySubstitution(
 		fx = factor(fx);
 	}
 
-	// If it still is not a product, substitution is impossible.
-	if (!fx.isProduct()) {
+	// elementsArray() omits the power of the containing product.
+	// Factoring a reciprocal may produce (a*b)^-1, which must not be
+	// mistaken for a*b when testing f*f' substitution.
+	if (!fx.isProduct() || !fx.getPower().isOne()) {
 		return undefined;
 	}
 
@@ -291,33 +338,42 @@ function getWrappedInnerCandidates(factor: Expression, x: string): Expression[] 
 /**
  * Attempts substitution when one factor wraps an inner expression and the
  * remaining factors are proportional to its derivative.
+ * Products with no eligible wrapper skip symbolic product construction.
  *
  * @param fx - Complete product integrand, used to select a fresh variable.
  * @param factors - Multiplicative factors to test.
  * @param x - Integration variable.
  * @returns The back-substituted antiderivative, or `undefined` when the outer
- * factor is not covered by the integration table.
+ * factor cannot be integrated. The optional callback keeps experimental
+ * recursive integration in its controller; legacy callers retain table lookup.
  */
 export function tryIntegrateByWrappedFactorSubstitution(
 	fx: Expression,
 	factors: Expression[],
-	x: string
+	x: string,
+	recurse?: (integrand: Expression, variable: string, depth: number) => Expression,
+	depth = 0
 ): Expression | undefined {
-	let total = factors[0];
-	for (let i = 1; i < factors.length; i++) {
-		total = total.times(factors[i]);
+	let total: Expression | undefined;
+	if (recurse && depth >= MAX_INTEGRATION_DEPTH) {
+		return undefined;
 	}
 
 	for (const factor of factors) {
-		const others = simplify(total.div(factor));
-		for (const inner of getWrappedInnerCandidates(factor, x)) {
-			const df = diff(inner, x);
-			if (df.isZero()) {
-				continue;
+		const candidates = getWrappedInnerCandidates(factor, x);
+		if (candidates.length === 0) {
+			continue;
+		}
+		if (!total) {
+			total = factors[0];
+			for (let i = 1; i < factors.length; i++) {
+				total = total.times(factors[i]);
 			}
-
-			const constant = simplify(others.div(df));
-			if (constant.hasVariable(x)) {
+		}
+		const others = simplify(total.div(factor));
+		for (const inner of candidates) {
+			const match = testQuotientSides(others, inner, x);
+			if (!match) {
 				continue;
 			}
 
@@ -327,12 +383,13 @@ export function tryIntegrateByWrappedFactorSubstitution(
 				continue;
 			}
 
-			const outerIntegral = tableOfIntegrals.lookup(new Pattern(factorInU, [u.text()]), 0);
+			const outerIntegral = recurse ? recurse(factorInU, u.text(), depth) :
+				tableOfIntegrals.lookup(new Pattern(factorInU, [u.text()]), 0);
 			if (!outerIntegral || outerIntegral.hasFunction(INTEGRATE)) {
 				continue;
 			}
 
-			return simplify(subst(outerIntegral, u, inner).times(constant));
+			return simplify(subst(outerIntegral, u, inner).times(match.constant));
 		}
 	}
 
@@ -348,6 +405,9 @@ function testQuotientSides(
 	const df = diff(denominator, x);
 
 	// If numerator = c*f'(x), then the integrand is c*f'(x)/f(x).
+	if (df.isZero()) {
+		return undefined;
+	}
 	const constant = simplify(numerator.div(df));
 
 	// The proportionality factor must be independent of x.
@@ -390,20 +450,35 @@ function testQuotientSides(
  * @param x integration variable
  * @returns logarithmic substitution match information or undefined
  */
-export function tryIntegrateByLogSubstitution(
+export function matchLogSubstitution(
 	fx: Expression,
 	x: string
 ): { fx: Expression; constant: Expression } | undefined {
-	// Extract numerator and denominator directly from the expression.
-	const numerator = simplify(fx.getNumerator());
-	const denominator = simplify(fx.getDenominator());
-
-	// If there is no real denominator, then there is no f'(x)/f(x) structure.
-	if (denominator.isOne()) {
+	const rawDenominator = fx.getDenominator();
+	if (rawDenominator.isOne()) {
 		return undefined;
 	}
 
-	return testQuotientSides(numerator, denominator, x);
+	// Extract numerator and denominator directly from the expression.
+	const numerator = simplify(fx.getNumerator());
+	const denominator = simplify(rawDenominator);
+
+	let retval = testQuotientSides(numerator, denominator, x);
+	if (!retval && denominator.isProduct()) {
+		const factors = denominator.elementsArray();
+		for (const factor of factors) {
+			if (retval) {
+				break;
+			}
+			if (!factor.hasVariable(x)) {
+				continue;
+			}
+			const remaining = denominator.div(factor);
+			retval = testQuotientSides(numerator.div(remaining), factor, x);
+		}
+	}
+
+	return retval;
 }
 
 /**
@@ -416,7 +491,7 @@ export function tryIntegrateByLogSubstitution(
  *      c * f(x)^(1-n) / (1-n)     for n ≠ 1
  *
  * The n=1 case is the logarithmic substitution handled by
- * tryIntegrateByLogSubstitution. This function handles n ≠ 1,
+ * matchLogSubstitution. This function handles n ≠ 1,
  * including fractional powers like n=1/2 (square root denominators).
  *
  * This catches integrands like:
@@ -428,53 +503,42 @@ export function tryIntegrateByLogSubstitution(
  * @param x integration variable
  * @returns match with fx (the inner function), constant, and power (the denominator exponent n)
  */
-export function tryIntegrateByPowerSubstitution(
+export function matchPowerSubstitution(
 	fx: Expression,
 	x: string
 ): { fx: Expression; constant: Expression; power: Expression } | undefined {
-	const numerator = simplify(fx.getNumerator());
+	let retval: { fx: Expression; constant: Expression; power: Expression } | undefined;
 	const denominator = simplify(fx.getDenominator());
-
-	// Must have a non-trivial denominator containing the variable
-	if (denominator.isOne() || !denominator.hasVariable(x)) {
-		return undefined;
-	}
-
-	// The denominator may be f(x)^n. Extract the base and power.
-	// getBase() returns the base: for (1-x²)^(1/2), getBase() = 1-x²
-	// getPower() returns the exponent: for (1-x²)^(1/2), getPower() = 1/2
-	const denBase = denominator.getBase();
-	const denPower = denominator.getPower();
-
-	// If the base doesn't contain the variable, nothing to substitute
-	if (!denBase.hasVariable(x)) {
-		return undefined;
-	}
-
-	// Compute derivative of the denominator base
-	const df = diff(denBase, x);
-	if (df.isZero()) {
-		return undefined;
-	}
-
-	// Check if numerator is proportional to f'(x):
-	// If numerator = c·f'(x), then integrand = c·f'(x)/f(x)^n
-	const ratio = simplify(numerator.div(df));
-
-	if (!ratio.hasVariable(x)) {
-		const oneMinusN = simplify(one().plus(denPower.times(minusOne())));
-
-		// n=1 is the logarithmic case — skip (handled by log substitution)
-		if (oneMinusN.isZero()) {
-			return undefined;
+	if (!denominator.isOne() && denominator.hasVariable(x)) {
+		const base = denominator.getBase();
+		const power = denominator.getPower();
+		if (base.hasVariable(x) && !simplify(one().minus(power)).isZero()) {
+			const match = testQuotientSides(simplify(fx.getNumerator()), base, x);
+			if (match) {
+				retval = { ...match, power };
+			}
 		}
-
-		return {
-			fx: denBase,
-			constant: ratio,
-			power: denPower,
-		};
 	}
+	return retval;
+}
 
-	return undefined;
+/**
+ * Integrate derivative-proportional quotients by the single power rule
+ * in the substituted variable. This combines logarithmic (n = 1)
+ * and non-logarithmic (n != 1) outcomes without introducing a new
+ * integration algorithm. Used by the experimental controller only.
+ */
+export function integrateDerivativeQuotient(expr: Expression, variable: string): Expression | undefined {
+	let retval: Expression | undefined;
+	const logarithmic = matchLogSubstitution(expr, variable);
+	if (logarithmic) {
+		retval = Expression.toFunction('log', [logarithmic.fx]).times(logarithmic.constant);
+	} else {
+		const power = matchPowerSubstitution(expr, variable);
+		if (power) {
+			const exponent = one().minus(power.power);
+			retval = power.fx.pow(exponent).div(exponent).times(power.constant);
+		}
+	}
+	return retval;
 }

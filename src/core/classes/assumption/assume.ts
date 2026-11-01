@@ -1,15 +1,76 @@
+import { ALL_SYMBOL } from '../../constants/symbolNames';
 import { message, UnexpectedInputError } from '../../errors';
 import { RESTRICTED } from '../../Settings';
 import { Expression } from '../expression/Expression';
-import { ALL_SYMBOL } from '../parser/constants';
 
 import { Assumption } from './Assumption';
+import { SymbolRelations } from './SymbolRelations';
+
+import type { SymbolRelation } from './symbolRelation';
 
 // Assumptions remain process-wide compatibility state in 2.0. A useful scoped
 // context would have to be threaded through parser, comparison, and simplification
 // calls; wrapping this Map without doing that would only create the appearance of
 // isolation. Keep the state explicit here until that larger API can be designed.
 const ASSUMPTIONS: Map<string, Assumption> = new Map();
+const SYMBOL_RELATIONS = new SymbolRelations();
+/** Rejects inferred symbolic comparisons disproved by numeric intervals. */
+function checkSymbolBounds(relations: SymbolRelations, bounds: ReadonlyMap<string, Assumption>): void {
+	const symbols = [...bounds.keys()];
+	const operators = ['>', '>=', '='] as const;
+	const inconsistent = symbols.some(leftSymbol =>
+		symbols.some(rightSymbol =>
+			leftSymbol !== rightSymbol && operators.some(operator => {
+				const known = relations.compare({ left: leftSymbol, operator, right: rightSymbol });
+				let contradicted = false;
+				if (known === true) {
+					const left = bounds.get(leftSymbol)!;
+					const right = bounds.get(rightSymbol)!;
+					const result = operator === '>' ? left.gt(right) :
+						operator === '>=' ? left.gte(right) : left.eq(right);
+					contradicted = result === false;
+				}
+				return contradicted;
+			})
+		)
+	);
+	if (inconsistent) {
+		throw new UnexpectedInputError(message('inconsistentAssumptions'));
+	}
+	// Check bounds implied by offsets as well as direct symbol ordering.
+	for (const relation of relations.getAll()) {
+		relations.getInterval(relation.left, bounds, Assumption);
+		relations.getInterval(relation.right, bounds, Assumption);
+	}
+}
+
+/** @internal Registers a symbolic fact without changing numeric intervals. */
+export function registerSymbolRelation(relation: SymbolRelation): void {
+	for (const symbol of [relation.left, relation.right]) {
+		if (Expression.RESERVED.includes(symbol) || RESTRICTED.includes(symbol) ||
+			symbol === Expression.imaginary) {
+			throw new UnexpectedInputError(message('plainVariableExpected', { input: symbol }));
+		}
+	}
+	const proposed = new SymbolRelations();
+	for (const existing of SYMBOL_RELATIONS.getAll()) {
+		proposed.add(existing);
+	}
+	proposed.add(relation);
+	checkSymbolBounds(proposed, ASSUMPTIONS);
+	SYMBOL_RELATIONS.add(relation);
+}
+
+/** @internal Returns a snapshot of stored symbolic relationships. */
+export function getSymbolRelations(): readonly SymbolRelation[] {
+	return SYMBOL_RELATIONS.getAll();
+}
+
+/** @internal Queries known symbolic relationships without modifying state. */
+export function compareSymbolRelation(relation: SymbolRelation): boolean | undefined {
+	return SYMBOL_RELATIONS.compare(relation);
+}
+
 
 /** @internal */
 export function hasAssumptions(): boolean {
@@ -35,6 +96,9 @@ function setAssumption(symbol: string, assumption: Assumption): Assumption {
 		}
 		retval = intersection;
 	}
+	const next = new Map(ASSUMPTIONS);
+	next.set(symbol, retval);
+	checkSymbolBounds(SYMBOL_RELATIONS, next);
 	ASSUMPTIONS.set(symbol, retval);
 
 	return retval;
@@ -129,6 +193,7 @@ export function assume(a: string, b?: string | Assumption): Assumption {
  */
 export function clearAssumptions(): void {
 	ASSUMPTIONS.clear();
+	SYMBOL_RELATIONS.clear();
 }
 
 /**
@@ -151,6 +216,7 @@ export function forgetAssumptionFor(x: Expression | string): void {
 
 	if (symbol !== undefined) {
 		ASSUMPTIONS.delete(symbol);
+		SYMBOL_RELATIONS.forget(symbol);
 	}
 }
 
@@ -184,6 +250,18 @@ export function getAssumptionFor(x: Expression | string): Assumption | undefined
 	}
 
 	return symbol === undefined ? undefined : ASSUMPTIONS.get(symbol);
+}
+
+
+/** @internal Resolves current interval bounds implied by stored symbol relationships. */
+export function resolveAssumption(x: Expression | string): Assumption | undefined {
+	let symbol: string | undefined;
+	if (Expression.isExpression(x) && x.isPlainVariable()) {
+		symbol = x.value;
+	} else if (typeof x === 'string') {
+		symbol = x;
+	}
+	return symbol === undefined ? undefined : SYMBOL_RELATIONS.getInterval(symbol, ASSUMPTIONS, Assumption);
 }
 
 /**

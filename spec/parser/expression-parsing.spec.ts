@@ -142,6 +142,7 @@ describe('Expression syntax boundaries', () => {
 	it('parses an unparenthesized negative exponent before implicit multiplication', () => {
 		expect(nerdamer('y^-2z').text()).toEqual('y^-2*z');
 		expect(nerdamer('y^-2z').text()).toEqual(nerdamer('(y^-2)*z').text());
+		expect(nerdamer('y^-2*z').text()).toEqual(nerdamer('(y^-2)*z').text());
 	});
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/378
@@ -230,7 +231,7 @@ describe('Custom operators', () => {
 				{
 					precedence: 9,
 					operator: '&',
-					action: 'auditSubtract154',
+					action: 'customSubtract154',
 					prefix: true,
 					postfix: false,
 					leftAssoc: true,
@@ -248,7 +249,7 @@ describe('Custom operators', () => {
 			nerdamer.setOperator({
 				precedence: 9,
 				operator: '&',
-				action: 'auditSubtract154',
+				action: 'customSubtract154',
 				prefix: true,
 				postfix: false,
 				leftAssoc: false,
@@ -259,7 +260,7 @@ describe('Custom operators', () => {
 				{
 					precedence: 7,
 					operator: '~',
-					action: 'auditDouble154',
+					action: 'customDouble154',
 					prefix: false,
 					postfix: true,
 					leftAssoc: false,
@@ -282,8 +283,8 @@ describe('Custom operators', () => {
 			delete operators['~'];
 			delete operators['×'];
 			delete operators['÷'];
-			delete _['auditSubtract154'];
-			delete _['auditDouble154'];
+			delete _['customSubtract154'];
+			delete _['customDouble154'];
 			refreshOperatorSymbols();
 		}
 	});

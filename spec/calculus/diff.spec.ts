@@ -1,11 +1,77 @@
 import { Parser } from '../../src/core/classes/parser/Parser';
 import nerdamer from '../../src/index';
 import { Expression } from '../../src/core/classes/expression/Expression';
+import { LOG, ATAN } from '../../src/core/classes/parser/constants';
+import { diff } from '../../src/calculus/derivative/diff';
 
 describe('Derivative', () => {
 	it('power rule and polynomials', () => {
 		expect(Parser.parse('diff((5/8)*x^2,x)').text()).toEqual('(5/4)*x');
 		expect(Parser.parse('diff(x^2+2*x+1,x)').text()).toEqual('2+2*x');
+	});
+
+	it('differentiates scaled logarithms without duplicating the coefficient', () => {
+		const source = '(1/2)*2^(-1/2)*log((-2*2^(1/2)+2*x)/(2*2^(1/2)+2*x))';
+		const derivative = Parser.parse(`diff(${source},x)`);
+		for (const x of [-3, -2, -1, -0.5, 0, 0.5, 1, 2, 3]) {
+			const expected = Number(Expression.create('1/(x^2-2)').evaluate({ x }).text({ decimal: true }));
+			const actual = Number(derivative.evaluate({ x }).text({ decimal: true }));
+			expect(actual).toBeCloseTo(expected, 8);
+		}
+	});
+
+	// Regression: coefficient normalization must not change a product's derivative.
+	it('retains reciprocal radical coefficients when differentiating products', () => {
+		for (const source of [
+			'sqrt(pi)*erf(sqrt(2)*x)/(2*sqrt(2))',
+			'sqrt(pi/2)*erf(sqrt(2)*x)/2',
+		]) {
+			const derivative = diff(source, 'x');
+			const expected = Expression.create('e^(-2*x^2)');
+			for (const x of [-1.2, -0.3, 0, 0.3, 1.2]) {
+				const actualValue = Number(derivative.evaluate({ x }).text({ decimal: true }));
+				const expectedValue = Number(expected.evaluate({ x }).text({ decimal: true }));
+				expect(actualValue).toBeCloseTo(expectedValue, 8);
+			}
+		}
+	});
+
+	it('differentiates function nodes constructed without parsing their text', () => {
+		const argument = Expression.create('x^2+1');
+		for (const name of [LOG, ATAN]) {
+			const expression = Expression.toFunction(name, [argument]);
+			const derivative = diff(expression, 'x');
+			const expected = name === LOG
+				? Expression.create('2*x/(1+x^2)')
+				: Expression.create('2*x/(1+(1+x^2)^2)');
+			for (const x of [0.2, 0.6, 1.1]) {
+				const actualValue = Number(derivative.evaluate({ x }).text({ decimal: true }));
+				const expectedValue = Number(expected.evaluate({ x }).text({ decimal: true }));
+				expect(actualValue).toBeCloseTo(expectedValue, 8);
+			}
+		}
+	});
+
+	it.each([
+		{ source: 'Si(2*x)', expected: 'sin(2*x)/x' },
+		{ source: 'Ci(3*x)', expected: 'cos(3*x)/x' },
+		{ source: 'Chi(2*x)', expected: 'cosh(2*x)/x' },
+		{ source: 'Shi(3*x)', expected: 'sinh(3*x)/x' },
+		{ source: 'Ei(2*x)', expected: 'e^(2*x)/x' },
+		{ source: 'Si(1+x)', expected: 'sin(1+x)/(1+x)' },
+		{ source: 'Ci(1+x)', expected: 'cos(1+x)/(1+x)' },
+		{ source: 'Chi(1+x)', expected: 'cosh(1+x)/(1+x)' },
+		{ source: 'Shi(1+x)', expected: 'sinh(1+x)/(1+x)' },
+		{ source: 'Ei(1+x)', expected: 'e^(1+x)/(1+x)' },
+	])('differentiates $source with a grouped argument denominator', ({ source, expected }) => {
+		const derivative = diff(source, 'x');
+		const expectedDerivative = Expression.create(expected);
+		for (const x of [0.3, 0.7, 1.1]) {
+			const actual = Number(derivative.evaluate({ x }).text({ decimal: true }));
+			const expectedValue = Number(expectedDerivative.evaluate({ x }).text({ decimal: true }));
+			expect(Number.isFinite(actual)).toBe(true);
+			expect(actual).toBeCloseTo(expectedValue, 10);
+		}
 	});
 
 	it('functions', () => {

@@ -14,6 +14,7 @@ import { coeffs, div, divide } from '../../src/core/classes/polynomial/functions
 import { ValuesSet } from '../../src/core/classes/valuesSet/ValuesSet';
 import { Vector } from '../../src/core/classes/vector/Vector';
 import { mathFunctionRegistry } from '../../src/core/dispatch';
+import { message, UnexpectedDataType } from '../../src/core/errors';
 import { expand } from '../../src/core/functions/expand/expand';
 import { subst } from '../../src/core/functions/subst';
 import { line } from '../../src/math/geometry';
@@ -21,8 +22,6 @@ import {
 	degrees,
 	doubleFactorial,
 	factorial,
-	gammaIncomplete,
-	gammaIncompleteLower,
 	log10,
 	max,
 	min,
@@ -31,11 +30,12 @@ import {
 	radians,
 	rect,
 	scientific,
-	sinc,
 	step,
 	tri,
-} from '../../src/math/math';
+} from '../../src/math/index';
 import { acos, asin, atan, atan2 } from '../../src/math/trig';
+import { gammaIncomplete, gammaIncompleteLower, sinc } from '../../src/special';
+import { mean, median, mode, smpstdev, smpvar, stdev, variance, zscore } from '../../src/statistics';
 import { continuedFraction } from '../../src/math/utils';
 import { roots } from '../../src/solve/solve';
 
@@ -90,6 +90,14 @@ describe('Public compatibility entry points', () => {
 		expect(nerdamer.max).toBe(max);
 		expect(nerdamer.sinc).toBe(sinc);
 		expect(nerdamer.ilt).toBe(ilaplace);
+		expect(nerdamer.mean).toBe(mean);
+		expect(nerdamer.median).toBe(median);
+		expect(nerdamer.mode).toBe(mode);
+		expect(nerdamer.smpvar).toBe(smpvar);
+		expect(nerdamer.variance).toBe(variance);
+		expect(nerdamer.smpstdev).toBe(smpstdev);
+		expect(nerdamer.stdev).toBe(stdev);
+		expect(nerdamer.zscore).toBe(zscore);
 	});
 
 	it('restores the legacy reserved-name helper through current parser state', () => {
@@ -98,6 +106,13 @@ describe('Public compatibility entry points', () => {
 		expect(nerdamer.isReserved('_n')).toBe(true);
 		expect(nerdamer.isReserved('all')).toBe(true);
 		expect(nerdamer.isReserved('ordinary_variable')).toBe(false);
+	});
+
+	// Legacy #395 retains natural log and exposes base-ten log explicitly.
+	it('keeps natural and base-ten logarithms distinct', () => {
+		expect(nerdamer('log(e)').text()).toEqual('1');
+		expect(nerdamer('log10(100)').text()).toEqual('2');
+		expect(nerdamer('log(100)').eq(Expression.create('2'))).toBe(false);
 	});
 
 	it('restores independent legacy math helpers without duplicating existing algorithms', () => {
@@ -143,6 +158,14 @@ describe('Public compatibility entry points', () => {
 			'matrix([-2, 1], [3/2, -1/2])'
 		);
 		expect(nerdamer('line([1,2],[3,4])').text()).toEqual('1+x');
+	});
+
+	it('preserves unresolved function names in symbolic return values', () => {
+		expect(step('x').text()).toEqual('step(x)');
+		expect(rect('x').text()).toEqual('rect(x)');
+		expect(tri('x').text()).toEqual('tri(x)');
+		expect(gammaIncomplete('a', 'x').text()).toEqual('gamma_incomplete(a, x)');
+		expect(gammaIncompleteLower('a', 'x').text()).toEqual('gamma_incomplete_lower(a, x)');
 	});
 
 	it('restores the remaining legacy algebra and formatting helpers through existing APIs', () => {
@@ -220,11 +243,23 @@ describe('Public compatibility entry points', () => {
 	});
 
 	it('rejects structured parsed results from chained buildFunction', () => {
-		for (const input of ['[x,y]', 'matrix([x,y])', 'x=y']) {
-			expect(() => nerdamer(input).buildFunction()).toThrow(
-				nerdamer.errors.UnexpectedDataType
+		for (const [input, type] of [
+			['[x,y]', 'Vector'],
+			['matrix([x,y])', 'Matrix'],
+			['x=y', 'Equation'],
+		]) {
+			let thrown: unknown;
+			try {
+				nerdamer(input).buildFunction();
+			} catch (error) {
+				thrown = error;
+			}
+
+			expect(thrown).toBeInstanceOf(UnexpectedDataType);
+			expect(thrown).toHaveProperty(
+				'message',
+				message('expressionExpected', { type })
 			);
-			expect(() => nerdamer(input).buildFunction()).toThrow('Expression expected');
 		}
 	});
 

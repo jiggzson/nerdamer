@@ -149,6 +149,16 @@ describe('Equation regressions', () => {
 		}
 	});
 
+	// Regression: https://github.com/jiggzson/nerdamer/issues/673
+	it('parses G as an ordinary symbol rather than a built-in physical constant', () => {
+		const equation = nerdamer('G=5');
+		expect(Equation.isEquation(equation)).toBe(true);
+		if (Equation.isEquation(equation)) {
+			expect(equation.LHS.eq(Expression.create('G'))).toBe(true);
+			expect(equation.RHS.eq(5)).toBe(true);
+		}
+	});
+
 	// Regression: https://github.com/jiggzson/nerdamer/issues/200
 	it('applies safe scalar arithmetic to both sides of an equation', () => {
 		expect(nerdamer('(a=b)+2').text()).toEqual('2+a=2+b');
@@ -170,6 +180,16 @@ describe('Equation regressions', () => {
 		expect(() => nerdamer('sqrt(a=b)')).toThrow();
 		expect(() => nerdamer('sin(a=b)')).toThrow();
 		expect(() => nerdamer('sum(a=b,a,1,10)')).toThrow();
+		for (const input of [
+			'log(a=b)',
+			'mod(a=b,a)',
+			'gcd(a=b,a)',
+			'min(a=b,a=b)',
+			'mean(a=b,a=b)',
+			'stdev(a=b)',
+		]) {
+			expect(() => nerdamer(input)).toThrow();
+		}
 	});
 
 	it('applies equation calculus parser functions to both sides', () => {

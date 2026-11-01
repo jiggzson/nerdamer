@@ -211,7 +211,7 @@ export class PolynomialSolver {
 				}
 
 				// Aberth correction: w = N(z) / (1 - N(z) * sum)
-				const denom = new Complex(1, 0).sub(newton.mul(sum));
+				const denom = new Complex(1, 0).sub(newton.times(sum));
 				const correction = denom.absSquared().lessThan(epsSquared)
 					? newton
 					: newton.div(denom);
@@ -280,11 +280,11 @@ export class PolynomialSolver {
 		let derivative = P[0];
 
 		for (let i = 1; i < n; i++) {
-			value = value.mul(z).add(P[i]);
-			derivative = derivative.mul(z).add(value);
+			value = value.times(z).add(P[i]);
+			derivative = derivative.times(z).add(value);
 		}
 
-		value = value.mul(z).add(P[n]);
+		value = value.times(z).add(P[n]);
 		return [value, derivative];
 	}
 	private finalize(
@@ -320,7 +320,7 @@ export class PolynomialSolver {
 		const magnitude = root.abs();
 
 		for (let i = 1; i < this.p.length; i++) {
-			residual = residual.mul(root).add(this.p[i]);
+			residual = residual.times(root).add(this.p[i]);
 			scale = scale.mul(magnitude).plus(this.p[i].abs());
 		}
 
@@ -548,8 +548,8 @@ export class PolynomialSolver {
 		const b = p[1];
 		const c = p[2];
 
-		const b2 = b.mul(b);
-		const ac4 = a.mul(c).scale(4);
+		const b2 = b.times(b);
+		const ac4 = a.times(c).scale(4);
 		const disc = b2.sub(ac4);
 
 		const sqrtDisc = this.complexSqrt(disc);

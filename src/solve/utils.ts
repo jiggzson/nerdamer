@@ -1,7 +1,8 @@
 import { Equation } from '../core/classes/equation/Equation';
 import { Expression } from '../core/classes/expression/Expression';
-import { dataTypes } from '../core/classes/parser/constants';
+import { requireVariableName } from '../core/classes/expression/utils';
 import { Parser } from '../core/classes/parser/Parser';
+import { dataTypes } from '../core/constants/entityTypes';
 import { message, UnexpectedInputError } from '../core/errors';
 
 import type { ExpressionInput, NerdamerInput } from '../core/types';
@@ -32,16 +33,6 @@ export function normalizeSolverExpression(input: NerdamerInput): Expression {
 	);
 }
 
-export function extractVariable(variable: ExpressionInput) {
-	variable = Expression.create(variable);
-	if (!variable.isPlainVariable()) {
-		throw new UnexpectedInputError(
-			message('plainVariableExpected', { input: variable.text() })
-		);
-	}
-	return variable.value;
-}
-
 export function prepareSolverInputs(
 	input: ExpressionInput | Equation | string,
 	variable?: ExpressionInput
@@ -58,11 +49,7 @@ export function prepareSolverInputs(
 			throw new UnexpectedInputError(message('tooManyUnknowns'));
 		}
 	} else {
-		x = extractVariable(variable);
-		if (x && vars[0] && !vars.includes(x)) {
-			// Rethink. Throw a better error message.
-			throw new UnexpectedInputError(message('tooManyUnknowns'));
-		}
+		x = requireVariableName(Expression.create(variable), true);
 	}
 
 	return {

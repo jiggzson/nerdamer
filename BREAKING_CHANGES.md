@@ -79,7 +79,7 @@ Many compatibility names have been deliberately restored, including:
 
 Compatibility names are backed by the 2.0 implementations; they are not copies of the 1.x internals.
 
-The statistics functions from the old `Extra` add-on were not recreated merely to preserve their names:
+The statistics functions from the old `Extra` add-on have been restored as supported Nerdamer 2.0 functions:
 
 - `mean`
 - `median`
@@ -119,7 +119,7 @@ Single-variable solving returns a `SolutionSet`.
 
 System solving returns a `Vector` containing a `Dictionary` for each solution rather than the nested JavaScript arrays used by older code.
 
-The legacy `solveeqs` name remains as the compatibility alias for `solveSystem()`. `solveEquations` is not retained as a public 2.0 name.
+The legacy `solveEquations` name was replaced by the parser-style `solveeqs`; the direct JavaScript and TypeScript API is `solveSystem()`.
 
 Code that consumes solver results by indexing native arrays must be updated for the Nerdamer structures.
 
@@ -239,6 +239,6 @@ For an existing Nerdamer 1.x application:
 9. Choose the complete package or parser entry point/build according to the functionality actually required.
 10. Run the application's own behavioral tests against 2.0 before upgrading production code.
 
-For a more detailed side-by-side migration guide, see [`docs/MIGRATING_FROM_1X.md`](docs/MIGRATING_FROM_1X.md). Current documentation and examples are available at https://nerdamer.com/.
+Current public documentation and examples are available at https://nerdamer.com/documentation.
 
 Source and issue tracking for the release are at https://github.com/jiggzson/nerdamer.

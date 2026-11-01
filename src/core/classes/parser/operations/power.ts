@@ -1,19 +1,8 @@
-import { abs as expressionAbs, log } from '../../../../math/math';
+import { abs as expressionAbs, log } from '../../../../math/index';
 import { cos, sin } from '../../../../math/trig';
-import { message, UndefinedError, ZeroToZeroPowerError } from '../../../errors';
-import { isEven } from '../../../functions/bigint/bigint';
-import { abs } from '../../../functions/bigint/bigint';
-import { primeFactorCounts } from '../../../functions/bigint/primeFactor';
-import { imagPart, realPart, simplifyImaginary } from '../../../functions/complex';
-import { toPolarFormArray } from '../../../functions/complex';
-import { Settings } from '../../../Settings';
-import { Expression } from '../../expression/Expression';
-import { minusOne, one, two, zero } from '../../expression/shortcuts';
-import { stripPower } from '../../expression/utils';
+import { RATIONAL } from '../../../constants/entityTypes';
 import {
 	ABS,
-	PI,
-	RATIONAL,
 	SQRT,
 	COS,
 	SIN,
@@ -27,7 +16,19 @@ import {
 	SECH,
 	CSCH,
 	COTH,
-} from '../constants';
+} from '../../../constants/functionNames';
+import { PI } from '../../../constants/symbolNames';
+import { message, UndefinedError, ZeroToZeroPowerError } from '../../../errors';
+import { isEven } from '../../../functions/bigint/bigint';
+import { abs } from '../../../functions/bigint/bigint';
+import { primeFactorCounts } from '../../../functions/bigint/primeFactor';
+import { imagPart, realPart, simplifyImaginary } from '../../../functions/complex';
+import { toPolarFormArray } from '../../../functions/complex';
+import { Settings } from '../../../Settings';
+import { Expression } from '../../expression/Expression';
+import { minusOne, one, two, zero } from '../../expression/shortcuts';
+import { stripPower } from '../../expression/utils';
+import { Rational } from '../../rational/Rational';
 
 import { equal } from './compare';
 import { multiply } from './multiply';
@@ -59,7 +60,7 @@ export function power(a: Expression, b: Expression): Expression {
 	let retval;
 
 	if (a.isZero() && b.isZero()) {
-		throw new ZeroToZeroPowerError(message('zeroToZeroPower'));
+		throw new ZeroToZeroPowerError(message('undefinedExpression', { expression: '0^0' }));
 	}
 
 	if (Settings.DEFER_SIMPLIFICATION) {
@@ -71,6 +72,17 @@ export function power(a: Expression, b: Expression): Expression {
 		// Simplify powers of i immediately
 		if (a.isI() && b.isInteger()) {
 			retval = simplifyImaginary(setPower(a, b));
+		}
+		// Principal powers of ±i reuse the exact principal logarithm.
+		else if (
+			!Settings.EVALUATE &&
+			a.isVAR() &&
+			a.isI() &&
+			a.getPower().isOne() &&
+			a.getMultiplier().abs().isOne() &&
+			b.isComplex()
+		) {
+			retval = power(Expression.E(), multiply(b, log(a)));
 		}
 		// Handle e^(i*pi)
 		else if (a.isE() && b.isComplex()) {
@@ -166,8 +178,13 @@ export function power(a: Expression, b: Expression): Expression {
 			// c*n^re*cos(log(n^im))+c*n^re*sin(log(n^im))*i
 			else if (b.isComplex()) {
 				const n = a.pow(b.realPart());
-				const x = a.pow(b.imagPart());
-				retval = n.times(cos(log(x))).plus(n.times(sin(log(x))).times(Expression.Img()));
+				const imaginary = b.imagPart();
+				const angle =
+					a.isE() ||
+					(a.isNUM() && a.getMultiplier().eq(Rational.E) && !imaginary.isNUM())
+						? imaginary
+						: log(a.pow(imaginary));
+				retval = n.times(cos(angle)).plus(n.times(sin(angle)).times(Expression.Img()));
 			}
 		} else {
 			// Store check since it occurs on almost every check and definitely on the first.
@@ -191,7 +208,7 @@ export function power(a: Expression, b: Expression): Expression {
 				const bIsInf = b.isInf();
 
 				if (aIsInf && bIsInf) {
-					throw new UndefinedError(message('infinityToInfinity'));
+					throw new UndefinedError(message('undefinedExpression', { expression: 'Infinity^Infinity' }));
 				}
 
 				if (a.isNUM()) {
@@ -204,13 +221,11 @@ export function power(a: Expression, b: Expression): Expression {
 						retval = Expression.Number('0');
 					} else {
 						throw new UndefinedError(
-							message('valueToInfinityUndefined', {
-								value: m.lt('0') ? `(${a})` : `${a}`,
-							})
+							message('undefinedExpression', { expression: `${m.lt('0') ? `(${a})` : `${a}`}^Infinity` })
 						);
 					}
 				} else if (b.isZero()) {
-					throw new UndefinedError(message('infinityToPowerZero'));
+					throw new UndefinedError(message('undefinedExpression', { expression: 'Infinity^0' }));
 				}
 			}
 			// Integer powers can be distributed across products without changing branches.
@@ -411,7 +426,7 @@ export function power(a: Expression, b: Expression): Expression {
 				const bIsInf = b.isInf();
 
 				if (aIsInf && bIsInf) {
-					throw new UndefinedError(message('infinityToInfinity'));
+					throw new UndefinedError(message('undefinedExpression', { expression: 'Infinity^Infinity' }));
 				}
 
 				if (a.isNUM()) {
@@ -424,14 +439,22 @@ export function power(a: Expression, b: Expression): Expression {
 						retval = Expression.Number('0');
 					} else {
 						throw new UndefinedError(
-							message('valueToInfinityUndefined', {
-								value: m.lt('0') ? `(${a})` : `${a}`,
-							})
+							message('undefinedExpression', { expression: `${m.lt('0') ? `(${a})` : `${a}`}^Infinity` })
 						);
 					}
 				} else if (b.isZero()) {
-					throw new UndefinedError(message('infinityToPowerZero'));
+					throw new UndefinedError(message('undefinedExpression', { expression: 'Infinity^0' }));
 				}
+			} else if (
+				a.isEXP() &&
+				!b.isComplex() &&
+				!a.getPower().isComplex() &&
+				a.getMultiplier().isOne() &&
+				!a.getBase().isComplex() &&
+				a.getBase().gt(zero())
+			) {
+				// For positive real bases and real exponents, nested powers combine.
+				retval = power(a.getBase(), multiply(a.getPower(), b));
 			} else {
 				const p = a.getPower();
 				const pow = b.times(p);

@@ -19,7 +19,7 @@ import { Vector } from '../../src/core/classes/vector/Vector';
 import { message } from '../../src/core/errors';
 import { Settings } from '../../src/core/Settings';
 import { definiteIntegrateNative } from '../../src/math/defint/defintNative';
-import { factorial } from '../../src/math/math';
+import { factorial } from '../../src/math/index';
 
 const allowedLiteralThrows = [
 	['core/classes/parser/scripting/controlFlow.ts', 'throw new ReturnSignal(x)'],
@@ -54,7 +54,7 @@ describe('localized user-facing errors', () => {
 		Settings.LANGUAGE = 'spa';
 
 		expect(() => multiply(Expression.Number(0), Expression.Inf())).toThrow(
-			message('infinityTimesZero')
+			message('undefinedExpression', { expression: '0*Infinity' })
 		);
 
 		const functionName = 'localization_probe_missing_function';

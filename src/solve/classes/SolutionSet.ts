@@ -1,20 +1,41 @@
 import Decimal from 'decimal.js';
 
 import { Expression } from '../../core/classes/expression/Expression';
-import { ALL_SYMBOL, INDEX_VARIABLE, SOLUTIONS_SET } from '../../core/classes/parser/constants';
 import { ValuesSet } from '../../core/classes/valuesSet/ValuesSet';
 import { isNerdamerNativeType } from '../../core/common/common';
-import { DivisionByZeroError, message, UnexpectedDataType } from '../../core/errors';
+import { SOLUTIONS_SET } from '../../core/constants/entityTypes';
+import { ALL_SYMBOL, INTEGER_PARAM } from '../../core/constants/symbolNames';
+import { DivisionByZeroError, message, UndefinedError, UnexpectedDataType, UnsupportedOperationError } from '../../core/errors';
+import { warn } from '../../core/warnings';
 
 import type { ParserValuesObject } from '../../core/classes/parser/types';
-import type { ParserEntity } from '../../core/types';
+import type { ExpressionInput, ParserEntity } from '../../core/types';
 import type { Root } from './FunctionSolver';
+
+type GenerationOptions =
+	| { indices: readonly [ExpressionInput, ExpressionInput]; interval?: never }
+	| { interval: readonly [ExpressionInput, ExpressionInput]; indices?: never };
+
+type GenerationBounds =
+	| { kind: 'indices'; start: bigint; end: bigint }
+	| {
+		kind: 'interval';
+		lower: Expression;
+		upper: Expression;
+		evaluatedLower: Expression;
+		evaluatedUpper: Expression;
+	};
+
+type IntervalBounds = Extract<GenerationBounds, { kind: 'interval' }>;
 
 /** Describes whether accepted solutions were produced by numerical strategies, symbolic strategies, or both. */
 export type SolutionsType = 'numeric' | 'symbolic' | 'mixed' | undefined;
 
 /** Describes whether the stored descriptors represent finite solutions, indexed families, or all values. */
 export type SolutionForm = 'finite' | 'parametric' | 'all';
+
+/** Limits the work performed when materializing integer-indexed solution families. */
+const MAX_GENERATED_MEMBERS = 1000;
 
 /**
  * A finite set of solution descriptors with solver-specific metadata.
@@ -64,6 +85,182 @@ export class SolutionSet extends ValuesSet {
 	/** Tests whether a value is specifically a solver `SolutionSet`. */
 	static isSolutionSet(obj: unknown): obj is SolutionSet {
 		return isNerdamerNativeType(obj, SOLUTIONS_SET);
+	}
+
+	/** Validates the requested range and normalizes bounds for generation. */
+	private checkBounds(options: GenerationOptions): GenerationBounds {
+		const indices = options?.indices;
+		const interval = options?.interval;
+		if ((indices === undefined) === (interval === undefined)) {
+			throw new UnsupportedOperationError(message('unsupportedOperation'));
+		}
+
+		if (indices !== undefined) {
+			if (!Array.isArray(indices) || indices.length !== 2) {
+				throw new RangeError(message('wrongInput', {
+					expected: 'two integer index bounds',
+					received: String(indices),
+				}));
+			}
+
+			const values = indices.map(value => {
+				if (typeof value === 'number' && !Number.isSafeInteger(value)) {
+					throw new RangeError(message('wrongInput', {
+						expected: 'an exact integer (use bigint for large indices)',
+						received: String(value),
+					}));
+				}
+				const expression = Expression.create(value);
+				if (!expression.isNUM() || !expression.getMultiplier().isInteger()) {
+					throw new RangeError(message('wrongInput', {
+						expected: 'an exact integer index',
+						received: expression.text(),
+					}));
+				}
+				return expression.getMultiplier().numerator;
+			});
+			const [start, end] = values;
+			if (start > end) {
+				throw new RangeError(message('invalidInterval', {
+					start: String(start),
+					end: String(end),
+				}));
+			}
+			return { kind: 'indices', start, end };
+		}
+
+		if (!Array.isArray(interval) || interval.length !== 2) {
+			throw new RangeError(message('wrongInput', {
+				expected: 'two interval endpoints',
+				received: String(interval),
+			}));
+		}
+		const [lower, upper] = interval.map(value => Expression.create(value));
+		const numeric = [lower.evaluate(), upper.evaluate()];
+		if (numeric.some(value => !value.isNUM())) {
+			throw new UnsupportedOperationError(message('unsupportedOperation'));
+		}
+		const reversed = numeric[0].getMultiplier().gt(numeric[1].getMultiplier());
+		if (reversed) {
+			throw new RangeError(message('invalidInterval', {
+				start: lower.text(),
+				end: upper.text(),
+			}));
+		}
+		return { kind: 'interval', lower, upper, evaluatedLower: numeric[0], evaluatedUpper: numeric[1] };
+	}
+
+	/** Removes values outside an inclusive real interval; unknown comparisons fail. */
+	private filterInterval(bounds: IntervalBounds): void {
+		for (const value of this.elements) {
+			if (value.isComplex()) {
+				// A known non-real root is outside every real interval.
+				this.delete(value);
+				continue;
+			}
+			if (value.lt(bounds.lower) || value.gt(bounds.upper)) {
+				this.delete(value);
+			} else if (!value.gte(bounds.lower) || !value.lte(bounds.upper)) {
+				throw new UnsupportedOperationError(message('unsupportedOperation'));
+			}
+		}
+	}
+
+	/** Substitutes no more than the remaining candidate budget into one family. */
+	private generateMembers(
+		family: Expression,
+		start: bigint,
+		end: bigint,
+		remaining: number,
+		bounds: GenerationBounds,
+	): number {
+		let attempted = 0;
+		for (let i = start; i <= end && attempted < remaining; i++) {
+			attempted++;
+			try {
+				const member = family.subst(INTEGER_PARAM, i);
+				if (member.isInf()) {
+					continue;
+				}
+				if (bounds.kind === 'interval') {
+					if (member.lt(bounds.lower) || member.gt(bounds.upper)) {
+						continue;
+					}
+					if (!member.gte(bounds.lower) || !member.lte(bounds.upper)) {
+						throw new UnsupportedOperationError(message('unsupportedOperation'));
+					}
+				}
+				this.add(member);
+			} catch (error) {
+				if (!(error instanceof DivisionByZeroError) &&
+					!(error instanceof UndefinedError)) {
+					throw error;
+				}
+			}
+		}
+		return attempted;
+	}
+
+	/** Determines the complete integer-index range of a supported affine family. */
+	private getIndexRange(family: Expression, bounds: IntervalBounds): readonly [bigint, bigint] {
+		const coefficients = family.expand().coeffs(INTEGER_PARAM);
+		const offset = coefficients.getPower(0) ?? Expression.Number(0);
+		const period = coefficients.getPower(1);
+		if (!period || period.isZero() || coefficients.max() !== 1 ||
+			!family.minus(offset.plus(period.times(Expression.N()))).expand().isZero()) {
+			throw new UnsupportedOperationError(message('unsupportedOperation'));
+		}
+
+		// Rational boundaries can be mapped to integer indices without any
+		// floating-point rounding, even when the indices exceed Number.MAX_SAFE_INTEGER.
+		if (offset.isNUM() && period.isNUM() && bounds.lower.isNUM() && bounds.upper.isNUM()) {
+			const first = bounds.lower.getMultiplier().minus(offset.getMultiplier())
+				.div(period.getMultiplier());
+			const last = bounds.upper.getMultiplier().minus(offset.getMultiplier())
+				.div(period.getMultiplier());
+			const left = first.lte(last) ? first : last;
+			const right = first.lte(last) ? last : first;
+			// BigInt division truncates toward zero; adjust for ceiling and floor.
+			const leftQuotient = left.numerator / left.denominator;
+			const rightQuotient = right.numerator / right.denominator;
+			const start = leftQuotient +
+				(left.numerator > 0n && left.numerator % left.denominator !== 0n ? 1n : 0n);
+			const end = rightQuotient -
+				(right.numerator < 0n && right.numerator % right.denominator !== 0n ? 1n : 0n);
+			return [start, end];
+		}
+
+		const base = offset.evaluate();
+		const step = period.evaluate();
+		if (!base.isNUM() || !step.isNUM() || step.isZero()) {
+			throw new UnsupportedOperationError(message('unsupportedOperation'));
+		}
+		const baseValue = base.getMultiplier().toDecimal();
+		const stepValue = step.getMultiplier().toDecimal();
+		const lowerValue = bounds.evaluatedLower.getMultiplier().toDecimal();
+		const upperValue = bounds.evaluatedUpper.getMultiplier().toDecimal();
+		if (!baseValue.isFinite() || !stepValue.isFinite() || stepValue.isZero()) {
+			throw new UnsupportedOperationError(message('unsupportedOperation'));
+		}
+
+		const first = lowerValue.minus(baseValue).div(stepValue);
+		const last = upperValue.minus(baseValue).div(stepValue);
+		if (!first.isFinite() || !last.isFinite()) {
+			throw new UnsupportedOperationError(message('unsupportedOperation'));
+		}
+		// Pad the projected indices to absorb rounding. Exact symbolic comparisons
+		// against the exterior witnesses must still establish that the range is complete.
+		const start = BigInt(Decimal.min(first, last).floor().minus(2).toFixed(0));
+		const end = BigInt(Decimal.max(first, last).ceil().plus(2).toFixed(0));
+		const before = family.subst(INTEGER_PARAM, start - 1n);
+		const after = family.subst(INTEGER_PARAM, end + 1n);
+		const covered = stepValue.isPositive()
+			? before.lt(bounds.lower) && after.gt(bounds.upper)
+			: before.gt(bounds.upper) && after.lt(bounds.lower);
+		if (!covered) {
+			throw new UnsupportedOperationError(message('unsupportedOperation'));
+		}
+		return [start, end];
 	}
 
 	/**
@@ -322,7 +519,6 @@ export class SolutionSet extends ValuesSet {
 
 		return this;
 	}
-
 	/**
 	 * Appends numerical solutions that were already validated by a numerical solver.
 	 *
@@ -347,12 +543,10 @@ export class SolutionSet extends ValuesSet {
 
 		return this;
 	}
-
 	/** Returns an independent Expression copy at the requested insertion-order index. */
 	override at(i: number): Expression | undefined {
 		return super.at(i) as Expression | undefined;
 	}
-
 	/**
 	 * Removes accepted solutions and all solver state so the instance can be reused.
 	 */
@@ -378,6 +572,7 @@ export class SolutionSet extends ValuesSet {
 		}
 		return copy;
 	}
+
 	/**
 	 * Visits or maps accepted solutions in insertion order.
 	 *
@@ -461,6 +656,57 @@ export class SolutionSet extends ValuesSet {
 		}
 	}
 
+	/**
+	 * Materializes finite indexed solutions, selecting either integer indices or
+	 * actual real solution values. Both ranges are inclusive. Returns an independent
+	 * result; hitting the generation budget marks it partial and emits a warning.
+	 */
+	generate(options: GenerationOptions): SolutionSet {
+		const bounds = this.checkBounds(options);
+		if (this.solutionForm === 'all') {
+			throw new UnsupportedOperationError(message('unsupportedOperation'));
+		}
+		const families = this.elements.filter(value => value.hasVariable(INTEGER_PARAM));
+		if (this.excluded.elements.some(value =>
+			Expression.isExpression(value) && value.hasVariable(INTEGER_PARAM)
+		)) {
+			// An indexed exclusion may match at an index outside this generation range.
+			throw new UnsupportedOperationError(message('unsupportedOperation'));
+		}
+
+		const result = this.copy();
+		for (const family of families) {
+			result.delete(family);
+		}
+		if (bounds.kind === 'interval') {
+			result.filterInterval(bounds);
+		}
+
+		let attempted = 0;
+		let limited = false;
+		for (const family of families) {
+			const [start, end] = bounds.kind === 'indices'
+				? [bounds.start, bounds.end]
+				: this.getIndexRange(family, bounds);
+			if (start > end) {
+				continue;
+			}
+			const generated = result.generateMembers(
+				family, start, end, MAX_GENERATED_MEMBERS - attempted, bounds
+			);
+			attempted += generated;
+			if (BigInt(generated) < end - start + 1n) {
+				limited = true;
+				break;
+			}
+		}
+		if (limited) {
+			result.partial = true;
+			warn('solve.generationLimit', message('solvePartialResultWarning'));
+		}
+		return result;
+	}
+
 	/** Returns an independent copy of the currently excluded values. */
 	public getExcluded(): ValuesSet {
 		return this.excluded.copy();
@@ -495,7 +741,7 @@ export class SolutionSet extends ValuesSet {
 				retval = 'all';
 				break;
 			}
-			if (solution.hasVariable(INDEX_VARIABLE)) {
+			if (solution.hasVariable(INTEGER_PARAM)) {
 				retval = 'parametric';
 			}
 		}

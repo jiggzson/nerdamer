@@ -1,14 +1,14 @@
-import { numeric as numericScalar } from '../../../../math/math';
-import { DimensionError, message, UnexpectedDataType } from '../../../errors';
+import { numeric as numericScalar } from '../../../../math/index';
+import { dataTypes } from '../../../constants/entityTypes';
+import { DimensionError, message, NotImplementedError, PolynomialError, UnexpectedDataType, UnsupportedOperationError } from '../../../errors';
 import { Collection } from '../../collection/Collection';
 import { Dictionary } from '../../dictionary/Dictionary';
 import { Equation } from '../../equation/Equation';
 import { Expression } from '../../expression/Expression';
-import { assertPlainVariableAndGetString } from '../../expression/utils';
+import { requireVariableName } from '../../expression/utils';
 import { Matrix } from '../../matrix/Matrix';
 import { ValuesSet } from '../../valuesSet/ValuesSet';
 import { Vector } from '../../vector/Vector';
-import { dataTypes } from '../constants';
 
 import type { ParserEntity } from '../../../types';
 import type { DeferredFunctionArgument, ParserValuesObject } from '../types';
@@ -69,7 +69,7 @@ export function evaluate(
 						message('expressionExpected', { type: dataTypes[variable.dataType] })
 					);
 				}
-				values[assertPlainVariableAndGetString(variable)] = resolvedPoint.elements[i];
+				values[requireVariableName(variable)] = resolvedPoint.elements[i];
 			}
 		} else {
 			if (!Dictionary.isDictionary(resolved)) {
@@ -99,7 +99,11 @@ export function evaluate(
 		} else {
 			retval = input.evaluate();
 		}
-	} catch {
+	} catch (error) {
+		if (!(error instanceof UnsupportedOperationError ||
+			error instanceof NotImplementedError || error instanceof PolynomialError)) {
+			throw error;
+		}
 		retval = input;
 	}
 

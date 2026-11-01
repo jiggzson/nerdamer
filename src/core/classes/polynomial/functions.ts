@@ -1,7 +1,7 @@
+import { CONTENT, DEG } from '../../constants/functionNames';
 import { Expression } from '../expression/Expression';
 import { zero } from '../expression/shortcuts';
-import { assertPlainVariableAndGetString } from '../expression/utils';
-import { CONTENT, DEG } from '../parser/constants';
+import { requireVariableName } from '../expression/utils';
 import { Vector } from '../vector/Vector';
 
 import { Polynomial } from './Polynomial';
@@ -36,7 +36,7 @@ export function deg(x: ExpressionInput | Polynomial, variable?: ExpressionInput)
 
 	if (variable !== undefined) {
 		variableExpression = Expression.create(variable);
-		variableName = assertPlainVariableAndGetString(variableExpression);
+		variableName = requireVariableName(variableExpression);
 	}
 
 	let retval: Expression | undefined = undefined;
@@ -130,7 +130,7 @@ export function coeffs(x: ExpressionInput, variable?: ExpressionInput): Vector {
 	let variableName: string | undefined;
 
 	if (variable !== undefined) {
-		variableName = assertPlainVariableAndGetString(Expression.create(variable));
+		variableName = requireVariableName(Expression.create(variable));
 	} else {
 		variableName = expression.variables()[0];
 	}

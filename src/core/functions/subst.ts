@@ -1,3 +1,4 @@
+import { hasAssumptions } from '../classes/assumption/assume';
 import { Expression } from '../classes/expression/Expression';
 import { one, zero } from '../classes/expression/shortcuts';
 import { sum, product } from '../classes/expression/utils';
@@ -236,8 +237,10 @@ export function subst(
 	if (expression.isNUM() && !includeNumeric) {
 		retval = expression;
 	}
-	// We next move to the most obvious substitution which is the expression is equal to the value
-	else if (expression.eq(value)) {
+	// Ordinary function nodes cannot algebraically equal a plain variable without
+	// assumptions; avoid repeating symbolic comparison at every nested level.
+	else if (!(expression.isFunction() && value.isPlainVariable() && !hasAssumptions()) &&
+		expression.eq(value)) {
 		retval = withValue;
 	}
 	// A variable can carry its coefficient and numeric power on the node itself. Replace
@@ -341,8 +344,9 @@ export function uSub(
 	x = Expression.create(x);
 	value = Expression.create(value);
 
-	// Get a suitable u
-	const u = getU(x, map);
+	// Reuse the same symbol when related expressions share a substitution map.
+	const valueText = value.text();
+	const u = Object.keys(map).find(key => map[key].text() === valueText) ?? getU(x, map);
 
 	// Perform the substitution
 	const subbed = subst(x, value, _(u));
@@ -590,3 +594,4 @@ export function uSubEXP(expression: Expression, map?: MapObjectType): [Expressio
 
 	return [expression, map];
 }
+

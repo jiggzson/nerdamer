@@ -1,6 +1,6 @@
 {
 	"name": "nerdamer",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"publishConfig": {
 		"tag": "latest"
 	},
@@ -16,9 +16,7 @@
 		"docs-data",
 		"index.d.ts",
 		"README.md",
-		"BREAKING_CHANGES.md",
-		"docs/MIGRATING_FROM_1X.md",
-		"docs/RELEASE_NOTES_2.md"
+		"BREAKING_CHANGES.md"
 	],
 	"scripts": {
 		"lint": "eslint ./src/**/*.ts",
@@ -35,10 +33,13 @@
 		"build:all-languages": "npm run build:modules && npm run build:bundle:all-languages && node tools/smoke-build.cjs full",
 		"build": "npm run build:full",
 		"docs:parser": "ts-node tools/generate-parser-docs.ts",
+		"docs:update": "node tools/update-docs.mjs",
+		"docs:check": "node tools/check-public-export-docs.mjs",
 		"validate:package": "ts-node tools/validate-package.ts",
-		"prepublishOnly": "npm run typecheck && npm run test && npm run test:coverage && npm run build && npm run validate:package",
+		"prepublishOnly": "npm run test && npm run typecheck && npm run test:coverage && npm run build && npm run validate:package",
 		"clean:modules": "node -e \"require('node:fs').rmSync('output', { recursive: true, force: true })\"",
-		"clean:dist": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\""
+		"clean:dist": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+		"dev": "nodemon ./tools/dev.ts"
 	},
 	"repository": {
 		"type": "git",
@@ -98,11 +99,13 @@
 		"eslint-plugin-perfectionist": "^5.6.0",
 		"html-webpack-plugin": "^5.6.4",
 		"jest": "^30.2.0",
+		"nodemon": "^3.1.10",
 		"prettier": "^3.8.1",
 		"terser-webpack-plugin": "^5.3.14",
 		"ts-jest": "^29.4.6",
 		"ts-loader": "^9.5.4",
 		"ts-node": "^10.9.2",
+		"tsx": "^4.20.6",
 		"typedoc": "^0.28.17",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.70.1",
@@ -119,6 +122,11 @@
 			"types": "./output/api/core.d.ts",
 			"require": "./output/api/core.js",
 			"default": "./output/api/core.js"
+		},
+		"./constants": {
+			"types": "./output/api/constants.d.ts",
+			"require": "./output/api/constants.js",
+			"default": "./output/api/constants.js"
 		},
 		"./algebra": {
 			"types": "./output/api/algebra.d.ts",
@@ -163,12 +171,25 @@
 		"./docs-data/parser-functions.json": "./docs-data/parser-functions.json",
 		"./docs-data/typedoc.json": "./docs-data/typedoc.json",
 		"./dist/bundle.js": "./dist/bundle.js",
-		"./package.json": "./package.json"
+		"./package.json": "./package.json",
+		"./special": {
+			"types": "./output/api/special.d.ts",
+			"require": "./output/api/special.js",
+			"default": "./output/api/special.js"
+		},
+		"./statistics": {
+			"types": "./output/api/statistics.d.ts",
+			"require": "./output/api/statistics.js",
+			"default": "./output/api/statistics.js"
+		}
 	},
 	"typesVersions": {
 		"*": {
 			"core": [
 				"output/api/core.d.ts"
+			],
+			"constants": [
+				"output/api/constants.d.ts"
 			],
 			"algebra": [
 				"output/api/algebra.d.ts"
@@ -193,6 +214,12 @@
 			],
 			"debug": [
 				"output/api/debug.d.ts"
+			],
+			"special": [
+				"output/api/special.d.ts"
+			],
+			"statistics": [
+				"output/api/statistics.d.ts"
 			]
 		}
 	}

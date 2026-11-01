@@ -91,7 +91,7 @@ describe('Assumption', () => {
 			expect(() => Assumption.parse('x>')).toThrow();
 			expect(() => Assumption.parse('x?3')).toThrow();
 			expect(() => Assumption.parse('x>y')).toThrow();
-			expect(() => Assumption.parse('x=1/2')).toThrow();
+			expect(Assumption.parse('x=1/2').assumption.getSingletonValue()?.getMultiplier().eq('1/2')).toBe(true);
 			expect(() => Assumption.parse('2x>0')).toThrow();
 		});
 	});

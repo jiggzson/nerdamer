@@ -3,7 +3,7 @@ import { Expression } from '../core/classes/expression/Expression';
 import { zero } from '../core/classes/expression/shortcuts';
 import { Matrix } from '../core/classes/matrix/Matrix';
 import { Vector } from '../core/classes/vector/Vector';
-import { message } from '../core/errors';
+import { message, DimensionError } from '../core/errors';
 /**
  * Discriminated result of exact symbolic linear-system reduction.
  *
@@ -101,96 +101,88 @@ export function solveLinearSystem(
 		augRows.push(row);
 	}
 
-	const augmented = new Matrix(...augRows);
-
-	// RREF
-	const R = augmented.rref();
-	const rRows = R.rows();
-	// const rCols = R.cols(); // = numCols + 1
-	const z = zero();
-
-	// Identify pivots and check consistency
-	const pivotCol: number[] = []; // pivotCol[i] = column of pivot in row i, or -1
-	for (let i = 0; i < rRows; i++) {
-		let found = -1;
-		for (let j = 0; j < numCols; j++) {
-			if (!R.get(i, j).eq(z)) {
-				found = j;
-				break;
-			}
-		}
-
-		if (found === -1) {
-			// All variable columns are zero — check augmented column
-			const rhs = R.get(i, numCols);
-			if (!rhs.eq(z)) {
-				return { type: 'inconsistent' };
-			}
-			// Otherwise it's a trivial 0 = 0 row
-			pivotCol.push(-1);
-		} else {
-			pivotCol.push(found);
-		}
-	}
-
-	// Identify pivot vs free variable columns
-	const pivotColSet = new Set<number>();
-	for (const pc of pivotCol) {
-		if (pc !== -1) {
-			pivotColSet.add(pc);
-		}
-	}
-
-	const freeColIndices: number[] = [];
-	for (let j = 0; j < numCols; j++) {
-		if (!pivotColSet.has(j)) {
-			freeColIndices.push(j);
-		}
-	}
-
-	// Unique solution
-	if (freeColIndices.length === 0) {
+	const result = solveAugmentedLinearSystem(augRows, numCols);
+	if (result.type === 'unique') {
 		const solutions: Record<string, Expression> = {};
-		for (let i = 0; i < rRows; i++) {
-			const pc = pivotCol[i];
-			if (pc !== -1) {
-				solutions[vars[pc]] = R.get(i, numCols);
-			}
+		for (let i = 0; i < vars.length; i++) {
+			solutions[vars[i]] = result.values[i];
 		}
 		return { type: 'unique', solutions };
 	}
+	if (result.type === 'inconsistent') {
+		return { type: 'inconsistent' };
+	}
 
-	// Infinite solutions
-	// Free variables are parameters; pivot variables are expressed in terms of them.
-	const freeVariables = freeColIndices.map(j => vars[j]);
+	const { reduced, pivotColumns, freeColumns } = result;
+	const freeVariables = freeColumns.map(j => vars[j]);
 	const solutions: Record<string, Expression> = {};
-
-	// Free variables map to themselves
 	for (const freeVar of freeVariables) {
 		solutions[freeVar] = Expression.create(freeVar);
 	}
-
-	// Pivot variables: x_pivot = rhs - sum(coeff * freeVar)
-	for (let i = 0; i < rRows; i++) {
-		const pc = pivotCol[i];
-		if (pc === -1) {
-			continue;
-		}
-
-		let expr: Expression = R.get(i, numCols);
-
-		for (const fj of freeColIndices) {
-			const coeff = R.get(i, fj);
-			if (!coeff.eq(z)) {
-				// x_pivot = rhs - coeff * freeVar
-				expr = expr.minus(coeff.times(Expression.create(vars[fj])));
+	for (let i = 0; i < pivotColumns.length; i++) {
+		const pivot = pivotColumns[i];
+		if (pivot < 0) {continue;}
+		let value = reduced.get(i, numCols);
+		for (const free of freeColumns) {
+			const coefficient = reduced.get(i, free);
+			if (!coefficient.isZero()) {
+				value = value.minus(coefficient.times(Expression.create(vars[free])));
 			}
 		}
-
-		solutions[vars[pc]] = expr;
+		solutions[vars[pivot]] = value;
 	}
-
 	return { type: 'infinite', solutions, freeVariables };
+}
+
+/**
+ * Reduce an augmented symbolic matrix without reconstructing equations.
+ * The final column is the right-hand side; earlier columns are unknowns.
+ */
+export function solveAugmentedLinearSystem(
+	rows: Expression[][],
+	count: number
+):
+	| { type: 'unique'; values: Expression[] }
+	| { type: 'infinite'; reduced: Matrix; pivotColumns: number[]; freeColumns: number[] }
+	| { type: 'inconsistent' } {
+	if (!Number.isInteger(count) || count < 0 || rows.some(row => row.length !== count + 1)) {
+		throw new DimensionError(message('wrongInput', { expected: 'an augmented matrix with count + 1 columns', received: 'incompatible dimensions' }));
+	}
+	if (rows.length === 0) {
+		return count === 0
+			? { type: 'unique', values: [] }
+			: { type: 'infinite', reduced: new Matrix(), pivotColumns: [], freeColumns: Array.from({ length: count }, (_, i) => i) };
+	}
+	const reduced = new Matrix(...rows).rref();
+	const pivotColumns: number[] = [];
+	let inconsistent = false;
+	for (let i = 0; i < reduced.rows(); i++) {
+		let pivot = -1;
+		for (let j = 0; j < count; j++) {
+			if (!reduced.get(i, j).isZero()) {
+				pivot = j;
+				break;
+			}
+		}
+		if (pivot < 0 && !reduced.get(i, count).isZero()) {
+			inconsistent = true;
+		}
+		pivotColumns.push(pivot);
+	}
+	const used = new Set(pivotColumns);
+	const freeColumns = Array.from({ length: count }, (_, i) => i)
+		.filter(i => !used.has(i));
+	if (inconsistent) {
+		return { type: 'inconsistent' };
+	}
+	if (freeColumns.length !== 0) {
+		return { type: 'infinite', reduced, pivotColumns, freeColumns };
+	}
+	const values = new Array<Expression>(count);
+	for (let i = 0; i < pivotColumns.length; i++) {
+		if (pivotColumns[i] >= 0) {values[pivotColumns[i]] = reduced.get(i, count);}
+	}
+	return { type: 'unique', values };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

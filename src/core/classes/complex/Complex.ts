@@ -8,7 +8,7 @@ import { DivisionByZeroError, message } from '../../errors';
  * @remarks
  * This class is a numerical helper used by algorithms such as polynomial root solving. It is
  * distinct from Nerdamer's symbolic complex expressions: it does not parse expressions, carry
- * symbolic structure, or implement branch-sensitive transcendental functions. Component
+ * symbolic structure, or manage symbolic principal-branch simplification. Its logarithm and power\n * use the numerical principal branch. Component
  * arithmetic follows the active global `decimal.js` precision.
  *
  * Arithmetic methods return new `Complex` objects rather than modifying the receiver. The
@@ -111,17 +111,18 @@ export class Complex {
 		);
 	}
 
-	/**
-	 * Multiplies two rectangular complex values.
-	 *
-	 * @param other - Complex factor.
-	 * @returns A new complex product.
-	 */
-	mul(other: Complex): Complex {
-		return new Complex(
-			this.re.mul(other.re).minus(this.im.mul(other.im)),
-			this.re.mul(other.im).plus(this.im.mul(other.re))
-		);
+	/** Computes exp(re + im*i) without losing Decimal precision. */
+	exp(): Complex {
+		const magnitude = this.re.exp();
+		return new Complex(magnitude.mul(this.im.cos()), magnitude.mul(this.im.sin()));
+	}
+
+	/** Principal logarithm, with its argument in (-pi, pi]. */
+	log(): Complex {
+		if (this.re.isZero() && this.im.isZero()) {
+			throw new DivisionByZeroError(message('divisionByZero'));
+		}
+		return new Complex(this.abs().ln(), Decimal.atan2(this.im, this.re));
 	}
 
 	/**
@@ -131,6 +132,11 @@ export class Complex {
 	 */
 	neg(): Complex {
 		return new Complex(this.re.neg(), this.im.neg());
+	}
+
+	/** Principal complex power exp(exponent * log(this)). */
+	pow(exponent: Complex): Complex {
+		return this.log().times(exponent).exp();
 	}
 
 	/**
@@ -169,5 +175,18 @@ export class Complex {
 	 */
 	sub(other: Complex): Complex {
 		return new Complex(this.re.minus(other.re), this.im.minus(other.im));
+	}
+
+	/**
+	 * Multiplies two rectangular complex values.
+	 *
+	 * @param other - Complex factor.
+	 * @returns A new complex product.
+	 */
+	times(other: Complex): Complex {
+		return new Complex(
+			this.re.mul(other.re).minus(this.im.mul(other.im)),
+			this.re.mul(other.im).plus(this.im.mul(other.re))
+		);
 	}
 }

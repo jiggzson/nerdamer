@@ -1,7 +1,8 @@
 import { allEqual } from '../../utils/array';
 import { Expression } from '../classes/expression/Expression';
 import { one, zero } from '../classes/expression/shortcuts';
-import { INFINITY, WRAP } from '../classes/parser/constants';
+import { WRAP } from '../constants/parserSyntax';
+import { INFINITY } from '../constants/symbolNames';
 import { message, MissingReferenceError } from '../errors';
 
 import { BaseConverter } from './BaseConverter';

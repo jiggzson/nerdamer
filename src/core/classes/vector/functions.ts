@@ -1,6 +1,7 @@
+import { dataTypes } from '../../constants/entityTypes';
+import { CROSS, DOT_PRODUCT } from '../../constants/functionNames';
 import { message, UnexpectedDataType } from '../../errors';
 import { Expression } from '../expression/Expression';
-import { CROSS, DOT_PRODUCT, dataTypes } from '../parser/constants';
 
 import { Vector } from './Vector';
 
@@ -33,14 +34,23 @@ export function dot(a: ParserEntity, b: ParserEntity): Expression {
 }
 
 /**
- * Computes a three-dimensional cross product or preserves symbolic operands.
+ * Computes the cross product of two vectors in 0, 1, 3, or 7 dimensions.
  *
- * @param a - First Vector, or a symbolic Expression operand.
- * @param b - Second Vector, or a symbolic Expression operand.
- * @returns The Vector cross product, or an unevaluated `cross(a, b)` Expression
- * when both operands are Expressions.
- * @throws {@link core!UnexpectedDataType} For incompatible parser operand types.
- * @throws {@link core!DimensionError} Unless both Vectors have exactly three elements.
+ * The three-dimensional result is the familiar cross product; the
+ * seven-dimensional result follows the fixed octonion convention documented
+ * on {@link Vector.cross}. The 7D multiplication table is not uniquely
+ * determined by dimension alone. Zero- and one-dimensional results are zero
+ * vectors. Other dimensions are unsupported.
+ *
+ * Two symbolic Expressions are instead left as an unevaluated `cross(a, b)`
+ * call, because their dimensions are not known.
+ *
+ * @param a - First Vector or symbolic Expression.
+ * @param b - Second Vector or symbolic Expression.
+ * @returns A new Vector for two supported Vectors; otherwise an unevaluated
+ * `cross(a, b)` Expression when both arguments are symbolic Expressions.
+ * @throws {@link core!UnexpectedDataType} If the operands have incompatible types.
+ * @throws {@link core!DimensionError} If Vector lengths differ or are not 0, 1, 3, or 7.
  */
 export function cross(a: Vector, b: Vector): Vector;
 export function cross(a: Expression, b: Expression): Expression;

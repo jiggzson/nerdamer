@@ -70,7 +70,10 @@ describe('Rational Division and Multiplication', () => {
 		expect(Rational.create('3.0').div(Rational.create('5')).asDecimal).toBe(true);
 	});
 	it('should convert scientific numbers to decimals after dividing', () => {
-		expect(Rational.create('3.0').div(Rational.create('5')).asDecimal).toBe(true);
+		const result = Rational.create('3e-1').div(Rational.create('5'));
+
+		expect(result.text()).toEqual('0.06');
+		expect(result.asDecimal).toBe(true);
 	});
 });
 describe('Rational absolute value', () => {

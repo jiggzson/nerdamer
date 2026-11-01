@@ -5,8 +5,10 @@ import * as algebraApi from '../src/api/algebra';
 import * as assumptionsApi from '../src/api/assumptions';
 import * as calculusApi from '../src/api/calculus';
 import * as solveApi from '../src/api/solve';
+import * as specialApi from '../src/api/special';
+import * as statisticsApi from '../src/api/statistics';
 import * as structuresApi from '../src/api/structures';
-import { registerNerdamerFunctions } from '../src/core/fullFunctions';
+import { registerNerdamerFunctions } from '../src/core/nerdamerFunctions';
 import { mathFunctionRegistry } from '../src/core/dispatch';
 import type { ParserRegistrationLevel, ParserUsage } from '../src/core/dispatch';
 
@@ -23,6 +25,7 @@ export type ParserFunctionCategory =
 	| 'Polynomials'
 	| 'Solving'
 	| 'Special functions'
+	| 'Statistics'
 	| 'Trigonometry';
 
 type DirectApiPackage = keyof typeof DIRECT_API_MODULES;
@@ -82,6 +85,8 @@ const DIRECT_API_MODULES = {
 	'nerdamer/assumptions': assumptionsApi,
 	'nerdamer/calculus': calculusApi,
 	'nerdamer/solve': solveApi,
+	'nerdamer/special': specialApi,
+	'nerdamer/statistics': statisticsApi,
 	'nerdamer/structures': structuresApi,
 } as const;
 
@@ -92,33 +97,37 @@ const CATEGORY_MEMBERS: Record<ParserFunctionCategory, readonly string[]> = {
 		'atanh', 'asech', 'acsch', 'acoth',
 	],
 	Math: [
-		'abs', 'sqrt', 'nthroot', 'cbrt', 'subst', 'log', 'exp', 'erf', 'erfc', 'gamma',
-		'delta', 'heaviside', 'hypot', 'fact', 'factorial', 'dfact', 'expand', 'round', 'sign',
+		'abs', 'sqrt', 'nthroot', 'cbrt', 'subst', 'log', 'exp',
+		'delta', 'heaviside', 'hypot', 'fact', 'factorial', 'dfact', 'dfactorial', 'expand', 'round', 'significant', 'sign',
 		'floor', 'ceil', 'ceiling', 'trunc', 'mod', 'modinv', 'numeric', 'parens', 'count', 'size', 'contains',
 		'max', 'min', 'radians', 'degrees', 'log10', 'step', 'rect', 'tri', 'continued_fraction', 'scientific',
 	],
-	Complex: ['imagpart', 'realpart', 'polarform', 'rectform', 'arg', 'csgn', 'conjugate'],
+	Complex: ['imagpart', 'realpart', 'polarform', 'rectform', 'arg', 'phase', 'magnitude', 'csgn', 'conjugate'],
 	'Linear algebra': [
 		'matrix', 'imatrix', 'determinant', 'invert', 'transpose', 'augment', 'rref', 'nullspace', 'dot', 'cross', 'line',
 	],
 	Polynomials: ['deg', 'content', 'coeffs', 'div', 'divide'],
 	Calculus: ['diff', 'integrate', 'limit', 'laplace', 'ilaplace', 'sum', 'product', 'defint', 'S', 'C'],
 	Algebra: ['polyfactors', 'factor', 'pfactor', 'pfactord', 'simplify', 'partfrac', 'gcd', 'lcm', 'groebner', 'sqcomp'],
-	Solving: ['solve', 'solveeqs', 'roots'],
+	Solving: ['solve', 'solveeqs', 'realsolutions', 'roots'],
 	'Assumptions and sets': ['assume', 'forget', 'unassign'],
 	'Nerdamer Language': [
 		'evaluate', 'return', 'break', 'continue', 'and', 'or', 'not', 'xor', 'iferror', 'iserror',
 		'if', 'while', 'for', 'each', 'let', 'block',
 	],
 	'Special functions': [
-		'isprime', 'fib', 'sinc', 'Shi', 'Si', 'Chi', 'Ci', 'Ei', 'Li',
+		'isprime', 'fib', 'erf', 'erfc', 'gamma', 'sinc', 'Shi', 'Si', 'Chi', 'Ci', 'Ei', 'Li',
 		'gamma_incomplete', 'gamma_incomplete_lower',
 	],
+	Statistics: ['mean', 'median', 'mode', 'smpvar', 'variance', 'smpstdev', 'stdev', 'zscore'],
 };
 
 const ALIAS_GROUPS = [
 	{ canonicalName: 'factorial', aliases: ['fact'] },
+	{ canonicalName: 'dfact', aliases: ['dfactorial'] },
 	{ canonicalName: 'ceil', aliases: ['ceiling'] },
+	{ canonicalName: 'arg', aliases: ['phase'] },
+	{ canonicalName: 'abs', aliases: ['magnitude'] },
 ] as const;
 
 const DIRECT_API_BY_PARSER_NAME: Record<string, ParserFunctionDirectApi> = {
@@ -144,6 +153,26 @@ const DIRECT_API_BY_PARSER_NAME: Record<string, ParserFunctionDirectApi> = {
 	sum: { package: 'nerdamer/calculus', name: 'sum' },
 	product: { package: 'nerdamer/calculus', name: 'product' },
 	defint: { package: 'nerdamer/calculus', name: 'defint' },
+	erf: { package: 'nerdamer/special', name: 'erf' },
+	erfc: { package: 'nerdamer/special', name: 'erfc' },
+	gamma: { package: 'nerdamer/special', name: 'gamma' },
+	gamma_incomplete: { package: 'nerdamer/special', name: 'gammaIncomplete' },
+	gamma_incomplete_lower: { package: 'nerdamer/special', name: 'gammaIncompleteLower' },
+	sinc: { package: 'nerdamer/special', name: 'sinc' },
+	Shi: { package: 'nerdamer/special', name: 'Shi' },
+	Si: { package: 'nerdamer/special', name: 'Si' },
+	Chi: { package: 'nerdamer/special', name: 'Chi' },
+	Ci: { package: 'nerdamer/special', name: 'Ci' },
+	Ei: { package: 'nerdamer/special', name: 'Ei' },
+	Li: { package: 'nerdamer/special', name: 'Li' },
+	mean: { package: 'nerdamer/statistics', name: 'mean' },
+	median: { package: 'nerdamer/statistics', name: 'median' },
+	mode: { package: 'nerdamer/statistics', name: 'mode' },
+	smpvar: { package: 'nerdamer/statistics', name: 'smpvar' },
+	variance: { package: 'nerdamer/statistics', name: 'variance' },
+	smpstdev: { package: 'nerdamer/statistics', name: 'smpstdev' },
+	stdev: { package: 'nerdamer/statistics', name: 'stdev' },
+	zscore: { package: 'nerdamer/statistics', name: 'zscore' },
 	S: { package: 'nerdamer/calculus', name: 'S' },
 	C: { package: 'nerdamer/calculus', name: 'C' },
 	solve: { package: 'nerdamer/solve', name: 'solve' },
@@ -313,6 +342,20 @@ const AUTHORED_DOCUMENTATION: Record<string, AuthoredParserFunctionDocumentation
 		],
 		examples: [
 			{ input: "nerdamer('limit(sin(x)/x,x,0)').text()" },
+		],
+	},
+	realsolutions: {
+		summary: 'Selects distinct real solution values from a SolutionSet or an existing system result.',
+		syntax: 'realsolutions(solutionSet, lower, upper) | realsolutions(systems, variable, lower, upper)',
+		parameters: [
+			{ name: 'solutionSetOrSystems', description: 'A SolutionSet from solve, or a Vector of Dictionary assignments from solveeqs.' },
+			{ name: 'variable', description: 'Required for system results: a plain variable whose distinct real values form the returned SolutionSet.' },
+			{ name: 'lower', description: 'Inclusive finite real lower bound of the requested interval.' },
+			{ name: 'upper', description: 'Inclusive finite real upper bound of the requested interval.' },
+		],
+		examples: [
+			{ input: "nerdamer('realsolutions(solve(cos(x),x),-10,10)').text()" },
+			{ input: "nerdamer('realsolutions(solveeqs([x+y=3,x-y=1]),x,1,3)').text()" },
 		],
 	},
 	solve: {

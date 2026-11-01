@@ -9,6 +9,7 @@ export function loadComplexFunctions() {
 		polarform: systemFunction({ fn: polarForm, minArgs: 1, maxArgs: 1, distElWise: true }),
 		rectform: systemFunction({ fn: rectForm, minArgs: 1, maxArgs: 1, distElWise: true }),
 		arg: systemFunction({ fn: arg, minArgs: 1, maxArgs: 1, distElWise: true }),
+		phase: systemFunction({ fn: arg, minArgs: 1, maxArgs: 1, distElWise: true }),
 		csgn: systemFunction({ fn: csgn, minArgs: 1, maxArgs: 1, distElWise: true }),
 		conjugate: systemFunction({ fn: conjugate, minArgs: 1, maxArgs: 1, distElWise: true }),
 	});

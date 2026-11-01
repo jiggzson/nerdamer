@@ -1,6 +1,8 @@
 import { diff as derivative } from '../../calculus/derivative/diff';
 import { Expression } from '../../core/classes/expression/Expression';
+import { message } from '../../core/errors';
 import { diff } from '../../core/functions/numeric';
+import { warn } from '../../core/warnings';
 
 import type { ParserValuesObject } from '../../core/classes/parser/types';
 import type { ExpressionInput } from '../../core/types';
@@ -63,7 +65,8 @@ export class Solver {
 		return points;
 	}
 
-	newton(f: (x: number) => number, point: number) {
+	/** Refines a numeric root; onLimit reports iteration exhaustion to the caller. */
+	newton(f: (x: number) => number, point: number, onLimit?: () => void) {
 		let iters = 0;
 		let x0 = point;
 		const fp = diff(f);
@@ -79,6 +82,7 @@ export class Solver {
 
 			iters++;
 			if (iters > this.newtonMaxIterations) {
+				onLimit?.();
 				return;
 			} //maximum iterations reached
 
@@ -93,7 +97,8 @@ export class Solver {
 		}
 	}
 
-	newtonSymbolic(f: Expression, p: Expression, variable: string) {
+	/** Refines a symbolic root; onLimit reports iteration exhaustion to the caller. */
+	newtonSymbolic(f: Expression, p: Expression, variable: string, onLimit?: () => void) {
 		let iters = 0;
 		let x0 = p.getMultiplier().toDecimal();
 		const fp = derivative(f, variable);
@@ -103,6 +108,7 @@ export class Solver {
 		do {
 			const fx0 = f.evaluate(values);
 			if (iters++ > this.newtonMaxSymbolicIterations) {
+				onLimit?.();
 				return;
 			} //maximum iterations reached
 
@@ -120,13 +126,19 @@ export class Solver {
 		const g = f.buildFunction();
 		const points = this.getPoints(g);
 		const solutions: number[] = [];
+		let exhausted = 0;
 		for (const p of points) {
-			const solution = this.newton(g, p);
+			const solution = this.newton(g, p, () => { exhausted++; });
 			if (solution !== undefined) {
 				solutions.push(solution);
 			}
 		}
 
+		if (exhausted > 0) {
+			warn('solve.iterationLimit', message('rootIterationWarning', {
+				count: String(exhausted), iterations: String(this.newtonMaxIterations),
+			}));
+		}
 		return [...new Set(solutions)];
 	}
 	solveSymbolic(f: ExpressionInput) {
@@ -135,13 +147,19 @@ export class Solver {
 		const points = this.getPoints(g);
 		const variable = f.variables()[0];
 		const solutions: { [key: string]: Decimal } = {};
+		let exhausted = 0;
 		for (const p of points) {
-			const solution = this.newtonSymbolic(f, Expression.Number(p), variable);
+			const solution = this.newtonSymbolic(f, Expression.Number(p), variable, () => { exhausted++; });
 			if (solution !== undefined) {
 				solutions[solution.toString()] = solution;
 			}
 		}
 
+		if (exhausted > 0) {
+			warn('solve.iterationLimit', message('rootIterationWarning', {
+				count: String(exhausted), iterations: String(this.newtonMaxSymbolicIterations),
+			}));
+		}
 		return Object.values(solutions);
 	}
 }

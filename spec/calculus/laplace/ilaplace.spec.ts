@@ -2,11 +2,22 @@ import { ilaplace } from '../../../src/calculus/laplace/ilaplace';
 import { laplace } from '../../../src/calculus/laplace/laplace';
 import { Expression } from '../../../src/core/classes/expression/Expression';
 import { ILAPLACE } from '../../../src/core/classes/parser/constants';
+import { UnexpectedInputError } from '../../../src/core/errors';
 import nerdamer from '../../../src/index';
 
 const text = (expr: string | number) => Expression.create(expr).text();
 
 describe('Inverse Laplace', () => {
+	it('requires plain transform and time variables', () => {
+		expect(ilaplace('s^-2', 's', 't').text()).toEqual(text('t'));
+		for (const variable of ['2*s', 's^2', 's^-1']) {
+			expect(() => ilaplace('s^-2', variable, 't')).toThrow(UnexpectedInputError);
+		}
+		for (const variable of ['3*t', 't^2', 't^-1']) {
+			expect(() => ilaplace('s^-2', 's', variable)).toThrow(UnexpectedInputError);
+		}
+	});
+
 	it('round trip checks', () => {
 		expect(ilaplace(laplace('t', 't', 's'), 's', 't').text()).toEqual(text('t'));
 		expect(ilaplace(laplace('e^t', 't', 's'), 's', 't').text()).toEqual(text('e^t'));

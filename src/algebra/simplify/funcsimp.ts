@@ -1,7 +1,7 @@
 import { Expression } from '../../core/classes/expression/Expression';
 import { one, zero } from '../../core/classes/expression/shortcuts';
-import { FACTORIAL } from '../../core/classes/parser/constants';
-import { LOG } from '../../core/classes/parser/constants';
+import { FACTORIAL, LOG } from '../../core/constants/functionNames';
+import { primeFactorCounts } from '../../core/functions/bigint/primeFactor';
 
 const MAX_FACTORIAL_ARGUMENT_DIFFERENCE = 100;
 
@@ -276,6 +276,57 @@ export function simplifyFactorials(x: Expression): Expression {
 //   3. For symbolic coefficients: group by matching coefficient, combine
 // ============================================================================
 
+
+/**
+ * Reduces a ratio of positive-integer logarithms using exact prime multiplicities.
+ * Leaves unrelated logarithms and products untouched.
+ */
+export function simplifyLogRatio(x: Expression): Expression {
+	let retval = x;
+	if (x.isProduct() && x.getPower().isOne()) {
+		const factors = x.elementsArray();
+		if (factors.length === 2) {
+			const numerator = factors.find(t => t.isFunction(LOG) && t.getPower().isOne());
+			const denominator = factors.find(t => t.isFunction(LOG) && t.getPower().eq(one().neg()));
+			if (numerator && denominator &&
+				numerator.getMultiplier().isOne() && denominator.getMultiplier().isOne()) {
+				const a = numerator.getArguments()[0];
+				const b = denominator.getArguments()[0];
+				if (a?.isNUM() && b?.isNUM() && a.isInteger() && b.isInteger() &&
+					a.gt(one()) && b.gt(one())) {
+					const numeratorCounts = primeFactorCounts(a.getMultiplier().numerator);
+					const denominatorCounts = primeFactorCounts(b.getMultiplier().numerator);
+					const primes = new Set([...Object.keys(numeratorCounts), ...Object.keys(denominatorCounts)]);
+					let ratioNumerator = 0n;
+					let ratioDenominator = 0n;
+					let proportional = true;
+					for (const prime of primes) {
+						const n = numeratorCounts[prime] ?? 0n;
+						const d = denominatorCounts[prime] ?? 0n;
+						if (n === 0n || d === 0n) {
+							proportional = false;
+							break;
+						}
+						if (ratioDenominator === 0n) {
+							ratioNumerator = n;
+							ratioDenominator = d;
+						} else if (n * ratioDenominator !== d * ratioNumerator) {
+							proportional = false;
+							break;
+						}
+					}
+					if (proportional && ratioDenominator !== 0n) {
+						retval = Expression.create(ratioNumerator.toString())
+							.div(Expression.create(ratioDenominator.toString()))
+							.times(Expression.fromRational(x.getMultiplier()));
+					}
+				}
+			}
+		}
+	}
+	return retval;
+}
+
 interface LogTerm {
 	coeff: Expression; // the coefficient (everything except log(...))
 	arg: Expression; // the argument to log
@@ -385,6 +436,14 @@ function liftCoefficientIntoPower(arg: Expression, coeff: Expression): Expressio
 	return arg.pow(absCoeff);
 }
 
+/** Build a combined logarithm without retaining decimal formatting on exact numeric arguments. */
+function combinedLog(arg: Expression): Expression {
+	const exactArg = arg.isNUM()
+		? Expression.Number(arg.getMultiplier().numerator).div(Expression.Number(arg.getMultiplier().denominator))
+		: arg;
+	return exactArg.isOne() ? zero() : Expression.toFunction(LOG, [exactArg]);
+}
+
 /**
  * Combines logarithmic terms in a sum expression when their arguments are
  * provably positive real values. Unknown-sign logarithms are left unchanged
@@ -454,7 +513,7 @@ export function simplifyLogs(x: Expression): Expression {
 			for (const other of transformOtherTerms) {
 				result = result.plus(other);
 			}
-			return applyOuterMultiplierAndPower(result, outerMultiplier, outerPower);
+			return restoreOuterForm(result, outerMultiplier, outerPower);
 		}
 		return x;
 	}
@@ -470,7 +529,7 @@ export function simplifyLogs(x: Expression): Expression {
 					result = result.plus(t.original);
 				}
 			}
-			return applyOuterMultiplierAndPower(result, outerMultiplier, outerPower);
+			return restoreOuterForm(result, outerMultiplier, outerPower);
 		}
 	}
 
@@ -489,7 +548,7 @@ export function simplifyLogs(x: Expression): Expression {
 		}
 		const result = combineSymbolicLogTerms(symbolicLogTerms, remainingOther, x);
 		if (result !== x) {
-			return applyOuterMultiplierAndPower(result, outerMultiplier, outerPower);
+			return restoreOuterForm(result, outerMultiplier, outerPower);
 		}
 	}
 
@@ -501,7 +560,7 @@ export function simplifyLogs(x: Expression): Expression {
  * Sums can carry an outer multiplier, e.g. (1/6)*(a+b) is a SUM with multiplier 1/6.
  * After transforming the inner elements, we need to put these back.
  */
-function applyOuterMultiplierAndPower(
+function restoreOuterForm(
 	result: Expression,
 	outerMultiplier: Expression,
 	outerPower: Expression
@@ -564,7 +623,7 @@ function combineNumericLogTerms(
 			}
 		}
 
-		const logExpr = Expression.toFunction(LOG, [innerArg]);
+	const logExpr = combinedLog(innerArg);
 		const resultTerms = [...otherTerms, commonFactor.times(logExpr)];
 
 		if (resultTerms.length === 1) {
@@ -598,7 +657,7 @@ function combineNumericLogTerms(
 		}
 	}
 
-	const logExpr = Expression.toFunction(LOG, [innerArg]);
+	const logExpr = combinedLog(innerArg);
 	const resultTerms = [...otherTerms, logExpr];
 
 	if (resultTerms.length === 1) {
@@ -756,7 +815,7 @@ function combineSymbolicLogTerms(
 		}
 
 		const commonCoeff = positive.length > 0 ? positive[0].coeff : negative[0].coeff.neg();
-		const logExpr = Expression.toFunction(LOG, [innerArg]);
+	const logExpr = combinedLog(innerArg);
 		resultTerms.push(commonCoeff.times(logExpr));
 	}
 

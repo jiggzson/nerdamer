@@ -1,9 +1,10 @@
 import { Expression } from '../../core/classes/expression/Expression';
 import { minusOne, zero } from '../../core/classes/expression/shortcuts';
-import { isTrig, isHyperbolicTrig, isInverseTrig } from '../../core/classes/expression/trig';
-import { COS, DIFF, INTEGRATE, LN, LOG, SIN } from '../../core/classes/parser/constants';
-import { max } from '../../math/math';
+import { COS, DIFF, INTEGRATE, LN, LOG, SIN, TRIG, INVERSE_TRIG, HYPERBOLIC_TRIG } from '../../core/constants/functionNames';
+import { max } from '../../math/index';
 import { diff } from '../derivative/diff';
+
+import { MAX_INTEGRATION_DEPTH } from './utils';
 
 import type { ExpressionInput } from '../../core/types';
 
@@ -112,12 +113,7 @@ function isProgress(
 		return newDeg < oldDeg;
 	}
 
-	if (uCategory === LIATE.LOG || uCategory === LIATE.INVERSE_TRIG) {
-		// Function count must decrease (log/invtrig disappears after differentiation)
-		return functionCount(newIntegrand) < functionCount(original);
-	}
-
-	// Fallback: structural complexity must decrease
+	// Logarithmic, inverse-trig, and other categories require fewer function nodes.
 	return functionCount(newIntegrand) < functionCount(original);
 }
 
@@ -143,15 +139,15 @@ function liatePriority(expr: Expression): number {
 			return LIATE.LOG;
 		}
 		// Inverse trig
-		if (isInverseTrig(expr)) {
+		if (expr.isFunction(INVERSE_TRIG)) {
 			return LIATE.INVERSE_TRIG;
 		}
 		// Trigonometric
-		if (isTrig(expr)) {
+		if (expr.isFunction(TRIG)) {
 			return LIATE.TRIG;
 		}
 		// Hyperbolic (treat like trig for LIATE purposes)
-		if (isHyperbolicTrig(expr)) {
+		if (expr.isFunction(HYPERBOLIC_TRIG)) {
 			return LIATE.TRIG;
 		}
 	}
@@ -263,7 +259,7 @@ function tryMergeDerivativePair(varFactors: Expression[], v: string): Expression
  * @returns An antiderivative when the transformation makes progress, otherwise
  * `undefined` so another strategy can run.
  */
-export function tryIntegrationByParts(
+export function tryIntegrateByParts(
 	x: Expression,
 	v: string,
 	integrate: (f: ExpressionInput, dx: ExpressionInput, depth: number) => Expression,
@@ -277,7 +273,7 @@ export function tryIntegrationByParts(
 	// IBP-specific depth guard: prevent runaway recursion independent of
 	// integrate's own MAX_DEPTH. This fires much sooner and avoids the
 	// long delays caused by exhausting the global depth limit.
-	if (ibpDepth >= MAX_IBP_DEPTH) {
+	if (ibpDepth >= MAX_IBP_DEPTH || depth >= MAX_INTEGRATION_DEPTH) {
 		return undefined;
 	}
 
@@ -379,7 +375,7 @@ export function tryIntegrationByParts(
 
 	if (remainder.isFunction(INTEGRATE)) {
 		// One more check: try IBP recursively on the remainder
-		const innerResult = tryIntegrationByParts(
+		const innerResult = tryIntegrateByParts(
 			newIntegrand,
 			v,
 			integrate,

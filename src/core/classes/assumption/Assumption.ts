@@ -1,25 +1,30 @@
 import Decimal from 'decimal.js';
 
 import { isNerdamerNativeType } from '../../common/common';
-import { message } from '../../errors';
+import { ASSUMPTION } from '../../constants/entityTypes';
+import { message, UnexpectedInputError } from '../../errors';
 import { Expression } from '../expression/Expression';
-import { ASSUMPTION } from '../parser/constants';
+import { compareRationalPower } from '../parser/operations/compare/rationalPower';
+import { Token } from '../parser/Token';
 import { Rational } from '../rational/Rational';
+
+import { parseRelation } from './parseRelation';
 
 /**
  * One endpoint of an {@link Assumption} interval.
  *
  * Infinity is always represented as an open endpoint because it is not itself a
  * member of a real interval. `value` remains Decimal-facing for API compatibility;
- * finite bounds also retain an exact rational representation internally.
+ * finite bounds retain exact rational or real-power expressions internally.
+ * Its Decimal value may be rounded; use the interval methods for proofs.
  */
 export type Bound = Readonly<{ value: Decimal; inclusive: boolean }>;
 
 /** Result returned by {@link Assumption.parse}. */
 export type ParsedAssumption = Readonly<{ symbol: string; assumption: Assumption }>;
 
-/** Numeric input accepted when constructing interval assumptions. */
-export type AssumptionValue = Decimal | Rational | string | number;
+/** Exact real expressions are accepted as finite interval endpoints. */
+export type AssumptionValue = Decimal | Rational | Expression | string | number;
 
 /**
  * Result of a comparison involving an interval-constrained value.
@@ -32,26 +37,36 @@ export type AssumptionValue = Decimal | Rational | string | number;
 export type AssumptionComparison = true | false | undefined;
 
 type NumericComparison = -1 | 0 | 1;
+type ExactBound = Rational | Expression | undefined;
 type NormalizedAssumptionValue = Readonly<{
 	value: Decimal;
-	exact: Rational | undefined;
+	exact: ExactBound;
 }>;
-
-function isIdentStart(ch: string) {
-	return /[A-Za-z_]/.test(ch);
-}
-
-function isIdentChar(ch: string) {
-	return /[A-Za-z0-9_]/.test(ch);
-}
 
 function normalizeAssumptionValue(value: AssumptionValue): NormalizedAssumptionValue {
 	let decimal: Decimal;
-	let exact: Rational | undefined;
+	let exact: ExactBound;
 
 	if (Rational.isRational(value)) {
 		exact = value.copy();
 		decimal = exact.toDecimal();
+	} else if (Expression.isExpression(value)) {
+		if (value.isNUM()) {
+			exact = value.getMultiplier().copy();
+			decimal = exact.toDecimal();
+		} else {
+			// Only proven real constants may define exact symbolic interval endpoints.
+			const sign = compareRationalPower(value, Expression.Number(0));
+			const evaluated = sign === undefined || sign === 'unresolved' || value.isComplex()
+				? undefined : value.evaluate();
+			if (!evaluated?.isNUM()) {
+				throw new UnexpectedInputError(message('wrongInput', {
+					expected: 'an exact real constant', received: value.text(),
+				}));
+			}
+			exact = value.copy();
+			decimal = evaluated.getMultiplier().toDecimal();
+		}
 	} else {
 		decimal = typeof value === 'number' || typeof value === 'string' ? new Decimal(value) : value;
 		if (decimal.isFinite()) {
@@ -62,31 +77,32 @@ function normalizeAssumptionValue(value: AssumptionValue): NormalizedAssumptionV
 	return { value: decimal, exact };
 }
 
+/**
+ * Compare exact endpoints. Decimal values are display projections, never proofs
+ * when either endpoint has a symbolic representation.
+ */
 function compareBoundValues(
-	a: Decimal,
-	aExact: Rational | undefined,
-	b: Decimal,
-	bExact: Rational | undefined
-): NumericComparison {
-	let retval: NumericComparison;
-
+	a: Decimal, aExact: ExactBound, b: Decimal, bExact: ExactBound
+): NumericComparison | undefined {
+	let result: NumericComparison | undefined;
 	if (a.isFinite() && b.isFinite()) {
 		const left = aExact ?? Rational.create(a.toString());
 		const right = bExact ?? Rational.create(b.toString());
-		if (left.lt(right)) {
-			retval = -1;
-		} else if (left.gt(right)) {
-			retval = 1;
+		if (Rational.isRational(left) && Rational.isRational(right)) {
+			result = left.lt(right) ? -1 : left.gt(right) ? 1 : 0;
 		} else {
-			retval = 0;
+			const ordered = compareRationalPower(
+				Rational.isRational(left) ? Expression.fromRational(left) : left,
+				Rational.isRational(right) ? Expression.fromRational(right) : right
+			);
+			result = ordered === 'unresolved' ? undefined : ordered;
 		}
 	} else if (a.eq(b)) {
-		retval = 0;
-	} else {
-		retval = a.lt(b) ? -1 : 1;
+		result = 0;
+	} else if (!a.isNaN() && !b.isNaN()) {
+		result = a.lt(b) ? -1 : 1;
 	}
-
-	return retval;
+	return result;
 }
 
 function parseNumber(value: string) {
@@ -105,39 +121,34 @@ function parseNumber(value: string) {
 	return n;
 }
 
-function compareNumericExpressionToBound(
-	x: Expression,
-	bound: Decimal,
-	boundExact: Rational | undefined
+/** Compare an expression to an exact endpoint without rounded sign decisions. */
+function compareToBound(
+	x: Expression, bound: Decimal, boundExact: ExactBound
 ): NumericComparison | undefined {
-	let retval: NumericComparison | undefined = undefined;
-
+	let result: NumericComparison | undefined;
 	if (x.isNegInf()) {
-		retval = bound.eq(-Infinity) ? 0 : -1;
+		result = bound.eq(-Infinity) ? 0 : -1;
 	} else if (x.isPosInf()) {
-		retval = bound.eq(Infinity) ? 0 : 1;
-	} else if (x.isNUM()) {
-		if (bound.isFinite()) {
-			const boundValue = boundExact ?? Rational.create(bound.toString());
-			const numericValue = x.getMultiplier();
-
-			if (numericValue.lt(boundValue)) {
-				retval = -1;
-			} else if (numericValue.gt(boundValue)) {
-				retval = 1;
-			} else {
-				retval = 0;
-			}
+		result = bound.eq(Infinity) ? 0 : 1;
+	} else if (!bound.isFinite()) {
+		result = bound.lt(0) ? 1 : -1;
+	} else {
+		const exact = boundExact ?? Rational.create(bound.toString());
+		if (x.isNUM() && Rational.isRational(exact)) {
+			const value = x.getMultiplier();
+			result = value.lt(exact) ? -1 : value.gt(exact) ? 1 : 0;
 		} else {
-			retval = bound.lt(0) ? 1 : -1;
+			const ordered = compareRationalPower(
+				x, Rational.isRational(exact) ? Expression.fromRational(exact) : exact
+			);
+			result = ordered === 'unresolved' ? undefined : ordered;
 		}
 	}
-
-	return retval;
+	return result;
 }
 
 /**
- * Describes the admissible real values of a symbolic variable as one numeric interval.
+ * Describes admissible real values as one exact interval.
  *
  * @remarks
  * An `Assumption` is an interval constraint, not a symbolic theorem. It can prove
@@ -149,17 +160,16 @@ function compareNumericExpressionToBound(
  * Instances are immutable. Repeated assumptions for a variable are intersected by
  * the global assumption registry rather than modifying an existing interval.
  *
- * Finite bounds preserve an exact rational value internally. Decimal inputs therefore
- * retain the exact value represented by their decimal text, while Rational inputs such
- * as `1/3` are not rounded through Decimal precision before comparisons are made.
+ * Finite bounds preserve exact rational values or supported real algebraic expressions.
+ * Decimal projections of algebraic endpoints are for compatibility and display only.
  *
- * The 2.0 assumption vocabulary covers a single real interval with numeric bounds.
+ * Each instance describes one real interval with exactly comparable endpoints.
  * Integer, parity, complex-domain, relational (`x > y`), union, and general predicate
  * assumptions are not represented by this class.
  */
 export class Assumption {
-	private readonly endExact: Rational | undefined;
-	private readonly startExact: Rational | undefined;
+	private readonly endExact: ExactBound;
+	private readonly startExact: ExactBound;
 
 	/** Runtime tag used by Nerdamer's assumption type guard. */
 	readonly dataType: typeof ASSUMPTION = ASSUMPTION;
@@ -178,11 +188,10 @@ export class Assumption {
 	 * @remarks
 	 * Infinite endpoints are normalized to open bounds. A zero-width interval is valid
 	 * only when both endpoints are inclusive, in which case it represents one exact
-	 * value. Rational inputs retain their exact value even when their Decimal projection
-	 * is necessarily finite precision.
+	 * value. Comparisons use exact endpoints, not their Decimal projections.
 	 *
-	 * @param start - Lower numeric endpoint.
-	 * @param end - Upper numeric endpoint.
+	 * @param start - Lower endpoint.
+	 * @param end - Upper endpoint.
 	 * @param startInclusive - Include the lower endpoint when it is finite.
 	 * @param endInclusive - Include the upper endpoint when it is finite.
 	 * @throws Error
@@ -281,97 +290,110 @@ export class Assumption {
 	 * Parses one numeric interval constraint such as `x >= 0` or `n < 10`.
 	 *
 	 * @remarks
+	 * The shared parser reads the relationship without evaluating its operands.
 	 * Whitespace is ignored. Variable names use the ASCII identifier form
 	 * `[A-Za-z_][A-Za-z0-9_]*`. Supported operators are `=`, `==`, `>`, `>=`, `<`,
 	 * and `<=`. Bounds are Decimal-compatible numeric literals; `inf`, `infinity`,
 	 * `+inf`, `+infinity`, `-inf`, and `-infinity` are also accepted.
 	 *
-	 * Expressions such as `x > y`, `x = 1/2`, and property predicates such as
-	 * `integer(x)` are outside the string assumption grammar. Parser assertive calls may
+	 * Expressions such as `x > y` and property predicates such as
+	 * `integer(x)` are outside the string assumption grammar. Simple numeric
+	 * fractions such as `x = 1/2` retain exact rational endpoints. Integer
+	 * powers are supported; fractional exponents are rejected. Parser assertive calls may
 	 * still provide already-evaluated Rational bounds directly.
 	 *
 	 * @param expr - Constraint to parse.
 	 * @returns The parsed symbol and its interval assumption.
-	 * @throws Error
+	 * @throws UnexpectedInputError
 	 * Thrown when the constraint has an invalid identifier, operator, or numeric bound.
 	 */
 	static parse(expr: string): ParsedAssumption {
-		if (typeof expr !== 'string') {
-			throw new Error(message('invalidAssumption', { input: String(expr) }));
+		if (typeof expr !== 'string' || !expr.trim()) {
+			throw new UnexpectedInputError(message('invalidAssumption', { input: String(expr) }));
 		}
 
-		const s = expr.replace(/\s+/g, '');
-		if (!s) {
-			throw new Error(message('invalidAssumption', { input: expr }));
+		const relation = parseRelation(expr);
+		if (!relation) {
+			throw new UnexpectedInputError(message('invalidAssumption', { input: expr }));
 		}
 
-		// Must have at least a one-character identifier, operator, and value.
-		if (s.length < 3) {
-			throw new Error(message('invalidAssumption', { input: expr }));
+		// Direct string assumptions require a plain variable and a numeric bound.
+		const variable = relation.left.length === 1 ? relation.left[0] : undefined;
+		if (!variable || variable.type !== Token.VARIABLE ||
+			!/^[A-Za-z_][A-Za-z0-9_]*$/.test(variable.value)) {
+			throw new UnexpectedInputError(message('assumptionIdentifierExpected'));
 		}
 
-		let i = 0;
+		const bound = relation.right;
+		const signed = bound.length === 2 && bound[1].type === Token.PREFIX &&
+			(bound[1].value === '-' || bound[1].value === '+');
+		const literal = bound.length === 1 || signed ? bound[0] : undefined;
+		let value: AssumptionValue;
 
-		// Parse the variable identifier first. Assumptions are attached to plain
-		// variables rather than arbitrary symbolic expressions.
-		if (!isIdentStart(s[i])) {
-			throw new Error(message('assumptionIdentifierExpected'));
-		}
-
-		let j = i + 1;
-		while (j < s.length && isIdentChar(s[j])) {
-			j++;
-		}
-
-		const symbol = s.slice(i, j);
-		i = j;
-
-		// Read the comparison operator separately so malformed combinations fail with
-		// an unsupported-operator error instead of being misread as part of the value.
-		let op = '';
-		while (i < s.length) {
-			const ch = s[i];
-			if (ch === '<' || ch === '>' || ch === '=') {
-				op += ch;
-				i++;
-			} else {
-				break;
+		if (literal && literal.type === Token.VARIABLE &&
+			/^(?:inf|infinity)$/i.test(literal.value)) {
+			value = parseNumber((signed ? bound[1].value : '') + literal.value);
+		} else {
+			// Evaluate numeric RPN once with exact Rational arithmetic.
+			const stack: Rational[] = [];
+			let valid = true;
+			for (const token of bound) {
+				if (token.type === Token.NUMBER) {
+					stack.push(Rational.create(token.value));
+				} else if (token.type === Token.PREFIX && (token.value === '+' || token.value === '-')) {
+					const operand = stack.pop();
+					if (!operand) {
+						valid = false;
+						break;
+					}
+					stack.push(token.value === '-' ? operand.neg() : operand);
+				} else if (token.type === Token.OPERATOR && ['+', '-', '*', '/', '^'].includes(token.value)) {
+					const right = stack.pop();
+					const left = stack.pop();
+					if (!left || !right || (token.value === '^' && !right.isInteger())) {
+						valid = false;
+						break;
+					}
+					let result: Rational;
+					switch (token.value) {
+						case '+': result = left.plus(right); break;
+						case '-': result = left.minus(right); break;
+						case '*': result = left.times(right); break;
+						case '/': result = left.times(right.invert()); break;
+						default: result = left.pow(right); break;
+					}
+					stack.push(result);
+				} else {
+					valid = false;
+					break;
+				}
 			}
+			if (!valid || stack.length !== 1) {
+				throw new UnexpectedInputError(message('invalidAssumption', { input: expr }));
+			}
+			value = stack[0];
 		}
 
-		if (!op) {
-			throw new Error(message('assumptionOperatorMissing'));
-		}
-
-		const valueStr = s.slice(i);
-		if (!valueStr) {
-			throw new Error(message('assumptionValueMissing'));
-		}
-
-		const value = parseNumber(valueStr);
 		let retval: ParsedAssumption;
 
-		switch (op) {
+		switch (relation.operator) {
 			case '>':
-				retval = { symbol, assumption: Assumption.atLeast(value, false) };
+				retval = { symbol: variable.value, assumption: Assumption.atLeast(value, false) };
 				break;
 			case '>=':
-				retval = { symbol, assumption: Assumption.atLeast(value, true) };
+				retval = { symbol: variable.value, assumption: Assumption.atLeast(value, true) };
 				break;
 			case '<':
-				retval = { symbol, assumption: Assumption.atMost(value, false) };
+				retval = { symbol: variable.value, assumption: Assumption.atMost(value, false) };
 				break;
 			case '<=':
-				retval = { symbol, assumption: Assumption.atMost(value, true) };
+				retval = { symbol: variable.value, assumption: Assumption.atMost(value, true) };
 				break;
 			case '=':
 			case '==':
-				retval = { symbol, assumption: Assumption.exactly(value) };
+				retval = { symbol: variable.value, assumption: Assumption.exactly(value) };
 				break;
-			default:
-				throw new Error(message('assumptionOperatorUnsupported', { operator: op }));
 		}
-
 		return retval;
 	}
 
@@ -383,29 +405,12 @@ export class Assumption {
 	 */
 	contains(x: AssumptionValue): boolean {
 		const value = normalizeAssumptionValue(x);
-		let retval = !value.value.isNaN();
-
-		if (
-			retval &&
-			(compareBoundValues(value.value, value.exact, this.start.value, this.startExact) < 0 ||
-				compareBoundValues(value.value, value.exact, this.end.value, this.endExact) > 0)
-		) {
-			retval = false;
-		} else if (
-			retval &&
-			compareBoundValues(value.value, value.exact, this.start.value, this.startExact) === 0 &&
-			!this.start.inclusive
-		) {
-			retval = false;
-		} else if (
-			retval &&
-			compareBoundValues(value.value, value.exact, this.end.value, this.endExact) === 0 &&
-			!this.end.inclusive
-		) {
-			retval = false;
-		}
-
-		return retval;
+		const lower = compareBoundValues(value.value, value.exact, this.start.value, this.startExact);
+		const upper = compareBoundValues(value.value, value.exact, this.end.value, this.endExact);
+		// A membership test must not accept an undecidable comparison.
+		return lower !== undefined && upper !== undefined &&
+			(lower > 0 || (lower === 0 && this.start.inclusive)) &&
+			(upper < 0 || (upper === 0 && this.end.inclusive));
 	}
 
 	/**
@@ -425,12 +430,12 @@ export class Assumption {
 		let retval: AssumptionComparison = undefined;
 
 		if (Expression.isExpression(x)) {
-			const startComparison = compareNumericExpressionToBound(
+			const startComparison = compareToBound(
 				x,
 				this.start.value,
 				this.startExact
 			);
-			const endComparison = compareNumericExpressionToBound(x, this.end.value, this.endExact);
+			const endComparison = compareToBound(x, this.end.value, this.endExact);
 
 			if (startComparison !== undefined && endComparison !== undefined) {
 				if (
@@ -445,8 +450,8 @@ export class Assumption {
 				}
 			}
 		} else if (this.isSingleton && x.isSingleton) {
-			retval =
-				compareBoundValues(this.start.value, this.startExact, x.start.value, x.startExact) === 0;
+			const order = compareBoundValues(this.start.value, this.startExact, x.start.value, x.startExact);
+			retval = order === undefined ? undefined : order === 0;
 		} else if (!this.overlaps(x)) {
 			retval = false;
 		}
@@ -454,16 +459,37 @@ export class Assumption {
 		return retval;
 	}
 
+	/** Returns the exact finite lower bound, or undefined for an unbounded interval. */
+	getFiniteLowerBound(): Expression | undefined {
+		let retval: Expression | undefined;
+		if (this.startExact) {
+			retval = Rational.isRational(this.startExact)
+				? Expression.fromRational(this.startExact) : this.startExact.copy();
+		}
+		return retval;
+	}
+
+	/** Returns the exact finite upper bound, or undefined for an unbounded interval. */
+	getFiniteUpperBound(): Expression | undefined {
+		let retval: Expression | undefined;
+		if (this.endExact) {
+			retval = Rational.isRational(this.endExact)
+				? Expression.fromRational(this.endExact) : this.endExact.copy();
+		}
+		return retval;
+	}
+
 	/**
-	 * Returns the exact value represented by a singleton interval.
+	 * Returns the exact expression represented by a singleton interval.
 	 *
-	 * @returns A numeric Expression when this interval is a singleton, otherwise
+	 * @returns An exact Expression when this interval is a singleton, otherwise
 	 * `undefined`.
 	 */
 	getSingletonValue(): Expression | undefined {
 		let retval: Expression | undefined;
 		if (this.isSingleton && this.startExact) {
-			retval = Expression.fromRational(this.startExact);
+			retval = Rational.isRational(this.startExact)
+				? Expression.fromRational(this.startExact) : this.startExact.copy();
 		}
 		return retval;
 	}
@@ -479,12 +505,12 @@ export class Assumption {
 		let retval: AssumptionComparison = undefined;
 
 		if (Expression.isExpression(x)) {
-			const startComparison = compareNumericExpressionToBound(
+			const startComparison = compareToBound(
 				x,
 				this.start.value,
 				this.startExact
 			);
-			const endComparison = compareNumericExpressionToBound(x, this.end.value, this.endExact);
+			const endComparison = compareToBound(x, this.end.value, this.endExact);
 
 			if (startComparison !== undefined && endComparison !== undefined) {
 				if (startComparison < 0 || (startComparison === 0 && !this.start.inclusive)) {
@@ -506,9 +532,10 @@ export class Assumption {
 				x.start.value,
 				x.startExact
 			);
-			if (startVsEnd > 0 || (startVsEnd === 0 && (!this.start.inclusive || !x.end.inclusive))) {
+			if (startVsEnd !== undefined &&
+				(startVsEnd > 0 || (startVsEnd === 0 && (!this.start.inclusive || !x.end.inclusive)))) {
 				retval = true;
-			} else if (endVsStart <= 0) {
+			} else if (endVsStart !== undefined && endVsStart <= 0) {
 				retval = false;
 			}
 		}
@@ -527,12 +554,12 @@ export class Assumption {
 		let retval: AssumptionComparison = undefined;
 
 		if (Expression.isExpression(x)) {
-			const startComparison = compareNumericExpressionToBound(
+			const startComparison = compareToBound(
 				x,
 				this.start.value,
 				this.startExact
 			);
-			const endComparison = compareNumericExpressionToBound(x, this.end.value, this.endExact);
+			const endComparison = compareToBound(x, this.end.value, this.endExact);
 
 			if (startComparison !== undefined && endComparison !== undefined) {
 				if (startComparison <= 0) {
@@ -554,11 +581,11 @@ export class Assumption {
 				x.start.value,
 				x.startExact
 			);
-			if (startVsEnd >= 0) {
+			if (startVsEnd !== undefined && startVsEnd >= 0) {
 				retval = true;
 			} else if (
-				endVsStart < 0 ||
-				(endVsStart === 0 && (!this.end.inclusive || !x.start.inclusive))
+				endVsStart !== undefined &&
+				(endVsStart < 0 || (endVsStart === 0 && (!this.end.inclusive || !x.start.inclusive)))
 			) {
 				retval = false;
 			}
@@ -570,8 +597,7 @@ export class Assumption {
 	/**
 	 * Intersects this interval with another interval.
 	 *
-	 * Endpoint selection uses the exact finite representation retained by each interval,
-	 * so repeated constraints do not lose rational precision while narrowing the range.
+	 * Endpoint selection preserves exact values; undecidable ordering is rejected.
 	 *
 	 * @param x - Interval to intersect with this one.
 	 * @returns The non-empty intersection, or `undefined` when the intervals are disjoint.
@@ -589,6 +615,11 @@ export class Assumption {
 			x.end.value,
 			x.endExact
 		);
+		if (startComparison === undefined || endComparison === undefined) {
+			throw new UnexpectedInputError(message('wrongInput', {
+				expected: 'comparable exact endpoints', received: 'incomparable intervals',
+			}));
+		}
 
 		let startValue: AssumptionValue;
 		let startInclusive: boolean;
@@ -624,6 +655,11 @@ export class Assumption {
 			normalizedEnd.value,
 			normalizedEnd.exact
 		);
+		if (intersectionComparison === undefined) {
+			throw new UnexpectedInputError(message('wrongInput', {
+				expected: 'comparable exact endpoints', received: 'incomparable intersection',
+			}));
+		}
 		let retval: Assumption | undefined;
 
 		if (
@@ -647,12 +683,12 @@ export class Assumption {
 		let retval: AssumptionComparison = undefined;
 
 		if (Expression.isExpression(x)) {
-			const startComparison = compareNumericExpressionToBound(
+			const startComparison = compareToBound(
 				x,
 				this.start.value,
 				this.startExact
 			);
-			const endComparison = compareNumericExpressionToBound(x, this.end.value, this.endExact);
+			const endComparison = compareToBound(x, this.end.value, this.endExact);
 
 			if (startComparison !== undefined && endComparison !== undefined) {
 				if (endComparison > 0 || (endComparison === 0 && !this.end.inclusive)) {
@@ -674,9 +710,10 @@ export class Assumption {
 				x.end.value,
 				x.endExact
 			);
-			if (endVsStart < 0 || (endVsStart === 0 && (!this.end.inclusive || !x.start.inclusive))) {
+			if (endVsStart !== undefined &&
+				(endVsStart < 0 || (endVsStart === 0 && (!this.end.inclusive || !x.start.inclusive)))) {
 				retval = true;
-			} else if (startVsEnd >= 0) {
+			} else if (startVsEnd !== undefined && startVsEnd >= 0) {
 				retval = false;
 			}
 		}
@@ -695,12 +732,12 @@ export class Assumption {
 		let retval: AssumptionComparison = undefined;
 
 		if (Expression.isExpression(x)) {
-			const startComparison = compareNumericExpressionToBound(
+			const startComparison = compareToBound(
 				x,
 				this.start.value,
 				this.startExact
 			);
-			const endComparison = compareNumericExpressionToBound(x, this.end.value, this.endExact);
+			const endComparison = compareToBound(x, this.end.value, this.endExact);
 
 			if (startComparison !== undefined && endComparison !== undefined) {
 				if (endComparison >= 0) {
@@ -722,11 +759,11 @@ export class Assumption {
 				x.end.value,
 				x.endExact
 			);
-			if (endVsStart <= 0) {
+			if (endVsStart !== undefined && endVsStart <= 0) {
 				retval = true;
 			} else if (
-				startVsEnd > 0 ||
-				(startVsEnd === 0 && (!this.start.inclusive || !x.end.inclusive))
+				startVsEnd !== undefined &&
+				(startVsEnd > 0 || (startVsEnd === 0 && (!this.start.inclusive || !x.end.inclusive)))
 			) {
 				retval = false;
 			}
@@ -739,7 +776,7 @@ export class Assumption {
 	 * Tests whether this interval and `x` share at least one admissible value.
 	 *
 	 * @param x - Interval to test for overlap.
-	 * @returns `true` when the intersection is non-empty.
+	 * @returns `false` only when the intervals are provably disjoint.
 	 */
 	overlaps(x: Assumption): boolean {
 		const endVsStart = compareBoundValues(
@@ -756,7 +793,8 @@ export class Assumption {
 		);
 		let retval = true;
 
-		if (endVsStart < 0 || startVsEnd > 0) {
+		if ((endVsStart !== undefined && endVsStart < 0) ||
+			(startVsEnd !== undefined && startVsEnd > 0)) {
 			retval = false;
 		} else if (endVsStart === 0) {
 			retval = this.end.inclusive && x.start.inclusive;
@@ -794,6 +832,8 @@ export class Assumption {
 	toString(): string {
 		const l = this.start.inclusive ? '[' : '(';
 		const r = this.end.inclusive ? ']' : ')';
-		return `${l}${this.start.value}, ${this.end.value}${r}`;
+		const start = Expression.isExpression(this.startExact) ? this.startExact.text() : this.start.value;
+		const end = Expression.isExpression(this.endExact) ? this.endExact.text() : this.end.value;
+		return `${l}${start}, ${end}${r}`;
 	}
 }

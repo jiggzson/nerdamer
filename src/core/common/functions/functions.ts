@@ -5,7 +5,7 @@ import { operators } from '../common';
  *
  * @returns An array with operator symbol
  */
-export function getOperatorSymbolArray() {
+export function operatorSymbols() {
 	// make them one long string and then filter out duplicates
 	const symbolSet = new Set(Object.keys(operators).join('').split(''));
 	//filter out letters used in keyword operators

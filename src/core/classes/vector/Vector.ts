@@ -1,11 +1,11 @@
 import { MathematicalAggregate } from '../../common/classes/MathematicalAggregate';
 import { isNerdamerNativeType } from '../../common/common';
 import { toParserEntities } from '../../common/functions/structuredEntityUtils';
+import { dataTypes, MATRIX, VECTOR } from '../../constants/entityTypes';
 import { message, DimensionError, MathError, UnexpectedDataType } from '../../errors';
 import { Collection } from '../collection/Collection';
 import { Expression } from '../expression/Expression';
 import { one, zero } from '../expression/shortcuts';
-import { dataTypes, MATRIX, VECTOR } from '../parser/constants';
 import { Polynomial } from '../polynomial/Polynomial';
 
 import type { ParserEntity, ExpressionInput, NerdamerInput } from '../../types';
@@ -17,8 +17,9 @@ import type { ParserValuesObject } from '../parser/types';
  *
  * @remarks
  * Vector is not restricted to numeric linear-algebra values. General arithmetic
- * is element-wise: scalar operands are broadcast across the Vector, while Vector
- * operands are paired by position and must have the same length. Vector-to-Vector
+ * is element-wise. Addition and subtraction require another Vector of equal
+ * length; multiplication, division, and powers can broadcast scalar operands.
+ * Vector-to-Vector
  * {@link times} remains an element-wise product rather than an alias for {@link dot}.
  * A Matrix operand interprets this Vector as a row vector for the standard
  * `Vector * Matrix` product; orientation is supplied by operand position rather
@@ -152,28 +153,72 @@ export class Vector extends MathematicalAggregate<Vector> {
 	}
 
 	/**
-	 * Computes the three-dimensional cross product.
+	 * Computes the cross product of two vectors of the same dimension.
 	 *
-	 * @throws {@link core!DimensionError} Unless both Vectors have exactly three elements.
-	 * @throws {@link core!UnexpectedDataType} If any required element is not an Expression.
+	 * Zero- and one-dimensional inputs return a zero vector of that dimension.
+	 * In three dimensions, this is the usual cross product. In seven dimensions,
+	 * the result uses a fixed octonion multiplication table: with one-based
+	 * indices, the cyclic triples are (123), (145), (176), (246), (257),
+	 * (347), and (365). For example, e1 × e2 = e3 and e2 × e1 = -e3.
+	 *
+	 * The seven-dimensional table is a choice of convention, not a unique
+	 * principal cross product. Other octonion conventions can give different
+	 * coordinate results. The product is antisymmetric, perpendicular to both
+	 * input vectors and satisfies |a × b|² = |a|²|b|² - (a·b)² for real vectors.
+	 * Unlike the three-dimensional product, it does not generally satisfy
+	 * the Jacobi identity.
+	 *
+	 * Source for the seven-dimensional table: "On the Structure of Octonion
+	 * Regular Functions", Advances in Applied Clifford Algebras (2019),
+	 * Lemma 2.5, https://doi.org/10.1007/s00006-019-0983-y.
+	 *
+	 * @param v - Vector with the same number of elements as this vector.
+	 * @returns A new Vector containing the cross product.
+	 * @throws {@link core!DimensionError} Unless the dimensions match and are 0, 1, 3, or 7.
+	 * @throws {@link core!UnexpectedDataType} If a required element is not an Expression.
 	 */
 	cross(v: Vector): Vector {
-		if (this.elements.length !== 3 || v.elements.length !== 3) {
+		const dimension = this.elements.length;
+		if (dimension !== v.elements.length ||
+			(dimension !== 0 && dimension !== 1 && dimension !== 3 && dimension !== 7)) {
 			throw new DimensionError(message('incorrectCrossDimension'));
 		}
 
-		const a = this.getExpressionAt(0);
-		const b = this.getExpressionAt(1);
-		const c = this.getExpressionAt(2);
-		const d = v.getExpressionAt(0);
-		const e = v.getExpressionAt(1);
-		const f = v.getExpressionAt(2);
+		let retval: Vector;
+		if (dimension <= 1) {
+			retval = Vector.create(Array.from({ length: dimension }, () => zero()));
+		} else if (dimension === 3) {
+			const a = this.getExpressionAt(0);
+			const b = this.getExpressionAt(1);
+			const c = this.getExpressionAt(2);
+			const d = v.getExpressionAt(0);
+			const e = v.getExpressionAt(1);
+			const f = v.getExpressionAt(2);
 
-		return Vector.create([
-			b.times(f).minus(c.times(e)),
-			c.times(d).minus(a.times(f)),
-			a.times(e).minus(b.times(d)),
-		]);
+			retval = Vector.create([
+				b.times(f).minus(c.times(e)),
+				c.times(d).minus(a.times(f)),
+				a.times(e).minus(b.times(d)),
+			]);
+		} else {
+			const a = Array.from({ length: dimension }, (_, i) => this.getExpressionAt(i));
+			const b = Array.from({ length: dimension }, (_, i) => v.getExpressionAt(i));
+			const result = Array.from({ length: dimension }, () => zero());
+
+			// Each oriented triple (i,j,k) contributes e_i × e_j = e_k,
+			// e_j × e_k = e_i, and e_k × e_i = e_j.
+			const triples = [
+				[0, 1, 2], [0, 3, 4], [0, 6, 5], [1, 3, 5],
+				[1, 4, 6], [2, 3, 6], [2, 5, 4],
+			];
+			for (const [i, j, k] of triples) {
+				result[k] = result[k].plus(a[i].times(b[j]).minus(a[j].times(b[i])));
+				result[i] = result[i].plus(a[j].times(b[k]).minus(a[k].times(b[j])));
+				result[j] = result[j].plus(a[k].times(b[i]).minus(a[i].times(b[k])));
+			}
+			retval = Vector.create(result);
+		}
+		return retval;
 	}
 
 	delete(x: ParserEntity): boolean {
@@ -374,12 +419,15 @@ export class Vector extends MathematicalAggregate<Vector> {
 	}
 
 	/**
-	 * Subtracts corresponding elements, or broadcasts a scalar subtrahend.
+	 * Subtracts corresponding elements of equal-length Vectors.
 	 *
 	 * @throws {@link core!DimensionError} If a Vector operand has a different length.
 	 */
 	override minus(x: NerdamerInput): Vector {
-		if (Vector.isVector(x) && !this.dimensionsMatch(x)) {
+		if (!Vector.isVector(x)) {
+			throw new UnexpectedDataType(message('vectorExpected', { type: Expression.isExpression(x) ? 'Expression' : typeof x }));
+		}
+		if (!this.dimensionsMatch(x)) {
 			throw new DimensionError(message('mismatchedDimensions', { function: 'Vector.minus' }));
 		}
 		return super.minus(x);
@@ -398,12 +446,15 @@ export class Vector extends MathematicalAggregate<Vector> {
 	}
 
 	/**
-	 * Adds corresponding elements, or broadcasts a scalar addend.
+	 * Adds corresponding elements of equal-length Vectors.
 	 *
 	 * @throws {@link core!DimensionError} If a Vector operand has a different length.
 	 */
 	override plus(x: NerdamerInput): Vector {
-		if (Vector.isVector(x) && !this.dimensionsMatch(x)) {
+		if (!Vector.isVector(x)) {
+			throw new UnexpectedDataType(message('vectorExpected', { type: Expression.isExpression(x) ? 'Expression' : typeof x }));
+		}
+		if (!this.dimensionsMatch(x)) {
 			throw new DimensionError(message('mismatchedDimensions', { function: 'Vector.plus' }));
 		}
 		return super.plus(x);

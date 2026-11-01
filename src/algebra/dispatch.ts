@@ -1,4 +1,4 @@
-import { PFACTOR, PFACTORD } from '../core/classes/parser/constants';
+import { PFACTOR, PFACTORD } from '../core/constants/functionNames';
 import { mathFunctionRegistry, systemFunction } from '../core/dispatch';
 
 import { completeSquare } from './adapters';

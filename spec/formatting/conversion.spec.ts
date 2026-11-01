@@ -11,9 +11,49 @@ import { mathFunctionRegistry } from '../../src/core/dispatch';
 import { SolutionSet } from '../../src/solve/classes/SolutionSet';
 
 describe('TeX conversion', () => {
+	// Regression: https://github.com/jiggzson/nerdamer/issues/613
+	it('preserves exponential powers inside nested sine and square root TeX', () => {
+		const rootTeX = nerdamer.convertToLaTeX('sqrt(e^x)');
+		const nestedTeX = nerdamer.convertToLaTeX('sin(sqrt(e^x))');
+
+		expect(nestedTeX).toContain('\\sin');
+		expect(nestedTeX).toContain(rootTeX);
+		expect(nestedTeX).not.toContain(',');
+		expect(nestedTeX).not.toContain('**');
+	});
+
 	// Regression: https://github.com/jiggzson/nerdamer/issues/683
 	it('accepts explicit parentheses when converting expressions to TeX', () => {
+		const tex = nerdamer.convertToLaTeX('sin(30*(pi/180))');
+		expect(tex).toContain('\\sin');
+		expect(tex).toContain('\\frac{\\pi}{180}');
 		expect(nerdamer.pretty('sin(30*(pi/180))', 'TeX')).toEqual('\\frac{1}{2}');
+	});
+
+	// Regression: https://github.com/jiggzson/nerdamer/issues/358
+	it('formats infinity as TeX', () => {
+		expect(nerdamer.convertToLaTeX('Infinity')).toContain('\\infty');
+	});
+
+	it('retains both arguments when formatting symbolic mod as TeX', () => {
+		const tex = nerdamer.convertToLaTeX('mod(a,b)');
+		expect(tex).toContain('\\bmod');
+		expect(tex).toContain('a');
+		expect(tex).toContain('b');
+	});
+
+	it.each([
+		['sum(a,k,1,n)', '\\sum', ['a', 'k', 'n']],
+		['product(a,k,1,n)', '\\prod', ['a', 'k', 'n']],
+		['nthroot(a,b)', '\\sqrt', ['a', 'b']],
+		['realpart(a)', '\\Re', ['a']],
+		['imagpart(a)', '\\Im', ['a']],
+	])('formats legacy #358 function %s', (source, operator, operands) => {
+		const tex = nerdamer.convertToLaTeX(source);
+		expect(tex).toContain(operator);
+		for (const operand of operands) {
+			expect(tex).toContain(operand);
+		}
 	});
 
 	it('defaults pretty output to TeX when the type is omitted', () => {
@@ -70,11 +110,28 @@ describe('TeX conversion', () => {
 	// Regression: https://github.com/together-science/nerdamer-prime/issues/36
 	it('imports arbitrary-base logarithms from LaTeX', () => {
 		expect(nerdamer.convertFromLaTeX('\\log_{2}256').evaluate().text()).toEqual('8');
+		const imported = nerdamer.convertFromLaTeX('\\log_{3}10').evaluate();
+		const expected = nerdamer('log(10,3)').evaluate();
+		expect(imported.eq(expected)).toBe(true);
 	});
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/660
 	it('imports LaTeX summations', () => {
 		expect(nerdamer.convertFromLaTeX('\\sum_{n=1}^{10}n').text()).toEqual('55');
+	});
+
+	it.each([
+		['nested fractions', '\\frac{1}{\\frac{x}{y}}', 'y/x'],
+		['bounded products', '\\prod_{k=1}^{3}k', '6'],
+		['limits', '\\lim_{x\\to 0}x', '0'],
+		['indefinite integrals', '\\int x^2 \\, dx', 'x^3/3'],
+	])('imports %s through nested TeX scopes', (_label, tex, expected) => {
+		const imported = nerdamer.convertFromLaTeX(tex);
+
+		expect(Expression.isExpression(imported)).toBe(true);
+		if (Expression.isExpression(imported)) {
+			expect(imported.eq(expected)).toBe(true);
+		}
 	});
 });
 
@@ -106,6 +163,7 @@ describe('Registered function TeX completeness', () => {
 		'acsch',
 		'acoth',
 		'abs',
+		'magnitude',
 		'sqrt',
 		'nthroot',
 		'cbrt',
@@ -122,7 +180,9 @@ describe('Registered function TeX completeness', () => {
 		'fact',
 		'factorial',
 		'dfact',
+		'dfactorial',
 		'round',
+		'significant',
 		'sign',
 		'floor',
 		'ceil',
@@ -134,6 +194,7 @@ describe('Registered function TeX completeness', () => {
 		'imagpart',
 		'realpart',
 		'arg',
+		'phase',
 		'conjugate',
 		'determinant',
 		'deg',
@@ -194,6 +255,14 @@ describe('Registered function TeX completeness', () => {
 		'rect',
 		'step',
 		'tri',
+		'mean',
+		'median',
+		'mode',
+		'smpvar',
+		'variance',
+		'smpstdev',
+		'stdev',
+		'zscore',
 	];
 
 	// These are transformations or solver commands rather than mathematical functions
@@ -240,6 +309,7 @@ describe('Registered function TeX completeness', () => {
 		'scientific',
 		'coeffs',
 		'roots',
+		'realsolutions',
 		'pfactor',
 		'pfactord',
 	];
@@ -305,6 +375,8 @@ describe('Registered function TeX completeness', () => {
 		['ceiling alias', 'ceiling(x)', '\\left\\lceil x \\right\\rceil'],
 		['explicit parentheses', 'parens(x+1)', '\\left(x+1\\right)'],
 		['complex argument', 'arg(z)', '\\arg\\left(z\\right)'],
+		['complex phase alias', 'phase(z)', '\\arg\\left(z\\right)'],
+		['complex magnitude alias', 'magnitude(z)', '\\left|z\\right|'],
 		['complex conjugate', 'conjugate(z)', '\\overline{z}'],
 		['Dirac delta', 'delta(x)', '\\delta\\left(x\\right)'],
 		['Heaviside step', 'heaviside(x)', 'H\\left(x\\right)'],

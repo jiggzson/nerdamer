@@ -115,8 +115,8 @@ describe('Parser function declarations', () => {
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/582
 	it('composes nested registered symbolic functions', () => {
-		const outerName = 'audit_legacy_582_outer';
-		const innerName = 'audit_legacy_582_inner';
+		const outerName = 'compose_582_outer';
+		const innerName = 'compose_582_inner';
 
 		try {
 			nerdamer.setFunction(outerName, ['x'], '2*x');

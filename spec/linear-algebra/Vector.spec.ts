@@ -118,15 +118,33 @@ describe('Vectors', () => {
 	});
 
 	describe('arithmetic', () => {
-		it('should apply scalar and corresponding Vector operations without mutating the source', () => {
+		it('should apply Vector and scalar multiplication operations without mutating the source', () => {
 			const vector = new Vector([2, 4]);
 
-			expect(vector.plus(1).eq(new Vector([3, 5]))).toBe(true);
+			expect(vector.plus(new Vector([1, 1])).eq(new Vector([3, 5]))).toBe(true);
 			expect(vector.minus(new Vector([1, 2])).eq(new Vector([1, 2]))).toBe(true);
 			expect(vector.times(new Vector([3, 4])).eq(new Vector([6, 16]))).toBe(true);
 			expect(vector.div(2).eq(new Vector([1, 2]))).toBe(true);
 			expect(vector.pow(2).eq(new Vector([4, 16]))).toBe(true);
 			expect(vector.eq(new Vector([2, 4]))).toBe(true);
+		});
+
+		// Addition and subtraction require two Vectors; other arithmetic is unchanged.
+		it('rejects scalar addition and subtraction in both parser operand orders', () => {
+			const vector = new Vector([1, 2, 3]);
+			for (const scalar of [1, 'a', Expression.create('a')]) {
+				expect(() => vector.plus(scalar)).toThrow(UnexpectedDataType);
+				expect(() => vector.minus(scalar)).toThrow(UnexpectedDataType);
+			}
+			for (const source of [
+				'[1,2,3]+a',
+				'a+[1,2,3]',
+				'[1,2,3]-a',
+				'a-[1,2,3]',
+			]) {
+				expect(() => Parser.parse(source)).toThrow(UnexpectedDataType);
+			}
+			expect(vector.eq(new Vector([1, 2, 3]))).toBe(true);
 		});
 
 		it('should reject mismatched Vector dimensions for element-wise arithmetic', () => {
@@ -241,6 +259,58 @@ describe('Vectors', () => {
 			expect(actual.dimensions()).toEqual([3]);
 			expect(actual.text()).toEqual('[0, 0, 1]');
 			expect(() => new Vector([1, 2]).cross(new Vector([3, 4]))).toThrow(DimensionError);
+		});
+
+		it('computes the seven-dimensional cross product with octonion orientation', () => {
+			const basis = (index: number, sign = 1) =>
+				new Vector(Array.from({ length: 7 }, (_, i) => i === index ? sign : 0));
+			const triples = [
+				[0, 1, 2], [0, 3, 4], [0, 6, 5], [1, 3, 5],
+				[1, 4, 6], [2, 3, 6], [2, 5, 4],
+			];
+			for (const [i, j, k] of triples) {
+				expect(basis(i).cross(basis(j)).eq(basis(k))).toBe(true);
+				expect(basis(j).cross(basis(k)).eq(basis(i))).toBe(true);
+				expect(basis(k).cross(basis(i)).eq(basis(j))).toBe(true);
+				expect(basis(j).cross(basis(i)).eq(basis(k, -1))).toBe(true);
+			}
+			expect(basis(0).cross(basis(0)).eq(new Vector([0, 0, 0, 0, 0, 0, 0]))).toBe(true);
+		});
+
+		it('preserves orthogonality and norm for seven-dimensional real vectors', () => {
+			const a = new Vector([1, 2, 3, 4, 5, 6, 7]);
+			const b = new Vector([7, 6, 5, 4, 3, 2, 1]);
+			const c = a.cross(b);
+			expect(c.count()).toBe(7);
+			expect(c.dot(a).text()).toEqual('0');
+			expect(c.dot(b).text()).toEqual('0');
+			expect(c.dot(c).eq(a.dot(a).times(b.dot(b)).minus(a.dot(b).pow(2)))).toBe(true);
+			expect(a.cross(b).eq(b.cross(a).times(-1))).toBe(true);
+			expect(a.text()).toEqual('[1, 2, 3, 4, 5, 6, 7]');
+		});
+
+		it('does not assume the seven-dimensional Jacobi identity', () => {
+			const e1 = new Vector([1, 0, 0, 0, 0, 0, 0]);
+			const e2 = new Vector([0, 1, 0, 0, 0, 0, 0]);
+			const e4 = new Vector([0, 0, 0, 1, 0, 0, 0]);
+			const jacobi = e1.cross(e2.cross(e4))
+				.plus(e2.cross(e4.cross(e1)))
+				.plus(e4.cross(e1.cross(e2)));
+			expect(jacobi.text()).toEqual('[0, 0, 0, 0, 0, 0, -3]');
+		});
+
+		it('returns zero vectors in zero and one dimensions, rejecting other sizes', () => {
+			expect(new Vector([]).cross(new Vector([])).text()).toEqual('[]');
+			expect(new Vector([9]).cross(new Vector([4])).text()).toEqual('[0]');
+			expect(() => new Vector([1, 2]).cross(new Vector([3, 4]))).toThrow(DimensionError);
+			expect(() => new Vector([1, 2, 3]).cross(new Vector([1, 2, 3, 4, 5, 6, 7]))).toThrow(DimensionError);
+			expect(() => new Vector([1, 2, 3, 4]).cross(new Vector([4, 3, 2, 1]))).toThrow(DimensionError);
+		});
+
+		it('computes symbolic cross products in seven dimensions', () => {
+			const a = new Vector(['x', 0, 0, 0, 0, 0, 0]);
+			const b = new Vector([0, 'y', 0, 0, 0, 0, 0]);
+			expect(a.cross(b).text()).toEqual('[0, 0, x*y, 0, 0, 0, 0]');
 		});
 
 		it('should compute Euclidean norms using coordinate magnitudes', () => {

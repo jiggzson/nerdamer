@@ -1,4 +1,5 @@
 import { message } from '../../core/errors';
+import { warn } from '../../core/warnings';
 
 /**
  * Adaptive Simpson definite integration using native `number` arithmetic.
@@ -77,6 +78,9 @@ interface Frame {
 	singularTries: number;
 }
 
+/** Tracks estimates accepted without meeting the requested tolerance. */
+type AccuracyState = { depthExceeded: boolean };
+
 // ── Core: finite-bounds adaptive Simpson ─────────────────────────────
 
 function withFiniteBounds(
@@ -87,7 +91,8 @@ function withFiniteBounds(
 	tolRel: number,
 	maxDepth: number,
 	maxEvals: number,
-	singular: 'auto' | 'strict' | 'ignore'
+	singular: 'auto' | 'strict' | 'ignore',
+	accuracy: AccuracyState
 ): number {
 	let a = aIn;
 	let b = bIn;
@@ -153,11 +158,11 @@ function withFiniteBounds(
 
 			return (
 				sign *
-				withFiniteBounds(transformed, 0, 1, tolAbs, tolRel, maxDepth, maxEvals, singular)
+				withFiniteBounds(transformed, 0, 1, tolAbs, tolRel, maxDepth, maxEvals, singular, accuracy)
 			);
 		}
 
-		return sign * autoSplitFinite(f, a, b, tolAbs, tolRel, maxDepth, maxEvals, singular);
+		return sign * autoSplitFinite(f, a, b, tolAbs, tolRel, maxDepth, maxEvals, singular, accuracy);
 	}
 
 	const S0 = simpson(a, b, fa, fm, fb);
@@ -252,6 +257,9 @@ function withFiniteBounds(
 		const scale = fr.tolAbs + fr.tolRel * Math.abs(S2);
 
 		if (err <= scale || fr.depth >= maxDepth) {
+			if (err > scale && fr.depth >= maxDepth) {
+				accuracy.depthExceeded = true;
+			}
 			// Richardson extrapolation
 			acc += S2 + (S2 - fr.S) / 15;
 			continue;
@@ -302,7 +310,8 @@ function autoSplitFinite(
 	tolRel: number,
 	maxDepth: number,
 	maxEvals: number,
-	singular: 'auto' | 'strict' | 'ignore'
+	singular: 'auto' | 'strict' | 'ignore',
+	accuracy: AccuracyState
 ): number {
 	const m = (a + b) / 2;
 	const q1 = (a + m) / 2;
@@ -310,10 +319,10 @@ function autoSplitFinite(
 	const segTol = tolAbs / 4;
 
 	return (
-		withFiniteBounds(f, a, q1, segTol, tolRel, maxDepth, maxEvals, singular) +
-		withFiniteBounds(f, q1, m, segTol, tolRel, maxDepth, maxEvals, singular) +
-		withFiniteBounds(f, m, q3, segTol, tolRel, maxDepth, maxEvals, singular) +
-		withFiniteBounds(f, q3, b, segTol, tolRel, maxDepth, maxEvals, singular)
+		withFiniteBounds(f, a, q1, segTol, tolRel, maxDepth, maxEvals, singular, accuracy) +
+		withFiniteBounds(f, q1, m, segTol, tolRel, maxDepth, maxEvals, singular, accuracy) +
+		withFiniteBounds(f, m, q3, segTol, tolRel, maxDepth, maxEvals, singular, accuracy) +
+		withFiniteBounds(f, q3, b, segTol, tolRel, maxDepth, maxEvals, singular, accuracy)
 	);
 }
 
@@ -340,6 +349,24 @@ export function definiteIntegrateNative(
 	a: number,
 	b: number,
 	options: DefIntNativeOptions = {}
+): number {
+	const accuracy: AccuracyState = { depthExceeded: false };
+	const result = performDefiniteIntegration(f, a, b, options, accuracy);
+	if (accuracy.depthExceeded && Number.isFinite(result)) {
+		warn('defint.depthLimit', message('defintAccuracyWarning', {
+			depth: String(options.maxDepth ?? DEFAULT_MAX_DEPTH),
+		}));
+	}
+	return result;
+}
+
+/** Performs the calculation while preserving accuracy status across subintervals. */
+function performDefiniteIntegration(
+	f: NumericFn,
+	a: number,
+	b: number,
+	options: DefIntNativeOptions,
+	accuracy: AccuracyState
 ): number {
 	if (a === b) {
 		return 0;
@@ -373,7 +400,7 @@ export function definiteIntegrateNative(
 				const x = a0 + t / u;
 				return f(x) / (u * u);
 			};
-			return withFiniteBounds(g, 0, 1 - eps, tolAbs, tolRel, maxDepth, maxEvals, singular);
+			return withFiniteBounds(g, 0, 1 - eps, tolAbs, tolRel, maxDepth, maxEvals, singular, accuracy);
 		}
 
 		if (isInfA && a < 0 && !isInfB) {
@@ -384,7 +411,7 @@ export function definiteIntegrateNative(
 				const x = b0 - t / u;
 				return f(x) / (u * u);
 			};
-			return withFiniteBounds(g, 0, 1 - eps, tolAbs, tolRel, maxDepth, maxEvals, singular);
+			return withFiniteBounds(g, 0, 1 - eps, tolAbs, tolRel, maxDepth, maxEvals, singular, accuracy);
 		}
 
 		if (isInfA && a < 0 && isInfB && b > 0) {
@@ -395,7 +422,7 @@ export function definiteIntegrateNative(
 				// dx/dt = π / cos²(u)
 				return (f(Math.tan(u)) * Math.PI) / (cosU * cosU);
 			};
-			return withFiniteBounds(g, eps, 1 - eps, tolAbs, tolRel, maxDepth, maxEvals, singular);
+			return withFiniteBounds(g, eps, 1 - eps, tolAbs, tolRel, maxDepth, maxEvals, singular, accuracy);
 		}
 
 		throw new Error(message('defintUnsupportedInfiniteBounds'));
@@ -409,7 +436,7 @@ export function definiteIntegrateNative(
 	const bps = (options.breakpoints ?? []).filter(x => x > lo && x < hi).sort((x, y) => x - y);
 
 	if (bps.length === 0) {
-		return withFiniteBounds(f, a, b, tolAbs, tolRel, maxDepth, maxEvals, singular);
+		return withFiniteBounds(f, a, b, tolAbs, tolRel, maxDepth, maxEvals, singular, accuracy);
 	}
 
 	// Segment integration with tolerance budget split across segments
@@ -430,7 +457,8 @@ export function definiteIntegrateNative(
 			tolRel,
 			maxDepth,
 			maxEvals,
-			singular
+			singular,
+			accuracy
 		);
 	}
 	return total;

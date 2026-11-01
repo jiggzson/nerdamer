@@ -1,8 +1,9 @@
 
-import { mod, modInv } from '../../../math/math';
+import { mod, modInv } from '../../../math/index';
 import { StructuredEntity } from '../../common/classes/StructuredEntity';
 import { isNerdamerNativeType } from '../../common/common';
 import { toParserEntities } from '../../common/functions/structuredEntityUtils';
+import { dataTypes, MATRIX } from '../../constants/entityTypes';
 import {
 	message,
 	DimensionError,
@@ -12,7 +13,6 @@ import {
 } from '../../errors';
 import { Expression } from '../expression/Expression';
 import { one, zero } from '../expression/shortcuts';
-import { dataTypes, MATRIX } from '../parser/constants';
 import { Vector } from '../vector/Vector';
 
 import type { StructuredEntityType, ParserEntity, NerdamerInput } from '../../types';

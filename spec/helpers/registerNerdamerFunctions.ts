@@ -1,3 +1,3 @@
-import { registerNerdamerFunctions } from '../../src/core/fullFunctions';
+import { registerNerdamerFunctions } from '../../src/core/nerdamerFunctions';
 
 registerNerdamerFunctions();

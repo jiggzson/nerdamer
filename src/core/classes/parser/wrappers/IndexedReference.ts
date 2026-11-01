@@ -1,5 +1,5 @@
 import { isNerdamerNativeType } from '../../../common/common';
-import { INDEXED_REFERENCE } from '../constants';
+import { INDEXED_REFERENCE } from '../../../constants/entityTypes';
 
 import type { ParserEntity, StructuredEntityType } from '../../../types';
 import type { Dictionary } from '../../dictionary/Dictionary';

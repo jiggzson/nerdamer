@@ -1,9 +1,9 @@
 import { isNerdamerNativeType } from '../../common/common';
+import { TERM } from '../../constants/entityTypes';
 import { productInRange } from '../../functions/bigint/bigint';
 import { sum } from '../../functions/numeric';
 import { arrayAddUnique } from '../../functions/utils';
 import { Expression } from '../expression/Expression';
-import { TERM } from '../parser/constants';
 
 /** Powers keyed by variable name. Missing variables have degree zero. */
 export type PowersObject = Record<string, number>;
@@ -96,7 +96,7 @@ export class Term {
 
 	/** Recalculates degree-derived caches after term arithmetic and returns this term. */
 	private update() {
-		this.updateMultiDegArray();
+		this.updateMultidegrees();
 		this.updateTotalPower();
 		this.length = this.getLength();
 		return this;
@@ -107,7 +107,7 @@ export class Term {
 	 *
 	 * @returns The refreshed internal multidegree array.
 	 */
-	private updateMultiDegArray() {
+	private updateMultidegrees() {
 		const retval = this.multideg(this.variables);
 		this.multidegArray = retval;
 		return retval;
@@ -293,7 +293,7 @@ export class Term {
 	getMultidegArray() {
 		let retval = this.multidegArray;
 		if (retval === undefined) {
-			retval = this.updateMultiDegArray();
+			retval = this.updateMultidegrees();
 		}
 
 		return retval;

@@ -1,9 +1,11 @@
+import { RANK } from '../../../constants/entityTypes';
+import { ABS } from '../../../constants/functionNames';
+import { WRAP } from '../../../constants/parserSyntax';
 import { message, UndefinedError } from '../../../errors';
 import { simplifyImaginary } from '../../../functions/complex';
 import { Settings } from '../../../Settings';
 import { Expression } from '../../expression/Expression';
 import { minusOne, one, zero } from '../../expression/shortcuts';
-import { ABS, RANK, WRAP } from '../constants';
 
 import { power, rationalizeRadical } from './power';
 
@@ -27,7 +29,7 @@ export function multiply(a: Expression, b: Expression): Expression {
 	} else {
 		if (a.isZero()) {
 			if (b.isInf()) {
-				throw new UndefinedError(message('infinityTimesZero'));
+				throw new UndefinedError(message('undefinedExpression', { expression: '0*Infinity' }));
 			}
 			retval = Expression.Number('0');
 		} else if (a.isNUM() && b.isNUM()) {
@@ -54,7 +56,7 @@ export function multiply(a: Expression, b: Expression): Expression {
 			if (a.getMultiplier().times(b.getMultiplier()).isNegative()) {
 				retval = retval.neg();
 			} else if (a.isZero() || b.isZero()) {
-				throw new UndefinedError(message('infinityTimesZero'));
+				throw new UndefinedError(message('undefinedExpression', { expression: '0*Infinity' }));
 			}
 		} else if (a.value === b.value) {
 			// Define Rule: i * i = -1

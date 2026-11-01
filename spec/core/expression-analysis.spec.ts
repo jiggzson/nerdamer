@@ -2,6 +2,9 @@ import '../helpers/registerNerdamerFunctions';
 import { Parser } from '../../src/core/classes/parser/Parser';
 
 import { Expression } from '../../src/core/classes/expression/Expression';
+import { requireVariableName } from '../../src/core/classes/expression/utils';
+import { UnexpectedInputError } from '../../src/core/errors';
+import { prepareSolverInputs } from '../../src/solve/utils';
 
 describe('Expression analysis', () => {
 	it('should accurately extract variables', () => {
@@ -46,5 +49,27 @@ describe('Expression names', () => {
 	// Regression: https://github.com/jiggzson/nerdamer/issues/676
 	it('does not interpret letters in function names as variables', () => {
 		expect(Expression.create('sin(x)').variables()).toEqual(['x']);
+	});
+});
+
+describe('shared variable-name validation', () => {
+	it('retains the existing default VAR acceptance behavior', () => {
+		expect(requireVariableName(Expression.create('x'))).toBe('x');
+		expect(requireVariableName(Expression.create('2*x'))).toBe('x');
+		expect(requireVariableName(Expression.create('x^2'))).toBe('x');
+	});
+
+	it('rejects decorated or nonvariable inputs when a plain variable is required', () => {
+		expect(requireVariableName(Expression.create('x'), true)).toBe('x');
+		for (const source of ['2*x', 'x^2', 'x^-1', 'x+y', '2']) {
+			expect(() => requireVariableName(Expression.create(source), true)).toThrow(UnexpectedInputError);
+		}
+	});
+
+	it('enforces plain solver variables through the shared core validator', () => {
+		expect(prepareSolverInputs('x^2-1', 'x').x).toBe('x');
+		for (const source of ['2*x', 'x^2', 'x+y', '2']) {
+			expect(() => prepareSolverInputs('x^2-1', source)).toThrow(UnexpectedInputError);
+		}
 	});
 });

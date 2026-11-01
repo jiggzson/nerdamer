@@ -1,6 +1,9 @@
 import Decimal from 'decimal.js';
 
 import { isNerdamerNativeType } from '../../common/common';
+import { RATIONAL } from '../../constants/entityTypes';
+import { DOT } from '../../constants/parserSyntax';
+import { PARSER_CONSTANTS } from '../../constants/parserValues';
 import {
 	message,
 	DivisionByZeroError,
@@ -11,7 +14,6 @@ import { convert, simplifyRatio, sign, abs, isEven } from '../../functions/bigin
 import { GCD, mod } from '../../functions/bigint/bigint';
 import { scientificToDecimal } from '../../functions/string';
 import { Expression } from '../expression/Expression';
-import { RATIONAL, DOT, PARSER_CONSTANTS } from '../parser/constants';
 
 import type { OptionsObject } from '../parser/types';
 
@@ -722,7 +724,7 @@ export class Rational {
 			num = Rational.toRational(num);
 
 			if (this.isZero() && num.isZero()) {
-				throw new ZeroToZeroPowerError(message('zeroToZeroPower'));
+				throw new ZeroToZeroPowerError(message('undefinedExpression', { expression: '0^0' }));
 			}
 
 			if (num.isInteger()) {

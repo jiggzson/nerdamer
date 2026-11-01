@@ -4,6 +4,7 @@ import '../helpers/registerNerdamerFunctions';
 import { Parser as parser } from '../../src/core/classes/parser/Parser';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { Parser } from '../../src/core/classes/parser/Parser';
+import nerdamer from '../../src/index';
 
 describe('Trig', () => {
 	it('should provide the correct value for cos in all quadrants', () => {
@@ -153,6 +154,12 @@ describe('Trig', () => {
 		expect(() => {
 			parser.parse('sec(5*pi/2)');
 		}).toThrow();
+	});
+
+	// Regression: https://github.com/jiggzson/nerdamer/issues/624
+	it('rejects csc(pi) through the public evaluation API', () => {
+		expect(() => nerdamer('csc(pi)').evaluate()).toThrow();
+		expect(nerdamer('csc(pi/2)').evaluate().text()).toEqual('1');
 	});
 
 	it('should provide the correct value for csc in all quadrants', () => {

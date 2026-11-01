@@ -208,7 +208,7 @@ export class ModularSparsePolynomial {
 		this.polynomial.degree(variableIndex);
 		if (exponent < 0n) {
 			throw new RangeError(
-				message('polyCoefficientExponentNonnegative')
+				message('sparseCoefficientExponentNonNegative', { polynomial: 'ModularSparsePolynomial' })
 			);
 		}
 
@@ -288,13 +288,13 @@ export class ModularSparsePolynomial {
 
 		const divisorLeading = divisor.leadingTerm(order);
 		if (divisorLeading === null) {
-			throw new RangeError(message('polyCannotDivideZero'));
+			throw new RangeError(message('zeroDivisorForOperation', { operation: 'ModularSparsePolynomial.divideWithRemainder' }));
 		}
 
 		const divisorLeadingInverse = invMod(divisorLeading.coefficient, this.modulus);
 		if (divisorLeadingInverse < 0n) {
 			throw new RangeError(
-				message('polyDivisorLeadingCoefficientInvertible')
+				message('invertibleLeadingCoefficientRequired', { operation: 'ModularSparsePolynomial.divideWithRemainder' })
 			);
 		}
 
@@ -425,7 +425,7 @@ export class ModularSparsePolynomial {
 		const inverse = invMod(leading.coefficient, this.modulus);
 		if (inverse < 0n) {
 			throw new RangeError(
-				message('polyLeadingCoefficientInvertible')
+				message('invertibleLeadingCoefficientRequired', { operation: 'ModularSparsePolynomial.monic' })
 			);
 		}
 		return this.scale(inverse);
@@ -447,7 +447,7 @@ export class ModularSparsePolynomial {
 	/** Raises the polynomial to a non-negative exact integer power. */
 	pow(exponent: bigint): ModularSparsePolynomial {
 		if (exponent < 0n) {
-			throw new RangeError(message('polyExponentNonnegative'));
+			throw new RangeError(message('sparseExponentNonNegative', { polynomial: 'ModularSparsePolynomial' }));
 		}
 		let result = ModularSparsePolynomial.constant(this.variableCount, this.modulus, 1n);
 		let power = exponent;

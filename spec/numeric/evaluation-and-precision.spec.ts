@@ -67,6 +67,36 @@ describe('Numeric parsing', () => {
 	});
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/341
+	it.each([
+		["0.'3'", '1/3'],
+		["1.'1'", '10/9'],
+		["1.2'34'", '611/495'],
+		["0.0'9'", '1/10'],
+		["-0.'6'", '-2/3'],
+		["2*0.'3'", '2/3'],
+		['0.[3]', '1/3'],
+		['1.[1]', '10/9'],
+		['1.2[34]', '611/495'],
+		['0.0[9]', '1/10'],
+		['-0.[6]', '-2/3'],
+		['2*0.[3]', '2/3'],
+	])('parses the recurring literal %s exactly', (source, expected) => {
+		expect(nerdamer(source).text()).toEqual(expected);
+	});
+
+	it('keeps ordinary decimal and vector syntax unchanged', () => {
+		expect(nerdamer('1.25').text()).toBe('1.25');
+		expect(nerdamer('[1,2]').text()).toContain('1');
+	});
+
+	it.each([
+		"0.[3x]",
+		"0.[]",
+		"0.'3x'",
+	])('rejects malformed recurring digits in %s', source => {
+		expect(() => nerdamer(source)).toThrow();
+	});
+
 	it('does not silently truncate recurring-decimal notation', () => {
 		let parsed: string | undefined;
 		let rejected = false;

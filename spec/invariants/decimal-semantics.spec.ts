@@ -80,7 +80,7 @@ describe('Decimal semantics', () => {
 			Parser.setPrecision(50);
 			try {
 				const value = Parser.evaluate('sqrt(2)').text({ decimal: true, precision: 50 });
-				expect(value.length).toBeGreaterThan(40);
+				expect(value).toEqual('1.4142135623730950488016887242096980785696718753769');
 			} finally {
 				Parser.setPrecision(previousPrecision);
 			}

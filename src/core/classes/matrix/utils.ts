@@ -1,5 +1,5 @@
+import { IMATRIX } from '../../constants/functionNames';
 import { Expression } from '../expression/Expression';
-import { IMATRIX } from '../parser/constants';
 
 import { Matrix } from './Matrix';
 

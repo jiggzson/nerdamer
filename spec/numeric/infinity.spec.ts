@@ -45,7 +45,6 @@ describe('Infinity arithmetic', () => {
 		expect(() => Parser.parse('0/Inf')).toThrow();
 		expect(() => Parser.parse('Inf/0')).toThrow();
 		expect(() => Parser.parse('(-1)^Inf')).toThrow();
-		expect(() => Parser.parse('(-1)^Inf')).toThrow();
 	});
 
 });

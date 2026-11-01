@@ -1,76 +1,90 @@
 import { Expression } from '../../core/classes/expression/Expression';
-import { five, four, half, six, three, two, zero } from '../../core/classes/expression/shortcuts';
+import { half, two, zero } from '../../core/classes/expression/shortcuts';
 import { LookupTable, type TableEntries } from '../../core/classes/lookupTable/LookupTable';
-import { Si, Ci, Ei } from '../../math/math';
+import { Ci, Ei, Si } from '../../special/integrals';
 
 import { integrate } from './integrate';
 
+import type { Pattern } from '../../core/converters/Pattern';
+
 const trigTable: TableEntries = {
 	// cos(x)
-	'a1*cos(a2*x1^n1)^n2': (p, depth) => {
+	'a1*cos(a2*x1^n1)^n2': (p, depth, recurse) => {
 		if (p.get('n1').isOne()) {
 			const n2 = p.get('n2');
+			if (!n2.isInteger() || !n2.gt(zero())) {
+				return undefined;
+			}
 			if (n2.isOne()) {
 				return p.fromPattern('(a1*sin(a2*x1))/a2');
 			} else if (n2.isEven()) {
 				// Rewrite using double angle identity and expand
 				const f = p.fromPattern('a1*((1+cos(2*a2*x1^n1))/2)^(n2/2)').expand();
 				// Ship it
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			} else {
 				//Rewrite using double angle but break off one cos
 				const f = p
 					.fromPattern('a1*cos(a2*x1^n1)*((1+cos(2*a2*x1^n1))/2)^((n2-1)/2)')
 					.expand();
 				// Ship
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 		}
 	},
 	// sin(x)
-	'a1*sin(a2*x1^n1)^n2': (p, depth) => {
+	'a1*sin(a2*x1^n1)^n2': (p, depth, recurse) => {
 		if (p.get('n1').isOne()) {
 			const n2 = p.get('n2');
+			if (!n2.isInteger() || !n2.gt(zero())) {
+				return undefined;
+			}
 			if (n2.isOne()) {
 				return p.fromPattern('-((a1*cos(a2*x1))/a2)');
 			} else if (n2.isEven()) {
 				// Rewrite using double angle identity and expand
 				const f = p.fromPattern('a1*((1-cos(2*a2*x1^n1))/2)^(n2/2)').expand();
 				// Ship it
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			} else {
 				//Rewrite using double angle but break off one cos
 				const f = p
 					.fromPattern('a1*sin(a2*x1^n1)*((1-cos(2*a2*x1^n1))/2)^((n2-1)/2)')
 					.expand();
 				// Ship
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 		}
 	},
 	// tan(x)
-	'a1*tan(a2*x1^n1)^n2': (p, depth) => {
+	'a1*tan(a2*x1^n1)^n2': (p, depth, recurse) => {
 		if (p.get('n1').isOne()) {
 			const n2 = p.get('n2');
+			if (!n2.isInteger() || !n2.gt(zero())) {
+				return undefined;
+			}
 
 			if (n2.isOne()) {
 				return p.fromPattern('(a1*log(sec(a2*x1)))/a2');
 			} else if (n2.isEven()) {
 				// tan^n = tan^(n-2)*(sec^2-1)
 				const f = p.fromPattern('a1*tan(a2*x1)^(n2-2)*(sec(a2*x1)^2-1)').expand();
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			} else {
 				// ∫tan^n = tan^(n-1)/(a2*(n-1)) - ∫tan^(n-2)
 				const head = p.fromPattern('(a1*tan(a2*x1)^(n2-1))/(a2*(n2-1))');
-				const tail = integrate(p.fromPattern('-a1*tan(a2*x1)^(n2-2)'), p.get('x1'), depth);
+				const tail = (recurse ?? integrate)(p.fromPattern('-a1*tan(a2*x1)^(n2-2)'), p.get('x1'), depth);
 				return head.plus(tail);
 			}
 		}
 	},
 	// sec(x)
-	'a1*sec(a2*x1^n1)^n2': (p, depth) => {
+	'a1*sec(a2*x1^n1)^n2': (p, depth, recurse) => {
 		if (p.get('n1').isOne()) {
 			const n2 = p.get('n2');
+			if (!n2.isInteger() || !n2.gt(zero())) {
+				return undefined;
+			}
 
 			if (n2.isOne()) {
 				return p.fromPattern('(a1*log(tan(a2*x1)+sec(a2*x1)))/a2');
@@ -78,7 +92,7 @@ const trigTable: TableEntries = {
 
 			// ∫sec^n = sec^(n-2)tan/(a2*(n-1)) + ((n-2)/(n-1))∫sec^(n-2)
 			const head = p.fromPattern('(a1*sec(a2*x1)^(n2-2)*tan(a2*x1))/(a2*(n2-1))');
-			const tail = integrate(
+			const tail = (recurse ?? integrate)(
 				p.fromPattern('a1*((n2-2)/(n2-1))*sec(a2*x1)^(n2-2)'),
 				p.get('x1'),
 				depth
@@ -87,18 +101,21 @@ const trigTable: TableEntries = {
 		}
 	},
 	// csc(x)
-	'a1*csc(a2*x1^n1)^n2': (p, depth) => {
+	'a1*csc(a2*x1^n1)^n2': (p, depth, recurse) => {
 		if (p.get('n1').isOne()) {
 			const n2 = p.get('n2');
+			if (!n2.isInteger() || !n2.gt(zero())) {
+				return undefined;
+			}
 
 			if (n2.isOne()) {
 				return p.fromPattern('-(a1*log(csc(a2*x1)+cot(a2*x1)))/a2');
 			}
 
-			// ∫csc^n = -csc^(n-2)cot/(a2*(n-1)) - ((n-2)/(n-1))∫csc^(n-2)
+			// ∫csc^n = -csc^(n-2)cot/(a2*(n-1)) + ((n-2)/(n-1))∫csc^(n-2)
 			const head = p.fromPattern('-(a1*csc(a2*x1)^(n2-2)*cot(a2*x1))/(a2*(n2-1))');
-			const tail = integrate(
-				p.fromPattern('-a1*((n2-2)/(n2-1))*csc(a2*x1)^(n2-2)'),
+			const tail = (recurse ?? integrate)(
+				p.fromPattern('a1*((n2-2)/(n2-1))*csc(a2*x1)^(n2-2)'),
 				p.get('x1'),
 				depth
 			);
@@ -106,29 +123,36 @@ const trigTable: TableEntries = {
 		}
 	},
 	// cot(x)
-	'a1*cot(a2*x1^n1)^n2': (p, depth) => {
+	'a1*cot(a2*x1^n1)^n2': (p, depth, recurse) => {
 		if (p.get('n1').isOne()) {
 			const n2 = p.get('n2');
+			if (!n2.isInteger() || !n2.gt(zero())) {
+				return undefined;
+			}
 
 			if (n2.isOne()) {
 				return p.fromPattern('(a1*log(sin(a2*x1)))/a2');
 			} else if (n2.isEven()) {
 				// cot^n = cot^(n-2)*(csc^2-1)
 				const f = p.fromPattern('a1*cot(a2*x1)^(n2-2)*(csc(a2*x1)^2-1)').expand();
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			} else {
 				// ∫cot^n = -cot^(n-1)/(a2*(n-1)) - ∫cot^(n-2)
 				const head = p.fromPattern('-(a1*cot(a2*x1)^(n2-1))/(a2*(n2-1))');
-				const tail = integrate(p.fromPattern('-a1*cot(a2*x1)^(n2-2)'), p.get('x1'), depth);
+				const tail = (recurse ?? integrate)(p.fromPattern('-a1*cot(a2*x1)^(n2-2)'), p.get('x1'), depth);
 				return head.plus(tail);
 			}
 		}
 	},
 	// cos(a*x)*cos(b*x)
-	'a1*cos(a2*x1^n1)^n2*cos(a3*x1^n3)^n4': (p, depth) => {
+	'a1*cos(a2*x1^n1)^n2*cos(a3*x1^n3)^n4': (p, depth, recurse) => {
 		if (p.get('n1').isOne() && p.get('n3').isOne()) {
 			const n2 = p.get('n2');
 			const n4 = p.get('n4');
+			if (!n2.isInteger() || !n2.gt(zero()) ||
+				!n4.isInteger() || !n4.gt(zero())) {
+				return undefined;
+			}
 
 			if (!n2.isOne()) {
 				let f: Expression;
@@ -139,7 +163,7 @@ const trigTable: TableEntries = {
 						.fromPattern('a1*cos(a2*x1)*((1+cos(2*a2*x1))/2)^((n2-1)/2)*cos(a3*x1)^n4')
 						.expand();
 				}
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 
 			if (!n4.isOne()) {
@@ -151,7 +175,7 @@ const trigTable: TableEntries = {
 						.fromPattern('a1*cos(a2*x1)^n2*cos(a3*x1)*((1+cos(2*a3*x1))/2)^((n4-1)/2)')
 						.expand();
 				}
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 
 			if (p.get('a2').eq(p.get('a3'))) {
@@ -162,10 +186,14 @@ const trigTable: TableEntries = {
 		}
 	},
 	// sin(a*x)*sin(b*x), with powers allowed
-	'a1*sin(a2*x1^n1)^n2*sin(a3*x1^n3)^n4': (p, depth) => {
+	'a1*sin(a2*x1^n1)^n2*sin(a3*x1^n3)^n4': (p, depth, recurse) => {
 		if (p.get('n1').isOne() && p.get('n3').isOne()) {
 			const n2 = p.get('n2');
 			const n4 = p.get('n4');
+			if (!n2.isInteger() || !n2.gt(zero()) ||
+				!n4.isInteger() || !n4.gt(zero())) {
+				return undefined;
+			}
 
 			// Reduce left power first
 			if (!n2.isOne()) {
@@ -177,7 +205,7 @@ const trigTable: TableEntries = {
 						.fromPattern('a1*sin(a2*x1)*((1-cos(2*a2*x1))/2)^((n2-1)/2)*sin(a3*x1)^n4')
 						.expand();
 				}
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 
 			// Reduce right power
@@ -190,7 +218,7 @@ const trigTable: TableEntries = {
 						.fromPattern('a1*sin(a2*x1)^n2*sin(a3*x1)*((1-cos(2*a3*x1))/2)^((n4-1)/2)')
 						.expand();
 				}
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 
 			// Same frequency: sin(a*x)*sin(a*x) = sin(a*x)^2
@@ -203,10 +231,14 @@ const trigTable: TableEntries = {
 		}
 	},
 	// sin(x)*cos(x)
-	'a1*cos(a2*x1^n1)^n2*sin(a3*x1^n3)^n4': (p, depth) => {
+	'a1*cos(a2*x1^n1)^n2*sin(a3*x1^n3)^n4': (p, depth, recurse) => {
 		if (p.get('n1').isOne() && p.get('n3').isOne()) {
 			const n2 = p.get('n2');
 			const n4 = p.get('n4');
+			if (!n2.isInteger() || !n2.gt(zero()) ||
+				!n4.isInteger() || !n4.gt(zero())) {
+				return undefined;
+			}
 
 			// Reduce left power first
 			if (!n2.isOne()) {
@@ -218,7 +250,7 @@ const trigTable: TableEntries = {
 						.fromPattern('a1*cos(a2*x1)*((1+cos(2*a2*x1))/2)^((n2-1)/2)*sin(a3*x1)^n4')
 						.expand();
 				}
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 
 			// Reduce right power
@@ -231,7 +263,7 @@ const trigTable: TableEntries = {
 						.fromPattern('a1*cos(a2*x1)^n2*sin(a3*x1)*((1-cos(2*a3*x1))/2)^((n4-1)/2)')
 						.expand();
 				}
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 
 			// Same frequency: cos(a*x)*sin(a*x)
@@ -548,7 +580,7 @@ const hyperbolicTrigTable: TableEntries = {
 	},
 
 	// cosh(u)^n * sinh(u)^m
-	'a1*cosh(a2*x1^n1)^n2*sinh(a3*x1^n3)^n4': (p, depth) => {
+	'a1*cosh(a2*x1^n1)^n2*sinh(a3*x1^n3)^n4': (p, depth, recurse) => {
 		if (p.get('n1').isOne() && p.get('n3').isOne() && p.get('a2').eq(p.get('a3'))) {
 			const n2 = p.get('n2');
 			const n4 = p.get('n4');
@@ -565,20 +597,20 @@ const hyperbolicTrigTable: TableEntries = {
 				const f = p
 					.fromPattern('a1*cosh(a2*x1)^n2*(cosh(a2*x1)^2-1)^((n4-1)/2)*sinh(a2*x1)')
 					.expand();
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 
 			if (n2.isOdd()) {
 				const f = p
 					.fromPattern('a1*(1+sinh(a2*x1)^2)^((n2-1)/2)*sinh(a2*x1)^n4*cosh(a2*x1)')
 					.expand();
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 		}
 	},
 
 	// sech(u)^n * tanh(u)^m
-	'a1*sech(a2*x1^n1)^n2*tanh(a3*x1^n3)^n4': (p, depth) => {
+	'a1*sech(a2*x1^n1)^n2*tanh(a3*x1^n3)^n4': (p, depth, recurse) => {
 		if (p.get('n1').isOne() && p.get('n3').isOne() && p.get('a2').eq(p.get('a3'))) {
 			const n2 = p.get('n2');
 			const n4 = p.get('n4');
@@ -595,20 +627,20 @@ const hyperbolicTrigTable: TableEntries = {
 				const f = p
 					.fromPattern('a1*sech(a2*x1)^n2*(1-sech(a2*x1)^2)^((n4-1)/2)*tanh(a2*x1)')
 					.expand();
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 
 			if (n2.isEven()) {
 				const f = p
 					.fromPattern('a1*(1-tanh(a2*x1)^2)^((n2-2)/2)*sech(a2*x1)^2*tanh(a2*x1)^n4')
 					.expand();
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 		}
 	},
 
 	// coth(u)^n * csch(u)^m
-	'a1*coth(a2*x1^n1)^n2*csch(a3*x1^n3)^n4': (p, depth) => {
+	'a1*coth(a2*x1^n1)^n2*csch(a3*x1^n3)^n4': (p, depth, recurse) => {
 		if (p.get('n1').isOne() && p.get('n3').isOne() && p.get('a2').eq(p.get('a3'))) {
 			const n2 = p.get('n2');
 			const n4 = p.get('n4');
@@ -625,14 +657,14 @@ const hyperbolicTrigTable: TableEntries = {
 				const f = p
 					.fromPattern('a1*(1+csch(a2*x1)^2)^((n2-1)/2)*csch(a2*x1)^n4*coth(a2*x1)')
 					.expand();
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 
 			if (n4.isEven()) {
 				const f = p
 					.fromPattern('a1*coth(a2*x1)^n2*(coth(a2*x1)^2-1)^((n4-2)/2)*csch(a2*x1)^2')
 					.expand();
-				return integrate(f, p.get('x1'), depth);
+				return (recurse ?? integrate)(f, p.get('x1'), depth);
 			}
 		}
 	},
@@ -771,23 +803,11 @@ const powerLogTable: TableEntries = {
 							return p.fromPattern(
 								'a1*(x1*log(a2*(a3*x1^2+a4))-2*a3*(x1/a3-(a4*log((2*a3*x1-2*sqrt(-(a3*a4)))/(2*a3*x1+2*sqrt(-(a3*a4)))))/(2*a3*sqrt(-(a3*a4)))))'
 							);
-						} else if (n1.eq(three())) {
-							return p.fromPattern(
-								`a1*(x1*log(a2*(a3*x1^3+a4))-3*a3*((${Expression.Img()}*a4^(1/3)*log((2*a3^(2/3)*x1-sqrt(3)*${Expression.Img()}*` +
-									`a3^(1/3)*a4^(1/3)-a3^(1/3)*a4^(1/3))/(2*a3^(2/3)*x1+sqrt(3)*${Expression.Img()}*a3^(1/3)*a4^(1/3)-a3^(1/3)*a4^(1/3))))/(2*sqrt(3)*a3^(4/3))` +
-									`+(a4^(1/3)*log(a3^(2/3)*x1^2-a3^(1/3)*a4^(1/3)*x1+a4^(2/3)))/(6*a3^(4/3))-(a4^(1/3)*log((a3^(1/3)*x1+a4^(1/3))/a3^(1/3)))/(3*a3^(4/3))+x1/a3))`
-							);
 						}
 					} else {
 						if (n1.eq(two())) {
 							return p.fromPattern(
 								'a1*(x1*log(a2*(a3*x1^2+a4))-2*a3*(x1/a3-(a4*atan((a3*x1)/sqrt(a3*a4)))/(a3*sqrt(a3*a4))))'
-							);
-						} else if (n1.eq(three())) {
-							return p.fromPattern(
-								`a1*(x1*log(a2*(a3*x1^3+a4))-3*a3*((${Expression.Img()}*a4^(1/3)*log((2*a3^(2/3)*x1-sqrt(3)*${Expression.Img()}*` +
-									`a3^(1/3)*a4^(1/3)-a3^(1/3)*a4^(1/3))/(2*a3^(2/3)*x1+sqrt(3)*${Expression.Img()}*a3^(1/3)*a4^(1/3)-a3^(1/3)*a4^(1/3))))/(2*sqrt(3)*a3^(4/3))` +
-									`+(a4^(1/3)*log(a3^(2/3)*x1^2-a3^(1/3)*a4^(1/3)*x1+a4^(2/3)))/(6*a3^(4/3))-(a4^(1/3)*log((a3^(1/3)*x1+a4^(1/3))/a3^(1/3)))/(3*a3^(4/3))+x1/a3))`
 							);
 						}
 					}
@@ -798,11 +818,36 @@ const powerLogTable: TableEntries = {
 };
 
 const exponentialTable: TableEntries = {
-	// e^x, 2^x, ...
+	// e^x, 2^x, ...; negative quadratic exponent uses erf.
 	'a1*(a2)^(a3*x1^n1)': p => {
+		let retval: Expression | undefined;
 		if (p.get('n1').isOne()) {
-			return p.fromPattern('(a1*a2^(a3*x1))/(log(a2)*a3)');
+			retval = p.fromPattern('(a1*a2^(a3*x1))/(log(a2)*a3)');
+		} else if (
+			p.get('n1').eq(two()) &&
+			p.equal('a2', 'e') &&
+			p.get('a3').isNUM() &&
+			p.get('a3').lt(zero())
+		) {
+			retval = p.fromPattern('(a1*sqrt(pi)*erf(x1*sqrt(-a3)))/(2*sqrt(-a3))');
 		}
+		return retval;
+	},
+
+	// e^(-a*x), 2^(-a*x), ...; positive quadratic rate uses erf.
+	'a1/(a2)^(a3*x1^n1)': p => {
+		let retval: Expression | undefined;
+		if (p.get('n1').isOne()) {
+			retval = p.fromPattern('-(a1*a2^(-a3*x1))/(log(a2)*a3)');
+		} else if (
+			p.get('n1').eq(two()) &&
+			p.equal('a2', 'e') &&
+			p.get('a3').isNUM() &&
+			p.get('a3').gt(zero())
+		) {
+			retval = p.fromPattern('(a1*sqrt(pi)*erf(x1*sqrt(a3)))/(2*sqrt(a3))');
+		}
+		return retval;
 	},
 
 	// e^(a*(bx+c)), 2^(a*(bx+c)), ...
@@ -812,6 +857,53 @@ const exponentialTable: TableEntries = {
 		}
 	},
 };
+
+/** Integrate x^n times a constant-base exponential, including reciprocal forms. */
+function polynomialExponentialProduct(p: Pattern, reciprocal: boolean): Expression | undefined {
+	let retval: Expression | undefined;
+	if (p.get('n1').isOne()) {
+		const degree = Number(p.get('n2').text());
+		if (Number.isInteger(degree) && degree >= 1 && degree <= 6) {
+			const rate = p.fromPattern(reciprocal ? '-a3*log(a2)' : 'a3*log(a2)');
+			if (!rate.isZero()) {
+				const x = p.get('x1');
+				let polynomial = Expression.Number(1).div(rate);
+				for (let n = 1; n <= degree; n++) {
+					polynomial = x.pow(n).minus(Expression.Number(n).times(polynomial)).div(rate);
+				}
+				const exponential = p.fromPattern(
+					reciprocal ? 'a1/a2^(a3*x1)' : 'a1*a2^(a3*x1)'
+				);
+				retval = exponential.times(polynomial);
+			}
+		}
+	}
+	return retval;
+}
+
+function integrateExponentialHyperbolic(p: Pattern, isSinh: boolean, reciprocal: boolean): Expression | undefined {
+	let retval: Expression | undefined;
+	if (p.get('n1').isOne() && p.get('n2').isOne() && p.get('n3').isOne()) {
+		const base = p.get('a2');
+		const rate = base.isE()
+			? p.get('a3')
+			: Expression.toFunction('log', [base]).times(p.get('a3'));
+		const frequency = p.get('a4');
+		const exponent = reciprocal ? rate.neg() : rate;
+		const positiveRate = exponent.plus(frequency);
+		const negativeRate = exponent.minus(frequency);
+		const x = p.get('x1');
+		const coefficient = p.get('a1').div(two());
+		const positive = positiveRate.isZero()
+			? coefficient.times(x)
+			: coefficient.times(Expression.toFunction('exp', [positiveRate.times(x)])).div(positiveRate);
+		const negative = negativeRate.isZero()
+			? coefficient.times(x)
+			: coefficient.times(Expression.toFunction('exp', [negativeRate.times(x)])).div(negativeRate);
+		retval = isSinh ? positive.minus(negative) : positive.plus(negative);
+	}
+	return retval;
+}
 
 const knownProductsTable: TableEntries = {
 	// e^x*cos(x)
@@ -838,62 +930,14 @@ const knownProductsTable: TableEntries = {
 			}
 		}
 	},
-	// e^x*cosh(x)
-	'a1*(a2)^(a3*x1^n1)*cosh(a4*x1^n2)^n3': p => {
-		if (p.get('n1').isOne()) {
-			if (p.get('n2').isOne()) {
-				if (p.get('n3').isOne()) {
-					return p.fromPattern(
-						'(a1*(x1-e^(-((-((log(a2)*a3)/a4)-1)*a4*x1))/((-((log(a2)*a3)/a4)-1)*a4)))/2'
-					);
-				}
-			}
-		}
-	},
-	// e^x*sinh(x)
-	'a1*(a2)^(a3*x1^n1)*sinh(a4*x1^n2)^n3': p => {
-		if (p.get('n1').isOne()) {
-			if (p.get('n2').isOne()) {
-				if (p.get('n3').isOne()) {
-					return p.fromPattern(
-						'(a1*(-x1-e^(-((-((log(a2)*a3)/a4)-1)*a4*x1))/((-((log(a2)*a3)/a4)-1)*a4)))/2'
-					);
-				}
-			}
-		}
-	},
-	// e^x*x
-	'a1*(a2)^(a3*x1^n1)*x1^n2': p => {
-		if (p.get('n1').isOne()) {
-			const n2 = p.get('n2');
-			if (n2.isOne()) {
-				return p.fromPattern('(e^(log(a2)*a3*x1)*a1*(log(a2)*a3*x1-1))/(log(a2)^2*a3^2)');
-			} else if (n2.eq(two())) {
-				return p.fromPattern(
-					'(e^(log(a2)*a3*x1)*a1*(log(a2)^2*a3^2*x1^2-2*log(a2)*a3*x1+2))/(log(a2)^3*a3^3)'
-				);
-			} else if (n2.eq(three())) {
-				return p.fromPattern(
-					'(e^(log(a2)*a3*x1)*a1*(log(a2)^3*a3^3*x1^3-3*log(a2)^2*a3^2*x1^2+6*log(a2)*a3*x1-6))/(log(a2)^4*a3^4)'
-				);
-			} else if (n2.eq(four())) {
-				return p.fromPattern(
-					'(e^(log(a2)*a3*x1)*a1*(log(a2)^4*a3^4*x1^4-4*log(a2)^3*a3^3*x1^3+12*log(a2)^2*a3^2*x1^2-24*log(a2)*a3*x1+24))/(log(a2)^5*a3^5)'
-				);
-			} else if (n2.eq(five())) {
-				return p.fromPattern(
-					'(e^(log(a2)*a3*x1)*a1*(log(a2)^5*a3^5*x1^5-5*log(a2)^4*a3^4*x1^4+20*log(a2)^3*a3^3*x1^3-' +
-						'60*log(a2)^2*a3^2*x1^2+120*log(a2)*a3*x1-120))/(log(a2)^6*a3^6)'
-				);
-			} else if (n2.eq(six())) {
-				return p.fromPattern(
-					'(e^(log(a2)*a3*x1)*a1*(log(a2)^6*a3^6*x1^6-6*log(a2)^5*a3^5*x1^5+30*log(a2)^4*a3^4*x1^4-' +
-						'120*log(a2)^3*a3^3*x1^3+360*log(a2)^2*a3^2*x1^2-720*log(a2)*a3*x1+720))/(log(a2)^7*a3^7)'
-				);
-			}
-			// Switch to IBP after this
-		}
-	},
+	// Exponential-hyperbolic products, with both exponent signs and resonances.
+	'a1*(a2)^(a3*x1^n1)*cosh(a4*x1^n2)^n3': p => integrateExponentialHyperbolic(p, false, false),
+	'a1*(a2)^(a3*x1^n1)*sinh(a4*x1^n2)^n3': p => integrateExponentialHyperbolic(p, true, false),
+	'(a1*cosh(a4*x1^n2)^n3)/(a2)^(a3*x1^n1)': p => integrateExponentialHyperbolic(p, false, true),
+	'(a1*sinh(a4*x1^n2)^n3)/(a2)^(a3*x1^n1)': p => integrateExponentialHyperbolic(p, true, true),
+	// x^n*b^(a*x), n = 1..6, including normalized negative exponents.
+	'a1*(a2)^(a3*x1^n1)*x1^n2': p => polynomialExponentialProduct(p, false),
+	'(a1*x1^n2)/(a2)^(a3*x1^n1)': p => polynomialExponentialProduct(p, true),
 };
 
 /**
@@ -971,27 +1015,51 @@ const knownIntegralsTable: TableEntries = {
 		}
 	},
 
-	// diff(asec(x))
+	// Integral of 1/(x*sqrt(a3-a2/x^2)) on its real branches.
 	'a1/(x1^n1*(-a2/x1^n2+a3)^n3)': p => {
-		if (p.get('n1').isOne() && p.get('n2').eq(two()) && p.get('n3').isHalf()) {
-			return p.fromPattern('(a1/a3^(1/2))*asec((a3^(1/2)*x1)/(a2^(1/2)))');
+		let retval: Expression | undefined;
+		if (p.get('n1').isOne() && p.get('n2').eq(two()) && p.get('n3').isHalf() &&
+			p.get('a2').gt(zero()) && p.get('a3').gt(zero())) {
+			const x = p.get('x1');
+			const boundary = p.fromPattern('sqrt(a2/a3)');
+			if (x.gt(boundary)) {
+				retval = p.fromPattern('(a1/sqrt(a3))*acosh(x1*sqrt(a3/a2))');
+			} else if (x.lt(boundary.neg())) {
+				retval = p.fromPattern('(a1/sqrt(a3))*acosh(-x1*sqrt(a3/a2))');
+			}
 		}
+		return retval;
 	},
 
-	// diff(acsc(x))
+	// Negative counterpart of the preceding real-domain rule.
 	'-a1/(x1^n1*(-a2/x1^n2+a3)^n3)': p => {
-		if (p.get('n1').isOne() && p.get('n2').eq(two()) && p.get('n3').isHalf()) {
-			return p.fromPattern('(a1/a3^(1/2))*acsc((a3^(1/2)*x1)/(a2^(1/2)))');
+		let retval: Expression | undefined;
+		if (p.get('n1').isOne() && p.get('n2').eq(two()) && p.get('n3').isHalf() &&
+			p.get('a2').gt(zero()) && p.get('a3').gt(zero())) {
+			const x = p.get('x1');
+			const boundary = p.fromPattern('sqrt(a2/a3)');
+			if (x.gt(boundary)) {
+				retval = p.fromPattern('(-a1/sqrt(a3))*acosh(x1*sqrt(a3/a2))');
+			} else if (x.lt(boundary.neg())) {
+				retval = p.fromPattern('(-a1/sqrt(a3))*acosh(-x1*sqrt(a3/a2))');
+			}
 		}
+		return retval;
 	},
 
-	// diff(acsch(x))
-	// -1/(x*sqrt(1+1/x^2)) -> -acsch(x^-1)
-	// after constant stripping: 1/(x*sqrt(1+1/x^2))
+	// Integral of 1/(x*sqrt(a3+a2/x^2)) for known real signs.
 	'a1/(x1^n1*(a2/x1^n2+a3)^n3)': p => {
-		if (p.get('n1').isOne() && p.get('n2').eq(two()) && p.get('n3').eq(half())) {
-			return p.fromPattern('a1*acsch((sqrt(a2/a3))/x1)/sqrt(a2*a3)');
+		let retval: Expression | undefined;
+		if (p.get('n1').isOne() && p.get('n2').eq(two()) && p.get('n3').eq(half()) &&
+			p.get('a2').gt(zero()) && p.get('a3').gt(zero())) {
+			const x = p.get('x1');
+			if (x.gt(zero())) {
+				retval = p.fromPattern('(a1/sqrt(a3))*asinh(x1*sqrt(a3/a2))');
+			} else if (x.lt(zero())) {
+				retval = p.fromPattern('(a1/sqrt(a3))*asinh(-x1*sqrt(a3/a2))');
+			}
 		}
+		return retval;
 	},
 };
 

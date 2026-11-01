@@ -1,5 +1,5 @@
 import { Expression } from '../core/classes/expression/Expression';
-import { FRESNEL_C, FRESNEL_S } from '../core/classes/parser/constants';
+import { FRESNEL_C, FRESNEL_S } from '../core/constants/functionNames';
 import { fresnelC, fresnelS } from '../core/functions/fresnelNumeric';
 
 import type { ExpressionInput } from '../core/types';

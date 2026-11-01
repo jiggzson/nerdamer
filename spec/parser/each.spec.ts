@@ -1,9 +1,9 @@
 import { Collection } from '../../src/core/classes/collection/Collection';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { Parser } from '../../src/core/classes/parser/Parser';
-import { loadParserFunctions } from '../../src/core/parserFunctions';
+import { registerParserFunctions } from '../../src/core/parserFunctions';
 
-loadParserFunctions();
+registerParserFunctions();
 
 describe('Parser each', () => {
 	it('iterates supported parser containers', () => {

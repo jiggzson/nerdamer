@@ -2,11 +2,12 @@ import { hypot } from '../../math/geometry';
 import { atan2, cos, sin } from '../../math/trig';
 import { Expression } from '../classes/expression/Expression';
 import { minusOne, one, two, zero } from '../classes/expression/shortcuts';
-import { ATAN, ATANH, CONJUGATE, CSGN, E, IMAGPART, REALPART } from '../classes/parser/constants';
 import { add } from '../classes/parser/operations/add';
 import { divide } from '../classes/parser/operations/divide';
 import { multiply } from '../classes/parser/operations/multiply';
 import { power } from '../classes/parser/operations/power';
+import { ATAN, ATANH, CONJUGATE, CSGN, IMAGPART, REALPART } from '../constants/functionNames';
+import { E } from '../constants/symbolNames';
 
 import { expand } from './expand/expand';
 
@@ -42,6 +43,13 @@ export function realPart(a: Expression) {
 		const multiplier = Expression.fromRational(x.getMultiplier());
 		if (p.isInteger()) {
 			retval = multiply(multiplier, realPart(power(x.getBase(), p)));
+		} else if (x.isE() && p.isComplex()) {
+			const pReal = realPart(p);
+			const pImaginary = imagPart(p);
+			retval = multiply(
+				multiplier,
+				multiply(power(Expression.Variable(E), pReal), cos(pImaginary))
+			);
 		} else {
 			const [r, theta] = toPolarFormArray(x.getBase());
 			const rp = power(r, p);
@@ -160,6 +168,13 @@ export function imagPart(a: Expression) {
 		const multiplier = Expression.fromRational(x.getMultiplier());
 		if (p.isInteger()) {
 			retval = multiply(multiplier, imagPart(power(x.getBase(), p)));
+		} else if (x.isE() && p.isComplex()) {
+			const pReal = realPart(p);
+			const pImaginary = imagPart(p);
+			retval = multiply(
+				multiplier,
+				multiply(power(Expression.Variable(E), pReal), sin(pImaginary))
+			);
 		} else {
 			const [r, theta] = toPolarFormArray(x.getBase());
 			const rp = power(r, p);
@@ -272,6 +287,18 @@ export function simplifyImaginary(x: Expression) {
 	return x;
 }
 
+/**
+ * Returns the coefficient of i when x is purely imaginary.
+ * Returns undefined when x has a nonzero real component.
+ */
+export function pureImaginaryCoefficient(x: Expression): Expression | undefined {
+	if (!x.isComplex()) {
+		return undefined;
+	}
+
+	return x.realPart().isZero() ? x.imagPart() : undefined;
+}
+
 export function toPolarFormArray(x: Expression) {
 	const re = x.realPart();
 	const im = x.imagPart();
@@ -281,6 +308,7 @@ export function toPolarFormArray(x: Expression) {
 	let theta: Expression;
 	if (re.isZero()) {
 		if (im.isZero()) {
+			// Use a zero angle at the origin by convention (arg(0) = 0).
 			theta = zero();
 		} else if (im.isConstant()) {
 			// On the imaginary axis: choose ±pi/2 based on sign(im)
@@ -393,10 +421,17 @@ export function rectForm(x: ExpressionInput): Expression {
 }
 
 /**
- * Returns the argument of an expression
+ * Returns the principal argument of a complex expression.
  *
- * @param x
- * @returns
+ * @remarks
+ * Nerdamer follows the WolframAlpha convention arg(0) = 0,
+ * matching the zero-angle choice in toPolarFormArray(). In contrast,
+ * SymPy returns nan for arg(0), and NIST DLMF §4.2 leaves the argument
+ * of zero undefined because zero has no direction.
+ * See https://dlmf.nist.gov/4.2.
+ *
+ * @param x - The expression whose principal argument is requested
+ * @returns The principal argument, or zero when x is zero
  */
 export function arg(x: ExpressionInput) {
 	x = Expression.create(x);

@@ -2,6 +2,11 @@ import { Dictionary } from '../classes/dictionary/Dictionary';
 import { Expression } from '../classes/expression/Expression';
 import { one, two } from '../classes/expression/shortcuts';
 import { Matrix } from '../classes/matrix/Matrix';
+import { Parser } from '../classes/parser/Parser';
+import { Token } from '../classes/parser/Token';
+import { ValuesSet } from '../classes/valuesSet/ValuesSet';
+import { Vector } from '../classes/vector/Vector';
+import { Scope } from '../common/classes/Scope';
 import {
 	CONJUGATE,
 	DEG,
@@ -9,15 +14,10 @@ import {
 	DOUBLE_FACTORIAL,
 	FACTORIAL,
 	HEAVISIDE,
-	INFINITY,
 	LI,
-	WRAP,
-} from '../classes/parser/constants';
-import { Parser } from '../classes/parser/Parser';
-import { Token } from '../classes/parser/Token';
-import { ValuesSet } from '../classes/valuesSet/ValuesSet';
-import { Vector } from '../classes/vector/Vector';
-import { Scope } from '../common/classes/Scope';
+} from '../constants/functionNames';
+import { WRAP } from '../constants/parserSyntax';
+import { INFINITY } from '../constants/symbolNames';
 import { mathFunctionRegistry } from '../dispatch';
 import { message } from '../errors';
 
@@ -168,13 +168,39 @@ export class Converter extends BaseConverter {
 	protected functionString(input: Expression, options?: OptionsObject): string {
 		const name = this.getFunctionName(input.name || '');
 		const args = input.getArguments();
-		const output = args.map(arg => this.convert(arg, options));
+		const unaryChain: Expression[] = [];
+		let argument = args[0];
 
-		if (this.mode === TEXT) {
-			return `${name}(${output.join(',')})`;
+		if (args.length === 1) {
+			// Plain unary calls have no multiplier/power formatting of their own.
+			// Collect them without recursive convert() calls so deep finite chains
+			// do not exhaust the native stack before reaching their argument.
+			while (argument.isFunction() && argument.getArguments().length === 1 &&
+				argument.getMultiplier().isOne() && argument.getPower().isOne()) {
+				unaryChain.push(argument);
+				argument = argument.getArguments()[0];
+			}
 		}
 
-		return this.formatTeXFunction(input.name || '', name, output, args);
+		const output = unaryChain.length > 0
+			? [this.convert(argument, options)]
+			: args.map(arg => this.convert(arg, options));
+
+		for (let index = unaryChain.length - 1; index >= 0; index--) {
+			const nested = unaryChain[index];
+			const nestedName = this.getFunctionName(nested.name || '');
+			output[0] = this.mode === TEXT
+				? `${nestedName}(${output[0]})`
+				: this.formatTeXFunction(nested.name || '', nestedName, [output[0]], nested.getArguments());
+		}
+
+		let retval: string;
+		if (this.mode === TEXT) {
+			retval = `${name}(${output.join(',')})`;
+		} else {
+			retval = this.formatTeXFunction(input.name || '', name, output, args);
+		}
+		return retval;
 	}
 
 	protected value(
@@ -423,6 +449,7 @@ export class Converter extends BaseConverter {
 			// Basic math
 			sqrt: std,
 			abs: () => this.inBrackets(output[0], 'abs'),
+			magnitude: () => this.inBrackets(output[0], 'abs'),
 			cbrt: () => `\\sqrt[3]${this.inBraces(output[0])}`,
 			max: () => `\\max${this.inBrackets(output.join(','), 'parens')}`,
 			min: () => `\\min${this.inBrackets(output.join(','), 'parens')}`,
@@ -510,6 +537,7 @@ export class Converter extends BaseConverter {
 			realpart: () => `\\Re${this.inBrackets(output[0])}`,
 			imagpart: () => `\\Im${this.inBrackets(output[0])}`,
 			arg: std,
+			phase: () => `\\arg${this.inBrackets(output[0])}`,
 			[CONJUGATE]: () => `\\overline${this.inBraces(output[0])}`,
 
 			// Linear algebra
@@ -796,7 +824,7 @@ export class Converter extends BaseConverter {
 		s = s.replace(/\\log\s*_\s*\{([^}]+)\}\s*([a-zA-Z0-9_.]+)/g, 'log($2,$1)');
 
 		// --- Special functions ---
-		s = this.replaceBracedTeXCommand(s, 'overline', CONJUGATE);
+		s = this.replaceBracedCommand(s, 'overline', CONJUGATE);
 		s = s.replace(/\\Gamma\s*/g, 'gamma');
 		s = s.replace(/\\delta\s*/g, DIRAC);
 		s = s.replace(/(?<![a-zA-Z])H\s*(?=(?:\\left\s*)?\()/g, HEAVISIDE);
@@ -846,7 +874,7 @@ export class Converter extends BaseConverter {
 	 * nested TeX groups. A flat regular expression cannot safely recover those arguments,
 	 * so this keeps the brace matching local to the TeX conversion pipeline.
 	 */
-	private replaceBracedTeXCommand(
+	private replaceBracedCommand(
 		input: string,
 		command: string,
 		functionName: string
@@ -887,7 +915,7 @@ export class Converter extends BaseConverter {
 						cursor = input.length;
 					} else {
 						const inner = input.slice(openIndex + 1, closeIndex - 1);
-						const convertedInner = this.replaceBracedTeXCommand(
+						const convertedInner = this.replaceBracedCommand(
 							inner,
 							command,
 							functionName

@@ -48,7 +48,7 @@ function getPreviousIdentifier(input: string, at: number): string | undefined {
 	return identifier && isIdentifierStart(identifier[0]) ? identifier : undefined;
 }
 
-function getNextSignificantCharacter(input: string, at: number): string | undefined {
+function nextSignificantChar(input: string, at: number): string | undefined {
 	let index = at;
 	while (index < input.length && /\s/.test(input[index])) {
 		index++;
@@ -130,7 +130,7 @@ function normalizeStatementSeparators(input: string): string {
 		}
 
 		if (character === ';') {
-			const nextCharacter = getNextSignificantCharacter(input, index + 1);
+			const nextCharacter = nextSignificantChar(input, index + 1);
 			const currentScope = scopes[scopes.length - 1];
 			const isTrailingTerminator =
 				nextCharacter === undefined ||
@@ -290,8 +290,26 @@ function findArgumentEnd(
 	return index;
 }
 
+/**
+ * Converts bracketed or quoted recurring decimal digits into exact fractions.
+ * The unquoted ellipsis notation is ambiguous and remains unsupported.
+ */
+function normalizeRecurringDecimals(input: string): string {
+	return input.replace(
+		/(?<![a-z0-9_.])(\d+)\.(\d*)(?:'(\d+)'|\[(\d+)\])(?![a-z0-9_.'])/gi,
+		(_match, whole: string, nonRepeating: string, quoted: string | undefined, bracketed: string | undefined) => {
+			const repeating = quoted ?? bracketed!;
+			const prefix = whole + nonRepeating;
+			const numerator = BigInt(prefix + repeating) - BigInt(prefix);
+			const denominator = BigInt('9'.repeat(repeating.length) + '0'.repeat(nonRepeating.length));
+			return `(${numerator}/${denominator})`;
+		}
+	);
+}
+
 export function preprocess(input: string, functions: FunctionRegistry): string {
 	let retval = normalizeComments(input);
+	retval = normalizeRecurringDecimals(retval);
 	retval = normalizeStatementSeparators(retval);
 	let bracketless = findBracketlessFunction(retval, functions);
 

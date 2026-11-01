@@ -1,6 +1,6 @@
 import { Expression } from '../../core/classes/expression/Expression';
 import { one, zero } from '../../core/classes/expression/shortcuts';
-import { ASEC, ACSC, ACOT } from '../../core/classes/parser/constants';
+import { ASEC, ACSC, ACOT } from '../../core/constants/functionNames';
 
 /**
  * Determines whether an expression contains any asec, acsc, or acot functions.
@@ -96,6 +96,12 @@ export function rewriteInverseTrig(x: Expression): Expression {
 			result = result.times(Expression.fromRational(m));
 		}
 		return result;
+	}
+
+	if (x.isFunction()) {
+		const args = x.getArguments().map(arg => rewriteInverseTrig(arg));
+		const result = Expression.toFunction(x.name, args).pow(x.getPower());
+		return result.times(Expression.fromRational(x.getMultiplier()));
 	}
 
 	return x;

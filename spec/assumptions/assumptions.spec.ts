@@ -11,7 +11,7 @@ import {
 import { Assumption } from '../../src/core/classes/assumption/Assumption';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { minusOne, one } from '../../src/core/classes/expression/shortcuts';
-import { ALL_SYMBOL, INDEX_VARIABLE } from '../../src/core/classes/parser/constants';
+import { ALL_SYMBOL, INTEGER_PARAM } from '../../src/core/constants/symbolNames';
 import { Parser } from '../../src/core/classes/parser/Parser';
 
 describe('Global assumptions', () => {
@@ -225,11 +225,11 @@ describe('Global assumptions', () => {
 	it('rejects assumptions on restricted parser and solver sentinels', () => {
 		const interval = new Assumption(0, 1);
 
-		expect(() => assume(`${INDEX_VARIABLE}>0`)).toThrow();
+		expect(() => assume(`${INTEGER_PARAM}>0`)).toThrow();
 		expect(() => assume(`${ALL_SYMBOL}>0`)).toThrow();
-		expect(() => assume(INDEX_VARIABLE, interval)).toThrow();
+		expect(() => assume(INTEGER_PARAM, interval)).toThrow();
 		expect(() => assume(ALL_SYMBOL, interval)).toThrow();
-		expect(getAssumptionFor(INDEX_VARIABLE)).toBeUndefined();
+		expect(getAssumptionFor(INTEGER_PARAM)).toBeUndefined();
 		expect(getAssumptionFor(ALL_SYMBOL)).toBeUndefined();
 	});
 

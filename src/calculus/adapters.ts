@@ -1,5 +1,5 @@
 import { Equation } from '../core/classes/equation/Equation';
-import { assertPlainVariableAndGetString } from '../core/classes/expression/utils';
+import { requireVariableName } from '../core/classes/expression/utils';
 
 import { diff } from './derivative/diff';
 import { integrate } from './integrate/integrate';
@@ -53,7 +53,7 @@ export function directionalLimit(
 	let direction: LimitDir = 'both';
 
 	if (dir) {
-		direction = assertPlainVariableAndGetString(dir) as LimitDir;
+		direction = requireVariableName(dir) as LimitDir;
 	}
 
 	const retval = limit(expr, x, val, direction);

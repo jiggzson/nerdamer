@@ -1,7 +1,7 @@
 import { Expression } from '../core/classes/expression/Expression';
 import { four, minusOne, one, six, three, two, zero } from '../core/classes/expression/shortcuts';
+import { Rational } from '../core/classes/rational/Rational';
 import {
-	PI,
 	COS,
 	SIN,
 	TAN,
@@ -27,15 +27,17 @@ import {
 	ASECH,
 	ACSCH,
 	ACOTH,
-} from '../core/classes/parser/constants';
-import { Rational } from '../core/classes/rational/Rational';
+} from '../core/constants/functionNames';
+import { PI } from '../core/constants/symbolNames';
 import { message, UndefinedError } from '../core/errors';
 import { isEven } from '../core/functions/bigint/bigint';
+import { pureImaginaryCoefficient } from '../core/functions/complex';
 import { Settings } from '../core/Settings';
 
 import { hypot } from './geometry';
-import { sqrt } from './math';
-import { log } from './math';
+
+import { sqrt } from './index';
+import { log } from './index';
 
 import type { ExpressionInput } from '../core/types';
 
@@ -70,7 +72,7 @@ export {
 	INVERSE_TRIG,
 	HYPERBOLIC_TRIG,
 	INVERSE_HYPERBOLIC_TRIG,
-} from '../core/classes/parser/constants';
+} from '../core/constants/functionNames';
 
 /**
  * Gets the quadrant of the trig function
@@ -162,6 +164,11 @@ export function cos(x: ExpressionInput): Expression {
 	// cos is an even function: cos(-x) = cos(x)
 	if (x.sign() === -1 && !x.isNUM()) {
 		return cos(x.neg());
+	}
+
+	const imaginary = !Settings.EVALUATE ? pureImaginaryCoefficient(x) : undefined;
+	if (imaginary) {
+		return cosh(imaginary);
 	}
 
 	const m = Math.abs(+x.getMultiplier());
@@ -282,6 +289,11 @@ export function sin(x: ExpressionInput): Expression {
 		return sin(x.neg()).neg();
 	}
 
+	const imaginary = !Settings.EVALUATE ? pureImaginaryCoefficient(x) : undefined;
+	if (imaginary) {
+		return sinh(imaginary).times(Expression.Img());
+	}
+
 	const m = Math.abs(+x.getMultiplier());
 
 	if (m === 1 && x.isFunction(ATAN)) {
@@ -395,6 +407,11 @@ export function tan(x: ExpressionInput): Expression {
 	// tan is an odd function: tan(-x) = -tan(x)
 	if (x.sign() === -1 && !x.isNUM()) {
 		return tan(x.neg()).neg();
+	}
+
+	const imaginary = !Settings.EVALUATE ? pureImaginaryCoefficient(x) : undefined;
+	if (imaginary) {
+		return tanh(imaginary).times(Expression.Img());
 	}
 
 	const m = Math.abs(+x.getMultiplier());
@@ -769,6 +786,12 @@ export function asin(x: ExpressionInput) {
  * Returns exact symbolic values involving π for well-known inputs:
  * `0 → 0`, `1/√3 → π/6`, `1 → π/4`, `√3 → π/3`.
  * Uses the identity `atan(-x) = -atan(x)` for negative arguments.
+ * For complex arguments, uses the principal logarithmic branch, with
+ * logarithmic singularities at ±i. The negative imaginary-axis cut is
+ * selected by odd symmetry rather than the opposite bank of the cut.
+ *
+ * Reference: NIST DLMF §4.23, Inverse Trigonometric Functions,
+ * https://dlmf.nist.gov/4.23
  *
  * At infinity: `atan(+∞) = π/2`, `atan(−∞) = −π/2`.
  *
@@ -800,8 +823,17 @@ export function atan(x: ExpressionInput): Expression {
 		retval = Expression.Number(x.getMultiplier().toDecimal().atan());
 	} else if (Settings.EVALUATE && x.isComplex()) {
 		const i = Expression.Img();
-		const a = log(i.minus(x).div(i.plus(x)));
-		retval = i.neg().div(two()).times(a).expand();
+		const imaginary = pureImaginaryCoefficient(x);
+		// atan has logarithmic singularities at ±i. Normalize the negative
+		// imaginary cut by odd symmetry to preserve the principal branch.
+		if (x.eq(i) || x.eq(i.neg())) {
+			throw new UndefinedError(message('undefinedValue'));
+		} else if (imaginary?.isNUM() && imaginary.sign() < 0) {
+			retval = atan(x.neg()).neg();
+		} else {
+			const a = log(i.minus(x).div(i.plus(x)));
+			retval = i.neg().div(two()).times(a).expand();
+		}
 	} else if (!x.isComplex()) {
 		// Known values lookup using structural equality
 		const knownValues: [Expression, Expression][] = [
@@ -963,7 +995,7 @@ export function atan2(y: ExpressionInput, x: ExpressionInput): Expression {
 
 	// atan2(±∞, ±∞) is undefined
 	if ((x.isPosInf() || x.isNegInf()) && (y.isPosInf() || y.isNegInf())) {
-		throw new UndefinedError(message('atan2Undefined'));
+		throw new UndefinedError(message('atan2InfiniteArguments'));
 	}
 
 	// atan2(y, ∞) = 0, atan2(y, -∞) = π or -π depending on sign of y
@@ -1032,6 +1064,11 @@ export function cosh(x: ExpressionInput) {
 		return Expression.Inf();
 	}
 
+	const imaginary = !Settings.EVALUATE ? pureImaginaryCoefficient(x) : undefined;
+	if (imaginary) {
+		return cos(imaginary);
+	}
+
 	// cosh(0) = 1
 	if (x.isZero()) {
 		retval = one();
@@ -1076,6 +1113,11 @@ export function sinh(x: ExpressionInput) {
 	// sinh(∞) = ∞, sinh(-∞) = -∞
 	if (x.isPosInf() || x.isNegInf()) {
 		return x.isNegInf() ? Expression.NegInf() : Expression.Inf();
+	}
+
+	const imaginary = !Settings.EVALUATE ? pureImaginaryCoefficient(x) : undefined;
+	if (imaginary) {
+		return sin(imaginary).times(Expression.Img());
 	}
 
 	// sinh(0) = 0
@@ -1123,6 +1165,11 @@ export function tanh(x: ExpressionInput) {
 	// tanh(∞) = 1, tanh(-∞) = -1
 	if (x.isPosInf() || x.isNegInf()) {
 		return x.isNegInf() ? one().neg() : one();
+	}
+
+	const imaginary = !Settings.EVALUATE ? pureImaginaryCoefficient(x) : undefined;
+	if (imaginary) {
+		return tan(imaginary).times(Expression.Img());
 	}
 
 	// tanh(0) = 0
@@ -1362,7 +1409,13 @@ export function asinh(x: ExpressionInput) {
  *
  * @param x - The input expression (domain `(-1, 1)` for real results).
  * @returns The inverse hyperbolic tangent of `x`.
- * @throws {@link core!UndefinedError} If `x` is `±∞` or exactly `1`.
+ * @throws {@link core!UndefinedError} If `x` is `±∞` or exactly `±1`.
+ *
+ * @remarks
+ * The logarithmic branch points at ±1 are singular, irrespective of the
+ * principal-value convention on the real-axis cuts beyond those points.
+ * See NIST DLMF §4.37, especially (4.37.3) and (4.37.24)–(4.37.25).
+ * https://dlmf.nist.gov/4.37
  *
  * @example
  * ```ts
@@ -1383,6 +1436,9 @@ export function atanh(x: ExpressionInput) {
 		retval = zero();
 	} else if (x.isOne()) {
 		throw new UndefinedError(message('atanhUndefined'));
+	} else if (x.isMinusOne()) {
+		// -1 is also a logarithmic singularity; preserve the existing +1 diagnostic.
+		throw new UndefinedError(message('undefinedValue'));
 	} else if (Settings.EVALUATE) {
 		if (x.isComplex() || x.lt(minusOne()) || x.gt(one())) {
 			//atanh(z) = (1/2) * ln((1 + z) / (1 - z))

@@ -1,19 +1,19 @@
 import { brackets, isNerdamerNativeType } from '../../common/common';
-import { getOperatorSymbolArray } from '../../common/functions/functions';
-
-import { DOT, SPACE, PLUS, MINUS, TOKEN } from './constants';
+import { operatorSymbols } from '../../common/functions/functions';
+import { TOKEN } from '../../constants/entityTypes';
+import { DOT, SPACE, PLUS, MINUS } from '../../constants/parserSyntax';
 
 import type { Operator } from '../../common/common';
 
 // Additional characters allowed in the parser which haven't already been defined
 export const ALLOWED_CHARACTERS: string[] = [];
 
-export const operatorArray = getOperatorSymbolArray();
+export const operatorArray = operatorSymbols();
 export let operatorRegex = new RegExp(`[${operatorArray.join('')}]`);
 
 /** Refreshes tokenizer operator symbols after the shared operator registry changes. */
 export function refreshOperatorSymbols() {
-	operatorArray.splice(0, operatorArray.length, ...getOperatorSymbolArray());
+	operatorArray.splice(0, operatorArray.length, ...operatorSymbols());
 	operatorRegex = new RegExp(`[${operatorArray.join('')}]`);
 }
 export const bracketRegex = new RegExp(`[${Object.keys(brackets).join('\\')}]`);
@@ -72,12 +72,9 @@ export class Token {
 		} else if (ch === SPACE) {
 			return Token.SPACE;
 		}
-		// It's a decimal and belongs to a number.
+		// A decimal point belongs to a number. Property-style dot notation is not part of
+		// Nerdamer syntax; adjacent symbolic terms continue through implicit multiplication.
 		else if (ch === DOT) {
-			// If the "." comes after a variable then we make it an operator to allow for dot notation at some point
-			if (buffer.tokenType === Token.VARIABLE) {
-				return Token.OPERATOR;
-			}
 			return Token.NUMBER;
 		}
 		// Scientific numbers

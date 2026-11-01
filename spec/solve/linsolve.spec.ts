@@ -1,6 +1,6 @@
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { Vector } from '../../src/core/classes/vector/Vector';
-import { solveLinearSystem, type LinearSystemResult } from '../../src/solve/linsolve';
+import { solveLinearSystem, solveAugmentedLinearSystem, type LinearSystemResult } from '../../src/solve/linsolve';
 
 /** Shorthand for Expression.create */
 const e = (s: string) => Expression.create(s);
@@ -259,5 +259,32 @@ describe('solveLinearSystem', () => {
 			const { w, x, y, z } = result.solutions;
 			expect(w.plus(x).plus(y).plus(z).eq(e('10'))).toBe(true);
 		});
+	});
+});
+
+describe('solveAugmentedLinearSystem', () => {
+	it('solves a uniquely determined overdetermined coefficient matrix', () => {
+		const result = solveAugmentedLinearSystem([
+			[e('1'), e('1'), e('3')],
+			[e('1'), e('-1'), e('1')],
+			[e('2'), e('0'), e('4')],
+		], 2);
+		expect(result.type).toBe('unique');
+		if (result.type === 'unique') {
+			expect(result.values.map(value => value.text())).toEqual(['2', '1']);
+		}
+	});
+	it('recognizes inconsistent and underdetermined matrices', () => {
+		expect(solveAugmentedLinearSystem([[e('1'), e('1')], [e('1'), e('2')]], 1).type)
+			.toBe('inconsistent');
+		expect(solveAugmentedLinearSystem([[e('1'), e('1'), e('3')]], 2).type)
+			.toBe('infinite');
+	});
+	it('preserves symbolic coefficients in augmented matrices', () => {
+		const result = solveAugmentedLinearSystem([[e('a'), e('a')]], 1);
+		expect(result.type).toBe('unique');
+		if (result.type === 'unique') {
+			expect(result.values[0].eq(1)).toBe(true);
+		}
 	});
 });

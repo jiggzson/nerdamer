@@ -1,15 +1,17 @@
 import { collectVariablesSet } from '../../core/classes/expression/collect';
 import { Expression } from '../../core/classes/expression/Expression';
 import { zero } from '../../core/classes/expression/shortcuts';
-import { GCD } from '../../core/classes/parser/constants';
 import {
 	expressionToIntegerSparsePolynomial,
 	sparsePolynomialToExpression,
 } from '../../core/classes/polynomial/SparsePolynomialAdapter';
+import { GCD } from '../../core/constants/functionNames';
 import { GCD as bigintGCD } from '../../core/functions/bigint/bigint';
 import { uUnSub } from '../../core/functions/subst';
 import { sparsePolynomialGcd } from '../polynomial/SparsePolynomialGcd';
 import { polynomialize } from '../polynomialize';
+
+import { complexPolynomialGcd } from './complexPolynomialGcd';
 
 import type { ExpressionInput } from '../../core/types';
 
@@ -22,7 +24,11 @@ import type { ExpressionInput } from '../../core/types';
  * their shared clearing denominator is restored afterward. Function-valued,
  * exponential, and irrational constants use the existing polynomialization
  * substitutions and are restored after the numerator and denominator GCDs are
- * combined. Unsupported inputs remain symbolic as `gcd(x, y)`.
+ * combined. For supported univariate polynomials with exact coefficients in
+ * Q(i), a separate Euclidean GCD path treats i as an algebraic coefficient
+ * satisfying i² = -1 rather than an independent polynomial variable.
+ * Unsupported inputs remain symbolic as `gcd(x, y)` where the existing
+ * polynomial fallback cannot handle them.
  *
  * @param x - First expression-compatible operand.
  * @param y - Second expression-compatible operand.
@@ -33,6 +39,15 @@ export function gcd(x: ExpressionInput, y: ExpressionInput) {
 		x = Expression.create(x);
 		y = Expression.create(y);
 		const asDecimal = x.hasDecimal() || y.hasDecimal();
+		// Exact complex coefficients use a separate univariate path. The integer
+		// polynomial GCD treats the imaginary unit as an unrelated variable.
+		const complexGcd = complexPolynomialGcd(x, y);
+		if (complexGcd !== undefined) {
+			return complexGcd;
+		}
+		if (x.eq(y) && !x.isPolynomialLike()) {
+			return x;
+		}
 
 		const { numerator: ax, denominator: bx, map } = polynomialize(x);
 		const { numerator: px, denominator: qx, map: finalMap } = polynomialize(y, map);

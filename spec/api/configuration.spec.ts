@@ -11,7 +11,7 @@ import nerdamer from '../../src/index';
 describe('Public configuration access', () => {
 	// Regression: https://github.com/jiggzson/nerdamer/issues/147
 	it('reads constants and parser settings', () => {
-		const constantName = 'audit_constant_147';
+		const constantName = 'configuration_constant_147';
 		const previousImplicitMultiplication = nerdamer.get(
 			'ALLOW_IMPLICIT_MULTIPLICATION'
 		) as boolean;

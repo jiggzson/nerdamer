@@ -115,7 +115,7 @@ function evaluateTailInteger(
 ): bigint {
 	const evaluated = evaluateTail(polynomial, variables, values);
 	if (!evaluated.isConstant()) {
-		throw new Error(message('polyWangLeadingEvaluationInteger'));
+		throw new Error(message('integerResultRequired', { operation: 'Wang.leadingEvaluation' }));
 	}
 	return evaluated.constantTerm();
 }
@@ -369,7 +369,7 @@ function testWangConfigurationWithLeadingFactorization(
 		const factorLeading = specializedFactor.leadingCoefficientIn(mainVariable);
 		if (factorLeading === null || !factorLeading.isConstant()) {
 			throw new Error(
-				message('polyWangSpecializedLeadingInteger')
+				message('integerResultRequired', { operation: 'Wang.specializedLeading' })
 			);
 		}
 
@@ -594,7 +594,7 @@ export function factorSquareFreeMultivariateInteger(
 ): readonly SparsePolynomial[] {
 	assertWangVariables(polynomial, variables);
 	if (polynomial.isZero()) {
-		throw new RangeError(message('polyCannotFactorZero', { operation: 'Wang factorization' }));
+		throw new RangeError(message('polyCannotFactorZeroPolynomial', { operation: 'SparsePolynomialMultivariateFactor.Wang' }));
 	}
 	if (polynomial.content() !== 1n) {
 		throw new RangeError(

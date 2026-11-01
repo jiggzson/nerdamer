@@ -1,6 +1,6 @@
+import { EXPRESSION_TYPES, RATIONAL } from '../../constants/entityTypes';
+import { SYMBOLIC_ACCESSOR } from '../../constants/parserSyntax';
 import { Settings } from '../../Settings';
-import { RATIONAL, SYMBOLIC_ACCESSOR } from '../parser/constants';
-import { EXPRESSION_TYPES } from '../parser/constants';
 
 import type { TextOptions } from '../parser/types';
 import type { Expression } from './Expression';
@@ -106,7 +106,7 @@ export function formatPowerString(
 	return retval;
 }
 
-function formatDefaultPowerString(
+function formatDefaultPower(
 	x: Expression,
 	powerOperator: string,
 	sortFunction: ExpressionSortFunction
@@ -144,7 +144,7 @@ function formatDefaultPowerString(
 	return retval;
 }
 
-function formatDefaultExpressionString(
+function formatDefaultExpression(
 	x: Expression,
 	powerOperator: string,
 	sortFunction: ExpressionSortFunction
@@ -186,7 +186,7 @@ export function toDefaultText(
 		retval = x.getMultiplier().text();
 	} else {
 		const multiplier = formatMultiplierString(x);
-		const power = formatDefaultPowerString(x, powerOperator, sortFunction);
+		const power = formatDefaultPower(x, powerOperator, sortFunction);
 		let value: string;
 
 		switch (x.type) {
@@ -216,12 +216,12 @@ export function toDefaultText(
 			}
 			case GRP:
 			case SUM:
-				value = formatDefaultExpressionString(x, powerOperator, sortFunction);
+				value = formatDefaultExpression(x, powerOperator, sortFunction);
 				value = multiplier || power ? `(${value})` : value;
 				retval = `${multiplier}${value}`;
 				break;
 			case PRD:
-				value = formatDefaultExpressionString(x, powerOperator, sortFunction);
+				value = formatDefaultExpression(x, powerOperator, sortFunction);
 				value = power ? `(${value})` : value;
 				retval = `${multiplier}${value}`;
 				break;

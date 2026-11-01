@@ -171,6 +171,45 @@ describe('Principal-branch semantics', () => {
 		}
 	});
 
+	it('keeps nested powers when the base sign is unknown or negative', () => {
+		expect(Expression.create('(a^x)^y').text()).toContain('(a^x)^y');
+		assume('a<0');
+		try {
+			expect(Expression.create('(a^x)^y').text()).toContain('(a^x)^y');
+		} finally {
+			clearAssumptions();
+		}
+	});
+
+	it('combines nested powers with a positive base and real symbolic exponents', () => {
+		assume('a>0');
+		try {
+			expect(Expression.create('(a^x)^y').text()).toEqual(Expression.create('a^(x*y)').text());
+		} finally {
+			clearAssumptions();
+		}
+	});
+
+	it('combines both positive-base powers in historical issue 255', () => {
+		assume('a>0');
+		try {
+			expect(Expression.create('(a^x)^y*(a^y)^x').text()).toEqual(
+				Expression.create('a^(2*x*y)').text()
+			);
+		} finally {
+			clearAssumptions();
+		}
+	});
+
+	it('retains nested powers with a complex outer exponent', () => {
+		assume('a>0');
+		try {
+			expect(Expression.create('(a^x)^(i*y)').text()).toContain('(a^x)');
+		} finally {
+			clearAssumptions();
+		}
+	});
+
 	it('retains branch-safe integer powers and conjugation rules', () => {
 		expect(Expression.create('(a*b)^2-a^2*b^2').simplify().text()).toEqual('0');
 		expect(

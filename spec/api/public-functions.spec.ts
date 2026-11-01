@@ -12,13 +12,48 @@ describe('Public function API', () => {
 
 	// Regression: https://github.com/jiggzson/nerdamer/issues/93
 	it('calls functions registered through the public API', () => {
-		const name = 'audit_legacy_93';
+		const name = 'registered_function_93';
 
 		try {
 			nerdamer.setFunction(name, ['x'], 'x^2');
 			expect(nerdamer(`${name}(4)`).text()).toEqual('16');
 		} finally {
 			delete mathFunctionRegistry[name];
+		}
+	});
+
+	// Regression: https://github.com/jiggzson/nerdamer/issues/658
+	it('clears user-defined functions without removing system functions', () => {
+		const previous = Object.entries(mathFunctionRegistry).filter(([, entry]) => entry.level === 'user');
+		const builtIn = mathFunctionRegistry.sin;
+		const first = 'clear_functions_658_first';
+		const second = 'clear_functions_658_second';
+
+		try {
+			nerdamer.setFunction(first, ['x'], 'x+1');
+			nerdamer.setFunction(second, ['x'], 'x^2');
+			expect(nerdamer(`${first}(2)`).text()).toBe('3');
+			expect(nerdamer(`${second}(3)`).text()).toBe('9');
+
+			expect(nerdamer.clearFunctions([])).toBe(nerdamer);
+			expect(nerdamer(`${first}(2)`).text()).toBe('3');
+			expect(nerdamer(`${second}(3)`).text()).toBe('9');
+
+			expect(nerdamer.clearFunctions([first, 'sin', 'unknown_legacy_658'])).toBe(nerdamer);
+			expect(mathFunctionRegistry[first]).toBeUndefined();
+			expect(nerdamer(`${second}(3)`).text()).toBe('9');
+			expect(mathFunctionRegistry.sin).toBe(builtIn);
+
+			expect(nerdamer.clearFunctions()).toBe(nerdamer);
+			expect(mathFunctionRegistry[second]).toBeUndefined();
+			expect(nerdamer.functions().user).toEqual([]);
+			expect(mathFunctionRegistry.sin).toBe(builtIn);
+			expect(nerdamer('sin(0)').text()).toBe('0');
+		} finally {
+			nerdamer.clearFunctions();
+			for (const [name, entry] of previous) {
+				mathFunctionRegistry[name] = entry;
+			}
 		}
 	});
 

@@ -27,14 +27,71 @@ describe('Module initialization order', () => {
 		});
 	});
 
+	it('initializes parser syntax before the Parser singleton', () => {
+		jest.isolateModules(() => {
+			const syntax = jest.requireActual<
+				typeof import('../../src/core/classes/parser/syntax')
+			>('../../src/core/classes/parser/syntax');
+			const { Parser } = jest.requireActual<
+				typeof import('../../src/core/classes/parser/Parser')
+			>('../../src/core/classes/parser/Parser');
+
+			expect(typeof syntax.tokenize).toEqual('function');
+			expect(typeof syntax.toRPN).toEqual('function');
+			expect(Parser.parse('x+1').text()).toEqual('1+x');
+		});
+	});
+
+	it('initializes TeX scope conversion before Parser and Converter', () => {
+		jest.isolateModules(() => {
+			const { convertTeXScope } = jest.requireActual<
+				typeof import('../../src/core/converters/texScope')
+			>('../../src/core/converters/texScope');
+			const { Parser } = jest.requireActual<
+				typeof import('../../src/core/classes/parser/Parser')
+			>('../../src/core/classes/parser/Parser');
+			const { Converter } = jest.requireActual<
+				typeof import('../../src/core/converters/Converter')
+			>('../../src/core/converters/Converter');
+
+			const tokens = Parser.tokenize('frac{1}{frac{x}{y}}', { pure: true });
+
+			expect(typeof convertTeXScope).toEqual('function');
+			expect(Parser.parseTeXRPN(tokens)).toEqual('(1)/((x)/(y))');
+			expect(new Converter().fromTeX('\\frac{1}{2}').text()).toEqual('1/2');
+		});
+	});
+
+	it('initializes limit growth analysis before limit evaluation', () => {
+		jest.isolateModules(() => {
+			const { classifyInfinityGrowth, findDominantAtInfinity } = jest.requireActual<
+				typeof import('../../src/calculus/limit/growth')
+			>('../../src/calculus/limit/growth');
+			const { Expression } = jest.requireActual<
+				typeof import('../../src/core/classes/expression/Expression')
+			>('../../src/core/classes/expression/Expression');
+			const { limit } = jest.requireActual<typeof import('../../src/calculus/limit/limit')>(
+				'../../src/calculus/limit/limit'
+			);
+			const x = Expression.create('x');
+
+			expect(classifyInfinityGrowth(Expression.create('x^3'), x)).toEqual({
+				type: 'polynomial',
+				degree: 3,
+			});
+			expect(findDominantAtInfinity(Expression.create('e^x+x'), x)?.text()).toEqual('e^x');
+			expect(limit('e^x/x^5', x, 'Inf').text()).toEqual('Inf');
+		});
+	});
+
 	it('initializes Vector before math container dispatch', () => {
 		jest.isolateModules(() => {
 			const { Vector } = jest.requireActual<
 				typeof import('../../src/core/classes/vector/Vector')
 			>('../../src/core/classes/vector/Vector');
 			const { contains } = jest.requireActual<
-				typeof import('../../src/math/math')
-			>('../../src/math/math');
+				typeof import('../../src/math/index')
+			>('../../src/math/index');
 			const { Dictionary } = jest.requireActual<
 				typeof import('../../src/core/classes/dictionary/Dictionary')
 			>('../../src/core/classes/dictionary/Dictionary');
@@ -63,10 +120,10 @@ describe('Module initialization order', () => {
 
 	it('initializes Expression before geometry without a partial geometry export', () => {
 		jest.isolateModules(() => {
-			const { loadParserFunctions } = jest.requireActual<
+			const { registerParserFunctions } = jest.requireActual<
 				typeof import('../../src/core/parserFunctions')
 			>('../../src/core/parserFunctions');
-			loadParserFunctions();
+			registerParserFunctions();
 			const { Expression } = jest.requireActual<
 				typeof import('../../src/core/classes/expression/Expression')
 			>('../../src/core/classes/expression/Expression');
@@ -83,10 +140,10 @@ describe('Module initialization order', () => {
 
 	it('initializes geometry before trig without a partial trig export', () => {
 		jest.isolateModules(() => {
-			const { loadParserFunctions } = jest.requireActual<
+			const { registerParserFunctions } = jest.requireActual<
 				typeof import('../../src/core/parserFunctions')
 			>('../../src/core/parserFunctions');
-			loadParserFunctions();
+			registerParserFunctions();
 			const { hypot } = jest.requireActual<
 				typeof import('../../src/math/geometry')
 			>('../../src/math/geometry');
@@ -176,8 +233,8 @@ describe('Module initialization order', () => {
 			const { Matrix } = jest.requireActual<
 				typeof import('../../src/core/classes/matrix/Matrix')
 			>('../../src/core/classes/matrix/Matrix');
-			const { matrix } = jest.requireActual<typeof import('../../src/math/math')>(
-				'../../src/math/math'
+			const { matrix } = jest.requireActual<typeof import('../../src/math/index')>(
+				'../../src/math/index'
 			);
 
 			expect(Matrix.identity(2).rref(5).text()).toEqual('matrix([1, 0], [0, 1])');
@@ -207,8 +264,8 @@ describe('Module initialization order', () => {
 			const { sin } = jest.requireActual<typeof import('../../src/math/trig')>(
 				'../../src/math/trig'
 			);
-			const { log } = jest.requireActual<typeof import('../../src/math/math')>(
-				'../../src/math/math'
+			const { log } = jest.requireActual<typeof import('../../src/math/index')>(
+				'../../src/math/index'
 			);
 			const { Expression } = jest.requireActual<
 				typeof import('../../src/core/classes/expression/Expression')

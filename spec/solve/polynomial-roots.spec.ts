@@ -301,11 +301,21 @@ describe('Polynomial-root regressions', () => {
 
 	// Regression: https://github.com/together-science/nerdamer-prime/issues/58
 	it('[slow] solves the large-coefficient quadratic without pathological delay', () => {
+		const polynomial = Expression.create(
+			'(365152319648560825/8)*s*t+(981/200)*t^2'
+		);
 		const solutions = nerdamer.solve(
 			'0=(365152319648560825/8)*s*t+(981/200)*t^2',
 			't'
 		);
-		expect(solutions.count()).toBeGreaterThan(0);
+
+		expect(sortedSolutionTexts(solutions)).toEqual([
+			'(-9128807991214020625/981)*s',
+			'0',
+		]);
+		for (const solution of solutions.elements) {
+			expect(polynomial.subst('t', solution).simplify().isZero()).toBe(true);
+		}
 	});
 });
 

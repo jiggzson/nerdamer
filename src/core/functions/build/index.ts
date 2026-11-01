@@ -1,6 +1,8 @@
 import { Expression } from '../../classes/expression/Expression';
-import { CHI, CI, E, EI, LI, PI_NAME, SHI, SI } from '../../classes/parser/constants';
+import { CHI, CI, EI, LI, SHI, SI } from '../../constants/functionNames';
+import { E, PI_NAME } from '../../constants/symbolNames';
 import { message, UnsupportedOperationError } from '../../errors';
+import { connectedNumericalFunctions } from '../connectFunctions';
 import { EULER_GAMMA } from '../numeric';
 
 import { definitions } from './definitions';
@@ -12,8 +14,8 @@ import type { ExpressionInput } from '../../types';
  * Compiles an expression into a native JavaScript-number function for repeated evaluation.
  *
  * @remarks
- * Function calls are linked to Nerdamer's internal numerical implementation registry, including
- * any dependencies those implementations require. The compiler supports scalar JavaScript-number
+ * Function calls are linked to Nerdamer's numerical implementation registry. Runtime-connected
+ * numerical functions are preferred when present. The compiler supports scalar JavaScript-number
  * semantics rather than Nerdamer's full symbolic or structured object model. Symbolic-only
  * operations such as indexed sums/products, solvers, and matrix operations are rejected if they
  * remain in the expression at compilation time.
@@ -22,6 +24,10 @@ import type { ExpressionInput } from '../../types';
  * generation. Normal parsing, simplification, solving, evaluation, and symbolic manipulation do
  * not use `eval()` or `new Function`. This compiler uses `new Function`, so it may be unavailable
  * under a Content Security Policy that forbids dynamic JavaScript evaluation.
+ *
+ * Numerical functions are supplied to the generated function as callable values instead of being
+ * serialized into source text. This preserves closures and allows functions connected from external
+ * numerical libraries to be used without making that library a Nerdamer dependency.
  *
  * When `argsArray` is omitted, free variables are sorted alphabetically.
  *
@@ -33,9 +39,9 @@ import type { ExpressionInput } from '../../types';
  *
  * @example
  * ```ts
- * build('x-y')(9, 7);				// 2
- * build('x-y', ['y', 'x'])(9, 7);	// -2
- * build('erf(x)+2')(9)				// 3
+ * build('x-y')(9, 7);                 // 2
+ * build('x-y', ['y', 'x'])(9, 7);    // -2
+ * build('erf(x)+2')(9)                // 3
  * ```
  */
 export function build(x: ExpressionInput, argsArray?: string[]): (...args: number[]) => number {
@@ -43,93 +49,48 @@ export function build(x: ExpressionInput, argsArray?: string[]): (...args: numbe
 	if (x.hasVariable(Expression.imaginary)) {
 		throw new UnsupportedOperationError(message('buildFunctionComplexUnsupported'));
 	}
-	// Collect the constants such as e, pi, or any other constants defined by the functions.
 	const constants = collectConstants(x);
-	/**
-	 * The body for the most part is just a expression. The function definitions get loaded
-	 * from the numeric functions object.
-	 */
-	const body = `${x.text({ wrapPow: true })};`
-		//The caret symbol gets replaced because it has an entirely different meaning to JavaScript
-		.replace(/\^/g, '**');
-	/**
-	 * Collect the functions in the string and import their definitions. Basically for each
-	 * function call in the expression a definition in the form const fn = ...; is added
-	 */
+	const body = `${x.text({ wrapPow: true })};`.replace(/\^/g, '**');
 	const imports: [string[], JsFunction[]] = [[], []];
-	x.functions().forEach((e: string) => {
-		importDeps(e, imports);
+	x.functions().forEach((name: string) => {
+		importFunction(name, imports);
 	});
 
-	/**
-	 * Compile the imports string
-	 */
-	let compiledImports = '';
-	for (let i = 0; i < imports[0].length; i++) {
-		compiledImports += `var ${imports[0][i]} = ${imports[1][i]};\n`;
-	}
-
-	/**
-	 * If no variables array is provided then it's generated;
-	 */
 	const functionArgs = argsArray || x.variables().sort();
-	// Construction the function definition
-	const functionDef = `${constants}${compiledImports} return ${body}`;
+	const functionDef = `${constants} return ${body}`;
+	const compiled = new Function(
+		...functionArgs,
+		...imports[0],
+		functionDef
+	) as (...args: Array<number | JsFunction>) => number;
 
-	return new Function(...functionArgs, functionDef) as (...args: number[]) => number;
+	return (...args: number[]) => compiled(...args, ...imports[1]);
 }
+
 /**
- * Recursively collects functions and their dependencies.
+ * Adds one numerical function required by a compiled expression.
  *
- * @param name - Function name emitted by the expression converter.
- * @param imports - Ordered names and implementations that will be inserted into the function body.
- * @param visiting - Function names on the current dependency path.
- * @returns The same imports tuple after adding the requested definition and its dependencies.
+ * Runtime connections take precedence over Nerdamer's built-in numerical definitions. Function
+ * objects are passed directly to the compiled function, so their lexical dependencies remain
+ * intact and do not need to be copied into generated source.
  */
-function importDeps(
+function importFunction(
 	name: string,
-	imports: [string[], JsFunction[]],
-	visiting: Set<string> = new Set()
-) {
-	// Parentheses are represented internally as a function with an empty name. They are
-	// already valid JavaScript syntax and do not need a numerical implementation.
-	if (name === '') {
+	imports: [string[], JsFunction[]]
+): [string[], JsFunction[]] {
+	if (name === '' || imports[0].includes(name)) {
 		return imports;
 	}
 
-	const names = imports[0];
-	const fns = imports[1];
-	if (names.includes(name)) {
-		return imports;
-	}
-
-	const definition = definitions[name];
-	if (definition === undefined) {
+	const fn = connectedNumericalFunctions[name] ?? definitions[name]?.[0];
+	if (fn === undefined) {
 		throw new UnsupportedOperationError(
 			message('buildFunctionUnsupportedFunction', { function: name })
 		);
 	}
 
-	// Numerical definitions can depend on one another. Track the active dependency path so
-	// mutually recursive definitions cannot recurse forever while the function is compiled.
-	if (visiting.has(name)) {
-		return imports;
-	}
-	visiting.add(name);
-
-	const [f, deps] = definition;
-	if (deps !== undefined) {
-		for (const dep of deps) {
-			importDeps(dep, imports, visiting);
-		}
-	}
-	visiting.delete(name);
-
-	if (!names.includes(name)) {
-		names.push(name);
-		fns.push(f);
-	}
-
+	imports[0].push(name);
+	imports[1].push(fn);
 	return imports;
 }
 
@@ -140,13 +101,11 @@ function collectConstants(x: Expression) {
 	function setConstant(name: string, value: number) {
 		constants.push(`var ${name} = ${value};\n`);
 	}
-	// Add the constants pi and e
 	[PI_NAME, E].forEach(e => {
 		if (x.hasVariable(e)) {
 			setConstant(e, nativeConstants[e]);
 		}
 	});
-	// Add constants for special functions
 	if ([CI, CHI, SI, SHI, LI, EI].some(f => x.hasFunction(f, true))) {
 		setConstant(EULER_GAMMA_IDENTIFIER, EULER_GAMMA);
 	}

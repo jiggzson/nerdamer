@@ -1,16 +1,16 @@
+import { ALL_SYMBOL } from '../../constants/symbolNames';
 import { message, UnexpectedInputError } from '../../errors';
-import { ALL_SYMBOL } from '../parser/constants';
 
 import { Expression } from './Expression';
 
 const CACHE: { [key: string]: Expression } = {};
 
-function getFromCacheOrCreate(value: string) {
+function getOrCreate(value: string) {
 	if (CACHE[value] === undefined) {
 		const c = Expression.Number(value);
 		// Set the power and multiplier since this create problems
 		// later when it's requested because we'll be freezing this object
-		c.getMultiplier();
+		Object.freeze(c.getMultiplier());
 		c.getPower();
 		Object.freeze(c);
 		CACHE[value] = c;
@@ -19,75 +19,75 @@ function getFromCacheOrCreate(value: string) {
 }
 
 export function zero() {
-	return getFromCacheOrCreate('0');
+	return getOrCreate('0');
 }
 
 export function quarter() {
-	return getFromCacheOrCreate('1/4');
+	return getOrCreate('1/4');
 }
 
 export function third() {
-	return getFromCacheOrCreate('1/3');
+	return getOrCreate('1/3');
 }
 
 export function half() {
-	return getFromCacheOrCreate('1/2');
+	return getOrCreate('1/2');
 }
 
 export function one() {
-	return getFromCacheOrCreate('1');
+	return getOrCreate('1');
 }
 
 export function minusOne() {
-	return getFromCacheOrCreate('-1');
+	return getOrCreate('-1');
 }
 
 export function two() {
-	return getFromCacheOrCreate('2');
+	return getOrCreate('2');
 }
 
 export function minusTwo() {
-	return getFromCacheOrCreate('-2');
+	return getOrCreate('-2');
 }
 
 export function three() {
-	return getFromCacheOrCreate('3');
+	return getOrCreate('3');
 }
 
 export function minusThree() {
-	return getFromCacheOrCreate('-3');
+	return getOrCreate('-3');
 }
 
 export function four() {
-	return getFromCacheOrCreate('4');
+	return getOrCreate('4');
 }
 
 export function five() {
-	return getFromCacheOrCreate('5');
+	return getOrCreate('5');
 }
 
 export function six() {
-	return getFromCacheOrCreate('6');
+	return getOrCreate('6');
 }
 
 export function seven() {
-	return getFromCacheOrCreate('7');
+	return getOrCreate('7');
 }
 
 export function eight() {
-	return getFromCacheOrCreate('8');
+	return getOrCreate('8');
 }
 
 export function sixteen() {
-	return getFromCacheOrCreate('16');
+	return getOrCreate('16');
 }
 
 export function twentySeven() {
-	return getFromCacheOrCreate('27');
+	return getOrCreate('27');
 }
 
 export function twoHundredFiftySix() {
-	return getFromCacheOrCreate('256');
+	return getOrCreate('256');
 }
 
 export function I() {
@@ -121,7 +121,7 @@ export function symbols(...args: string[]) {
 		c.getMultiplier();
 		c.getPower();
 		if (!c.isVAR()) {
-			throw new UnexpectedInputError(message('plainVariableExpected'));
+			throw new UnexpectedInputError(message('plainVariableExpected', { input: x }));
 		}
 		// Make it read-only
 		Object.freeze(c);

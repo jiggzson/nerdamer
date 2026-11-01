@@ -1,5 +1,6 @@
 import Decimal from 'decimal.js';
 
+import { Complex } from '../classes/complex/Complex';
 import { message } from '../errors';
 
 import { factorial } from './bigint/bigint';
@@ -109,6 +110,42 @@ export function erf(x: DecimalType) {
 	return retval;
 }
 
+/**
+ * Evaluates erf(z) by its entire power series, with guard digits for cancellation.
+ * This path is used for finite complex arguments of moderate magnitude.
+ */
+export function erfComplex(z: Complex): Complex {
+	const precision = Decimal.precision;
+	const magnitudeSquared = z.absSquared();
+	// High powers in the alternating series can cancel substantially.
+	const guardDigits = Math.ceil(magnitudeSquared.toNumber() / Math.LN10) + 12;
+	Decimal.set({ precision: precision + guardDigits });
+	let retval = new Complex(0);
+	try {
+		const zSquared = z.times(z);
+		const scale = new Decimal(2).div(Decimal.acos(-1).sqrt());
+		const tolerance = new Decimal(10).pow(-(precision + guardDigits - 4));
+		let term = z;
+		let sum = z;
+		const maxIterations = Math.max(100, Math.ceil(magnitudeSquared.toNumber() * 4) + precision * 4);
+		for (let n = 1; n <= maxIterations; n++) {
+			term = term.times(zSquared).scale(new Decimal(-1).div(n));
+			const delta = term.scale(new Decimal(1).div(2 * n + 1));
+			sum = sum.add(delta);
+			if (delta.abs().lte(tolerance.mul(Decimal.max(1, sum.abs())))) {
+				break;
+			}
+			if (n === maxIterations) {
+				throw new Error(message('erfConvergenceFailed'));
+			}
+		}
+		retval = sum.scale(scale);
+	} finally {
+		Decimal.set({ precision });
+	}
+	return new Complex(new Decimal(retval.re), new Decimal(retval.im));
+}
+
 function calcCoeffs(n: number) {
 	const c: Decimal[] = [];
 	let kFact = new Decimal(1);
@@ -159,6 +196,44 @@ export function gamma(x: DecimalType) {
 	}
 
 	return gammaSpouge(x);
+}
+
+/**
+ * Spouge approximation for complex arguments. The coefficients and working
+ * precision follow the existing real gamma implementation.
+ *
+ * https://en.wikipedia.org/wiki/Spouge%27s_approximation
+ */
+export function gammaComplex(z: Complex): Complex {
+	const precision = Decimal.precision;
+	Decimal.set({ precision: Math.floor(precision * 1.45) });
+	try {
+		const one = new Complex(1);
+		const pi = Decimal.acos(-1);
+		// Reflection avoids evaluating the approximation near negative poles.
+		if (z.re.lt('0.5')) {
+			const piZ = z.scale(pi);
+			const sinPiZ = new Complex(
+				piZ.re.sin().mul(piZ.im.cosh()),
+				piZ.re.cos().mul(piZ.im.sinh())
+			);
+			return new Complex(pi).div(sinPiZ.times(gammaComplex(one.sub(z))));
+		}
+
+		const n = precision;
+		const coefficients = calcCoeffs(n);
+		let sum = new Complex(coefficients[0]);
+		for (let k = 1; k < n; k++) {
+			sum = sum.add(new Complex(coefficients[k]).div(z.add(new Complex(k))));
+		}
+		const shifted = z.add(new Complex(n));
+		return shifted.pow(z.add(new Complex(0.5)))
+			.times(shifted.neg().exp())
+			.times(sum)
+			.div(z);
+	} finally {
+		Decimal.set({ precision });
+	}
 }
 
 export function sinc(x: DecimalType): Decimal {
@@ -627,6 +702,96 @@ export function Ei(x: DecimalType): Decimal {
 		}
 	}
 	return EULER_GAMMA.plus(d.abs().ln()).plus(sum);
+}
+
+/**
+ * Complex sine integral from its entire power series.
+ * Restricted to moderate arguments by the symbolic caller.
+ */
+export function SiComplex(z: Complex): Complex {
+	const precision = Decimal.precision;
+	Decimal.set({ precision: precision + 12 });
+	let retval = new Complex(0);
+	try {
+		const z2 = z.times(z).neg();
+		let term = z;
+		let sum = z;
+		const tolerance = new Decimal(10).pow(-(precision + 8));
+		for (let n = 1; n <= 500; n++) {
+			const k = 2 * n + 1;
+			term = term.times(z2).scale(new Decimal(k - 2).div((k - 1) * k * k));
+			sum = sum.add(term);
+			if (term.abs().lte(tolerance)) {
+				break;
+			}
+			if (n === 500) {
+				throw new Error(message('convergenceFailed', { iters: '500' }));
+			}
+		}
+		retval = sum;
+	} finally {
+		Decimal.set({ precision });
+	}
+	return new Complex(new Decimal(retval.re), new Decimal(retval.im));
+}
+
+/**
+ * Principal-branch complex cosine integral:
+ * Ci(z) = gamma + log(z) + sum((-1)^n z^(2n) / (2n * (2n)!)).
+ */
+export function CiComplex(z: Complex): Complex {
+	const precision = Decimal.precision;
+	Decimal.set({ precision: precision + 12 });
+	let retval = new Complex(0);
+	try {
+		const z2 = z.times(z).neg();
+		let term = z2.scale(new Decimal(1).div(4));
+		let sum = term;
+		const tolerance = new Decimal(10).pow(-(precision + 8));
+		for (let n = 2; n <= 500; n++) {
+			term = term.times(z2).scale(new Decimal(2 * n - 2).div((2 * n - 1) * (2 * n) * (2 * n)));
+			sum = sum.add(term);
+			if (term.abs().lte(tolerance)) {
+				break;
+			}
+			if (n === 500) {
+				throw new Error(message('convergenceFailed', { iters: '500' }));
+			}
+		}
+		retval = z.log().add(new Complex(EULER_GAMMA)).add(sum);
+	} finally {
+		Decimal.set({ precision });
+	}
+	return new Complex(new Decimal(retval.re), new Decimal(retval.im));
+}
+
+/**
+ * Principal-branch complex exponential integral:
+ * Ei(z) = gamma + log(z) + sum(z^n / (n * n!)).
+ */
+export function EiComplex(z: Complex): Complex {
+	const precision = Decimal.precision;
+	Decimal.set({ precision: precision + 12 });
+	let retval = new Complex(0);
+	try {
+		let term = z;
+		let sum = z;
+		const tolerance = new Decimal(10).pow(-(precision + 8));
+		for (let n = 2; n <= 500; n++) {
+			term = term.times(z).scale(new Decimal(n - 1).div(n * n));
+			sum = sum.add(term);
+			if (term.abs().lte(tolerance)) {
+				break;
+			}
+			if (n === 500) {
+				throw new Error(message('convergenceFailed', { iters: '500' }));
+			}
+		}
+		retval = z.log().add(new Complex(EULER_GAMMA)).add(sum);
+	} finally {
+		Decimal.set({ precision });
+	}
+	return new Complex(new Decimal(retval.re), new Decimal(retval.im));
 }
 
 export function Li(x: DecimalType): Decimal {

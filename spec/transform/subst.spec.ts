@@ -9,6 +9,14 @@ import { Parser } from '../../src/core/classes/parser/Parser';
 import { uSub, uUnSub, uSubFN, subRadicals, uSubEXP } from '../../src/core/functions/subst';
 
 describe('Subst', () => {
+	it('reuses a mapped constant across related expressions', () => {
+		const [left, map] = uSub('x+pi', 'pi');
+		const [right, finalMap] = uSub('y+pi', 'pi', map);
+		expect(Object.keys(finalMap)).toEqual(['u0']);
+		expect(left.eq('x+u0')).toBe(true);
+		expect(right.eq('y+u0')).toBe(true);
+	});
+
 	it('should perform substitutions correctly', () => {
 		expect(one().subst('1', 'u').text()).toEqual('1');
 		expect(Expression.create('cos(x+1)^x').subst('x', 'u').text()).toEqual('cos(1+u)^u');
@@ -61,6 +69,11 @@ describe('Subst', () => {
 				delete Parser.KNOWN_VALUES[variable];
 			}
 		}
+	});
+
+	it('substitutes complex values without losing the imaginary component', () => {
+		expect(Expression.create('x+1').subst('x', '1+i').eq('2+i')).toBe(true);
+		expect(Expression.create('x^2+y').subst('x', '1+i').eq('2*i+y')).toBe(true);
 	});
 
 	it('should perform u-substitutions correctly', () => {

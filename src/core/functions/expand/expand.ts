@@ -1,59 +1,50 @@
 import { Expression } from '../../classes/expression/Expression';
 import { zero } from '../../classes/expression/shortcuts';
-import { FACTORIAL, WRAP } from '../../classes/parser/constants';
+import { FACTORIAL } from '../../constants/functionNames';
+import { WRAP } from '../../constants/parserSyntax';
 
-export function powerExpandToArray(variables: string[], power: number) {
-	/**
-	 * The row will take on the form of [a_power, b_power, ..., coeff]. The polynomial gets
-	 * flattened so we'll disregard their powers. We'll let the parser handle that at a later point.
-	 * So x^2 + x*y become two flat variables with the value x^2 and x*y but for this example let's
-	 * think of a & b. Since the variable is flattened each "term" becomes [0, 0, 1]. We'll construct
-	 * a table multiplying out the row and column. For the first iteration the column = row. Our table
-	 * becomes something like this
-	 * +---+----+----+
-	 * |   | a  | b  |
-	 * +---+----+----+
-	 * | a | aa | ba |
-	 * | b | ab | bb |
-	 * +---+----+----+
-	 */
+type PowerExpansionTerm = { powers: number[]; coefficient: bigint };
 
-	// Constructs the row. You get back the array with zeros and a coefficient of one at the end
-	// Given the expression (a+b) becomes [[0,0,1], [0,0,1]] where representing[[power a, power b, coeff a], [power a, power b, coeff b]]
-	// The powers for each term are zero since they're just the value 1
-	function constructRow() {
-		return variables.map((x, i) => {
-			const row = new Array(variables.length).fill(0);
-			row.push(1);
-			row[i] = 1;
-			return row;
-		});
-	}
+/**
+ * Expands the powers of a sum by multiplying its terms one step at a time.
+ *
+ * Each input string represents one term of the sum, even when that term contains
+ * products or powers. For (a+b), multiply the first row by the same terms:
+ *
+ *     +---+----+----+
+ *     |   | a  | b  |
+ *     +---+----+----+
+ *     | a | aa | ab |
+ *     | b | ba | bb |
+ *     +---+----+----+
+ *
+ * The two middle products have the same powers, so the result is
+ * a^2 + 2*a*b + b^2. Each term stores its powers separately from its
+ * coefficient, for example { powers: [1, 1], coefficient: 2n } for 2*a*b.
+ * Repeat this multiplication for higher powers, combining matching terms
+ * after each step. Coefficients use bigint so large values remain exact.
+ */
+export function powerExpandToArray(variables: string[], power: number): PowerExpansionTerm[] {
+	let row: PowerExpansionTerm[] = variables.map((_, i) => ({
+		powers: variables.map((_, j) => i === j ? 1 : 0),
+		coefficient: 1n,
+	}));
 
-	// We now perform piecewise multiplication incrementing the power each time like values are multiplied.
-	let row = constructRow();
-
-	for (let n = 0; n < power - 1; n++) {
-		const result: number[][] = [];
-		for (let i = 0; i < row.length; i++) {
+	for (let n = 1; n < power; n++) {
+		const sumMap = new Map<string, PowerExpansionTerm>();
+		for (const term of row) {
 			for (let j = 0; j < variables.length; j++) {
-				const term = [...row[i]];
-				term[j]++;
-				result.push(term);
+				const powers = [...term.powers];
+				powers[j]++;
+				const key = powers.join(',');
+				const existing = sumMap.get(key);
+				if (existing) {
+					existing.coefficient += term.coefficient;
+				} else {
+					sumMap.set(key, { powers, coefficient: term.coefficient });
+				}
 			}
 		}
-
-		const sumMap = new Map<string, number[]>();
-		for (const term of result) {
-			const key = term.slice(0, -1).join(',');
-			const existing = sumMap.get(key);
-			if (existing) {
-				existing[existing.length - 1] += term[term.length - 1];
-			} else {
-				sumMap.set(key, [...term]);
-			}
-		}
-
 		row = Array.from(sumMap.values());
 	}
 
@@ -61,15 +52,13 @@ export function powerExpandToArray(variables: string[], power: number) {
 }
 
 /**
- * Converts an array of number[] back to its expression form. Given a set of arrays in
- * the form [[1,1,2], [2,0,1]] and the variables [a, b] it gets converted back to
- * a*b*2 + (a)^2. At the time of this documentation the brackets are always added for power > 1
+ * Converts multinomial terms back into a parseable expression.
  *
- * @param row
- * @param variables
- * @returns
+ * For variables [a, b], terms with powers [1, 1] and coefficient 2n,
+ * and powers [2, 0] and coefficient 1n, produce 2*a*b + a^2.
+ * Parentheses preserve each input term when its power is greater than one.
  */
-export function expandArrayToExpression(row: number[][], variables: string[], multiplier?: string) {
+export function expandArrayToExpression(row: PowerExpansionTerm[], variables: string[], multiplier?: string) {
 	const termsArray: string[] = [];
 	// Put the multiplication in front of the multiplier if provided
 	const m = multiplier ? `${multiplier}*` : '';
@@ -77,10 +66,10 @@ export function expandArrayToExpression(row: number[][], variables: string[], mu
 	for (let i = 0; i < row.length; i++) {
 		const term = row[i];
 		const varStringArray: string[] = [];
-		// We skip the last element since that's the coefficient
-		for (let j = 0; j < term.length - 1; j++) {
+		// Coefficients are stored separately from the powers.
+		for (let j = 0; j < term.powers.length; j++) {
 			const variable = variables[j];
-			const p = term[j];
+			const p = term.powers[j];
 			if (p === 1) {
 				varStringArray.push(`(${variable})`);
 			} else if (p !== 0) {
@@ -89,8 +78,8 @@ export function expandArrayToExpression(row: number[][], variables: string[], mu
 		}
 
 		let termsString = varStringArray.join('*');
-		const coeff = term[term.length - 1];
-		if (coeff !== 1) {
+		const coeff = term.coefficient;
+		if (coeff !== 1n) {
 			termsString = `(${coeff})*${termsString}`;
 		}
 
@@ -120,10 +109,16 @@ export function isExpandable(x: Expression) {
  */
 export function powerExpand(x: Expression) {
 	let retval = x;
+	const power = x.getPower();
+	// Reparsing this shape as a power of one makes no progress and can feed the
+	// same complex radical back through component expansion indefinitely.
+	const skipExpansion = x.isSum() && power.isOne() && x.isComplex() &&
+		x.elementsArray().some(element => element.hasRadical() ||
+			element.elementsArray().some(factor => factor.hasRadical()));
 
-	if (x.isSum() && x.getPower().isInteger()) {
-		const sgn = x.getPower().sign();
-		const power = x.getPower().abs();
+	if (x.isSum() && power.isInteger() && !skipExpansion) {
+		const sgn = power.sign();
+		const absolutePower = power.abs();
 		const variables = x.elementsArray().map(e => {
 			return e.text();
 		});
@@ -132,7 +127,7 @@ export function powerExpand(x: Expression) {
 			? undefined
 			: (sgn < 0 ? x.getMultiplier().invert() : x.getMultiplier()).text();
 
-		const termsArray = powerExpandToArray(variables, Number(power));
+		const termsArray = powerExpandToArray(variables, Number(absolutePower));
 
 		const expression = expandArrayToExpression(termsArray, variables, multiplier);
 

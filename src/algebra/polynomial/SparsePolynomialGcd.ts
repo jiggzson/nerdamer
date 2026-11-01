@@ -105,7 +105,7 @@ export function combinePolynomialCongruences(
  * Ties follow the remaining ring coordinates in their existing order, matching a
  * lexicographic view with variableIndex moved to the front.
  */
-function leadingCoefficientForVariable(
+function leadingCoefficientIn(
 	polynomial: SparsePolynomial,
 	variableIndex: number
 ): bigint {
@@ -233,8 +233,8 @@ export function sparsePolynomialGcd(
 	const leadingGcd = bigintGCD(leftLeading.coefficient, rightLeading.coefficient);
 	const badPrimeFactors = variables.map(variableIndex =>
 		bigintGCD(
-			leadingCoefficientForVariable(primitiveLeft, variableIndex),
-			leadingCoefficientForVariable(primitiveRight, variableIndex)
+			leadingCoefficientIn(primitiveLeft, variableIndex),
+			leadingCoefficientIn(primitiveRight, variableIndex)
 		)
 	);
 	let prime = nextPrimeBig(INITIAL_GCD_PRIME);

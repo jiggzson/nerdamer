@@ -1,5 +1,6 @@
 import { Expression } from '../../core/classes/expression/Expression';
-import { one, zero } from '../../core/classes/expression/shortcuts';
+import { one, two, zero } from '../../core/classes/expression/shortcuts';
+import { _ } from '../../core/classes/parser/helpers';
 import {
 	ABS,
 	ACOS,
@@ -13,6 +14,7 @@ import {
 	ASIN,
 	ASINH,
 	ATAN,
+	ATAN2,
 	ATANH,
 	CHI,
 	CI,
@@ -31,16 +33,15 @@ import {
 	SECH,
 	SGN,
 	SHI,
-	SYMBOLIC_ACCESSOR,
 	SI,
 	SIN,
 	SINH,
 	TAN,
 	TANH,
-} from '../../core/classes/parser/constants';
-import { _ } from '../../core/classes/parser/helpers';
+} from '../../core/constants/functionNames';
+import { SYMBOLIC_ACCESSOR } from '../../core/constants/parserSyntax';
 import { message, UnsupportedOperationError } from '../../core/errors';
-import { log } from '../../math/math';
+import { log } from '../../math/index';
 
 import type { ExpressionInput } from '../../core/types';
 
@@ -69,7 +70,7 @@ function productRule(expression: Expression, variable: Expression): Expression {
 		//add the derivative to the result
 		result = result.plus(df);
 	}
-	return result; //done
+	return result.times(expression.getMultiplier());
 }
 
 /**
@@ -142,7 +143,8 @@ export function diff(
 		// Pull the derivate of the outside. At this point we've already performed all the required checks.
 		const m = x.getMultiplier().times(x.getPower());
 		const p = x.getPower().minus(one());
-		const f = Expression.create(x.value);
+		// Keep function nodes intact: reparsing their text can treat a function name as a variable.
+		const f = x.isFunction() ? x.toLinearAndUnitMultiplier() : Expression.create(x.value);
 		const fp = p.isZero() ? m : f.pow(p).times(m);
 		// Pull the derivative of the inside
 		if (f.isVAR()) {
@@ -157,10 +159,10 @@ export function diff(
 			retval = productRule(f, variable);
 		} else if (f.isFunction()) {
 			const x = f.getArguments()[0];
-			const m = f.getMultiplier();
+			let applyChainRule = true;
 			switch (f.name) {
 				case LOG:
-					retval = _(`(${m})/(${x})`);
+					retval = one().div(x);
 					break;
 				case COS:
 					retval = _(`-sin(${x})`);
@@ -189,6 +191,16 @@ export function diff(
 				case ATAN:
 					retval = _(`1/(1+(${x})^2)`);
 					break;
+				case ATAN2: {
+					// The two-argument angle differentiates through both coordinates.
+					const y = x;
+					const horizontal = f.getArguments()[1];
+					retval = horizontal.times(diff(y, variable))
+						.minus(y.times(diff(horizontal, variable)))
+						.div(horizontal.pow(two()).plus(y.pow(two())));
+					applyChainRule = false;
+					break;
+				}
 				case ASEC:
 					retval = _(`1/(sqrt(1-1/(${x})^2)*(${x})^2)`);
 					break;
@@ -239,19 +251,19 @@ export function diff(
 					retval = _(`sign(${x})`);
 					break;
 				case CI:
-					retval = _(`cos(${x})/${x}`);
+					retval = Expression.toFunction(COS, [x]).div(x);
 					break;
 				case CHI:
-					retval = _(`cosh(${x})/${x}`);
+					retval = Expression.toFunction(COSH, [x]).div(x);
 					break;
 				case SI:
-					retval = _(`sin(${x})/${x}`);
+					retval = Expression.toFunction(SIN, [x]).div(x);
 					break;
 				case SHI:
-					retval = _(`sinh(${x})/${x}`);
+					retval = Expression.toFunction(SINH, [x]).div(x);
 					break;
 				case EI:
-					retval = _(`e^(${x})/${x}`);
+					retval = Expression.E().pow(x).div(x);
 					break;
 				case LI:
 					retval = _(`1/${LOG}(${x})`);
@@ -262,13 +274,13 @@ export function diff(
 				case SGN:
 					retval = zero();
 					break;
-				// Missing: S, Si, Shi, Ci, Chi, Ei, Li, erf, atan2, sinc, heaviside
+				// Missing: S, sinc, heaviside
 				// case '':
 				//     retval = _(``);
 				//     break;
 			}
 			// Multiply times the derivative of the inside
-			if (retval) {
+			if (retval && applyChainRule) {
 				retval = retval.times(diff(x, variable));
 			}
 		}

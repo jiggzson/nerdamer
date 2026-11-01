@@ -1,7 +1,7 @@
 import { Parser } from '../../src/core/classes/parser/Parser';
-import { loadParserFunctions } from '../../src/core/parserFunctions';
+import { registerParserFunctions } from '../../src/core/parserFunctions';
 
-loadParserFunctions();
+registerParserFunctions();
 
 describe('Dynamic indexed references', () => {
 	it('resolves a dictionary index from the active parser scope', () => {
@@ -111,5 +111,43 @@ describe('Dynamic indexed references', () => {
 			delete Parser.KNOWN_VALUES[key];
 			delete Parser.KNOWN_VALUES[value];
 		}
+	});
+
+	it('assigns through a computed Vector index', () => {
+		const vector = 'script_assignment_computed_vector';
+		const index = 'script_assignment_computed_index';
+		try {
+			const result = Parser.parse(
+				`block(${vector}:[4,5,6],${index}:1,${vector}[${index}+1]:9,${vector})`
+			);
+			expect(result.text()).toEqual('[4, 5, 9]');
+		} finally {
+			delete Parser.KNOWN_VALUES[vector];
+			delete Parser.KNOWN_VALUES[index];
+		}
+	});
+
+	it('keeps a Vector unchanged when an indexed assignment has no result', () => {
+		const vector = 'script_assignment_no_result_vector';
+		try {
+			const result = Parser.parse(
+				`block(${vector}:[4,5,6],${vector}[1]:if(0,9),${vector})`
+			);
+			expect(result.text()).toEqual('[4, 5, 6]');
+		} finally {
+			delete Parser.KNOWN_VALUES[vector];
+		}
+	});
+
+	it('rejects unknown multi-argument calls without treating them as multiplication', () => {
+		expect(() => Parser.parse('script_missing_function(2,3)')).toThrow(
+			'Unsupported function script_missing_function'
+		);
+	});
+
+	it('treats an unknown one-argument call as implicit multiplication', () => {
+		expect(Parser.parse('script_missing_function(2)').text()).toEqual(
+			'2*script_missing_function'
+		);
 	});
 });

@@ -6,12 +6,11 @@ import {
 	DICTIONARY,
 	EQUATION,
 	MATRIX,
-	NTHROOT,
 	SET,
 	SOLUTIONS_SET,
-	SQRT,
 	VECTOR,
-} from '../classes/parser/constants';
+} from '../constants/entityTypes';
+import { NTHROOT, SQRT } from '../constants/functionNames';
 import { message } from '../errors';
 
 import type { SolutionSet } from '../../solve/classes/SolutionSet';

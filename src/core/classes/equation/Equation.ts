@@ -1,8 +1,8 @@
 import { isNerdamerNativeType } from '../../common/common';
+import { dataTypes, EQUATION } from '../../constants/entityTypes';
 import { message, UnexpectedDataType, UnsupportedOperationError } from '../../errors';
 import { Expression } from '../expression/Expression';
 import { zero } from '../expression/shortcuts';
-import { dataTypes, EQUATION } from '../parser/constants';
 
 import type { ExpressionInput, ParserEntity } from '../../types';
 
@@ -22,7 +22,7 @@ import type { ExpressionInput, ParserEntity } from '../../types';
  *
  * Absolute value is not supported as an equation rewrite because applying it
  * independently to both sides can change the solution set. {@link Equation.abs} remains only
- * as a compatibility member of the general parser-entity surface and always throws. Callers
+ * as a compatibility member of the general parser-entity interface and always throws. Callers
  * performing a non-equivalent transformation can use {@link Equation.each} explicitly.
  *
  * Equation comparisons reduce each equation to its residual `LHS - RHS` and then use the
@@ -92,7 +92,7 @@ export class Equation {
 	 *
 	 * @remarks
 	 * Replacing `a = b` with `|a| = |b|` is not generally solution-set preserving. This
-	 * method remains on `Equation` so the general {@link ParserEntity} surface can retain
+	 * method remains on `Equation` so the general {@link ParserEntity} interface can retain
 	 * its historical `abs()` member without reintroducing the unsafe transformation.
 	 *
 	 * Use {@link Equation.each} explicitly to transform

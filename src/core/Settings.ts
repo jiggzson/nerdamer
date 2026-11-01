@@ -2,9 +2,9 @@ import {
 	ALL_SYMBOL,
 	DEFAULT_IMAGINARY,
 	E,
-	INDEX_VARIABLE,
+	INTEGER_PARAM,
 	PI_NAME,
-} from './classes/parser/constants';
+} from './constants/symbolNames';
 
 import type { Language } from './errors';
 
@@ -90,6 +90,6 @@ export function scopedBlock<T>(setting: string, value: boolean, callback: () => 
 }
 
 // The list of restricted variables
-export const RESTRICTED: string[] = [E, PI_NAME, DEFAULT_IMAGINARY, INDEX_VARIABLE, ALL_SYMBOL];
+export const RESTRICTED: string[] = [E, PI_NAME, DEFAULT_IMAGINARY, INTEGER_PARAM, ALL_SYMBOL];
 // The list of special values that get ignore at substitution
 export const SPECIAL: string[] = [E, PI_NAME];

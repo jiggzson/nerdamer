@@ -284,8 +284,7 @@ describe('Matrices', () => {
 			const M = new Matrix(['a', 'b'], ['c', 'd']);
 			// det = ad - bc
 			const det = M.determinant();
-			// Verify by substituting known values: a=1,b=0,c=0,d=1 -> det=1
-			expect(det.text()).toBeTruthy();
+			expect(det.eq(Expression.create('a*d-b*c'))).toBe(true);
 		});
 	});
 

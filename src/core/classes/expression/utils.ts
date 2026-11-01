@@ -242,14 +242,20 @@ export function largestPower(x: Expression, ...args: Expression[]) {
 	return retval;
 }
 
-export function assertPlainVariableAndGetString(x: Expression) {
-	if (!x.isVAR()) {
+/**
+ * Extracts a variable name from an Expression.
+ *
+ * By default this preserves the existing VAR-type acceptance contract.
+ * When plain is true, reject multipliers and powers on the variable.
+ */
+export function requireVariableName(x: Expression, plain = false) {
+	if (plain ? !x.isPlainVariable() : !x.isVAR()) {
 		throw new UnexpectedInputError(message('plainVariableExpected', { input: x.text() }));
 	}
 	return x.value;
 }
 
-export function getNumericOrAssumedValue(x: Expression) {
+export function resolveNumericValue(x: Expression) {
 	let retval: Expression | undefined = undefined;
 	// If it's numeric then we're done
 	if (x.isNUM()) {

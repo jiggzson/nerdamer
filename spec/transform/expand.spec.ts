@@ -3,6 +3,7 @@
 import { Parser } from '../../src/core/classes/parser/Parser';
 import nerdamer from '../../src/index';
 import { Expression } from '../../src/core/classes/expression/Expression';
+import { powerExpand } from '../../src/core/functions/expand/expand';
 
 describe('Expand', () => {
 	it('should expand correctly', () => {
@@ -57,6 +58,12 @@ describe('Expand', () => {
 });
 
 describe('Expansion regressions', () => {
+	it('does not reparse a linear sum as a power expansion', () => {
+		const input = Expression.create('-1/33750+(1/56250)*sqrt(15)*i');
+
+		expect(powerExpand(input)).toBe(input);
+	});
+
 	// Regression: https://github.com/jiggzson/nerdamer/issues/3
 	it('uses the accepted expansion path for opposite squared differences', () => {
 		expect(Expression.create('(a-b)^2-(b-a)^2').expand().isZero()).toBe(true);

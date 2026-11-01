@@ -30,6 +30,11 @@ export function divide(a: Expression, b: Expression): Expression {
 			retval = a.copy(); // create a new copy
 			const multiplier = a.getMultiplier().div(b.getMultiplier());
 			retval.multiplier = multiplier;
+		} else if (b.isI() && b.getPower().isOne()) {
+			const reciprocal = Expression.Img()
+				.times(Expression.fromRational(b.getMultiplier().invert()))
+				.neg();
+			retval = multiply(a, reciprocal);
 		} else if (a.isComplex() || b.isComplex()) {
 			const realA = a.realPart();
 			const realB = b.realPart();

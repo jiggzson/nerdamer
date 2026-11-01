@@ -1,3 +1,4 @@
+import { dataTypes } from '../../../constants/entityTypes';
 import { message, UnexpectedDataType } from '../../../errors';
 import { Collection } from '../../collection/Collection';
 import { Dictionary } from '../../dictionary/Dictionary';
@@ -6,7 +7,6 @@ import { one, zero } from '../../expression/shortcuts';
 import { Matrix } from '../../matrix/Matrix';
 import { ValuesSet } from '../../valuesSet/ValuesSet';
 import { Vector } from '../../vector/Vector';
-import { dataTypes } from '../constants';
 
 import {
 	FOR,

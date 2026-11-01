@@ -129,6 +129,20 @@ describe('Factorial', () => {
 	});
 });
 
+describe('Complex rounding functions', () => {
+	it('applies floor and ceiling to each complex component', () => {
+		expect(nerdamer('floor(3/2+7*i/3)').text()).toEqual('1+2*i');
+		expect(nerdamer('ceil(3/2+7*i/3)').text()).toEqual('2+3*i');
+		expect(nerdamer('ceiling(-3/2-7*i/3)').text()).toEqual('-1-2*i');
+	});
+
+	it('applies truncation and rounding to each complex component', () => {
+		expect(nerdamer('trunc(-3/2+7*i/3)').text()).toEqual('-1+2*i');
+		expect(nerdamer('round(3/2+7*i/3)').text()).toEqual('2+2*i');
+		expect(nerdamer('round(31/20+47*i/20,1)').text()).toEqual('1.6+2.4*i');
+	});
+});
+
 describe('Logarithms', () => {
 	it('should be computed correctly', () => {
 		expect(Parser.parse('log(e)').text()).toEqual('1');
@@ -136,6 +150,26 @@ describe('Logarithms', () => {
 		expect(Parser.parse('log(1/e^e)').text()).toEqual('-e');
 		expect(Parser.parse('log(1/sqrt(2))').text()).toEqual('(-1/2)*log(2)');
 		expect(Parser.parse('e+log(6)').text()).toEqual('e+log(6)');
+	});
+});
+
+describe('Legacy issue #181 complex elementary functions', () => {
+	it('evaluates log10 at the imaginary unit', () => {
+		const actual = nerdamer('log10(i)');
+		const expected = Expression.create('i*pi/(2*log(10))');
+
+		expect(actual.eq(expected)).toBe(true);
+	});
+
+	it('evaluates acos at the imaginary unit on the principal branch', () => {
+		const actual = nerdamer('acos(i)').evaluate();
+		const expected = Expression.create('pi/2-i*log(1+sqrt(2))').evaluate();
+
+		expect(Expression.isExpression(actual)).toBe(true);
+		expect(Expression.isExpression(expected)).toBe(true);
+		if (Expression.isExpression(actual) && Expression.isExpression(expected)) {
+			expect(actual.minus(expected).isNearlyZero()).toBe(true);
+		}
 	});
 });
 
@@ -168,6 +202,107 @@ describe('The buildFunction method', () => {
 	});
 });
 
+// Regression: https://github.com/jiggzson/nerdamer/issues/236
+describe('Infinite geometric sums', () => {
+	it.each([
+		['sum(1/(2^x),x,1,Infinity)', '1'],
+		['sum(2^(-x),x,0,Infinity)', '2'],
+		['sum(3^(-2*x),x,1,Infinity)', '1/8'],
+		['sum(2^x,x,1,Infinity)', 'sum(2^x,x,1,Infinity)'],
+		['sum(x^(-2),x,1,Infinity)', 'sum(x^(-2),x,1,Infinity)'],
+		['sum(2^(-x^2),x,1,Infinity)', 'sum(2^(-x^2),x,1,Infinity)'],
+		['sum(2^(-x),x,n,Infinity)', 'sum(2^(-x),x,n,Infinity)'],
+	])('handles infinite summation: %s', (input, expected) => {
+		expect(Expression.create(input).text()).toEqual(Expression.create(expected).text());
+	});
+});
+
+describe('Closed-form sums and products', () => {
+	it.each([
+		['sum((-1/2)^k,k,0,Infinity)', '2/3'],
+		['sum((-1/2)^k,k,1,Infinity)', '-1/3'],
+		['sum(0,k,1,Infinity)', '0'],
+		['sum(k,k,1,n)', 'n*(n+1)/2'],
+		['sum(k^2,k,1,n)', 'n*(n+1)*(2*n+1)/6'],
+		['sum(k,k,3,n)', 'n*(n+1)/2-3'],
+		['sum(2^k,k,0,n)', '2^(n+1)-1'],
+		['sum(2^k,k,3,n)', '(2^(n+1)-8)'],
+		['sum(a,k,1,n)', 'a*n'],
+		['sum(k,k,1,20000)', '200010000'],
+		['product(k,k,1,n)', 'factorial(n)'],
+		['product(2^k,k,1,n)', '2^(n*(n+1)/2)'],
+		['product(a,k,1,n)', 'a^n'],
+	])('evaluates supported form %s', (input, expected) => {
+		expect(Expression.create(input).eq(Expression.create(expected))).toBe(true);
+	});
+
+	it.each([
+		'sum((-2)^k,k,0,Infinity)',
+		'sum(2^(-k^2),k,1,Infinity)',
+		'sum(k^3,k,1,20000)',
+		'product(k+1,k,1,n)',
+	])('preserves unsupported form %s', input => {
+		const result = Expression.create(input);
+		expect(result.isFunction(input.startsWith('sum') ? 'sum' : 'product')).toBe(true);
+	});
+});
+
+describe('Additional infinite sum and product limits', () => {
+	it.each([
+		['sum((-2)^(-k),k,1,Infinity)', '-1/3'],
+		['sum(2^k,k,-Infinity,0)', '2'],
+		['sum((-2)^k,k,-Infinity,0)', '2/3'],
+		['product(1,k,1,Infinity)', '1'],
+		['product(1,k,-Infinity,0)', '1'],
+		['product(1/2,k,1,Infinity)', '0'],
+		['product(-1/2,k,1,Infinity)', '0'],
+		['product(0,k,1,Infinity)', '0'],
+		['product(1-1/k^2,k,1,Infinity)', '0'],
+	])('evaluates %s exactly', (input, expected) => {
+		const actual = Expression.create(input);
+		expect(actual.eq(Expression.create(expected))).toBe(true);
+		expect(actual.text()).toBe(Expression.create(expected).text());
+	});
+
+	it.each([
+		'sum(2^k,k,1,Infinity)',
+		'sum(2^(-k),k,-Infinity,0)',
+		'product(2,k,1,Infinity)',
+		'product(-1,k,1,Infinity)',
+	])('preserves unsupported infinite form %s', input => {
+		const actual = Expression.create(input);
+		expect(actual.isFunction(input.startsWith('sum') ? 'sum' : 'product')).toBe(true);
+	});
+});
+
+describe('Telescoping sums and products', () => {
+	it.each([
+		['sum(1/(k*(k+1)),k,1,Infinity)', '1'],
+		['sum(1/(k*(k+1)),k,2,Infinity)', '1/2'],
+		['sum(1/(k*(k+1)),k,1,n)', 'n/(n+1)'],
+		['sum(1/(k*(k+1)),k,3,20000)', '1/3-1/20001'],
+		['product(k/(k+1),k,1,Infinity)', '0'],
+		['product(k/(k+1),k,1,n)', '1/(n+1)'],
+		['product((k+1)/k,k,2,n)', '(n+1)/2'],
+		['product((k+1)/k,k,1,20000)', '20001'],
+		['product(1-1/k^2,k,2,Infinity)', '1/2'],
+		['product(1-1/k^2,k,3,Infinity)', '2/3'],
+		['product(1-1/k^2,k,2,n)', '(n+1)/(2*n)'],
+		['product(0,k,1,Infinity)', '0'],
+	])('evaluates %s', (input, expected) => {
+		expect(Expression.create(input).eq(Expression.create(expected))).toBe(true);
+	});
+
+	it.each([
+		'sum(1/(k*(k+1)),k,0,Infinity)',
+		'product((k+1)/k,k,1,Infinity)',
+		'product(2,k,1,Infinity)',
+	])('preserves unsupported infinite form %s', input => {
+		const result = Expression.create(input);
+		expect(result.isFunction(input.startsWith('sum') ? 'sum' : 'product')).toBe(true);
+	});
+});
+
 describe('sum and product (finite)', () => {
 	describe('numeric evaluation', () => {
 		it('evaluates simple sum', () => {
@@ -176,6 +311,18 @@ describe('sum and product (finite)', () => {
 
 		it('evaluates simple product', () => {
 			expect(Expression.create('product(k, k, 1, 4)').text()).toBe('24');
+		});
+
+		it('evaluates finite complex sums', () => {
+			expect(Expression.create('sum(i*k, k, 1, 4)').text()).toBe('10*i');
+			expect(Expression.create('sum((1+i)*k, k, 1, 4)').text()).toBe('10+10*i');
+			expect(Expression.create('sum(i^k, k, 0, 4)').text()).toBe('1');
+		});
+
+		it('evaluates finite complex products', () => {
+			expect(Expression.create('product(i*k, k, 1, 4)').text()).toBe('24');
+			expect(Expression.create('product((1+i)*k, k, 1, 3)').eq('-12+12*i')).toBe(true);
+			expect(Expression.create('product(i^k, k, 1, 4)').text()).toBe('-1');
 		});
 
 		it('evaluates polynomial body', () => {
@@ -223,7 +370,7 @@ describe('sum and product (finite)', () => {
 
 	describe('symbolic fallback', () => {
 		it('returns symbolic form for symbolic upper bound', () => {
-			expect(Expression.create('sum(k, k, 1, n)').text()).toBe('sum(k, k, 1, n)');
+			expect(Expression.create('sum(k^3, k, 1, n)').text()).toBe('sum(k^3, k, 1, n)');
 		});
 
 		it('returns symbolic form for symbolic lower bound', () => {
@@ -241,7 +388,7 @@ describe('sum and product (finite)', () => {
 
 	describe('evaluation safety limit', () => {
 		it('does not evaluate when term count exceeds limit', () => {
-			expect(Expression.create('sum(k, k, 1, 20000)').text()).toBe('sum(k, k, 1, 20000)');
+			expect(Expression.create('sum(k^3, k, 1, 20000)').text()).toBe('sum(k^3, k, 1, 20000)');
 		});
 
 		it('evaluates at limit boundary', () => {
@@ -418,6 +565,27 @@ describe('Function regressions', () => {
 		expect(nerdamer('max(-5,1)').text()).toEqual('1');
 		expect(nerdamer('min(-5,1)').text()).toEqual('-5');
 	});
+
+	it('compares indexed vector elements the same as assigned values (legacy #638)', () => {
+		const names = ['legacy638v', 'legacy638a', 'legacy638b'];
+		for (const name of names) {
+			delete Parser.KNOWN_VALUES[name];
+		}
+		try {
+			Parser.parse('legacy638v:[-5,1]');
+			expect(Parser.parse('max(legacy638v[0],legacy638v[1])').text()).toEqual('1');
+			expect(Parser.parse('min(legacy638v[0],legacy638v[1])').text()).toEqual('-5');
+			Parser.parse('legacy638a:legacy638v[0]');
+			Parser.parse('legacy638b:legacy638v[1]');
+			expect(Parser.parse('max(legacy638a,legacy638b)').text()).toEqual('1');
+			expect(Parser.parse('min(legacy638a,legacy638b)').text()).toEqual('-5');
+		} finally {
+			for (const name of names) {
+				delete Parser.KNOWN_VALUES[name];
+			}
+		}
+	});
+
 
 	// Issue: Nerdamer 2.0 issue #2
 	it('computes Gaussian integer modulo using Wolfram-compatible quotient rounding', () => {

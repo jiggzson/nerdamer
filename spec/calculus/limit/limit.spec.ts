@@ -1,6 +1,6 @@
 import { limit } from '../../../src/calculus/limit/limit';
 import { Expression } from '../../../src/core/classes/expression/Expression';
-import { exp } from '../../../src/math/math';
+import { exp } from '../../../src/math/index';
 import nerdamer from '../../../src/index';
 
 describe('limit', () => {

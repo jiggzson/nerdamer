@@ -1,4 +1,4 @@
-import { matrix } from '../../../math/math';
+import { matrix } from '../../../math/index';
 import { mathFunctionRegistry, systemFunction } from '../../dispatch';
 
 import { determinant, invert, nullspace } from './functions';

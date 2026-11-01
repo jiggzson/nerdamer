@@ -1,7 +1,8 @@
 import type { Pattern } from '../../converters/Pattern';
 import type { Expression } from '../expression/Expression';
 
-export type TableEntryHandler = (f: Pattern, depth?: number) => Expression | undefined;
+export type TableIntegrationCallback = (expr: Expression, variable: Expression, depth?: number) => Expression;
+export type TableEntryHandler = (f: Pattern, depth?: number, integrate?: TableIntegrationCallback) => Expression | undefined;
 export type TableEntries = Record<string, TableEntryHandler>;
 
 export class LookupTable {
@@ -32,7 +33,7 @@ export class LookupTable {
 		}
 	}
 
-	public lookup(pattern: Pattern, depth?: number) {
+	public lookup(pattern: Pattern, depth?: number, integrate?: TableIntegrationCallback) {
 		// Get the handlers
 		const handlers = this.get(pattern.patternString);
 		// console.log('Looking up\n');
@@ -42,7 +43,7 @@ export class LookupTable {
 		if (handlers) {
 			// If there are handlers then try each one until a match is found.
 			for (const handler of handlers) {
-				const result = handler(pattern, depth);
+				const result = handler(pattern, depth, integrate);
 				if (result) {
 					return result;
 				}

@@ -1,4 +1,4 @@
-import { SCOPE } from '../../classes/parser/constants';
+import { SCOPE } from '../../constants/entityTypes';
 import { isNerdamerNativeType } from '../common';
 
 import type { Token } from '../../classes/parser/Token';
