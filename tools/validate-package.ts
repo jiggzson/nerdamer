@@ -178,7 +178,7 @@ function main(): void {
 		// A fresh working directory ensures the tarball cannot be confused with
 		// an older package. Inspect the files npm actually creates instead of
 		// relying on the shape of npm's stdout, which varies by npm version.
-		const packOutput = npm(['pack', ROOT, '--ignore-scripts'], temp);
+		const packOutput = npm(['pack', ROOT, '--ignore-scripts', '--dry-run=false'], temp);
 		const archives = readdirSync(temp).filter(name => name.endsWith('.tgz'));
 		if (archives.length !== 1) {
 			throw new Error(
@@ -196,7 +196,7 @@ function main(): void {
 		const consumer = join(temp, 'consumer');
 		mkdirSync(consumer);
 		writeFileSync(join(consumer, 'package.json'), '{"private":true}');
-		npm(['install', tarball, '--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false'], consumer);
+		npm(['install', tarball, '--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false', '--dry-run=false'], consumer);
 		if (existsSync(join(consumer, 'node_modules', 'nerdamer', 'docs'))) {
 			throw new Error('Packed package contains internal docs.');
 		}
