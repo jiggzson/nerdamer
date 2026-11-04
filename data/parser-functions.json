@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "packageVersion": "2.0.0",
+  "packageVersion": "2.0.1",
   "functions": [
     {
       "name": "C",
@@ -41,7 +41,11 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "Chi(arg1)"
+      "syntax": "Chi(arg1)",
+      "directApi": {
+        "package": "nerdamer/special",
+        "name": "Chi"
+      }
     },
     {
       "name": "Ci",
@@ -53,7 +57,11 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "Ci(arg1)"
+      "syntax": "Ci(arg1)",
+      "directApi": {
+        "package": "nerdamer/special",
+        "name": "Ci"
+      }
     },
     {
       "name": "Ei",
@@ -65,7 +73,11 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "Ei(arg1)"
+      "syntax": "Ei(arg1)",
+      "directApi": {
+        "package": "nerdamer/special",
+        "name": "Ei"
+      }
     },
     {
       "name": "Li",
@@ -77,7 +89,11 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "Li(arg1)"
+      "syntax": "Li(arg1)",
+      "directApi": {
+        "package": "nerdamer/special",
+        "name": "Li"
+      }
     },
     {
       "name": "S",
@@ -118,7 +134,11 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "Shi(arg1)"
+      "syntax": "Shi(arg1)",
+      "directApi": {
+        "package": "nerdamer/special",
+        "name": "Shi"
+      }
     },
     {
       "name": "Si",
@@ -130,7 +150,11 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "Si(arg1)"
+      "syntax": "Si(arg1)",
+      "directApi": {
+        "package": "nerdamer/special",
+        "name": "Si"
+      }
     },
     {
       "name": "abs",
@@ -142,7 +166,10 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "abs(arg1)"
+      "syntax": "abs(arg1)",
+      "aliases": [
+        "magnitude"
+      ]
     },
     {
       "name": "acos",
@@ -238,7 +265,10 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "arg(arg1)"
+      "syntax": "arg(arg1)",
+      "aliases": [
+        "phase"
+      ]
     },
     {
       "name": "asec",
@@ -737,7 +767,23 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "dfact(arg1)"
+      "syntax": "dfact(arg1)",
+      "aliases": [
+        "dfactorial"
+      ]
+    },
+    {
+      "name": "dfactorial",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "dfactorial(arg1)",
+      "canonicalName": "dfact"
     },
     {
       "name": "diff",
@@ -853,7 +899,7 @@
     },
     {
       "name": "erf",
-      "category": "Math",
+      "category": "Special functions",
       "usage": "notation",
       "minArgs": 1,
       "maxArgs": 1,
@@ -861,11 +907,15 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "erf(arg1)"
+      "syntax": "erf(arg1)",
+      "directApi": {
+        "package": "nerdamer/special",
+        "name": "erf"
+      }
     },
     {
       "name": "erfc",
-      "category": "Math",
+      "category": "Special functions",
       "usage": "notation",
       "minArgs": 1,
       "maxArgs": 1,
@@ -873,7 +923,11 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "erfc(arg1)"
+      "syntax": "erfc(arg1)",
+      "directApi": {
+        "package": "nerdamer/special",
+        "name": "erfc"
+      }
     },
     {
       "name": "evaluate",
@@ -940,7 +994,9 @@
       "usage": "notation",
       "minArgs": 1,
       "maxArgs": 1,
-      "equationArgs": [],
+      "equationArgs": [
+        0
+      ],
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
@@ -1053,7 +1109,7 @@
     },
     {
       "name": "gamma",
-      "category": "Math",
+      "category": "Special functions",
       "usage": "notation",
       "minArgs": 1,
       "maxArgs": 1,
@@ -1061,7 +1117,11 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "gamma(arg1)"
+      "syntax": "gamma(arg1)",
+      "directApi": {
+        "package": "nerdamer/special",
+        "name": "gamma"
+      }
     },
     {
       "name": "gamma_incomplete",
@@ -1073,7 +1133,11 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "gamma_incomplete(arg1, arg2)"
+      "syntax": "gamma_incomplete(arg1, arg2)",
+      "directApi": {
+        "package": "nerdamer/special",
+        "name": "gammaIncomplete"
+      }
     },
     {
       "name": "gamma_incomplete_lower",
@@ -1085,7 +1149,11 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "gamma_incomplete_lower(arg1, arg2)"
+      "syntax": "gamma_incomplete_lower(arg1, arg2)",
+      "directApi": {
+        "package": "nerdamer/special",
+        "name": "gammaIncompleteLower"
+      }
     },
     {
       "name": "gcd",
@@ -1431,6 +1499,19 @@
       "syntax": "log10(arg1)"
     },
     {
+      "name": "magnitude",
+      "category": "Complex",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "magnitude(arg1)",
+      "canonicalName": "abs"
+    },
+    {
       "name": "matrix",
       "category": "Linear algebra",
       "usage": "notation",
@@ -1467,6 +1548,38 @@
       "syntax": "max(arg1, arg2, ...)"
     },
     {
+      "name": "mean",
+      "category": "Statistics",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "mean(arg1, ...)",
+      "directApi": {
+        "package": "nerdamer/statistics",
+        "name": "mean"
+      }
+    },
+    {
+      "name": "median",
+      "category": "Statistics",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "median(arg1, ...)",
+      "directApi": {
+        "package": "nerdamer/statistics",
+        "name": "median"
+      }
+    },
+    {
       "name": "min",
       "category": "Math",
       "usage": "notation",
@@ -1489,6 +1602,22 @@
       "deferArguments": false,
       "registrationLevel": "system",
       "syntax": "mod(arg1, arg2)"
+    },
+    {
+      "name": "mode",
+      "category": "Statistics",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "mode(arg1, ...)",
+      "directApi": {
+        "package": "nerdamer/statistics",
+        "name": "mode"
+      }
     },
     {
       "name": "modinv",
@@ -1693,6 +1822,19 @@
       }
     },
     {
+      "name": "phase",
+      "category": "Complex",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": 1,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "phase(arg1)",
+      "canonicalName": "arg"
+    },
+    {
       "name": "polarform",
       "category": "Complex",
       "usage": "notation",
@@ -1759,6 +1901,45 @@
       "deferArguments": false,
       "registrationLevel": "system",
       "syntax": "realpart(arg1)"
+    },
+    {
+      "name": "realsolutions",
+      "category": "Solving",
+      "usage": "notation",
+      "minArgs": 3,
+      "maxArgs": 4,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "realsolutions(solutionSet, lower, upper) | realsolutions(systems, variable, lower, upper)",
+      "summary": "Selects distinct real solution values from a SolutionSet or an existing system result.",
+      "parameters": [
+        {
+          "name": "solutionSetOrSystems",
+          "description": "A SolutionSet from solve, or a Vector of Dictionary assignments from solveeqs."
+        },
+        {
+          "name": "variable",
+          "description": "Required for system results: a plain variable whose distinct real values form the returned SolutionSet."
+        },
+        {
+          "name": "lower",
+          "description": "Inclusive finite real lower bound of the requested interval."
+        },
+        {
+          "name": "upper",
+          "description": "Inclusive finite real upper bound of the requested interval."
+        }
+      ],
+      "examples": [
+        {
+          "input": "nerdamer('realsolutions(solve(cos(x),x),-10,10)').text()"
+        },
+        {
+          "input": "nerdamer('realsolutions(solveeqs([x+y=3,x-y=1]),x,1,3)').text()"
+        }
+      ]
     },
     {
       "name": "rect",
@@ -1937,6 +2118,18 @@
       "syntax": "sign(arg1)"
     },
     {
+      "name": "significant",
+      "category": "Math",
+      "usage": "notation",
+      "minArgs": 2,
+      "maxArgs": 2,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "significant(arg1, arg2)"
+    },
+    {
       "name": "simplify",
       "category": "Algebra",
       "usage": "notation",
@@ -1974,7 +2167,11 @@
       "distElWise": true,
       "deferArguments": false,
       "registrationLevel": "system",
-      "syntax": "sinc(arg1)"
+      "syntax": "sinc(arg1)",
+      "directApi": {
+        "package": "nerdamer/special",
+        "name": "sinc"
+      }
     },
     {
       "name": "sinh",
@@ -2016,6 +2213,38 @@
           "output": "[2, 3]"
         }
       ]
+    },
+    {
+      "name": "smpstdev",
+      "category": "Statistics",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "smpstdev(arg1, ...)",
+      "directApi": {
+        "package": "nerdamer/statistics",
+        "name": "smpstdev"
+      }
+    },
+    {
+      "name": "smpvar",
+      "category": "Statistics",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "smpvar(arg1, ...)",
+      "directApi": {
+        "package": "nerdamer/statistics",
+        "name": "smpvar"
+      }
     },
     {
       "name": "solve",
@@ -2094,6 +2323,22 @@
       "deferArguments": false,
       "registrationLevel": "system",
       "syntax": "sqrt(arg1)"
+    },
+    {
+      "name": "stdev",
+      "category": "Statistics",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "stdev(arg1, ...)",
+      "directApi": {
+        "package": "nerdamer/statistics",
+        "name": "stdev"
+      }
     },
     {
       "name": "step",
@@ -2221,6 +2466,22 @@
       "syntax": "unassign(arg1)"
     },
     {
+      "name": "variance",
+      "category": "Statistics",
+      "usage": "notation",
+      "minArgs": 1,
+      "maxArgs": -1,
+      "equationArgs": [],
+      "distElWise": false,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "variance(arg1, ...)",
+      "directApi": {
+        "package": "nerdamer/statistics",
+        "name": "variance"
+      }
+    },
+    {
       "name": "while",
       "category": "Nerdamer Language",
       "usage": "scripting",
@@ -2243,6 +2504,22 @@
       "deferArguments": false,
       "registrationLevel": "system",
       "syntax": "xor(arg1, arg2, ...)"
+    },
+    {
+      "name": "zscore",
+      "category": "Statistics",
+      "usage": "notation",
+      "minArgs": 3,
+      "maxArgs": 3,
+      "equationArgs": [],
+      "distElWise": true,
+      "deferArguments": false,
+      "registrationLevel": "system",
+      "syntax": "zscore(arg1, arg2, arg3)",
+      "directApi": {
+        "package": "nerdamer/statistics",
+        "name": "zscore"
+      }
     }
   ]
 }

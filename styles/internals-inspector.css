@@ -20,7 +20,7 @@
   gap: 16px;
   padding: 12px 15px;
   border-bottom: 1px solid rgb(var(--border));
-  background: rgba(var(--bg-soft), .68);
+  background: rgb(var(--bg-soft) / .68);
 }
 .inspector-panel-head strong { color: rgb(var(--fg)); }
 .inspector-panel-head span { color: rgb(var(--muted)); font-size: .76rem; }
@@ -56,8 +56,8 @@
   font-size: .76rem;
   font-weight: 700;
 }
-.inspector-actions .engine-status.ready { border-color: rgba(var(--good), .35); color: rgb(var(--good)); }
-.inspector-actions .engine-status.error { border-color: rgba(var(--danger), .35); color: rgb(var(--danger)); }
+.inspector-actions .engine-status.ready { border-color: rgb(var(--good) / .35); color: rgb(var(--good)); }
+.inspector-actions .engine-status.error { border-color: rgb(var(--danger) / .35); color: rgb(var(--danger)); }
 .inspector-examples { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 15px 15px; }
 .inspector-examples button {
   border: 1px solid rgb(var(--border));
@@ -68,7 +68,7 @@
   cursor: pointer;
   font-size: .74rem;
 }
-.inspector-examples button:hover { border-color: rgba(var(--accent), .45); color: rgb(var(--accent-deep)); }
+.inspector-examples button:hover { border-color: rgb(var(--accent) / .45); color: rgb(var(--accent-deep)); }
 .inspector-result-math {
   min-height: 94px;
   display: flex;
@@ -94,9 +94,9 @@
 .inspector-error {
   margin: 18px 0 26px;
   padding: 14px 16px;
-  border: 1px solid rgba(var(--danger), .28);
+  border: 1px solid rgb(var(--danger) / .28);
   border-radius: 12px;
-  background: rgba(var(--danger), .06);
+  background: rgb(var(--danger) / .06);
   color: rgb(var(--danger));
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -146,7 +146,7 @@
   padding: 9px;
   border: 1px dashed rgb(var(--border-strong));
   border-radius: 12px;
-  background: rgba(var(--accent), .035);
+  background: rgb(var(--accent) / .035);
 }
 .inspector-token-scope-label { margin-bottom: 7px; color: rgb(var(--muted)); font-size: .67rem; text-transform: uppercase; letter-spacing: .07em; }
 .inspector-tree { margin: 16px 0 30px; padding: 13px; overflow-x: auto; }

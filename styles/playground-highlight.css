@@ -55,7 +55,7 @@
 
 .editor-wrap.syntax-highlighted .editor::selection,
 .editor-wrap.syntax-highlighted .editor::-moz-selection {
-  background: rgba(var(--accent), .34);
+  background: rgb(var(--accent) / .34);
   color: #fff;
 }
 

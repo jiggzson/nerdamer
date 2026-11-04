@@ -76,7 +76,7 @@ html.dark .docs-sidebar::-webkit-scrollbar-thumb:hover {
 }
 
 .docs-nav-toggle:focus-visible {
-  outline: 2px solid rgba(var(--accent), .55);
+  outline: 2px solid rgb(var(--accent) / .55);
   outline-offset: 3px;
   border-radius: 4px;
 }

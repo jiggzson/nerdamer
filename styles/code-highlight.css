@@ -52,7 +52,7 @@ pre.codeblock .token {
 }
 
 .code-copy:hover {
-  border-color: rgba(var(--accent), .45);
+  border-color: rgb(var(--accent) / .45);
   color: rgb(var(--fg));
 }
 

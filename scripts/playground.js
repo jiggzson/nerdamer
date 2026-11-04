@@ -40,6 +40,31 @@
     'LHS', 'RHS', 'lhs', 'rhs',
   ];
   const currentNerdamer = globalThis.nerdamer;
+  const siteVersion = typeof currentNerdamer?.version === 'function' ? currentNerdamer.version() : '';
+  const siteLabel = /^\d+\.\d+\.\d+/.test(siteVersion)
+    ? `Nerdamer ${siteVersion} (site build)`
+    : 'Nerdamer 2.x (site build)';
+
+  // List published 2.x releases here; exclude the current local version and newer versions.
+  const releaseVersions = ['2.0.0'];
+  const versionParts = value => /^\d+\.\d+\.\d+/.test(value)
+    ? value.match(/^\d+\.\d+\.\d+/)[0].split('.').map(Number)
+    : null;
+  const isOlderRelease = version => {
+    const candidate = versionParts(version);
+    const current = versionParts(siteVersion);
+    if (!candidate || !current) return false;
+    for (let i = 0; i < 3; i++) {
+      if (candidate[i] !== current[i]) return candidate[i] < current[i];
+    }
+    return false;
+  };
+  const historicalVersions = releaseVersions.filter(isOlderRelease);
+  const releaseUrls = new Map(
+    historicalVersions.map(version => [version, `https://cdn.jsdelivr.net/npm/nerdamer@${version}/dist/bundle.js`])
+  );
+  const releaseRuntimes = new Map();
+  const releasePromises = new Map();
   const legacyUrl = 'https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/all.min.js';
   const primeUrl = 'https://cdn.jsdelivr.net/npm/nerdamer-prime@1.5.0/all.min.js';
   let legacyNerdamer = null;
@@ -84,26 +109,28 @@
     }
   };
 
-  const engines = {
-    v2: {
-      id: 'v2',
-      label: 'Nerdamer 2.0',
-      root: () => currentNerdamer,
-      run(source, shouldEvaluate = false) {
-        return withGlobalEngine(currentNerdamer, runtime => {
-          const value = runtime(source);
-          return shouldEvaluate ? value.evaluate() : value;
-        });
-      },
-      toText(value) {
-        return typeof value?.text === 'function' ? value.text() : String(value);
-      },
-      toTeX(value) {
-        return withGlobalEngine(currentNerdamer, runtime => typeof runtime?.pretty === 'function'
-          ? runtime.pretty(value, 'TeX')
-          : (typeof value?.toTeX === 'function' ? value.toTeX() : ''));
-      },
+  const createV2Engine = (id, label, root) => ({
+    id,
+    label,
+    root,
+    run(source, shouldEvaluate = false) {
+      return withGlobalEngine(root(), runtime => {
+        const value = runtime(source);
+        return shouldEvaluate ? value.evaluate() : value;
+      });
     },
+    toText(value) {
+      return typeof value?.text === 'function' ? value.text() : String(value);
+    },
+    toTeX(value) {
+      return withGlobalEngine(root(), runtime => typeof runtime?.pretty === 'function'
+        ? runtime.pretty(value, 'TeX')
+        : (typeof value?.toTeX === 'function' ? value.toTeX() : ''));
+    },
+  });
+
+  const engines = {
+    v2: createV2Engine('v2', siteLabel, () => currentNerdamer),
     legacy: {
       id: 'legacy',
       label: 'Nerdamer 1.1.13',
@@ -140,11 +167,57 @@
     },
   };
 
+  engineSelect.querySelector('option[value="v2"]').textContent = siteLabel;
+
+  for (const version of historicalVersions) {
+    engines[version] = createV2Engine(version, `Nerdamer ${version}`, () => releaseRuntimes.get(version));
+    const option = document.createElement('option');
+    option.value = version;
+    option.textContent = `Nerdamer ${version}`;
+    engineSelect.add(option, engineSelect.querySelector('option[value="legacy"]'));
+  }
+
   const activeEngine = () => engines[activeEngineId];
 
   const setStatus = (message, kind = '') => {
     status.textContent = message;
     status.className = `engine-status ${kind}`.trim();
+  };
+
+  const loadRelease = version => {
+    const url = releaseUrls.get(version);
+    if (!url) return Promise.reject(new Error(`Nerdamer ${version} is not configured.`));
+
+    const loaded = releaseRuntimes.get(version);
+    if (loaded) return Promise.resolve(loaded);
+    if (releasePromises.has(version)) return releasePromises.get(version);
+
+    const promise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = url;
+      script.async = true;
+      script.onload = () => {
+        const runtime = globalThis.nerdamer;
+        globalThis.nerdamer = currentNerdamer;
+        if (typeof runtime !== 'function' || runtime === currentNerdamer) {
+          reject(new Error(`Nerdamer ${version} did not initialize.`));
+          return;
+        }
+        releaseRuntimes.set(version, runtime);
+        resolve(runtime);
+      };
+      script.onerror = () => {
+        globalThis.nerdamer = currentNerdamer;
+        reject(new Error(`Could not load Nerdamer ${version}.`));
+      };
+      document.head.append(script);
+    }).catch(caught => {
+      releasePromises.delete(version);
+      throw caught;
+    });
+
+    releasePromises.set(version, promise);
+    return promise;
   };
 
   const loadLegacy = () => {
@@ -821,6 +894,9 @@
       } else if (requested === 'prime') {
         setStatus('Loading Nerdamer-Prime…');
         await loadPrime();
+      } else if (releaseUrls.has(requested)) {
+        setStatus(`Loading Nerdamer ${requested}…`);
+        await loadRelease(requested);
       }
       activeEngineId = requested;
       setStatus(`${activeEngine().label} ready`, 'ready');
@@ -828,7 +904,7 @@
     } catch (caught) {
       engineSelect.value = 'v2';
       activeEngineId = 'v2';
-      setStatus(`${requested === 'prime' ? 'Nerdamer-Prime' : 'Nerdamer 1.1.13'} unavailable`, 'error');
+      setStatus(`${engines[requested]?.label || 'Selected engine'} unavailable`, 'error');
       error.textContent = caught?.message || String(caught);
       error.hidden = false;
     } finally {
@@ -955,10 +1031,10 @@
   if (params.get('expr')) editor.value = params.get('expr');
 
   if (typeof currentNerdamer === 'function') {
-    setStatus('Nerdamer 2.0 ready', 'ready');
+    setStatus(`${engines.v2.label} ready`, 'ready');
     execute();
   } else {
-    setStatus('Nerdamer 2.0 unavailable', 'error');
+    setStatus(`${engines.v2.label} unavailable`, 'error');
     run.disabled = true;
     evaluateOutput.disabled = true;
     engineSelect.disabled = true;

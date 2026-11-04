@@ -38,7 +38,7 @@ html.dark body::before {
   width: min(100%, 1440px);
   margin: 0 auto;
   background: rgb(var(--bg));
-  box-shadow: 0 0 70px rgba(var(--shadow), .12);
+  box-shadow: 0 0 70px rgb(var(--shadow) / .12);
 }
 
 /* The background is now site-wide, so the homepage no longer needs its own copy. */

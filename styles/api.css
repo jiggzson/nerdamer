@@ -38,7 +38,7 @@
 
 .api-package-card:hover {
   transform: translateY(-1px);
-  border-color: rgba(var(--accent), .5);
+  border-color: rgb(var(--accent) / .5);
 }
 
 .api-package-card > div {
@@ -110,7 +110,7 @@
 }
 
 .api-list-item:hover {
-  border-color: rgba(var(--accent), .45);
+  border-color: rgb(var(--accent) / .45);
 }
 
 .api-list-item > div {
@@ -270,7 +270,7 @@
 }
 
 .api-table th {
-  background: rgba(var(--bg-soft), .7);
+  background: rgb(var(--bg-soft) / .7);
   color: rgb(var(--fg));
   font-size: .74rem;
   letter-spacing: .06em;

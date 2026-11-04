@@ -31,10 +31,10 @@
   background: linear-gradient(
     90deg,
     rgb(var(--bg)) 0%,
-    rgba(var(--bg), .99) 27%,
-    rgba(var(--bg), .88) 39%,
-    rgba(var(--bg), .48) 53%,
-    rgba(var(--bg), .12) 67%,
+    rgb(var(--bg) / .99) 27%,
+    rgb(var(--bg) / .88) 39%,
+    rgb(var(--bg) / .48) 53%,
+    rgb(var(--bg) / .12) 67%,
     transparent 79%
   );
 }
@@ -46,7 +46,7 @@
 
 .home-hero .hero-console {
   background: rgb(var(--bg-elevated));
-  box-shadow: 0 24px 70px rgba(var(--shadow), .18);
+  box-shadow: 0 24px 70px rgb(var(--shadow) / .18);
   backdrop-filter: none;
 }
 
@@ -59,10 +59,10 @@ html.dark .home-hero::after {
   background: linear-gradient(
     90deg,
     rgb(var(--bg)) 0%,
-    rgba(var(--bg), .99) 28%,
-    rgba(var(--bg), .9) 41%,
-    rgba(var(--bg), .58) 55%,
-    rgba(var(--bg), .2) 69%,
+    rgb(var(--bg) / .99) 28%,
+    rgb(var(--bg) / .9) 41%,
+    rgb(var(--bg) / .58) 55%,
+    rgb(var(--bg) / .2) 69%,
     transparent 80%
   );
 }
@@ -75,7 +75,7 @@ html.dark .home-hero::after {
   }
 
   .home-hero::after {
-    background: linear-gradient(180deg, rgba(var(--bg), .18), rgba(var(--bg), .78) 70%, rgb(var(--bg)) 100%);
+    background: linear-gradient(180deg, rgb(var(--bg) / .18), rgb(var(--bg) / .78) 70%, rgb(var(--bg)) 100%);
   }
 }
 

@@ -31,9 +31,9 @@
 .showcase-run-meta .engine-status { display: inline-flex; align-items: center; min-height: 32px; padding: 0 10px; border: 1px solid rgb(var(--border)); border-radius: 999px; background: rgb(var(--bg-elevated)); color: rgb(var(--muted)); font-size: .8rem; font-weight: 700; }
 .showcase-run-meta p { margin: 12px 0 4px; color: rgb(var(--muted)); }
 .showcase-run-meta small { display: block; color: rgb(var(--muted)); overflow-wrap: anywhere; }
-.showcase-run-meta .engine-status.ready { border-color: rgba(var(--good), .35); color: rgb(var(--good)); }
-.showcase-run-meta .engine-status.warning { border-color: rgba(var(--accent), .35); color: rgb(var(--accent)); }
-.showcase-run-meta .engine-status.error { border-color: rgba(var(--danger), .35); color: rgb(var(--danger)); }
+.showcase-run-meta .engine-status.ready { border-color: rgb(var(--good) / .35); color: rgb(var(--good)); }
+.showcase-run-meta .engine-status.warning { border-color: rgb(var(--accent) / .35); color: rgb(var(--accent)); }
+.showcase-run-meta .engine-status.error { border-color: rgb(var(--danger) / .35); color: rgb(var(--danger)); }
 
 .showcase-jump {
   display: flex;
@@ -50,7 +50,7 @@
   font-size: .85rem;
   text-decoration: none;
 }
-.showcase-jump a:hover { border-color: rgba(var(--accent), .45); }
+.showcase-jump a:hover { border-color: rgb(var(--accent) / .45); }
 
 .showcase-category { margin: 0 0 52px; scroll-margin-top: 90px; }
 .showcase-category-heading {
@@ -97,8 +97,8 @@
 .showcase-result-source { margin-top: 8px; color: rgb(var(--muted)); font-size: .78rem; }
 .showcase-result-source summary { cursor: pointer; user-select: none; }
 .showcase-result-source code { display: block; margin-top: 7px; white-space: pre-wrap; overflow-wrap: anywhere; color: rgb(var(--muted)); }
-.showcase-output-issue { background: rgba(var(--accent), .045); }
-.showcase-error { background: rgba(var(--danger), .06); }
+.showcase-output-issue { background: rgb(var(--accent) / .045); }
+.showcase-error { background: rgb(var(--danger) / .06); }
 .showcase-error .showcase-math,
 .showcase-error .showcase-result-issue { color: rgb(var(--danger)); }
 

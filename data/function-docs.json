@@ -1432,7 +1432,11 @@
       "summary": "Adds a real numeric interval assumption for a symbol so assumption-aware operations can use the known range.",
       "description": [
         "Assumptions narrow a plain variable to a non-empty interval of real numeric values. Repeated constraints for the same variable are intersected, and contradictory constraints are rejected without replacing the previous assumption.",
-        "Assumptions are used conservatively. They can influence comparisons and transformations that depend on sign or ordering, but they are not a general logical theorem system."
+        "Assumptions are used conservatively. They can influence comparisons and transformations that depend on sign or ordering, but they are not a general logical theorem system.",
+        "Exact rational bounds and supported real algebraic endpoints such as sqrt(2) are preserved without decimal rounding. In Nerdamer Notation, assume(x>sqrt(2)) registers an exact irrational lower bound; unsupported expressions are rejected.",
+        "Parser notation also supports relations between two variables with exact rational differences, such as assume(x<y+1) and assume(2*x+3<2*y+5). Such relations can derive bounds from current assumptions on another variable; getAssumptionFor returns only explicitly registered numeric intervals.",
+        "Assumption-aware comparisons can prove signs for compatible linear combinations, positive products, selected integer and reciprocal powers, and square roots over nonnegative intervals. When the constraints do not prove a conclusion, Nerdamer does not infer it. An even power may be nonnegative without being strictly positive.",
+        "Assumption relations can distinguish true, false, and undefined (unknown); public Expression comparison methods still return booleans for compatibility. Forgotten variables remove dependent relationships, and contradictory constraints are rejected without discarding valid earlier assumptions."
       ],
       "examples": [
         {
@@ -1449,11 +1453,35 @@
           "expression": "assume(x>0); assume(y>0); simplify(log(x)+log(y))",
           "output": "log(x*y)",
           "description": "Use positivity information in a sign-sensitive logarithm simplification."
+        },
+        {
+          "expression": "assume(x>sqrt(2)); x>1",
+          "output": "true",
+          "description": "Use an exact algebraic endpoint to establish a comparison without rounding."
+        },
+        {
+          "expression": "assume(x<y+1); assume(y<=3); x<4",
+          "output": "true",
+          "description": "Propagate a strict upper bound through a relationship between variables."
+        },
+        {
+          "expression": "assume(a>5); assume(b<3); a-b-2>0",
+          "output": "true",
+          "description": "Use independent intervals to establish the strict sign of a linear combination."
+        },
+        {
+          "expression": "assume(x>4); sqrt(x)-2>0",
+          "output": "true",
+          "description": "Establish a strict square-root bound when the entire assumed interval is positive."
         }
       ],
       "notes": [
         "The direct string API accepts a variable, a comparison operator, and a numeric bound. Parser notation can evaluate arithmetic such as 1/3 before storing the bound.",
-        "Assumption state is process-wide until it is cleared or forgotten."
+        "Assumption state is process-wide until it is cleared or forgotten.",
+        "Direct string assumptions handle exact rational arithmetic; parser notation additionally accepts supported exact real algebraic endpoints and two-variable relationships.",
+        "Relationships may propagate through multiple variables, but unsupported nonlinear relations such as assume(x<y^2) are rejected.",
+        "Reciprocal bounds require intervals separated from zero, and square-root bounds require a nonnegative domain. Unknown results are not proofs.",
+        "Use forgetAssumptionFor(variable) to remove that variable's dependent relationships, or clearAssumptions() to clear process-wide state."
       ]
     },
     {
@@ -1675,6 +1703,164 @@
           "expression": "line([0,0],[1,1])",
           "description": "Construct the line through the origin and (1,1)."
         }
+      ]
+    },
+    {
+      "name": "mean",
+      "summary": "Returns the arithmetic mean of a list or vector of values.",
+      "description": [
+        "mean adds the supplied values and divides by their count. Pass individual expressions or a single vector; exact rational values are preserved when possible.",
+        "The same function is available to JavaScript and TypeScript callers from nerdamer/statistics."
+      ],
+      "examples": [
+        {
+          "expression": "mean(2,4,6)",
+          "output": "4",
+          "description": "Compute a mean from separate arguments."
+        },
+        {
+          "expression": "mean([2,4,6])",
+          "output": "4",
+          "description": "A single vector is unpacked."
+        }
+      ]
+    },
+    {
+      "name": "median",
+      "summary": "Returns the middle value of numerically orderable data.",
+      "description": [
+        "median orders the supplied values by their evaluated numeric values. For an even number of values, it returns the mean of the two middle entries. Unorderable symbolic or complex inputs remain in an unevaluated median call.",
+        "Pass separate arguments or a single vector."
+      ],
+      "examples": [
+        {
+          "expression": "median(1,7,3)",
+          "output": "3",
+          "description": "Select the middle value of three inputs."
+        }
+      ]
+    },
+    {
+      "name": "mode",
+      "summary": "Finds the most frequently occurring value.",
+      "description": [
+        "mode counts exact expression values and returns the most frequent one. When multiple values tie for highest frequency, the result remains symbolic instead of arbitrarily selecting one."
+      ],
+      "examples": [
+        {
+          "expression": "mode(2,3,2,4)",
+          "output": "2",
+          "description": "Find the unique most frequent value."
+        }
+      ]
+    },
+    {
+      "name": "variance",
+      "summary": "Computes the population variance.",
+      "description": [
+        "variance takes the mean squared deviation from the arithmetic mean, dividing by the total number of values. Use smpvar for the sample variance with an n-1 denominator.",
+        "Both the notation function and the direct nerdamer/statistics export accept separate values or one vector."
+      ],
+      "examples": [
+        {
+          "expression": "variance(1,2,3)",
+          "output": "2/3",
+          "description": "Compute an exact population variance."
+        }
+      ]
+    },
+    {
+      "name": "smpvar",
+      "summary": "Computes the sample variance.",
+      "description": [
+        "smpvar divides the sum of squared deviations by n-1 instead of n. It is the Nerdamer Notation name for the sampleVariance function exported from nerdamer/statistics."
+      ],
+      "examples": [
+        {
+          "expression": "smpvar(1,2,3)",
+          "output": "1",
+          "description": "Compute the sample variance."
+        }
+      ]
+    },
+    {
+      "name": "stdev",
+      "summary": "Computes the population standard deviation.",
+      "description": [
+        "stdev returns the square root of population variance. It accepts separate values or a single vector and preserves an exact symbolic radical when possible."
+      ],
+      "examples": [
+        {
+          "expression": "stdev(1,3)",
+          "output": "1",
+          "description": "Compute standard deviation for two values."
+        }
+      ]
+    },
+    {
+      "name": "smpstdev",
+      "summary": "Computes the sample standard deviation.",
+      "description": [
+        "smpstdev returns the square root of sample variance, using an n-1 denominator. The direct nerdamer/statistics export also provides the descriptive name sampleStandardDeviation."
+      ],
+      "examples": [
+        {
+          "expression": "smpstdev(1,2,3)",
+          "output": "1",
+          "description": "Compute the sample standard deviation."
+        }
+      ]
+    },
+    {
+      "name": "zscore",
+      "summary": "Computes a value's z-score from a mean and standard deviation.",
+      "description": [
+        "zscore(x, average, standardDeviation) returns (x-average)/standardDeviation. The average and standard deviation are supplied explicitly; this function does not estimate them from a dataset."
+      ],
+      "examples": [
+        {
+          "expression": "zscore(7,5,2)",
+          "output": "1",
+          "description": "Measure a value one standard deviation above the mean."
+        }
+      ]
+    },
+    {
+      "name": "significant",
+      "summary": "Rounds a number to a requested number of significant figures.",
+      "description": [
+        "significant(value, figures) rounds the supplied value to the specified number of significant figures. Unlike round(value, places), the precision is relative to the number's magnitude."
+      ],
+      "examples": [
+        {
+          "expression": "significant(1234.567,3)",
+          "output": "1230",
+          "description": "Round to three significant figures."
+        }
+      ]
+    },
+    {
+      "name": "realsolutions",
+      "summary": "Selects real solutions within an inclusive interval.",
+      "description": [
+        "For a SolutionSet returned by solve, realsolutions(solutions, lower, upper) filters or materializes real solutions within the requested inclusive interval, including supported integer-indexed periodic families.",
+        "For a system result returned by solveeqs, realsolutions(systems, variable, lower, upper) projects the distinct real values of the selected variable into a SolutionSet, rather than returning the full system dictionaries."
+      ],
+      "examples": [
+        {
+          "expression": "realsolutions(solve(sin(x),x),-2*pi,2*pi)",
+          "output": "{-2*pi, -pi, 0, pi, 2*pi}",
+          "description": "Materialize a periodic family within a specified real interval."
+        },
+        {
+          "expression": "realsolutions(solveeqs([x+y=3,x-y=1]),x,1,3)",
+          "output": "{2}",
+          "description": "Select x-values from a system's solutions."
+        }
+      ],
+      "notes": [
+        "A finite interval is required; this operation does not enumerate an infinite family without limits.",
+        "For JavaScript or TypeScript, SolutionSet.generate({ interval: [lower, upper] }) and SolutionSet.generate({ indices: [first, last] }) provide explicit generation operations."
       ]
     },
     {

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Nerdamer 2.0.1 improvements — Documentation</title>
+  <meta name="description" content="New APIs, restored functions, solver generation, and correctness updates in Nerdamer 2.0.1.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='auto';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/releases/">What’s New</a><a href="/docs/references/">References &amp; citations</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
+    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+  </nav>
+</aside>
+<article class="docs-content"><div class="eyebrow">Release guide</div>
+<h1>Nerdamer 2.0.1 improvements</h1>
+<p>This page highlights the additions and changes introduced after 2.0.0. It supplements the existing <a href="/docs/functions/">Nerdamer Notation reference</a>, <a href="/docs/api/">JavaScript / TypeScript API</a>, and <a href="/docs/migration/">1.xx migration guide</a>; it does not replace those references.</p>
+
+<h2 id="numerical-connections">Connect external numerical functions</h2>
+<p>The root API now exposes <code>nerdamer.connect(names, source)</code>; direct API users can import <a href="/docs/api/core/connect-functions/"><code>connectFunctions</code></a> from <code>nerdamer/core</code>. The source is an already-loaded JavaScript object containing functions; Nerdamer does not automatically load the external package.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">helpers</span> <span class="token operator">=</span> <span class="token punctuation">{</span> <span class="token variable">cube</span><span class="token operator">:</span> <span class="token variable">x</span> <span class="token operator">=&gt;</span> <span class="token variable">x</span> <span class="token operator">*</span> <span class="token variable">x</span> <span class="token operator">*</span> <span class="token variable">x</span> <span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">connect</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token string">&#39;cube&#39;</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token variable">helpers</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;cube(x)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>             <span class="token comment">// cube(x)</span>
+<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;cube(2)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 8</span></code></pre>
+<p>Functions retain their symbolic form during normal parsing. Their connected implementations are used for numerical evaluation and compilation through <code>buildFunction()</code>. Use <code>['*']</code> to connect all own enumerable functions on the supplied object; non-function properties are skipped. Use wildcard connections selectively because utility functions from a broad library may not be meaningful as mathematical operations.</p>
+<p>Use <code>nerdamer.clearFunctions(['cube'])</code> to remove a named user-defined function, or <code>nerdamer.clearFunctions()</code> to clear user functions without deleting built-in functions. See the <a href="/docs/language/user-defined-functions/">user-defined functions guide</a>.</p>
+
+<h2 id="statistics">Restored statistics and a dedicated module</h2>
+<p>Statistical operations are once again available through Nerdamer Notation and the full package. TypeScript and JavaScript users can import them from <a href="/docs/api/statistics/"><code>nerdamer/statistics</code></a>, including the descriptive <code>sampleVariance</code> and <code>sampleStandardDeviation</code> exports.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token function">mean</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">]</span><span class="token punctuation">)</span>               <span class="token comment">// 4</span>
+<span class="token function">median</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">7</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span>              <span class="token comment">// 3</span>
+<span class="token function">mode</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">)</span>              <span class="token comment">// 2</span>
+<span class="token function">variance</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span>            <span class="token comment">// 2/3</span>
+<span class="token function">smpvar</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span>              <span class="token comment">// 1</span>
+<span class="token function">smpstdev</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span>            <span class="token comment">// 1</span>
+<span class="token function">zscore</span><span class="token punctuation">(</span><span class="token number">7</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">)</span>              <span class="token comment">// 1</span></code></pre>
+<p>Available names include <a href="/docs/functions/mean/"><code>mean</code></a>, <a href="/docs/functions/median/"><code>median</code></a>, <a href="/docs/functions/mode/"><code>mode</code></a>, <a href="/docs/functions/variance/"><code>variance</code></a>, <a href="/docs/functions/smpvar/"><code>smpvar</code></a>, <a href="/docs/functions/stdev/"><code>stdev</code></a>, <a href="/docs/functions/smpstdev/"><code>smpstdev</code></a>, and <a href="/docs/functions/zscore/"><code>zscore</code></a>. The <code>smp*</code> names use sample denominators; the corresponding population functions use the full dataset size.</p>
+
+<h2 id="special-functions">Special functions and complex-number operations</h2>
+<p>The dedicated <a href="/docs/api/special/"><code>nerdamer/special</code></a> module exports gamma and incomplete-gamma operations, <code>erf</code>, <code>erfc</code>, <code>sinc</code>, and the supported sine, cosine, exponential, and logarithmic integral functions. The 2.0.1 implementation extends complex-argument evaluation for gamma, erf, Si, Ci, and Ei, improves complex identities and inverse functions, and fixes several principal-branch, derivative, undefined-value, and complex-logarithm cases.</p>
+<p>The <code>phase</code> and <code>magnitude</code> names are aliases for <a href="/docs/functions/arg/"><code>arg</code></a> and <a href="/docs/functions/abs/"><code>abs</code></a>. Rounding of supported complex values is also improved. Significant-figure rounding is provided by <a href="/docs/functions/significant/"><code>significant(value, figures)</code></a>, separately from decimal-place rounding with <code>round</code>.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">phase</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">+</span><span class="token constant">i</span><span class="token punctuation">)</span>                  <span class="token comment">// (1/4)*pi</span>
+<span class="token function">magnitude</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token operator">+</span><span class="token number">4</span><span class="token operator">*</span><span class="token constant">i</span><span class="token punctuation">)</span>           <span class="token comment">// 5</span>
+<span class="token function">significant</span><span class="token punctuation">(</span><span class="token number">1234.567</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span>    <span class="token comment">// 1230</span>
+<span class="token function">gamma</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">/</span><span class="token number">2</span><span class="token punctuation">)</span>                 <span class="token comment">// sqrt(pi)</span></code></pre>
+
+<h2 id="solving">Periodic solutions, intervals, and solver results</h2>
+<p>Equation solving now handles more complete periodic trigonometric families and exact intersections of compatible periodic families in systems. Improvements also include expression-inferred search bounds for certain trigonometric equations, better starting points for certain multivariate systems, and numerical root-finding improvements.</p>
+<p>The <a href="/docs/functions/realsolutions/"><code>realsolutions</code></a> function returns real solutions in an inclusive interval. For system solutions, it requires a variable and returns that variable's values rather than the complete assignment dictionaries.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">realsolutions</span><span class="token punctuation">(</span><span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token operator">-</span><span class="token number">2</span><span class="token operator">*</span><span class="token constant">pi</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token operator">*</span><span class="token constant">pi</span><span class="token punctuation">)</span>
+<span class="token comment">// {-2*pi, -pi, 0, pi, 2*pi}</span>
+
+<span class="token function">realsolutions</span><span class="token punctuation">(</span><span class="token function">solveeqs</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token operator">+</span><span class="token variable">y</span><span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token operator">-</span><span class="token variable">y</span><span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span>
+<span class="token comment">// {2}</span></code></pre>
+<p>JavaScript and TypeScript callers can explicitly enumerate supported integer-indexed families with <code>SolutionSet.generate()</code>, specifying either index bounds or a real-value interval:</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">const</span> <span class="token variable">solutions</span> <span class="token operator">=</span> <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">solve</span><span class="token punctuation">(</span><span class="token string">&#39;sin(x)&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;x&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token variable">solutions</span><span class="token punctuation">.</span><span class="token function">generate</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token variable">indices</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// {-2*pi, -pi, 0, pi, 2*pi}</span>
+
+<span class="token variable">solutions</span><span class="token punctuation">.</span><span class="token function">generate</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token variable">interval</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">&#39;-2*pi&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;2*pi&#39;</span><span class="token punctuation">]</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// {-2*pi, -pi, 0, pi, 2*pi}</span></code></pre>
+<p>The <code>indices</code> option limits the integer parameter, not the numerical values. The <code>interval</code> option limits real solutions by value. Unsupported or unbounded generation and requests exceeding safety limits are rejected; the operation is not a general-purpose enumeration of arbitrary infinite sets. See the <a href="/docs/api/solve/solution-set/">SolutionSet API</a>.</p>
+
+<h2 id="algebra-calculus">Algebra, calculus, and numerical extensions</h2>
+<p>Algebra now supports more polynomial operations with symbolic coefficients, exact polynomial GCDs with complex coefficients, exact comparisons involving radicals and powers, more symbolic assumptions and variable relationships, and exact algebraic assumption bounds. Additional vector support includes seven-dimensional cross products.</p>
+<p>Finite and infinite sums and products have broader formula support, including geometric and telescoping cases. Integration improvements cover more rational forms, negative exponentials, Gaussian exponentials expressed using <code>erf</code>, and complex-valued definite integration. More Laplace-transform rules and precise handling of unresolved integrals have been added.</p>
+<p>Nerdamer Notation also supports the <code>!=</code> comparison operator. The parser accepts supported exact repeating-decimal forms; logarithmic and radical simplification, nested powers, equation arithmetic, TeX conversion of deeply nested expressions, and several complex-number calculations have been corrected.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token number">1</span><span class="token operator">!=</span><span class="token number">2</span>                         <span class="token comment">// 1</span>
+<span class="token function">sum</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token operator">^</span><span class="token variable">k</span><span class="token punctuation">,</span><span class="token variable">k</span><span class="token punctuation">,</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span>              <span class="token comment">// 15</span>
+<span class="token function">product</span><span class="token punctuation">(</span><span class="token variable">k</span><span class="token punctuation">,</span><span class="token variable">k</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">)</span>            <span class="token comment">// 24</span></code></pre>
+
+<h2 id="configuration">Function groups, warnings, and compatibility</h2>
+<p>The immutable function-name categories <code>TRIG</code>, <code>INVERSE_TRIG</code>, <code>HYPERBOLIC_TRIG</code>, <code>INVERSE_HYPERBOLIC_TRIG</code>, <code>STATISTICS</code>, <code>NUMBER_THEORY</code>, and <code>SPECIAL_FUNCTIONS</code> are exposed from <code>nerdamer/constants</code> and through <code>nerdamer.constants</code>. They classify built-in names; they are not dynamic listings of user registrations.</p>
+<p>Warnings now cover selected incomplete solver results and numerical calculation limits. The root API includes <code>getWarnings()</code>, <code>clearWarnings()</code>, <code>setWarningHandler()</code>, and <code>setConsoleWarnings()</code> for warning handling. Legacy <code>setVar(name, 'delete')</code> and <code>setConstant(name, 'delete')</code> removal forms issue deprecation warnings; prefer dedicated removal operations.</p>
+
+<h2 id="fixes">Reliability and performance</h2>
+<p>This release also fixes missing polynomial roots, logarithmic equations, absolute-value systems, incomplete trigonometric solutions, incorrect oscillatory limits, invalid equation arguments, incorrect vector operations, special-function derivatives, infinite-series results, and numerical root-finding edge cases. Further fixes address deep recursion, localized messages, rational integration, and the handling of variables absent from an equation.</p>
+<p>Performance work reduces costs in numerical solving, integration, symbolic simplification, parsing, and expression processing. The regression suite and package-import and TypeScript validation were expanded alongside these changes.</p></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+
+<script src="../../../scripts/code-copy.js"></script>
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

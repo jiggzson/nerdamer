@@ -31,7 +31,7 @@ html.dark .home-page-root::before {
   width: min(100%, 1440px);
   margin: 0 auto;
   background: rgb(var(--bg));
-  box-shadow: 0 0 70px rgba(var(--shadow), .12);
+  box-shadow: 0 0 70px rgb(var(--shadow) / .12);
 }
 
 .home-hero {
@@ -75,7 +75,7 @@ html.dark .home-page-root::before {
 .home-hero .hero-console {
   position: relative;
   background: rgb(var(--bg-elevated));
-  box-shadow: 0 24px 70px rgba(var(--shadow), .13);
+  box-shadow: 0 24px 70px rgb(var(--shadow) / .13);
 }
 
 .home-about .about-grid {
@@ -166,9 +166,9 @@ html.dark .home-page-root::before {
   height: 48px;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(var(--accent), .22);
+  border: 1px solid rgb(var(--accent) / .22);
   border-radius: 11px;
-  background: rgba(var(--accent), .075);
+  background: rgb(var(--accent) / .075);
   color: rgb(var(--accent));
   font-family: var(--mono);
   font-size: .9rem;
@@ -267,8 +267,8 @@ html.dark .home-page-root::before {
 
 .project-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(var(--accent), .5);
-  box-shadow: 0 8px 24px rgba(var(--shadow), .07);
+  border-color: rgb(var(--accent) / .5);
+  box-shadow: 0 8px 24px rgb(var(--shadow) / .07);
 }
 
 .project-card span {
