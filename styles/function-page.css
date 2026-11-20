@@ -1,0 +1,95 @@
+/* Function page template: signature, parameters, returns, examples, notes. */
+
+.fn-summary {
+  margin: 8px 0 0;
+  font-size: 1.08rem;
+}
+
+.fn-signature {
+  font-size: .95rem;
+}
+
+.fn-params {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 18px;
+  margin: 12px 0 0;
+}
+
+.fn-params dt {
+  margin: 0;
+}
+
+.fn-params dt code {
+  color: rgb(var(--accent-deep));
+  font-weight: 700;
+}
+
+.fn-params dd {
+  margin: 0;
+}
+
+.docs-content .api-detail p code,
+.docs-content .api-detail li code,
+.fn-summary code {
+  color: rgb(var(--accent-deep));
+}
+
+.fn-api-links {
+  color: rgb(var(--muted));
+  font-size: .9rem;
+}
+
+@media (max-width: 560px) {
+  .fn-params {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .fn-params dd {
+    margin-bottom: 10px;
+  }
+}
+
+/* Ways to call the function: Notation first, then the JavaScript forms, one under the other. */
+.fn-forms {
+  margin: 18px 0 8px;
+  border: 1px solid rgb(var(--border));
+  border-radius: 12px;
+  background: rgb(var(--bg-soft));
+}
+
+.fn-form {
+  padding: 12px 14px;
+}
+
+.fn-form + .fn-form {
+  border-top: 1px solid rgb(var(--border));
+}
+
+.docs-content .fn-form-label {
+  margin: 0;
+  color: rgb(var(--muted));
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.fn-form .api-signature,
+.fn-form .codeblock {
+  margin: 8px 0;
+  background: rgb(var(--bg));
+}
+
+.fn-form-note {
+  margin: 6px 0 0;
+  color: rgb(var(--muted));
+  font-size: .88rem;
+}
+
+/* Sits right under its example's code block. */
+.api-example-block .fn-example-try {
+  display: block;
+  width: fit-content;
+  margin: -10px 0 0 auto;
+  font-size: .85rem;
+}

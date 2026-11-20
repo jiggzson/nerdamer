@@ -96,6 +96,7 @@ img { max-width: 100%; }
   width: 38px; height: 38px; border: 1px solid rgb(var(--border)); border-radius: 10px;
   background: rgb(var(--bg-elevated)); color: rgb(var(--muted)); cursor: pointer;
 }
+.theme-toggle { display: inline-grid; place-items: center; padding: 0; }
 .theme-toggle:hover, .menu-toggle:hover { border-color: rgb(var(--accent) / .45); color: rgb(var(--accent)); }
 .menu-toggle { display: none; }
 .mobile-nav { display: none; padding: 8px 20px 16px; }

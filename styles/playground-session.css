@@ -191,3 +191,37 @@
     align-self: flex-start;
   }
 }
+/* Under the result: the session variables the input used, whose values were substituted. */
+.result-session-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-left: 3px solid rgb(var(--accent));
+  border-radius: 8px;
+  background: rgb(var(--accent) / .06);
+  font-size: .78rem;
+}
+
+.result-session-note[hidden] {
+  display: none;
+}
+
+.result-session-note .playground-session-vars {
+  flex: 0 1 auto;
+}
+
+.result-session-note .playground-session-value {
+  padding-right: 9px;
+}
+
+.result-session-label {
+  color: rgb(var(--fg));
+  font-weight: 700;
+}
+
+.result-session-hint {
+  color: rgb(var(--muted-2));
+}

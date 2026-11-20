@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Reserved names — Nerdamer Documentation</title>
+  <meta name="description" content="The names Nerdamer gives a fixed meaning (e, pi, i, _n, all), how to check them, and how to free i for use as a variable.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='auto';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../styles/api.css">
+<link rel="stylesheet" href="../../../styles/library-docs.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme"><svg class="theme-toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Get started</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Install &amp; first steps</a><a href="/docs/choosing-an-api/">Ways to use Nerdamer</a><a href="/docs/releases/">What’s new</a><a href="/docs/migration/">Migrating from 1.x</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Guides</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Writing expressions</a><a href="/docs/guides/reserved-names/">Reserved names</a><a href="/docs/language/">Scripting</a><a href="/docs/language/user-defined-functions/">User-defined functions</a><a href="/docs/public-helpers/">Results &amp; output</a><a href="/docs/guides/sets/">Sets &amp; solution sets</a><a href="/docs/guides/assumptions/">Assumptions</a><a href="/docs/settings/">Settings</a><a href="/docs/guides/warnings/">Warnings</a><a href="/docs/guides/connecting-functions/">Connecting functions</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/examples/">JavaScript examples</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Reference</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/functions/">Functions</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">Types &amp; import paths</a></div>
+  </nav>
+  <a class="docs-sidebar-footer-link" href="/contributing/">Contributing →</a>
+</aside>
+<article class="docs-content"><div class="library-doc"><h1 id="reserved-names">Reserved names</h1>
+<p>A few names have a fixed meaning in Nerdamer, and you can&#39;t assign to them:</p>
+<div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>e</code></td><td>Euler&#39;s number</td></tr>
+<tr><td><code>pi</code></td><td>π</td></tr>
+<tr><td><code>i</code></td><td>the imaginary unit</td></tr>
+<tr><td><code>_n</code></td><td>&quot;any integer&quot;, in a family of solutions</td></tr>
+<tr><td><code>all</code></td><td>&quot;every value&quot;, for an equation that is always true</td></tr>
+</tbody></table></div>
+<p>Check a name with <code>isReserved</code> rather than copying this list, because the list can change:</p>
+<pre class="codeblock language-typescript"><code class="language-typescript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Parser</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/parser&#39;</span><span class="token punctuation">;</span>
+
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">isReserved</span><span class="token punctuation">(</span><span class="token string">&#39;pi&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// true</span>
+<span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token function">isReserved</span><span class="token punctuation">(</span><span class="token string">&#39;_n&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// true</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">isReserved</span><span class="token punctuation">(</span><span class="token string">&#39;x&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// false</span></code></pre>
+<h2 id="using-i-as-a-variable">Using <code>i</code> as a variable</h2>
+<p>The imaginary unit can be moved to another symbol. The new symbol becomes reserved and <code>i</code> is freed:</p>
+<pre class="codeblock language-typescript"><code class="language-typescript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Parser</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/parser&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">previous</span> <span class="token operator">=</span> <span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token function">getI</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// &#39;i&#39;</span>
+<span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token function">setI</span><span class="token punctuation">(</span><span class="token string">&#39;j&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token function">isReserved</span><span class="token punctuation">(</span><span class="token string">&#39;j&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// true</span>
+<span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token function">isReserved</span><span class="token punctuation">(</span><span class="token string">&#39;i&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// false</span>
+
+<span class="token class-name">Parser</span><span class="token punctuation">.</span><span class="token function">setI</span><span class="token punctuation">(</span><span class="token variable">previous</span><span class="token punctuation">)</span><span class="token punctuation">;</span>    <span class="token comment">// put it back</span></code></pre>
+<p>The change applies to everything parsed afterwards in your app, so choose a symbol you don&#39;t otherwise use.</p>
+<p>A constant you define with <code>setConstant</code> is not a reserved name: it is replaced by its value, but <code>isReserved</code> doesn&#39;t report it.</p>
+<h2 id="_n-and-all-in-solutions"><code>_n</code> and <code>all</code> in solutions</h2>
+<p><code>solve</code> uses these two names in its results.</p>
+<p><code>_n</code> stands for any integer in a periodic family:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span><span class="token variable">_n</span><span class="token operator">*</span><span class="token constant">pi</span><span class="token punctuation">}</span></code></pre>
+<p>To pick one member, give <code>_n</code> a value for a single evaluation, as in <code>evaluate(sol,{_n=&gt;0})</code>, or substitute into the result. Don&#39;t assign <code>_n</code> itself; <code>_n:0</code> is an error.</p>
+<p><code>all</code> means every value of the variable is a solution. It isn&#39;t a variable either.</p>
+</div></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/contributing/">Contributing</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+
+<script src="../../../scripts/code-copy.js"></script>
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

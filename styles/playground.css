@@ -234,6 +234,14 @@
   color: rgb(var(--accent-deep));
 }
 
+/* The argument the cursor is in. */
+.signature-bar .signature-active {
+  color: rgb(var(--accent));
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .output-tabs {
   display: flex;
   gap: 4px;
@@ -304,6 +312,43 @@
   font-family: var(--mono);
   font-size: .82rem;
   white-space: pre-wrap;
+}
+
+.playground-warning-box {
+  margin-top: 14px;
+  border: 1px solid rgb(186 126 32 / .35);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: rgb(186 126 32 / .08);
+  color: rgb(var(--fg));
+}
+
+.playground-warning-box[hidden] {
+  display: none;
+}
+
+.playground-warning-box strong {
+  font-size: .85rem;
+}
+
+.playground-warning-box ul {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: .84rem;
+  overflow-wrap: anywhere;
+}
+
+.playground-warning-box li {
+  white-space: pre-wrap;
+}
+
+.playground-warning-box code {
+  margin-left: 8px;
+  color: rgb(var(--muted));
+  font-family: var(--mono);
+  font-size: .76rem;
 }
 
 .tree-toolbar {
@@ -526,6 +571,10 @@
   font-size: .8rem;
 }
 
+.plot-container[hidden] {
+  display: none;
+}
+
 .plot-container {
   min-height: 420px;
   border: 1px solid rgb(var(--border));
@@ -535,38 +584,37 @@
 }
 
 .example-strip {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.example-strip-label {
+  margin-right: 2px;
+  color: rgb(var(--muted));
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
 }
 
 .example-chip {
+  padding: 4px 11px;
   border: 1px solid rgb(var(--border));
-  border-radius: 10px;
-  padding: 11px 12px;
+  border-radius: 999px;
   background: rgb(var(--bg-elevated));
-  text-align: left;
+  color: rgb(var(--fg));
+  font: inherit;
+  font-size: .8rem;
   cursor: pointer;
 }
 
-.example-chip strong {
-  display: block;
-  font-size: .78rem;
-}
-
-.example-chip code {
-  display: block;
-  margin-top: 5px;
-  overflow: hidden;
-  color: rgb(var(--muted));
-  font-size: .72rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.example-chip:hover {
+.example-chip:hover,
+.example-chip:focus-visible {
   border-color: rgb(var(--accent) / .45);
+  color: rgb(var(--accent));
 }
 
 @media (max-width: 980px) {
@@ -594,10 +642,6 @@
 
   .plot-3d-options {
     width: 100%;
-  }
-
-  .example-strip {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -631,12 +675,15 @@
     flex-direction: column;
   }
 
-  .example-strip {
-    grid-template-columns: 1fr;
-  }
-
   .suggestion {
     grid-template-columns: 1fr;
     gap: 2px;
+  }
+}
+
+/* Keyboard shortcuts mean nothing on a touch screen. */
+@media (hover: none) and (pointer: coarse) {
+  .playground-keys {
+    display: none;
   }
 }

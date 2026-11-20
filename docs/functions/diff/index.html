@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>diff — Nerdamer Documentation</title>
-  <meta name="description" content="Differentiates an expression symbolically with respect to a variable.">
+  <meta name="description" content="Differentiates an expression with respect to a variable.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
   <link rel="stylesheet" href="../../../styles/api.css">
+<link rel="stylesheet" href="../../../styles/function-page.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -42,7 +43,7 @@
       <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
     </nav>
     <div class="nav-actions">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme"><svg class="theme-toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
       <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
     </div>
   </div>
@@ -55,53 +56,57 @@
 <div class="docs-layout"><aside class="docs-sidebar">
   <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
   <nav class="docs-nav" id="docs-nav">
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/releases/">What’s New</a><a href="/docs/references/">References &amp; citations</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Get started</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Install &amp; first steps</a><a href="/docs/choosing-an-api/">Ways to use Nerdamer</a><a href="/docs/releases/">What’s new</a><a href="/docs/migration/">Migrating from 1.x</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Guides</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Writing expressions</a><a href="/docs/guides/reserved-names/">Reserved names</a><a href="/docs/language/">Scripting</a><a href="/docs/language/user-defined-functions/">User-defined functions</a><a href="/docs/public-helpers/">Results &amp; output</a><a href="/docs/guides/sets/">Sets &amp; solution sets</a><a href="/docs/guides/assumptions/">Assumptions</a><a href="/docs/settings/">Settings</a><a href="/docs/guides/warnings/">Warnings</a><a href="/docs/guides/connecting-functions/">Connecting functions</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/examples/">JavaScript examples</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Reference</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/functions/">Functions</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">Types &amp; import paths</a></div>
   </nav>
+  <a class="docs-sidebar-footer-link" href="/contributing/">Contributing →</a>
 </aside>
 <article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/functions/">Function reference</a></div>
 <div class="eyebrow">Function reference · Calculus</div>
 <h1><code>diff</code></h1>
-<p>Differentiates an expression symbolically with respect to a variable.</p>
-<div class="api-description"><p>Nerdamer applies the standard differentiation rules to algebraic expressions and supported functions, including product, quotient, power, and chain rules. Higher-order derivatives can be requested with the optional order argument.</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Differentiate a polynomial.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">diff</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">2</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span>
-<span class="token comment">// → 2+2*x</span></code></pre></div>
-<div class="api-example-block"><p>Apply the chain rule through a trigonometric power.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">diff</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token operator">*</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span>
-<span class="token comment">// → 20*x*cos(x^2)*sin(x^2)</span></code></pre></div>
-<div class="api-example-block"><p>Differentiate a variable raised to a variable-dependent power.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">diff</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span>
-<span class="token comment">// → x^sin(x)*(x^-1*sin(x)+cos(x)*log(x))</span></code></pre></div></section>
-<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
-<section class="api-detail" id="notation">
-<h2>Nerdamer Notation</h2>
-<p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
-<pre class="api-signature"><code>diff(expression[, variable][, order])</code></pre>
-<h3>Parameters</h3><ul><li><code>expression</code> — Expression to differentiate.</li>
-<li><code>variable</code> — Variable to differentiate with respect to.</li>
-<li><code>order</code> — Optional derivative order.</li></ul>
-
+<p class="fn-summary">Differentiates an expression with respect to a variable.</p>
+<p>It uses the product, quotient, power and chain rules on algebraic expressions and the built-in functions. Pass an order for higher derivatives.</p>
+<div class="fn-forms">
+<section class="fn-form" id="notation">
+<h2 class="fn-form-label">Notation</h2>
+<pre class="api-signature fn-signature"><code>diff(expression[, variable][, order])</code></pre>
+<p class="fn-form-note">Write it in an expression: <code>nerdamer('diff(x^2+2*x+1,x)')</code>, or in the <a href="/playground/?expr=diff(x%5E2%2B2*x%2B1%2Cx)">Playground</a>.</p>
 </section>
-<section class="api-detail" id="nerdamer-api">
-<h2><code>nerdamer.diff</code></h2>
-<p>Call the operation through the default <code>nerdamer</code> import.</p>
-<pre class="api-signature"><code>nerdamer.diff(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, variable?: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, n?: number | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
-<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Expression to differentiate.</td></tr><tr><td><code>variable</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Variable with respect to which the derivative is taken.</td></tr><tr><td><code>n</code></td><td><code>number | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>Positive integer derivative order. Defaults to the first derivative.</td></tr></tbody></table></div></section>
-<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The symbolic derivative, or an unevaluated <code>diff(...)</code> call when the
-requested operation cannot be resolved.</p></section>
-<p><a href="/docs/api/nerdamer/">Browse the <code>nerdamer</code> API →</a></p>
+<section class="fn-form" id="nerdamer-api">
+<h2 class="fn-form-label"><code>nerdamer.diff</code></h2>
+<pre class="api-signature fn-signature"><code>nerdamer.diff(expression: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>, variable?: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, order?: number | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
+<p class="fn-form-note">A method on the default import. Arguments can be strings, as in Notation.</p>
 </section>
-<section class="api-detail" id="direct-api">
-<h2>Direct JavaScript / TypeScript API</h2>
-<p>Import the operation directly from its package entry point.</p>
+<section class="fn-form" id="direct-api">
+<h2 class="fn-form-label"><code>import { diff }</code></h2>
 <pre class="codeblock language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">diff</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/calculus&#39;</span><span class="token punctuation">;</span></code></pre>
-<pre class="api-signature"><code>diff(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, variable?: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, n?: number | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
-<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Expression to differentiate.</td></tr><tr><td><code>variable</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Variable with respect to which the derivative is taken.</td></tr><tr><td><code>n</code></td><td><code>number | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>Positive integer derivative order. Defaults to the first derivative.</td></tr></tbody></table></div></section>
-<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — The symbolic derivative, or an unevaluated <code>diff(...)</code> call when the
-requested operation cannot be resolved.</p></section>
-<p><a href="/docs/api/calculus/">Browse <code>nerdamer/calculus</code> →</a></p>
+<pre class="api-signature fn-signature"><code>diff(expression: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, variable?: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>, order?: number | <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
+<p class="fn-form-note">Import only this function, from <a href="/docs/api/calculus/"><code>nerdamer/calculus</code></a>.</p>
 </section>
+</div>
+<section class="api-detail"><h2>Parameters</h2><dl class="fn-params"><dt><code>expression</code></dt><dd>Expression to differentiate.</dd>
+<dt><code>variable</code></dt><dd>Variable to differentiate with respect to.</dd>
+<dt><code>order</code></dt><dd>Optional derivative order.</dd></dl></section>
+
+<section class="api-detail"><h2>Examples</h2><div class="api-example-block"><p>A polynomial.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">diff</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">2</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span>
+<span class="token comment">// → 2+2*x</span></code></pre><a class="fn-example-try" href="/playground/?expr=diff(x%5E2%2B2*x%2B1%2Cx)">Open in Playground</a></div>
+<div class="api-example-block"><p>The chain rule through a power of a sine.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">diff</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token operator">*</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span>
+<span class="token comment">// → 20*x*cos(x^2)*sin(x^2)</span></code></pre><a class="fn-example-try" href="/playground/?expr=diff(5*sin(x%5E2)%5E2%2Cx)">Open in Playground</a></div>
+<div class="api-example-block"><p>A variable raised to a variable power.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">diff</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span>
+<span class="token comment">// → x^sin(x)*(x^-1*sin(x)+cos(x)*log(x))</span></code></pre><a class="fn-example-try" href="/playground/?expr=diff(x%5Esin(x)%2Cx)">Open in Playground</a></div>
+<div class="api-example-block"><p>The third derivative.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">diff</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span>
+<span class="token comment">// → -cos(x)</span></code></pre><a class="fn-example-try" href="/playground/?expr=diff(sin(x)%2Cx%2C3)">Open in Playground</a></div>
+<div class="api-example-block"><p>Leave out the variable when the expression has only one.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">diff</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">)</span>
+<span class="token comment">// → 2*x</span></code></pre><a class="fn-example-try" href="/playground/?expr=diff(x%5E2)">Open in Playground</a></div>
+<div class="api-example-block"><p>A vector is differentiated element by element.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">diff</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token comment">// → [1, 2*x]</span></code></pre><a class="fn-example-try" href="/playground/?expr=diff(%5Bx%2Cx%5E2%5D)">Open in Playground</a></div>
+<div class="api-example-block"><p>A value stored under the variable&#39;s name isn&#39;t substituted, so this is still <code>2*x</code>.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token variable">x</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">;</span> <span class="token function">diff</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span>
+<span class="token comment">// → 2*x</span></code></pre><a class="fn-example-try" href="/playground/?expr=x%3A5%3B%20diff(x%5E2%2Cx)">Open in Playground</a></div>
+<div class="api-example-block"><p>Other stored values are substituted as usual.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token variable">a</span><span class="token operator">:</span><span class="token number">2</span><span class="token punctuation">;</span> <span class="token function">diff</span><span class="token punctuation">(</span><span class="token variable">a</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span>
+<span class="token comment">// → 4*x</span></code></pre><a class="fn-example-try" href="/playground/?expr=a%3A2%3B%20diff(a*x%5E2%2Cx)">Open in Playground</a></div></section>
+<section class="api-detail"><h2>Good to know</h2><ul><li>Without a variable, <code>diff</code> uses the only variable left after stored values are substituted: after <code>x:5</code>, <code>diff(x^2)</code> gives <code>0</code>. With more than one variable, give it: <code>diff(x*y)</code> is an error.</li></ul></section>
+
 
 
 <p><a href="/docs/functions/">← Back to Function reference</a></p></article></div>
@@ -112,9 +117,9 @@ requested operation cannot be resolved.</p></section>
       <p>Symbolic mathematics for JavaScript and TypeScript.</p>
     </div>
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
-        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        Scripting</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/contributing/">Contributing</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

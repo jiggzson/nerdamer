@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Warnings — Nerdamer Documentation</title>
+  <meta name="description" content="How Nerdamer reports problems that aren&#39;t errors, such as a solver stopping at its limit, and how to read or show them.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='auto';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../styles/api.css">
+<link rel="stylesheet" href="../../../styles/library-docs.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme"><svg class="theme-toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Get started</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Install &amp; first steps</a><a href="/docs/choosing-an-api/">Ways to use Nerdamer</a><a href="/docs/releases/">What’s new</a><a href="/docs/migration/">Migrating from 1.x</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Guides</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Writing expressions</a><a href="/docs/guides/reserved-names/">Reserved names</a><a href="/docs/language/">Scripting</a><a href="/docs/language/user-defined-functions/">User-defined functions</a><a href="/docs/public-helpers/">Results &amp; output</a><a href="/docs/guides/sets/">Sets &amp; solution sets</a><a href="/docs/guides/assumptions/">Assumptions</a><a href="/docs/settings/">Settings</a><a href="/docs/guides/warnings/">Warnings</a><a href="/docs/guides/connecting-functions/">Connecting functions</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/examples/">JavaScript examples</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Reference</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/functions/">Functions</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">Types &amp; import paths</a></div>
+  </nav>
+  <a class="docs-sidebar-footer-link" href="/contributing/">Contributing →</a>
+</aside>
+<article class="docs-content"><div class="library-doc"><h1 id="warnings">Warnings</h1>
+<p>Some problems aren&#39;t worth stopping for, such as a solver reaching its iteration limit and returning what it found so far. Nerdamer records these as warnings instead of throwing an error. By default it records them silently.</p>
+<p>A warning doesn&#39;t mean the result is wrong, and the absence of one doesn&#39;t mean it is right. Invalid input and failed calculations still throw errors.</p>
+<h2 id="reading-warnings">Reading warnings</h2>
+<pre class="codeblock language-typescript"><code class="language-typescript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">warnings</span> <span class="token operator">=</span> <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">getWarnings</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// [{ code, message }, ...]</span>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">clearWarnings</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>Each warning has a <code>code</code>, which stays the same between versions so your code can check it, and a <code>message</code> for people.</p>
+<h2 id="getting-them-as-they-happen">Getting them as they happen</h2>
+<pre class="codeblock language-typescript"><code class="language-typescript"><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">setWarningHandler</span><span class="token punctuation">(</span><span class="token variable">warning</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token comment">// Show warning.message in your own UI, or check warning.code.</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">setWarningHandler</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// stop</span></code></pre>
+<p>To print them to the console instead, call <code>nerdamer.setConsoleWarnings(true)</code>. It&#39;s off by default, and does nothing where there is no console.</p>
+<p>If your handler throws, the error reaches the code that triggered the warning, so keep handlers from throwing.</p>
+<h2 id="the-warnings">The warnings</h2>
+<div class="api-table-wrap"><table class="api-table"><thead><tr><th>Code</th><th>When</th></tr></thead><tbody>
+<tr><td><code>api.deprecatedDelete</code></td><td>You called <code>setConstant(name, &#39;delete&#39;)</code> or <code>setVar(name, &#39;delete&#39;)</code>. The value is still removed.</td></tr>
+<tr><td><code>api.deprecatedFunction</code></td><td>You called a function by its Nerdamer 1.x name, such as <code>IF</code> instead of <code>if</code> or <code>solveEquations</code> instead of <code>solveeqs</code>. The function still runs; the message names the one to use.</td></tr>
+<tr><td><code>defint.depthLimit</code></td><td>A numeric definite integral ran out of subdivisions before reaching the accuracy it aimed for.</td></tr>
+<tr><td><code>defint.singularity</code></td><td>A definite integral meets a point where the function isn&#39;t finite, as in <code>defint(1/x,x,0,1)</code>. The integral stays unevaluated.</td></tr>
+<tr><td><code>solve.iterationLimit</code></td><td>A solver reached its iteration limit and returned what it had.</td></tr>
+<tr><td><code>solve.generationLimit</code></td><td><code>SolutionSet.generate()</code> stopped at 1,000 members. The result has <code>partial = true</code>, and members in the requested range may be missing.</td></tr>
+<tr><td><code>tex.periodicVariable</code></td><td>A periodic solution&#39;s <code>_n</code> was written in TeX with another letter, because the expression already uses the one set by <code>TEX_PERIODIC_VAR</code>.</td></tr>
+</tbody></table></div>
+<p>A slow or large calculation doesn&#39;t produce a warning by itself.</p>
+<h2 id="shared-by-the-whole-app">Shared by the whole app</h2>
+<p>The warning list and the handler apply to your whole app, not to one expression or one caller. Calculations running side by side share them.</p>
+</div></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/contributing/">Contributing</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+
+<script src="../../../scripts/code-copy.js"></script>
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

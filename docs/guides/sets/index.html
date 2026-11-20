@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Sets and solution sets — Nerdamer Documentation</title>
+  <meta name="description" content="Finite sets in Nerdamer, their operations, and the solution sets that solve returns, including families of solutions and how to list their members.">
+  <script>
+    if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
+      const analytics = document.createElement('script');
+      analytics.async = true;
+      analytics.src = 'https://www.googletagmanager.com/gtag/js?id=G-GDY77BKS20';
+      document.head.appendChild(analytics);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GDY77BKS20');
+    }
+  </script>
+  <link rel="icon" type="image/png" href="../../../images/ico.png?v=4">
+  <link rel="shortcut icon" type="image/png" href="../../../images/ico.png?v=4">
+  <script>try{if(location.pathname.startsWith('/docs/')&&!location.hash)history.scrollRestoration='auto';const t=localStorage.getItem('nerdamer-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}</script>
+  <link rel="stylesheet" href="../../../styles/site.css">
+  <link rel="stylesheet" href="../../../styles/code-highlight.css">
+  <link rel="stylesheet" href="../../../styles/logo.css">
+  <link rel="stylesheet" href="../../../styles/header.css">
+  <link rel="stylesheet" href="../../../styles/back-to-top.css">
+  <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
+  <link rel="stylesheet" href="../../../styles/playground-tree.css">
+  <link rel="stylesheet" href="../../../styles/api.css">
+<link rel="stylesheet" href="../../../styles/library-docs.css">
+  <link rel="stylesheet" href="../../../styles/background.css">
+</head>
+<body>
+<header class="site-header" id="site-header">
+  <div class="shell nav-shell">
+    <a class="brand" href="/" aria-label="Nerdamer home"><img src="../../../images/logo.png" alt="Nerdamer"></a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="/docs/">Documentation</a>
+      <a href="/playground/">Playground</a>
+      <a href="/showcase/">Showcase</a>
+      <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme"><svg class="theme-toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/docs/">Documentation</a><a href="/playground/">Playground</a><a href="/showcase/">Showcase</a><a href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="page">
+<div class="docs-layout"><aside class="docs-sidebar">
+  <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
+  <nav class="docs-nav" id="docs-nav">
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Get started</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Install &amp; first steps</a><a href="/docs/choosing-an-api/">Ways to use Nerdamer</a><a href="/docs/releases/">What’s new</a><a href="/docs/migration/">Migrating from 1.x</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Guides</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Writing expressions</a><a href="/docs/guides/reserved-names/">Reserved names</a><a href="/docs/language/">Scripting</a><a href="/docs/language/user-defined-functions/">User-defined functions</a><a href="/docs/public-helpers/">Results &amp; output</a><a href="/docs/guides/sets/">Sets &amp; solution sets</a><a href="/docs/guides/assumptions/">Assumptions</a><a href="/docs/settings/">Settings</a><a href="/docs/guides/warnings/">Warnings</a><a href="/docs/guides/connecting-functions/">Connecting functions</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/examples/">JavaScript examples</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Reference</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/functions/">Functions</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">Types &amp; import paths</a></div>
+  </nav>
+  <a class="docs-sidebar-footer-link" href="/contributing/">Contributing →</a>
+</aside>
+<article class="docs-content"><div class="library-doc"><h1 id="sets-and-solution-sets">Sets and solution sets</h1>
+<p>Nerdamer has two kinds of set:</p>
+<ul>
+<li>a <strong>set</strong> (<code>ValuesSet</code>) of known values, written <code>{a, b, c}</code>;</li>
+<li>a <strong>solution set</strong> (<code>SolutionSet</code>), returned by <code>solve</code>. Each entry is one solution, a whole family of solutions, or &quot;every value&quot;.</li>
+</ul>
+<p>Neither is a general set engine: there&#39;s no set-builder notation, no intervals as sets, and no infinite sets other than solution families.</p>
+<h2 id="sets">Sets</h2>
+<p>Curly braces make a set. Each value appears once:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">,</span> <span class="token variable">b</span><span class="token punctuation">,</span> <span class="token variable">a</span><span class="token punctuation">}</span>       <span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">,</span> <span class="token variable">b</span><span class="token punctuation">}</span>
+<span class="token punctuation">{</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">}</span>   <span class="token punctuation">{</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">}</span></code></pre>
+<p>Two values are the same if Nerdamer can show they are equal; if it can&#39;t, both are kept. The order you write them in is kept for display, but it doesn&#39;t matter for equality.</p>
+<h3 id="set-operations">Set operations</h3>
+<p>Three functions combine sets:</p>
+<div class="api-table-wrap"><table class="api-table"><thead><tr><th>Notation</th><th>Gives</th></tr></thead><tbody>
+<tr><td><code>union(A, B, ...)</code></td><td>the values in any of the sets</td></tr>
+<tr><td><code>intersection(A, B, ...)</code></td><td>the values in all of them</td></tr>
+<tr><td><code>difference(A, B)</code></td><td>the values in <code>A</code> that aren&#39;t in <code>B</code></td></tr>
+</tbody></table></div>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">union</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">,</span><span class="token variable">b</span><span class="token punctuation">}</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">b</span><span class="token punctuation">,</span><span class="token variable">c</span><span class="token punctuation">}</span><span class="token punctuation">)</span>          <span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">,</span> <span class="token variable">b</span><span class="token punctuation">,</span> <span class="token variable">c</span><span class="token punctuation">}</span>
+<span class="token function">intersection</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">,</span><span class="token variable">b</span><span class="token punctuation">}</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">b</span><span class="token punctuation">,</span><span class="token variable">c</span><span class="token punctuation">}</span><span class="token punctuation">)</span>   <span class="token punctuation">{</span><span class="token variable">b</span><span class="token punctuation">}</span>
+<span class="token function">difference</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">,</span><span class="token variable">b</span><span class="token punctuation">}</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">b</span><span class="token punctuation">,</span><span class="token variable">c</span><span class="token punctuation">}</span><span class="token punctuation">)</span>     <span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">}</span></code></pre>
+<p>To add a value to a set, take the union with a one-element set. This collects the distinct values of a list:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token control">block</span><span class="token punctuation">(</span><span class="token variable">s</span><span class="token operator">:</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token function">each</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token punctuation">,</span> <span class="token variable">s</span><span class="token operator">:</span><span class="token function">union</span><span class="token punctuation">(</span><span class="token variable">s</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">x</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token variable">s</span><span class="token punctuation">)</span>   <span class="token punctuation">{</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">}</span></code></pre>
+<p>These compare sets:</p>
+<div class="api-table-wrap"><table class="api-table"><thead><tr><th>Notation</th><th>Means</th></tr></thead><tbody>
+<tr><td><code>A &lt;= B</code></td><td>A is a subset of B</td></tr>
+<tr><td><code>A &lt; B</code></td><td>A is a proper subset of B</td></tr>
+<tr><td><code>A &gt;= B</code></td><td>A is a superset of B</td></tr>
+<tr><td><code>A &gt; B</code></td><td>A is a proper superset of B</td></tr>
+<tr><td><code>A == B</code></td><td>A and B have the same members</td></tr>
+</tbody></table></div>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">,</span><span class="token variable">b</span><span class="token punctuation">}</span> <span class="token operator">&lt;=</span> <span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">,</span><span class="token variable">b</span><span class="token punctuation">,</span><span class="token variable">c</span><span class="token punctuation">}</span>   <span class="token number">1</span>
+<span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">,</span><span class="token variable">b</span><span class="token punctuation">}</span> <span class="token operator">==</span> <span class="token punctuation">{</span><span class="token variable">b</span><span class="token punctuation">,</span><span class="token variable">a</span><span class="token punctuation">}</span>     <span class="token number">1</span></code></pre>
+<p>Two functions from Nerdamer 1.x ask the same kind of question, and also give <code>1</code> or <code>0</code>:</p>
+<div class="api-table-wrap"><table class="api-table"><thead><tr><th>Notation</th><th>Gives <code>1</code> when</th></tr></thead><tbody>
+<tr><td><code>intersects(A, B)</code></td><td>A and B have a value in common</td></tr>
+<tr><td><code>issubset(A, B)</code></td><td>every value of A is in B, the same as <code>A &lt;= B</code></td></tr>
+</tbody></table></div>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">intersects</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">,</span><span class="token variable">b</span><span class="token punctuation">}</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">b</span><span class="token punctuation">,</span><span class="token variable">c</span><span class="token punctuation">}</span><span class="token punctuation">)</span>   <span class="token number">1</span>
+<span class="token function">intersects</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">}</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">c</span><span class="token punctuation">}</span><span class="token punctuation">)</span>       <span class="token number">0</span>
+<span class="token function">issubset</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">}</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">,</span><span class="token variable">b</span><span class="token punctuation">}</span><span class="token punctuation">)</span>       <span class="token number">1</span>
+<span class="token function">issubset</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">,</span><span class="token variable">b</span><span class="token punctuation">}</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">a</span><span class="token punctuation">}</span><span class="token punctuation">)</span>       <span class="token number">0</span></code></pre>
+<p>The 1.x spelling <code>is_subset</code> still works, but it&#39;s deprecated and records an <code>api.deprecatedFunction</code> <a href="/docs/guides/warnings/">warning</a>. Use <code>issubset</code>.</p>
+<p>In JavaScript, <code>nerdamer.union(&#39;{a,b}&#39;, &#39;{b,c}&#39;)</code> takes strings, as in Notation, and so do <code>nerdamer.intersects</code> and <code>nerdamer.issubset</code>. <code>union</code>, <code>intersection</code>, <code>difference</code>, <code>intersects</code> and <code>isSubset</code> can also be imported from <code>nerdamer/structures</code>, and take sets. The <code>ValuesSet</code> methods do the same, and add <code>symmetricDifference</code> and <code>isDisjointFrom</code>. Like the functions, they return new sets and leave the originals unchanged:</p>
+<pre class="codeblock language-typescript"><code class="language-typescript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Expression</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/core&#39;</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">ValuesSet</span><span class="token punctuation">,</span> <span class="token variable">union</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> <span class="token variable">a</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ValuesSet</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token class-name">Expression</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token string">&#39;a&#39;</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token class-name">Expression</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token string">&#39;b&#39;</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token variable">b</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ValuesSet</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token class-name">Expression</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token string">&#39;b&#39;</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token class-name">Expression</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token string">&#39;c&#39;</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">union</span><span class="token punctuation">(</span><span class="token variable">a</span><span class="token punctuation">,</span> <span class="token variable">b</span><span class="token punctuation">)</span><span class="token punctuation">;</span>                <span class="token comment">// {a, b, c}</span>
+<span class="token variable">a</span><span class="token punctuation">.</span><span class="token function">union</span><span class="token punctuation">(</span><span class="token variable">b</span><span class="token punctuation">)</span><span class="token punctuation">;</span>                 <span class="token comment">// {a, b, c}</span>
+<span class="token variable">a</span><span class="token punctuation">.</span><span class="token function">intersection</span><span class="token punctuation">(</span><span class="token variable">b</span><span class="token punctuation">)</span><span class="token punctuation">;</span>          <span class="token comment">// {b}</span>
+<span class="token variable">a</span><span class="token punctuation">.</span><span class="token function">difference</span><span class="token punctuation">(</span><span class="token variable">b</span><span class="token punctuation">)</span><span class="token punctuation">;</span>            <span class="token comment">// {a}</span>
+<span class="token variable">a</span><span class="token punctuation">.</span><span class="token function">symmetricDifference</span><span class="token punctuation">(</span><span class="token variable">b</span><span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// {a, c}</span>
+<span class="token variable">a</span><span class="token punctuation">.</span><span class="token function">isDisjointFrom</span><span class="token punctuation">(</span><span class="token variable">b</span><span class="token punctuation">)</span><span class="token punctuation">;</span>        <span class="token comment">// false</span></code></pre>
+<p>There are also <code>isSubsetOf()</code>, <code>isProperSubsetOf()</code>, <code>isSupersetOf()</code> and <code>isProperSupersetOf()</code>.</p>
+<h3 id="functions-apply-to-each-member">Functions apply to each member</h3>
+<p>Functions such as <code>expand</code>, <code>abs</code> and <code>evaluate</code> apply to each member and return a set. Members that become equal merge:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">expand</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">2</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">}</span><span class="token punctuation">)</span>   <span class="token punctuation">{</span><span class="token number">1</span><span class="token operator">+</span><span class="token number">2</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">+</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">}</span>
+<span class="token function">abs</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">}</span><span class="token punctuation">)</span>                <span class="token punctuation">{</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">}</span></code></pre>
+<h3 id="no-arithmetic-on-sets">No arithmetic on sets</h3>
+<p><code>{a, b} + {c, d}</code> and <code>{a, b} * 2</code> are errors. Pairing members up would depend on their order, which a set doesn&#39;t have. Use the set operations above.</p>
+<h3 id="changing-a-set">Changing a set</h3>
+<ul>
+<li><code>add()</code> and <code>addMany()</code> skip values already present.</li>
+<li><code>delete()</code> removes a value equal to the one you pass.</li>
+<li><code>each()</code> maps every member, merging equal results.</li>
+<li>Replacing a member by index removes it if the new value is already in the set.</li>
+<li><code>clear()</code> empties it.</li>
+</ul>
+<p>A set keeps its own copies. Values you add are copied, and <code>elements</code>, <code>at()</code> and indexing return copies, so changing what you get back never changes the set.</p>
+<h2 id="solution-sets">Solution sets</h2>
+<p><code>solve</code> returns a <code>SolutionSet</code>:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">solve</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">-</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span>   <span class="token punctuation">{</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">}</span>
+<span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span>  <span class="token punctuation">{</span><span class="token variable">_n</span><span class="token operator">*</span><span class="token constant">pi</span><span class="token punctuation">}</span>
+<span class="token function">solve</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">=</span><span class="token variable">x</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span>     <span class="token punctuation">{</span><span class="token variable">all</span><span class="token punctuation">}</span></code></pre>
+<ul>
+<li>An entry with <code>_n</code> is a <strong>family</strong>: one solution for every integer <code>_n</code>.</li>
+<li><code>all</code> means every value is a solution.</li>
+</ul>
+<p><code>count()</code> counts entries, so <code>{_n*pi}</code> has a count of 1 even though it stands for infinitely many solutions.</p>
+<p>Two properties describe the result:</p>
+<div class="api-table-wrap"><table class="api-table"><thead><tr><th>Property</th><th>Values</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>solutionForm</code></td><td><code>finite</code>, <code>parametric</code>, <code>all</code></td><td>Plain solutions, at least one <code>_n</code> family, or every value</td></tr>
+<tr><td><code>solutionsType</code></td><td><code>numeric</code>, <code>symbolic</code>, <code>mixed</code></td><td>Whether the solutions were found numerically, exactly, or both</td></tr>
+</tbody></table></div>
+<p><code>solutionsType</code> says how a solution was found, not how it looks: an exact method can return <code>1</code>. Symbolic coefficients such as <code>a</code> don&#39;t make a result <code>parametric</code>; only <code>_n</code> does.</p>
+<h3 id="picking-one-member-of-a-family">Picking one member of a family</h3>
+<p>Give <code>_n</code> a value for one evaluation:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">sol</span><span class="token operator">:</span> <span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">sol</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">_n</span><span class="token operator">=&gt;</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span><span class="token number">0</span><span class="token punctuation">}</span></code></pre>
+<p>Assign with <code>:</code>. <code>_n</code> itself can&#39;t be assigned (<code>_n:0</code> is an error), and <code>sol = solve(sin(x),x)</code> is an error too, because <code>=</code> makes an equation.</p>
+<p>In JavaScript, substitute into an entry:</p>
+<pre class="codeblock language-typescript"><code class="language-typescript"><span class="token keyword">const</span> <span class="token variable">solutions</span> <span class="token operator">=</span> <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">solve</span><span class="token punctuation">(</span><span class="token string">&#39;sin(x)&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;x&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token variable">solutions</span><span class="token punctuation">.</span><span class="token variable">elements</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">subst</span><span class="token punctuation">(</span><span class="token string">&#39;_n&#39;</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// 2*pi</span></code></pre>
+<h3 id="listing-the-members-of-a-family">Listing the members of a family</h3>
+<p><code>generate</code> lists members, in one of two ways. Both include their bounds.</p>
+<p><strong>By value</strong>, with <code>interval</code>: every solution between two numbers.</p>
+<pre class="codeblock language-typescript"><code class="language-typescript"><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">solve</span><span class="token punctuation">(</span><span class="token string">&#39;sin(x)&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;x&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">generate</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token variable">interval</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">10</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">]</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// {-3*pi, -2*pi, -pi, 0, pi, 2*pi, 3*pi}</span></code></pre>
+<p>In Notation: <code>realsolutions(solve(sin(x),x),-10,10)</code>.</p>
+<p><strong>By index</strong>, with <code>indices</code>: the members for a range of <code>_n</code>. These bounds are values of <code>_n</code>, not of the solutions.</p>
+<pre class="codeblock language-typescript"><code class="language-typescript"><span class="token keyword">const</span> <span class="token variable">families</span> <span class="token operator">=</span> <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">solve</span><span class="token punctuation">(</span><span class="token string">&#39;sin(x)&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;x&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>    <span class="token comment">// {_n*pi}</span>
+<span class="token keyword">const</span> <span class="token variable">roots</span> <span class="token operator">=</span> <span class="token variable">families</span><span class="token punctuation">.</span><span class="token function">generate</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token variable">indices</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token variable">roots</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>           <span class="token comment">// {-2*pi, -pi, 0, pi, 2*pi}</span>
+<span class="token variable">roots</span><span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>          <span class="token comment">// 5</span>
+<span class="token variable">roots</span><span class="token punctuation">.</span><span class="token variable">solutionForm</span><span class="token punctuation">;</span>     <span class="token comment">// &#39;finite&#39;</span>
+<span class="token variable">families</span><span class="token punctuation">.</span><span class="token variable">solutionForm</span><span class="token punctuation">;</span>  <span class="token comment">// &#39;parametric&#39;: the original is unchanged</span></code></pre>
+<p>Details:</p>
+<ul>
+<li><strong>What each mode accepts.</strong> <code>indices</code> works for any family with <code>_n</code>, periodic or not, and symbolic coefficients stay symbolic. <code>interval</code> works for families of the form <code>a + b*_n</code> with real numbers <code>a</code> and <code>b</code>; other families throw <code>UnsupportedOperationError</code>.</li>
+<li><strong>Index values.</strong> They can be numbers, strings, <code>bigint</code>, decimals, fractions or expressions, but must be exact integers. JavaScript numbers beyond the safe integer range are rejected; use <code>bigint</code> for large indices.</li>
+<li><strong>Interval bounds.</strong> They must be finite real numbers in ascending order.</li>
+<li><strong>Plain solutions.</strong> On a result without families, <code>indices</code> returns a copy and <code>interval</code> keeps the real solutions in range. Complex solutions are dropped: <code>realsolutions(solve(x^6-1,x),-10,10)</code> gives <code>{-1, 1}</code>.</li>
+<li><strong>Every value.</strong> <code>all</code> can&#39;t be listed, and throws an error.</li>
+<li><strong>Undefined members.</strong> Members that are undefined or infinite are left out.</li>
+<li><strong>Excluded families.</strong> If the solution set excludes a whole family of values, listing it throws <code>UnsupportedOperationError</code> rather than risk a wrong answer.</li>
+<li><strong>The 1,000-member limit.</strong> <code>generate</code> looks at no more than 1,000 candidates per call. Past that, it sets <code>partial</code> to <code>true</code> on the result and records a <code>solve.generationLimit</code> <a href="/docs/guides/warnings/">warning</a>. The result then may be missing members in the range.</li>
+</ul>
+<h3 id="real-values-from-a-system">Real values from a system</h3>
+<p><code>realsolutions</code> with four arguments takes the result of <code>solveeqs</code> and returns the distinct real values of one variable within an interval:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">realsolutions</span><span class="token punctuation">(</span><span class="token function">solveeqs</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token operator">+</span><span class="token variable">y</span><span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token operator">-</span><span class="token variable">y</span><span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span>   <span class="token punctuation">{</span><span class="token number">2</span><span class="token punctuation">}</span>
+<span class="token function">realsolutions</span><span class="token punctuation">(</span><span class="token function">solveeqs</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token operator">+</span><span class="token variable">y</span><span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token operator">-</span><span class="token variable">y</span><span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">y</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span>   <span class="token punctuation">{</span><span class="token number">1</span><span class="token punctuation">}</span></code></pre>
+<p>It returns only that variable&#39;s values, not the full solutions. It filters what <code>solveeqs</code> found; it doesn&#39;t search for more solutions. The interval includes its bounds and must be finite and ascending.</p>
+<p>Both forms of <code>realsolutions</code> throw an error for input they can&#39;t handle, such as a number instead of a solution set, rather than returning the call unevaluated.</p>
+<h3 id="other-things-a-solution-set-records">Other things a solution set records</h3>
+<ul>
+<li><code>partial</code>: whether the result may be incomplete.</li>
+<li><code>getExcluded()</code>: values that were rejected while checking the solutions, such as points where a denominator is zero. An excluded value stays out even if it is added again later.</li>
+<li><code>getRawRoots()</code>: details of the numerical root finding.</li>
+</ul>
+<p><code>copy()</code>, <code>getExcluded()</code> and <code>getRawRoots()</code> return independent copies. <code>append()</code> merges another solution set into this one, combining exclusions, partial state and solution types.</p>
+</div></article></div>
+</main>
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div><img class="footer-logo" src="../../../images/logo.png" alt="Nerdamer">
+      <p>Symbolic mathematics for JavaScript and TypeScript.</p>
+    </div>
+    <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
+        Scripting</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">JavaScript /
+        TypeScript API</a></div>
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/contributing/">Contributing</a><a rel="noopener noreferrer" target="_blank"
+        href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
+  </div>
+  <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
+</footer>
+<button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" hidden>↑ Back to top</button>
+<script src="../../../scripts/site.js"></script>
+
+<script src="../../../scripts/code-copy.js"></script>
+<script src="../../../scripts/playground-tree.js"></script>
+</body>
+</html>

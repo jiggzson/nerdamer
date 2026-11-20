@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>evaluate — Nerdamer Documentation</title>
-  <meta name="description" content="Evaluates a parser value immediately, optionally with substitutions.">
+  <meta name="description" content="Evaluates a value now, optionally with values for its variables.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
   <link rel="stylesheet" href="../../../styles/api.css">
+<link rel="stylesheet" href="../../../styles/function-page.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -42,7 +43,7 @@
       <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
     </nav>
     <div class="nav-actions">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme"><svg class="theme-toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
       <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
     </div>
   </div>
@@ -55,42 +56,42 @@
 <div class="docs-layout"><aside class="docs-sidebar">
   <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
   <nav class="docs-nav" id="docs-nav">
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/releases/">What’s New</a><a href="/docs/references/">References &amp; citations</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Get started</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Install &amp; first steps</a><a href="/docs/choosing-an-api/">Ways to use Nerdamer</a><a href="/docs/releases/">What’s new</a><a href="/docs/migration/">Migrating from 1.x</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Guides</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Writing expressions</a><a href="/docs/guides/reserved-names/">Reserved names</a><a href="/docs/language/">Scripting</a><a href="/docs/language/user-defined-functions/">User-defined functions</a><a href="/docs/public-helpers/">Results &amp; output</a><a href="/docs/guides/sets/">Sets &amp; solution sets</a><a href="/docs/guides/assumptions/">Assumptions</a><a href="/docs/settings/">Settings</a><a href="/docs/guides/warnings/">Warnings</a><a href="/docs/guides/connecting-functions/">Connecting functions</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/examples/">JavaScript examples</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Reference</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/functions/">Functions</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">Types &amp; import paths</a></div>
   </nav>
+  <a class="docs-sidebar-footer-link" href="/contributing/">Contributing →</a>
 </aside>
 <article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/language/">Nerdamer Scripting</a></div>
 <div class="eyebrow">Scripting reference · Nerdamer Language</div>
 <h1><code>evaluate</code></h1>
-<p>Evaluates a parser value immediately, optionally with substitutions.</p>
-<div class="api-description"><p>evaluate(value) invokes the value&#39;s existing evaluation behavior from Nerdamer Scripting.</p><p>The two-argument form accepts a Dictionary whose entries are substitutions for that evaluation only. They do not create or replace parser assignments, and they can be applied to expressions and supported structured values including SolutionSet results.</p><p>The three-argument form accepts a variable Vector and a same-length point Vector, which is useful for repeated numerical evaluation without rebuilding substitution dictionaries.</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Scripting.</p><div class="api-example-block"><p>Evaluate a numerical expression immediately.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-<span class="token comment">// → 0.9092974268256816954</span></code></pre></div>
-<div class="api-example-block"><p>Evaluate a structured value with Dictionary substitutions.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token operator">+</span><span class="token variable">y</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token operator">*</span><span class="token variable">y</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">x</span><span class="token operator">=&gt;</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token variable">y</span><span class="token operator">=&gt;</span><span class="token number">3</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
-<span class="token comment">// → [5, 6]</span></code></pre></div>
-<div class="api-example-block"><p>Store a periodic SolutionSet with : and evaluate one indexed family member by supplying the reserved _n index locally.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token variable">sol</span><span class="token operator">:</span> <span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">sol</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">_n</span><span class="token operator">=&gt;</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
-<span class="token comment">// → {0}</span></code></pre></div>
-<div class="api-example-block"><p>Evaluate from parallel variable and point Vectors.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">u</span><span class="token operator">+</span><span class="token variable">v</span><span class="token punctuation">,</span><span class="token variable">u</span><span class="token operator">*</span><span class="token variable">v</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token variable">u</span><span class="token punctuation">,</span><span class="token variable">v</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
-<span class="token comment">// → [5, 6]</span></code></pre></div></section>
-<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#scripting">Nerdamer Scripting</a></p></section>
-<section class="api-detail" id="scripting">
-<h2>Nerdamer Scripting</h2>
-<p>Use this form in Nerdamer Scripting input passed to <code>nerdamer(...)</code>.</p>
-<pre class="api-signature"><code>evaluate(value[, substitutions]) | evaluate(value, variables, point)</code></pre>
-<h3>Parameters</h3><ul><li><code>value</code> — Expression, equation, or structured parser value to evaluate.</li>
-<li><code>substitutions</code> — Optional Dictionary mapping variable names to substitution values.</li>
-<li><code>variables</code> — Variable Vector used with point in the three-argument form.</li>
-<li><code>point</code> — Value Vector corresponding positionally to variables.</li></ul>
-
+<p class="fn-summary">Evaluates a value now, optionally with values for its variables.</p>
+<p>With one argument, it evaluates numerically. With a dictionary such as <code>{x=&gt;2}</code>, it uses those values for this call only. With a list of variables and a list of values, it does the same faster when you evaluate many points.</p>
+<div class="fn-forms">
+<section class="fn-form" id="scripting">
+<h2 class="fn-form-label">Scripting</h2>
+<pre class="api-signature fn-signature"><code>evaluate(value[, substitutions]) | evaluate(value, variables, point)</code></pre>
+<p class="fn-form-note">Write it in a script: <code>nerdamer('evaluate(sin(2))')</code>, or in the <a href="/playground/?expr=evaluate(sin(2))">Playground</a>.</p>
 </section>
+</div>
+<section class="api-detail"><h2>Parameters</h2><dl class="fn-params"><dt><code>value</code></dt><dd>An expression, equation, vector, matrix, set or solution set.</dd>
+<dt><code>substitutions</code></dt><dd>Optional. A dictionary of values, such as <code>{x=&gt;2}</code>.</dd>
+<dt><code>variables</code></dt><dd>In the three-argument form: a vector of variables.</dd>
+<dt><code>point</code></dt><dd>In the three-argument form: a vector of their values, in the same order.</dd></dl></section>
+
+<section class="api-detail"><h2>Examples</h2><div class="api-example-block"><p>A decimal value.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token comment">// → 0.9092974268256816954</span></code></pre><a class="fn-example-try" href="/playground/?expr=evaluate(sin(2))">Open in Playground</a></div>
+<div class="api-example-block"><p>Values for this call, on a vector.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token operator">+</span><span class="token variable">y</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token operator">*</span><span class="token variable">y</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">x</span><span class="token operator">=&gt;</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token variable">y</span><span class="token operator">=&gt;</span><span class="token number">3</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token comment">// → [5, 6]</span></code></pre><a class="fn-example-try" href="/playground/?expr=evaluate(%5Bx%2By%2Cx*y%5D%2C%7Bx%3D%3E2%2Cy%3D%3E3%7D)">Open in Playground</a></div>
+<div class="api-example-block"><p>Pick one solution from a periodic family by giving <code>_n</code> a value.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token variable">sol</span><span class="token operator">:</span> <span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">sol</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">_n</span><span class="token operator">=&gt;</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token comment">// → {0}</span></code></pre><a class="fn-example-try" href="/playground/?expr=sol%3A%20solve(sin(x)%2Cx)%3B%20evaluate(sol%2C%7B_n%3D%3E0%7D)">Open in Playground</a></div>
+<div class="api-example-block"><p>Variables and values as two lists.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">u</span><span class="token operator">+</span><span class="token variable">v</span><span class="token punctuation">,</span><span class="token variable">u</span><span class="token operator">*</span><span class="token variable">v</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token variable">u</span><span class="token punctuation">,</span><span class="token variable">v</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token comment">// → [5, 6]</span></code></pre><a class="fn-example-try" href="/playground/?expr=evaluate(%5Bu%2Bv%2Cu*v%5D%2C%5Bu%2Cv%5D%2C%5B2%2C3%5D)">Open in Playground</a></div></section>
+<section class="api-detail"><h2>Good to know</h2><ul><li>The values apply to this call only. They don&#39;t assign the variables, so <code>{_n=&gt;0}</code> works even though <code>_n:0</code> is an error.</li>
+<li>If it can&#39;t evaluate further, <code>evaluate</code> returns its input unchanged.</li>
+<li>To store a value first, assign it with <code>:</code>; <code>=</code> makes an equation.</li></ul></section>
 
 
-<section class="api-detail"><h2>Notes</h2><ul><li>If evaluation cannot complete, evaluate returns the resolved input unchanged rather than creating a symbolic evaluate(...) node.</li>
-<li>Dictionary substitutions are local to the evaluate call. Supplying {_n=&gt;0} does not assign _n globally; _n remains a reserved solver-family index and _n:0 is still rejected.</li>
-<li>When a value must be stored before evaluation, use Nerdamer Scripting assignment with :. The = operator denotes an equation and does not store a parser value.</li></ul></section>
 
 <p><a href="/docs/language/">← Back to Nerdamer Scripting</a></p></article></div>
 </main>
@@ -100,9 +101,9 @@
       <p>Symbolic mathematics for JavaScript and TypeScript.</p>
     </div>
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
-        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        Scripting</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/contributing/">Contributing</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

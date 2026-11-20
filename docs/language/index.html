@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>Nerdamer Scripting — Documentation</title>
-  <meta name="description" content="Beta Nerdamer Scripting documentation for variables, user-defined functions, conditions, loops, local scope, and control flow.">
+  <meta name="description" content="Nerdamer Scripting: variables, your own functions, conditions, loops, local values and error handling, inside nerdamer(...).">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -42,7 +42,7 @@
       <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
     </nav>
     <div class="nav-actions">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme"><svg class="theme-toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
       <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
     </div>
   </div>
@@ -55,56 +55,85 @@
 <div class="docs-layout"><aside class="docs-sidebar">
   <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
   <nav class="docs-nav" id="docs-nav">
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/releases/">What’s New</a><a href="/docs/references/">References &amp; citations</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Get started</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Install &amp; first steps</a><a href="/docs/choosing-an-api/">Ways to use Nerdamer</a><a href="/docs/releases/">What’s new</a><a href="/docs/migration/">Migrating from 1.x</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Guides</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Writing expressions</a><a href="/docs/guides/reserved-names/">Reserved names</a><a href="/docs/language/">Scripting</a><a href="/docs/language/user-defined-functions/">User-defined functions</a><a href="/docs/public-helpers/">Results &amp; output</a><a href="/docs/guides/sets/">Sets &amp; solution sets</a><a href="/docs/guides/assumptions/">Assumptions</a><a href="/docs/settings/">Settings</a><a href="/docs/guides/warnings/">Warnings</a><a href="/docs/guides/connecting-functions/">Connecting functions</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/examples/">JavaScript examples</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Reference</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/functions/">Functions</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">Types &amp; import paths</a></div>
   </nav>
+  <a class="docs-sidebar-footer-link" href="/contributing/">Contributing →</a>
 </aside>
 <article class="docs-content"><div class="eyebrow">Nerdamer Scripting</div>
 <h1>Nerdamer Scripting <span class="status-badge">Beta</span></h1>
-<div class="docs-callout">
-	<strong>Beta:</strong> Nerdamer Scripting is supported in Nerdamer 2.0. Some syntax and API details may still change before Nerdamer 2.0 final.
-</div>
-<p>
-	Nerdamer Scripting is the compact programming layer available inside text passed to <code>nerdamer(...)</code>. Use
-	it when a single mathematical expression is not enough and you need assignments, user-defined functions, conditions,
-	loops, or local scope.
-</p>
-<div class="docs-callout">
-	<strong>Not JavaScript:</strong> the scripting layer is evaluated by the library's parser. For ordinary mathematical expressions
-	and functions, see <a href="/docs/functions/">Nerdamer Notation</a>. For methods and imported APIs, see the
-	<a href="/docs/api/">JavaScript / TypeScript API</a>.
-</div>
+<p>Scripting lets the text you pass to <code>nerdamer(...)</code> do more than one thing: store values, define functions, make decisions and repeat steps. It runs inside Nerdamer, not as JavaScript.</p>
 
-<h2>Notation and scripting side by side</h2>
-<pre class="codeblock language-javascript"><code class="language-javascript">
-<span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
 
-<span class="token comment">// Nerdamer Notation: one mathematical expression</span>
-<span class="token keyword">const</span> <span class="token variable">expression</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;factor(x^2-1)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// Notation: one expression</span>
+<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;factor(x^2-1)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>        <span class="token comment">// (1+x)*(-1+x)</span>
 
-<span class="token comment">// Nerdamer Scripting: define and use a function</span>
-<span class="token keyword">const</span> <span class="token variable">script</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">`
+<span class="token comment">// Scripting: define a function, then use it</span>
+<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">`
 square(x):=x^2;
 square(6)
-`</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+`</span><span class="token punctuation">)</span><span class="token punctuation">;</span>                               <span class="token comment">// 36</span></code></pre>
 
-<h2>User-defined functions</h2>
-<p>
-	Define a symbolic function in scripting with <code>f(x):=...</code>, or define it from application code with
-	<code>nerdamer.setFunction(...)</code>. See
-	<a href="/docs/language/user-defined-functions/">User-defined functions</a> for both forms and how they relate.
-</p>
+<h2>Variables</h2>
+<p>Assign with <code>:</code>.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">a</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">;</span>
+<span class="token variable">b</span><span class="token operator">:</span><span class="token variable">a</span><span class="token operator">+</span><span class="token number">2</span><span class="token punctuation">;</span>
+<span class="token variable">b</span>                        <span class="token comment">// 7</span></code></pre>
+<div class="docs-callout"><strong><code>:</code> and <code>=</code> are different.</strong> <code>x:5</code> assigns 5 to x. <code>x=5</code> is the equation x=5.</div>
+<p>Store any result the same way, including solutions:</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token variable">sol</span><span class="token operator">:</span> <span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">sol</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">_n</span><span class="token operator">=&gt;</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">)</span>    <span class="token comment">// {0}</span></code></pre>
+<p><code>_n</code> stands for "any integer" in periodic solutions and can't be assigned (<code>_n:0</code> is an error). The <code>{_n=>0}</code> above applies only to that <code>evaluate</code> call.</p>
+<p>A value stays until you remove it, and later calls see it. Use <code>unassign(a)</code> to remove one, <code>nerdamer.clearVars()</code> from JavaScript to remove all, or <a href="/docs/language/let/"><code>let</code></a> for a value that exists only inside one expression.</p>
 
-<p>
-	For larger workflows built entirely in the scripting language, see the
-	<a href="/docs/language/examples/">Scripting examples</a>.
-</p>
+<h2>Statements</h2>
+<p>Separate statements with <code>;</code>. A new line alone doesn't end a statement.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">f</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token operator">:=</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token function">f</span><span class="token punctuation">(</span><span class="token number">12</span><span class="token punctuation">)</span>                    <span class="token comment">// 145</span></code></pre>
+<p>Inside one expression, <a href="/docs/language/block/"><code>block</code></a> runs its arguments in order and returns the last one. <a href="/docs/language/let/"><code>let</code></a> does the same with temporary values:</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token function">block</span><span class="token punctuation">(</span><span class="token variable">a</span><span class="token operator">:</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token variable">b</span><span class="token operator">:</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token variable">a</span><span class="token operator">+</span><span class="token variable">b</span><span class="token punctuation">)</span>     <span class="token comment">// 5</span>
+<span class="token keyword">let</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token variable">y</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token operator">+</span><span class="token variable">y</span><span class="token punctuation">)</span>     <span class="token comment">// 5</span></code></pre>
 
-<h2>Scripting reference</h2>
-<p>The entries below are the parser functions classified as scripting by the generated documentation data.</p>
+<h2>Your own functions</h2>
+<p>Define a function with <code>f(x):=...</code>. Functions can call themselves:</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">f</span><span class="token punctuation">(</span><span class="token variable">n</span><span class="token punctuation">)</span><span class="token operator">:=</span><span class="token control">if</span><span class="token punctuation">(</span><span class="token variable">n</span><span class="token operator">&lt;</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token variable">n</span><span class="token operator">*</span><span class="token function">f</span><span class="token punctuation">(</span><span class="token variable">n</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">f</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span>                     <span class="token comment">// 120</span></code></pre>
+<p>You can also define them from JavaScript with <code>nerdamer.setFunction(...)</code>. See <a href="/docs/language/user-defined-functions/">User-defined functions</a> for both.</p>
+
+<h2>Conditions</h2>
+<p><a href="/docs/language/if/"><code>if</code></a> evaluates only the branch it picks. Combine conditions with <code>and</code>, <code>or</code>, <code>not</code> and <code>xor</code>, which return 1 or 0.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">x</span><span class="token operator">:</span><span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">;</span>
+<span class="token control">if</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&gt;</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token punctuation">,</span> <span class="token operator">-</span><span class="token variable">x</span><span class="token punctuation">)</span>           <span class="token comment">// 3</span>
+<span class="token function">and</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&gt;</span><span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token operator">&lt;</span><span class="token number">0</span><span class="token punctuation">)</span>           <span class="token comment">// 1</span></code></pre>
+
+<h2>Loops</h2>
+<p><a href="/docs/language/while/"><code>while</code></a> repeats while its condition is nonzero. <a href="/docs/language/for/"><code>for</code></a> takes a start, a condition, a step and a body. <a href="/docs/language/each/"><code>each</code></a> visits every element of a vector, matrix or set.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token control">block</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token control">while</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&lt;</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token operator">:</span><span class="token variable">x</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token punctuation">)</span>                              <span class="token comment">// 3</span>
+<span class="token control">block</span><span class="token punctuation">(</span><span class="token variable">total</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token control">for</span><span class="token punctuation">(</span><span class="token variable">k</span><span class="token operator">:</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token operator">-</span><span class="token variable">k</span><span class="token punctuation">,</span> <span class="token variable">k</span><span class="token operator">:</span><span class="token variable">k</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token variable">total</span><span class="token operator">:</span><span class="token variable">total</span><span class="token operator">+</span><span class="token variable">k</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token variable">total</span><span class="token punctuation">)</span>    <span class="token comment">// 10</span>
+<span class="token control">block</span><span class="token punctuation">(</span><span class="token variable">total</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token function">each</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token variable">v</span><span class="token punctuation">,</span> <span class="token variable">total</span><span class="token operator">:</span><span class="token variable">total</span><span class="token operator">+</span><span class="token variable">v</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token variable">total</span><span class="token punctuation">)</span>        <span class="token comment">// 6</span></code></pre>
+<p><a href="/docs/language/break/"><code>break()</code></a> leaves a loop, and <a href="/docs/language/continue/"><code>continue()</code></a> skips to its next pass.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token control">block</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token control">while</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token control">block</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">:</span><span class="token variable">x</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token control">if</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&gt;</span><span class="token number">4</span><span class="token punctuation">,</span> <span class="token control">break</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token punctuation">)</span>    <span class="token comment">// 5</span></code></pre>
+
+<h2>Returning early</h2>
+<p><a href="/docs/language/return/"><code>return</code></a> ends a function or block with a value.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">g</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token operator">:=</span><span class="token control">block</span><span class="token punctuation">(</span><span class="token control">if</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&lt;</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token control">return</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">sqrt</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">g</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">4</span><span class="token punctuation">)</span>                    <span class="token comment">// 0</span>
+<span class="token function">g</span><span class="token punctuation">(</span><span class="token number">9</span><span class="token punctuation">)</span>                     <span class="token comment">// 3</span></code></pre>
+
+<h2>Errors</h2>
+<p><a href="/docs/language/iferror/"><code>iferror</code></a> gives a fallback when an expression fails. <a href="/docs/language/iserror/"><code>iserror</code></a> tells you whether it fails.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token function">iferror</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token operator">/</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">7</span><span class="token punctuation">)</span>          <span class="token comment">// 7</span>
+<span class="token function">iserror</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token operator">/</span><span class="token number">0</span><span class="token punctuation">)</span>             <span class="token comment">// 1</span></code></pre>
+
+<h2>Evaluating with values</h2>
+<p><a href="/docs/language/evaluate/"><code>evaluate</code></a> computes a value now, optionally with values for the variables. The values apply to that call only.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token operator">+</span><span class="token variable">y</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token operator">*</span><span class="token variable">y</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token variable">x</span><span class="token operator">=&gt;</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token variable">y</span><span class="token operator">=&gt;</span><span class="token number">3</span><span class="token punctuation">}</span><span class="token punctuation">)</span>   <span class="token comment">// [5, 6]</span></code></pre>
+
+<p>For longer programs, see the <a href="/docs/language/examples/">Scripting examples</a>.</p>
+
+<h2>Reference</h2>
 <div class="reference-toolbar">
 	<input
 		class="reference-search"
@@ -113,67 +142,22 @@ square(6)
 		placeholder="Search if, for, let, block…"
 	/><span class="reference-count" data-reference-count></span>
 </div>
-<div class="reference-list"><a class="reference-item docs-card" href="/docs/language/and/" data-reference-item data-search="and nerdamer language and(arg1, arg2, ...) returns 1 when every argument is nonzero and 0 otherwise."><code>and(arg1, arg2, ...)</code><p>Returns 1 when every argument is nonzero and 0 otherwise.</p></a>
-<a class="reference-item docs-card" href="/docs/language/block/" data-reference-item data-search="block nerdamer language block(...) evaluates a sequence of nerdamer scripting expressions in order."><code>block(...)</code><p>Evaluates a sequence of Nerdamer Scripting expressions in order.</p></a>
-<a class="reference-item docs-card" href="/docs/language/break/" data-reference-item data-search="break nerdamer language break() exits the nearest nerdamer scripting loop."><code>break()</code><p>Exits the nearest Nerdamer Scripting loop.</p></a>
-<a class="reference-item docs-card" href="/docs/language/continue/" data-reference-item data-search="continue nerdamer language continue() skips the remainder of the current nerdamer scripting loop iteration."><code>continue()</code><p>Skips the remainder of the current Nerdamer Scripting loop iteration.</p></a>
-<a class="reference-item docs-card" href="/docs/language/each/" data-reference-item data-search="each nerdamer language each(container, value, body) evaluates a body once for each value in a parser container."><code>each(container, value, body)</code><p>Evaluates a body once for each value in a parser container.</p></a>
-<a class="reference-item docs-card" href="/docs/language/evaluate/" data-reference-item data-search="evaluate nerdamer language evaluate(value[, substitutions]) | evaluate(value, variables, point) evaluates a parser value immediately, optionally with substitutions."><code>evaluate(value[, substitutions]) | evaluate(value, variables, point)</code><p>Evaluates a parser value immediately, optionally with substitutions.</p></a>
-<a class="reference-item docs-card" href="/docs/language/for/" data-reference-item data-search="for nerdamer language for(arg1, arg2, arg3, arg4) runs a four-part nerdamer scripting loop."><code>for(arg1, arg2, arg3, arg4)</code><p>Runs a four-part Nerdamer Scripting loop.</p></a>
-<a class="reference-item docs-card" href="/docs/language/if/" data-reference-item data-search="if nerdamer language if(condition, whentrue, whenfalse) evaluates one branch based on a nerdamer scripting condition."><code>if(condition, whenTrue, whenFalse)</code><p>Evaluates one branch based on a Nerdamer Scripting condition.</p></a>
-<a class="reference-item docs-card" href="/docs/language/iferror/" data-reference-item data-search="iferror nerdamer language iferror(arg1, arg2) evaluates a fallback expression only when the first expression throws an ordinary error."><code>iferror(arg1, arg2)</code><p>Evaluates a fallback expression only when the first expression throws an ordinary error.</p></a>
-<a class="reference-item docs-card" href="/docs/language/iserror/" data-reference-item data-search="iserror nerdamer language iserror(arg1) returns 1 when evaluating an expression throws an ordinary error and 0 otherwise."><code>iserror(arg1)</code><p>Returns 1 when evaluating an expression throws an ordinary error and 0 otherwise.</p></a>
-<a class="reference-item docs-card" href="/docs/language/let/" data-reference-item data-search="let nerdamer language let(arg1, arg2, arg3, ...) creates temporary nerdamer scripting bindings for a body expression."><code>let(arg1, arg2, arg3, ...)</code><p>Creates temporary Nerdamer Scripting bindings for a body expression.</p></a>
-<a class="reference-item docs-card" href="/docs/language/not/" data-reference-item data-search="not nerdamer language not(arg1) returns 1 for a zero argument and 0 for a nonzero argument."><code>not(arg1)</code><p>Returns 1 for a zero argument and 0 for a nonzero argument.</p></a>
-<a class="reference-item docs-card" href="/docs/language/or/" data-reference-item data-search="or nerdamer language or(arg1, arg2, ...) returns 1 when at least one argument is nonzero and 0 otherwise."><code>or(arg1, arg2, ...)</code><p>Returns 1 when at least one argument is nonzero and 0 otherwise.</p></a>
-<a class="reference-item docs-card" href="/docs/language/return/" data-reference-item data-search="return nerdamer language return(arg1) returns a value from the current symbolic function or outer scripting block."><code>return(arg1)</code><p>Returns a value from the current symbolic function or outer scripting block.</p></a>
-<a class="reference-item docs-card" href="/docs/language/while/" data-reference-item data-search="while nerdamer language while(arg1, arg2) repeats a nerdamer scripting body while its condition is nonzero."><code>while(arg1, arg2)</code><p>Repeats a Nerdamer Scripting body while its condition is nonzero.</p></a>
-<a class="reference-item docs-card" href="/docs/language/xor/" data-reference-item data-search="xor nerdamer language xor(arg1, arg2, ...) returns 1 when an odd number of arguments are nonzero."><code>xor(arg1, arg2, ...)</code><p>Returns 1 when an odd number of arguments are nonzero.</p></a></div>
-
-<h2>Assignment</h2>
-<p>Use <code>:</code> to assign a parser variable. Assignments are retained by the parser and can affect later calls until they are removed.</p>
-<pre class="codeblock language-nerdamer"><code class="language-nerdamer">
-<span class="token variable">a</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">;</span>
-<span class="token variable">b</span><span class="token operator">:</span><span class="token variable">a</span><span class="token operator">+</span><span class="token number">2</span><span class="token punctuation">;</span>
-<span class="token variable">b</span></code></pre>
-<div class="docs-callout"><strong><code>:</code> and <code>=</code> are not interchangeable.</strong> <code>:</code> stores a parser value. <code>=</code> denotes a mathematical equation. For example, <code>x:5</code> assigns 5 to x, while <code>x=5</code> produces the equation x=5.</div>
-<p>This distinction also applies to structured results such as solver output. To store a <code>SolutionSet</code>, assign it with <code>:</code>:</p>
-<pre class="codeblock language-javascript"><code class="language-javascript">
-<span class="token variable">sol</span><span class="token operator">:</span> <span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token function">evaluate</span><span class="token punctuation">(</span><span class="token variable">sol</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token variable">_n</span><span class="token operator">=&gt;</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">)</span>    <span class="token comment">// {0}</span></code></pre>
-<p><code>_n</code> is the reserved integer index used by solver-generated periodic families. It cannot be assigned globally with <code>_n:0</code>, but it can be supplied in the substitution Dictionary passed to <code>evaluate</code>. That Dictionary applies only to the evaluation and does not create a stored value for <code>_n</code>.</p>
-<p>Use <code>unassign(a)</code> to remove one stored assignment, <code>nerdamer.clearVars()</code> from application code to clear them all, or <code>let(...)</code> for temporary local bindings.</p>
-
-<h2>Statement separators</h2>
-<p>Newlines are formatting whitespace, not statement separators. Use <code>;</code> between multiple statements passed in one call.</p>
-<pre class="codeblock language-nerdamer"><code class="language-nerdamer">
-<span class="token function">f</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token operator">:=</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">;</span>
-<span class="token function">f</span><span class="token punctuation">(</span><span class="token number">12</span><span class="token punctuation">)</span></code></pre>
-
-<h2>Blocks and local scope</h2>
-<p>
-	<code>block(...)</code> evaluates expressions in sequence. <code>let(...)</code> creates temporary local bindings
-	while its body is evaluated.
-</p>
-<pre class="codeblock language-javascript"><code class="language-javascript">
-<span class="token function">block</span><span class="token punctuation">(</span><span class="token variable">a</span><span class="token operator">:</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token variable">b</span><span class="token operator">:</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token variable">a</span><span class="token operator">+</span><span class="token variable">b</span><span class="token punctuation">)</span>
-<span class="token keyword">let</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token operator">^</span><span class="token number">3</span><span class="token punctuation">)</span></code></pre>
-
-<h2>Conditions and loops</h2>
-<p><code>if</code>, <code>while</code>, and <code>for</code> let a script choose or repeat expressions.</p>
-<pre class="codeblock language-javascript"><code class="language-javascript">
-<span class="token keyword">if</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&gt;</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token punctuation">,</span> <span class="token operator">-</span><span class="token variable">x</span><span class="token punctuation">)</span>
-
-<span class="token keyword">let</span><span class="token punctuation">(</span><span class="token variable">k</span><span class="token punctuation">,</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token function">block</span><span class="token punctuation">(</span>
-  <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token operator">-</span><span class="token variable">k</span><span class="token punctuation">,</span> <span class="token variable">k</span><span class="token operator">:</span><span class="token variable">k</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-  <span class="token variable">k</span>
-<span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre>
-
-<h2>Control flow</h2>
-<p>
-	<code>return</code>, <code>break</code>, and <code>continue</code> control how blocks, functions, and loops finish.
-	Their individual reference pages describe where each form applies.
-</p></article></div>
+<div class="reference-list"><a class="reference-item docs-card" href="/docs/language/and/" data-reference-item data-search="and nerdamer language and(arg1, arg2, ...) returns 1 when every argument is true, and 0 otherwise. "><code>and(arg1, arg2, ...)</code><p>Returns 1 when every argument is true, and 0 otherwise.</p></a>
+<a class="reference-item docs-card" href="/docs/language/block/" data-reference-item data-search="block nerdamer language block(...) evaluates expressions in order and returns the last value. "><code>block(...)</code><p>Evaluates expressions in order and returns the last value.</p></a>
+<a class="reference-item docs-card" href="/docs/language/break/" data-reference-item data-search="break nerdamer language break() leaves the loop it is in. "><code>break()</code><p>Leaves the loop it is in.</p></a>
+<a class="reference-item docs-card" href="/docs/language/continue/" data-reference-item data-search="continue nerdamer language continue() skips the rest of the current pass of a loop. "><code>continue()</code><p>Skips the rest of the current pass of a loop.</p></a>
+<a class="reference-item docs-card" href="/docs/language/each/" data-reference-item data-search="each nerdamer language each(container, value, body) evaluates an expression once for each element of a vector, matrix, set or dictionary. "><code>each(container, value, body)</code><p>Evaluates an expression once for each element of a vector, matrix, set or dictionary.</p></a>
+<a class="reference-item docs-card" href="/docs/language/evaluate/" data-reference-item data-search="evaluate nerdamer language evaluate(value[, substitutions]) | evaluate(value, variables, point) evaluates a value now, optionally with values for its variables. "><code>evaluate(value[, substitutions]) | evaluate(value, variables, point)</code><p>Evaluates a value now, optionally with values for its variables.</p></a>
+<a class="reference-item docs-card" href="/docs/language/for/" data-reference-item data-search="for nerdamer language for(arg1, arg2, arg3, arg4) repeats an expression with a start, a condition and a step. "><code>for(arg1, arg2, arg3, arg4)</code><p>Repeats an expression with a start, a condition and a step.</p></a>
+<a class="reference-item docs-card" href="/docs/language/if/" data-reference-item data-search="if nerdamer language if(condition, whentrue, whenfalse) returns one of two values, depending on a condition. if "><code>if(condition, whenTrue, whenFalse)</code><p>Returns one of two values, depending on a condition.</p></a>
+<a class="reference-item docs-card" href="/docs/language/iferror/" data-reference-item data-search="iferror nerdamer language iferror(arg1, arg2) returns a fallback value when an expression throws an error. "><code>iferror(arg1, arg2)</code><p>Returns a fallback value when an expression throws an error.</p></a>
+<a class="reference-item docs-card" href="/docs/language/iserror/" data-reference-item data-search="iserror nerdamer language iserror(arg1) returns 1 when an expression throws an error, and 0 otherwise. "><code>iserror(arg1)</code><p>Returns 1 when an expression throws an error, and 0 otherwise.</p></a>
+<a class="reference-item docs-card" href="/docs/language/let/" data-reference-item data-search="let nerdamer language let(arg1, arg2, arg3, ...) gives variables temporary values for one expression. "><code>let(arg1, arg2, arg3, ...)</code><p>Gives variables temporary values for one expression.</p></a>
+<a class="reference-item docs-card" href="/docs/language/not/" data-reference-item data-search="not nerdamer language not(arg1) returns 1 for a false value and 0 for a true one. "><code>not(arg1)</code><p>Returns 1 for a false value and 0 for a true one.</p></a>
+<a class="reference-item docs-card" href="/docs/language/or/" data-reference-item data-search="or nerdamer language or(arg1, arg2, ...) returns 1 when at least one argument is true, and 0 otherwise. "><code>or(arg1, arg2, ...)</code><p>Returns 1 when at least one argument is true, and 0 otherwise.</p></a>
+<a class="reference-item docs-card" href="/docs/language/return/" data-reference-item data-search="return nerdamer language return(arg1) ends a function or block early with a value. "><code>return(arg1)</code><p>Ends a function or block early with a value.</p></a>
+<a class="reference-item docs-card" href="/docs/language/while/" data-reference-item data-search="while nerdamer language while(arg1, arg2) repeats an expression while a condition is true. "><code>while(arg1, arg2)</code><p>Repeats an expression while a condition is true.</p></a>
+<a class="reference-item docs-card" href="/docs/language/xor/" data-reference-item data-search="xor nerdamer language xor(arg1, arg2, ...) returns 1 when an odd number of arguments are true. "><code>xor(arg1, arg2, ...)</code><p>Returns 1 when an odd number of arguments are true.</p></a></div></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -181,9 +165,9 @@ square(6)
       <p>Symbolic mathematics for JavaScript and TypeScript.</p>
     </div>
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
-        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        Scripting</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/contributing/">Contributing</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

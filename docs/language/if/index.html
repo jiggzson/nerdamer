@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>if — Nerdamer Documentation</title>
-  <meta name="description" content="Evaluates one branch based on a Nerdamer Scripting condition.">
+  <meta name="description" content="Returns one of two values, depending on a condition.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
   <link rel="stylesheet" href="../../../styles/api.css">
+<link rel="stylesheet" href="../../../styles/function-page.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -42,7 +43,7 @@
       <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
     </nav>
     <div class="nav-actions">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme"><svg class="theme-toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
       <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
     </div>
   </div>
@@ -55,36 +56,41 @@
 <div class="docs-layout"><aside class="docs-sidebar">
   <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
   <nav class="docs-nav" id="docs-nav">
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/releases/">What’s New</a><a href="/docs/references/">References &amp; citations</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Get started</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Install &amp; first steps</a><a href="/docs/choosing-an-api/">Ways to use Nerdamer</a><a href="/docs/releases/">What’s new</a><a href="/docs/migration/">Migrating from 1.x</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Guides</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Writing expressions</a><a href="/docs/guides/reserved-names/">Reserved names</a><a href="/docs/language/">Scripting</a><a href="/docs/language/user-defined-functions/">User-defined functions</a><a href="/docs/public-helpers/">Results &amp; output</a><a href="/docs/guides/sets/">Sets &amp; solution sets</a><a href="/docs/guides/assumptions/">Assumptions</a><a href="/docs/settings/">Settings</a><a href="/docs/guides/warnings/">Warnings</a><a href="/docs/guides/connecting-functions/">Connecting functions</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/examples/">JavaScript examples</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Reference</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/functions/">Functions</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">Types &amp; import paths</a></div>
   </nav>
+  <a class="docs-sidebar-footer-link" href="/contributing/">Contributing →</a>
 </aside>
 <article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/language/">Nerdamer Scripting</a></div>
 <div class="eyebrow">Scripting reference · Nerdamer Language</div>
 <h1><code>if</code></h1>
-<p>Evaluates one branch based on a Nerdamer Scripting condition.</p>
-<div class="api-description"><p>The condition is evaluated first. Only the selected branch is evaluated, so errors or assignments in the unselected branch do not run.</p><p>The false branch is optional.</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Scripting.</p><div class="api-example-block"><p>Evaluate only the true branch.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token control">if</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">)</span>
-<span class="token comment">// → 5</span></code></pre></div>
-<div class="api-example-block"><p>Evaluate only the false branch.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token control">if</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">)</span>
-<span class="token comment">// → 6</span></code></pre></div></section>
-<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#scripting">Nerdamer Scripting</a></p></section>
-<section class="api-detail" id="scripting">
-<h2>Nerdamer Scripting</h2>
-<p>Use this form in Nerdamer Scripting input passed to <code>nerdamer(...)</code>.</p>
-<pre class="api-signature"><code>if(condition, whenTrue, whenFalse)</code></pre>
-<h3>Parameters</h3><ul><li><code>condition</code> — Condition evaluated by the Nerdamer Language runtime.</li>
-<li><code>whenTrue</code> — Expression evaluated when the condition is true.</li>
-<li><code>whenFalse</code> — Expression evaluated when the condition is false.</li></ul>
-
+<p class="fn-summary">Returns one of two values, depending on a condition.</p>
+<p>Only the chosen branch is evaluated, so an error or assignment in the other one never happens.</p>
+<p>The false branch is optional. Without it, a false condition gives no value, so use that form for a step that only sometimes runs, inside <code>block</code>.</p>
+<div class="fn-forms">
+<section class="fn-form" id="scripting">
+<h2 class="fn-form-label">Scripting</h2>
+<pre class="api-signature fn-signature"><code>if(condition, whenTrue, whenFalse)</code></pre>
+<p class="fn-form-note">Write it in a script: <code>nerdamer('if(1,5,6)')</code>, or in the <a href="/playground/?expr=if(1%2C5%2C6)">Playground</a>.</p>
 </section>
+</div>
+<section class="api-detail"><h2>Parameters</h2><dl class="fn-params"><dt><code>condition</code></dt><dd>Decides which branch runs.</dd>
+<dt><code>whenTrue</code></dt><dd>The value when the condition is true.</dd>
+<dt><code>whenFalse</code></dt><dd>Optional. The value when it is false.</dd></dl></section>
+
+<section class="api-detail"><h2>Examples</h2><div class="api-example-block"><p>The condition is true.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token control">if</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">)</span>
+<span class="token comment">// → 5</span></code></pre><a class="fn-example-try" href="/playground/?expr=if(1%2C5%2C6)">Open in Playground</a></div>
+<div class="api-example-block"><p>The condition is false.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token control">if</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">)</span>
+<span class="token comment">// → 6</span></code></pre><a class="fn-example-try" href="/playground/?expr=if(0%2C5%2C6)">Open in Playground</a></div>
+<div class="api-example-block"><p><code>x&gt;0</code> can&#39;t be decided for an unknown <code>x</code>, so it counts as false.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token control">if</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">&gt;</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">)</span>
+<span class="token comment">// → 2</span></code></pre><a class="fn-example-try" href="/playground/?expr=if(x%3E0%2C1%2C2)">Open in Playground</a></div>
+<div class="api-example-block"><p>No false branch: the assignment is skipped.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token control">block</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">:</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token control">if</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token operator">:</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token variable">x</span><span class="token punctuation">)</span>
+<span class="token comment">// → 1</span></code></pre><a class="fn-example-try" href="/playground/?expr=block(x%3A1%2C%20if(0%2C%20x%3A2)%2C%20x)">Open in Playground</a></div></section>
+<section class="api-detail"><h2>Good to know</h2><ul><li>A value is true when it isn&#39;t zero. An unknown symbol counts as true; a comparison that can&#39;t be decided, such as <code>x&gt;0</code> for an unknown <code>x</code>, counts as false.</li></ul></section>
 
 
-
-
+<section class="api-detail" id="deprecated-names"><h2>Deprecated names</h2><div class="docs-callout api-deprecated"><strong>Deprecated.</strong> <p><code>IF</code> still works, and gives the same result as <code>if</code>, but each call records an <code>api.deprecatedFunction</code> <a href="/docs/guides/warnings/">warning</a>. Use <code>if</code> instead; the old name will be removed in a later major version.</p></div></section>
 <p><a href="/docs/language/">← Back to Nerdamer Scripting</a></p></article></div>
 </main>
 <footer class="site-footer">
@@ -93,9 +99,9 @@
       <p>Symbolic mathematics for JavaScript and TypeScript.</p>
     </div>
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
-        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        Scripting</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/contributing/">Contributing</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>User-defined functions — Nerdamer Documentation</title>
-  <meta name="description" content="Define symbolic functions with Nerdamer Scripting or the JavaScript / TypeScript API.">
+  <meta name="description" content="Define your own functions in Nerdamer Scripting or from JavaScript, and use them like built-in ones.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -42,7 +42,7 @@
       <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
     </nav>
     <div class="nav-actions">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme"><svg class="theme-toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
       <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
     </div>
   </div>
@@ -55,49 +55,54 @@
 <div class="docs-layout"><aside class="docs-sidebar">
   <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
   <nav class="docs-nav" id="docs-nav">
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/releases/">What’s New</a><a href="/docs/references/">References &amp; citations</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Get started</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Install &amp; first steps</a><a href="/docs/choosing-an-api/">Ways to use Nerdamer</a><a href="/docs/releases/">What’s new</a><a href="/docs/migration/">Migrating from 1.x</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Guides</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Writing expressions</a><a href="/docs/guides/reserved-names/">Reserved names</a><a href="/docs/language/">Scripting</a><a href="/docs/language/user-defined-functions/">User-defined functions</a><a href="/docs/public-helpers/">Results &amp; output</a><a href="/docs/guides/sets/">Sets &amp; solution sets</a><a href="/docs/guides/assumptions/">Assumptions</a><a href="/docs/settings/">Settings</a><a href="/docs/guides/warnings/">Warnings</a><a href="/docs/guides/connecting-functions/">Connecting functions</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/examples/">JavaScript examples</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Reference</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/functions/">Functions</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">Types &amp; import paths</a></div>
   </nav>
+  <a class="docs-sidebar-footer-link" href="/contributing/">Contributing →</a>
 </aside>
-<article class="docs-content"><div class="eyebrow">Nerdamer Scripting · JavaScript / TypeScript API</div>
+<article class="docs-content"><div class="eyebrow">Nerdamer Scripting</div>
 <h1>User-defined functions</h1>
-<p>Nerdamer can register symbolic functions in two ways: inside Nerdamer Scripting with <code>:=</code>, or from JavaScript / TypeScript with <code>nerdamer.setFunction(...)</code>. Functions defined either way can be called later from Nerdamer Notation.</p>
+<p>Define your own functions in two ways: in Scripting with <code>:=</code>, or from JavaScript with <code>nerdamer.setFunction(...)</code>. Either way, you then use them like built-in functions.</p>
 
-<h2>Define a function in Nerdamer Scripting</h2>
-<p>Write the function name and parameters on the left of <code>:=</code>, followed by the symbolic body.</p>
+<h2>In Scripting</h2>
+<p>Write the name and parameters on the left of <code>:=</code>, and the body on the right.</p>
 <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
 
 <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;f(x):=x^2&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;f(3)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token comment">// 9</span></code></pre>
-<p>Functions can accept more than one parameter:</p>
+<p>A function can take several parameters:</p>
 <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;g(x,y):=x^2+y&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;g(3,4)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token comment">// 13</span></code></pre>
-<div class="docs-callout">A function definition is registered with Nerdamer, so later <code>nerdamer(...)</code> calls can use it. Defining the same function name again replaces the previous definition.</div>
+<div class="docs-callout">A function stays defined for later <code>nerdamer(...)</code> calls. Defining the same name again replaces it.</div>
+<p>Functions work anywhere a built-in one does: with symbolic arguments, and inside <code>diff</code> or <code>integrate</code>.</p>
+<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;f(x):=x^2&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;f(a+1)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>            <span class="token comment">// (1+a)^2</span>
+<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;diff(f(x),x)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>      <span class="token comment">// 2*x</span>
+<span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;integrate(f(x),x)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// (1/3)*x^3</span></code></pre>
 
-<h2>Define the same kind of function from JavaScript / TypeScript</h2>
-<p>Use <code>nerdamer.setFunction(name, parameters, body)</code> when the function definition comes from application code. The parameter names and function body are strings interpreted by Nerdamer.</p>
+<h2>From JavaScript</h2>
+<p>Use <code>nerdamer.setFunction(name, parameters, body)</code> when your code creates the definition. The parameters and body are strings in Notation.</p>
 <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
 
 <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">setFunction</span><span class="token punctuation">(</span><span class="token string">&#39;f&#39;</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token string">&#39;x&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;y&#39;</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">&#39;x^2+y&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;f(4,7)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token comment">// 23</span></code></pre>
-<p>See <a href="/docs/api/nerdamer/set-function/"><code>nerdamer.setFunction()</code></a> for the generated JavaScript / TypeScript API reference.</p>
+<p>See <a href="/docs/api/nerdamer/set-function/"><code>nerdamer.setFunction()</code></a> for its options.</p>
 
-<h2>Removing user-defined functions</h2>
-<p>Use <a href="/docs/api/nerdamer/clear-functions/"><code>nerdamer.clearFunctions()</code></a> to remove functions you registered without affecting built-in functions. Pass an array to remove selected names, or omit the argument to remove all user-defined functions.</p>
-<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">setFunction</span><span class="token punctuation">(</span><span class="token string">&#39;f&#39;</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token string">&#39;x&#39;</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">&#39;x^2&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<h2>Removing functions</h2>
+<p><a href="/docs/api/nerdamer/clear-functions/"><code>nerdamer.clearFunctions()</code></a> removes your functions and leaves the built-in ones. Pass a list of names to remove only those.</p>
+<pre class="codeblock language-nerdamer"><code class="language-nerdamer"><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">setFunction</span><span class="token punctuation">(</span><span class="token string">&#39;f&#39;</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token string">&#39;x&#39;</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">&#39;x^2&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">setFunction</span><span class="token punctuation">(</span><span class="token string">&#39;g&#39;</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token string">&#39;x&#39;</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">&#39;x+1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 
 <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">clearFunctions</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token string">&#39;f&#39;</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// Keep g</span>
-<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">clearFunctions</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>      <span class="token comment">// Clear remaining user functions</span></code></pre>
+<span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">clearFunctions</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>      <span class="token comment">// remove the rest</span></code></pre>
+<p>After a function is removed, its name is an ordinary variable again: <code>f(2)</code> then means <code>2*f</code>.</p>
 
-<h2>Which form should I use?</h2>
-<p>Use <code>f(x):=...</code> when the definition naturally belongs to Nerdamer input or a Nerdamer script. Use <code>nerdamer.setFunction(...)</code> when your JavaScript or TypeScript application is creating the definition directly. Both forms register a symbolic function that can be used in later Nerdamer expressions.</p>
+<h2>Which to use</h2>
+<p>Use <code>f(x):=...</code> when the definition is part of the formula or script. Use <code>nerdamer.setFunction(...)</code> when your code builds it. The result is the same.</p>
 
 <h2>Redefining a function</h2>
 <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;f(x):=x^2&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -107,7 +112,7 @@
 <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;f(x):=x+1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;f(3)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token comment">// 4</span></code></pre>
-<p>For scripting constructs such as <code>if</code>, <code>for</code>, <code>while</code>, <code>let</code>, and <code>block</code>, return to <a href="/docs/language/">Nerdamer Scripting</a>.</p></article></div>
+<p>For <code>if</code>, loops, <code>let</code> and <code>block</code>, see <a href="/docs/language/">Scripting</a>.</p></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -115,9 +120,9 @@
       <p>Symbolic mathematics for JavaScript and TypeScript.</p>
     </div>
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
-        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        Scripting</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/contributing/">Contributing</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

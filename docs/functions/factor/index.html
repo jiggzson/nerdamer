@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>factor — Nerdamer Documentation</title>
-  <meta name="description" content="Factors an expression into a product of simpler factors.">
+  <meta name="description" content="Factors a polynomial or an integer.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
   <link rel="stylesheet" href="../../../styles/api.css">
+<link rel="stylesheet" href="../../../styles/function-page.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -42,7 +43,7 @@
       <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
     </nav>
     <div class="nav-actions">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme"><svg class="theme-toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
       <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
     </div>
   </div>
@@ -55,49 +56,57 @@
 <div class="docs-layout"><aside class="docs-sidebar">
   <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
   <nav class="docs-nav" id="docs-nav">
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/releases/">What’s New</a><a href="/docs/references/">References &amp; citations</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Get started</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Install &amp; first steps</a><a href="/docs/choosing-an-api/">Ways to use Nerdamer</a><a href="/docs/releases/">What’s new</a><a href="/docs/migration/">Migrating from 1.x</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Guides</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Writing expressions</a><a href="/docs/guides/reserved-names/">Reserved names</a><a href="/docs/language/">Scripting</a><a href="/docs/language/user-defined-functions/">User-defined functions</a><a href="/docs/public-helpers/">Results &amp; output</a><a href="/docs/guides/sets/">Sets &amp; solution sets</a><a href="/docs/guides/assumptions/">Assumptions</a><a href="/docs/settings/">Settings</a><a href="/docs/guides/warnings/">Warnings</a><a href="/docs/guides/connecting-functions/">Connecting functions</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/examples/">JavaScript examples</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Reference</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/functions/">Functions</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">Types &amp; import paths</a></div>
   </nav>
+  <a class="docs-sidebar-footer-link" href="/contributing/">Contributing →</a>
 </aside>
 <article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/functions/">Function reference</a></div>
 <div class="eyebrow">Function reference · Algebra</div>
 <h1><code>factor</code></h1>
-<p>Factors an expression into a product of simpler factors.</p>
-<div class="api-description"><p>Use factor to expose multiplicative structure in polynomial-like expressions. It can factor univariate and multivariate polynomials, extract common factors, recognize repeated factors, and prime-factor exact integers.</p><p>If Nerdamer cannot factor an input using its supported symbolic methods, the expression may remain unchanged or as an unevaluated factor call.</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Factor a quadratic over the integers.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">factor</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">5</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">+</span><span class="token number">6</span><span class="token punctuation">)</span>
-<span class="token comment">// → (2+x)*(3+x)</span></code></pre></div>
-<div class="api-example-block"><p>Recognize a multivariable perfect square.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">factor</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">2</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">*</span><span class="token variable">y</span><span class="token operator">+</span><span class="token variable">y</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">)</span>
-<span class="token comment">// → (x+y)^2</span></code></pre></div>
-<div class="api-example-block"><p>Prime-factor an exact integer.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">factor</span><span class="token punctuation">(</span><span class="token number">4677271</span><span class="token punctuation">)</span>
-<span class="token comment">// → 2089*2239</span></code></pre></div></section>
-<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a> · <a href="#direct-api">Direct API</a></p></section>
-<section class="api-detail" id="notation">
-<h2>Nerdamer Notation</h2>
-<p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
-<pre class="api-signature"><code>factor(expression)</code></pre>
-<h3>Parameters</h3><ul><li><code>expression</code> — Expression to factor.</li></ul>
+<p class="fn-summary">Factors a polynomial or an integer.</p>
 
+<div class="fn-forms">
+<section class="fn-form" id="notation">
+<h2 class="fn-form-label">Notation</h2>
+<pre class="api-signature fn-signature"><code>factor(expression)</code></pre>
+<p class="fn-form-note">Write it in an expression: <code>nerdamer('factor(x^2+5*x+6)')</code>, or in the <a href="/playground/?expr=factor(x%5E2%2B5*x%2B6)">Playground</a>.</p>
 </section>
-<section class="api-detail" id="nerdamer-api">
-<h2><code>nerdamer.factor</code></h2>
-<p>Call the operation through the default <code>nerdamer</code> import.</p>
-<pre class="api-signature"><code>nerdamer.factor(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
-<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Expression-compatible value to factor.</td></tr></tbody></table></div></section>
-<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — A factored expression or an unevaluated symbolic <code>factor</code> call.</p></section>
-<p><a href="/docs/api/nerdamer/">Browse the <code>nerdamer</code> API →</a></p>
+<section class="fn-form" id="nerdamer-api">
+<h2 class="fn-form-label"><code>nerdamer.factor</code></h2>
+<pre class="api-signature fn-signature"><code>nerdamer.factor(expression: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
+<p class="fn-form-note">A method on the default import. Arguments can be strings, as in Notation.</p>
 </section>
-<section class="api-detail" id="direct-api">
-<h2>Direct JavaScript / TypeScript API</h2>
-<p>Import the operation directly from its package entry point.</p>
+<section class="fn-form" id="direct-api">
+<h2 class="fn-form-label"><code>import { factor }</code></h2>
 <pre class="codeblock language-javascript" data-language="javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">factor</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/algebra&#39;</span><span class="token punctuation">;</span></code></pre>
-<pre class="api-signature"><code>factor(x: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
-<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>x</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a></code></td><td>Expression-compatible value to factor.</td></tr></tbody></table></div></section>
-<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code> — A factored expression or an unevaluated symbolic <code>factor</code> call.</p></section>
-<p><a href="/docs/api/algebra/">Browse <code>nerdamer/algebra</code> →</a></p>
+<pre class="api-signature fn-signature"><code>factor(expression: <a class="api-type-link" href="/docs/api/core/expression-input/">ExpressionInput</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
+<p class="fn-form-note">Import only this function, from <a href="/docs/api/algebra/"><code>nerdamer/algebra</code></a>.</p>
 </section>
+</div>
+<section class="api-detail"><h2>Parameters</h2><dl class="fn-params"><dt><code>expression</code></dt><dd>A polynomial in one or more variables, or an integer.</dd></dl></section>
+<section class="api-detail"><h2>Returns</h2><p>The factored expression. A polynomial that can&#39;t be factored over the rationals comes back unchanged.</p></section>
+<section class="api-detail"><h2>Examples</h2><div class="api-example-block"><p>Factor a quadratic.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">factor</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">5</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">+</span><span class="token number">6</span><span class="token punctuation">)</span>
+<span class="token comment">// → (3+x)*(2+x)</span></code></pre><a class="fn-example-try" href="/playground/?expr=factor(x%5E2%2B5*x%2B6)">Open in Playground</a></div>
+<div class="api-example-block"><p>The leading coefficient doesn&#39;t have to be 1.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">factor</span><span class="token punctuation">(</span><span class="token number">6</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">5</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">-</span><span class="token number">6</span><span class="token punctuation">)</span>
+<span class="token comment">// → (-2+3*x)*(3+2*x)</span></code></pre><a class="fn-example-try" href="/playground/?expr=factor(6*x%5E2%2B5*x-6)">Open in Playground</a></div>
+<div class="api-example-block"><p>Factors are split as far as rational coefficients allow.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">factor</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">4</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token comment">// → (1+x)*(-1+x)*(1+x^2)</span></code></pre><a class="fn-example-try" href="/playground/?expr=factor(x%5E4-1)">Open in Playground</a></div>
+<div class="api-example-block"><p><code>x^2-2</code> would need irrational coefficients, so it stays as it is.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">factor</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">)</span>
+<span class="token comment">// → -2+x^2</span></code></pre><a class="fn-example-try" href="/playground/?expr=factor(x%5E2-2)">Open in Playground</a></div>
+<div class="api-example-block"><p>A repeated factor is written as a power.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">factor</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">3</span><span class="token operator">+</span><span class="token number">3</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">3</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token comment">// → (1+x)^3</span></code></pre><a class="fn-example-try" href="/playground/?expr=factor(x%5E3%2B3*x%5E2%2B3*x%2B1)">Open in Playground</a></div>
+<div class="api-example-block"><p>Common factors come out first, in several variables too.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">factor</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">*</span><span class="token variable">y</span><span class="token operator">+</span><span class="token variable">x</span><span class="token operator">*</span><span class="token variable">y</span><span class="token operator">^</span><span class="token number">2</span><span class="token punctuation">)</span>
+<span class="token comment">// → y*x*(x+y)</span></code></pre><a class="fn-example-try" href="/playground/?expr=factor(x%5E2*y%2Bx*y%5E2)">Open in Playground</a></div>
+<div class="api-example-block"><p>A rational constant comes out in front.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">factor</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">/</span><span class="token number">3</span><span class="token operator">*</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">-</span><span class="token number">1</span><span class="token operator">/</span><span class="token number">3</span><span class="token punctuation">)</span>
+<span class="token comment">// → (1/3)*(1+x)*(-1+x)</span></code></pre><a class="fn-example-try" href="/playground/?expr=factor(1%2F3*x%5E2-1%2F3)">Open in Playground</a></div>
+<div class="api-example-block"><p>An integer is split into primes.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">factor</span><span class="token punctuation">(</span><span class="token number">4677271</span><span class="token punctuation">)</span>
+<span class="token comment">// → 2089*2239</span></code></pre><a class="fn-example-try" href="/playground/?expr=factor(4677271)">Open in Playground</a></div></section>
+<section class="api-detail"><h2>Good to know</h2><ul><li>The order of the factors isn&#39;t fixed and can change between versions. To compare results, compare them with <code>expand</code>, not as text.</li>
+<li>To get the prime factors of an integer as a list, use <code>pfactor</code>: <code>pfactor(12)</code> gives <code>[2, 2, 3]</code>.</li></ul></section>
+<section class="api-detail" id="javascript"><h2>JavaScript examples</h2><div class="api-example-block"><pre class="codeblock language-javascript" data-language="javascript"><code class="language-javascript"><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">factor</span><span class="token punctuation">(</span><span class="token string">&#39;x^2+5*x+6&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token comment">// → (3+x)*(2+x)</span></code></pre></div></section>
 
 
 <p><a href="/docs/functions/">← Back to Function reference</a></p></article></div>
@@ -108,9 +117,9 @@
       <p>Symbolic mathematics for JavaScript and TypeScript.</p>
     </div>
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
-        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        Scripting</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/contributing/">Contributing</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

@@ -1,0 +1,27 @@
+/* Pages pulled from the library's Markdown documentation. */
+.library-doc h1 {
+  margin-top: 0;
+}
+
+.library-doc h2 {
+  margin-top: 40px;
+}
+
+.library-doc h3 {
+  margin-top: 28px;
+}
+
+.library-doc table code,
+.library-doc li code,
+.library-doc p code {
+  color: rgb(var(--accent-deep));
+}
+
+.library-doc ol,
+.library-doc ul {
+  padding-left: 1.4em;
+}
+
+.library-doc li + li {
+  margin-top: 4px;
+}

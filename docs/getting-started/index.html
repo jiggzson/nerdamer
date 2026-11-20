@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Getting Started — Nerdamer</title>
-  <meta name="description" content="Install Nerdamer and learn the basic Nerdamer Notation and JavaScript / TypeScript API usage patterns.">
+  <title>Install &amp; First Steps — Nerdamer</title>
+  <meta name="description" content="Install Nerdamer, run your first expression, and call it from JavaScript or TypeScript.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -42,7 +42,7 @@
       <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
     </nav>
     <div class="nav-actions">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme"><svg class="theme-toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
       <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
     </div>
   </div>
@@ -55,16 +55,15 @@
 <div class="docs-layout"><aside class="docs-sidebar">
   <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
   <nav class="docs-nav" id="docs-nav">
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/releases/">What’s New</a><a href="/docs/references/">References &amp; citations</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Get started</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Install &amp; first steps</a><a href="/docs/choosing-an-api/">Ways to use Nerdamer</a><a href="/docs/releases/">What’s new</a><a href="/docs/migration/">Migrating from 1.x</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Guides</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Writing expressions</a><a href="/docs/guides/reserved-names/">Reserved names</a><a href="/docs/language/">Scripting</a><a href="/docs/language/user-defined-functions/">User-defined functions</a><a href="/docs/public-helpers/">Results &amp; output</a><a href="/docs/guides/sets/">Sets &amp; solution sets</a><a href="/docs/guides/assumptions/">Assumptions</a><a href="/docs/settings/">Settings</a><a href="/docs/guides/warnings/">Warnings</a><a href="/docs/guides/connecting-functions/">Connecting functions</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/examples/">JavaScript examples</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Reference</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/functions/">Functions</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">Types &amp; import paths</a></div>
   </nav>
+  <a class="docs-sidebar-footer-link" href="/contributing/">Contributing →</a>
 </aside>
-<article class="docs-content"><div class="eyebrow">Start here</div>
-<h1>Getting started</h1>
-<p>The quickest way to begin is to install the package, import the <code>nerdamer</code> function, and pass it mathematical notation.</p>
+<article class="docs-content"><div class="eyebrow">Get started</div>
+<h1>Install &amp; first steps</h1>
+<p>Install the package, import <code>nerdamer</code>, and pass it a formula as a string.</p>
 
 <h2>Install</h2>
 <pre class="codeblock language-shell"><code class="language-shell"><span class="token function">npm</span> <span class="token variable">install</span> <span class="token variable">nerdamer</span></code></pre>
@@ -75,22 +74,23 @@
 <span class="token keyword">const</span> <span class="token variable">expression</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;x + 2*x + 1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">expression</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token comment">// 1+3*x</span></code></pre>
-<p>The string <code>'x + 2*x + 1'</code> is Nerdamer Notation. The result is a symbolic value that you can simplify, evaluate, format, or use in later calculations.</p>
-<div class="docs-callout"><strong>Strings passed to <code>nerdamer(...)</code> are interpreted as Nerdamer Notation, not executed as JavaScript.</strong> The exception is <code>buildFunction()</code>, which compiles an expression into a numerical JavaScript function.</div>
+<p>The string is Nerdamer Notation. The result is an expression you can simplify, evaluate, format or use in another calculation.</p>
+<div class="docs-callout"><strong>The string is read as mathematics, not run as JavaScript.</strong> To get a fast numeric JavaScript function from an expression, use <code>buildFunction()</code>.</div>
 
-<h2>Call functions in Nerdamer Notation</h2>
+<h2>Use functions in the string</h2>
 <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">const</span> <span class="token variable">result</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;factor(x^4-1)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">result</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-<div class="docs-callout"><strong>Important:</strong> <code>factor(...)</code> above is part of the expression string. It is a Nerdamer Notation function, not a JavaScript function call. The <a href="/docs/functions/">function reference</a> documents this form.</div>
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">result</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// (1+x)*(-1+x)*(1+x^2)</span></code></pre>
+<p><code>factor</code> here is part of the formula, not a JavaScript call. The <a href="/docs/functions/">function reference</a> lists every function you can write this way.</p>
 
-<h2>Call common functions directly from <code>nerdamer</code></h2>
-<p>Common operations can also be called directly from JavaScript or TypeScript. For example, you can factor an expression without writing <code>factor(...)</code> inside a Nerdamer string.</p>
+<h2>Or call them from JavaScript</h2>
 <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
 
-<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">factor</span><span class="token punctuation">(</span><span class="token string">&#39;x^4-1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-<p>For example, <code>nerdamer.factor('x^4-1')</code> and <code>nerdamer('factor(x^4-1)')</code> perform the same factoring operation through two different interfaces. Other commonly used operations such as <code>diff</code> and <code>solve</code> are also available from the full-package export.</p>
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">factor</span><span class="token punctuation">(</span><span class="token string">&#39;x^4-1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// (1+x)*(-1+x)*(1+x^2)</span></code></pre>
+<p>Most functions are also methods on <code>nerdamer</code>, such as <code>nerdamer.diff</code> and <code>nerdamer.solve</code>. They give the same result as writing them in the string.</p>
 
-<h2>Substitute JavaScript values</h2>
+<h2>Substitute values</h2>
 <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">const</span> <span class="token variable">result</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;x^2 + y&#39;</span><span class="token punctuation">,</span> <span class="token punctuation">{</span>
   <span class="token variable">x</span><span class="token operator">:</span> <span class="token number">3</span><span class="token punctuation">,</span>
   <span class="token variable">y</span><span class="token operator">:</span> <span class="token string">&#39;t&#39;</span>
@@ -98,10 +98,9 @@
 
 <span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token variable">result</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token comment">// 9+t</span></code></pre>
-<p>Also see <a href="/docs/functions/subst/"><code>subst</code></a> for substitution written directly in Nerdamer Notation.</p>
+<p>To substitute inside a formula instead, use <a href="/docs/functions/subst/"><code>subst</code></a>.</p>
 
-<h2>Use the JavaScript / TypeScript API</h2>
-<p>You do not have to express everything as a string. The library also exposes methods, functions, classes, and types for direct use from application code.</p>
+<h2>Import functions and classes</h2>
 <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token class-name">Matrix</span><span class="token punctuation">,</span> <span class="token variable">determinant</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/structures&#39;</span><span class="token punctuation">;</span>
 
 <span class="token keyword">const</span> <span class="token class-name">M</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">Matrix</span><span class="token punctuation">(</span>
@@ -109,30 +108,18 @@
   <span class="token punctuation">[</span><span class="token string">&#39;x&#39;</span><span class="token punctuation">,</span> <span class="token string">&#39;y&#39;</span><span class="token punctuation">]</span>
 <span class="token punctuation">)</span><span class="token punctuation">;</span>
 
-<span class="token keyword">const</span> <span class="token variable">d</span> <span class="token operator">=</span> <span class="token function">determinant</span><span class="token punctuation">(</span><span class="token class-name">M</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-<p>Use the API when your application already has JavaScript data, when you want a specific public class, or when TypeScript types are useful to your code.</p>
-
-<h2>The same operation can have more than one form</h2>
-<pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">import</span> <span class="token variable">nerdamer</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">;</span>
-<span class="token keyword">import</span> <span class="token punctuation">{</span> <span class="token variable">factor</span> <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">&#39;nerdamer/algebra&#39;</span><span class="token punctuation">;</span>
-
-<span class="token comment">// Nerdamer Notation</span>
-<span class="token keyword">const</span> <span class="token variable">a</span> <span class="token operator">=</span> <span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;factor(x^2-1)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-<span class="token comment">// Full-package method</span>
-<span class="token keyword">const</span> <span class="token variable">b</span> <span class="token operator">=</span> <span class="token variable">nerdamer</span><span class="token punctuation">.</span><span class="token function">factor</span><span class="token punctuation">(</span><span class="token string">&#39;x^2-1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-
-<span class="token comment">// JavaScript / TypeScript subpath import</span>
-<span class="token keyword">const</span> <span class="token variable">c</span> <span class="token operator">=</span> <span class="token function">factor</span><span class="token punctuation">(</span><span class="token string">&#39;x^2-1&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-<p><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a> explains the difference between Nerdamer Notation, Nerdamer Scripting, and the JavaScript / TypeScript API.</p>
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token function">determinant</span><span class="token punctuation">(</span><span class="token class-name">M</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// y-2*x</span></code></pre>
+<p>Import what you need when your data is already in JavaScript, or when you want TypeScript types. <a href="/docs/choosing-an-api/">Ways to use Nerdamer</a> compares the options.</p>
 
 <h2>CommonJS</h2>
 <pre class="codeblock language-javascript"><code class="language-javascript"><span class="token keyword">const</span> <span class="token variable">nerdamer</span> <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">&#39;nerdamer&#39;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 
-<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;expand((x+1)^3)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token function">nerdamer</span><span class="token punctuation">(</span><span class="token string">&#39;expand((x+1)^3)&#39;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 1+3*x+3*x^2+x^3</span></code></pre>
 
 <h2>Try it in the browser</h2>
-<p>The <a href="/playground/">Playground</a> lets you run Nerdamer Notation, inspect text and TeX output, and view the resulting expression tree without installing the package.</p></article></div>
+<p>The <a href="/playground/">Playground</a> runs Nerdamer in your browser, with no install. It shows the result as text and TeX, and as an expression tree.</p></article></div>
 </main>
 <footer class="site-footer">
   <div class="shell footer-grid">
@@ -140,9 +127,9 @@
       <p>Symbolic mathematics for JavaScript and TypeScript.</p>
     </div>
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
-        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        Scripting</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/contributing/">Contributing</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

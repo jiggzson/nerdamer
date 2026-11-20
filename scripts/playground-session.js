@@ -41,7 +41,8 @@
     </form>
     <div class="result-evaluator-output" aria-live="polite" hidden></div>
   `;
-  resultMeta.insertAdjacentElement('afterend', evaluator);
+  // Below the result line and the note on which session variables the input used.
+  (document.getElementById('result-session-note') || resultMeta).insertAdjacentElement('afterend', evaluator);
 
   const sessionVars = sessionBar.querySelector('.playground-session-vars');
   const clearSession = sessionBar.querySelector('.playground-session-clear');
@@ -193,24 +194,30 @@
 
   evaluatorForm.addEventListener('submit', event => {
     event.preventDefault();
-    const value = parseDisplayedResult();
-    if (!value || typeof value.evaluate !== 'function') return;
+    const evaluateResult = () => {
+      const value = parseDisplayedResult();
+      if (!value || typeof value.evaluate !== 'function') return;
 
-    const values = {};
-    for (const input of evaluatorFields.querySelectorAll('input[name]')) {
-      const inputValue = input.value.trim();
-      if (inputValue) values[input.name] = inputValue;
-    }
+      const values = {};
+      for (const input of evaluatorFields.querySelectorAll('input[name]')) {
+        const inputValue = input.value.trim();
+        if (inputValue) values[input.name] = inputValue;
+      }
 
-    try {
-      const evaluated = Object.keys(values).length ? value.evaluate(values) : value.evaluate();
-      const text = typeof evaluated?.text === 'function' ? evaluated.text() : String(evaluated);
-      evaluatorOutput.textContent = text;
-      evaluatorOutput.hidden = false;
-    } catch (caught) {
-      evaluatorOutput.textContent = caught?.message || String(caught);
-      evaluatorOutput.hidden = false;
-    }
+      try {
+        const evaluated = Object.keys(values).length ? value.evaluate(values) : value.evaluate();
+        const text = typeof evaluated?.text === 'function' ? evaluated.text() : String(evaluated);
+        evaluatorOutput.textContent = text;
+        evaluatorOutput.hidden = false;
+      } catch (caught) {
+        evaluatorOutput.textContent = caught?.message || String(caught);
+        evaluatorOutput.hidden = false;
+      }
+    };
+
+    const capture = globalThis.__nerdamerPlayground?.captureWarnings;
+    if (typeof capture === 'function') capture(evaluateResult);
+    else evaluateResult();
   });
 
   engineSelect.addEventListener('change', () => queueMicrotask(refresh));

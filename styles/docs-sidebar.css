@@ -123,3 +123,31 @@ html.dark .docs-sidebar::-webkit-scrollbar-thumb:hover {
 .docs-content section[id] {
   scroll-margin-top: calc(var(--header-h) + 24px);
 }
+
+/* The contributor area's sidebar links back to the user documentation. */
+.docs-sidebar-back {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: rgb(var(--muted));
+  font-size: .85rem;
+  text-decoration: none;
+}
+
+.docs-sidebar-back:hover {
+  color: rgb(var(--accent));
+}
+
+/* A single link to the contributor area, below the user documentation groups. */
+.docs-sidebar-footer-link {
+  display: block;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgb(var(--border));
+  color: rgb(var(--muted));
+  font-size: .85rem;
+  text-decoration: none;
+}
+
+.docs-sidebar-footer-link:hover {
+  color: rgb(var(--accent));
+}

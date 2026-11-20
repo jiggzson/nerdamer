@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>realpart — Nerdamer Documentation</title>
-  <meta name="description" content="Returns the real component of a complex expression.">
+  <meta name="description" content="Returns the real part of a complex expression.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
   <link rel="stylesheet" href="../../../styles/api.css">
+<link rel="stylesheet" href="../../../styles/function-page.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -42,7 +43,7 @@
       <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
     </nav>
     <div class="nav-actions">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme"><svg class="theme-toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
       <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
     </div>
   </div>
@@ -55,38 +56,38 @@
 <div class="docs-layout"><aside class="docs-sidebar">
   <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
   <nav class="docs-nav" id="docs-nav">
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/releases/">What’s New</a><a href="/docs/references/">References &amp; citations</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Get started</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Install &amp; first steps</a><a href="/docs/choosing-an-api/">Ways to use Nerdamer</a><a href="/docs/releases/">What’s new</a><a href="/docs/migration/">Migrating from 1.x</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Guides</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Writing expressions</a><a href="/docs/guides/reserved-names/">Reserved names</a><a href="/docs/language/">Scripting</a><a href="/docs/language/user-defined-functions/">User-defined functions</a><a href="/docs/public-helpers/">Results &amp; output</a><a href="/docs/guides/sets/">Sets &amp; solution sets</a><a href="/docs/guides/assumptions/">Assumptions</a><a href="/docs/settings/">Settings</a><a href="/docs/guides/warnings/">Warnings</a><a href="/docs/guides/connecting-functions/">Connecting functions</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/examples/">JavaScript examples</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Reference</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/functions/">Functions</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">Types &amp; import paths</a></div>
   </nav>
+  <a class="docs-sidebar-footer-link" href="/contributing/">Contributing →</a>
 </aside>
 <article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/functions/">Function reference</a></div>
 <div class="eyebrow">Function reference · Complex</div>
 <h1><code>realpart</code></h1>
-<p>Returns the real component of a complex expression.</p>
-<div class="api-description"><p>Nerdamer expands supported algebraic structure and separates known real and complex factors. Expressions whose complex component cannot yet be resolved can remain under realpart(...).</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Extract the real component of a numeric complex value.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">realpart</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token operator">+</span><span class="token number">2</span><span class="token operator">*</span><span class="token constant">i</span><span class="token punctuation">)</span>
-<span class="token comment">// → 3</span></code></pre></div>
-<div class="api-example-block"><p>Expand a symbolic complex product and collect its real component.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">realpart</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token variable">a</span><span class="token operator">+</span><span class="token variable">b</span><span class="token operator">*</span><span class="token constant">i</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token variable">c</span><span class="token operator">+</span><span class="token variable">d</span><span class="token operator">*</span><span class="token constant">i</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-<span class="token comment">// → a*c-b*d</span></code></pre></div></section>
-<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a> · <a href="#nerdamer-api"><code>nerdamer</code> API</a></p></section>
-<section class="api-detail" id="notation">
-<h2>Nerdamer Notation</h2>
-<p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
-<pre class="api-signature"><code>realpart(arg1)</code></pre>
+<p class="fn-summary">Returns the real part of a complex expression.</p>
+<p>Products and sums are multiplied out first. If the real part can&#39;t be separated, the call is returned unevaluated.</p>
+<div class="fn-forms">
+<section class="fn-form" id="notation">
+<h2 class="fn-form-label">Notation</h2>
+<pre class="api-signature fn-signature"><code>realpart(args)</code></pre>
+<p class="fn-form-note">Write it in an expression: <code>nerdamer('realpart(3+2*i)')</code>, or in the <a href="/playground/?expr=realpart(3%2B2*i)">Playground</a>.</p>
+</section>
+<section class="fn-form" id="nerdamer-api">
+<h2 class="fn-form-label"><code>nerdamer.realpart</code></h2>
+<pre class="api-signature fn-signature"><code>nerdamer.realpart(...args: [a]): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
+<p class="fn-form-note">A method on the default import. Arguments can be strings, as in Notation.</p>
+</section>
+</div>
 
 
-</section>
-<section class="api-detail" id="nerdamer-api">
-<h2><code>nerdamer.realpart</code></h2>
-<p>Call the operation through the default <code>nerdamer</code> import.</p>
-<pre class="api-signature"><code>nerdamer.realpart(a: <a class="api-type-link" href="/docs/api/core/expression/">Expression</a>): <a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></pre>
-<section class="api-detail"><h3>Parameters</h3><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>a</code></td><td><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></td><td>—</td></tr></tbody></table></div></section>
-<section class="api-detail"><h3>Returns</h3><p><code><a class="api-type-link" href="/docs/api/core/expression/">Expression</a></code></p></section>
-<p><a href="/docs/api/nerdamer/">Browse the <code>nerdamer</code> API →</a></p>
-</section>
+<section class="api-detail"><h2>Examples</h2><div class="api-example-block"><p>A number.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">realpart</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token operator">+</span><span class="token number">2</span><span class="token operator">*</span><span class="token constant">i</span><span class="token punctuation">)</span>
+<span class="token comment">// → 3</span></code></pre><a class="fn-example-try" href="/playground/?expr=realpart(3%2B2*i)">Open in Playground</a></div>
+<div class="api-example-block"><p>A product, multiplied out.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">realpart</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token variable">a</span><span class="token operator">+</span><span class="token variable">b</span><span class="token operator">*</span><span class="token constant">i</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token variable">c</span><span class="token operator">+</span><span class="token variable">d</span><span class="token operator">*</span><span class="token constant">i</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token comment">// → a*c-b*d</span></code></pre><a class="fn-example-try" href="/playground/?expr=realpart((a%2Bb*i)*(c%2Bd*i))">Open in Playground</a></div>
+<div class="api-example-block"><p>Can&#39;t be separated: unevaluated.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">realpart</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">+</span><span class="token constant">i</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token comment">// → realpart(sin(x+i))</span></code></pre><a class="fn-example-try" href="/playground/?expr=realpart(sin(x%2Bi))">Open in Playground</a></div></section>
+
 
 
 
@@ -98,9 +99,9 @@
       <p>Symbolic mathematics for JavaScript and TypeScript.</p>
     </div>
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
-        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        Scripting</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/contributing/">Contributing</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

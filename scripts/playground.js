@@ -9,10 +9,13 @@
   const signature = document.getElementById('signature');
   const result = document.getElementById('result');
   const resultMeta = document.getElementById('result-meta');
+  const sessionNote = document.getElementById('result-session-note');
   const raw = document.getElementById('raw-output');
   const tex = document.getElementById('tex-output');
   const tree = document.getElementById('tree-output');
   const error = document.getElementById('error-output');
+  const warningOutput = document.getElementById('warning-output');
+  const warningList = document.getElementById('warning-list');
   const tabs = [...document.querySelectorAll('[data-tab]')];
   const panes = [...document.querySelectorAll('[data-pane]')];
   const examples = [...document.querySelectorAll('[data-example]')];
@@ -32,37 +35,52 @@
   const plot3DOptions = document.getElementById('plot-3d-options');
   const plotFixed = document.getElementById('plot-fixed-vars');
 
-  if (!editor || !run || !clear || !evaluateOutput || !engineSelect || !status || !suggestions || !signature || !result || !resultMeta || !raw || !tex || !tree || !error) return;
+  if (!editor || !run || !clear || !evaluateOutput || !engineSelect || !status || !suggestions || !signature || !result || !resultMeta || !raw || !tex || !tree || !error || !warningOutput || !warningList) return;
 
   const inspectKeys = [
     'typeName', 'type', 'group', 'dataType', 'value', 'symbol', 'name', 'precision',
     'deferred', 'multiplier', 'power', 'base', 'elements', 'symbols', 'args',
     'LHS', 'RHS', 'lhs', 'rhs',
   ];
-  const currentNerdamer = globalThis.nerdamer;
-  const siteVersion = typeof currentNerdamer?.version === 'function' ? currentNerdamer.version() : '';
-  const siteLabel = /^\d+\.\d+\.\d+/.test(siteVersion)
-    ? `Nerdamer ${siteVersion} (site build)`
-    : 'Nerdamer 2.x (site build)';
-
-  // List published 2.x releases here; exclude the current local version and newer versions.
-  const releaseVersions = ['2.0.0'];
-  const versionParts = value => /^\d+\.\d+\.\d+/.test(value)
-    ? value.match(/^\d+\.\d+\.\d+/)[0].split('.').map(Number)
-    : null;
-  const isOlderRelease = version => {
-    const candidate = versionParts(version);
-    const current = versionParts(siteVersion);
-    if (!candidate || !current) return false;
-    for (let i = 0; i < 3; i++) {
-      if (candidate[i] !== current[i]) return candidate[i] < current[i];
-    }
-    return false;
+  // Minified engine builds mangle class names (Expression becomes Expression_Expression),
+  // so name results by their stable dataType code instead.
+  const dataTypeNames = {
+    EXP: 'Expression', SOL: 'SolutionSet', VEC: 'Vector', MAT: 'Matrix',
+    SET: 'ValuesSet', DIC: 'Dictionary', EQN: 'Equation', COL: 'Collection',
   };
-  const historicalVersions = releaseVersions.filter(isOlderRelease);
-  const releaseUrls = new Map(
-    historicalVersions.map(version => [version, `https://cdn.jsdelivr.net/npm/nerdamer@${version}/dist/bundle.js`])
-  );
+  const typeLabel = value => {
+    if (Array.isArray(value)) return `Array(${value.length})`;
+    if (value === null || value === undefined) return String(value);
+    if (typeof value !== 'object' && typeof value !== 'function') return typeof value;
+    if (typeof value.dataType === 'string' && dataTypeNames[value.dataType]) return dataTypeNames[value.dataType];
+    const name = value.constructor?.name || '';
+    const mangled = /^([A-Za-z]+)_\1$/.exec(name);
+    if (mangled) return mangled[1];
+    return name || value.typeName || value.dataType || 'Object';
+  };
+  const currentNerdamer = globalThis.nerdamer;
+  const siteVersion = typeof currentNerdamer?.version === 'function'
+    ? String(currentNerdamer.version())
+    : '';
+  const siteLabel = siteVersion
+    ? `Nerdamer ${siteVersion}`
+    : 'Nerdamer (version unavailable)';
+
+  const releaseManifestUrl = 'https://data.jsdelivr.com/v1/package/npm/nerdamer';
+  const releaseUrls = new Map();
+  const stableV2Parts = version => {
+    if (typeof version !== 'string') return null;
+    const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
+    return match && Number(match[1]) === 2 ? match.slice(1).map(Number) : null;
+  };
+  const compareVersions = (a, b) => {
+    const left = stableV2Parts(a);
+    const right = stableV2Parts(b);
+    for (let i = 0; i < 3; i++) {
+      if (left[i] !== right[i]) return left[i] - right[i];
+    }
+    return 0;
+  };
   const releaseRuntimes = new Map();
   const releasePromises = new Map();
   const legacyUrl = 'https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/all.min.js';
@@ -169,19 +187,98 @@
 
   engineSelect.querySelector('option[value="v2"]').textContent = siteLabel;
 
-  for (const version of historicalVersions) {
-    engines[version] = createV2Engine(version, `Nerdamer ${version}`, () => releaseRuntimes.get(version));
-    const option = document.createElement('option');
-    option.value = version;
-    option.textContent = `Nerdamer ${version}`;
-    engineSelect.add(option, engineSelect.querySelector('option[value="legacy"]'));
-  }
+  const discoverReleases = async () => {
+    try {
+      const response = await fetch(releaseManifestUrl, { cache: 'no-cache' });
+      if (!response.ok) throw new Error('Release metadata unavailable.');
+      const data = await response.json();
+      if (!Array.isArray(data?.versions)) throw new Error('Invalid release metadata.');
+
+      const versions = [...new Set(data.versions.filter(version => stableV2Parts(version)))]
+        .sort((a, b) => compareVersions(b, a));
+
+      // Published builds are separate from the local site bundle, even when
+      // both report the same version. No manual release list is maintained.
+      for (const version of versions) {
+        releaseUrls.set(version, `https://cdn.jsdelivr.net/npm/nerdamer@${version}/dist/bundle.js`);
+        engines[version] = createV2Engine(version, `Nerdamer ${version}`, () => releaseRuntimes.get(version));
+
+        const option = document.createElement('option');
+        option.value = version;
+        option.textContent = engines[version].label;
+        engineSelect.add(option, engineSelect.querySelector('option[value="legacy"]'));
+      }
+
+    } catch {
+      // Release discovery is optional; existing engines remain available.
+    }
+  };
 
   const activeEngine = () => engines[activeEngineId];
 
   const setStatus = (message, kind = '') => {
     status.textContent = message;
     status.className = `engine-status ${kind}`.trim();
+  };
+
+  const clearWarningDisplay = () => {
+    warningList.replaceChildren();
+    warningOutput.hidden = true;
+  };
+
+  // The warning API stores diagnostics across calls. Snapshot its length
+  // instead of clearing shared runtime state so only this action is displayed.
+  const warningSnapshot = runtime => {
+    if (typeof runtime?.getWarnings !== 'function') return null;
+    try {
+      const records = runtime.getWarnings();
+      return Array.isArray(records) ? records.length : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Shows the warnings recorded from offset up to end (or the latest).
+  const renderWarnings = (runtime, offset, end = null) => {
+    clearWarningDisplay();
+    if (offset === null || typeof runtime?.getWarnings !== 'function') return;
+
+    let records;
+    try {
+      records = runtime.getWarnings();
+    } catch {
+      return;
+    }
+    if (!Array.isArray(records)) return;
+    const start = records.length < offset ? 0 : offset;
+    for (const warning of records.slice(start, end ?? records.length)) {
+      const message = typeof warning === 'string' ? warning : warning?.message;
+      if (typeof message !== 'string' || !message.trim()) continue;
+
+      const item = document.createElement('li');
+      const content = document.createElement('span');
+      content.textContent = message;
+      item.append(content);
+
+      if (typeof warning?.code === 'string' && warning.code) {
+        const code = document.createElement('code');
+        code.textContent = warning.code;
+        item.append(code);
+      }
+      warningList.append(item);
+    }
+    warningOutput.hidden = warningList.childElementCount === 0;
+  };
+
+  const captureWarnings = callback => {
+    const runtime = activeEngine().root();
+    clearWarningDisplay();
+    const offset = warningSnapshot(runtime);
+    try {
+      return callback();
+    } finally {
+      renderWarnings(runtime, offset);
+    }
   };
 
   const loadRelease = version => {
@@ -201,6 +298,10 @@
         globalThis.nerdamer = currentNerdamer;
         if (typeof runtime !== 'function' || runtime === currentNerdamer) {
           reject(new Error(`Nerdamer ${version} did not initialize.`));
+          return;
+        }
+        if (typeof runtime.version !== 'function' || runtime.version() !== version) {
+          reject(new Error(`Nerdamer ${version} did not report the expected version.`));
           return;
         }
         releaseRuntimes.set(version, runtime);
@@ -346,9 +447,7 @@
     key.textContent = label;
     const type = document.createElement('span');
     type.className = 'tree-type';
-    type.textContent = Array.isArray(value)
-      ? `Array(${value.length})`
-      : (value.constructor?.name || value.dataType || value.typeName || 'Object');
+    type.textContent = typeLabel(value);
     summary.append(key, type);
     details.append(summary);
 
@@ -410,10 +509,66 @@
     updateAutocomplete();
   };
 
+  // Finds the function call around the cursor: its name and which argument the
+  // cursor is in, counting only top-level commas.
+  const enclosingCall = () => {
+    const before = editor.value.slice(0, editor.selectionStart);
+    let depth = 0;
+    let argument = 0;
+    for (let i = before.length - 1; i >= 0; i--) {
+      const c = before[i];
+      if (c === ')' || c === ']' || c === '}') depth++;
+      else if (c === '[' || c === '{') {
+        if (depth === 0) return null;
+        depth--;
+      } else if (c === '(') {
+        if (depth > 0) {
+          depth--;
+          continue;
+        }
+        const name = before.slice(0, i).match(/([A-Za-z_]\w*)\s*$/)?.[1];
+        return name ? { name, argument } : null;
+      } else if (c === ',' && depth === 0) argument++;
+    }
+    return null;
+  };
+
+  const splitParameters = syntax => {
+    const inner = syntax.match(/\((.*)\)\s*$/)?.[1] ?? '';
+    const parts = [];
+    let depth = 0;
+    let current = '';
+    for (const c of inner) {
+      if ('([{'.includes(c)) depth++;
+      if (')]}'.includes(c)) depth--;
+      if (c === ',' && depth === 0) {
+        parts.push(current.trim());
+        current = '';
+      } else current += c;
+    }
+    if (current.trim()) parts.push(current.trim());
+    return parts;
+  };
+
+  const renderSignatureHelp = () => {
+    const call = enclosingCall();
+    const item = call && manifest.find(entry => entry.name === call.name);
+    if (!item) {
+      signature.textContent = 'Type a function name to see signature help.';
+      return;
+    }
+    const parameters = splitParameters(functionSyntax(item));
+    const shown = parameters.map((parameter, index) => {
+      const text = escape(parameter);
+      return index === Math.min(call.argument, parameters.length - 1) ? `<b class="signature-active">${text}</b>` : text;
+    }).join(', ');
+    signature.innerHTML = `<code>${escape(item.name)}(${shown})</code><span>${escape(item.summary || '')}</span>`;
+  };
+
   const renderSuggestions = () => {
     if (!filtered.length) {
       suggestions.hidden = true;
-      signature.textContent = 'Type a function name to see signature help.';
+      renderSignatureHelp();
       return;
     }
 
@@ -423,6 +578,11 @@
     )).join('');
     suggestions.hidden = false;
 
+    // Inside a call, keep showing that call's signature; the list still offers completions.
+    if (enclosingCall()) {
+      renderSignatureHelp();
+      return;
+    }
     const item = filtered[active];
     signature.innerHTML = `<code>${escape(functionSyntax(item))}</code><span>${escape(item?.summary || '')}</span>`;
   };
@@ -802,6 +962,7 @@
       delete sceneLayout.xaxis;
       delete sceneLayout.yaxis;
       plotUpdating = true;
+      plotContainer.hidden = false;
       Promise.resolve(Plotly.react(
         plotContainer,
         [{ type: 'surface', x: xs, y: ys, z, colorscale: 'Blues', showscale: false }],
@@ -819,11 +980,13 @@
     if (!traces.length) {
       plotMessage.textContent = 'No finite plottable values were produced.';
       Plotly.purge(plotContainer);
+      plotContainer.hidden = true;
       plotRelayoutBound = false;
       return;
     }
 
     plotUpdating = true;
+    plotContainer.hidden = false;
     Promise.resolve(Plotly.react(plotContainer, traces, { ...layout, height: 420 }, config)).finally(() => {
       plotUpdating = false;
       bindPlotRelayout();
@@ -831,13 +994,83 @@
     plotMessage.textContent = `2-D plot · ${activeEngine().label} · ${sampleCount} samples`;
   };
 
+  // The names an input refers to as variables, and the ones it gives a value itself:
+  // assignments such as x:5 and the parameters of definitions such as f(x):=x^2.
+  // Comments and strings are skipped. A name before a bracket is a function only when
+  // one is registered under it, since x(2) is x*2.
+  const inputNames = (source, functions) => {
+    const text = source.replace(/\/\/[^\n]*/g, ' ').replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, ' ');
+    const used = new Set();
+    const local = new Set();
+    for (const match of text.matchAll(/[A-Za-z_]\w*/g)) {
+      const after = text.slice(match.index + match[0].length).trimStart();
+      if (!(after.startsWith('(') && functions.has(match[0]))) used.add(match[0]);
+      if (/^:(?!=)/.test(after)) local.add(match[0]);
+    }
+    for (const match of text.matchAll(/[A-Za-z_]\w*\s*\(([^()]*)\)\s*:=/g)) {
+      for (const name of match[1].match(/[A-Za-z_]\w*/g) || []) local.add(name);
+    }
+    return { used, local };
+  };
+
+  // The session variables an input uses: their values are substituted when it runs, so
+  // factor(x^6-1) with x = 5 factors 15624. Read before the run, which can change them.
+  const sessionValuesUsed = (runtime, source) => {
+    let retval = [];
+    try {
+      const values = typeof runtime.getVars === 'function' ? runtime.getVars('text') || {} : {};
+      const entries = Object.entries(values).filter(([name]) => name !== 'undefined');
+      if (entries.length) {
+        const registered = typeof runtime.functions === 'function' ? runtime.functions() : null;
+        const functions = new Set(registered ? [...(registered.system || []), ...(registered.user || [])] : []);
+        const { used, local } = inputNames(source, functions);
+        retval = entries.filter(([name]) => used.has(name) && !local.has(name));
+      }
+    } catch {}
+    return retval;
+  };
+
+  const showSessionValues = entries => {
+    if (!sessionNote) return;
+    sessionNote.replaceChildren();
+    sessionNote.hidden = entries.length === 0;
+    if (!entries.length) return;
+
+    const label = document.createElement('span');
+    label.className = 'result-session-label';
+    label.textContent = entries.length === 1 ? 'Uses a session variable' : 'Uses session variables';
+    const chips = document.createElement('span');
+    chips.className = 'playground-session-vars';
+    for (const [name, value] of entries) {
+      const chip = document.createElement('span');
+      chip.className = 'playground-session-chip';
+      const content = document.createElement('span');
+      content.className = 'playground-session-value';
+      const nameCode = document.createElement('code');
+      nameCode.textContent = name;
+      const equals = document.createElement('span');
+      equals.textContent = '=';
+      const valueCode = document.createElement('code');
+      valueCode.textContent = value;
+      content.append(nameCode, equals, valueCode);
+      chip.append(content);
+      chips.append(chip);
+    }
+    const hint = document.createElement('span');
+    hint.className = 'result-session-hint';
+    hint.textContent = `Remove ${entries.length === 1 ? 'it' : 'them'} from Session variables to keep ${entries.length === 1 ? 'it' : 'them'} symbolic.`;
+    sessionNote.append(label, chips, hint);
+  };
+
   const execute = () => {
     const engine = activeEngine();
     const mode = evaluateOutput.checked ? 'Evaluated' : 'Symbolic';
     error.textContent = '';
     error.hidden = true;
+    clearWarningDisplay();
 
-    if (typeof engine.root() !== 'function') {
+    const runtime = engine.root();
+    if (typeof runtime !== 'function') {
       error.textContent = `${engine.label} is not available.`;
       error.hidden = false;
       result.textContent = 'Evaluation failed.';
@@ -849,6 +1082,10 @@
     const source = cleanSource(editor.value);
     if (!source) return;
 
+    showSessionValues(sessionValuesUsed(runtime, source));
+    const warningOffset = warningSnapshot(runtime);
+    // The plot check below parses the input again; its warnings are not shown twice.
+    let warningEnd = null;
     const start = performance.now();
     try {
       const value = engine.run(source, evaluateOutput.checked);
@@ -860,15 +1097,17 @@
       } catch {}
 
       result.textContent = text;
-      resultMeta.textContent = `${engine.label} · ${mode} · ${value?.constructor?.name || typeof value} · ${elapsed.toFixed(2)} ms`;
+      resultMeta.textContent = `${engine.label} · ${mode} · ${typeLabel(value)} · ${elapsed.toFixed(2)} ms`;
       raw.textContent = text;
       tex.textContent = latex || 'No TeX converter result available.';
       renderTree(value);
       lastExecution = { source, text, value, engineId: activeEngineId, evaluated: evaluateOutput.checked };
       selectTab('result');
+      warningEnd = warningSnapshot(runtime);
       syncPlotContext();
     } catch (caught) {
-      error.textContent = caught?.stack || caught?.message || String(caught);
+      warningEnd ??= warningSnapshot(runtime);
+      error.textContent = caught?.message || String(caught);
       error.hidden = false;
       result.textContent = 'Evaluation failed.';
       resultMeta.textContent = `${engine.label} · ${mode}`;
@@ -878,12 +1117,15 @@
       lastExecution = null;
       selectTab('result');
       syncPlotContext();
+    } finally {
+      renderWarnings(runtime, warningOffset, warningEnd);
     }
   };
 
   const switchEngine = async () => {
     const requested = engineSelect.value;
     suggestions.hidden = true;
+    clearWarningDisplay();
     engineSelect.disabled = true;
     let ready = false;
 
@@ -916,6 +1158,7 @@
     syncPlotContext();
     if (globalThis.Plotly && plotContainer) {
       globalThis.Plotly.purge(plotContainer);
+      plotContainer.hidden = true;
       plotRelayoutBound = false;
     }
     if (ready) execute();
@@ -972,16 +1215,19 @@
     signature.textContent = 'Type a function name to see signature help.';
     result.textContent = 'Ready.';
     resultMeta.textContent = '';
+    showSessionValues([]);
     raw.textContent = '';
     tex.textContent = '';
     tree.replaceChildren();
     error.textContent = '';
     error.hidden = true;
+    clearWarningDisplay();
     lastExecution = null;
     plotBaseXRange = null;
     syncPlotContext();
     if (globalThis.Plotly && plotContainer) {
       globalThis.Plotly.purge(plotContainer);
+      plotContainer.hidden = true;
       plotRelayoutBound = false;
     }
   });
@@ -992,6 +1238,13 @@
     suggestions.hidden = true;
     lastExecution = null;
     execute();
+    // Plot examples also draw their plot, in the dimension the chip names.
+    const dimension = button.dataset.plot;
+    if (dimension && lastExecution && plot3D) {
+      plot3D.checked = dimension === '3d';
+      // The change handler updates the 3-D options and plots.
+      plot3D.dispatchEvent(new Event('change'));
+    }
   }));
 
   engineSelect.addEventListener('change', switchEngine);
@@ -1016,6 +1269,8 @@
     if (plotContainer?.data) plotCurrent({ keepBaseRange: true });
   }, 0));
 
+  discoverReleases();
+
   fetch('/data/parser-functions.json')
     .then(response => response.json())
     .then(data => {
@@ -1027,12 +1282,30 @@
       refreshFunctionCatalog();
     });
 
-  const params = new URLSearchParams(location.search);
-  if (params.get('expr')) editor.value = params.get('expr');
+  // Links such as /playground/?expr=x^2+1 open with that input and run it.
+  // ?eq= is the name the 1.x demo page used, and ?graph=1 also plots the result,
+  // as it did there. The query is decoded by hand because URLSearchParams turns
+  // + into a space, and + in an expression is almost always addition.
+  const queryParam = name => {
+    for (const pair of location.search.slice(1).split('&')) {
+      const at = pair.indexOf('=');
+      const key = at < 0 ? pair : pair.slice(0, at);
+      if (key !== name) continue;
+      try {
+        return decodeURIComponent(at < 0 ? '' : pair.slice(at + 1));
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+  const linkedInput = queryParam('expr') ?? queryParam('eq');
+  if (linkedInput) editor.value = linkedInput;
 
   if (typeof currentNerdamer === 'function') {
     setStatus(`${engines.v2.label} ready`, 'ready');
     execute();
+    if (linkedInput && queryParam('graph') === '1') plotCurrent();
   } else {
     setStatus(`${engines.v2.label} unavailable`, 'error');
     run.disabled = true;
@@ -1047,6 +1320,7 @@
       editor.dispatchEvent(new Event('input', { bubbles: true }));
     },
     run: execute,
+    captureWarnings,
     selectEngine: async id => {
       engineSelect.value = id;
       await switchEngine();

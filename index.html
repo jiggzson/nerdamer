@@ -43,7 +43,7 @@
       <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
     </nav>
     <div class="nav-actions">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme"><svg class="theme-toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
       <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
     </div>
   </div>
@@ -121,9 +121,7 @@
 							server.
 						</p>
 						<p>
-							Current releases no longer use the 1.x core-plus-add-ons loading model. The complete package
-							can be used directly, and application code can import documented public APIs from the
-							package entry points. It is open source under the Apache-2.0 license.
+							Import the whole package, or only the parts you need, such as <code>nerdamer/algebra</code>. It is open source under the Apache-2.0 license.
 						</p>
 					</div>
 					<div class="home-facts" aria-label="Nerdamer at a glance">
@@ -141,8 +139,7 @@
 						<div>
 							<strong>Typed public APIs</strong
 							><span
-								>Use the root package or documented JavaScript and TypeScript entry points in
-								application code.</span
+								>Import the whole package, or only the functions, classes and types you need.</span
 							>
 						</div>
 						<div>
@@ -236,15 +233,14 @@
 					<div>
 						<span class="feature-mark">TS</span>
 						<p>
-							<strong>JavaScript and TypeScript API</strong> Use Nerdamer from application code with typed
-							public entry points.
+							<strong>JavaScript and TypeScript API</strong> Call Nerdamer from your code, with TypeScript types.
 						</p>
 					</div>
 					<div>
 						<span class="feature-mark">TeX</span>
 						<p>
 							<strong>Display and reuse results</strong> Convert expressions to text or TeX, evaluate
-							them, or compile supported expressions to JavaScript functions.
+							them, or turn them into fast JavaScript functions.
 						</p>
 					</div>
 				</div>
@@ -400,9 +396,9 @@
       <p>Symbolic mathematics for JavaScript and TypeScript.</p>
     </div>
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
-        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        Scripting</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/contributing/">Contributing</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>realsolutions — Nerdamer Documentation</title>
-  <meta name="description" content="Selects real solutions within an inclusive interval.">
+  <meta name="description" content="Returns the real solutions in an interval.">
   <script>
     if (location.hostname === 'nerdamer.com' || location.hostname === 'www.nerdamer.com') {
       const analytics = document.createElement('script');
@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="../../../styles/docs-sidebar.css">
   <link rel="stylesheet" href="../../../styles/playground-tree.css">
   <link rel="stylesheet" href="../../../styles/api.css">
+<link rel="stylesheet" href="../../../styles/function-page.css">
   <link rel="stylesheet" href="../../../styles/background.css">
 </head>
 <body>
@@ -42,7 +43,7 @@
       <a class="github-link" href="https://github.com/jiggzson/nerdamer" target="_blank" rel="noreferrer">GitHub</a>
     </nav>
     <div class="nav-actions">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme"><svg class="theme-toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
       <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button>
     </div>
   </div>
@@ -55,37 +56,42 @@
 <div class="docs-layout"><aside class="docs-sidebar">
   <div class="docs-search-wrap"><label for="docs-filter">Documentation</label><input id="docs-filter" type="search" placeholder="Filter sections…" autocomplete="off"></div>
   <nav class="docs-nav" id="docs-nav">
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Start here</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Getting started</a><a href="/docs/choosing-an-api/">Choosing how to use Nerdamer</a><a href="/docs/migration/">Migrating from Nerdamer 1.xx</a><a href="/docs/releases/">What’s New</a><a href="/docs/references/">References &amp; citations</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Notation</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Expression syntax</a><a href="/docs/functions/">Function reference</a></div>
-    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Nerdamer Scripting</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/language/">Overview &amp; reference</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/language/user-defined-functions/">User-defined functions</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">JavaScript / TypeScript API</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/api/">API overview</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/settings/">Settings &amp; configuration</a><a href="/docs/public-helpers/">Text output &amp; public helpers</a><a href="/docs/examples/">API examples</a></div>
-    <div class="docs-nav-group is-collapsed" data-default-expanded="false"><button class="docs-nav-toggle" type="button" aria-expanded="false"><span class="docs-nav-label">Contributors</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/internals/">Architecture</a><a href="/docs/internals/expression-model/">Expression model</a><a href="/docs/internals/parser/">Parser internals</a><a href="/docs/internals/codebase-map/">Codebase map</a><a href="/docs/internals/inspector/">Internals inspector</a><a href="/docs/internals/development/">How to develop</a><a href="/docs/internals/code-conventions/">Code conventions</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Get started</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/">Overview</a><a href="/docs/getting-started/">Install &amp; first steps</a><a href="/docs/choosing-an-api/">Ways to use Nerdamer</a><a href="/docs/releases/">What’s new</a><a href="/docs/migration/">Migrating from 1.x</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Guides</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/parser/">Writing expressions</a><a href="/docs/guides/reserved-names/">Reserved names</a><a href="/docs/language/">Scripting</a><a href="/docs/language/user-defined-functions/">User-defined functions</a><a href="/docs/public-helpers/">Results &amp; output</a><a href="/docs/guides/sets/">Sets &amp; solution sets</a><a href="/docs/guides/assumptions/">Assumptions</a><a href="/docs/settings/">Settings</a><a href="/docs/guides/warnings/">Warnings</a><a href="/docs/guides/connecting-functions/">Connecting functions</a><a href="/docs/language/examples/">Scripting examples</a><a href="/docs/examples/">JavaScript examples</a></div>
+    <div class="docs-nav-group"><button class="docs-nav-toggle" type="button" aria-expanded="true"><span class="docs-nav-label">Reference</span><span class="docs-nav-chevron" aria-hidden="true">⌄</span></button><a href="/docs/functions/">Functions</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">Types &amp; import paths</a></div>
   </nav>
+  <a class="docs-sidebar-footer-link" href="/contributing/">Contributing →</a>
 </aside>
 <article class="docs-content"><div class="api-breadcrumbs"><a href="/docs/">Documentation</a><span>/</span><a href="/docs/functions/">Function reference</a></div>
 <div class="eyebrow">Function reference · Solving</div>
 <h1><code>realsolutions</code></h1>
-<p>Selects real solutions within an inclusive interval.</p>
-<div class="api-description"><p>For a SolutionSet returned by solve, realsolutions(solutions, lower, upper) filters or materializes real solutions within the requested inclusive interval, including supported integer-indexed periodic families.</p><p>For a system result returned by solveeqs, realsolutions(systems, variable, lower, upper) projects the distinct real values of the selected variable into a SolutionSet, rather than returning the full system dictionaries.</p></div>
-<section class="api-detail"><h2>Examples</h2><p>These examples use Nerdamer Notation.</p><div class="api-example-block"><p>Materialize a periodic family within a specified real interval.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">realsolutions</span><span class="token punctuation">(</span><span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token operator">-</span><span class="token number">2</span><span class="token operator">*</span><span class="token constant">pi</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token operator">*</span><span class="token constant">pi</span><span class="token punctuation">)</span>
-<span class="token comment">// → {-2*pi, -pi, 0, pi, 2*pi}</span></code></pre></div>
-<div class="api-example-block"><p>Select x-values from a system&#39;s solutions.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">realsolutions</span><span class="token punctuation">(</span><span class="token function">solveeqs</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token operator">+</span><span class="token variable">y</span><span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token operator">-</span><span class="token variable">y</span><span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span>
-<span class="token comment">// → {2}</span></code></pre></div></section>
-<section class="api-detail"><h2>Interfaces</h2><p>The same operation is available through the interfaces below.</p><p><a href="#notation">Nerdamer Notation</a></p></section>
-<section class="api-detail" id="notation">
-<h2>Nerdamer Notation</h2>
-<p>Use this form inside input passed to <code>nerdamer(...)</code>.</p>
-<pre class="api-signature"><code>realsolutions(solutionSet, lower, upper) | realsolutions(systems, variable, lower, upper)</code></pre>
-<h3>Parameters</h3><ul><li><code>solutionSetOrSystems</code> — A SolutionSet from solve, or a Vector of Dictionary assignments from solveeqs.</li>
-<li><code>variable</code> — Required for system results: a plain variable whose distinct real values form the returned SolutionSet.</li>
-<li><code>lower</code> — Inclusive finite real lower bound of the requested interval.</li>
-<li><code>upper</code> — Inclusive finite real upper bound of the requested interval.</li></ul>
-
+<p class="fn-summary">Returns the real solutions in an interval.</p>
+<p>For the result of <a href="/docs/functions/solve/"><code>solve</code></a>, use <code>realsolutions(solutions, lower, upper)</code>. It also lists the members of a periodic family that fall in the interval.</p>
+<p>For the result of <a href="/docs/functions/solveeqs/"><code>solveeqs</code></a>, use <code>realsolutions(solutions, variable, lower, upper)</code>. It returns the real values of that one variable.</p>
+<div class="fn-forms">
+<section class="fn-form" id="notation">
+<h2 class="fn-form-label">Notation</h2>
+<pre class="api-signature fn-signature"><code>realsolutions(solutionSet, lower, upper) | realsolutions(systems, variable, lower, upper)</code></pre>
+<p class="fn-form-note">Write it in an expression: <code>nerdamer('realsolutions(solve(sin(x),x),-2*pi,2*pi)')</code>, or in the <a href="/playground/?expr=realsolutions(solve(sin(x)%2Cx)%2C-2*pi%2C2*pi)">Playground</a>.</p>
 </section>
+</div>
+<section class="api-detail"><h2>Parameters</h2><dl class="fn-params"><dt><code>solutionSetOrSystems</code></dt><dd>A SolutionSet from solve, or a Vector of Dictionary assignments from solveeqs.</dd>
+<dt><code>variable</code></dt><dd>Required for system results: a plain variable whose distinct real values form the returned SolutionSet.</dd>
+<dt><code>lower</code></dt><dd>Inclusive finite real lower bound of the requested interval.</dd>
+<dt><code>upper</code></dt><dd>Inclusive finite real upper bound of the requested interval.</dd></dl></section>
+
+<section class="api-detail"><h2>Examples</h2><div class="api-example-block"><p>List a periodic family between -2π and 2π.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">realsolutions</span><span class="token punctuation">(</span><span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">sin</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token operator">-</span><span class="token number">2</span><span class="token operator">*</span><span class="token constant">pi</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token operator">*</span><span class="token constant">pi</span><span class="token punctuation">)</span>
+<span class="token comment">// → {-2*pi, -pi, 0, pi, 2*pi}</span></code></pre><a class="fn-example-try" href="/playground/?expr=realsolutions(solve(sin(x)%2Cx)%2C-2*pi%2C2*pi)">Open in Playground</a></div>
+<div class="api-example-block"><p>The zeros of cosine in one period.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">realsolutions</span><span class="token punctuation">(</span><span class="token function">solve</span><span class="token punctuation">(</span><span class="token function">cos</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token operator">*</span><span class="token constant">pi</span><span class="token punctuation">)</span>
+<span class="token comment">// → {(1/2)*pi, (3/2)*pi}</span></code></pre><a class="fn-example-try" href="/playground/?expr=realsolutions(solve(cos(x)%2Cx)%2C0%2C2*pi)">Open in Playground</a></div>
+<div class="api-example-block"><p>No real solutions.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">realsolutions</span><span class="token punctuation">(</span><span class="token function">solve</span><span class="token punctuation">(</span><span class="token variable">x</span><span class="token operator">^</span><span class="token number">2</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">)</span>
+<span class="token comment">// → {}</span></code></pre><a class="fn-example-try" href="/playground/?expr=realsolutions(solve(x%5E2%2B1%2Cx)%2C-5%2C5)">Open in Playground</a></div>
+<div class="api-example-block"><p>The x-values of a system&#39;s solutions.</p><pre class="codeblock language-nerdamer" data-language="nerdamer"><code class="language-nerdamer"><span class="token function">realsolutions</span><span class="token punctuation">(</span><span class="token function">solveeqs</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">x</span><span class="token operator">+</span><span class="token variable">y</span><span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token operator">-</span><span class="token variable">y</span><span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token variable">x</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span>
+<span class="token comment">// → {2}</span></code></pre><a class="fn-example-try" href="/playground/?expr=realsolutions(solveeqs(%5Bx%2By%3D3%2Cx-y%3D1%5D)%2Cx%2C1%2C3)">Open in Playground</a></div></section>
+<section class="api-detail"><h2>Good to know</h2><ul><li>The interval must be finite.</li>
+<li>In JavaScript, <code>SolutionSet.generate({ interval: [lower, upper] })</code> and <code>SolutionSet.generate({ indices: [first, last] })</code> do the same.</li></ul></section>
 
 
-<section class="api-detail"><h2>Notes</h2><ul><li>A finite interval is required; this operation does not enumerate an infinite family without limits.</li>
-<li>For JavaScript or TypeScript, SolutionSet.generate({ interval: [lower, upper] }) and SolutionSet.generate({ indices: [first, last] }) provide explicit generation operations.</li></ul></section>
 
 <p><a href="/docs/functions/">← Back to Function reference</a></p></article></div>
 </main>
@@ -95,9 +101,9 @@
       <p>Symbolic mathematics for JavaScript and TypeScript.</p>
     </div>
     <div><strong>Documentation</strong><a href="/docs/parser/">Nerdamer Notation</a><a href="/docs/language/">Nerdamer
-        Scripting</a><a href="/docs/api/nerdamer/"><code>nerdamer</code> API</a><a href="/docs/api/">JavaScript /
+        Scripting</a><a href="/docs/api/nerdamer/">The <code>nerdamer</code> object</a><a href="/docs/api/">JavaScript /
         TypeScript API</a></div>
-    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/docs/internals/">Internals</a><a rel="noopener noreferrer" target="_blank"
+    <div><strong>Project</strong><a href="/playground/">Playground</a><a href="/docs/references/">References &amp; citations</a><a href="/contributing/">Contributing</a><a rel="noopener noreferrer" target="_blank"
         href="https://github.com/jiggzson/nerdamer">GitHub</a></div>
   </div>
   <div class="shell footer-bottom">Copyright © 2013–2026 Martin Donk · Licensed under the Apache License 2.0</div>
